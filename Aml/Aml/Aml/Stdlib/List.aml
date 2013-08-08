@@ -1,0 +1,68 @@
+; Aml List library.
+; Copyright (C) Bryan Edds, 2012-2013.
+
+[usingFile "Core.aml"]
+[usingFile "Int.aml"]
+
+[struct listEnumerator [lst] where: [[list lst]]
+    doc: "A list enumerator."]
+
+[instance semigroup [lst lst2] where: [[list lst] [list lst2]]
+    doc: "An instance of the semigroup protocol over lists."
+    [def <++> t++]]
+
+[instance monoid [lst lst2] where: [[list lst] [list lst2]]
+    doc: "An instance of the monoid protocol over lists."
+    [def <id> [lst] (list)]]
+
+[instance sizable [lst lst2] where: [[list lst] [list lst2]]
+    doc: "An instance of the sizable protocol over lists."
+    [def length tLength]
+    [def isEmpty [lst] (= lst (list))]]
+
+[instance sequence [enr] where: [[listEnumerator enr]]
+    doc: "An instance of the sequence protocol over list enumerators."
+    [def isDone [enr] (isEmpty enr.lst)]
+    [def peek [enr] (head enr.lst)]
+    [def next [enr] (listEnumerator (tail enr.lst))]]
+
+[instance sequence [lst] where: [[list lst]]
+    doc: "An instance of the sequence protocol over lists."
+    [def isDone isEmpty]
+    [def peek head]
+    [def next [lst] (next (listEnumerator lst))]]
+    
+[def mapIntoList [mapper seq] where: [[lambda mapper] [sequence seq]]
+    doc: "Perform a functional map over a sequence into a list. Not structure-preserving."
+    (foldRight (lambda (x y) (cons (mapper x) y)) (list) seq)]
+
+[def sequenceToList [seq] where: [[sequence seq]]
+    doc: "Convert a sequence to a list."
+    (if (isList seq)
+        seq
+        (if (isListEnumerator seq)
+            seq.lst
+            (mapIntoList identity seq)))]
+
+#| Affirmations |#
+
+[def lstLst (list 0 5 10 15 20)]
+[def lstIncLst (list 1 6 11 16 21)]
+
+[affirmation mapIntoListWorks
+    (= (mapIntoList inc lstLst) lstIncLst)]
+
+[affirmation sequenceToListWorks
+    (= (sequenceToList lstLst) lstLst)]
+
+[affirmation listFoldWorks
+    (= (fold + 0 lstLst) 50)]
+
+[affirmation listFoldRightWorks
+    (= (foldRight - 0 lstLst) 10)]
+    
+[affirmation listReduceWorks
+    (= (reduce + lstLst) 50)]
+
+[affirmation listReduceRightWorks
+    (= (reduceRight - lstLst) -10)]
