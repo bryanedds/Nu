@@ -1,0 +1,62 @@
+; Aml Array library.
+; Copyright (C) Bryan Edds, 2012-2013.
+
+[usingFile "Core.aml"]
+[usingFile "Int.aml"]
+[usingFile "List.aml"]
+
+[struct arrayEnumerator [arr index] where: [[array arr] [int index]]
+    doc: "An array enumerator."
+    req: (isPositive index)]
+
+[instance semigroup [arr arr2] where: [[array arr] [array arr2]]
+    doc: "An instance of the semigroup protocol over arrays."
+    [def <++> a++]]
+
+[instance monoid [arr arr2] where: [[array arr] [array arr2]]
+    doc: "An instance of the monoid protocol over arrays."
+    [def <id> [arr] (array)]]
+
+[instance sizable [arr arr2] where: [[array arr] [array arr2]]
+    doc: "An instance of the sizable protocol over arrays."
+    [def length aLength]
+    [def isEmpty [arr] (isZero (length arr))]]
+
+[instance sequence [enr] where: [[arrayEnumerator enr]]
+    doc: "An instance of the sequence protocol over array enumerators."
+    [def isDone [enr] (= enr.index (length enr.arr))]
+    [def peek [enr] enr.arr.enr::index]
+    [def next [enr] (arrayEnumerator enr.arr (inc enr.index))]]
+
+[instance sequence [arr] where: [[array arr]]
+    doc: "An instance of the sequence protocol over arrays."
+    [def isDone isEmpty]
+    [def peek [arr] arr.0]
+    [def next [arr] (arrayEnumerator arr 1)]]
+
+[def sequenceToArray [seq] where: [[sequence seq]]
+    doc: "Convert a sequence to an array."
+    (if (isArray seq)
+        seq
+        (if (and (isArrayEnumerator seq) (isZero seq.index))
+            seq.arr
+            (listToArray (sequenceToList seq))))]
+  
+#| Affirmations |#
+
+[def arrArr (array 0 5 10 15 20)]
+
+[affirmation sequenceToArrayWorks
+    (= (sequenceToArray arrArr) arrArr)]
+
+[affirmation arrayFoldWorks
+    (= (fold + 0 arrArr) 50)]
+
+[affirmation arrayFoldRightWorks
+    (= (foldRight - 0 arrArr) 10)]
+    
+[affirmation arrayReduceWorks
+    (= (reduce + arrArr) 50)]
+
+[affirmation arrayReduceRightWorks
+    (= (reduceRight - arrArr) -10)]

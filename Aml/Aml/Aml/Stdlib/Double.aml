@@ -1,0 +1,65 @@
+; Aml Double library.
+; Copyright (C) Bryan Edds, 2012-2013.
+
+[usingFile "Core.aml"]
+
+; Double constants.
+; TODO: document these.
+[def dMin -1.79769313486E+308d]
+[def dMax 1.79769313486E+308d]
+[def dPi 3.14159265359d]
+[def dE 2.71828182846d]
+
+[instance comparable [x y] where: [[double x] [double y]]
+    doc: "An instance of the comparable protocol over doubles."
+    [def < d<]
+    [def > d>]
+    [def <= d<=]
+    [def >= d>=]]
+    
+[instance numeric [x y] where: [[double x] [double y]]
+    doc: "An instance of the numeric protocol over doubles."
+    [def isExact [x] false]
+    [def + d+]
+    [def - d-]
+    [def * d*]
+    [def / d/]
+    [def pow dPow]
+    [def rem dRem]
+    [def inc [x] (+ x 1.0d)]
+    [def dec [x] (- x 1.0d)]
+    [def zeroAs [x] 0.0d]
+    [def identityAs [x] 1.0d]
+    [def minAs [x] dMin]
+    [def maxAs [x] dMax]]
+    
+[instance fractional [x y] where: [[double x] [double y]]
+    doc: "An instance of the fractional protocol over doubles."
+    [def floor dFloor]
+    [def ceiling dCeiling]
+    [def truncate dTruncate]
+    [def round dRound]
+    [def exp dExp]
+    [def log dLog]
+    [def logN dLogN]
+    [def root dRoot]
+    [def sqrt dSqrt]
+    [def sin dSin]
+    [def cos dCos]
+    [def tan dTan]
+    [def asin dAsin]
+    [def acos dAcos]
+    [def atan dAtan]
+    [def piAs [x] dPi]
+    [def eAs [x] dE]]
+    
+#| Affirmations |#
+    
+[affirmation doubleComparisonWorks
+    (comparisonWorks 0.0d 5.0d)]
+    
+[affirmation doubleIsPositiveInfinityWorks
+    (isPositiveInfinity (/ 1.0d 0.0d))]
+    
+[affirmation doubleIsNegativeInfinityWorks
+    (isNegativeInfinity (/ -1.0d 0.0d))]

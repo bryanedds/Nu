@@ -1,0 +1,554 @@
+; Aml Core library.
+; Copyright (C) Bryan Edds, 2012-2013.
+
+#| Core Type Indicators |#
+
+[def -b- doc: "Short-hand for the 'bool' type indicator." -bool-]
+[def -c- doc: "Short-hand for the 'char' type indicator." -char-]
+[def -s- doc: "Short-hand for the 'string' type indicator." -string-]
+[def -i- doc: "Short-hand for the 'int' type indicator." -int-]
+[def -g- doc: "Short-hand for the 'long' type indicator." -long-]
+[def -f- doc: "Short-hand for the 'float' type indicator." -float-]
+[def -d- doc: "Short-hand for the 'double' type indicator." -double-]
+[def -k- doc: "Short-hand for the 'keyword' type indicator." -keyword-]
+[def -r- doc: "Short-hand for the 'ref' type indicator." -ref-]
+[def -t- doc: "Short-hand for the 'list' type indicator." -list-]
+[def -a- doc: "Short-hand for the 'array' type indicator." -array-]
+[def -l- doc: "Short-hand for the 'lambda' type indicator." -lambda-]
+
+#| Core Combinators |#
+
+[def identity [x]
+    doc: "Take the identity of a value."
+    x]
+
+[def flip [f] where: [[lambda f]]
+    doc: "Flip a function's two arguments."
+    (lambda (x y) (f y x))]
+
+[def curry [f argsHead] where: [[lambda f]]
+    doc: "Curry a function call."
+    (lambda (argsTail...)
+        (let (args (cons argsHead argsTail))
+             (apply f args)))]
+
+[def compose [f g] where: [[lambda f] [lambda g]]
+    doc: "Compose two functions."
+    (lambda (args...) (f (apply g args)))]
+
+[def kappa [x]
+    doc: "Make a parameterless lambda that just returns the given value."
+    (lambda () x)]
+    
+[def iota [x]
+    doc: "Make a variadic lambda that just returns the given value."
+    (lambda (args...) x)]
+
+[def selector [key]
+    doc: "Build a function to select a value from a keyed target, such as a list, string, array, or other."
+    (lambda (target) (select key target))]
+
+[def update! [f r] where: [[lambda f] [ref r]]
+    doc: "Apply a function to a reference value, then update the reference with the new value."
+    (set! r (f (get r)))]
+
+#| Core Protocols TODO: document these protocols' signatures |#
+
+[protocol comparable [a]
+    doc: "Performs value comparisons."
+    [sig < [a a]]
+    [sig > [a a]]
+    [sig <= [a a]]
+    [sig >= [a a]]]
+
+; We could also allow defining multiple sigs with the same types like this -
+; [protocol comparable [a] where: [[equatable a]]
+;     [sigs [< > <= >=] [a a -> bool]]]
+
+[protocol numeric [a] where: [[comparable a]]
+    doc: "Performs numeric operations."
+    [sig isExact [a]]
+    [sig + [a a]]
+    [sig - [a a]]
+    [sig * [a a]]
+    [sig / [a a]]
+    [sig pow [a a]]
+    [sig rem [a a]]
+    [sig inc [a]]
+    [sig dec [a]]
+    [sig zeroAs [a]]
+    [sig identityAs [a]]
+    [sig minAs [a]]
+    [sig maxAs [a]]]
+
+[protocol fractional [a] where: [[numeric a]]
+    doc: "Performs fractional number operations."
+    [sig floor [a]]
+    [sig ceiling [a]]
+    [sig truncate [a]]
+    [sig round [a]]
+    [sig exp [a]]
+    [sig log [a]]
+    [sig logN [a a]]
+    [sig root [a a]]
+    [sig sqrt [a]]
+    [sig sin [a]]
+    [sig cos [a]]
+    [sig tan [a]]
+    [sig asin [a]]
+    [sig acos [a]]
+    [sig atan [a]]
+    [sig piAs [a]]
+    [sig eAs [a]]]
+
+[protocol semigroup [p]
+    doc: "As in abstract algebra, a value with an associative binary operator."
+    [sig <++> [p p] doc: "Append two values together in an abstract manner. <++> is pronounced 'pAppend'."]]
+
+[protocol monoid [p] where: [[semigroup p]]
+    doc: "A semigroup with an identity value."
+    [sig </> [p] doc: "Get the abstract nothing value. </> is pronounced 'pNothing'."]]
+    
+[protocol functor [p]
+    doc: "Enables application of functions lifted into a computational context."
+    [sig <map> [f p] doc: "Apply a function lifted into a computational context. <map> is pronounced 'pMap'."]]
+
+[protocol pointed [p] where: [[functor p]]
+    doc: "Enables a value to be made available for use in a computational context."
+    [sig <1> [p x] doc: "Make a value available for use in a computational context. <1> is pronounced 'pOne'."]]
+
+[protocol applicative [p] where: [[pointed p]]
+    doc: "Enables the application of a function in one computational context to a value in another computational context."
+    [sig <*> [p p] doc: "Apply a function in one computational context to a value in another. <*> is pronounced 'pStar'."]]
+
+[protocol monad [p] where: [[applicative p]]
+    doc: "Enables actions to be injected into a computational context."
+    [sig >>= [p f] doc: "Inject an action into a computational context. >>= is pronounced 'pBind'."]
+    [sig <join> [p] doc: "Join two layers of computation context. <join> is pronouned 'pJoin'."]]
+
+[protocol monadPlus [p] where: [[monoid p] [monad p]]
+    doc: "Combines the properties of a monad with monoid."
+    [sig <0> [p] doc: "Get the abstract zero value for a computational context. <0> is pronounced 'pZero'."]
+    [sig <+> [p p] doc: "Combine two values in a computational context. <+> is pronounced 'pPlus'."]]
+
+[protocol sizable [a] where: [[monoid a]]
+    doc: "Queries size properties."
+    [sig length [a]]
+    [sig isEmpty [a]]]
+
+[protocol sequence [a]; TODO: make sequence a monadPlus.
+    doc: "Supplies a sequence of values."
+    [sig isDone [a]]
+    [sig peek [a]]
+    [sig next [a]]]
+    
+[def <join>InTermsOf>>= [c] where: [[monad c]]
+    doc: "Perform a monadic join in terms of bind."
+    (>>= c identity)]
+    
+[def >>=InTermsOf<join> [c f] where: [[monad c] [lambda f]]
+    doc: "Perform a monadic bind in terms of join."
+    (<join> (<map> f c))]
+
+#| Flarging |#
+
+[def flarg [x]
+    doc: "Flatten an arg to a single list when it is a list of length 1 whose only element is a sequence."
+    (if (and (isList x)
+             (and (and (not (isDone x)) (isDone (next x)))
+                  (hasProtocol :p/sequence (head x))))
+        (head x)
+        x)]
+
+[def composeFlarg [f g] where: [[lambda f] [lambda g]]
+    doc: "Compose two functions, allowing the resulting function to be called with variadic flarging."
+    (lambda (args...) (f (apply g (flarg args))))]
+
+#| Option |#
+    
+[struct option [value exists] where: [[bool exists]]
+    doc: "A context that optionally holds a value."]
+    
+[def -o- doc: "Short-hand for the 'option' type indicator." -option-]
+
+[def nothing
+    doc: "The option with no value."
+    (option (violation :v/option/valueFromNothing "Cannot get a value from nothing." ()) #f)]
+
+[def something [value]
+    doc: "Make an option with a value."
+    (option value #t)]
+
+[instance semigroup [x] where: [[option x]]
+    doc: "An instance of the semigroup protocol over the option context."
+    [def <++> [x x2] (if x.exists (if x2.exists (<++> x.value x2.value) c) (if x2.exists x2 nothing))]]
+    
+[instance monoid [x] where: [[option x]]
+    doc: "An instance of the monoid protocol over the option context."
+    [def </> [x] nothing]]
+
+[instance functor [c] where: [[option c]]
+    doc: "An instance of the functor protocol over the option context."
+    [def <map> [f c] #|where: [[lambda f]]|# (if c.exists (something (f c.value)) nothing)]]
+
+[instance pointed [c] where: [[option c]]
+    doc: "An instance of the pointed protocol over the option context."
+    [def <1> [c x] (something x)]]
+
+[instance applicative [c c2] where: [[option c] [option c2]]
+    doc: "An instance of the applicative protocol over the option context."
+    [def <*> [c c2] (if (and c.exists c2.exists) (something (c.value c2.value)) nothing)]]
+
+[instance monad [c] where: [[option c]]
+    doc: "An instance of the monad protocol over the option context."
+    [def >>= [c f] #|where: [[lambda f]]|# (if c.exists (f c.value) nothing)]
+    [def <join> <join>InTermsOf>>=]]
+
+[instance monadPlus [c c2] where: [[option c] [option c2]]
+    doc: "An instance of the monadPlus protocol over the option context."
+    [def <0> </>]
+    [def <+> [c c2] (if c.exists c (if c2.exists c2 nothing))]]
+
+#| Core Functions |#
+
+[def not [x] where: [[bool x]]
+    doc: "Negate a boolean value. TODO: make this built-in for speed."
+    (if x #f #t)]
+
+[def min [x y] where: [[comparable x] [comparable y]]
+    doc: "Find the min value."
+    (if (< x y) x y)]
+
+[def max [x y] where: [[comparable x] [comparable y]]
+    doc: "Find the max value."
+    (if (> x y) x y)]
+    
+[def compare [x y] where: [[comparable x] [comparable y]]
+    doc: "Compare two comparable values. Returns :lessThan, :greaterThan, or :equal."
+    (if (< x y)
+        :lessThan
+        (if (> x y)
+            :greaterThan
+            :equal))]
+
+[def oneAs [x] where: [[numeric x]]
+    doc: "A one with the same numeric type as x."
+    (inc (zeroAs x))]
+
+[def twoAs [x] where: [[numeric x]]
+    doc: "A two with the same numeric type as x."
+    (inc (oneAs x))]
+
+[def negate [x] where: [[numeric x]]
+    doc: "Negate a numeric value."
+    (- (zeroAs x) x)]
+
+[def sign [x] where: [[numeric x]]
+    doc: "The sign of a numeric value, either :positive or :negative."
+    (if (>= x (zeroAs x)) :positive :negative)]
+
+[def isPositive [x] where: [[numeric x]]
+    doc: "Query that a numeric value is positive."
+    (>= x (zeroAs x))]
+
+[def isNegative [x] where: [[numeric x]]
+    doc: "Query that a numeric value is negative."
+    (< x (zeroAs x))]
+
+[def isEven [x] where: [[numeric x]]
+    doc: "Query that a numeric value is even."
+    (= (rem x (twoAs x)) (zeroAs x))]
+
+[def isOdd [x] where: [[numeric x]]
+    doc: "Query that a numeric value is odd."
+    (/= (rem x (twoAs x)) (zeroAs x))]
+
+[def isZero [x] where: [[numeric x]]
+    doc: "Query that a numeric value is zero."
+    (= x (zeroAs x))]
+
+[def isIdentity [x] where: [[numeric x]]
+    doc: "Query that a numeric value is the identity."
+    (= x (identityAs x))]
+
+[def isOne [x] where: [[numeric x]]
+    doc: "Query that a numeric value is one."
+    (= x (oneAs x))]
+
+[def abs [x] where: [[numeric x]]
+    doc: "Compute the absolute numeric value."
+    (if (isPositive x) x (negate x))]
+
+[def sqr [x] where: [[numeric x]]
+    doc: "Compute a numeric power of two."
+    (* x x)]
+
+[def isPositiveInfinity [x] where: [[numeric x]]
+    doc: "Query that a numeric value is positive infinity."
+    (> x (maxAs x))]
+
+[def isNegativeInfinity [x] where: [[numeric x]]
+    doc: "Query that a numeric value is negative infinity."
+    (< x (minAs x))]
+
+[def isNaN [x] where: [[numeric x]]
+    doc: "Query that a numeric value is not a number, based on the IEEE concept of NaN."
+    (or (isPositiveInfinity x)
+        (isNegativeInfinity x))]
+
+[def isInRange [index szb] where: [[int index] [sizable szb]]
+    doc: "Query that an index is in a valid range."
+    (and (i>= index 0)
+         (i< index (length szb)))]
+
+[def similar [seq seq2] where: [[sequence seq] [sequence seq2]]
+    doc: "Query that two sequences have similar contents."
+    (if (isDone seq)
+        (isDone seq2)
+        (if (isDone seq2)
+            #f
+            (let (value (peek seq))
+                 (value2 (peek seq2))
+                 (if (and (hasProtocol :p/sequence value) (hasProtocol :p/sequence value2))
+                     (if (similar value value2)
+                         (similar (next seq) (next seq2))
+                         #f)
+                     (if (= (peek seq) (peek seq2))
+                         (similar (next seq) (next seq2))
+                         #f)))))]
+                
+[def dissimilar [seq seq2] where: [[sequence seq] [sequence seq2]]
+    doc: "Query that two sequences have dissimilar contents."
+    (not (similar seq seq2))]
+  
+[def fold [folder state seq] where: [[lambda folder] [sequence seq]]
+    doc: "Perform a left-associative fold over a sequence."
+    (if (isDone seq)
+        state
+        (let (newState (folder state (peek seq)))
+             (nextSeq (next seq))
+             (fold folder newState nextSeq)))]
+
+[def foldRight [folder state seq] where: [[lambda folder] [sequence seq]]
+    doc: "Perform a right-associative fold over a sequence."
+    (if (isDone seq)
+        state
+        (let (elem (peek seq))
+             (nextSeq (next seq))
+             (nextState (foldRight folder state nextSeq))
+             (folder elem nextState)))]
+
+[def reduce [reducer seq] where: [[lambda reducer] [sequence seq]]
+    doc: "Perform a left-associative reduce over a sequence."
+    pre: (not (isDone seq))
+    (fold reducer (peek seq) (next seq))]
+
+[def reduceRight [reducer seq] where: [[lambda reducer] [sequence seq]]
+    doc: "Perform a right-associative reduce over a sequence."
+    pre: (not (isDone seq))
+    (foldRight reducer (peek seq) (next seq))]
+  
+[def hasAtLeast [count seq] where: [[int count] [sequence seq]]
+    doc: "Query that a sequence has at least count elements. Note this is a linear query and shouldn't be used with arrays, etc."
+    pre: (i>= count 0)
+    (if (= count 0)
+        #t
+        (if (isDone seq)
+            #f
+            (hasAtLeast (i- count 1) (next seq))))]
+
+[def hasAtMost [count seq] where: [[int count] [sequence seq]]
+    doc: "Query that a sequence has at most count elements. Note this is a linear query and shouldn't be used with arrays, etc."
+    pre: (i>= count 0)
+    (if (isDone seq)
+        #t
+        (if (= count 0)
+            #t
+            (hasAtMost (i- count 1) (next seq))))]
+
+[def hasExactly [count seq] where: [[int count] [sequence seq]]
+    doc: "Query that a sequence has exactly count elements. Note this is a linear query and shouldn't be used with arrays, etc."
+    pre: (i>= count 0)
+    (if (= count 0)
+        (isDone seq)
+        (if (isDone seq)
+            #f
+            (hasExactly (i- count 1) (next seq))))]
+
+[def areSameLength [seq seq2] where: [[sequence seq] [sequence seq2]]
+    doc: "Query that two sequences have the same number of elements. Note this is a linear query and shouldn't be used with arrays, etc."
+    (if (isDone seq)
+        (isDone seq2)
+        (if (isDone seq2)
+            #f
+            (areSameLength (next seq) (next seq2))))]
+
+[def containsWhen [pred seq] where: [[lambda pred] [sequence seq]]
+    doc: "Query that a predicate passes on an element of a sequence."
+    (if (isDone seq)
+        #f
+        (if (pred (peek seq))
+            #t
+            (containsWhen pred (next seq))))]
+    
+[def contains [element seq] where: [[sequence seq]]
+    doc: "Query that a sequence contains an equal element."
+    (containsWhen (lambda (elem) (= elem element)) seq)]
+    
+[def tallyWhen [pred seq] where: [[lambda pred] [sequence seq]]
+    doc: "Query the number the values in a sequence that satisfy a predicate."
+    (fold (lambda (elem count) (if (pred elem) (i+ count 1) count)) 0 seq)]
+    
+[def tally [seq] where: [[sequence seq]]
+    doc: "Count the number of values in a sequence."
+    (fold (lambda (count value) (i+ count 1)) 0 seq)]
+    
+[def findWhen [pred seq] where: [[lambda pred] [sequence seq]]
+    doc: "Try to find a value in a sequence that satisfies a predicate. Returns an optional value."
+    (if (isDone seq)
+        none
+        (let (value (peek seq))
+             (if (pred value)
+                 (something value)
+                 (findWhen pred (next seq)))))]
+                 
+[def find [index seq] where: [[int index] [sequence seq]]
+    doc: "Try to locate an element at an index."
+    (if (isDone seq)
+        nothing
+        (if (= index 0)
+            (something (peek seq))
+            (find (i- index 1) (next seq))))]
+
+[def car doc: "Equivalent to peek." peek]
+[def cdr doc: "Equivalent to next." next]
+[def caar [seq] where: [[sequence seq]] doc: "Equivalent to (car (car seq))." (car (car seq))]
+[def cdar [seq] where: [[sequence seq]] doc: "Equivalent to (car (cdr seq))." (car (cdr seq))]
+[def cadr [seq] where: [[sequence seq]] doc: "Equivalent to (cdr (car seq))." (cdr (car seq))]
+[def cddr [seq] where: [[sequence seq]] doc: "Equivalent to (car (car seq))." (cdr (cdr seq))]
+[def caaar [seq] where: [[sequence seq]] doc: "Equivalent to (car (car (car seq)))." (car (car (car seq)))]
+[def cdaar [seq] where: [[sequence seq]] doc: "Equivalent to (car (car (cdr seq)))." (car (car (cdr seq)))]
+[def cadar [seq] where: [[sequence seq]] doc: "Equivalent to (car (cdr (car seq)))." (car (cdr (car seq)))]
+[def caadr [seq] where: [[sequence seq]] doc: "Equivalent to (cdr (car (car seq)))." (cdr (car (car seq)))]
+[def cddar [seq] where: [[sequence seq]] doc: "Equivalent to (car (cdr (cdr seq)))." (car (cdr (cdr seq)))]
+[def caddr [seq] where: [[sequence seq]] doc: "Equivalent to (cdr (cdr (car seq)))." (cdr (cdr (car seq)))]
+[def cdadr [seq] where: [[sequence seq]] doc: "Equivalent to (cdr (car (cdr seq)))." (cdr (car (cdr seq)))]
+[def cdddr [seq] where: [[sequence seq]] doc: "Equivalent to (cdr (cdr (cdr seq)))." (cdr (cdr (cdr seq)))]
+
+[def all [args...]
+  doc: "Query that all values are true."
+  (reduce and (flarg args))]
+
+[def allWith [pred args...] where: [[lambda pred]]
+    doc: "Query that all values satisfy a predicate."
+    (fold
+        (lambda (state current) (and state (pred current)))
+        #t
+        (flarg args))]
+    
+[def any [args...]
+    doc: "Query that any of the values are true."
+    (reduce or (flarg args))]
+    
+[def anyWith [pred args...] where: [[lambda pred]]
+    doc: "Query that any of values satisfy a predicate."
+    (fold
+        (lambda (state current) (or state (pred current)))
+        #f
+        (flarg args))]
+    
+[def none [args...]
+    doc: "Query that none of the values are true."
+    (not (any args))]
+    
+[def noneWith [pred args...] where: [[lambda pred]]
+    doc: "Query that none of values satisfy a predicate."
+    (not (allWith pred (flarg args)))]
+    
+[def minima [args...]
+    doc: "Find the minima value."
+    (reduce min (flarg args))]
+    
+[def maxima [args...]
+    doc: "Find the maxima value."
+    (reduce max (flarg args))]
+    
+[def sum [args...]
+    doc: "Find the sum of the values."
+    (reduce + (flarg args))]
+    
+[def product [args...]
+    doc: "Find the product of the values."
+    (reduce * (flarg args))]
+    
+[def average [args...]
+    doc: "Find the average of the values."
+    (/ (sum args) (length args))]
+    
+[def <cat> [c] where: [[monoid c]]
+    doc: "Catenate a monoid. <cat> is pronounced 'pCat'."
+    (fold <++> (</> c) c)]
+    
+#| Affirmation Helpers |#
+    
+[def comparisonWorks [lesser greater]
+    (and (< lesser greater)
+         (and (> greater lesser)
+              (and (<= lesser greater)
+                   (>= greater lesser))))]
+                   
+#| Affirmations |#
+    
+[affirmation identityWorks
+    (= (identity 5) 5)]
+    
+[affirmation flipWorks
+    (let (unflipped (x y) x)
+         (flipped (flip unflipped))
+         (= (flipped 5 10) 10))]
+         
+[affirmation curryWorks
+    (let (curried (curry i+ 5))
+         (= (curried 10) 15))]
+    
+[affirmation composeWorks
+    (let (f (x) (i+ x 2))
+         (g (x) (i- x 1))
+         (composed (compose f g))
+         (= (composed 0) 1))]
+
+[affirmation update!Works
+    (= (update! iInc (ref 0)) (ref 1))]
+    
+[affirmation selectorWorks
+    ((selector :m/exists) (something 5))]
+    
+[affirmation option<++>Works
+    (not (<++> nothing nothing).exists)]
+    
+[affirmation option</>Works
+    (not (</> -o-).exists)]
+    
+[affirmation option<map>Works
+    (= (<map> iInc (something 5)).value 6)]
+    
+[affirmation option<1>Works
+    (= (<1> -o- 5).value 5)]
+    
+[affirmation option<*>Works
+    (= (<*> (something iInc) (something 5)).value 6)]
+    
+[affirmation option>>=Works
+    (= (>>= (something 5) iInc) 6)]
+    
+[affirmation option<join>Works
+    (= (<join> (something (something 5))).value 5)]
+    
+[affirmation option<0>Works
+    (not (<0> -o-).exists)]
+    
+[affirmation option<+>Works
+    (<+> nothing (something 5)).exists]
+    
+[affirmation notWorks
+    (not #f)]

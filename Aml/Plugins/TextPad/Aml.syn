@@ -1,0 +1,316 @@
+; Aml syntax high-lighting
+
+C=1
+
+[Syntax]
+Namespace1 = 6
+IgnoreCase = No
+InitKeyWordChars = A-Za-z
+KeyWordChars = -A-Za-z0-9+-.*/<>!?:$%_&
+BracketChars = ()[]{}
+OperatorChars = -+^*_=<>/
+PreprocStart =
+SyntaxStart =
+SyntaxEnd =
+CommentStart = #|
+CommentEnd = |#
+CommentStartAlt =
+CommentEndAlt =
+SingleComment = ;
+SingleCommentCol =
+SingleCommentAlt =
+SingleCommentColAlt =
+StringStart = "
+StringEnd = "
+StringAlt =
+StringEsc = \
+CharStart = "
+CharEnd = "
+CharEsc = \
+
+; syntax
+[Keywords 1]
+affirmation
+apply
+attempt
+case
+compose
+composeFlarg
+condition
+curry
+def
+doc
+flarg
+flip
+get
+identity
+if
+instance
+intervene
+iota
+kappa
+lambda
+let
+mutual
+post
+pre
+protocol
+ref
+req
+select
+selector
+set!
+steps!
+sig
+struct
+update!
+usingFile
+usingLanguage
+where
+while!
+
+; logical functions
+[Keywords 2]
+/=
+/==
+<
+<=
+=
+==
+>
+>=
+all
+allWith
+and
+any
+anyWith
+equal
+greaterThan
+inequal
+lessThan
+nand
+none
+noneWith
+nor
+not
+or
+xor
+
+; math functions
+[Keywords 3]
+*
++
+-
+/
+abs
+acos
+asin
+atan
+average
+ceiling
+cos
+dec
+double
+eAs
+exp
+floor
+identityAs
+inc
+isEven
+isExact
+isIdentity
+isNaN
+isNegative
+isNegativeInfinity
+isOdd
+isOne
+isPositive
+isPositiveInfinity
+isZero
+log
+logN
+long
+max
+maxAs
+maxima
+min
+minAs
+minima
+negate
+oneAs
+piAs
+pow
+product
+rem
+root
+round
+sign
+sin
+sqr
+sqrt
+sum
+tan
+truncate
+twoAs
+zeroAs
+
+; standard functions
+[Keywords 4]
+access
+alternative
+ap
+applicative
+areSameLength
+arithmetic
+arrayToList
+arrayToString
+caaar
+caadr
+caar
+cadar
+caddr
+cadr
+car
+cat
+cdaar
+cdadr
+cdar
+cddar
+cdddr
+cddr
+cdr
+charToInt
+combineAs
+comparable
+compare
+cons
+contains
+containsWhen
+dissimilar
+drop
+dropWhile
+doubleToFloat
+doubleToLong
+equatable
+extend
+fill
+fillWith
+filter
+filterWith
+find
+findWhen
+first
+floatToDouble
+floatToInt
+fold
+foldRight
+functor
+hasAtLeast
+hasAtMost
+hasExactly
+head
+inspect
+intToChar
+intToLong
+intToFloat
+isAbsent
+isArray
+isBool
+isChar
+isComposite
+isDone
+isDouble
+isEmpty
+isFloat
+isInRange
+isInt
+isKeyword
+isList
+isLong
+isPackage
+isPair
+isPresent
+isString
+isUnit
+join
+length
+listToArray
+listToString
+longToDouble
+longToInt
+map
+mapIntoList
+monad
+monadPlus
+monoid
+navigable
+negative
+next
+numeric
+partition
+pBindInTermsOfPJoin
+peek
+pJoinInTermsOfPBind
+pointed
+positive
+rational
+reduce
+reduceRight
+replace
+replaceWhen
+replaceWith
+replaceWithWhen
+reverse
+second
+semigroup
+separate
+sequence
+sequenceToArray
+sequenceToList
+similar
+sizable
+slice
+sliceWhen
+stringToArray
+stringToList
+subsequence
+substring
+tail
+take
+takeWhile
+tally
+tallyWhen
+typeName
+unfold
+unzip
+zip
+zipWith
+
+; primitives
+[Keywords 5]
+array
+bool
+char
+composite
+float
+hasProtocol
+hasType
+int
+keyword
+list
+nothing
+option
+pair
+something
+specialValue
+string
+type
+v2
+violation
+
+; additional syntax
+[Keywords 6]
+data
+hide
+problem
+reload
