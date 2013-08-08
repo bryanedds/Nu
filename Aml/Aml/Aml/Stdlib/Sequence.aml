@@ -1,0 +1,236 @@
+; Aml Sequence library.
+; Copyright (C) Bryan Edds, 2012-2013.
+
+[usingFile "Core.aml"]
+[usingFile "Int.aml"]
+[usingFile "List.aml"]
+
+[def map [mapper seq] where: [[lambda mapper] [sequence seq]]
+    doc: "Perform a functional map over a sequence. Map, and other sequence functions, are structure-preserving in that they always take a sequence and return a sequence."
+    (mapIntoList mapper seq)]
+    
+[def reverse [seq] where: [[sequence seq]]
+    doc: "Reverse a sequence."
+    (fold (flip cons) (list) seq)]
+    
+[def filterWith [mapper pred seq] where: [[lambda mapper] [lambda pred] [sequence seq]]
+    doc: "Perform a functional filter over a sequence while applying a function to each value that satisfied the predicate."
+    (foldRight
+        (lambda (x y) (if (pred x) (cons (mapper x) y) y))
+        (list)
+        seq)]
+    
+[def filter [pred seq] where: [[lambda pred] [sequence seq]]
+    doc: "Perform a functional filter over a sequence."
+    (filterWith identity pred seq)]
+    
+[def unfold [pred unfolder state] where: [[lambda pred] [lambda unfolder] [sequence seq]]
+    doc: "Perform a functional unfold over a value."
+    (if (pred state)
+        (cons state (list))
+        (cons state (unfold pred unfolder (unfolder state))))]
+    
+[def fillWith [filler count] where: [[lambda filler] [int count]]
+    doc: "Fill a list with a number of transformed values."
+    pre: (isPositive count)
+    (if (isZero count)
+        (list)
+        (let (value (filler count))
+             (nextCount (dec count))
+             (cons value (fillWith filler nextCount))))]
+             
+[def fill [value count] where: [[int count]]
+    doc: "Fill a list with a number of values."
+    (fillWith (lambda (counter) value) count)]
+    
+[def takeWhile [pred seq]
+    doc: "Takes elements from a sequence while they satisfy a predicate."
+    (if (isDone seq)
+        (list)
+        (let (value (peek seq))
+             (nextSeq (next seq))
+             (if (not (pred value))
+                 (list)
+                 (cons value (takeWhile pred nextSeq)))))]
+    
+[def take [count seq] where: [[int count]]
+    doc: "Take a number of elements from a sequence, or fewer if they run out."
+    pre: (isPositive count)
+    (if (or (isZero count) (isDone seq))
+        (list)
+        (let (value (peek seq))
+             (nextSeq (next seq))
+             (nextCount (dec count))
+             (cons value (take nextCount nextSeq))))]
+    
+[def dropWhile [pred seq] where: [[lambda pred] [sequence seq]]
+    doc: "Drop elements from a sequence while they satisfy a predicate."
+    (if (isDone seq)
+        (list)
+        (if (not (pred (peek seq)))
+            seq
+            (dropWhile pred (next seq))))]
+    
+[def drop [count seq] where: [[int count] [sequence seq]]
+    doc: "Drop elements from a sequence, or all of them if they run out."
+    pre: (isPositive count)
+    (if (isDone seq)
+        (list)
+        (if (isZero count)
+            seq
+            (drop (dec count) (next seq))))]
+    
+[def replaceWithWhen [mapper pred seq] where: [[lambda mapper] [lambda pred] [sequence seq]]
+    doc: "Transform the elements of a sequence that satisfy a predicate."
+    (map
+        (lambda (elem) (if (pred elem) (mapper elem) elem))
+        seq)]
+    
+[def replaceWith [mapper newValue seq] where: [[lambda mapper] [sequence seq]]
+    doc: "Transform the elements of a sequence that match a value."
+    (replaceWithWhen
+        mapper
+        (lambda (oldValue) (= oldValue newValue))
+        seq)]
+    
+[def replaceWhen [newValue pred seq] where: [[lambda pred] [sequence seq]]
+    doc: "Replace the elements of a sequence that satisfy a predicate."
+    (replaceWithWhen
+        (lambda (oldValue) newValue)
+        pred
+        seq)]
+    
+[def replace [newValue findValue seq] where: [[sequence seq]]
+    doc: "Replace the matching elements of a sequence."
+    (replaceWithWhen
+        (lambda (oldValue) newValue)
+        (lambda (oldValue) (= oldValue findValue))
+        seq)]
+    
+[def subsequence [start end seq] where: [[int start] [int end] [sequence seq]]
+    doc: "Get a sub-sequence."
+    pre: (and (isPositive start) (<= start end))
+    (let (resultWidth (- end start))
+         (end (drop start seq))
+         (take resultWidth end))]
+      
+#|   Affirmations |#
+    
+[def seqLst (list 0 5 10 15 20)]
+[def seqIncLst (list 1 6 11 16 21)]
+[def seqRevLst (list 20 15 10 5 0)]
+[def seqLargeLst (list 15 20)]
+[def seqSmallLst (list 0 5 10)]
+[def seqCountLst (list 1 2 3 4 5)]
+[def seqOnesLst (list 1 1 1 1 1)]
+[def seqTensLst (list 10 10 10 10 10)]
+[def seqIsDivByFive [x] (isZero (rem x 5))]
+    
+[affirmation flargWorks
+    (and (= (flarg (list (list))) (list))
+         (= (flarg (list)) (list)))]
+    
+[affirmation composeFlargWorks
+    (let (f (x) x)
+         (g (x...) x)
+         (composed (composeFlarg f g))
+         (= (composed 0 5 10) (list 0 5 10)))]
+    
+[affirmation allWorks
+    (and (all #t #t)
+         (not (all #t #f)))]
+    
+[affirmation allWithWorks
+    (and (allWith seqIsDivByFive seqLst)
+         (not (allWith seqIsDivByFive seqIncLst)))]
+         
+[affirmation anyWorks
+    (and (any #f #t)
+         (not (any #f #f)))]
+    
+[affirmation anyWithWorks
+    (and (anyWith seqIsDivByFive seqLst)
+         (not (anyWith seqIsDivByFive seqIncLst)))]
+         
+[affirmation noneWorks
+    (and (none #f #f)
+         (not (none #f #t)))]
+    
+[affirmation noneWithWorks
+    (and (noneWith seqIsDivByFive seqIncLst)
+         (not (noneWith seqIsDivByFive seqLst)))]
+    
+[affirmation minimaWorks
+    (= (minima -5 0 5) -5)]
+    
+[affirmation maximaWorks
+    (= (maxima -5 0 5) 5)]
+    
+[affirmation sumWorks
+    (= (sum 0 5 10) 15)]
+    
+[affirmation productWorks
+    (= (product 1 2 3) 6)]
+    
+[affirmation averageWorks
+    (= (average 0 5 10) 5)]
+    
+[affirmation foldWorks
+    (= (fold + 0 seqLst) 50)]
+    
+[affirmation foldRightWorks
+    (= (foldRight - 0 seqLst) 10)]
+    
+[affirmation reduceWorks
+    (= (reduce + seqLst) 50)]
+    
+[affirmation reduceRightWorks
+    (= (reduceRight - seqLst) -10)]
+    
+[affirmation hasAtLeastWorks
+    (hasAtLeast 3 seqLst)]
+    
+[affirmation hasAtMostWorks
+    (hasAtMost 8 seqLst)]
+    
+[affirmation hasExactlyWorks
+    (hasExactly 5 seqLst)]
+    
+[affirmation areSameLengthWorks
+    (areSameLength seqLst seqIncLst)]
+    
+[affirmation containsWorks
+    (contains 15 seqLst)]
+    
+[affirmation findWhenWorks
+    (= (findWhen (lambda (elem) (= elem 15)) seqLst) (something 15))]
+    
+[affirmation mapWorks
+    (similar (map inc seqLst) seqIncLst)]
+    
+[affirmation reverseWorks
+    (similar (reverse seqLst) seqRevLst)]
+         
+[affirmation filterWorks
+    (similar (filter (lambda (x) (> x 10)) seqLst) seqLargeLst)]
+    
+[affirmation unfoldWorks
+    (similar (unfold (lambda (x) (>= x 5)) inc 1) seqCountLst)]
+      
+[affirmation fillWorks
+    (similar (fill 1 5) seqOnesLst)]
+    
+[affirmation takeWhileWorks
+    (similar (takeWhile (lambda (x) (< x 15)) seqLst) seqSmallLst)]
+      
+[affirmation takeWorks
+    (similar (take 3 seqLst) seqSmallLst)]
+    
+[affirmation dropWhileWorks
+    (similar (dropWhile (lambda (x) (< x 15)) seqLst) seqLargeLst)]
+    
+[affirmation dropWorks
+    (similar (drop 3 seqLst) seqLargeLst)]
+    
+[affirmation replaceWorks
+    (similar (replace 10 1 seqOnesLst) seqTensLst)]
