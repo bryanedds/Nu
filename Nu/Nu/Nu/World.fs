@@ -79,6 +79,7 @@ type [<StructuralEquality; StructuralComparison>] Asset =
 ///
 /// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
 /// avoid unnecessary Large Object Heap fragmentation.
+///
 /// A serializable value type.
 type [<StructuralEquality; StructuralComparison>] AssetPackage =
     { Name : Lun
@@ -103,7 +104,17 @@ and [<ReferenceEquality>] World =
       Renderer : Renderer
       Integrator : Integrator
       RenderMessages : RenderMessage rQueue
-      PhysicsMessages : PhysicsMessage rQueue }
+      PhysicsMessages : PhysicsMessage rQueue
+      Components : IWorldComponent list }
+
+/// Enables components that open the world for extension.
+and IWorldComponent =
+    interface
+        abstract member GetRenderDescriptors : World -> RenderDescriptor list
+        // TODO: abstract member GetRenderMessages : World -> RenderMessage rQueue
+        // TODO: abstract member GetPhysicsMessages : World -> PhysicsMessage rQueue
+        // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
+        end
 
 /// Try to find an element at the given address.
 let inline tryFind address (world : World) : obj option =
@@ -174,8 +185,14 @@ let withSubscription address subscription subscriber procedure world : World =
     let newWorld2 = procedure newWorld
     unsubscribe address subscriber newWorld2
 
+let getComponentRenderDescriptors (world : World) : RenderDescriptor rQueue =
+    let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
+    List.collect (fun descs -> descs) descriptorLists
+
 let getRenderDescriptors (world : World) : RenderDescriptor rQueue =
-    [] // TODO: get render descriptors
+    let componentDescriptors = getComponentRenderDescriptors world
+    let worldDescriptors = [] // TODO: get render descriptors
+    worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Render the world.
 let render (world : World) : unit =
