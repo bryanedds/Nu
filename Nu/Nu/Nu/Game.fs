@@ -10,8 +10,9 @@
 
 // TODO: go through Prime and label / attribute all its types as was done here.
 
-module Nu.Core
+module Nu.Game
 open System
+open Nu.Rendering
 
 /// A generic identification code type.
 /// OPTIMIZATION: A 32-bit type rather than 64 as a way to save performance on 32-bit platforms.
@@ -19,35 +20,11 @@ open System
 /// A serializable value type.
 type ID = uint32
 
-/// A 2D vector that stands-in for the one that will come from a .Net library / wrapper.
+/// A 2D vector that stands-in for the one that will come from a .NET library / wrapper.
 /// A serializable value type.
 type [<StructuralEquality; StructuralComparison>] Vector2 =
     { X : single
       Y : single }
-
-/// A 3D vector that stands-in for the one that will come from a .Net library / wrapper.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] Vector3 =
-    { X : single
-      Y : single
-      Z : single }
-
-/// A place-holder for a RigidBody descriptor that will come from Bullet.
-/// Probably a serializable value type? Not sure...
-type RigidBody = unit // definition elided for obvious reasons...
-
-/// Describes a logical connection between an Actor and a single rigid body.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] ActorRigidBody =
-    { ActorID : ID
-      RigidBodyID : ID }
-
-/// Describes a logical connection between an Actor and its physics.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] ActorPhysicsConnection =
-    | ActorRigidBodyConnection of ActorRigidBody
-    | ActorRagDollConnection // of ...
-    | ActorTerrainConnection // of ...
 
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
@@ -77,9 +54,8 @@ type [<StructuralEquality; StructuralComparison>] ActorSemantic =
 /// A game actor.
 /// A serializable value type.
 type [<StructuralEquality; StructuralComparison>] Actor =
-    { Position : Vector3
-      Scale : Vector3
-      PhysicsConnection : ActorPhysicsConnection
+    { Position : Vector2
+      Scale : Vector2
       Semantic : ActorSemantic }
 
 /// An algabraically-closed semantics for game entities.
@@ -96,7 +72,7 @@ type [<CustomEquality; CustomComparison>] Entity =
       Visible : bool
       Enabled : bool
       Semantic : EntitySemantic }
-    interface IComparable<Entity> with member this.CompareTo that = this.ID.CompareTo that.ID
+    interface Entity IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Entity>.GetHashCode ()
     override this.Equals that = match that with :? Entity as thatEntity -> this.ID = thatEntity.ID | _ -> false
 
@@ -106,8 +82,8 @@ type [<CustomEquality; CustomComparison>] Group =
     { ID : ID
       Visible : bool
       Enabled : bool
-      Entities : LunTrie<Entity> }
-    interface IComparable<Group> with member this.CompareTo that = this.ID.CompareTo that.ID
+      Entities : Entity LunTrie }
+    interface Group IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Group>.GetHashCode ()
     override this.Equals that = match that with :? Group as thatGroup -> this.ID = thatGroup.ID | _ -> false
     
@@ -126,9 +102,9 @@ type [<CustomEquality; CustomComparison>] Screen =
     { ID : ID
       Visible : bool
       Enabled : bool
-      Groups : LunTrie<Group>
+      Groups : Group LunTrie
       Semantic : ScreenSemantic }
-    interface IComparable<Screen> with member this.CompareTo that = this.ID.CompareTo that.ID
+    interface Screen IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Screen>.GetHashCode ()
     override this.Equals that = match that with :? Screen as thatScreen -> this.ID = thatScreen.ID | _ -> false
 
@@ -137,8 +113,8 @@ type [<CustomEquality; CustomComparison>] Screen =
 type [<CustomEquality; CustomComparison>] Game =
     { ID : ID
       Enabled : bool
-      Screens : LunTrie<Screen>
+      Screens : Screen LunTrie
       ActiveScreen : Screen option }
-    interface IComparable<Game> with member this.CompareTo that = this.ID.CompareTo that.ID
+    interface Game IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Game>.GetHashCode ()
     override this.Equals that = match that with :? Game as thatGame -> this.ID = thatGame.ID | _ -> false
