@@ -219,7 +219,7 @@ let joinBy by sep (list : 'a list) =
             ""
             list
 
-/// Join a list into a string separated by sep.
+/// Join a list of lists into a list separated by sep.
 let joinList sep (list : 'a list list) =
     if list.IsEmpty then []
     else List.reduce (fun acc elem -> acc @ sep @ elem) list
