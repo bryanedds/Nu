@@ -1,0 +1,16 @@
+﻿module Nu.Physics
+
+type [<StructuralEquality; StructuralComparison>] PhysicsMessage =
+    | BodyCreateMessage // of ...
+    | BodyDestroyMessage // of ...
+    | ForceApplyMessage // of ...
+
+type  [<StructuralEquality; StructuralComparison>] IntegrationMessage =
+    | CollisionMessage // of ...
+    | BodyTransformationMessage // of ...
+
+type [<ReferenceEquality>] Integrator =
+    { PhysicsContext : unit }
+
+let integrate physicsMessages integrator : IntegrationMessage rQueue =
+    [] // TODO: integrate
