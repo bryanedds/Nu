@@ -1,21 +1,34 @@
 ﻿module Nu.World
 open System
 open FSharpx
-open Nu.Core
+open Nu.Physics
+open Nu.Rendering
+open Nu.Game
 
-// NOTE: one will notice that the world uses asynchrony for physics and rendering. This is
-// reasonable as these systems generally do not need to cooperate with the world. As a rule, non-
-// cooperative systems like these may be asynchronous. Conversely, systems that require cooperation
-// with the world should be synchronous (EG - on the same thread). This is because the cost of
-// cooperation is much higher with asynchrony due to the need for extra intermediate program states
-// during periods of cooperation, as well as additional error-handling code to make the system
-// fault-tolerant in the case that cooperation cannot be acheived. Coordination can be subtle -
-// even a simple query from the world to an asynchronous system (say a segment intersection query
-// to a physics system) requires cooperation, and imposes the same heavy toll.
+// NOTE: one will notice that the world uses a persistent (as opposed to a transient) thread for
+// input, but not physics or rendering. This is reasonable as while the input process must take
+// place on a separate thread, this is not required for physics and rendering (as rendering is
+// already threaded by passing messages over the display driver to the GPU, and physics are
+// currently processed right on the main CPU).
 //
-// So, the rule is, consider asynchrony when there is a significant performance boost from a non-
-// cooperative system. By the same token, try very, VERY hard to avoid asynchrony with cooperative
-// systems, even if some nice performance is lost. At the end of the day, simplicity is priority 1.
+// There may also be introduced the use of tranient threads to execute embarassingly parallel
+// algorithms.
+//
+// Beyonds these cases where persistent threads are absolutely required or where transient threads
+// implement an embarassingly parallel processes, threads should be AVOIDED as a rule.
+//
+// If it were the case that physics were processed on a separate hardware component and thereby
+// ought to be run on a separate persistent thread, then the proper way to approach the problem of
+// physics system queries is to copy the relevant portion of the physics state from the PPU to main
+// memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
+// need for complex intermediate states (albeit against a physics state that is one frame old).
+
+/// Specifies the address of an element in a world.
+/// Note that, similar to Mu, the last node of the address is the name of the event (such as "clicked").
+/// Also note that subscribing to a partial address results in listening to all messages whose
+/// beginning address nodes match the partial address (sort of a wild-card).
+/// A value type.
+type Address = Lun list
 
 /// Describes human input.
 /// A serializable value type.
@@ -24,40 +37,10 @@ type [<StructuralEquality; StructuralComparison>] HumanInput =
     | KeyboardInput // of ...
     | MouseInput // of ...
 
-/// Describes physics input from the physics engine.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] PhysicsInput =
-    | Collision // of ...
-    | Transformation // of ...
-
-/// Describes physics output to the physics engine.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] PhysicsOutput =
-    | CreateBody // of...
-    | DestroyBody // of...
-    | ApplyForce // of ...
-
-/// Describes renderer output.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] RendererOutput =
-    | Sprite // of ...
-    | StaticModel // of ...
-    | AnimatedModel // of ...
-
 /// Mailbox processors for the world.
 /// A reference type.
 type [<ReferenceEquality>] Mailboxes =
-    { HumanInput : HumanInput MailboxProcessor
-      PhysicsInput : PhysicsInput MailboxProcessor
-      PhysicsOutput : PhysicsOutput MailboxProcessor // NOTE: I'm not sure if we need a mailbox processor for outputs...
-      RendererOutput : RendererOutput MailboxProcessor } // NOTE: same as above...
-
-/// Specifies the address of an element in a world.
-/// Note that, similar to Mu, the last node of the address is the name of the event (such as "clicked").
-/// Also note that subscribing to a partial address results in listening to all messages whose
-/// beginning address nodes match the partial address (sort of a wild-card).
-/// A value type.
-type Address = Lun list
+    { HumanInput : HumanInput MailboxProcessor }
 
 /// Describes a mouse button.
 /// A serializable value type.
@@ -93,6 +76,7 @@ type [<StructuralEquality; StructuralComparison>] Asset =
 /// The use of a message system for the renderer should enable streamed loading, optionally with
 /// smooth fading-in of late-loaded assets (IE - assets that are already in the view frustum but are
 /// still being loaded).
+///
 /// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
 /// avoid unnecessary Large Object Heap fragmentation.
 /// A serializable value type.
@@ -115,14 +99,15 @@ and Subscriptions =
 and [<ReferenceEquality>] World =
     { Game : Game
       Subscriptions : Subscriptions
-      Mailboxes : Mailboxes }
-    member inline this.TryFind address : obj option = None // TODO: implement
-    member inline this.Set address (element : 'e when 'e : not struct) = this // TODO: implement
-    member inline this.Remove address = this // TODO: implement
+      Mailboxes : Mailboxes
+      Renderer : Renderer
+      Integrator : Integrator
+      RenderMessages : RenderMessage rQueue
+      PhysicsMessages : PhysicsMessage rQueue }
 
 /// Try to find an element at the given address.
 let inline tryFind address (world : World) : obj option =
-    world.TryFind address
+    None // TODO: implement
 
 /// Try to find an element at the given address.
 let inline tryFindAs<'e when 'e : not struct> address (world : World) : 'e option =
@@ -135,12 +120,12 @@ let inline tryFindAs<'e when 'e : not struct> address (world : World) : 'e optio
         | _ -> None
 
 /// Set an element at the given address.
-let inline set address (element : 'e when 'e : not struct) (world : World) =
-    world.Set element address
+let inline set address (element : 'e when 'e : not struct) (world : World) : World =
+    world // TODO: implement
 
 /// Remove an element at the given address.
-let inline remove address (world : World) =
-    world.Remove address
+let inline remove address (world : World) : World =
+    world // TODO: implement
 
 /// Try to find an entity at the given address.
 let inline tryFindEntity address world : Entity option =
@@ -148,10 +133,6 @@ let inline tryFindEntity address world : Entity option =
 
 /// Try to find an actor at the given address.
 let inline tryFindActor address world : Actor option =
-    None // not yet implemented...
-
-/// Try to find an actor's rigid body at the given address.
-let inline tryFindActorRigidBody address world : RigidBody option =
     None // not yet implemented...
 
 /// Publish a message to the given address.
@@ -192,3 +173,19 @@ let withSubscription address subscription subscriber procedure world : World =
     let newWorld = subscribe address subscription subscriber world
     let newWorld2 = procedure newWorld
     unsubscribe address subscriber newWorld2
+
+let getRenderDescriptors (world : World) : RenderDescriptor rQueue =
+    [] // TODO: get render descriptors
+
+/// Render the world.
+let render (world : World) : unit =
+    let renderDescriptors = getRenderDescriptors world
+    Rendering.render world.RenderMessages renderDescriptors world.Renderer
+
+let handleIntegrationMessages integrationMessages world : World =
+    world // TODO: handle integration messages
+
+/// Integrate the world.
+let integrate (world : World) : World =
+    let integrationMessages = Physics.integrate world.PhysicsMessages world.Integrator
+    handleIntegrationMessages integrationMessages world
