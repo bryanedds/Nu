@@ -118,7 +118,7 @@ and IWorldComponent =
 
 /// Try to find an element at the given address.
 let inline tryFind address (world : World) : obj option =
-    None // TODO: implement
+    None // TODO: forward to implemention in Nu.Game
 
 /// Try to find an element at the given address.
 let inline tryFindAs<'e when 'e : not struct> address (world : World) : 'e option =
@@ -132,19 +132,19 @@ let inline tryFindAs<'e when 'e : not struct> address (world : World) : 'e optio
 
 /// Set an element at the given address.
 let inline set address (element : 'e when 'e : not struct) (world : World) : World =
-    world // TODO: implement
+    world // TODO: forward to implemention in Nu.Game
 
 /// Remove an element at the given address.
 let inline remove address (world : World) : World =
-    world // TODO: implement
+    world // TODO: forward to implemention in Nu.Game
 
 /// Try to find an entity at the given address.
 let inline tryFindEntity address world : Entity option =
-    None // not yet implemented...
+    None // TODO: forward to implemention in Nu.Game
 
 /// Try to find an actor at the given address.
 let inline tryFindActor address world : Actor option =
-    None // not yet implemented...
+    None // TODO: forward to implemention in Nu.Game
 
 /// Publish a message to the given address.
 let publish address message world : World =
