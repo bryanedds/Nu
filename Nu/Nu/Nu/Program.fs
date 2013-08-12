@@ -1,7 +1,5 @@
 ﻿//module Program = let [<EntryPoint>] main = fun _ -> 0
 
-// NOTE: the code below is just expirementing with F# serialization...
-
 (*module Program
 open System
 open System.IO
@@ -71,7 +69,7 @@ let withSdlResource create destroy action =
         destroy resource
         result
 
-let resourceNop resource =
+let resourceNop (_ : nativeint) =
     ()
 
 let [<EntryPoint>] main _ =
