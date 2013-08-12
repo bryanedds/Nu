@@ -1,0 +1,1 @@
+I could not build a release version of SDL2-CS due to having only Visual C# Express 2010 installed.
