@@ -1,21 +1,16 @@
 ﻿module Nu.World
 open System
 open FSharpx
+open SDL2
 open Nu.Physics
 open Nu.Rendering
 open Nu.Game
+open Nu.Sdl
 
-// NOTE: one will notice that the world uses a persistent (as opposed to a transient) thread for
-// input, but not physics or rendering. This is reasonable as while the input process must take
-// place on a separate thread, this is not required for physics and rendering (as rendering is
-// already threaded by passing messages over the display driver to the GPU, and physics are
-// currently processed right on the main CPU).
+// NOTE: On avoiding threads where possible...
 //
-// There may also be introduced the use of tranient threads to execute embarassingly parallel
-// algorithms.
-//
-// Beyonds these cases where persistent threads are absolutely required or where transient threads
-// implement an embarassingly parallel processes, threads should be AVOIDED as a rule.
+// Beyond the cases where persistent threads are absolutely required or where transient threads
+// implement embarassingly parallel processes, threads should be AVOIDED as a rule.
 //
 // If it were the case that physics were processed on a separate hardware component and thereby
 // ought to be run on a separate persistent thread, then the proper way to approach the problem of
@@ -36,11 +31,6 @@ type [<StructuralEquality; StructuralComparison>] HumanInput =
     | PadInput // of ...
     | KeyboardInput // of ...
     | MouseInput // of ...
-
-/// Mailbox processors for the world.
-/// A reference type.
-type [<ReferenceEquality>] Mailboxes =
-    { HumanInput : HumanInput MailboxProcessor }
 
 /// Describes a mouse button.
 /// A serializable value type.
@@ -100,12 +90,12 @@ and Subscriptions =
 and [<ReferenceEquality>] World =
     { Game : Game
       Subscriptions : Subscriptions
-      Mailboxes : Mailboxes
       Renderer : Renderer
       Integrator : Integrator
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
-      Components : IWorldComponent list }
+      Components : IWorldComponent list
+      SdlDeps : SdlDeps }
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -206,3 +196,19 @@ let handleIntegrationMessages integrationMessages world : World =
 let integrate (world : World) : World =
     let integrationMessages = Physics.integrate world.PhysicsMessages world.Integrator
     handleIntegrationMessages integrationMessages world
+
+let run sdlConfig =
+    runSdl
+        (fun sdlDeps ->
+            let game = { ID = 0ul; Enabled = false; Screens = LunTrie.empty; ActiveScreen = None }
+            { Game = game; Subscriptions = Map.empty; Renderer = { RenderContext = () }; Integrator = { PhysicsContext = () }; RenderMessages = []; PhysicsMessages = []; Components = []; SdlDeps = sdlDeps })
+        (fun event sdlDeps world ->
+            match event.Value.``type`` with
+            | SDL.SDL_EventType.SDL_QUIT -> (false, world)
+            | _ -> (true, world))
+        (fun sdlDeps world ->
+            let newWorld = integrate world
+            (true, newWorld))
+        (fun sdlDeps world ->
+            render world)
+        sdlConfig
