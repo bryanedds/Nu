@@ -78,7 +78,7 @@ let [<EntryPoint>] main _ =
         (fun () -> SDL.SDL_Quit ())
         (fun () ->
             withSdlResource
-                (fun () -> SDL.SDL_CreateWindow ("Nu Game Engine", 100, 100, 640, 480, SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN))
+                (fun () -> SDL.SDL_CreateWindow ("Nu Game Engine", 100, 100, 512, 512, SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN))
                 (fun window -> SDL.SDL_DestroyWindow window)
                 (fun window ->
                     withSdlResource
@@ -93,9 +93,24 @@ let [<EntryPoint>] main _ =
                                         (fun () -> SDL.SDL_CreateTextureFromSurface (renderer, bitmap))
                                         resourceNop
                                         (fun texture ->
+
+                                            let mutable sourceRect = SDL.SDL_Rect ()
+                                            sourceRect.x <- 0
+                                            sourceRect.y <- 0
+                                            sourceRect.w <- 512
+                                            sourceRect.h <- 512
+
+                                            let mutable destRect = SDL.SDL_Rect ()
+                                            destRect.x <- 0
+                                            destRect.y <- 0
+                                            destRect.w <- 256
+                                            destRect.h <- 256
+                                             
                                             ignore (SDL.SDL_SetRenderDrawColor (renderer, 125uy, 0uy, 125uy, 255uy))
                                             ignore (SDL.SDL_RenderClear renderer)
-                                            ignore (SDL.SDL_RenderCopy (renderer, texture, ref Unchecked.defaultof<SDL.SDL_Rect>, ref Unchecked.defaultof<SDL.SDL_Rect>))
+                                            ignore (SDL.SDL_SetRenderTarget (renderer, IntPtr.Zero))
+                                            ignore (SDL.SDL_RenderCopy (renderer, texture, ref sourceRect, ref destRect))
+                                            
                                             SDL.SDL_RenderPresent renderer
                                             Thread.Sleep 3000
                                             0)))))
