@@ -41,38 +41,28 @@ let [<EntryPoint>] main _ =
     
 module Program
 open System
+open System.Diagnostics
 open System.Threading
 open SDL2
-
-let [<Literal>] FailureCode = 1
-let [<Literal>] SuccessCode = 0
-
-let withSdlInit create destroy action =
-    let initResult = create ()
-    let error = SDL.SDL_GetError ()
-    if initResult <> 0 && error <> "CoInitialize() DirectX error -2147417850" then
-        Console.WriteLine ("SDL2# initialization failed due to '" + error + "'.")
-        FailureCode
-    else
-        let result = action ()
-        destroy ()
-        result
-
-let withSdlResource create destroy action =
-    let resource = create ()
-    if resource = IntPtr.Zero then
-        let error = SDL.SDL_GetError ()
-        Console.WriteLine ("SDL2# resource creation failed due to '" + error + "'.")
-        FailureCode
-    else
-        let result = action resource
-        destroy resource
-        result
-
-let resourceNop (_ : nativeint) =
-    ()
+open Nu.Run
 
 let [<EntryPoint>] main _ =
+    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int (uint32 SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| uint32 SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC))
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 512 512 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags
+    runNu
+        (fun event sdlDeps ->
+            match event.Value.``type`` with
+            | SDL.SDL_EventType.SDL_QUIT -> false
+            | _ -> true)
+        (fun sdlDeps ->
+            true)
+        (fun sdlDeps ->
+            ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.Renderer, 0uy, 0uy, 127uy, 255uy))
+            ignore (SDL.SDL_RenderClear sdlDeps.Renderer)
+            true)
+        sdlConfig
+
+(*let [<EntryPoint>] main _ =
     withSdlInit
         (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
         (fun () -> SDL.SDL_Quit ())
@@ -113,4 +103,4 @@ let [<EntryPoint>] main _ =
                                             
                                             SDL.SDL_RenderPresent renderer
                                             Thread.Sleep 3000
-                                            0)))))
+                                            0)))))*)
