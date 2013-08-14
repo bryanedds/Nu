@@ -5,7 +5,7 @@ open Nu.Sdl
 open Nu.World
 
 let [<EntryPoint>] main _ =
-    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int (uint32 SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| uint32 SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC))
+    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 512 512 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags
     run sdlConfig
 
