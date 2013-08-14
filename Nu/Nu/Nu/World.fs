@@ -25,26 +25,6 @@ open Nu.Sdl
 /// A value type.
 type Address = Lun list
 
-/// Describes human input.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] HumanInput =
-    | PadInput // of ...
-    | KeyboardInput // of ...
-    | MouseInput // of ...
-
-/// Describes a mouse button.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] MouseButton =
-    | MouseLeft
-    | MouseRight
-    | MouseCenter
-
-/// Describes a mouse event.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] MouseEvent =
-    { Button : MouseButton
-      Position : Vector2 }
-
 /// A generic message for the Nu game engine.
 /// A reference type.
 type [<ReferenceEquality>] Message =
