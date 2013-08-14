@@ -40,8 +40,10 @@
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
   <ItemGroup>
     <Compile Include="RQueue.fs" />
+    <Compile Include="Core.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Rendering.fs" />
+    <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="World.fs" />
