@@ -1,4 +1,4 @@
-﻿module Nu.Run
+﻿module Nu.Sdl
 open System
 open System.Diagnostics
 open System.Threading
@@ -35,8 +35,7 @@ let makeSdlDeps renderer window config =
       Window = window
       Config  = config }
 
-let resourceNop (_ : nativeint) =
-    ()
+let resourceNop (_ : nativeint) = ()
 
 let withSdlInit create destroy action =
     let initResult = create ()
@@ -60,28 +59,31 @@ let withSdlResource create destroy action =
         destroy resource
         result
 
-let updateSdl handleEvent handleUpdate sdlDeps =
-    let mutable keepRunning = true
+let advanceSdl handleEvent handleUpdate sdlDeps world =
+    let mutable result = (true, world)
     let polledEvent = ref (SDL.SDL_Event ())
     while SDL.SDL_PollEvent polledEvent <> 0 do
-        if keepRunning then
-            keepRunning <- handleEvent polledEvent sdlDeps
-    if keepRunning then
-        keepRunning <- handleUpdate sdlDeps
-    keepRunning
+        if fst result then
+            result <- handleEvent polledEvent sdlDeps (snd result)
+    if fst result then
+        result <- handleUpdate sdlDeps (snd result)
+    result
 
-let renderSdl handleRender sdlDeps =
-    let keepRunning = handleRender sdlDeps
+let renderSdl handleRender sdlDeps world =
+    ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.Renderer, 0uy, 0uy, 179uy, 255uy))
+    ignore (SDL.SDL_RenderClear sdlDeps.Renderer)
+    handleRender sdlDeps world
     SDL.SDL_RenderPresent sdlDeps.Renderer
-    keepRunning
     
-let rec runSdl handleEvent handleUpdate handleRender sdlDeps keepRunning =
+let rec runSdl4 handleEvent handleUpdate handleRender sdlDeps world keepRunning =
     if keepRunning then
-        let keepRunning2 = updateSdl handleEvent handleUpdate sdlDeps
-        let keepRunning3 = keepRunning2 && renderSdl handleRender sdlDeps
-        runSdl handleEvent handleUpdate handleRender sdlDeps keepRunning3
+        let advanceResult = advanceSdl handleEvent handleUpdate sdlDeps world
+        let newKeepRunning = fst advanceResult
+        if newKeepRunning then
+            renderSdl handleRender sdlDeps world
+            runSdl4 handleEvent handleUpdate handleRender sdlDeps world newKeepRunning
 
-let runNu handleEvent handleUpdate handleRender sdlConfig =
+let runSdl createWorld handleEvent handleUpdate handleRender sdlConfig =
     withSdlInit
         (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
         (fun () -> SDL.SDL_Quit ())
@@ -95,5 +97,6 @@ let runNu handleEvent handleUpdate handleRender sdlConfig =
                         (fun renderer -> SDL.SDL_DestroyRenderer renderer)
                         (fun renderer ->
                             let sdlDeps = makeSdlDeps renderer window sdlConfig
-                            runSdl handleEvent handleUpdate handleRender sdlDeps true
+                            let world = createWorld sdlDeps
+                            runSdl4 handleEvent handleUpdate handleRender sdlDeps world true
                             SuccessCode)))
