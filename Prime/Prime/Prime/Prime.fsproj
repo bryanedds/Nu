@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="ReferenceEquality.fs" />
     <Compile Include="Option.fs" />
+    <Compile Include="Either.fs" />
     <Compile Include="Triple.fs" />
     <Compile Include="Seq.fs" />
     <Compile Include="Array.fs" />
