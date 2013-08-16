@@ -5,10 +5,3 @@
 /// Note that this optimization is speculative.
 /// A serializable value type.
 type ID = uint32
-
-/// A 2D vector that stands-in for the one that will come from a .NET library / wrapper.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] Vector2 =
-    { X : single
-      Y : single }
-

@@ -1,4 +1,4 @@
-﻿// NaiveSimulation - a technical prototype for Nu, the Flipped! prototype engine.
+﻿// NaiveSimulation - a technical prototype for Nu, the Flipped prototype engine.
 //
 // A naive, closed simulation implementation in F# that uses semantics and identity.
 //
@@ -12,12 +12,13 @@
 
 module Nu.Game
 open System
+open OpenTK
 open Nu.Core
 open Nu.Rendering
 
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] GuiSemantic =
+type [<StructuralEquality; NoComparison>] GuiSemantic =
     | Button // of Button
     | CheckBox // of CheckBox
     | Label // of Label
@@ -26,30 +27,47 @@ type [<StructuralEquality; StructuralComparison>] GuiSemantic =
 
 /// A game gui element.
 /// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] Gui =
+type [<StructuralEquality; NoComparison>] Gui =
     { Position : Vector2
       Size : Vector2
       Semantic : GuiSemantic }
 
+/// A Lustre stone.
+type [<StructuralEquality; NoComparison>] LustreStone =
+    { LustreStoneTag : unit
+      Sprite : SpriteDescriptor }
+
+/// A Lustre gem.
+type [<StructuralEquality; NoComparison>] LustreGem =
+    { LustreGemTag : unit
+      Sprite : SpriteDescriptor }
+
+/// A Lustre chest.
+type [<StructuralEquality; NoComparison>] LustreChest =
+    { LustreChestTag : unit
+      Sprite : SpriteDescriptor }
+
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] ActorSemantic =
+type [<StructuralEquality; NoComparison>] ActorSemantic =
+    | LustreStone of LustreStone
+    | LustreChest of LustreChest
+    | LustreGem of LustreGem
     | Avatar // of Avatar
     | Item // of Item
-    | Geostage // of Geostage
  // | ...additional actors
  // | UserDefinedActor of IUserDefinedActor (* this would be one way to get open actor semantics, but perhaps at the cost of its value semantics... *)
 
 /// A game actor.
 /// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] Actor =
+type [<StructuralEquality; NoComparison>] Actor =
     { Position : Vector2
-      Scale : Vector2
+      Size : Vector2
       Semantic : ActorSemantic }
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] EntitySemantic =
+type [<StructuralEquality; NoComparison>] EntitySemantic =
     | Gui of Gui
     | Actor of Actor
  // | Actor2D of Actor2D
@@ -78,7 +96,7 @@ type [<CustomEquality; CustomComparison>] Group =
     
 /// An algabraically-closed semantics for game screens.
 /// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] ScreenSemantic =
+type [<StructuralEquality; NoComparison>] ScreenSemantic =
     | Title // of Title
     | Intro // of Intro
     | Playground // of Playground
