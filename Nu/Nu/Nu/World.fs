@@ -32,29 +32,6 @@ type [<ReferenceEquality>] Message =
       Publisher : obj
       Data : obj }
 
-/// Describes a game asset, such as a texture, sound, or model.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] Asset =
-    { Name : Lun
-      Package : Lun }
-
-/// All assets must belong to an AssetPackage, which is a unit of asset loading.
-/// In order for the renderer to render a single texture, that texture, along with all the other
-/// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
-/// assets is to send an AssetPackageUnload message to the renderer, which unloads them all. There
-/// is an AssetPackageLoad message to load a package when convenient.
-/// The use of a message system for the renderer should enable streamed loading, optionally with
-/// smooth fading-in of late-loaded assets (IE - assets that are already in the view frustum but are
-/// still being loaded).
-///
-/// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
-/// avoid unnecessary Large Object Heap fragmentation.
-///
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] AssetPackage =
-    { Name : Lun
-      AssetNames : Lun list }
-
 /// Describes a game message subscription.
 /// A reference type.
 type [<ReferenceEquality>] Subscription =
@@ -165,17 +142,23 @@ let getRenderDescriptors (world : World) : RenderDescriptor rQueue =
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Render the world.
-let render (world : World) : unit =
+let render (world : World) : World =
     let renderDescriptors = getRenderDescriptors world
-    Rendering.render world.RenderMessages renderDescriptors world.Renderer
+    let renderMessages = world.RenderMessages
+    let renderer = world.Renderer
+    let newWorld = { world with RenderMessages = [] }
+    Rendering.render renderMessages renderDescriptors renderer
+    newWorld
 
+/// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
     world // TODO: handle integration messages
 
 /// Integrate the world.
 let integrate (world : World) : World =
     let integrationMessages = Physics.integrate world.PhysicsMessages world.Integrator
-    handleIntegrationMessages integrationMessages world
+    let newWorld = { world with PhysicsMessages = [] }
+    handleIntegrationMessages integrationMessages newWorld
 
 let run sdlConfig =
     runSdl

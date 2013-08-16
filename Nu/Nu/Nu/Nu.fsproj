@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="RQueue.fs" />
     <Compile Include="Core.fs" />
+    <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Rendering.fs" />
     <Compile Include="Input.fs" />
@@ -53,6 +54,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <Content Include="Image.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -75,11 +79,6 @@
     <Reference Include="xunit">
       <HintPath>..\..\xUnit\xunit.dll</HintPath>
     </Reference>
-    <ProjectReference Include="..\..\..\Aml\Aml\Aml\Aml.fsproj">
-      <Name>Aml</Name>
-      <Project>{6703b97a-6b6d-4e68-ba67-4a29ee72ec42}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
       <Name>Prime</Name>
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
