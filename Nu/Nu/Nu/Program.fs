@@ -4,7 +4,36 @@ open SDL2
 open Nu.Sdl
 open Nu.World
 
+(* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
+
+type Data =
+  { A : int
+    B : byte }
+
+type DataRecording =
+    | ARecording of int
+    | BRecording of byte
+
+let setA setter =
+    ((fun data -> let newA = setter data.A in { data with A = newA }),
+     (fun data -> ARecording data.A))
+
+let setB setter =
+    ((fun data -> let newB = setter data.B in { data with B = newB }),
+     (fun data -> BRecording data.B))
+
 let [<EntryPoint>] main _ =
+
+    Console.WriteLine (
+        propagate 0 >.
+        plus 2 >.
+        mul 5)
+
+    let propagatedData =
+        propagate { A = 0; B = 0uy } >>.
+        setA incI >>.
+        setB incUy
+
     let optAssets = Assets.tryLoadAssets "Rendering" "Misc" "AssetGraph.xml"
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 512 512 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags
