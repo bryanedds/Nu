@@ -7,7 +7,7 @@ open Nu.Rendering
 open Nu.Game
 open Nu.Sdl
 
-// NOTE: On avoiding threads where possible...
+// WISDOM: On avoiding threads where possible...
 //
 // Beyond the cases where persistent threads are absolutely required or where transient threads
 // implement embarassingly parallel processes, threads should be AVOIDED as a rule.
