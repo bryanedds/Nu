@@ -1,6 +1,7 @@
 ﻿module Program
 open System
 open SDL2
+open Propagate
 open Nu.Sdl
 open Nu.World
 
@@ -36,7 +37,7 @@ let [<EntryPoint>] main _ =
 
     let optAssets = Assets.tryLoadAssets "Rendering" "Misc" "AssetGraph.xml"
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 512 512 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 512 512 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
     run sdlConfig
 
 (*module Program

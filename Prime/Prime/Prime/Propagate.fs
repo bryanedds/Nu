@@ -1,6 +1,5 @@
 ﻿// http://www.quanttec.com/fparsec/users-guide/debugging-a-parser.html
 
-[<AutoOpen>]
 module Propagate
 
 type Propagation<'s, 'r> =
@@ -17,8 +16,5 @@ let inline ( >>. ) (propagation : Propagation<'s, 'r>) ((setter : ('s -> 't)), (
 let inline ( >. ) (propagation : Propagation<'s, 's>) (setter : ('s -> 's)) : Propagation<'s, 's> =
     ( >>. ) propagation (setter, id)
 
-[<AutoOpen>]
-module Propagate =
-
-    let propagate state =
-        Propagation (state, [])
+let propagate state =
+    Propagation (state, [])

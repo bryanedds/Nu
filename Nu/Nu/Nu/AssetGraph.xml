@@ -2,5 +2,6 @@
 <root>
   <package name="Misc">
     <asset name="Image" fileName="Image.bmp" associations="Rendering"/>
+    <asset name="Sound" fileName="Sound.wav" associations="Audio"/>
   </package>
 </root>

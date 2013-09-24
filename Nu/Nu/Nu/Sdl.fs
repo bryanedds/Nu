@@ -14,21 +14,23 @@ type SdlConfig =
       WindowW : int
       WindowH : int
       WindowFlags : SDL.SDL_WindowFlags
-      RendererFlags : SDL.SDL_RendererFlags }
+      RendererFlags : SDL.SDL_RendererFlags
+      AudioVolume : single }
 
 type SdlDeps =
     { Renderer : nativeint
       Window : nativeint
       Config : SdlConfig }
 
-let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags rendererFlags =
+let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags rendererFlags audioVolume =
     { WindowTitle = windowTitle
       WindowX = windowX
       WindowY = windowY
       WindowW = windowW
       WindowH = windowH
       WindowFlags = windowFlags
-      RendererFlags = rendererFlags }
+      RendererFlags = rendererFlags
+      AudioVolume = audioVolume }
 
 let makeSdlDeps renderer window config =
     { Renderer = renderer
