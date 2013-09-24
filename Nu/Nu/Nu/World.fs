@@ -2,8 +2,10 @@
 open System
 open FSharpx
 open SDL2
+open OpenTK
 open Nu.Physics
 open Nu.Rendering
+open Nu.Audio
 open Nu.Game
 open Nu.Sdl
 
@@ -47,8 +49,10 @@ and Subscriptions =
 and [<ReferenceEquality>] World =
     { Game : Game
       Subscriptions : Subscriptions
+      AudioPlayer : AudioPlayer
       Renderer : Renderer
       Integrator : Integrator
+      AudioMessages : AudioMessage rQueue
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list
@@ -57,6 +61,7 @@ and [<ReferenceEquality>] World =
 /// Enables components that open the world for extension.
 and IWorldComponent =
     interface
+        abstract member GetAudioDescriptors : World -> AudioDescriptor list
         abstract member GetRenderDescriptors : World -> RenderDescriptor list
         // TODO: abstract member GetRenderMessages : World -> RenderMessage rQueue
         // TODO: abstract member GetPhysicsMessages : World -> PhysicsMessage rQueue
@@ -132,6 +137,24 @@ let withSubscription address subscription subscriber procedure world : World =
     let newWorld2 = procedure newWorld
     unsubscribe address subscriber newWorld2
 
+let getComponentAudioDescriptors (world : World) : AudioDescriptor rQueue =
+    let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
+    List.collect (fun descs -> descs) descriptorLists
+
+let getAudioDescriptors (world : World) : AudioDescriptor rQueue =
+    let componentDescriptors = getComponentAudioDescriptors world
+    let worldDescriptors = [] // TODO: get audio descriptors
+    worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
+
+/// Play the world.
+let play (world : World) : World =
+    let audioDescriptors = getAudioDescriptors world
+    let audioMessages = world.AudioMessages
+    let audioPlayer = world.AudioPlayer
+    let newWorld = { world with AudioMessages = [] }
+    Audio.play audioMessages audioDescriptors audioPlayer
+    newWorld
+
 let getComponentRenderDescriptors (world : World) : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
     List.collect (fun descs -> descs) descriptorLists
@@ -160,11 +183,56 @@ let integrate (world : World) : World =
     let newWorld = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages newWorld
 
+let createTestGame () =
+    
+    let testButton =
+        { IsUp = true
+          UpSprite = { AssetName = "Image"; PackageName = "Misc" }
+          DownSprite = { AssetName = "Image"; PackageName = "Misc" }
+          ClickSound = { Volume = 1.0f; AssetName = "Sound"; PackageName = "Misc" }}
+
+    let testButtonGui =
+        { Position = Vector2.Zero
+          Size = Vector2 32.0f
+          GuiSemantic = Button testButton }
+
+    let testButtonEntity =
+        { ID = getNuId ()
+          Enabled = true
+          Visible = true
+          EntitySemantic = Gui testButtonGui }
+          
+    let testGroup =
+        { ID = getNuId ()
+          Enabled = true
+          Visible = true
+          Entities = LunTrie.singleton (Lun.make "testButton") testButtonEntity }
+
+    let testScreen =
+        { ID = getNuId ()
+          Enabled = true
+          Visible = true
+          Groups = LunTrie.singleton (Lun.make "testGroup") testGroup
+          ScreenSemantic = TestScreen { Unused = () }}
+
+    { ID = getNuId ()
+      Enabled = false
+      Screens = LunTrie.singleton (Lun.make "testScreen") testScreen
+      ActiveScreen = None }
+
 let run sdlConfig =
     runSdl
         (fun sdlDeps ->
-            let game = { ID = 0ul; Enabled = false; Screens = LunTrie.empty; ActiveScreen = None }
-            { Game = game; Subscriptions = Map.empty; Renderer = { RenderContext = () }; Integrator = { PhysicsContext = () }; RenderMessages = []; PhysicsMessages = []; Components = []; SdlDeps = sdlDeps })
+            { Game = createTestGame ()
+              Subscriptions = Map.empty
+              AudioPlayer = { AudioContext = () }
+              Renderer = { RenderContext = () }
+              Integrator = { PhysicsContext = () }
+              AudioMessages = []
+              RenderMessages = []
+              PhysicsMessages = []
+              Components = []
+              SdlDeps = sdlDeps })
         (fun event sdlDeps world ->
             match event.Value.``type`` with
             | SDL.SDL_EventType.SDL_QUIT -> (false, world)
@@ -173,5 +241,6 @@ let run sdlConfig =
             let newWorld = integrate world
             (true, newWorld))
         (fun sdlDeps world ->
-            render world)
+            let newWorld = render world
+            play newWorld)
         sdlConfig

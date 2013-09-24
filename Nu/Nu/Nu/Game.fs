@@ -14,14 +14,25 @@ module Nu.Game
 open System
 open OpenTK
 open Nu.Core
+open Nu.Audio
 open Nu.Rendering
+
+let getNuId = createGetNextId ()
+
+type [<StructuralEquality; NoComparison>] Button =
+    { IsUp : bool
+      UpSprite : SpriteDescriptor
+      DownSprite : SpriteDescriptor
+      ClickSound : SoundMessage }
+      
+type [<StructuralEquality; NoComparison>] Label =
+    { Sprite : SpriteDescriptor }
 
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] GuiSemantic =
-    | Button // of Button
-    | CheckBox // of CheckBox
-    | Label // of Label
+    | Button of Button
+    | Label of Label
  // | ...additional controls
  // | UserDefinedGui of IUserDefinedGui (* this would give us open gui semantics, but perhaps at the cost of its value semantics...  *)
 
@@ -30,29 +41,11 @@ type [<StructuralEquality; NoComparison>] GuiSemantic =
 type [<StructuralEquality; NoComparison>] Gui =
     { Position : Vector2
       Size : Vector2
-      Semantic : GuiSemantic }
-
-/// A Lustre stone.
-type [<StructuralEquality; NoComparison>] LustreStone =
-    { LustreStoneTag : unit
-      Sprite : SpriteDescriptor }
-
-/// A Lustre gem.
-type [<StructuralEquality; NoComparison>] LustreGem =
-    { LustreGemTag : unit
-      Sprite : SpriteDescriptor }
-
-/// A Lustre chest.
-type [<StructuralEquality; NoComparison>] LustreChest =
-    { LustreChestTag : unit
-      Sprite : SpriteDescriptor }
+      GuiSemantic : GuiSemantic }
 
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] ActorSemantic =
-    | LustreStone of LustreStone
-    | LustreChest of LustreChest
-    | LustreGem of LustreGem
     | Avatar // of Avatar
     | Item // of Item
  // | ...additional actors
@@ -63,7 +56,7 @@ type [<StructuralEquality; NoComparison>] ActorSemantic =
 type [<StructuralEquality; NoComparison>] Actor =
     { Position : Vector2
       Size : Vector2
-      Semantic : ActorSemantic }
+      ActorSemantic : ActorSemantic }
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
@@ -76,9 +69,9 @@ type [<StructuralEquality; NoComparison>] EntitySemantic =
 /// A serializable value type, albeit with quick equality, hashing, and comparison for use in Maps.
 type [<CustomEquality; CustomComparison>] Entity =
     { ID : ID
-      Visible : bool
       Enabled : bool
-      Semantic : EntitySemantic }
+      Visible : bool
+      EntitySemantic : EntitySemantic }
     interface Entity IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Entity>.GetHashCode ()
     override this.Equals that = match that with :? Entity as thatEntity -> this.ID = thatEntity.ID | _ -> false
@@ -87,19 +80,22 @@ type [<CustomEquality; CustomComparison>] Entity =
 /// A serializable value type, albeit with quick equality, hashing, and comparison for use in Maps.
 type [<CustomEquality; CustomComparison>] Group =
     { ID : ID
-      Visible : bool
       Enabled : bool
+      Visible : bool
       Entities : Entity LunTrie }
     interface Group IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Group>.GetHashCode ()
     override this.Equals that = match that with :? Group as thatGroup -> this.ID = thatGroup.ID | _ -> false
     
+type [<StructuralEquality; NoComparison>] TestScreen =
+    { Unused : unit }
+
 /// An algabraically-closed semantics for game screens.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] ScreenSemantic =
+    | TestScreen of TestScreen
     | Title // of Title
     | Intro // of Intro
-    | Playground // of Playground
  // | ...additional screens
  // | UserDefinedScreen of IUserDefinedScreen (* this would give us open screen semantics, but perhaps at the cost of its value semantics...  *)
     
@@ -107,10 +103,10 @@ type [<StructuralEquality; NoComparison>] ScreenSemantic =
 /// A serializable value type, albeit with quick equality, hashing, and comparison for use in Maps.
 type [<CustomEquality; CustomComparison>] Screen =
     { ID : ID
-      Visible : bool
       Enabled : bool
+      Visible : bool
       Groups : Group LunTrie
-      Semantic : ScreenSemantic }
+      ScreenSemantic : ScreenSemantic }
     interface Screen IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Screen>.GetHashCode ()
     override this.Equals that = match that with :? Screen as thatScreen -> this.ID = thatScreen.ID | _ -> false
