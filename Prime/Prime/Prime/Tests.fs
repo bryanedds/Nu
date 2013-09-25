@@ -22,3 +22,4 @@ let [<Fact>] lunTrieTest =
     let trie = LunTrie.add ccc ccc.LunHash trie
     Assert.True (LunTrie.containsKey ccc trie)
     Assert.Equal ((LunTrie.tryFind a trie).Value, a.LunHash)
+    // TODO: add test for LunTrie.toSeq
