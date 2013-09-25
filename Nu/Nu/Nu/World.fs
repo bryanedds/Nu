@@ -5,9 +5,12 @@ open SDL2
 open OpenTK
 open Nu.Physics
 open Nu.Rendering
+open Nu.Input
 open Nu.Audio
 open Nu.Game
 open Nu.Sdl
+
+let MouseLeftClick = [Lun.make "mouse"; Lun.make "left"; Lun.make "click"] // TODO: convert from "mouse/left/click
 
 // WISDOM: On avoiding threads where possible...
 //
@@ -27,12 +30,16 @@ open Nu.Sdl
 /// A value type.
 type Address = Lun list
 
+type [<ReferenceEquality>] MessageData =
+    | MouseClickData of Vector2 * MouseButton
+    | OtherData of obj
+
 /// A generic message for the Nu game engine.
 /// A reference type.
 type [<ReferenceEquality>] Message =
     { Handled : bool
       Publisher : obj
-      Data : obj }
+      Data : MessageData }
 
 /// Describes a game message subscription.
 /// A reference type.
@@ -49,6 +56,7 @@ and Subscriptions =
 and [<ReferenceEquality>] World =
     { Game : Game
       Subscriptions : Subscriptions
+      MouseState : MouseState
       AudioPlayer : AudioPlayer
       Renderer : Renderer
       Integrator : Integrator
@@ -173,7 +181,7 @@ let getWorldRenderDescriptors world =
                             match entity.EntitySemantic with
                             | Gui gui ->
                                 match gui.GuiSemantic with
-                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = button.UpSprite })
+                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
                                 | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
                             | Actor actor ->
                                 match actor.ActorSemantic with
@@ -199,6 +207,16 @@ let render (world : World) : World =
     let newWorld = {{ world with RenderMessages = [] } with Renderer = newRenderer }
     newWorld
 
+let handleRenderExit (world : World) : World =
+    let renderer = world.Renderer
+    let renderAssetTries = LunTrie.toValueSeq renderer.RenderAssetMap
+    let renderAssets = Seq.collect LunTrie.toValueSeq renderAssetTries
+    for renderAsset in renderAssets do
+        match renderAsset with
+        | TextureAsset texture -> () // apparently there is no need to free textures in SDL
+    let newRenderer = { renderer with RenderAssetMap = LunTrie.empty }
+    { world with Renderer = newRenderer }
+
 /// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
     world // TODO: handle integration messages
@@ -212,7 +230,7 @@ let integrate (world : World) : World =
 let createTestGame () =
     
     let testButton =
-        { IsUp = true
+        { IsDown = false
           UpSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
           DownSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
           ClickSound = { Volume = 1.0f; AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
@@ -251,6 +269,7 @@ let createTestWorld sdlDeps =
     let testGame =
         { Game = createTestGame ()
           Subscriptions = Map.empty
+          MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
           AudioPlayer = { AudioContext = () }
           Renderer = { RenderContext = sdlDeps.RenderContext; RenderAssetMap = LunTrie.empty }
           Integrator = { PhysicsContext = () }
@@ -271,14 +290,35 @@ let run sdlConfig =
     runSdl
         (fun sdlDeps ->
             createTestWorld sdlDeps)
-        (fun event sdlDeps world ->
-            match event.Value.``type`` with
-            | SDL.SDL_EventType.SDL_QUIT -> (false, world)
-            | _ -> (true, world))
+        (fun refEvent sdlDeps world ->
+            let event = refEvent.Value
+            match event.``type`` with
+            | SDL.SDL_EventType.SDL_QUIT ->
+                (false, world)
+            | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
+                let mouseState = world.MouseState
+                if event.button.button = byte SDL.SDL_BUTTON_LEFT then
+                    let newMouseState = { mouseState with MouseLeftDown = true }
+                    let newWorld = { world with MouseState = newMouseState }
+                    (true, newWorld)
+                else (true, world)
+            | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
+                let mouseState = world.MouseState
+                if mouseState.MouseLeftDown && event.button.button = byte SDL.SDL_BUTTON_LEFT then
+                    let messageData = MouseClickData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
+                    let newMouseState = { mouseState with MouseLeftDown = false }
+                    let newWorld = { world with MouseState = newMouseState }
+                    let newWorld2 = publish MouseLeftClick { Handled = false; Publisher = AppDomain.CurrentDomain; Data = messageData } newWorld
+                    (true, newWorld2)
+                else (true, world)
+            | _ ->
+                (true, world))
         (fun sdlDeps world ->
             let newWorld = integrate world
             (true, newWorld))
         (fun sdlDeps world ->
             let newWorld = render world
             play newWorld)
+        (fun sdlDeps world ->
+            handleRenderExit world)
         sdlConfig

@@ -14,6 +14,7 @@ type FrameSkip =
     | Fifth = 5
     | Count = 5
 
+// TODO: avoid using arrays! match lookups on literals are just as fast
 let MinFrameTimes =
     Array.init
         (int FrameSkip.Count)
