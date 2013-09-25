@@ -1,4 +1,4 @@
-﻿module Assets
+﻿module Nu.Assets
 open System
 open System.Linq
 open System.Xml
@@ -32,6 +32,12 @@ type [<StructuralEquality; NoComparison>] Asset =
 type [<StructuralEquality; NoComparison>] Package =
     { Name : string
       AssetNames : string list }
+
+type [<StructuralEquality; NoComparison>] AssetKey =
+    { Name : Lun
+      PackageName : Lun }
+
+type 'a AssetMap = ('a LunTrie) LunTrie
 
 let tryLoadAsset packageName (xmlNode : XmlNode) =
     let xmlAttributes = xmlNode.Attributes

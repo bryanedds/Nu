@@ -71,6 +71,21 @@ let ofListBy by kvps =
     let pairs = List.map by kvps
     ofList pairs
 
+let rec toValueSeqBy by trie =
+    seq {
+        match trie with
+        | Empty -> yield! Seq.empty
+        | Leaf (_, value) -> yield by value
+        | Branch (_, optValue, map) ->
+            match optValue with
+            | None -> for subTrieKvp in map do yield! toValueSeqBy by subTrieKvp.Value
+            | Some value ->
+                yield by value
+                for subTrieKvp in map do yield! toValueSeqBy by subTrieKvp.Value }
+
+let toValueSeq trie =
+    toValueSeqBy id trie
+
 let rec private foldInternal (folder : 'a -> char list -> 'b -> 'a) (rev : char list) (state : 'a) (trie : 'b LunTrie) : 'a =
     match trie with
     | Empty -> state
@@ -100,7 +115,7 @@ let toValueListBy by trie =
     fold (fun state _ value -> by value :: state) [] trie
 
 let toValueList trie =
-    toValueListBy (fun value -> value) trie
+    toValueListBy id trie
 
 let singleton key value =
     add key value empty
