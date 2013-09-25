@@ -148,8 +148,8 @@ let getAudioDescriptors (world : World) : AudioDescriptor rQueue =
 
 /// Play the world.
 let play (world : World) : World =
-    let audioDescriptors = getAudioDescriptors world
     let audioMessages = world.AudioMessages
+    let audioDescriptors = getAudioDescriptors world
     let audioPlayer = world.AudioPlayer
     let newWorld = { world with AudioMessages = [] }
     Audio.play audioMessages audioDescriptors audioPlayer
@@ -159,18 +159,44 @@ let getComponentRenderDescriptors (world : World) : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
     List.collect (fun descs -> descs) descriptorLists
 
+let getWorldRenderDescriptors world =
+    match world.Game.OptActiveScreen with
+    | None -> []
+    | Some activeScreen ->
+        let groups = LunTrie.toValueSeq activeScreen.Groups
+        let optDescriptorSeqs =
+            Seq.map
+                (fun group ->
+                    let entities = LunTrie.toValueSeq group.Entities
+                    Seq.map
+                        (fun entity ->
+                            match entity.EntitySemantic with
+                            | Gui gui ->
+                                match gui.GuiSemantic with
+                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = button.UpSprite })
+                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
+                            | Actor actor ->
+                                match actor.ActorSemantic with
+                                | Avatar -> None
+                                | Item -> None)
+                        entities)
+                groups
+        let optDescriptors = Seq.concat optDescriptorSeqs
+        let descriptors = Seq.definitize optDescriptors
+        List.ofSeq descriptors
+
 let getRenderDescriptors (world : World) : RenderDescriptor rQueue =
     let componentDescriptors = getComponentRenderDescriptors world
-    let worldDescriptors = [] // TODO: get render descriptors
+    let worldDescriptors = getWorldRenderDescriptors world
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Render the world.
 let render (world : World) : World =
-    let renderDescriptors = getRenderDescriptors world
     let renderMessages = world.RenderMessages
+    let renderDescriptors = getRenderDescriptors world
     let renderer = world.Renderer
-    let newWorld = { world with RenderMessages = [] }
-    Rendering.render renderMessages renderDescriptors renderer
+    let newRenderer = Rendering.render renderMessages renderDescriptors renderer
+    let newWorld = {{ world with RenderMessages = [] } with Renderer = newRenderer }
     newWorld
 
 /// Handle physics integration messages.
@@ -187,13 +213,13 @@ let createTestGame () =
     
     let testButton =
         { IsUp = true
-          UpSprite = { AssetName = "Image"; PackageName = "Misc" }
-          DownSprite = { AssetName = "Image"; PackageName = "Misc" }
-          ClickSound = { Volume = 1.0f; AssetName = "Sound"; PackageName = "Misc" }}
+          UpSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
+          DownSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
+          ClickSound = { Volume = 1.0f; AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testButtonGui =
         { Position = Vector2.Zero
-          Size = Vector2 32.0f
+          Size = Vector2 512.0f // TODO: look this up from bitmap file
           GuiSemantic = Button testButton }
 
     let testButtonEntity =
@@ -218,21 +244,33 @@ let createTestGame () =
     { ID = getNuId ()
       Enabled = false
       Screens = LunTrie.singleton (Lun.make "testScreen") testScreen
-      ActiveScreen = None }
+      OptActiveScreen = Some testScreen }
+
+let createTestWorld sdlDeps =
+
+    let testGame =
+        { Game = createTestGame ()
+          Subscriptions = Map.empty
+          AudioPlayer = { AudioContext = () }
+          Renderer = { RenderContext = sdlDeps.RenderContext; RenderAssetMap = LunTrie.empty }
+          Integrator = { PhysicsContext = () }
+          AudioMessages = []
+          RenderMessages = []
+          PhysicsMessages = []
+          Components = []
+          SdlDeps = sdlDeps }
+
+    let hintRenderingPackageUse =
+        { FileName = "AssetGraph.xml"
+          PackageName = "Misc"
+          HRPU = () }
+
+    { testGame with RenderMessages = HintRenderingPackageUse hintRenderingPackageUse :: testGame.RenderMessages }
 
 let run sdlConfig =
     runSdl
         (fun sdlDeps ->
-            { Game = createTestGame ()
-              Subscriptions = Map.empty
-              AudioPlayer = { AudioContext = () }
-              Renderer = { RenderContext = () }
-              Integrator = { PhysicsContext = () }
-              AudioMessages = []
-              RenderMessages = []
-              PhysicsMessages = []
-              Components = []
-              SdlDeps = sdlDeps })
+            createTestWorld sdlDeps)
         (fun event sdlDeps world ->
             match event.Value.``type`` with
             | SDL.SDL_EventType.SDL_QUIT -> (false, world)

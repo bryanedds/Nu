@@ -18,7 +18,7 @@ type SdlConfig =
       AudioVolume : single }
 
 type SdlDeps =
-    { Renderer : nativeint
+    { RenderContext : nativeint
       Window : nativeint
       Config : SdlConfig }
 
@@ -33,7 +33,7 @@ let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags render
       AudioVolume = audioVolume }
 
 let makeSdlDeps renderer window config =
-    { Renderer = renderer
+    { RenderContext = renderer
       Window = window
       Config  = config }
 
@@ -43,7 +43,7 @@ let withSdlInit create destroy action =
     let initResult = create ()
     let error = SDL.SDL_GetError ()
     if initResult <> 0 && error <> "CoInitialize() DirectX error -2147417850" then
-        Console.WriteLine ("SDL2# initialization failed due to '" + error + "'.")
+        trace ("SDL2# initialization failed due to '" + error + "'.")
         FailureCode
     else
         let result = action ()
@@ -72,10 +72,10 @@ let advanceSdl handleEvent handleUpdate sdlDeps world =
     result
 
 let renderSdl handleRender sdlDeps world =
-    ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.Renderer, 0uy, 0uy, 179uy, 255uy))
-    ignore (SDL.SDL_RenderClear sdlDeps.Renderer)
+    ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, 0uy, 0uy, 179uy, 255uy))
+    ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
     let newWorld = handleRender sdlDeps world
-    SDL.SDL_RenderPresent sdlDeps.Renderer
+    SDL.SDL_RenderPresent sdlDeps.RenderContext
     newWorld
     
 let rec runSdl6 handleEvent handleUpdate handleRender sdlDeps world keepRunning =

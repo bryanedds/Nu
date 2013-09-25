@@ -21,12 +21,12 @@ let getNuId = createGetNextId ()
 
 type [<StructuralEquality; NoComparison>] Button =
     { IsUp : bool
-      UpSprite : SpriteDescriptor
-      DownSprite : SpriteDescriptor
+      UpSprite : Sprite
+      DownSprite : Sprite
       ClickSound : SoundMessage }
       
 type [<StructuralEquality; NoComparison>] Label =
-    { Sprite : SpriteDescriptor }
+    { Sprite : Sprite }
 
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
@@ -117,7 +117,7 @@ type [<CustomEquality; CustomComparison>] Game =
     { ID : ID
       Enabled : bool
       Screens : Screen LunTrie
-      ActiveScreen : Screen option }
+      OptActiveScreen : Screen option }
     interface Game IComparable with member this.CompareTo that = this.ID.CompareTo that.ID
     override this.GetHashCode () = int this.ID ^^^ typeof<Game>.GetHashCode ()
     override this.Equals that = match that with :? Game as thatGame -> this.ID = thatGame.ID | _ -> false

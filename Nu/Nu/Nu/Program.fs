@@ -35,7 +35,6 @@ let [<EntryPoint>] main _ =
         setA incI >>.
         setB incUy
 
-    let optAssets = Assets.tryLoadAssets "Rendering" "Misc" "AssetGraph.xml"
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 512 512 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
     run sdlConfig
