@@ -20,7 +20,7 @@ open Nu.Rendering
 let getNuId = createGetNextId ()
 
 type [<StructuralEquality; NoComparison>] Button =
-    { IsUp : bool
+    { IsDown : bool
       UpSprite : Sprite
       DownSprite : Sprite
       ClickSound : SoundMessage }
