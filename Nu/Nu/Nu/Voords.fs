@@ -5,5 +5,5 @@ device most likely to be used. Devices with other ratio will just have to suffer
 
 // Virtual resolution based on iPhone 4 in horizontal mode (since I'm guessing this is our most
 // likely preferred device).
-let [<Literal>] VesolutionX = 960
-let [<Literal>] VesolutionY = 640
+let [<Literal>] VesolutionX = 960.0f
+let [<Literal>] VesolutionY = 640.0f
