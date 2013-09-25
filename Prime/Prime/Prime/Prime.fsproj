@@ -64,6 +64,7 @@
     <Compile Include="RduTreeModule.fs" />
     <Compile Include="RduTree.fs" />
     <Compile Include="Propagate.fs" />
+    <Compile Include="Log.fs" />
     <Compile Include="Tests.fs" />
     <None Include="Interactive.fsx" />
   </ItemGroup>

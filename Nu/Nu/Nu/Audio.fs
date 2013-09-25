@@ -13,12 +13,22 @@ type [<StructuralEquality; NoComparison>] AudioDescriptor =
 
 type [<StructuralEquality; NoComparison>] SoundMessage =
     { Volume : single
-      AssetName : string
-      PackageName : string }
+      AssetName : Lun
+      PackageName : Lun }
+
+type [<StructuralEquality; NoComparison>] HintAudioPackageUse =
+    { FileName : string
+      AudioPackageName : string
+      HAPU : unit }
+
+type [<StructuralEquality; NoComparison>] HintAudioPackageDisuse =
+    { FileName : string
+      AudioPackageName : string
+      HAPD : unit }
 
 type [<StructuralEquality; NoComparison>] AudioMessage =
-    | HintPackageUse of (*FileName*) string * (*PackageName*) string
-    | HintPackageDisuse of (*PackageName*) string
+    | HintAudioPackageUse of HintAudioPackageUse
+    | HintAudioPackageDisuse of HintAudioPackageDisuse
     | PlaySound of SoundMessage
 
 type [<ReferenceEquality>] AudioPlayer =

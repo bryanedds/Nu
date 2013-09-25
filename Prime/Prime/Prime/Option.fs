@@ -10,3 +10,8 @@ let concat opt =
     | None -> None
     | Some None -> None
     | Some (Some s) -> Some s
+
+let reduce fn opt =
+    match opt with
+    | None -> None
+    | Some value -> fn value
