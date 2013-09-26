@@ -1,11 +1,19 @@
 ﻿module Program
 open System
 open SDL2
-open Propagate
 open Nu.Sdl
 open Nu.World
 
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
+
+let [<EntryPoint>] main _ =
+    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 1024 768 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
+    run sdlConfig
+
+(*module Program
+open System
+open Propagate
 
 type Data =
   { A : int
@@ -33,11 +41,7 @@ let [<EntryPoint>] main _ =
     let propagatedData =
         propagate { A = 0; B = 0uy } >>.
         setA incI >>.
-        setB incUy
-
-    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 1024 768 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
-    run sdlConfig
+        setB incUy*)
 
 (*module Program
 open System
