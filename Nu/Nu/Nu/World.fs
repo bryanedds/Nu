@@ -77,60 +77,60 @@ and IWorldComponent =
         // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
         end
 
-let find4 successFn errorFn address (world : World) =
-    // TODO: forward to implemention in Nu.Game
-    match address with
-    | [] -> errorFn ("Invalid address '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head world.Game.Screens
-        match optScreen with
-        | None -> errorFn ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
-            | [] -> successFn (screen :> obj)
-            | head :: tail ->
-                let optGroup = LunTrie.tryFind head screen.Groups
-                match optGroup with
-                | None -> errorFn ("No group at address '" + str address + "'.")
-                | Some group ->
-                    match tail with
-                    | [] -> successFn (group :> obj)
-                    | head :: tail ->
-                        let optEntity = LunTrie.tryFind head group.Entities
-                        match optEntity with
-                        | None -> errorFn ("No entity at address '" + str address + "'.")
-                        | Some entity -> successFn (entity :> obj)
-                
-/// Find an element at the given address, failing with exception otherwise.
-let inline findInWorld requirement address (world : World) =
-    findInGame requirement address world.Game
+/// Find a screen at the given address, failing with exception otherwise.
+let inline findScreenInWorld address (world : World) =
+    findScreenInGame address world.Game
 
-/// Try to find an element at the given address.
-let inline tryFindInWorld address (world : World) =
-    tryFindInGame address world.Game
+/// Try to find a screen at the given address.
+let inline tryFindScreenInWorld address (world : World) =
+    tryFindScreenInGame address world.Game
 
-/// Set an element at the given address.
-let inline setInWorld address (element : 'e when 'e : not struct) (world : World) : World =
-    { world with Game = setInGame address element world.Game }
+/// Find a group at the given address, failing with exception otherwise.
+let inline findGroupInWorld address (world : World) =
+    findGroupInGame address world.Game
 
-/// Remove an element at the given address.
-let inline removeInWorld address (world : World) : World =
-    { world with Game = removeInGame address world.Game }
+/// Try to find a group at the given address.
+let inline tryFindGroupInWorld address (world : World) =
+    tryFindGroupInGame address world.Game
 
-/// Lens for a particular address in a world.
-let forAddress requirement address =
-    { Get = findInWorld requirement address
-      Set = 
-          function
-          | Some value -> setInWorld address value
-          | None -> removeInWorld address }
+/// Find an entity at the given address, failing with exception otherwise.
+let inline findEntityInWorld address (world : World) =
+    findEntityInGame address world.Game
+
+/// Try to find an entity at the given address.
+let inline tryEntityFindInWorld address (world : World) =
+    tryFindEntityInGame address world.Game
+
+/// Set a screen at the given address.
+let inline setScreenInWorld address screen world =
+    { world with Game = setScreenInGame address screen world.Game }
+
+/// Remove a screen at the given address.
+let inline removeScreenInWorld address world =
+    { world with Game = removeScreenInGame address world.Game }
+
+/// Set a group at the given address.
+let inline setGroupInWorld address group world =
+    { world with Game = setGroupInGame address group world.Game }
+
+/// Remove a group at the given address.
+let inline removeGroupInWorld address world =
+    { world with Game = removeGroupInGame address world.Game }
+
+/// Set an entity at the given address.
+let inline setEntityInWorld address entity world =
+    { world with Game = setEntityInGame address entity world.Game }
+
+/// Remove an entity at the given address.
+let inline removeEntityInWorld address world =
+    { world with Game = removeEntityInGame address world.Game }
 
 let withButton4 fn errorFn address world : World =
-    let result = findInWorld requireEntity address world
-    match result.OptEntity.Value.EntitySemantic with
+    let entity = findEntityInWorld address world
+    match entity.EntitySemantic with
     | Gui gui ->
         match gui.GuiSemantic with
-        | Button button -> fn result gui button
+        | Button button -> fn entity gui button
         | _ -> errorFn ("Expecting button at address '" + str address + "'.")
     | _ -> errorFn ("Expecting gui at address '" + str address + "'.")
 
@@ -205,7 +205,7 @@ let getWorldRenderDescriptors world =
     match world.Game.OptActiveScreen with
     | None -> []
     | Some activeScreenAddress ->
-        let optActiveScreen = (tryFindInWorld activeScreenAddress world).OptScreen
+        let optActiveScreen = tryFindScreenInWorld activeScreenAddress world
         match optActiveScreen with
         | None -> debug ("Could not find active screen with address '" + str activeScreenAddress + "'."); []
         | Some activeScreen ->
@@ -332,7 +332,7 @@ let createTestWorld sdlDeps =
                 match message.Data with
                 | MouseButtonData (position, button) ->
                     withButton
-                        (fun findResult gui button ->
+                        (fun entity gui button ->
                             if position.X >= gui.Position.X &&
                                position.X < gui.Position.X + gui.Size.X &&
                                position.Y >= gui.Position.Y &&
@@ -340,8 +340,8 @@ let createTestWorld sdlDeps =
                             then
                                 let newButton = { button with IsDown = true }
                                 let newGui = { gui with GuiSemantic = Button newButton }
-                                let newEntity = { findResult.OptEntity.Value with EntitySemantic = Gui newGui }
-                                let newWorld = setInWorld subscriber newEntity world
+                                let newEntity = { entity with EntitySemantic = Gui newGui }
+                                let newWorld = setEntityInWorld subscriber newEntity world
                                 publish ClickTestButton { Handled = false; Data = NoData } newWorld
                             else world)
                         subscriber
@@ -356,7 +356,7 @@ let createTestWorld sdlDeps =
             match message.Data with
             | MouseButtonData (position, button) ->
                 withButton
-                    (fun findResult gui button ->
+                    (fun entity gui button ->
                         if position.X >= gui.Position.X &&
                            position.X < gui.Position.X + gui.Size.X &&
                            position.Y >= gui.Position.Y &&
@@ -364,8 +364,8 @@ let createTestWorld sdlDeps =
                         then
                             let newButton = { button with IsDown = false }
                             let newGui = { gui with GuiSemantic = Button newButton }
-                            let newEntity = { findResult.OptEntity.Value with EntitySemantic = Gui newGui }
-                            let newWorld = setInWorld subscriber newEntity world
+                            let newEntity = { entity with EntitySemantic = Gui newGui }
+                            let newWorld = setEntityInWorld subscriber newEntity world
                             publish ClickTestButton { Handled = false; Data = NoData } newWorld
                         else world)
                     subscriber

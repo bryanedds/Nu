@@ -116,28 +116,24 @@ type [<StructuralEquality; NoComparison>] Game =
       Screens : Screen LunTrie
       OptActiveScreen : Address option }
 
-type [<StructuralEquality; NoComparison>] FindResult =
-    { OptEntity : Entity option
-      OptGroup : Group option
-      OptScreen : Screen option
-      Game : Game }
+let inline tryFailure _ = None
 
-let requireScreen errorFn address findResult =
-    match findResult.OptScreen with
-    | None -> errorFn  ("No screen at address '" + str address + "'.")
-    | Some _ -> findResult
+let findScreenInGame4 successFn errorFn address game =
+    match address with
+    | [] -> errorFn ("Invalid address '" + str address + "'.")
+    | head :: tail ->
+        let optScreen = LunTrie.tryFind head game.Screens
+        match optScreen with
+        | None -> errorFn ("No screen at address '" + str address + "'.")
+        | Some screen -> successFn screen
 
-let requireGroup errorFn address findResult =
-    match findResult.OptGroup with
-    | None -> errorFn ("No group at address '" + str address + "'.")
-    | Some _ -> requireScreen errorFn address findResult
+let inline findScreenInGame address game =
+    findScreenInGame4 id failwith address game
 
-let requireEntity errorFn address findResult =
-    match findResult.OptEntity with
-    | None -> errorFn ("No entity at address '" + str address + "'.")
-    | Some _ -> requireGroup errorFn address findResult
+let inline tryFindScreenInGame address game =
+    findScreenInGame4 (Some) tryFailure address game
 
-let findInGame4 errorFn requirement address game =
+let findGroupInGame4 successFn errorFn address game =
     match address with
     | [] -> errorFn ("Invalid address '" + str address + "'.")
     | head :: tail ->
@@ -146,89 +142,138 @@ let findInGame4 errorFn requirement address game =
         | None -> errorFn ("No screen at address '" + str address + "'.")
         | Some screen ->
             match tail with
-            | [] -> requirement errorFn address { OptEntity = None; OptGroup = None; OptScreen = Some screen; Game = game }
+            | [] -> errorFn ("Invalid address '" + str address + "'.")
+            | head :: tail ->
+                let optGroup = LunTrie.tryFind head screen.Groups
+                match optGroup with
+                | None -> errorFn ("No group at address '" + str address + "'.")
+                | Some group -> successFn group
+
+let inline findGroupInGame address game =
+    findGroupInGame4 id failwith address game
+
+let inline tryFindGroupInGame address game =
+    findGroupInGame4 (Some) tryFailure address game
+
+let findEntityInGame4 successFn errorFn address game =
+    match address with
+    | [] -> errorFn ("Invalid address '" + str address + "'.")
+    | head :: tail ->
+        let optScreen = LunTrie.tryFind head game.Screens
+        match optScreen with
+        | None -> errorFn ("No screen at address '" + str address + "'.")
+        | Some screen ->
+            match tail with
+            | [] -> errorFn ("Invalid address '" + str address + "'.")
             | head :: tail ->
                 let optGroup = LunTrie.tryFind head screen.Groups
                 match optGroup with
                 | None -> errorFn ("No group at address '" + str address + "'.")
                 | Some group ->
                     match tail with
-                    | [] -> requirement errorFn address { OptEntity = None; OptGroup = Some group; OptScreen = Some screen; Game = game }
+                    | [] -> errorFn ("Invalid address '" + str address + "'.")
                     | head :: tail ->
                         let optEntity = LunTrie.tryFind head group.Entities
                         match optEntity with
                         | None -> errorFn ("No entity at address '" + str address + "'.")
-                        | Some entity -> requirement errorFn address { OptEntity = Some entity; OptGroup = Some group; OptScreen = Some screen; Game = game }
-                
-/// Find an element at the given address, failing with exception otherwise.
-let inline findInGame requirement address game =
-    findInGame4 failwith requirement address game
+                        | Some entity -> successFn entity
 
-/// Try to find an element at the given address.
-let inline tryFindInGame address game =
-    findInGame4
-        (fun _ -> { OptEntity = None; OptGroup = None; OptScreen = None; Game = game })
-        (fun _ _ findResult -> findResult) address game
+let inline findEntityInGame address game =
+    findEntityInGame4 id failwith address game
 
-let setInGame address (element : obj) game : Game =
+let inline tryFindEntityInGame address game =
+    findEntityInGame4 (Some) tryFailure address game
+
+let setScreenInGame address screen game : Game =
     match address with
     | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [head] ->
-        match element with
-        | :? Screen as screen -> { game with Screens = LunTrie.add head screen game.Screens }
-        | _ -> failwith ("Invalid address for screen '" + str address + "'.")
+    | [head] -> { game with Screens = LunTrie.add head screen game.Screens }
+    | _ :: _ -> failwith ("Invalid address for screen '" + str address + "'.")
+
+let setGroupInGame address group game : Game =
+    match address with
+    | [] -> failwith ("Invalid address '" + str address + "'.")
+    | [_] -> failwith ("Invalid address for group '" + str address + "'.")
     | head :: tail ->
         let optScreen = LunTrie.tryFind head game.Screens
         match optScreen with
         | None -> failwith ("No screen at address '" + str address + "'.")
         | Some screen ->
             match tail with
-            | [] -> failwith ("Invalid address '" + str address + "'.")
+            | [] -> failwith ("Invalid address for group '" + str address + "'.")
             | [head'] ->
-                match element with
-                | :? Group as group ->
-                    let newScreen = { screen with Groups = LunTrie.add head' group screen.Groups }
-                    { game with Screens = LunTrie.add head newScreen game.Screens }
-                | _ -> failwith ("Invalid address for group '" + str address + "'.")
+                let newScreen = { screen with Groups = LunTrie.add head' group screen.Groups }
+                { game with Screens = LunTrie.add head newScreen game.Screens }
+            | _ :: _ -> failwith ("Invalid address for group '" + str address + "'.")
+
+let setEntityInGame address entity game : Game =
+    match address with
+    | [] -> failwith ("Invalid address '" + str address + "'.")
+    | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
+    | head :: tail ->
+        let optScreen = LunTrie.tryFind head game.Screens
+        match optScreen with
+        | None -> failwith ("No screen at address '" + str address + "'.")
+        | Some screen ->
+            match tail with
+            | [] -> failwith ("Invalid address for entity '" + str address + "'.")
+            | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
             | head' :: tail' ->
                 let optGroup = LunTrie.tryFind head' screen.Groups
                 match optGroup with
                 | None -> failwith ("No group at address '" + str address + "'.")
                 | Some group ->
                     match tail' with
-                    | [] -> failwith ("Invalid address '" + str address + "'.")
+                    | [] -> failwith ("Invalid address for entity '" + str address + "'.")
                     | [head''] ->
-                        match element with
-                        | :? Entity as entity ->
-                            let newGroup = { group with Entities = LunTrie.add head'' entity group.Entities }
-                            let newScreen = { screen with Groups = LunTrie.add head' newGroup screen.Groups }
-                            { game with Screens = LunTrie.add head newScreen game.Screens }
-                        | _ -> failwith ("Invalid address for group '" + str address + "'.")
-                    | head'' :: tail'' -> failwith ("Invalid address '" + str address + "'.")
+                        let newGroup = { group with Entities = LunTrie.add head'' entity group.Entities }
+                        let newScreen = { screen with Groups = LunTrie.add head' newGroup screen.Groups }
+                        { game with Screens = LunTrie.add head newScreen game.Screens }
+                    | _ :: _ -> failwith ("Invalid address for entity '" + str address + "'.")
 
-let removeInGame address game : Game =
+let removeScreenInGame address game : Game =
     match address with
     | [] -> failwith ("Invalid address '" + str address + "'.")
     | [head] -> { game with Screens = LunTrie.remove head game.Screens }
+    | _ :: _ -> failwith ("Invalid address for screen '" + str address + "'.")
+
+let removeGroupInGame address game : Game =
+    match address with
+    | [] -> failwith ("Invalid address '" + str address + "'.")
+    | [_] -> failwith ("Invalid address for group '" + str address + "'.")
     | head :: tail ->
         let optScreen = LunTrie.tryFind head game.Screens
         match optScreen with
         | None -> failwith ("No screen at address '" + str address + "'.")
         | Some screen ->
             match tail with
-            | [] -> failwith ("Invalid address '" + str address + "'.")
+            | [] -> failwith ("Invalid address for group '" + str address + "'.")
             | [head'] ->
                 let newScreen = { screen with Groups = LunTrie.remove head' screen.Groups }
                 { game with Screens = LunTrie.add head newScreen game.Screens }
+            | _ :: _ -> failwith ("Invalid address for group '" + str address + "'.")
+
+let removeEntityInGame address game : Game =
+    match address with
+    | [] -> failwith ("Invalid address '" + str address + "'.")
+    | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
+    | head :: tail ->
+        let optScreen = LunTrie.tryFind head game.Screens
+        match optScreen with
+        | None -> failwith ("No screen at address '" + str address + "'.")
+        | Some screen ->
+            match tail with
+            | [] -> failwith ("Invalid address for entity '" + str address + "'.")
+            | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
             | head' :: tail' ->
                 let optGroup = LunTrie.tryFind head' screen.Groups
                 match optGroup with
                 | None -> failwith ("No group at address '" + str address + "'.")
                 | Some group ->
                     match tail' with
-                    | [] -> failwith ("Invalid address '" + str address + "'.")
+                    | [] -> failwith ("Invalid address for entity '" + str address + "'.")
                     | [head''] ->
                         let newGroup = { group with Entities = LunTrie.remove head'' group.Entities }
                         let newScreen = { screen with Groups = LunTrie.add head' newGroup screen.Groups }
                         { game with Screens = LunTrie.add head newScreen game.Screens }
-                    | head'' :: tail'' -> failwith ("Invalid address '" + str address + "'.")
+                    | _ :: _ -> failwith ("Invalid address for entity '" + str address + "'.")
