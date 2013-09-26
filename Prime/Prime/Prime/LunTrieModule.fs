@@ -13,8 +13,8 @@ type LunTrie<'v> =
     | Branch of Lun * 'v option * Map<char, LunTrie<'v>>
 
     static member KeyValueToString key value =
-        "{Key = \"" + key.ToString () + "\"; " +
-        "Value = \"" + value.ToString () + "\"}"
+        "[Key = \"" + str key + "\"; " +
+        "Value = \"" + str value + "\"]"
 
     static member MapToString map =
         Map.fold
@@ -23,16 +23,19 @@ type LunTrie<'v> =
                 else accStr + " " + trie.ToString ())
             String.Empty map
 
-    override this.ToString () =
-        this.DebugView
+    member this.ToSeqBy by =
+        seq {
+            match this with
+            | Empty -> yield! Seq.empty
+            | Leaf (key, value) -> yield by key value
+            | Branch (key, optValue, map) ->
+                match optValue with
+                | None -> for subTrieKvp in map do yield! subTrieKvp.Value.ToSeqBy by
+                | Some value ->
+                    yield by key value
+                    for subTrieKvp in map do yield! subTrieKvp.Value.ToSeqBy by }
 
     member this.DebugView
         with get () =
-            match this with
-            | Empty -> String.Empty
-            | Leaf (key, value) -> LunTrie<'v>.KeyValueToString key value
-            | Branch (key, optValue, map) ->
-                match optValue with
-                | None -> LunTrie<'v>.MapToString map
-                | Some value -> LunTrie<'v>.KeyValueToString key value + " " + LunTrie<'v>.MapToString map
-        
+            let seq = this.ToSeqBy (fun key value -> ("Key = \"" + key.LunStr + "\"", value))
+            List.ofSeq seq

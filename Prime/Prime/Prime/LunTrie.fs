@@ -64,6 +64,12 @@ let rec addMany kvps trie =
         let newTrie = add (fst kvpHead) (snd kvpHead) trie
         addMany kvpTail newTrie
 
+let remove key trie =
+    trie // TODO: implement
+
+let removeMany keys trie =
+    trie // TODO: implement
+
 let ofList kvps =
     addMany kvps empty
 
@@ -71,17 +77,11 @@ let ofListBy by kvps =
     let pairs = List.map by kvps
     ofList pairs
 
-let rec toValueSeqBy by trie =
-    seq {
-        match trie with
-        | Empty -> yield! Seq.empty
-        | Leaf (_, value) -> yield by value
-        | Branch (_, optValue, map) ->
-            match optValue with
-            | None -> for subTrieKvp in map do yield! toValueSeqBy by subTrieKvp.Value
-            | Some value ->
-                yield by value
-                for subTrieKvp in map do yield! toValueSeqBy by subTrieKvp.Value }
+let toSeqBy by (trie : 'v LunTrie) =
+    trie.ToSeqBy by
+
+let toValueSeqBy by trie =
+    toSeqBy (fun _ value -> by value) trie
 
 let toValueSeq trie =
     toValueSeqBy id trie
