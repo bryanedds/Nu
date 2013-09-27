@@ -39,9 +39,9 @@
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
   <ItemGroup>
-    <Compile Include="Math.fs" />
-    <Compile Include="RQueue.fs" />
     <Compile Include="Core.fs" />
+    <Compile Include="RQueue.fs" />
+    <Compile Include="Math.fs" />
     <Compile Include="FrameRate.fs" />
     <Compile Include="Voords.fs" />
     <Compile Include="Assets.fs" />
@@ -70,6 +70,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FarseerPhysics">
+      <HintPath>..\..\Farseer\FarseerPhysics.dll</HintPath>
+    </Reference>
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
@@ -78,7 +81,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\SDL2#\Debug\SDL2#.dll</HintPath>
+      <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
