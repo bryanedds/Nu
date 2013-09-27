@@ -1,6 +1,4 @@
-﻿// NaiveSimulation - a technical prototype for Nu, the Flipped prototype engine.
-//
-// A naive, closed simulation implementation in F# that uses semantics and identity.
+﻿// WISDOM:
 //
 // A simulation that would put physics on another thread should likely do so in a different app
 // domain with communication via .NET remoting to make 100% sure that no sharing is happening.
