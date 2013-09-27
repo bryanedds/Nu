@@ -33,14 +33,14 @@ let rec private addInternal key (keyStr : string) index value trie =
         if keyStr.Length = index then Leaf (key, value)
         else
             let char = keyStr.[index]
-            let newTrie = addInternal key keyStr (index + 1) value empty
-            Branch (Lun.empty, None, Map.singleton char newTrie)
+            let trie2 = addInternal key keyStr (index + 1) value empty
+            Branch (Lun.empty, None, Map.singleton char trie2)
     | Leaf (leafKey, leafValue) ->
         if keyStr.Length = index then Leaf (key, value)
         else
             let char = keyStr.[index]
-            let newTrie = addInternal key keyStr (index + 1) value empty
-            Branch (leafKey, Some leafValue, Map.singleton char newTrie)
+            let trie2 = addInternal key keyStr (index + 1) value empty
+            Branch (leafKey, Some leafValue, Map.singleton char trie2)
     | Branch (branchKey, optBranchValue, branchMap) ->
         if keyStr.Length = index then Branch (key, Some value, branchMap)
         else
@@ -49,8 +49,8 @@ let rec private addInternal key (keyStr : string) index value trie =
                 match Map.tryFind char branchMap with
                 | None -> empty
                 | Some subTrie -> subTrie
-            let newTrie = addInternal key keyStr (index + 1) value subTrie
-            let newMap = Map.add char newTrie branchMap
+            let trie2 = addInternal key keyStr (index + 1) value subTrie
+            let newMap = Map.add char trie2 branchMap
             Branch (branchKey, optBranchValue, newMap)
             
 let add key value trie =
@@ -61,8 +61,8 @@ let rec addMany kvps trie =
     else
         let kvpHead = Seq.head kvps
         let kvpTail = Seq.skip 1 kvps
-        let newTrie = add (fst kvpHead) (snd kvpHead) trie
-        addMany kvpTail newTrie
+        let trie2 = add (fst kvpHead) (snd kvpHead) trie
+        addMany kvpTail trie2
 
 let remove key trie =
     trie // TODO: implement

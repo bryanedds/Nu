@@ -82,8 +82,8 @@ let handleRenderMessage renderer renderMessage =
                 let renderAssetTrie = LunTrie.ofList renderAssets
                 { renderer with RenderAssetMap = LunTrie.add packageNameLun renderAssetTrie renderer.RenderAssetMap }
             | Some renderAssetTrie ->
-                let newRenderAssetTrie = LunTrie.addMany renderAssets renderAssetTrie
-                { renderer with RenderAssetMap = LunTrie.add packageNameLun renderAssetTrie renderer.RenderAssetMap }
+                let renderAssetTrie2 = LunTrie.addMany renderAssets renderAssetTrie
+                { renderer with RenderAssetMap = LunTrie.add packageNameLun renderAssetTrie2 renderer.RenderAssetMap }
     | HintRenderingPackageDisuse hintPackageDisuse ->
         let optAssets = Assets.tryLoadAssets "Rendering" hintPackageDisuse.PackageName hintPackageDisuse.FileName
         match optAssets with
@@ -131,6 +131,6 @@ let doRender renderDescriptors renderer =
     | _ -> trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
 let render renderMessages renderDescriptors renderer =
-    let newRenderer = handleRenderMessages renderMessages renderer
-    doRender renderDescriptors newRenderer
-    newRenderer
+    let renderer2 = handleRenderMessages renderMessages renderer
+    doRender renderDescriptors renderer2
+    renderer2
