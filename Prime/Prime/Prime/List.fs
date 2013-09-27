@@ -91,9 +91,9 @@ let rec roll roller state (list : 'a list) =
         let curr = list.[0]
         let next = list.[1]
         let rest = list.Tail
-        let newState = roller state curr next
-        if rest.Tail.IsEmpty then newState
-        else roll roller newState rest
+        let state2 = roller state curr next
+        if rest.Tail.IsEmpty then state2
+        else roll roller state2 rest
 
 /// Windowed for lists.
 let windowed count (list : 'a list) =
@@ -110,8 +110,8 @@ let tryHead list =
     List.tryFind (fun _ -> true) list
     
 /// Replace a list's head.
-let replaceHead list newHead =
-    newHead :: List.tail list
+let replaceHead list head =
+    head :: List.tail list
 
 /// Truncate for lists.
 let truncate count list =

@@ -10,9 +10,9 @@ let singleton elem = List.toDictionary [elem]
 
 /// Map over a dictionary. A new dictionary is produced.
 let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) =
-    let newDictionary = Dictionary<'k, 'v> ()
-    for kvp in dictionary do newDictionary.Add (kvp.Key, mapper kvp)
-    newDictionary
+    let dictionary2 = Dictionary<'k, 'v> ()
+    for kvp in dictionary do dictionary2.Add (kvp.Key, mapper kvp)
+    dictionary2
 
 /// Dictionary extension methods.
 type Dictionary<'k, 'v> with

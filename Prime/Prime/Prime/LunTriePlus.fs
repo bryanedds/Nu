@@ -34,8 +34,8 @@ let rec addMany kvps triePlus =
     else
         let kvpHead = Seq.head kvps
         let kvpTail = Seq.skip 1 kvps
-        let newTrie = add (fst kvpHead) (snd kvpHead) triePlus
-        addMany kvpTail newTrie
+        let trie2 = add (fst kvpHead) (snd kvpHead) triePlus
+        addMany kvpTail trie2
 
 let ofList kvps =
     addMany kvps empty

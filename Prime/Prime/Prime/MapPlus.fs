@@ -34,8 +34,8 @@ let rec addMany kvps triePlus =
     else
         let kvpHead = Seq.head kvps
         let kvpTail = Seq.skip 1 kvps
-        let newTrie = add (fst kvpHead) (snd kvpHead) triePlus
-        addMany kvpTail newTrie
+        let trie2 = add (fst kvpHead) (snd kvpHead) triePlus
+        addMany kvpTail trie2
 
 let remove (versionKey, trieKey) triePlus =
     let optTrie = Map.tryFind versionKey triePlus
@@ -48,8 +48,8 @@ let rec removeMany keys trie =
     else
         let keyHead = Seq.head keys
         let keyTail = Seq.skip 1 keys
-        let newTrie = remove keyHead trie
-        removeMany keyTail newTrie
+        let trie2 = remove keyHead trie
+        removeMany keyTail trie2
 
 let ofList kvps =
     addMany kvps empty
