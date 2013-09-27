@@ -1,8 +1,10 @@
 ﻿module Nu.World
 open System
 open FSharpx
+open FSharpx.Lens.Operators
 open SDL2
 open OpenTK
+open Nu.Math
 open Nu.Physics
 open Nu.Rendering
 open Nu.Input
@@ -12,12 +14,13 @@ open Nu.Sdl
 
 // TODO: consider converting these from slash-delimited strings
 let MouseLeft0 = [Lun.make "mouse"; Lun.make "left"; Lun.make "0"]
-let ClickMouseLeft0 = Lun.make "click" :: MouseLeft0
 let DownMouseLeft0 = Lun.make "down" :: MouseLeft0
 let UpMouseLeft0 = Lun.make "up" :: MouseLeft0
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroup = TestScreenAddress @ [Lun.make "testGroup"]
 let TestButton = TestGroup @ [Lun.make "testButton"]
+let DownTestButton = Lun.make "down" :: TestButton
+let UpTestButton = Lun.make "up" :: TestButton
 let ClickTestButton = Lun.make "click" :: TestButton
 
 // WISDOM: On avoiding threads where possible...
@@ -66,6 +69,21 @@ and [<ReferenceEquality>] World =
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list
       SdlDeps : SdlDeps }
+    with
+        static member mouseState =
+            { Get = fun this -> this.MouseState
+              Set = fun mouseState this -> { this with MouseState = mouseState }}
+        static member game =
+            { Get = fun this -> this.Game
+              Set = fun game this -> { this with Game = game }}
+        static member optActiveScreenAddress =
+            World.game >>| Game.optActiveScreenAddress
+        static member screen (address : Address) =
+            World.game >>| Game.screen address
+        static member group (address : Address) =
+            World.game >>| Game.group address
+        static member entity (address : Address) =
+            World.game >>| Game.entity address
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -77,69 +95,6 @@ and IWorldComponent =
         // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
         end
 
-/// Find a screen at the given address, failing with exception otherwise.
-let inline findScreenInWorld address (world : World) =
-    findScreenInGame address world.Game
-
-/// Try to find a screen at the given address.
-let inline tryFindScreenInWorld address (world : World) =
-    tryFindScreenInGame address world.Game
-
-/// Find a group at the given address, failing with exception otherwise.
-let inline findGroupInWorld address (world : World) =
-    findGroupInGame address world.Game
-
-/// Try to find a group at the given address.
-let inline tryFindGroupInWorld address (world : World) =
-    tryFindGroupInGame address world.Game
-
-/// Find an entity at the given address, failing with exception otherwise.
-let inline findEntityInWorld address (world : World) =
-    findEntityInGame address world.Game
-
-/// Try to find an entity at the given address.
-let inline tryEntityFindInWorld address (world : World) =
-    tryFindEntityInGame address world.Game
-
-/// Set a screen at the given address.
-let inline setScreenInWorld address screen world =
-    { world with Game = setScreenInGame address screen world.Game }
-
-/// Remove a screen at the given address.
-let inline removeScreenInWorld address world =
-    { world with Game = removeScreenInGame address world.Game }
-
-/// Set a group at the given address.
-let inline setGroupInWorld address group world =
-    { world with Game = setGroupInGame address group world.Game }
-
-/// Remove a group at the given address.
-let inline removeGroupInWorld address world =
-    { world with Game = removeGroupInGame address world.Game }
-
-/// Set an entity at the given address.
-let inline setEntityInWorld address entity world =
-    { world with Game = setEntityInGame address entity world.Game }
-
-/// Remove an entity at the given address.
-let inline removeEntityInWorld address world =
-    { world with Game = removeEntityInGame address world.Game }
-
-let withButton4 fn errorFn address world : World =
-    let entity = findEntityInWorld address world
-    match entity.EntitySemantic with
-    | Gui gui ->
-        match gui.GuiSemantic with
-        | Button button -> fn entity gui button
-        | _ -> errorFn ("Expecting button at address '" + str address + "'.")
-    | _ -> errorFn ("Expecting gui at address '" + str address + "'.")
-
-let withButton fn address world =
-    withButton4 fn failwith address world
-
-let tryWithButton fn address world =
-    withButton4 fn (fun _ -> world) address world
-
 /// Publish a message to the given address.
 let publish address message world : World =
     let optSubMap = Map.tryFind address world.Subscriptions
@@ -147,7 +102,7 @@ let publish address message world : World =
     | None -> world
     | Some subMap ->
         Map.fold
-            (fun newWorld subscriber (Subscription subscription) -> subscription address subscriber message newWorld)
+            (fun world2 subscriber (Subscription subscription) -> subscription address subscriber message world2)
             world
             subMap
 
@@ -169,15 +124,15 @@ let unsubscribe address subscriber world : World =
     match optSubMap with
     | None -> world
     | Some subMap ->
-        let newSubMap = Map.remove subscriber subMap in
-        let newSubscriptions = Map.add address newSubMap subs
-        { world with Subscriptions = newSubscriptions }
+        let subMap2 = Map.remove subscriber subMap in
+        let subscriptions2 = Map.add address subMap2 subs
+        { world with Subscriptions = subscriptions2 }
 
 /// Execute a procedure within the context of a given subscription at the given address.
 let withSubscription address subscription subscriber procedure world : World =
-    let newWorld = subscribe address subscriber subscription world
-    let newWorld2 = procedure newWorld
-    unsubscribe address subscriber newWorld2
+    let world2 = subscribe address subscriber subscription world
+    let world3 = procedure world2
+    unsubscribe address subscriber world3
 
 let getComponentAudioDescriptors (world : World) : AudioDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
@@ -202,34 +157,31 @@ let getComponentRenderDescriptors (world : World) : RenderDescriptor rQueue =
     List.collect (fun descs -> descs) descriptorLists
 
 let getWorldRenderDescriptors world =
-    match world.Game.OptActiveScreen with
+    match get world World.optActiveScreenAddress with
     | None -> []
     | Some activeScreenAddress ->
-        let optActiveScreen = tryFindScreenInWorld activeScreenAddress world
-        match optActiveScreen with
-        | None -> debug ("Could not find active screen with address '" + str activeScreenAddress + "'."); []
-        | Some activeScreen ->
-            let groups = LunTrie.toValueSeq activeScreen.Groups
-            let optDescriptorSeqs =
-                Seq.map
-                    (fun group ->
-                        let entities = LunTrie.toValueSeq group.Entities
-                        Seq.map
-                            (fun entity ->
-                                match entity.EntitySemantic with
-                                | Gui gui ->
-                                    match gui.GuiSemantic with
-                                    | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
-                                    | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
-                                | Actor actor ->
-                                    match actor.ActorSemantic with
-                                    | Avatar -> None
-                                    | Item -> None)
-                            entities)
-                    groups
-            let optDescriptors = Seq.concat optDescriptorSeqs
-            let descriptors = Seq.definitize optDescriptors
-            List.ofSeq descriptors
+        let activeScreen = get world (World.screen activeScreenAddress)
+        let groups = LunTrie.toValueSeq activeScreen.Groups
+        let optDescriptorSeqs =
+            Seq.map
+                (fun group ->
+                    let entities = LunTrie.toValueSeq group.Entities
+                    Seq.map
+                        (fun entity ->
+                            match entity.EntitySemantic with
+                            | Gui gui ->
+                                match gui.GuiSemantic with
+                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
+                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
+                            | Actor actor ->
+                                match actor.ActorSemantic with
+                                | Avatar -> None
+                                | Item -> None)
+                        entities)
+                groups
+        let optDescriptors = Seq.concat optDescriptorSeqs
+        let descriptors = Seq.definitize optDescriptors
+        List.ofSeq descriptors
 
 let getRenderDescriptors (world : World) : RenderDescriptor rQueue =
     let componentDescriptors = getComponentRenderDescriptors world
@@ -241,9 +193,9 @@ let render (world : World) : World =
     let renderMessages = world.RenderMessages
     let renderDescriptors = getRenderDescriptors world
     let renderer = world.Renderer
-    let newRenderer = Rendering.render renderMessages renderDescriptors renderer
-    let newWorld = {{ world with RenderMessages = [] } with Renderer = newRenderer }
-    newWorld
+    let renderer2 = Rendering.render renderMessages renderDescriptors renderer
+    let world2 = {{ world with RenderMessages = [] } with Renderer = renderer2 }
+    world2
 
 let handleRenderExit (world : World) : World =
     let renderer = world.Renderer
@@ -262,8 +214,8 @@ let handleIntegrationMessages integrationMessages world : World =
 /// Integrate the world.
 let integrate (world : World) : World =
     let integrationMessages = Physics.integrate world.PhysicsMessages world.Integrator
-    let newWorld = { world with PhysicsMessages = [] }
-    handleIntegrationMessages integrationMessages newWorld
+    let world2 = { world with PhysicsMessages = [] }
+    handleIntegrationMessages integrationMessages world2
 
 let createTestGame () =
     
@@ -280,27 +232,27 @@ let createTestGame () =
 
     let testButtonEntity =
         { ID = getNuId ()
-          Enabled = true
-          Visible = true
+          IsEnabled = true
+          IsVisible = true
           EntitySemantic = Gui testButtonGui }
           
     let testGroup =
         { ID = getNuId ()
-          Enabled = true
-          Visible = true
+          IsEnabled = true
+          IsVisible = true
           Entities = LunTrie.singleton (Lun.make "testButton") testButtonEntity }
 
     let testScreen =
         { ID = getNuId ()
-          Enabled = true
-          Visible = true
+          IsEnabled = true
+          IsVisible = true
           Groups = LunTrie.singleton (Lun.make "testGroup") testGroup
           ScreenSemantic = TestScreen { Unused = () }}
 
     { ID = getNuId ()
-      Enabled = false
+      IsEnabled = false
       Screens = LunTrie.singleton (Lun.make "testScreen") testScreen
-      OptActiveScreen = Some TestScreenAddress }
+      OptActiveScreenAddress = Some TestScreenAddress }
 
 let createTestWorld sdlDeps =
 
@@ -330,46 +282,33 @@ let createTestWorld sdlDeps =
             TestButton
             (fun address subscriber message world ->
                 match message.Data with
-                | MouseButtonData (position, button) ->
-                    withButton
-                        (fun entity gui button ->
-                            if position.X >= gui.Position.X &&
-                               position.X < gui.Position.X + gui.Size.X &&
-                               position.Y >= gui.Position.Y &&
-                               position.Y < gui.Position.Y + gui.Size.Y
-                            then
-                                let newButton = { button with IsDown = true }
-                                let newGui = { gui with GuiSemantic = Button newButton }
-                                let newEntity = { entity with EntitySemantic = Gui newGui }
-                                let newWorld = setEntityInWorld subscriber newEntity world
-                                publish ClickTestButton { Handled = false; Data = NoData } newWorld
-                            else world)
-                        subscriber
-                        world
+                | MouseButtonData (mousePosition, _) ->
+                    let entity = get world (World.entity subscriber)
+                    let position = get entity Entity.guiPosition
+                    let size = get entity Entity.guiSize
+                    if isInBox3 mousePosition position size then
+                        let entity2 = set true entity Entity.buttonIsDown
+                        let world2 = set entity2 world (World.entity subscriber)
+                        publish DownTestButton { Handled = false; Data = NoData } world2
+                    else world
                 | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
             testWorld2
 
     subscribe
-        ClickMouseLeft0
+        UpMouseLeft0
         TestButton
         (fun address subscriber message world ->
             match message.Data with
-            | MouseButtonData (position, button) ->
-                withButton
-                    (fun entity gui button ->
-                        if position.X >= gui.Position.X &&
-                           position.X < gui.Position.X + gui.Size.X &&
-                           position.Y >= gui.Position.Y &&
-                           position.Y < gui.Position.Y + gui.Size.Y
-                        then
-                            let newButton = { button with IsDown = false }
-                            let newGui = { gui with GuiSemantic = Button newButton }
-                            let newEntity = { entity with EntitySemantic = Gui newGui }
-                            let newWorld = setEntityInWorld subscriber newEntity world
-                            publish ClickTestButton { Handled = false; Data = NoData } newWorld
-                        else world)
-                    subscriber
-                    world
+            | MouseButtonData (mousePosition, _) ->
+                let entity = get world (World.entity subscriber)
+                let position = get entity Entity.guiPosition
+                let size = get entity Entity.guiSize
+                let resultWorld =
+                    let entity2 = set false entity Entity.buttonIsDown
+                    let world2 = set entity2 world (World.entity subscriber)
+                    publish UpTestButton { Handled = false; Data = NoData } world2
+                if isInBox3 mousePosition position size then publish ClickTestButton { Handled = false; Data = NoData } resultWorld
+                else resultWorld
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
         testWorld3
 
@@ -386,10 +325,10 @@ let run sdlConfig =
                 let mouseState = world.MouseState
                 if event.button.button = byte SDL.SDL_BUTTON_LEFT then
                     let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
-                    let newMouseState = { mouseState with MouseLeftDown = true }
-                    let newWorld = { world with MouseState = newMouseState }
-                    let newWorld2 = publish DownMouseLeft0 { Handled = false; Data = messageData } newWorld
-                    (true, newWorld2)
+                    let mouseState2 = { mouseState with MouseLeftDown = true }
+                    let world2 = { world with MouseState = mouseState2 }
+                    let world3 = publish DownMouseLeft0 { Handled = false; Data = messageData } world2
+                    (true, world3)
                 else (true, world)
             | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                 let mouseState = world.MouseState
@@ -398,17 +337,16 @@ let run sdlConfig =
                     let newMouseState = { mouseState with MouseLeftDown = false }
                     let newWorld = { world with MouseState = newMouseState }
                     let newWorld2 = publish UpMouseLeft0 { Handled = false; Data = messageData } newWorld
-                    let newWorld3 = publish ClickMouseLeft0 { Handled = false; Data = messageData } newWorld2
-                    (true, newWorld3)
+                    (true, newWorld2)
                 else (true, world)
             | _ ->
                 (true, world))
         (fun sdlDeps world ->
-            let newWorld = integrate world
-            (true, newWorld))
+            let world2 = integrate world
+            (true, world2))
         (fun sdlDeps world ->
-            let newWorld = render world
-            play newWorld)
+            let world2 = render world
+            play world2)
         (fun sdlDeps world ->
             handleRenderExit world)
         sdlConfig

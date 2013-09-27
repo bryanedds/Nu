@@ -24,11 +24,11 @@ type DataRecording =
     | BRecording of byte
 
 let setA setter =
-    ((fun data -> let newA = setter data.A in { data with A = newA }),
+    ((fun data -> let a2 = setter data.A in { data with A = a2 }),
      (fun data -> ARecording data.A))
 
 let setB setter =
-    ((fun data -> let newB = setter data.B in { data with B = newB }),
+    ((fun data -> let b2 = setter data.B in { data with B = b2 }),
      (fun data -> BRecording data.B))
 
 let [<EntryPoint>] main _ =
@@ -73,10 +73,10 @@ let reflectionTest () =
     let betaA = A (0, alpha)
     let betaB = B (Some betaA)
     let betaC = C (Map.singleton 0 betaB)
-    let sb = new StringBuilder()
-    let xmlSerializer = DataContractSerializer(typeof<Beta>); 
-    xmlSerializer.WriteObject(new XmlTextWriter(new StringWriter(sb)), betaC)
-    let sr = sb.ToString()
+    let sb = StringBuilder ()
+    let xmlSerializer = DataContractSerializer typeof<Beta>
+    xmlSerializer.WriteObject (XmlTextWriter (StringWriter sb), betaC)
+    let sr = str sb
     printfn "%A" sr
 
 let [<EntryPoint>] main _ =

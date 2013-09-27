@@ -74,16 +74,16 @@ let advanceSdl handleEvent handleUpdate sdlDeps world =
 let renderSdl handleRender sdlDeps world =
     ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, 0uy, 0uy, 179uy, 255uy))
     ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
-    let newWorld = handleRender sdlDeps world
+    let world2 = handleRender sdlDeps world
     SDL.SDL_RenderPresent sdlDeps.RenderContext
-    newWorld
+    world2
     
 let rec runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world keepRunning =
     if keepRunning then
-        let (newKeepRunning, newWorld) = advanceSdl handleEvent handleUpdate sdlDeps world
-        if newKeepRunning then
-            let newWorld2 = renderSdl handleRender sdlDeps newWorld
-            runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps newWorld2 newKeepRunning
+        let (keepRunning2, world2) = advanceSdl handleEvent handleUpdate sdlDeps world
+        if keepRunning2 then
+            let world3 = renderSdl handleRender sdlDeps world2
+            runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world3 keepRunning2
         else ignore (handleExit sdlDeps world)
 
 let runSdl createWorld handleEvent handleUpdate handleRender handleExit sdlConfig =

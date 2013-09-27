@@ -13,9 +13,13 @@
 module Nu.Game
 open System
 open OpenTK
+open FSharpx
+open FSharpx.Lens.Operators
 open Nu.Core
 open Nu.Audio
 open Nu.Rendering
+
+let inline emptyFailure _ = None
 
 let getNuId = createGetNextId ()
 
@@ -30,7 +34,11 @@ type [<StructuralEquality; NoComparison>] Button =
       UpSprite : Sprite
       DownSprite : Sprite
       ClickSound : SoundMessage }
-      
+    with
+        static member isDown =
+            { Get = fun this -> this.IsDown
+              Set = fun isDown this -> { this with IsDown = isDown }}
+
 type [<StructuralEquality; NoComparison>] Label =
     { Sprite : Sprite }
 
@@ -48,6 +56,21 @@ type [<StructuralEquality; NoComparison>] Gui =
     { Position : Vector2
       Size : Vector2
       GuiSemantic : GuiSemantic }
+    with
+        static member position =
+            { Get = fun this -> this.Position
+              Set = fun position this -> { this with Position = position }}
+        static member size =
+            { Get = fun this -> this.Size
+              Set = fun size this -> { this with Size = size }}
+        static member button =
+            { Get = fun this -> match this.GuiSemantic with Button button -> button | _ -> failwith "Gui is not a button."
+              Set = fun button this -> match this.GuiSemantic with Button _ -> { this with GuiSemantic = Button button } | _ -> failwith "Gui is not a button."}
+        static member label =
+            { Get = fun this -> match this.GuiSemantic with Label label -> label | _ -> failwith "Gui is not a label."
+              Set = fun label this -> match this.GuiSemantic with Label _ -> { this with GuiSemantic = Label label } | _ -> failwith "Gui is not a label."}
+        static member buttonIsDown =
+            Gui.button >>| Button.isDown
 
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
@@ -75,17 +98,70 @@ type [<StructuralEquality; NoComparison>] EntitySemantic =
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Entity =
     { ID : ID
-      Enabled : bool
-      Visible : bool
+      IsEnabled : bool
+      IsVisible : bool
       EntitySemantic : EntitySemantic }
+    with
+        static member isEnabled =
+            { Get = fun this -> this.IsEnabled
+              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
+        static member isVisible =
+            { Get = fun this -> this.IsVisible
+              Set = fun isVisible this -> { this with IsVisible = isVisible }}
+        static member gui =
+            { Get = fun this -> match this.EntitySemantic with Gui gui -> gui | _ -> failwith "Entity is not a gui."
+              Set = fun gui this -> match this.EntitySemantic with Gui _ -> { this with EntitySemantic = Gui gui } | _ -> failwith "Entity is not a gui."}
+        static member guiPosition =
+            Entity.gui >>| Gui.position
+        static member guiSize =
+            Entity.gui >>| Gui.size
+        static member button =
+            Entity.gui >>| Gui.button
+        static member buttonIsDown =
+            Entity.gui >>| Gui.buttonIsDown
+        static member label =
+            Entity.gui >>| Gui.label
 
 /// A game entity group.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Group =
     { ID : ID
-      Enabled : bool
-      Visible : bool
+      IsEnabled : bool
+      IsVisible : bool
       Entities : Entity LunTrie }
+    with
+        static member isEnabled =
+            { Get = fun this -> this.IsEnabled
+              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
+        static member isVisible =
+            { Get = fun this -> this.IsVisible
+              Set = fun isVisible this -> { this with IsVisible = isVisible }}
+        static member getEntity3 this successFn errorFn address =
+            match address with
+            | [] -> errorFn ("Invalid address '" + str address + "'.")
+            | [head] ->
+                let optEntity = LunTrie.tryFind head this.Entities
+                match optEntity with
+                | None -> errorFn ("No entity at address '" + str address + "'.")
+                | Some entity -> successFn entity
+            | _ :: _ -> errorFn ("Inavlid address for entity '" + str address + "'.")
+        static member setEntity3 this errorFn address entity =
+            match address with
+            | [] -> errorFn ("Invalid address '" + str address + "'.")
+            | [head] -> { this with Entities = LunTrie.add head entity this.Entities }
+            | _ :: _ -> errorFn ("Inavlid address for entity '" + str address + "'.")
+        static member entity address =
+            { Get = fun this -> Group.getEntity3 this id failwith address
+              Set = fun entity this -> Group.setEntity3 this failwith address entity }
+        static member optEntity address =
+            { Get = fun this -> Group.getEntity3 this (Some) emptyFailure address
+              Set = fun optEntity this ->
+                match optEntity with
+                | None -> { this with Entities = LunTrie.remove address this.Entities }
+                | Some entity -> Group.setEntity3 this (fun _ -> this) address entity }
+        static member entities =
+            { Get = fun this -> this.Entities
+              Set = fun entities this -> { this with Entities = entities }}
 
 type [<StructuralEquality; NoComparison>] TestScreen =
     { Unused : unit }
@@ -103,177 +179,90 @@ type [<StructuralEquality; NoComparison>] ScreenSemantic =
 /// A serializable value type
 type [<StructuralEquality; NoComparison>] Screen =
     { ID : ID
-      Enabled : bool
-      Visible : bool
+      IsEnabled : bool
+      IsVisible : bool
       Groups : Group LunTrie
       ScreenSemantic : ScreenSemantic }
+    with
+        static member isEnabled =
+            { Get = fun this -> this.IsEnabled
+              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
+        static member isVisible =
+            { Get = fun this -> this.IsVisible
+              Set = fun isVisible this -> { this with IsVisible = isVisible }}
+        static member getGroup3 this successFn errorFn address =
+            match address with
+            | [] -> errorFn ("Invalid address '" + str address + "'.")
+            | [head] ->
+                let optGroup = LunTrie.tryFind head this.Groups
+                match optGroup with
+                | None -> errorFn ("No group at address '" + str address + "'.")
+                | Some group -> successFn group
+            | _ :: _ -> errorFn ("Inavlid address for group '" + str address + "'.")
+        static member setGroup3 (this : Screen) errorFn address group =
+            match address with
+            | [] -> errorFn ("Invalid address '" + str address + "'.")
+            | [head] -> { this with Groups = LunTrie.add head group this.Groups }
+            | _ :: _ -> errorFn ("Inavlid address for group '" + str address + "'.")
+        static member group address =
+            { Get = fun this -> Screen.getGroup3 this id failwith address
+              Set = fun group this -> Screen.setGroup3 this failwith address group }
+        static member optGroup address =
+            { Get = fun this -> Screen.getGroup3 this (Some) emptyFailure address
+              Set = fun optGroup this ->
+                match optGroup with
+                | None -> { this with Groups = LunTrie.remove address this.Groups }
+                | Some group -> Screen.setGroup3 this (fun _ -> this) address group }
+        static member groups =
+            { Get = fun this -> this.Groups
+              Set = fun groups this -> { this with Groups = groups }}
+        static member entity address =
+            Screen.group ([List.head address]) >>| Group.entity (List.tail address)
 
 /// A game.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Game =
     { ID : ID
-      Enabled : bool
+      IsEnabled : bool
       Screens : Screen LunTrie
-      OptActiveScreen : Address option }
-
-let inline tryFailure _ = None
-
-let findScreenInGame4 successFn errorFn address game =
-    match address with
-    | [] -> errorFn ("Invalid address '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> errorFn ("No screen at address '" + str address + "'.")
-        | Some screen -> successFn screen
-
-let inline findScreenInGame address game =
-    findScreenInGame4 id failwith address game
-
-let inline tryFindScreenInGame address game =
-    findScreenInGame4 (Some) tryFailure address game
-
-let findGroupInGame4 successFn errorFn address game =
-    match address with
-    | [] -> errorFn ("Invalid address '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> errorFn ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
+      OptActiveScreenAddress : Address option }
+    with
+        static member isEnabled =
+            { Get = fun this -> this.IsEnabled
+              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
+        static member isVisible =
+            { Get = fun this -> this.IsVisible
+              Set = fun isVisible this -> { this with IsVisible = isVisible }}
+        static member getScreen3 this successFn errorFn address =
+            match address with
             | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | head :: tail ->
-                let optGroup = LunTrie.tryFind head screen.Groups
-                match optGroup with
-                | None -> errorFn ("No group at address '" + str address + "'.")
-                | Some group -> successFn group
-
-let inline findGroupInGame address game =
-    findGroupInGame4 id failwith address game
-
-let inline tryFindGroupInGame address game =
-    findGroupInGame4 (Some) tryFailure address game
-
-let findEntityInGame4 successFn errorFn address game =
-    match address with
-    | [] -> errorFn ("Invalid address '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> errorFn ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
+            | [head] ->
+                let optScreen = LunTrie.tryFind head this.Screens
+                match optScreen with
+                | None -> errorFn ("No screen at address '" + str address + "'.")
+                | Some screen -> successFn screen
+            | _ :: _ -> errorFn ("Inavlid address for screen '" + str address + "'.")
+        static member setScreen3 (this : Game) errorFn address screen =
+            match address with
             | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | head :: tail ->
-                let optGroup = LunTrie.tryFind head screen.Groups
-                match optGroup with
-                | None -> errorFn ("No group at address '" + str address + "'.")
-                | Some group ->
-                    match tail with
-                    | [] -> errorFn ("Invalid address '" + str address + "'.")
-                    | head :: tail ->
-                        let optEntity = LunTrie.tryFind head group.Entities
-                        match optEntity with
-                        | None -> errorFn ("No entity at address '" + str address + "'.")
-                        | Some entity -> successFn entity
-
-let inline findEntityInGame address game =
-    findEntityInGame4 id failwith address game
-
-let inline tryFindEntityInGame address game =
-    findEntityInGame4 (Some) tryFailure address game
-
-let setScreenInGame address screen game : Game =
-    match address with
-    | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [head] -> { game with Screens = LunTrie.add head screen game.Screens }
-    | _ :: _ -> failwith ("Invalid address for screen '" + str address + "'.")
-
-let setGroupInGame address group game : Game =
-    match address with
-    | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [_] -> failwith ("Invalid address for group '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> failwith ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
-            | [] -> failwith ("Invalid address for group '" + str address + "'.")
-            | [head'] ->
-                let newScreen = { screen with Groups = LunTrie.add head' group screen.Groups }
-                { game with Screens = LunTrie.add head newScreen game.Screens }
-            | _ :: _ -> failwith ("Invalid address for group '" + str address + "'.")
-
-let setEntityInGame address entity game : Game =
-    match address with
-    | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> failwith ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
-            | [] -> failwith ("Invalid address for entity '" + str address + "'.")
-            | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
-            | head' :: tail' ->
-                let optGroup = LunTrie.tryFind head' screen.Groups
-                match optGroup with
-                | None -> failwith ("No group at address '" + str address + "'.")
-                | Some group ->
-                    match tail' with
-                    | [] -> failwith ("Invalid address for entity '" + str address + "'.")
-                    | [head''] ->
-                        let newGroup = { group with Entities = LunTrie.add head'' entity group.Entities }
-                        let newScreen = { screen with Groups = LunTrie.add head' newGroup screen.Groups }
-                        { game with Screens = LunTrie.add head newScreen game.Screens }
-                    | _ :: _ -> failwith ("Invalid address for entity '" + str address + "'.")
-
-let removeScreenInGame address game : Game =
-    match address with
-    | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [head] -> { game with Screens = LunTrie.remove head game.Screens }
-    | _ :: _ -> failwith ("Invalid address for screen '" + str address + "'.")
-
-let removeGroupInGame address game : Game =
-    match address with
-    | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [_] -> failwith ("Invalid address for group '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> failwith ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
-            | [] -> failwith ("Invalid address for group '" + str address + "'.")
-            | [head'] ->
-                let newScreen = { screen with Groups = LunTrie.remove head' screen.Groups }
-                { game with Screens = LunTrie.add head newScreen game.Screens }
-            | _ :: _ -> failwith ("Invalid address for group '" + str address + "'.")
-
-let removeEntityInGame address game : Game =
-    match address with
-    | [] -> failwith ("Invalid address '" + str address + "'.")
-    | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
-    | head :: tail ->
-        let optScreen = LunTrie.tryFind head game.Screens
-        match optScreen with
-        | None -> failwith ("No screen at address '" + str address + "'.")
-        | Some screen ->
-            match tail with
-            | [] -> failwith ("Invalid address for entity '" + str address + "'.")
-            | [_] -> failwith ("Invalid address for entity '" + str address + "'.")
-            | head' :: tail' ->
-                let optGroup = LunTrie.tryFind head' screen.Groups
-                match optGroup with
-                | None -> failwith ("No group at address '" + str address + "'.")
-                | Some group ->
-                    match tail' with
-                    | [] -> failwith ("Invalid address for entity '" + str address + "'.")
-                    | [head''] ->
-                        let newGroup = { group with Entities = LunTrie.remove head'' group.Entities }
-                        let newScreen = { screen with Groups = LunTrie.add head' newGroup screen.Groups }
-                        { game with Screens = LunTrie.add head newScreen game.Screens }
-                    | _ :: _ -> failwith ("Invalid address for entity '" + str address + "'.")
+            | [head] -> { this with Screens = LunTrie.add head screen this.Screens }
+            | _ :: _ -> errorFn ("Inavlid address for screen '" + str address + "'.")
+        static member screen address =
+            { Get = fun this -> Game.getScreen3 this id failwith address
+              Set = fun screen this -> Game.setScreen3 this failwith address screen }
+        static member optScreen address =
+            { Get = fun this -> Game.getScreen3 this (Some) emptyFailure address
+              Set = fun optScreen this ->
+                match optScreen with
+                | None -> { this with Screens = LunTrie.remove address this.Screens }
+                | Some screen -> Game.setScreen3 this (fun _ -> this) address screen }
+        static member screens =
+            { Get = fun this -> this.Screens
+              Set = fun screens this -> { this with Screens = screens }}
+        static member optActiveScreenAddress =
+            { Get = fun this -> this.OptActiveScreenAddress
+              Set = fun optActiveScreenAddress this -> { this with OptActiveScreenAddress = optActiveScreenAddress }}
+        static member group (address : Address) =
+            Game.screen ([List.head address]) >>| Screen.group (List.tail address)
+        static member entity (address : Address) =
+            Game.screen ([List.head address]) >>| Screen.entity (List.tail address)
