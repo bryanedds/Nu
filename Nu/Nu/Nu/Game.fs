@@ -17,8 +17,6 @@ open Nu.Core
 open Nu.Audio
 open Nu.Rendering
 
-let inline emptyFailure _ = None
-
 let getNuId = createGetNextId ()
 
 /// Specifies the address of an element in a game.
@@ -237,11 +235,7 @@ type [<StructuralEquality; NoComparison>] Entity =
               Set = fun optGuiButton this ->
                 match optGuiButton with
                 | None -> failwith "Cannot set Entity.optGui to None."
-                | Some guiButton ->
-                    let optGui = get this Entity.optGui
-                    match optGui with
-                    | None -> failwith "Entity is not a gui."
-                    | Some _ -> set guiButton this Entity.guiButton }
+                | Some guiButton -> set guiButton this Entity.guiButton }
 
 /// A game entity group.
 /// A serializable value type.
