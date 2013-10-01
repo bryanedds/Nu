@@ -70,20 +70,36 @@ and [<ReferenceEquality>] World =
       Components : IWorldComponent list
       SdlDeps : SdlDeps }
     with
-        static member mouseState =
-            { Get = fun this -> this.MouseState
-              Set = fun mouseState this -> { this with MouseState = mouseState }}
         static member game =
             { Get = fun this -> this.Game
               Set = fun game this -> { this with Game = game }}
+        
         static member optActiveScreenAddress =
             World.game >>| Game.optActiveScreenAddress
+        
         static member screen (address : Address) =
             World.game >>| Game.screen address
+        
         static member group (address : Address) =
             World.game >>| Game.group address
+        
         static member entity (address : Address) =
             World.game >>| Game.entity address
+        
+        static member entityGui (address : Address) =
+            World.game >>| Game.entityGui address
+        
+        static member entityGuiButton (address : Address) =
+            World.game >>| Game.entityGuiButton address
+        
+        static member optEntity (address : Address) =
+            World.game >>| Game.optEntity address
+        
+        static member optEntityGui (address : Address) =
+            World.game >>| Game.optEntityGui address
+        
+        static member optEntityGuiButton (address : Address) =
+            World.game >>| Game.optEntityGuiButton address
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -283,13 +299,13 @@ let createTestWorld sdlDeps =
             (fun address subscriber message world ->
                 match message.Data with
                 | MouseButtonData (mousePosition, _) ->
-                    let entity = get world (World.entity subscriber)
-                    let position = get entity Entity.guiPosition
-                    let size = get entity Entity.guiSize
-                    if isInBox3 mousePosition position size then
-                        let entity2 = set true entity Entity.buttonIsDown
-                        let world2 = set entity2 world (World.entity subscriber)
-                        publish DownTestButton { Handled = false; Data = NoData } world2
+                    let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+                    if entity.IsEnabled && entity.IsVisible then
+                        if isInBox3 mousePosition gui.Position gui.Size then
+                            let button2 = { button with IsDown = true }
+                            let world2 = set (entity, gui, button2) world (World.entityGuiButton subscriber)
+                            publish DownTestButton { Handled = false; Data = NoData } world2
+                        else world
                     else world
                 | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
             testWorld2
@@ -300,15 +316,15 @@ let createTestWorld sdlDeps =
         (fun address subscriber message world ->
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let entity = get world (World.entity subscriber)
-                let position = get entity Entity.guiPosition
-                let size = get entity Entity.guiSize
-                let resultWorld =
-                    let entity2 = set false entity Entity.buttonIsDown
-                    let world2 = set entity2 world (World.entity subscriber)
-                    publish UpTestButton { Handled = false; Data = NoData } world2
-                if isInBox3 mousePosition position size then publish ClickTestButton { Handled = false; Data = NoData } resultWorld
-                else resultWorld
+                let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+                if entity.IsEnabled && entity.IsVisible then
+                    let world2 =
+                        let button2 = { button with IsDown = false }
+                        let world2b = set (entity, gui, button2) world (World.entityGuiButton subscriber)
+                        publish UpTestButton { Handled = false; Data = NoData } world2b
+                    if isInBox3 mousePosition gui.Position gui.Size then publish ClickTestButton { Handled = false; Data = NoData } world2
+                    else world2
+                else world
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
         testWorld3
 

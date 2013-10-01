@@ -26,16 +26,88 @@ let getNuId = createGetNextId ()
 /// beginning address nodes match the partial address (sort of a wild-card).
 /// A value type.
 type Address = Lun list
+                        
+let getChild childFinder parent (address : Address) =
+    match address with
+    | [head] -> childFinder head parent
+    | _ -> failwith ("Invalid address '" + str address + "'.")
+
+let setChild childAdder parent (address : Address) child =
+    match address with
+    | [head] -> childAdder head parent child
+    | _ -> failwith ("Invalid address '" + str address + "'.")
+
+let getChildPlus childFinder childToPlus address parent =
+    let child = getChild childFinder parent address
+    let plus = childToPlus child
+    (child, plus)
+
+let setChildPlus childAdder childPlusSetter address parent child plus =
+    let child2 = childPlusSetter child plus
+    setChild childAdder parent address child2
+
+let getChildPlusPlus childFinder childToPlusPlus address parent =
+    let child = getChild childFinder parent address
+    let (plus, plus2) = childToPlusPlus child
+    (child, plus, plus2)
+
+let setChildPlusPlus childAdder childPlusPlusSetter address parent child plus plus2 =
+    let child2 = childPlusPlusSetter child plus plus2
+    setChild childAdder parent address child2
+
+let getOptChild optChildFinder parent (address : Address) =
+    match address with
+    | [] -> None
+    | [head] ->
+        let optChild = optChildFinder head parent
+        match optChild with
+        | None -> None
+        | Some child -> Some child
+    | _ :: _ -> None
+
+let setOptChild addChild removeChild parent (address : Address) optChild =
+    match address with
+    | [head] ->
+        match optChild with
+        | None -> removeChild head parent
+        | Some child -> addChild head parent child
+    | _ -> failwith ("Invalid address '" + str address + "'.")
+
+let getOptChildPlus optChildFinder childToOptPlus parent address =
+    let optChild = getOptChild optChildFinder parent address
+    match optChild with
+    | None -> None
+    | Some child ->
+        let optPlus = childToOptPlus child
+        match optPlus with
+        | None -> None
+        | Some plus -> Some (child, plus)
+
+let setOptChildPlus childAdder childRemover childPlusSetter optChildPlus parent address =
+    match optChildPlus with
+    | None -> setOptChild childAdder childRemover parent address None
+    | Some (child, plus) -> setChildPlus childAdder childPlusSetter address parent child plus
+    
+let getOptChildPlusPlus optChildFinder childToOptPlusPlus parent address =
+    let optChild = getOptChild optChildFinder parent address
+    match optChild with
+    | None -> None
+    | Some child ->
+        let optPlusPlus = childToOptPlusPlus child
+        match optPlusPlus with
+        | None -> None
+        | Some (plus, plus2) -> Some (child, plus, plus2)
+
+let setOptChildPlusPlus childAdder childRemover childPlusPlusSetter optChildPlusPlus parent address =
+    match optChildPlusPlus with
+    | None -> setOptChild childAdder childRemover parent address None
+    | Some (child, plus, plus2) -> setChildPlusPlus childAdder childPlusPlusSetter address parent child plus plus2
 
 type [<StructuralEquality; NoComparison>] Button =
     { IsDown : bool
       UpSprite : Sprite
       DownSprite : Sprite
       ClickSound : SoundMessage }
-    with
-        static member isDown =
-            { Get = fun this -> this.IsDown
-              Set = fun isDown this -> { this with IsDown = isDown }}
 
 type [<StructuralEquality; NoComparison>] Label =
     { Sprite : Sprite }
@@ -55,20 +127,41 @@ type [<StructuralEquality; NoComparison>] Gui =
       Size : Vector2
       GuiSemantic : GuiSemantic }
     with
-        static member position =
-            { Get = fun this -> this.Position
-              Set = fun position this -> { this with Position = position }}
-        static member size =
-            { Get = fun this -> this.Size
-              Set = fun size this -> { this with Size = size }}
         static member button =
-            { Get = fun this -> match this.GuiSemantic with Button button -> button | _ -> failwith "Gui is not a button."
-              Set = fun button this -> match this.GuiSemantic with Button _ -> { this with GuiSemantic = Button button } | _ -> failwith "Gui is not a button."}
+            { Get = fun this ->
+                match this.GuiSemantic with
+                | Button button -> button
+                | _ -> failwith "Gui is not a button."
+              Set = fun button this ->
+                { this with GuiSemantic = Button button }}
+        
         static member label =
-            { Get = fun this -> match this.GuiSemantic with Label label -> label | _ -> failwith "Gui is not a label."
-              Set = fun label this -> match this.GuiSemantic with Label _ -> { this with GuiSemantic = Label label } | _ -> failwith "Gui is not a label."}
-        static member buttonIsDown =
-            Gui.button >>| Button.isDown
+            { Get = fun this ->
+                match this.GuiSemantic with
+                | Label label -> label
+                | _ -> failwith "Gui is not a label."
+              Set = fun label this ->
+                { this with GuiSemantic = Label label }}
+
+        static member optButton =
+            { Get = fun this ->
+                match this.GuiSemantic with
+                | Button button -> Some button
+                | _ -> None
+              Set = fun optButton this ->
+                match optButton with
+                | None -> failwith "Cannot set gui to None."
+                | Some button -> { this with GuiSemantic = Button button }}
+
+        static member optLabel =
+            { Get = fun this ->
+                match this.GuiSemantic with
+                | Label label -> Some label
+                | _ -> None
+              Set = fun optButton this ->
+                match optButton with
+                | None -> failwith "Cannot set gui to None."
+                | Some label -> { this with GuiSemantic = Label label }}
 
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
@@ -90,7 +183,7 @@ type [<StructuralEquality; NoComparison>] Actor =
 type [<StructuralEquality; NoComparison>] EntitySemantic =
     | Gui of Gui
     | Actor of Actor
- // | Actor2D of Actor2D
+ // | Actor3D of Actor3D
 
 /// A game entity.
 /// A serializable value type.
@@ -100,25 +193,55 @@ type [<StructuralEquality; NoComparison>] Entity =
       IsVisible : bool
       EntitySemantic : EntitySemantic }
     with
-        static member isEnabled =
-            { Get = fun this -> this.IsEnabled
-              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
-        static member isVisible =
-            { Get = fun this -> this.IsVisible
-              Set = fun isVisible this -> { this with IsVisible = isVisible }}
+        static member tryGetGui entity =
+            match entity.EntitySemantic with
+            | Gui gui -> Some gui
+            | _ -> None
+        
         static member gui =
-            { Get = fun this -> match this.EntitySemantic with Gui gui -> gui | _ -> failwith "Entity is not a gui."
-              Set = fun gui this -> match this.EntitySemantic with Gui _ -> { this with EntitySemantic = Gui gui } | _ -> failwith "Entity is not a gui."}
-        static member guiPosition =
-            Entity.gui >>| Gui.position
-        static member guiSize =
-            Entity.gui >>| Gui.size
-        static member button =
-            Entity.gui >>| Gui.button
-        static member buttonIsDown =
-            Entity.gui >>| Gui.buttonIsDown
-        static member label =
-            Entity.gui >>| Gui.label
+            { Get = fun this ->
+                match this.EntitySemantic with
+                | Gui gui -> gui
+                | _ -> failwith "Entity is not a gui."
+              Set = fun gui this ->
+                { this with EntitySemantic = Gui gui }}
+        
+        static member guiButton =
+            { Get = fun this ->
+                let gui = get this Entity.gui
+                (gui, get gui Gui.button)
+              Set = fun (gui, button) this ->
+                let newGui = set button Gui.button
+                set gui this Entity.gui }
+        
+        static member optGui =
+            { Get = fun this ->
+                match this.EntitySemantic with
+                | Gui gui -> Some gui
+                | _ -> None
+              Set = fun optGui this ->
+                match optGui with
+                | None -> failwith "Cannot set Entity.optGui to None."
+                | Some gui -> { this with EntitySemantic = Gui gui }}
+        
+        static member optGuiButton =
+            { Get = fun this ->
+                let optGui = get this Entity.optGui
+                match optGui with
+                | None -> None
+                | Some gui ->
+                    let optButton = get gui Gui.optButton
+                    match optButton with
+                    | None -> None
+                    | Some button -> Some (gui, button)
+              Set = fun optGuiButton this ->
+                match optGuiButton with
+                | None -> failwith "Cannot set Entity.optGui to None."
+                | Some guiButton ->
+                    let optGui = get this Entity.optGui
+                    match optGui with
+                    | None -> failwith "Entity is not a gui."
+                    | Some _ -> set guiButton this Entity.guiButton }
 
 /// A game entity group.
 /// A serializable value type.
@@ -128,35 +251,78 @@ type [<StructuralEquality; NoComparison>] Group =
       IsVisible : bool
       Entities : Entity LunTrie }
     with
-        static member isEnabled =
-            { Get = fun this -> this.IsEnabled
-              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
-        static member isVisible =
-            { Get = fun this -> this.IsVisible
-              Set = fun isVisible this -> { this with IsVisible = isVisible }}
-        static member getEntity3 this successFn errorFn address =
-            match address with
-            | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | [head] ->
-                let optEntity = LunTrie.tryFind head this.Entities
-                match optEntity with
-                | None -> errorFn ("No entity at address '" + str address + "'.")
-                | Some entity -> successFn entity
-            | _ :: _ -> errorFn ("Inavlid address for entity '" + str address + "'.")
-        static member setEntity3 this errorFn address entity =
-            match address with
-            | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | [head] -> { this with Entities = LunTrie.add head entity this.Entities }
-            | _ :: _ -> errorFn ("Inavlid address for entity '" + str address + "'.")
+        static member private optChildFinder addressHead parent =
+            LunTrie.tryFind addressHead parent.Entities
+        
+        static member private childFinder addressHead parent =
+            let optChild = Group.optChildFinder addressHead parent
+            match optChild with
+            | None -> failwith ("Could not find child at address '" + str addressHead + "'.")
+            | Some child -> child
+        
+        static member private childAdder addressHead parent child =
+            { parent with Entities = LunTrie.add addressHead child parent.Entities }
+        
+        static member private childRemover addressHead parent =
+            { parent with Entities = LunTrie.remove addressHead parent.Entities }
+        
+        static member private childGuiSetter child gui =
+            { child with EntitySemantic = Gui gui }
+        
+        static member private childToGui child =
+            match child.EntitySemantic with
+            | Gui gui -> gui
+            | _ -> failwith "Semantic of wrong type."
+        
+        static member private childToOptGui child =
+            match child.EntitySemantic with
+            | Gui gui -> Some gui
+            | _ -> None
+        
+        static member private childGuiButtonSetter child gui button =
+            let gui2 = { gui with GuiSemantic = Button button }
+            { child with EntitySemantic = Gui gui2 }
+        
+        static member private childToGuiButton child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | Button button -> (gui, button)
+                | _ -> failwith "Semantic of wrong type."
+            | _ -> failwith "Semantic of wrong type."
+        
+        static member private childToOptGuiButton child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | Button button -> Some (gui, button)
+                | _ -> None
+            | _ -> None
+        
         static member entity address =
-            { Get = fun this -> Group.getEntity3 this id failwith address
-              Set = fun entity this -> Group.setEntity3 this failwith address entity }
+            { Get = fun this -> getChild Group.childFinder this address
+              Set = fun entity this -> setChild Group.childAdder this address entity }
+        
+        static member entityGui address =
+            { Get = fun this -> getChildPlus Group.childFinder Group.childToGui address this
+              Set = fun (entity, gui) this -> setChildPlus Group.childAdder Group.childGuiSetter address this entity gui }
+        
+        static member entityGuiButton address =
+            { Get = fun this -> getChildPlusPlus Group.childFinder Group.childToGuiButton address this
+              Set = fun (entity, gui, button) this -> setChildPlusPlus Group.childAdder Group.childGuiButtonSetter address this entity gui button }
+        
         static member optEntity address =
-            { Get = fun this -> Group.getEntity3 this (Some) emptyFailure address
-              Set = fun optEntity this ->
-                match optEntity with
-                | None -> { this with Entities = LunTrie.remove address this.Entities }
-                | Some entity -> Group.setEntity3 this (fun _ -> this) address entity }
+            { Get = fun this -> getOptChild Group.optChildFinder this address
+              Set = fun optEntity this -> setOptChild Group.childAdder Group.childRemover this address optEntity }
+        
+        static member optEntityGui address =
+            { Get = fun this -> getOptChildPlus Group.optChildFinder Group.childToOptGui this address
+              Set = fun optEntityGui this -> setOptChildPlus Group.childAdder Group.childRemover Group.childGuiSetter optEntityGui this address }
+        
+        static member optEntityGuiButton address =
+            { Get = fun this -> getOptChildPlusPlus Group.optChildFinder Group.childToOptGuiButton this address
+              Set = fun optEntityGuiButton this -> setOptChildPlusPlus Group.childAdder Group.childRemover Group.childGuiButtonSetter optEntityGuiButton this address }
+        
         static member entities =
             { Get = fun this -> this.Entities
               Set = fun entities this -> { this with Entities = entities }}
@@ -182,40 +348,50 @@ type [<StructuralEquality; NoComparison>] Screen =
       Groups : Group LunTrie
       ScreenSemantic : ScreenSemantic }
     with
-        static member isEnabled =
-            { Get = fun this -> this.IsEnabled
-              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
-        static member isVisible =
-            { Get = fun this -> this.IsVisible
-              Set = fun isVisible this -> { this with IsVisible = isVisible }}
-        static member getGroup3 this successFn errorFn address =
-            match address with
-            | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | [head] ->
-                let optGroup = LunTrie.tryFind head this.Groups
-                match optGroup with
-                | None -> errorFn ("No group at address '" + str address + "'.")
-                | Some group -> successFn group
-            | _ :: _ -> errorFn ("Inavlid address for group '" + str address + "'.")
-        static member setGroup3 (this : Screen) errorFn address group =
-            match address with
-            | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | [head] -> { this with Groups = LunTrie.add head group this.Groups }
-            | _ :: _ -> errorFn ("Inavlid address for group '" + str address + "'.")
+        static member private optChildFinder addressHead parent =
+            LunTrie.tryFind addressHead parent.Groups
+        
+        static member private childFinder addressHead parent =
+            let optChild = Screen.optChildFinder addressHead parent
+            match optChild with
+            | None -> failwith ("Could not find child at address '" + str addressHead + "'.")
+            | Some child -> child
+        
+        static member private childAdder addressHead parent child =
+            { parent with Screen.Groups = LunTrie.add addressHead child parent.Groups }
+        
+        static member private childRemover addressHead parent =
+            { parent with Screen.Groups = LunTrie.remove addressHead parent.Groups }
+        
         static member group address =
-            { Get = fun this -> Screen.getGroup3 this id failwith address
-              Set = fun group this -> Screen.setGroup3 this failwith address group }
+            { Get = fun this -> getChild Screen.childFinder this address
+              Set = fun group this -> setChild Screen.childAdder this address group }
+        
         static member optGroup address =
-            { Get = fun this -> Screen.getGroup3 this (Some) emptyFailure address
-              Set = fun optGroup this ->
-                match optGroup with
-                | None -> { this with Groups = LunTrie.remove address this.Groups }
-                | Some group -> Screen.setGroup3 this (fun _ -> this) address group }
+            { Get = fun this -> getOptChild Screen.optChildFinder this address
+              Set = fun optGroup this -> setOptChild Screen.childAdder Screen.childRemover this address optGroup }
+        
         static member groups =
             { Get = fun this -> this.Groups
               Set = fun groups this -> { this with Groups = groups }}
+        
         static member entity address =
-            Screen.group ([List.head address]) >>| Group.entity (List.tail address)
+            Screen.group [List.head address] >>| Group.entity (List.tail address)
+        
+        static member entityGui address =
+            Screen.group [List.head address] >>| Group.entityGui (List.tail address)
+        
+        static member entityGuiButton address =
+            Screen.group [List.head address] >>| Group.entityGuiButton (List.tail address)
+        
+        static member optEntity address =
+            Screen.group [List.head address] >>| Group.optEntity (List.tail address)
+        
+        static member optEntityGui address =
+            Screen.group [List.head address] >>| Group.optEntityGui (List.tail address)
+        
+        static member optEntityGuiButton address =
+            Screen.group [List.head address] >>| Group.optEntityGuiButton (List.tail address)
 
 /// A game.
 /// A serializable value type.
@@ -225,42 +401,54 @@ type [<StructuralEquality; NoComparison>] Game =
       Screens : Screen LunTrie
       OptActiveScreenAddress : Address option }
     with
-        static member isEnabled =
-            { Get = fun this -> this.IsEnabled
-              Set = fun isEnabled this -> { this with IsEnabled = isEnabled }}
-        static member isVisible =
-            { Get = fun this -> this.IsVisible
-              Set = fun isVisible this -> { this with IsVisible = isVisible }}
-        static member getScreen3 this successFn errorFn address =
-            match address with
-            | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | [head] ->
-                let optScreen = LunTrie.tryFind head this.Screens
-                match optScreen with
-                | None -> errorFn ("No screen at address '" + str address + "'.")
-                | Some screen -> successFn screen
-            | _ :: _ -> errorFn ("Inavlid address for screen '" + str address + "'.")
-        static member setScreen3 (this : Game) errorFn address screen =
-            match address with
-            | [] -> errorFn ("Invalid address '" + str address + "'.")
-            | [head] -> { this with Screens = LunTrie.add head screen this.Screens }
-            | _ :: _ -> errorFn ("Inavlid address for screen '" + str address + "'.")
+        static member private optChildFinder addressHead parent =
+            LunTrie.tryFind addressHead parent.Screens
+        
+        static member private childFinder addressHead parent =
+            let optChild = Game.optChildFinder addressHead parent
+            match optChild with
+            | None -> failwith ("Could not find child at address '" + str addressHead + "'.")
+            | Some child -> child
+        
+        static member private childAdder addressHead parent child =
+            { parent with Game.Screens = LunTrie.add addressHead child parent.Screens }
+        
+        static member private childRemover addressHead parent =
+            { parent with Game.Screens = LunTrie.remove addressHead parent.Screens }
+        
         static member screen address =
-            { Get = fun this -> Game.getScreen3 this id failwith address
-              Set = fun screen this -> Game.setScreen3 this failwith address screen }
+            { Get = fun this -> getChild Game.childFinder this address
+              Set = fun screen this -> setChild Game.childAdder this address screen }
+        
         static member optScreen address =
-            { Get = fun this -> Game.getScreen3 this (Some) emptyFailure address
-              Set = fun optScreen this ->
-                match optScreen with
-                | None -> { this with Screens = LunTrie.remove address this.Screens }
-                | Some screen -> Game.setScreen3 this (fun _ -> this) address screen }
+            { Get = fun this -> getOptChild Game.optChildFinder this address
+              Set = fun optScreen this -> setOptChild Game.childAdder Game.childRemover this address optScreen }
+        
         static member screens =
             { Get = fun this -> this.Screens
               Set = fun screens this -> { this with Screens = screens }}
+        
         static member optActiveScreenAddress =
             { Get = fun this -> this.OptActiveScreenAddress
               Set = fun optActiveScreenAddress this -> { this with OptActiveScreenAddress = optActiveScreenAddress }}
+        
         static member group (address : Address) =
-            Game.screen ([List.head address]) >>| Screen.group (List.tail address)
+            Game.screen [List.head address] >>| Screen.group (List.tail address)
+        
         static member entity (address : Address) =
-            Game.screen ([List.head address]) >>| Screen.entity (List.tail address)
+            Game.screen [List.head address] >>| Screen.entity (List.tail address)
+        
+        static member entityGui (address : Address) =
+            Game.screen [List.head address] >>| Screen.entityGui (List.tail address)
+        
+        static member entityGuiButton (address : Address) =
+            Game.screen [List.head address] >>| Screen.entityGuiButton (List.tail address)
+        
+        static member optEntity (address : Address) =
+            Game.screen [List.head address] >>| Screen.optEntity (List.tail address)
+        
+        static member optEntityGui (address : Address) =
+            Game.screen [List.head address] >>| Screen.optEntityGui (List.tail address)
+        
+        static member optEntityGuiButton (address : Address) =
+            Game.screen [List.head address] >>| Screen.optEntityGuiButton (List.tail address)
