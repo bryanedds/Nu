@@ -73,6 +73,10 @@ and [<ReferenceEquality>] World =
         static member game =
             { Get = fun this -> this.Game
               Set = fun game this -> { this with Game = game }}
+
+        static member mouseState =
+            { Get = fun this -> this.MouseState
+              Set = fun mouseState this -> { this with MouseState = mouseState }}
         
         static member optActiveScreenAddress =
             World.game >>| Game.optActiveScreenAddress
@@ -338,11 +342,9 @@ let run sdlConfig =
             | SDL.SDL_EventType.SDL_QUIT ->
                 (false, world)
             | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                let mouseState = world.MouseState
                 if event.button.button = byte SDL.SDL_BUTTON_LEFT then
                     let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
-                    let mouseState2 = { mouseState with MouseLeftDown = true }
-                    let world2 = { world with MouseState = mouseState2 }
+                    let world2 = set { world.MouseState with MouseLeftDown = true } world World.mouseState
                     let world3 = publish DownMouseLeft0 { Handled = false; Data = messageData } world2
                     (true, world3)
                 else (true, world)
@@ -350,10 +352,9 @@ let run sdlConfig =
                 let mouseState = world.MouseState
                 if mouseState.MouseLeftDown && event.button.button = byte SDL.SDL_BUTTON_LEFT then
                     let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
-                    let newMouseState = { mouseState with MouseLeftDown = false }
-                    let newWorld = { world with MouseState = newMouseState }
-                    let newWorld2 = publish UpMouseLeft0 { Handled = false; Data = messageData } newWorld
-                    (true, newWorld2)
+                    let world2 = set { world.MouseState with MouseLeftDown = false } world World.mouseState
+                    let world3 = publish UpMouseLeft0 { Handled = false; Data = messageData } world2
+                    (true, world3)
                 else (true, world)
             | _ ->
                 (true, world))
