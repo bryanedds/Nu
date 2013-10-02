@@ -32,7 +32,11 @@ type [<StructuralEquality; NoComparison>] AudioMessage =
     | PlaySound of SoundMessage
 
 type [<ReferenceEquality>] AudioPlayer =
-    { AudioContext : unit }
+    private
+        { AudioContext : unit }
 
 let play audioMessages audioDescriptors audioPlayer : unit =
     () // TODO: play
+
+let makeAudioPlayer () =
+    { AudioContext = () }

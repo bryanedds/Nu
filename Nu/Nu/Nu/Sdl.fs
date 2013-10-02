@@ -66,15 +66,15 @@ let advanceSdl handleEvent handleUpdate sdlDeps world =
     let polledEvent = ref (SDL.SDL_Event ())
     while SDL.SDL_PollEvent polledEvent <> 0 do
         if fst result then
-            result <- handleEvent polledEvent sdlDeps (snd result)
+            result <- handleEvent polledEvent (snd result)
     if fst result then
-        result <- handleUpdate sdlDeps (snd result)
+        result <- handleUpdate (snd result)
     result
 
 let renderSdl handleRender sdlDeps world =
     ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, 0uy, 0uy, 179uy, 255uy))
     ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
-    let world2 = handleRender sdlDeps world
+    let world2 = handleRender world
     SDL.SDL_RenderPresent sdlDeps.RenderContext
     world2
     
@@ -84,7 +84,7 @@ let rec runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world k
         if keepRunning2 then
             let world3 = renderSdl handleRender sdlDeps world2
             runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world3 keepRunning2
-        else ignore (handleExit sdlDeps world)
+        else ignore (handleExit world)
 
 let runSdl createWorld handleEvent handleUpdate handleRender handleExit sdlConfig =
     withSdlInit

@@ -6,9 +6,9 @@ module ReferenceEquality
 open System
 
 /// Test for reference equality.
-let (===) x y =
+let inline (===) x y =
     Object.ReferenceEquals (x, y)
 
 /// Test for reference inequality.
-let (<<>>) x y =
+let inline (<<>>) x y =
     not (x === y)
