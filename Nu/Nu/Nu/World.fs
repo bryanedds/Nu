@@ -218,9 +218,14 @@ let render (world : World) : World =
     let world2 = {{ world with RenderMessages = [] } with Renderer = renderer2 }
     world2
 
+let handleIntegrationMessage world integrationMessage : World =
+    match integrationMessage with
+    | BodyTransformMessage bodyTransformMessage -> world
+    | BodyCollisionMessage bodyCollisionMessage -> world
+
 /// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
-    world // TODO: handle integration messages
+    List.fold handleIntegrationMessage world integrationMessages
 
 /// Integrate the world.
 let integrate (world : World) : World =
@@ -316,7 +321,8 @@ let createTestWorld sdlDeps =
                         let button2 = { button with IsDown = false }
                         let world2b = set (entity, gui, button2) world (World.entityGuiButton subscriber)
                         publish UpTestButton { Handled = false; Data = NoData } world2b
-                    if isInBox3 mousePosition gui.Position gui.Size then publish ClickTestButton { Handled = false; Data = NoData } world2
+                    if isInBox3 mousePosition gui.Position gui.Size
+                    then publish ClickTestButton { Handled = false; Data = NoData } world2
                     else world2
                 else world
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
