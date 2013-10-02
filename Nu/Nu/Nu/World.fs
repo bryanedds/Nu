@@ -4,6 +4,8 @@ open FSharpx
 open FSharpx.Lens.Operators
 open SDL2
 open OpenTK
+open Nu.Core
+open Nu.Constants
 open Nu.Math
 open Nu.Physics
 open Nu.Rendering
@@ -34,6 +36,7 @@ let ClickTestButton = Lun.make "click" :: TestButton
 // memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
 // need for complex intermediate states (albeit against a physics state that is one frame old).
 
+/// Describes data relevant to specific event messages.
 type [<ReferenceEquality>] MessageData =
     | MouseButtonData of Vector2 * MouseButton
     | OtherData of obj
@@ -52,8 +55,7 @@ type [<ReferenceEquality>] Subscription =
 
 /// A map of game message subscriptions.
 /// A reference type due to the reference-typeness of Subscription.
-and Subscriptions =
-    Map<Address, Map<Address, Subscription>>
+and Subscriptions = Map<Address, Map<Address, Subscription>>
 
 /// The world, in a functional programming sense.
 /// A reference type with some value semantics.
@@ -282,7 +284,7 @@ let createTestWorld sdlDeps =
           MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
           AudioPlayer = { AudioContext = () }
           Renderer = { RenderContext = sdlDeps.RenderContext; RenderAssetMap = LunTrie.empty }
-          Integrator = { PhysicsContext = () }
+          Integrator = { PhysicsContext = FarseerPhysics.Dynamics.World Gravity; Bodies = BodyDictionary (); IntegrationMessages = System.Collections.Generic.List<IntegrationMessage> () }
           AudioMessages = []
           RenderMessages = []
           PhysicsMessages = []
@@ -363,7 +365,8 @@ let run sdlConfig =
             (true, world2))
         (fun sdlDeps world ->
             let world2 = render world
-            play world2)
+            let world3 = play world2
+            integrate world3)
         (fun sdlDeps world ->
             handleRenderExit world)
         sdlConfig
