@@ -21,6 +21,7 @@ let UpMouseLeft0 = Lun.make "up" :: MouseLeft0
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroup = TestScreenAddress @ [Lun.make "testGroup"]
 let TestButton = TestGroup @ [Lun.make "testButton"]
+let TestCrate = TestGroup @ [Lun.make "testCrate"]
 let DownTestButton = Lun.make "down" :: TestButton
 let UpTestButton = Lun.make "up" :: TestButton
 let ClickTestButton = Lun.make "click" :: TestButton
@@ -91,20 +92,38 @@ and [<ReferenceEquality>] World =
         static member entity (address : Address) =
             World.game >>| Game.entity address
         
-        static member entityGui (address : Address) =
-            World.game >>| Game.entityGui address
-        
-        static member entityGuiButton (address : Address) =
-            World.game >>| Game.entityGuiButton address
-        
         static member optEntity (address : Address) =
             World.game >>| Game.optEntity address
+        
+        static member entityGui (address : Address) =
+            World.game >>| Game.entityGui address
         
         static member optEntityGui (address : Address) =
             World.game >>| Game.optEntityGui address
         
+        static member entityGuiButton (address : Address) =
+            World.game >>| Game.entityGuiButton address
+        
         static member optEntityGuiButton (address : Address) =
             World.game >>| Game.optEntityGuiButton address
+        
+        static member entityGuiLabel (address : Address) =
+            World.game >>| Game.entityGuiLabel address
+        
+        static member optEntityGuiLabel (address : Address) =
+            World.game >>| Game.optEntityGuiLabel address
+        
+        static member entityActor (address : Address) =
+            World.game >>| Game.entityActor address
+        
+        static member optEntityActor (address : Address) =
+            World.game >>| Game.optEntityActor address
+        
+        static member entityActorCrate (address : Address) =
+            World.game >>| Game.entityActorCrate address
+        
+        static member optEntityActorCrate (address : Address) =
+            World.game >>| Game.optEntityActorCrate address
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -196,8 +215,8 @@ let getWorldRenderDescriptors world =
                                 | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
                             | Actor actor ->
                                 match actor.ActorSemantic with
-                                | Avatar -> None
-                                | Item -> None)
+                                | Crate crate -> Some (SpriteDescriptor { Position = actor.Position; Size = actor.Size; Sprite = crate.Sprite })
+                                | Avatar _ -> None) // TODO: implement Avatar
                         entities)
                 groups
         let optDescriptors = Seq.concat optDescriptorSeqs
@@ -220,8 +239,11 @@ let render (world : World) : World =
 
 let handleIntegrationMessage world integrationMessage : World =
     match integrationMessage with
-    | BodyTransformMessage bodyTransformMessage -> world
-    | BodyCollisionMessage bodyCollisionMessage -> world
+    | BodyTransformMessage bodyTransformMessage ->
+        let (entity, actor) = get world (World.entityActor bodyTransformMessage.EntityAddress)
+        let actor2 = {{ actor with Position = bodyTransformMessage.Position } with Rotation = bodyTransformMessage.Rotation }
+        set (entity, actor2) world (World.entityActor bodyTransformMessage.EntityAddress)
+    | BodyCollisionMessage bodyCollisionMessage -> world // TODO: play collision sound
 
 /// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
@@ -239,7 +261,7 @@ let createTestGame () =
         { IsDown = false
           UpSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
           DownSprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
-          ClickSound = { Volume = 1.0f; AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          ClickSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testButtonGui =
         { Position = Vector2 100.0f
@@ -247,33 +269,65 @@ let createTestGame () =
           GuiSemantic = Button testButton }
 
     let testButtonEntity =
-        { ID = getNuId ()
+        { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
           EntitySemantic = Gui testButtonGui }
-          
-    let testGroup =
-        { ID = getNuId ()
+    
+    let testCrate =
+        { Sprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
+          ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+
+    let testCrateActor =
+        { Position = Vector2 (650.0f, 0.0f)
+          Size = Vector2 512.0f // TODO: look this up from bitmap file
+          Rotation = 0.0f
+          ActorSemantic = Crate testCrate }
+
+    let testCrateEntity =
+        { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
-          Entities = LunTrie.singleton (Lun.make "testButton") testButtonEntity }
+          EntitySemantic = Actor testCrateActor }
+
+    let testBodyCreateMessage =
+        { PhysicsId = getPhysicsId ()
+          EntityAddress = TestCrate
+          Shape = BoxShape { Center = Vector2.Zero; Extent = testCrateActor.Size / 2.0f }
+          Position = testCrateActor.Position
+          Rotation = 0.0f
+          Density = 0.1f // TODO: ensure this is koscher with the physics system
+          BodyType = BodyType.Dynamic }
+          
+    let testGroup =
+        { Id = getNuId ()
+          IsEnabled = true
+          IsVisible = true
+          Entities = LunTrie.ofSeq
+            [(Lun.make "testButton", testButtonEntity)
+             (Lun.make "testCrate", testCrateEntity)] }
 
     let testScreen =
-        { ID = getNuId ()
+        { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
           Groups = LunTrie.singleton (Lun.make "testGroup") testGroup
           ScreenSemantic = TestScreen { Unused = () }}
 
-    { ID = getNuId ()
-      IsEnabled = false
-      Screens = LunTrie.singleton (Lun.make "testScreen") testScreen
-      OptActiveScreenAddress = Some TestScreenAddress }
+    let testGame =
+        { Id = getNuId ()
+          IsEnabled = false
+          Screens = LunTrie.singleton (Lun.make "testScreen") testScreen
+          OptActiveScreenAddress = Some TestScreenAddress }
+
+    (testGame, BodyCreateMessage testBodyCreateMessage)
 
 let createTestWorld sdlDeps =
 
+    let (testGame, testBodyCreateMessage) = createTestGame ()
+
     let testWorld =
-        { Game = createTestGame ()
+        { Game = testGame
           Subscriptions = Map.empty
           MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
           AudioPlayer = makeAudioPlayer ()
@@ -281,7 +335,7 @@ let createTestWorld sdlDeps =
           Integrator = makeIntegrator Gravity
           AudioMessages = []
           RenderMessages = []
-          PhysicsMessages = []
+          PhysicsMessages = [testBodyCreateMessage]
           Components = [] }
 
     let hintRenderingPackageUse =
