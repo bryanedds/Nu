@@ -18,12 +18,6 @@ open Nu.Audio
 open Nu.Rendering
 
 let getNuId = createGetNextId ()
-
-/// Specifies the address of an element in a game.
-/// Note that subscribing to a partial address results in listening to all messages whose
-/// beginning address nodes match the partial address (sort of a wild-card).
-/// A value type.
-type Address = Lun list
                         
 let getChild childFinder parent (address : Address) =
     match address with
@@ -191,11 +185,6 @@ type [<StructuralEquality; NoComparison>] Entity =
       IsVisible : bool
       EntitySemantic : EntitySemantic }
     with
-        static member tryGetGui entity =
-            match entity.EntitySemantic with
-            | Gui gui -> Some gui
-            | _ -> None
-        
         static member gui =
             { Get = fun this ->
                 match this.EntitySemantic with
@@ -220,7 +209,7 @@ type [<StructuralEquality; NoComparison>] Entity =
               Set = fun optGui this ->
                 match optGui with
                 | None -> failwith "Cannot set Entity.optGui to None."
-                | Some gui -> { this with EntitySemantic = Gui gui }}
+                | Some gui -> set gui this Entity.gui }
         
         static member optGuiButton =
             { Get = fun this ->
