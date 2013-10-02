@@ -1,10 +1,17 @@
 ﻿module Nu.Audio
 
+type [<StructuralEquality; NoComparison>] Sound =
+    { AssetName : Lun
+      PackageName : Lun }
+
+type [<StructuralEquality; NoComparison>] Song =
+    { AssetName : string
+      PackageName : string }
+
 type [<StructuralEquality; NoComparison>] SongDescriptor =
     { Volume : float
       Repeat : bool
-      AssetName : string
-      PackageName : string }
+      Song : Song }
 
 /// Describes an audio asset.
 /// A serializable value type.
@@ -13,8 +20,7 @@ type [<StructuralEquality; NoComparison>] AudioDescriptor =
 
 type [<StructuralEquality; NoComparison>] SoundMessage =
     { Volume : single
-      AssetName : Lun
-      PackageName : Lun }
+      Sound : Sound }
 
 type [<StructuralEquality; NoComparison>] HintAudioPackageUse =
     { FileName : string
