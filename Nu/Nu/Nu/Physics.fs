@@ -7,7 +7,7 @@ open Nu.Core
 open Nu.Constants
 
 type [<StructuralEquality; NoComparison>] BoxShape =
-    { Position : Vector2 // NOTE: I presume this is like a center offset for the shape...
+    { Position : Vector2 // NOTE: I guess this is like a center offset for the shape?
       Extent : Vector2 }
 
 type [<StructuralEquality; NoComparison>] BodyShape =
@@ -52,9 +52,10 @@ type  [<StructuralEquality; NoComparison>] IntegrationMessage =
     | BodyTranformMessage // of ...
 
 type [<ReferenceEquality>] Integrator =
-    { PhysicsContext : Dynamics.World
-      Bodies : BodyDictionary
-      IntegrationMessages : IntegrationMessage List }
+    private
+        { PhysicsContext : Dynamics.World
+          Bodies : BodyDictionary
+          IntegrationMessages : IntegrationMessage List }
 
 let toVector2 (v2 : Framework.Vector2) =
     Vector2 (v2.X, v2.Y)
@@ -97,3 +98,8 @@ let integrate physicsMessages integrator : IntegrationMessage list =
     // TODO: handle physics messages
     ignore (integrator.PhysicsContext.Step PhysicsStepRate)
     List.ofSeq integrator.IntegrationMessages
+
+let makeIntegrator gravity =
+     { PhysicsContext = FarseerPhysics.Dynamics.World Gravity
+       Bodies = BodyDictionary ()
+       IntegrationMessages = System.Collections.Generic.List<IntegrationMessage> () }
