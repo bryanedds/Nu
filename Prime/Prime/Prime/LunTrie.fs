@@ -70,12 +70,12 @@ let remove key trie =
 let removeMany keys trie =
     trie // TODO: implement
 
-let ofList kvps =
+let ofSeq kvps =
     addMany kvps empty
 
-let ofListBy by kvps =
-    let pairs = List.map by kvps
-    ofList pairs
+let ofSeqBy by kvps =
+    let pairs = Seq.map by kvps
+    ofSeq pairs
 
 let toSeqBy by (trie : 'v LunTrie) =
     trie.ToSeqBy by

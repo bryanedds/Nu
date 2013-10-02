@@ -80,7 +80,7 @@ let handleRenderMessage renderer renderMessage =
             let optRenderAssetTrie = LunTrie.tryFind packageNameLun renderer.RenderAssetMap
             match optRenderAssetTrie with
             | None ->
-                let renderAssetTrie = LunTrie.ofList renderAssets
+                let renderAssetTrie = LunTrie.ofSeq renderAssets
                 { renderer with RenderAssetMap = LunTrie.add packageNameLun renderAssetTrie renderer.RenderAssetMap }
             | Some renderAssetTrie ->
                 let renderAssetTrie2 = LunTrie.addMany renderAssets renderAssetTrie

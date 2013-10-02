@@ -650,11 +650,11 @@ let makeTickAttributeTemplate () =
 let makeGlobalClassTemplate () =
     let tickAttribute = makeTickAttribute ()
     let addressAttribute = makeAddressAttribute ()
-    let attributes = LunTrie.ofList [(TickLun, tickAttribute); (AddressLun, addressAttribute)]
+    let attributes = LunTrie.ofSeq [(TickLun, tickAttribute); (AddressLun, addressAttribute)]
     let classRecord = makeClassRecord GlobalClassLun 1.0f attributes
     let tickAttributeTemplate = makeTickAttributeTemplate ()
     let addressAttributeTemplate = makeAddressAttributeTemplate ()
-    let attributeTemplates = LunTrie.ofList [(TickLun, tickAttributeTemplate); (AddressLun, addressAttributeTemplate)]
+    let attributeTemplates = LunTrie.ofSeq [(TickLun, tickAttributeTemplate); (AddressLun, addressAttributeTemplate)]
     makeClassTemplateRecord GlobalLun classRecord { WhileOptPredicate = None } (*LunTrie.empty*) attributeTemplates
 
 let makeWorkBench
@@ -925,7 +925,7 @@ let tryBuildClass env exprs =
                             let optAttributes = tryBuildAttributes env tail
                             match optAttributes with
                             | Some (attributes, []) ->
-                                let attributeTrie = LunTrie.ofListBy (fun attribute -> (attribute.AttrName, attribute)) attributes
+                                let attributeTrie = LunTrie.ofSeqBy (fun attribute -> (attribute.AttrName, attribute)) attributes
                                 let classRecord = makeClassRecord classSymbol.SymName version attributeTrie
                                 Some (classRecord, exprs.Tail)
                             | _ -> None
@@ -1056,11 +1056,11 @@ let tryBuildClassTemplate env workBench exprs : (ClassTemplateRecord * Expr list
                                 match optChildren with
                                 | None -> None
                                 | Some (children, tail) ->
-                                    let childTrie = LunTrie.ofListBy (fun attribute -> (attribute.CTName, attribute)) children*)
+                                    let childTrie = LunTrie.ofSeqBy (fun attribute -> (attribute.CTName, attribute)) children*)
                                     let optAttributeTemplates = tryBuildAttributeTemplates env address (!classRecord).ClassAttributes tail
                                     match optAttributeTemplates with
                                     | Some (attributeTemplates, []) ->
-                                        let attributeTemplateTrie = LunTrie.ofListBy (fun attributeTemplate -> (attributeTemplate.ATAttribute.AttrName, attributeTemplate)) attributeTemplates
+                                        let attributeTemplateTrie = LunTrie.ofSeqBy (fun attributeTemplate -> (attributeTemplate.ATAttribute.AttrName, attributeTemplate)) attributeTemplates
                                         let classTemplate = makeClassTemplateRecord name !classRecord whileRecord (*childTrie*) attributeTemplateTrie
                                         for attributeTemplate in attributeTemplates do
                                             let attribute = attributeTemplate.ATAttribute

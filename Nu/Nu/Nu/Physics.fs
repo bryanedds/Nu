@@ -6,8 +6,10 @@ open Microsoft.Xna
 open Nu.Core
 open Nu.Constants
 
+let getPhysicsId = createGetNextId ()
+
 type [<StructuralEquality; NoComparison>] BoxShape =
-    { Position : Vector2 // NOTE: I guess this is like a center offset for the shape?
+    { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
       Extent : Vector2 }
 
 type [<StructuralEquality; NoComparison>] BodyShape =
@@ -19,7 +21,7 @@ type [<StructuralEquality; NoComparison>] BodyType =
     | Dynamic
 
 type [<StructuralEquality; NoComparison>] BodyCreateMessage =
-    { PhysicsID : ID
+    { PhysicsId : Id
       EntityAddress : Address
       Shape : BodyShape
       Position : Vector2
@@ -28,10 +30,10 @@ type [<StructuralEquality; NoComparison>] BodyCreateMessage =
       BodyType : BodyType }
 
 type [<StructuralEquality; NoComparison>] BodyDestroyMessage =
-    { PhysicsID : ID }
+    { PhysicsId : Id }
 
 type [<StructuralEquality; NoComparison>] ForceApplyMessage =
-    { PhysicsID : ID
+    { PhysicsId : Id
       Force : Vector2
       Point : Vector2 }
 
@@ -46,7 +48,7 @@ type [<StructuralEquality; NoComparison>] BodyTransformMessage =
       Position : Vector2
       Rotation : single }
 
-type BodyDictionary = Dictionary<ID, Dynamics.Body>
+type BodyDictionary = Dictionary<Id, Dynamics.Body>
 
 type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | BodyCreateMessage of BodyCreateMessage
@@ -78,8 +80,8 @@ let toPhysicsBodyType bodyType =
 let createBody integrator bodyCreateMessage =
     match bodyCreateMessage.Shape with
     | BoxShape boxShape ->
-        let shapePosition = toPhysicsVector2 boxShape.Position
-        let body = Factories.BodyFactory.CreateRectangle (integrator.PhysicsContext, boxShape.Extent.X, boxShape.Extent.Y, bodyCreateMessage.Density, shapePosition, bodyCreateMessage.EntityAddress)
+        let shapeCenter = toPhysicsVector2 boxShape.Center
+        let body = Factories.BodyFactory.CreateRectangle (integrator.PhysicsContext, boxShape.Extent.X, boxShape.Extent.Y, bodyCreateMessage.Density, shapeCenter, bodyCreateMessage.EntityAddress)
         ignore (body.Position <- toPhysicsVector2 bodyCreateMessage.Position)
         ignore (body.Rotation <- bodyCreateMessage.Rotation)
         ignore (body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType)
@@ -93,20 +95,20 @@ let createBody integrator bodyCreateMessage =
                 let integrationMessage = BodyCollisionMessage bodyCollisionMessage
                 ignore (integrator.IntegrationMessages.Add integrationMessage)
                 true)
-        integrator.Bodies.Add (bodyCreateMessage.PhysicsID, body)
+        integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
 let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
     let body = Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsID, ref body) then
-        ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsID)
+    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, ref body) then
+        ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
         integrator.PhysicsContext.RemoveBody body
-    else debug ("Could not remove non-existent body with PhysicsID = " + str bodyDestroyMessage.PhysicsID + "'.")
+    else debug ("Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'.")
 
 let forceApply integrator forceApplyMessage =
     let body = Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsID, ref body) then
+    if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsId, ref body) then
         body.ApplyForce (toPhysicsVector2 forceApplyMessage.Force, toPhysicsVector2 forceApplyMessage.Point)
-    else debug ("Could not apply force to non-existent body with PhysicsID = " + str forceApplyMessage.PhysicsID + "'.")
+    else debug ("Could not apply force to non-existent body with PhysicsId = " + str forceApplyMessage.PhysicsId + "'.")
 
 let handlePhysicsMessage integrator physicsMessage =
     match physicsMessage with
