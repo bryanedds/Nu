@@ -69,8 +69,7 @@ and [<ReferenceEquality>] World =
       AudioMessages : AudioMessage rQueue
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
-      Components : IWorldComponent list
-      SdlDeps : SdlDeps }
+      Components : IWorldComponent list }
     with
         static member game =
             { Get = fun this -> this.Game
@@ -219,16 +218,6 @@ let render (world : World) : World =
     let world2 = {{ world with RenderMessages = [] } with Renderer = renderer2 }
     world2
 
-let handleRenderExit (world : World) : World =
-    let renderer = world.Renderer
-    let renderAssetTries = LunTrie.toValueSeq renderer.RenderAssetMap
-    let renderAssets = Seq.collect LunTrie.toValueSeq renderAssetTries
-    for renderAsset in renderAssets do
-        match renderAsset with
-        | TextureAsset texture -> () // apparently there is no need to free textures in SDL
-    let newRenderer = { renderer with RenderAssetMap = LunTrie.empty }
-    { world with Renderer = newRenderer }
-
 /// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
     world // TODO: handle integration messages
@@ -282,14 +271,13 @@ let createTestWorld sdlDeps =
         { Game = createTestGame ()
           Subscriptions = Map.empty
           MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-          AudioPlayer = { AudioContext = () }
-          Renderer = { RenderContext = sdlDeps.RenderContext; RenderAssetMap = LunTrie.empty }
-          Integrator = { PhysicsContext = FarseerPhysics.Dynamics.World Gravity; Bodies = BodyDictionary (); IntegrationMessages = System.Collections.Generic.List<IntegrationMessage> () }
+          AudioPlayer = makeAudioPlayer ()
+          Renderer = makeRenderer sdlDeps.RenderContext
+          Integrator = makeIntegrator Gravity
           AudioMessages = []
           RenderMessages = []
           PhysicsMessages = []
-          Components = []
-          SdlDeps = sdlDeps }
+          Components = [] }
 
     let hintRenderingPackageUse =
         { FileName = "AssetGraph.xml"
@@ -338,7 +326,7 @@ let run sdlConfig =
     runSdl
         (fun sdlDeps ->
             createTestWorld sdlDeps)
-        (fun refEvent sdlDeps world ->
+        (fun refEvent world ->
             let event = refEvent.Value
             match event.``type`` with
             | SDL.SDL_EventType.SDL_QUIT ->
@@ -360,13 +348,12 @@ let run sdlConfig =
                 else (true, world)
             | _ ->
                 (true, world))
-        (fun sdlDeps world ->
+        (fun world ->
             let world2 = integrate world
             (true, world2))
-        (fun sdlDeps world ->
+        (fun world ->
             let world2 = render world
-            let world3 = play world2
-            integrate world3)
-        (fun sdlDeps world ->
-            handleRenderExit world)
+            play world2) // TODO: put play in its own callback!
+        (fun world ->
+            { world with Renderer = handleRenderExit world.Renderer })
         sdlConfig

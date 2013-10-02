@@ -38,8 +38,9 @@ type [<ReferenceEquality>] RenderAsset =
     | TextureAsset of nativeint
 
 type [<ReferenceEquality>] Renderer =
-    { RenderContext : nativeint
-      RenderAssetMap : RenderAsset AssetMap }
+    private
+        { RenderContext : nativeint
+          RenderAssetMap : RenderAsset AssetMap }
 
 let tryLoadRenderAsset renderContext (asset : Asset) =
     let extension = Path.GetExtension asset.FileName
@@ -134,3 +135,15 @@ let render renderMessages renderDescriptors renderer =
     let renderer2 = handleRenderMessages renderMessages renderer
     doRender renderDescriptors renderer2
     renderer2
+
+let handleRenderExit renderer =
+    let renderAssetTries = LunTrie.toValueSeq renderer.RenderAssetMap
+    let renderAssets = Seq.collect LunTrie.toValueSeq renderAssetTries
+    for renderAsset in renderAssets do
+        match renderAsset with
+        | TextureAsset texture -> () // apparently there is no need to free textures in SDL
+    { renderer with RenderAssetMap = LunTrie.empty }
+
+
+let makeRenderer renderContext =
+    { RenderContext = renderContext; RenderAssetMap = LunTrie.empty }
