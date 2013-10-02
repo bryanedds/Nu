@@ -32,24 +32,30 @@ type [<StructuralEquality; NoComparison>] BodyDestroyMessage =
 
 type [<StructuralEquality; NoComparison>] ForceApplyMessage =
     { PhysicsID : ID
-      Force : Vector2 }
+      Force : Vector2
+      Point : Vector2 }
 
-type [<StructuralEquality; NoComparison>] CollisionMessage =
+type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
     { EntityAddress : Address
       EntityAddress2 : Address
       Normal : Vector2
       Speed : single }
+
+type [<StructuralEquality; NoComparison>] BodyTransformMessage =
+    { EntityAddress : Address
+      Position : Vector2
+      Rotation : single }
 
 type BodyDictionary = Dictionary<ID, Dynamics.Body>
 
 type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | BodyCreateMessage of BodyCreateMessage
     | BodyDestroyMessage of BodyDestroyMessage
-    | ForceApplyMessage  of ForceApplyMessage
+    | ForceApplyMessage of ForceApplyMessage
 
 type  [<StructuralEquality; NoComparison>] IntegrationMessage =
-    | CollisionMessage of CollisionMessage
-    | BodyTranformMessage // of ...
+    | BodyCollisionMessage of BodyCollisionMessage
+    | BodyTransformMessage of BodyTransformMessage
 
 type [<ReferenceEquality>] Integrator =
     private
@@ -79,24 +85,53 @@ let createBody integrator bodyCreateMessage =
         ignore (body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType)
         body.add_OnCollision
             (fun fixture fixture2 contact ->
-                let collisionMessage =
+                let bodyCollisionMessage =
                     { EntityAddress = fixture.Body.UserData :?> Address
                       EntityAddress2 = fixture2.Body.UserData :?> Address
                       Normal = toVector2 contact.Manifold.LocalNormal
                       Speed = contact.TangentSpeed }
-                let integrationMessage = CollisionMessage collisionMessage
+                let integrationMessage = BodyCollisionMessage bodyCollisionMessage
                 ignore (integrator.IntegrationMessages.Add integrationMessage)
                 true)
         integrator.Bodies.Add (bodyCreateMessage.PhysicsID, body)
 
-let destroyBody integrator bodyDestroyMessage =
+let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
     let body = Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsID, ref body) then integrator.PhysicsContext.RemoveBody body
+    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsID, ref body) then
+        ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsID)
+        integrator.PhysicsContext.RemoveBody body
     else debug ("Could not remove non-existent body with PhysicsID = " + str bodyDestroyMessage.PhysicsID + "'.")
 
+let forceApply integrator forceApplyMessage =
+    let body = Unchecked.defaultof<Dynamics.Body>
+    if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsID, ref body) then
+        body.ApplyForce (toPhysicsVector2 forceApplyMessage.Force, toPhysicsVector2 forceApplyMessage.Point)
+    else debug ("Could not apply force to non-existent body with PhysicsID = " + str forceApplyMessage.PhysicsID + "'.")
+
+let handlePhysicsMessage integrator physicsMessage =
+    match physicsMessage with
+    | BodyCreateMessage bodyCreateMessage -> createBody integrator bodyCreateMessage
+    | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
+    | ForceApplyMessage forceApplyMessage -> forceApply integrator forceApplyMessage
+    
+let handlePhysicsMessages integrator physicsMessages =
+    for physicsMessage in physicsMessages do
+        handlePhysicsMessage integrator physicsMessage
+
+let createTransformMessages integrator =
+    for body in integrator.Bodies.Values do
+        if body.Awake then
+            let bodyTransformMessage =
+                BodyTransformMessage
+                    { EntityAddress = body.UserData :?> Address
+                      Position = toVector2 body.Position
+                      Rotation = body.Rotation }
+            integrator.IntegrationMessages.Add bodyTransformMessage
+
 let integrate physicsMessages integrator : IntegrationMessage list =
-    // TODO: handle physics messages
-    ignore (integrator.PhysicsContext.Step PhysicsStepRate)
+    handlePhysicsMessages integrator physicsMessages
+    integrator.PhysicsContext.Step PhysicsStepRate
+    createTransformMessages integrator
     List.ofSeq integrator.IntegrationMessages
 
 let makeIntegrator gravity =
