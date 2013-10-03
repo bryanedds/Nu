@@ -5,8 +5,8 @@ type [<StructuralEquality; NoComparison>] Sound =
       PackageName : Lun }
 
 type [<StructuralEquality; NoComparison>] Song =
-    { AssetName : string
-      PackageName : string }
+    { AssetName : Lun
+      PackageName : Lun }
 
 type [<StructuralEquality; NoComparison>] SongDescriptor =
     { Volume : float
