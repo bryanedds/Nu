@@ -10,6 +10,7 @@ type Id = int64
 /// A value type.
 type Address = Lun list
 
+// BUG: RQueue does not seem to be auto-opening in practice!
 [<AutoOpen>]
 module RQueue =
 
