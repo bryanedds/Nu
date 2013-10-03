@@ -17,6 +17,30 @@ let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
 let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
+let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
+
+let createTestBlock () =
+
+    let testBlock =
+        { PhysicsId = getPhysicsId ()
+          Density = 0.1f // TODO: ensure this is koscher with the physics system
+          BodyType = Dynamic
+          Sprite = { AssetName = Lun.make "Image3"; PackageName = Lun.make "Misc" }
+          ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+
+    let testBlockActor =
+        { Position = Vector2 (200.0f, 200.0f)
+          Size = Vector2 64.0f // TODO: look this up from bitmap file
+          Rotation = 0.0f
+          ActorSemantic = Block testBlock }
+
+    let testBlockActorEntity =
+        { Id = getNuId ()
+          IsEnabled = true
+          IsVisible = true
+          EntitySemantic = Actor testBlockActor }
+
+    (testBlockActorEntity, testBlockActor, testBlock)
 
 let createTestWorld (sdlDeps : SdlDeps) =
 
@@ -68,25 +92,6 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsVisible = true
           EntitySemantic = Gui testButtonGui }
     
-    let testBlock =
-        { PhysicsId = getPhysicsId ()
-          Density = 0.1f // TODO: ensure this is koscher with the physics system
-          BodyType = Dynamic
-          Sprite = { AssetName = Lun.make "Image3"; PackageName = Lun.make "Misc" }
-          ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
-
-    let testBlockActor =
-        { Position = Vector2 (200.0f, 200.0f)
-          Size = Vector2 64.0f // TODO: look this up from bitmap file
-          Rotation = 0.0f
-          ActorSemantic = Block testBlock }
-
-    let testBlockActorEntity =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          EntitySemantic = Actor testBlockActor }
-    
     let testFloor =
         { PhysicsId = getPhysicsId ()
           Density = 0.1f // TODO: ensure this is koscher with the physics system
@@ -105,13 +110,16 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsEnabled = true
           IsVisible = true
           EntitySemantic = Actor testFloorActor }
+    
+    let testEntityActorBlock = createTestBlock ()
 
-    let testWorld_ = addScreenX testScreen TestScreenAddress testWorld
+    let testWorld_ = subscribe ClickTestButtonAddress [] (fun _ _ _ world -> let entityActorBlock = createTestBlock () in addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.make (str (getNuId ()))]) world) testWorld
+    let testWorld_ = addScreenX testScreen TestScreenAddress testWorld_
     let testWorld_ = set (Some TestScreenAddress) testWorld_ World.optActiveScreenAddress
     let testWorld_ = addGroup testGroup TestGroupAddress testWorld_
     let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress testWorld_
-    let testWorld_ = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlockAddress testWorld_
     let testWorld_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress testWorld_
+    let testWorld_ = addEntityActorBlock testEntityActorBlock TestBlockAddress testWorld_
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
     { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
 
