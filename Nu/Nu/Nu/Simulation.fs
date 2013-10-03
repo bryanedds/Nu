@@ -172,8 +172,14 @@ let withSubscription address subscription subscriber procedure world : World =
     let world3 = procedure world2
     unsubscribe address subscriber world3
 
+let unregisterEntityGuiButton address world : World =
+    let world2 = unsubscribe DownMouseLeftAddress address world
+    unsubscribe UpMouseLeftAddress address world2
+
 let registerEntityGuiButton address world : World =
-    let world2 =
+    let optOldEntityGuiButton = get world (World.optEntityGuiButton address)
+    let world_ = if optOldEntityGuiButton.IsSome then unregisterEntityGuiButton address world else world
+    let world_ =
         subscribe
             DownMouseLeftAddress
             address
@@ -189,7 +195,7 @@ let registerEntityGuiButton address world : World =
                         else world
                     else world
                 | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
-            world
+            world_
     subscribe
         UpMouseLeftAddress
         address
@@ -207,11 +213,7 @@ let registerEntityGuiButton address world : World =
                     else world2
                 else world
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
-        world2
-
-let unregisterEntityGuiButton address world : World =
-    let world2 = unsubscribe DownMouseLeftAddress address world
-    unsubscribe UpMouseLeftAddress address world2
+        world_
 
 let addEntityGuiButton entityGuiButton address world : World =
     let world2 = registerEntityGuiButton address world
@@ -227,7 +229,16 @@ let addEntityGuiLabel entityGuiButton address world : World =
 let removeEntityGuiLabel address world : World =
     set None world (World.optEntityGuiButton address)
 
+let unregisterEntityActorBlock (entity, actor, block) address world : World =
+    let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
+    { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+
 let registerEntityActorBlock (entity, actor, block) address world : World =
+    let optOldEntityActorBlock = get world (World.optEntityActorBlock address)
+    let world2 =
+        match optOldEntityActorBlock with
+        | None -> world
+        | Some oldEntityActorBlock -> unregisterEntityActorBlock oldEntityActorBlock address world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -237,11 +248,7 @@ let registerEntityActorBlock (entity, actor, block) address world : World =
               Rotation = actor.Rotation
               Density = block.Density
               BodyType = block.BodyType }
-    { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
-
-let unregisterEntityActorBlock (entity, actor, block) address world : World =
-    let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
-    { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+    { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
 let addEntityActorBlock entityActorBlock address world : World =
     let world2 = registerEntityActorBlock entityActorBlock address world
