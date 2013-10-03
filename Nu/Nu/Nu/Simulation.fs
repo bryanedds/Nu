@@ -232,8 +232,8 @@ let registerEntityActorBlock (entity, actor, block) address world : World =
         BodyCreateMessage
             { EntityAddress = address
               PhysicsId = block.PhysicsId
-              Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size / 2.0f }
-              Position = actor.Position
+              Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size * 0.5f }
+              Position = actor.Position + actor.Size * 0.5f
               Rotation = actor.Rotation
               Density = block.Density
               BodyType = block.BodyType }
@@ -330,7 +330,7 @@ let handleIntegrationMessage world integrationMessage : World =
     match integrationMessage with
     | BodyTransformMessage bodyTransformMessage ->
         let (entity, actor) = get world (World.entityActor bodyTransformMessage.EntityAddress)
-        let actor2 = {{ actor with Position = bodyTransformMessage.Position } with Rotation = bodyTransformMessage.Rotation }
+        let actor2 = {{ actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f } with Rotation = bodyTransformMessage.Rotation }
         set (entity, actor2) world (World.entityActor bodyTransformMessage.EntityAddress)
     | BodyCollisionMessage bodyCollisionMessage -> world // TODO: play collision sound
 
