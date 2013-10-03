@@ -12,13 +12,18 @@ open Nu.Simulation
 
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
+let TestScreenAddress = [Lun.make "testScreen"]
+let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
+let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
+let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
+
 let createTestWorld (sdlDeps : SdlDeps) =
 
     let testGame =
         { Id = getNuId ()
           IsEnabled = true
           Screens = LunTrie.empty
-          OptActiveScreenAddress = Some TestScreen }
+          OptActiveScreenAddress = None }
 
     let testWorld =
         { Game = testGame
@@ -81,11 +86,11 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsVisible = true
           EntitySemantic = Actor testBlockActor }
 
-    let testWorld_ = addScreenX testScreen TestScreen testWorld
-    let testWorld_ = set (Some TestScreen) testWorld_ World.optActiveScreenAddress
-    let testWorld_ = addGroup testGroup TestGroup testWorld_
-    let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButton testWorld_
-    let testWorld_ = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlock testWorld_
+    let testWorld_ = addScreenX testScreen TestScreenAddress testWorld
+    let testWorld_ = set (Some TestScreenAddress) testWorld_ World.optActiveScreenAddress
+    let testWorld_ = addGroup testGroup TestGroupAddress testWorld_
+    let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress testWorld_
+    let testWorld_ = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlockAddress testWorld_
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
     { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
 

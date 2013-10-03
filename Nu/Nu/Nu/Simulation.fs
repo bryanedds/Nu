@@ -14,17 +14,9 @@ open Nu.Audio
 open Nu.Simulants
 open Nu.Sdl
 
-// TODO: consider converting these from slash-delimited strings
-let MouseLeft0 = [Lun.make "mouse"; Lun.make "left"; Lun.make "0"]
-let DownMouseLeft0 = Lun.make "down" :: MouseLeft0
-let UpMouseLeft0 = Lun.make "up" :: MouseLeft0
-let TestScreen = [Lun.make "testScreen"]
-let TestGroup = TestScreen @ [Lun.make "testGroup"]
-let TestButton = TestGroup @ [Lun.make "testButton"]
-let TestBlock = TestGroup @ [Lun.make "testBlock"]
-let DownTestButton = Lun.make "down" :: TestButton
-let UpTestButton = Lun.make "up" :: TestButton
-let ClickTestButton = Lun.make "click" :: TestButton
+let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
+let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
+let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
 
 // WISDOM: On avoiding threads where possible...
 //
@@ -183,7 +175,7 @@ let withSubscription address subscription subscriber procedure world : World =
 let registerEntityGuiButton address world : World =
     let world2 =
         subscribe
-            DownMouseLeft0
+            DownMouseLeftAddress
             address
             (fun address subscriber message world ->
                 match message.Data with
@@ -193,13 +185,13 @@ let registerEntityGuiButton address world : World =
                         if isInBox3 mousePosition gui.Position gui.Size then
                             let button2 = { button with IsDown = true }
                             let world2 = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                            publish DownTestButton { Handled = false; Data = NoData } world2
+                            publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world2
                         else world
                     else world
                 | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
             world
     subscribe
-        UpMouseLeft0
+        UpMouseLeftAddress
         address
         (fun address subscriber message world ->
             match message.Data with
@@ -209,17 +201,17 @@ let registerEntityGuiButton address world : World =
                     let world2 =
                         let button2 = { button with IsDown = false }
                         let world2b = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                        publish UpTestButton { Handled = false; Data = NoData } world2b
+                        publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world2b
                     if isInBox3 mousePosition gui.Position gui.Size
-                    then publish ClickTestButton { Handled = false; Data = NoData } world2
+                    then publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world2
                     else world2
                 else world
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
         world2
 
 let unregisterEntityGuiButton address world : World =
-    let world2 = unsubscribe DownMouseLeft0 address world
-    unsubscribe UpMouseLeft0 address world2
+    let world2 = unsubscribe DownMouseLeftAddress address world
+    unsubscribe UpMouseLeftAddress address world2
 
 let addEntityGuiButton entityGuiButton address world : World =
     let world2 = registerEntityGuiButton address world
@@ -365,7 +357,7 @@ let run2 createWorld sdlConfig =
                 if event.button.button = byte SDL.SDL_BUTTON_LEFT then
                     let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
                     let world2 = set { world.MouseState with MouseLeftDown = true } world World.mouseState
-                    let world3 = publish DownMouseLeft0 { Handled = false; Data = messageData } world2
+                    let world3 = publish DownMouseLeftAddress { Handled = false; Data = messageData } world2
                     (true, world3)
                 else (true, world)
             | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
@@ -373,7 +365,7 @@ let run2 createWorld sdlConfig =
                 if mouseState.MouseLeftDown && event.button.button = byte SDL.SDL_BUTTON_LEFT then
                     let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
                     let world2 = set { world.MouseState with MouseLeftDown = false } world World.mouseState
-                    let world3 = publish UpMouseLeft0 { Handled = false; Data = messageData } world2
+                    let world3 = publish UpMouseLeftAddress { Handled = false; Data = messageData } world2
                     (true, world3)
                 else (true, world)
             | _ ->
@@ -395,7 +387,7 @@ let run sdlConfig =
                 { Id = getNuId ()
                   IsEnabled = true
                   Screens = LunTrie.empty
-                  OptActiveScreenAddress = Some TestScreen }
+                  OptActiveScreenAddress = None }
             { Game = game
               Subscriptions = Map.empty
               MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
