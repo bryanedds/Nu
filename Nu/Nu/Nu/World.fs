@@ -18,10 +18,10 @@ open Nu.Sdl
 let MouseLeft0 = [Lun.make "mouse"; Lun.make "left"; Lun.make "0"]
 let DownMouseLeft0 = Lun.make "down" :: MouseLeft0
 let UpMouseLeft0 = Lun.make "up" :: MouseLeft0
-let TestScreenAddress = [Lun.make "testScreen"]
-let TestGroup = TestScreenAddress @ [Lun.make "testGroup"]
+let TestScreen = [Lun.make "testScreen"]
+let TestGroup = TestScreen @ [Lun.make "testGroup"]
 let TestButton = TestGroup @ [Lun.make "testButton"]
-let TestCrate = TestGroup @ [Lun.make "testCrate"]
+let TestBlock = TestGroup @ [Lun.make "testBlock"]
 let DownTestButton = Lun.make "down" :: TestButton
 let UpTestButton = Lun.make "up" :: TestButton
 let ClickTestButton = Lun.make "click" :: TestButton
@@ -80,15 +80,6 @@ and [<ReferenceEquality>] World =
             { Get = fun this -> this.MouseState
               Set = fun mouseState this -> { this with MouseState = mouseState }}
         
-        static member optActiveScreenAddress =
-            World.game >>| Game.optActiveScreenAddress
-        
-        static member screen (address : Address) =
-            World.game >>| Game.screen address
-        
-        static member group (address : Address) =
-            World.game >>| Game.group address
-        
         static member entity (address : Address) =
             World.game >>| Game.entity address
         
@@ -119,11 +110,26 @@ and [<ReferenceEquality>] World =
         static member optEntityActor (address : Address) =
             World.game >>| Game.optEntityActor address
         
-        static member entityActorCrate (address : Address) =
-            World.game >>| Game.entityActorCrate address
+        static member entityActorBlock (address : Address) =
+            World.game >>| Game.entityActorBlock address
         
-        static member optEntityActorCrate (address : Address) =
-            World.game >>| Game.optEntityActorCrate address
+        static member optEntityActorBlock (address : Address) =
+            World.game >>| Game.optEntityActorBlock address
+        
+        static member group (address : Address) =
+            World.game >>| Game.group address
+        
+        static member optGroup (address : Address) =
+            World.game >>| Game.optGroup address
+        
+        static member screen (address : Address) =
+            World.game >>| Game.screen address
+        
+        static member optScreen (address : Address) =
+            World.game >>| Game.optScreen address
+        
+        static member optActiveScreenAddress =
+            World.game >>| Game.optActiveScreenAddress
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -174,17 +180,108 @@ let withSubscription address subscription subscriber procedure world : World =
     let world3 = procedure world2
     unsubscribe address subscriber world3
 
-let getComponentAudioDescriptors (world : World) : AudioDescriptor rQueue =
+let registerEntityGuiButton address world : World =
+    let world2 =
+        subscribe
+            DownMouseLeft0
+            address
+            (fun address subscriber message world ->
+                match message.Data with
+                | MouseButtonData (mousePosition, _) ->
+                    let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+                    if entity.IsEnabled && entity.IsVisible then
+                        if isInBox3 mousePosition gui.Position gui.Size then
+                            let button2 = { button with IsDown = true }
+                            let world2 = set (entity, gui, button2) world (World.entityGuiButton subscriber)
+                            publish DownTestButton { Handled = false; Data = NoData } world2
+                        else world
+                    else world
+                | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
+            world
+    subscribe
+        UpMouseLeft0
+        address
+        (fun address subscriber message world ->
+            match message.Data with
+            | MouseButtonData (mousePosition, _) ->
+                let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+                if entity.IsEnabled && entity.IsVisible then
+                    let world2 =
+                        let button2 = { button with IsDown = false }
+                        let world2b = set (entity, gui, button2) world (World.entityGuiButton subscriber)
+                        publish UpTestButton { Handled = false; Data = NoData } world2b
+                    if isInBox3 mousePosition gui.Position gui.Size
+                    then publish ClickTestButton { Handled = false; Data = NoData } world2
+                    else world2
+                else world
+            | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
+        world2
+
+let unregisterEntityGuiButton address world : World =
+    let world2 = unsubscribe DownMouseLeft0 address world
+    unsubscribe UpMouseLeft0 address world2
+
+let addEntityGuiButton entityGuiButton address world : World =
+    let world2 = registerEntityGuiButton address world
+    set entityGuiButton world2 (World.entityGuiButton address)
+
+let removeEntityGuiButton address world : World =
+    let world2 = set None world (World.optEntityGuiButton address)
+    unregisterEntityGuiButton address world2
+
+let addEntityGuiLabel entityGuiButton address world : World =
+    set entityGuiButton world (World.entityGuiButton address)
+
+let removeEntityGuiLabel address world : World =
+    set None world (World.optEntityGuiButton address)
+
+let registerEntityActorBlock (entity, actor, block) address world : World =
+    let bodyCreateMessage =
+        BodyCreateMessage
+            { EntityAddress = address
+              PhysicsId = block.PhysicsId
+              Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size / 2.0f }
+              Position = actor.Position
+              Rotation = actor.Rotation
+              Density = block.Density
+              BodyType = block.BodyType }
+    { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+
+let unregisterEntityActorBlock (entity, actor, block) address world : World =
+    let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
+    { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+
+let addEntityActorBlock entityActorBlock address world : World =
+    let world2 = registerEntityActorBlock entityActorBlock address world
+    set entityActorBlock world2 (World.entityActorBlock address)
+
+let removeEntityActorBlock entityActorBlock address world : World =
+    let world2 = set None world (World.optEntityActorBlock address)
+    unregisterEntityActorBlock entityActorBlock address world2
+
+let addGroup group address world : World =
+    set group world (World.group address)
+
+let removeGroup address world : World =
+    set None world (World.optGroup address)
+
+let addScreenX screen address world : World =
+    set screen world (World.screen address)
+
+let removeScreenX address world : World =
+    set None world (World.optScreen address)
+
+let getComponentAudioDescriptors world : AudioDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
     List.collect (fun descs -> descs) descriptorLists
 
-let getAudioDescriptors (world : World) : AudioDescriptor rQueue =
+let getAudioDescriptors world : AudioDescriptor rQueue =
     let componentDescriptors = getComponentAudioDescriptors world
     let worldDescriptors = [] // TODO: get audio descriptors
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Play the world.
-let play (world : World) : World =
+let play world : World =
     let audioMessages = world.AudioMessages
     let audioDescriptors = getAudioDescriptors world
     let audioPlayer = world.AudioPlayer
@@ -192,7 +289,7 @@ let play (world : World) : World =
     Audio.play audioMessages audioDescriptors audioPlayer
     newWorld
 
-let getComponentRenderDescriptors (world : World) : RenderDescriptor rQueue =
+let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
     List.collect (fun descs -> descs) descriptorLists
 
@@ -215,7 +312,7 @@ let getWorldRenderDescriptors world =
                                 | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
                             | Actor actor ->
                                 match actor.ActorSemantic with
-                                | Crate crate -> Some (SpriteDescriptor { Position = actor.Position; Size = actor.Size; Sprite = crate.Sprite })
+                                | Block block -> Some (SpriteDescriptor { Position = actor.Position; Size = actor.Size; Sprite = block.Sprite })
                                 | Avatar _ -> None) // TODO: implement Avatar
                         entities)
                 groups
@@ -223,13 +320,13 @@ let getWorldRenderDescriptors world =
         let descriptors = Seq.definitize optDescriptors
         List.ofSeq descriptors
 
-let getRenderDescriptors (world : World) : RenderDescriptor rQueue =
+let getRenderDescriptors world : RenderDescriptor rQueue =
     let componentDescriptors = getComponentRenderDescriptors world
     let worldDescriptors = getWorldRenderDescriptors world
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Render the world.
-let render (world : World) : World =
+let render world : World =
     let renderMessages = world.RenderMessages
     let renderDescriptors = getRenderDescriptors world
     let renderer = world.Renderer
@@ -250,13 +347,44 @@ let handleIntegrationMessages integrationMessages world : World =
     List.fold handleIntegrationMessage world integrationMessages
 
 /// Integrate the world.
-let integrate (world : World) : World =
+let integrate world : World =
     let integrationMessages = Physics.integrate world.PhysicsMessages world.Integrator
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
 
-let createTestGame () =
-    
+let createTestWorld sdlDeps =
+
+    let testGame =
+        { Id = getNuId ()
+          IsEnabled = false
+          Screens = LunTrie.empty
+          OptActiveScreenAddress = Some TestScreen }
+
+    let testWorld =
+        { Game = testGame
+          Subscriptions = Map.empty
+          MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+          AudioPlayer = makeAudioPlayer ()
+          Renderer = makeRenderer sdlDeps.RenderContext
+          Integrator = makeIntegrator Gravity
+          AudioMessages = []
+          RenderMessages = []
+          PhysicsMessages = []
+          Components = [] }
+
+    let testScreen =
+        { Id = getNuId ()
+          IsEnabled = true
+          IsVisible = true
+          Groups = LunTrie.empty
+          ScreenSemantic = Title }
+
+    let testGroup =
+        { Id = getNuId ()
+          IsEnabled = true
+          IsVisible = true
+          Entities = LunTrie.empty }
+          
     let testButton =
         { IsDown = false
           UpSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
@@ -268,119 +396,38 @@ let createTestGame () =
           Size = Vector2 512.0f // TODO: look this up from bitmap file
           GuiSemantic = Button testButton }
 
-    let testButtonEntity =
+    let testButtonGuiEntity =
         { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
           EntitySemantic = Gui testButtonGui }
     
-    let testCrate =
-        { Sprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
+    let testBlock =
+        { PhysicsId = getPhysicsId ()
+          Density = 0.1f // TODO: ensure this is koscher with the physics system
+          BodyType = Dynamic
+          Sprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
           ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
-    let testCrateActor =
+    let testBlockActor =
         { Position = Vector2 (650.0f, 0.0f)
           Size = Vector2 512.0f // TODO: look this up from bitmap file
           Rotation = 0.0f
-          ActorSemantic = Crate testCrate }
+          ActorSemantic = Block testBlock }
 
-    let testCrateEntity =
+    let testBlockActorEntity =
         { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
-          EntitySemantic = Actor testCrateActor }
+          EntitySemantic = Actor testBlockActor }
 
-    let testBodyCreateMessage =
-        { PhysicsId = getPhysicsId ()
-          EntityAddress = TestCrate
-          Shape = BoxShape { Center = Vector2.Zero; Extent = testCrateActor.Size / 2.0f }
-          Position = testCrateActor.Position
-          Rotation = 0.0f
-          Density = 0.1f // TODO: ensure this is koscher with the physics system
-          BodyType = BodyType.Dynamic }
-          
-    let testGroup =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          Entities = LunTrie.ofSeq
-            [(Lun.make "testButton", testButtonEntity)
-             (Lun.make "testCrate", testCrateEntity)] }
-
-    let testScreen =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          Groups = LunTrie.singleton (Lun.make "testGroup") testGroup
-          ScreenSemantic = TestScreen { Unused = () }}
-
-    let testGame =
-        { Id = getNuId ()
-          IsEnabled = false
-          Screens = LunTrie.singleton (Lun.make "testScreen") testScreen
-          OptActiveScreenAddress = Some TestScreenAddress }
-
-    (testGame, BodyCreateMessage testBodyCreateMessage)
-
-let createTestWorld sdlDeps =
-
-    let (testGame, testBodyCreateMessage) = createTestGame ()
-
-    let testWorld =
-        { Game = testGame
-          Subscriptions = Map.empty
-          MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-          AudioPlayer = makeAudioPlayer ()
-          Renderer = makeRenderer sdlDeps.RenderContext
-          Integrator = makeIntegrator Gravity
-          AudioMessages = []
-          RenderMessages = []
-          PhysicsMessages = [testBodyCreateMessage]
-          Components = [] }
-
-    let hintRenderingPackageUse =
-        { FileName = "AssetGraph.xml"
-          PackageName = "Misc"
-          HRPU = () }
-
-    let testWorld2 = { testWorld with RenderMessages = HintRenderingPackageUse hintRenderingPackageUse :: testWorld.RenderMessages }
-    
-    let testWorld3 =
-        subscribe
-            DownMouseLeft0
-            TestButton
-            (fun address subscriber message world ->
-                match message.Data with
-                | MouseButtonData (mousePosition, _) ->
-                    let (entity, gui, button) = get world (World.entityGuiButton subscriber)
-                    if entity.IsEnabled && entity.IsVisible then
-                        if isInBox3 mousePosition gui.Position gui.Size then
-                            let button2 = { button with IsDown = true }
-                            let world2 = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                            publish DownTestButton { Handled = false; Data = NoData } world2
-                        else world
-                    else world
-                | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
-            testWorld2
-
-    subscribe
-        UpMouseLeft0
-        TestButton
-        (fun address subscriber message world ->
-            match message.Data with
-            | MouseButtonData (mousePosition, _) ->
-                let (entity, gui, button) = get world (World.entityGuiButton subscriber)
-                if entity.IsEnabled && entity.IsVisible then
-                    let world2 =
-                        let button2 = { button with IsDown = false }
-                        let world2b = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                        publish UpTestButton { Handled = false; Data = NoData } world2b
-                    if isInBox3 mousePosition gui.Position gui.Size
-                    then publish ClickTestButton { Handled = false; Data = NoData } world2
-                    else world2
-                else world
-            | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
-        testWorld3
+    let testWorld2 = addScreenX testScreen TestScreen testWorld
+    let testWorld3 = set (Some TestScreen) testWorld2 World.optActiveScreenAddress
+    let testWorld4 = addGroup testGroup TestGroup testWorld3
+    let testWorld5 = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButton testWorld4
+    let testWorld6 = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlock testWorld5
+    let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
+    { testWorld6 with RenderMessages = hintRenderingPackageUse :: testWorld6.RenderMessages }
 
 let run sdlConfig =
     runSdl
