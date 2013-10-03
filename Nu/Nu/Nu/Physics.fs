@@ -98,16 +98,16 @@ let createBody integrator bodyCreateMessage =
         integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
 let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
-    let body = Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, ref body) then
+    let body = ref Unchecked.defaultof<Dynamics.Body>
+    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
         ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
-        integrator.PhysicsContext.RemoveBody body
+        integrator.PhysicsContext.RemoveBody body.Value
     else debug ("Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'.")
 
 let forceApply integrator forceApplyMessage =
-    let body = Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsId, ref body) then
-        body.ApplyForce (toPhysicsVector2 forceApplyMessage.Force, toPhysicsVector2 forceApplyMessage.Point)
+    let body = ref Unchecked.defaultof<Dynamics.Body>
+    if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsId, body) then
+        body.Value.ApplyForce (toPhysicsVector2 forceApplyMessage.Force, toPhysicsVector2 forceApplyMessage.Point)
     else debug ("Could not apply force to non-existent body with PhysicsId = " + str forceApplyMessage.PhysicsId + "'.")
 
 let handlePhysicsMessage integrator physicsMessage =
@@ -116,8 +116,8 @@ let handlePhysicsMessage integrator physicsMessage =
     | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
     | ForceApplyMessage forceApplyMessage -> forceApply integrator forceApplyMessage
     
-let handlePhysicsMessages integrator physicsMessages =
-    for physicsMessage in physicsMessages do
+let handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
+    for physicsMessage in List.rev physicsMessages do
         handlePhysicsMessage integrator physicsMessage
 
 let createTransformMessages integrator =
@@ -130,7 +130,7 @@ let createTransformMessages integrator =
                       Rotation = body.Rotation }
             integrator.IntegrationMessages.Add bodyTransformMessage
 
-let integrate physicsMessages integrator : IntegrationMessage list =
+let integrate (physicsMessages : PhysicsMessage rQueue) integrator : IntegrationMessage list =
     handlePhysicsMessages integrator physicsMessages
     integrator.PhysicsContext.Step PhysicsStepRate
     createTransformMessages integrator

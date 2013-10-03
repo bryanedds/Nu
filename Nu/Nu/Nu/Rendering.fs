@@ -3,6 +3,7 @@ open System
 open System.IO
 open OpenTK
 open SDL2
+open Nu.Core
 open Nu.Assets
 
 type [<StructuralEquality; NoComparison>] Sprite =
@@ -94,8 +95,8 @@ let handleRenderMessage renderer renderMessage =
         | Right assets -> renderer // TODO: unload assets
     | ScreenFlash -> renderer // TODO: render screen flash for one frame
 
-let handleRenderMessages renderMessages renderer =
-    List.fold handleRenderMessage renderer renderMessages
+let handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
+    List.fold handleRenderMessage renderer (List.rev renderMessages)
 
 let doRender renderDescriptors renderer =
     let renderContext = renderer.RenderContext
@@ -131,7 +132,7 @@ let doRender renderDescriptors renderer =
                     // | _ -> trace "Cannot sprite render with a non-texture asset."
     | _ -> trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
-let render renderMessages renderDescriptors renderer =
+let render (renderMessages : RenderMessage rQueue) renderDescriptors renderer =
     let renderer2 = handleRenderMessages renderMessages renderer
     doRender renderDescriptors renderer2
     renderer2
@@ -143,7 +144,6 @@ let handleRenderExit renderer =
         match renderAsset with
         | TextureAsset texture -> () // apparently there is no need to free textures in SDL
     { renderer with RenderAssetMap = LunTrie.empty }
-
 
 let makeRenderer renderContext =
     { RenderContext = renderContext; RenderAssetMap = LunTrie.empty }
