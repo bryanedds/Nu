@@ -81,7 +81,7 @@ let createBody integrator bodyCreateMessage =
     match bodyCreateMessage.Shape with
     | BoxShape boxShape ->
         let shapeCenter = toPhysicsVector2 boxShape.Center
-        let body = Factories.BodyFactory.CreateRectangle (integrator.PhysicsContext, boxShape.Extent.X, boxShape.Extent.Y, bodyCreateMessage.Density, shapeCenter, bodyCreateMessage.EntityAddress)
+        let body = Factories.BodyFactory.CreateRectangle (integrator.PhysicsContext, boxShape.Extent.X * 2.0f, boxShape.Extent.Y * 2.0f, bodyCreateMessage.Density, shapeCenter, bodyCreateMessage.EntityAddress)
         ignore (body.Position <- toPhysicsVector2 bodyCreateMessage.Position)
         ignore (body.Rotation <- bodyCreateMessage.Rotation)
         ignore (body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType)
