@@ -72,6 +72,9 @@ let seqMap = Lens.seqMap*)
 /// Set a value through a lens
 let set = Lens.set
 
+/// Set a value through a lens with piping state
+let inline setP a lens b = Lens.set a b lens
+
 /// Applies a lens in the 'set' direction within a state monad
 let setState = Lens.setState
 

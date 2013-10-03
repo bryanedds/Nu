@@ -421,13 +421,13 @@ let createTestWorld sdlDeps =
           IsVisible = true
           EntitySemantic = Actor testBlockActor }
 
-    let testWorld2 = addScreenX testScreen TestScreen testWorld
-    let testWorld3 = set (Some TestScreen) testWorld2 World.optActiveScreenAddress
-    let testWorld4 = addGroup testGroup TestGroup testWorld3
-    let testWorld5 = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButton testWorld4
-    let testWorld6 = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlock testWorld5
+    let testWorldV = addScreenX testScreen TestScreen testWorld
+    let testWorldV = set (Some TestScreen) testWorldV World.optActiveScreenAddress
+    let testWorldV = addGroup testGroup TestGroup testWorldV
+    let testWorldV = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButton testWorldV
+    let testWorldV = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlock testWorldV
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-    { testWorld6 with RenderMessages = hintRenderingPackageUse :: testWorld6.RenderMessages }
+    { testWorldV with RenderMessages = hintRenderingPackageUse :: testWorldV.RenderMessages }
 
 let run sdlConfig =
     runSdl
