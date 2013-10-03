@@ -1,4 +1,4 @@
-﻿module Nu.World
+﻿module Nu.Simulation
 open System
 open FSharpx
 open FSharpx.Lens.Operators
@@ -11,7 +11,7 @@ open Nu.Physics
 open Nu.Rendering
 open Nu.Input
 open Nu.Audio
-open Nu.Game
+open Nu.Simulants
 open Nu.Sdl
 
 // TODO: consider converting these from slash-delimited strings
@@ -265,7 +265,7 @@ let addGroup group address world : World =
 let removeGroup address world : World =
     set None world (World.optGroup address)
 
-let addScreenX screen address world : World =
+let addScreenX screen address world : World = // TODO: add plus type
     set screen world (World.screen address)
 
 let removeScreenX address world : World =
@@ -352,87 +352,10 @@ let integrate world : World =
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
 
-let createTestWorld sdlDeps =
-
-    let testGame =
-        { Id = getNuId ()
-          IsEnabled = false
-          Screens = LunTrie.empty
-          OptActiveScreenAddress = Some TestScreen }
-
-    let testWorld =
-        { Game = testGame
-          Subscriptions = Map.empty
-          MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-          AudioPlayer = makeAudioPlayer ()
-          Renderer = makeRenderer sdlDeps.RenderContext
-          Integrator = makeIntegrator Gravity
-          AudioMessages = []
-          RenderMessages = []
-          PhysicsMessages = []
-          Components = [] }
-
-    let testScreen =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          Groups = LunTrie.empty
-          ScreenSemantic = Title }
-
-    let testGroup =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          Entities = LunTrie.empty }
-          
-    let testButton =
-        { IsDown = false
-          UpSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
-          DownSprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
-          ClickSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
-
-    let testButtonGui =
-        { Position = Vector2 100.0f
-          Size = Vector2 512.0f // TODO: look this up from bitmap file
-          GuiSemantic = Button testButton }
-
-    let testButtonGuiEntity =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          EntitySemantic = Gui testButtonGui }
-    
-    let testBlock =
-        { PhysicsId = getPhysicsId ()
-          Density = 0.1f // TODO: ensure this is koscher with the physics system
-          BodyType = Dynamic
-          Sprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
-          ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
-
-    let testBlockActor =
-        { Position = Vector2 (650.0f, 0.0f)
-          Size = Vector2 512.0f // TODO: look this up from bitmap file
-          Rotation = 0.0f
-          ActorSemantic = Block testBlock }
-
-    let testBlockActorEntity =
-        { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
-          EntitySemantic = Actor testBlockActor }
-
-    let testWorld_ = addScreenX testScreen TestScreen testWorld
-    let testWorld_ = set (Some TestScreen) testWorld_ World.optActiveScreenAddress
-    let testWorld_ = addGroup testGroup TestGroup testWorld_
-    let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButton testWorld_
-    let testWorld_ = addEntityActorBlock (testBlockActorEntity, testBlockActor, testBlock) TestBlock testWorld_
-    let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-    { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
-
-let run sdlConfig =
+let run2 createWorld sdlConfig =
     runSdl
         (fun sdlDeps ->
-            createTestWorld sdlDeps)
+            createWorld sdlDeps)
         (fun refEvent world ->
             let event = refEvent.Value
             match event.``type`` with
@@ -463,4 +386,24 @@ let run sdlConfig =
             play world2) // TODO: put play in its own callback!
         (fun world ->
             { world with Renderer = handleRenderExit world.Renderer })
+        sdlConfig
+
+let run sdlConfig =
+    run2
+        (fun sdlDeps ->
+            let game =
+                { Id = getNuId ()
+                  IsEnabled = true
+                  Screens = LunTrie.empty
+                  OptActiveScreenAddress = Some TestScreen }
+            { Game = game
+              Subscriptions = Map.empty
+              MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+              AudioPlayer = makeAudioPlayer ()
+              Renderer = makeRenderer sdlDeps.RenderContext
+              Integrator = makeIntegrator Gravity
+              AudioMessages = []
+              RenderMessages = []
+              PhysicsMessages = []
+              Components = [] })
         sdlConfig

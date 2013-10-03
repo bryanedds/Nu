@@ -2,13 +2,6 @@
 open OpenTK
 open Nu.Core
 
-/// Describes human input.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] HumanInput =
-    | PadInput // of ...
-    | KeyboardInput // of ...
-    | MouseInput // of ...
-
 /// Describes a mouse button.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] MouseButton =
