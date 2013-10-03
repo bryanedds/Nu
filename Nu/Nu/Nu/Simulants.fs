@@ -8,7 +8,7 @@
 
 // TODO: go through Prime and label / attribute all its types as was done here.
 
-module Nu.Game
+module Nu.Simulants
 open System
 open OpenTK
 open FSharpx
@@ -30,22 +30,22 @@ let setChild childAdder parent (address : Address) child =
     | [head] -> childAdder head parent child
     | _ -> failwith ("Invalid address '" + str address + "'.")
 
-let getChildPlus childFinder childToPlus address parent =
+let getChildSem childFinder childToSem address parent =
     let child = getChild childFinder parent address
-    let plus = childToPlus child
-    (child, plus)
+    let semantic = childToSem child
+    (child, semantic)
 
-let setChildPlus childAdder childPlusSetter address parent child plus =
-    let child2 = childPlusSetter child plus
+let setChildSem childAdder childSemSetter address parent child semantic =
+    let child2 = childSemSetter child semantic
     setChild childAdder parent address child2
 
-let getChildPlusPlus childFinder childToPlusPlus address parent =
+let getChildSemSem childFinder childToSemSem address parent =
     let child = getChild childFinder parent address
-    let (plus, plus2) = childToPlusPlus child
-    (child, plus, plus2)
+    let (semantic, semantic2) = childToSemSem child
+    (child, semantic, semantic2)
 
-let setChildPlusPlus childAdder childPlusPlusSetter address parent child plus plus2 =
-    let child2 = childPlusPlusSetter child plus plus2
+let setChildSemSem childAdder childSemSemSetter address parent child semantic semantic2 =
+    let child2 = childSemSemSetter child semantic semantic2
     setChild childAdder parent address child2
 
 let getOptChild optChildFinder parent (address : Address) =
@@ -66,35 +66,35 @@ let setOptChild addChild removeChild parent (address : Address) optChild =
         | Some child -> addChild head parent child
     | _ -> failwith ("Invalid address '" + str address + "'.")
 
-let getOptChildPlus optChildFinder childToOptPlus parent address =
+let getOptChildSem optChildFinder childToOptSem parent address =
     let optChild = getOptChild optChildFinder parent address
     match optChild with
     | None -> None
     | Some child ->
-        let optPlus = childToOptPlus child
-        match optPlus with
+        let optSem = childToOptSem child
+        match optSem with
         | None -> None
-        | Some plus -> Some (child, plus)
+        | Some semantic -> Some (child, semantic)
 
-let setOptChildPlus childAdder childRemover childPlusSetter optChildPlus parent address =
-    match optChildPlus with
+let setOptChildSem childAdder childRemover childSemSetter optChildSem parent address =
+    match optChildSem with
     | None -> setOptChild childAdder childRemover parent address None
-    | Some (child, plus) -> setChildPlus childAdder childPlusSetter address parent child plus
+    | Some (child, semantic) -> setChildSem childAdder childSemSetter address parent child semantic
     
-let getOptChildPlusPlus optChildFinder childToOptPlusPlus parent address =
+let getOptChildSemSem optChildFinder childToOptSemSem parent address =
     let optChild = getOptChild optChildFinder parent address
     match optChild with
     | None -> None
     | Some child ->
-        let optPlusPlus = childToOptPlusPlus child
-        match optPlusPlus with
+        let optSemSem = childToOptSemSem child
+        match optSemSem with
         | None -> None
-        | Some (plus, plus2) -> Some (child, plus, plus2)
+        | Some (semantic, semantic2) -> Some (child, semantic, semantic2)
 
-let setOptChildPlusPlus childAdder childRemover childPlusPlusSetter optChildPlusPlus parent address =
-    match optChildPlusPlus with
+let setOptChildSemSem childAdder childRemover childSemSemSetter optChildSemSem parent address =
+    match optChildSemSem with
     | None -> setOptChild childAdder childRemover parent address None
-    | Some (child, plus, plus2) -> setChildPlusPlus childAdder childPlusPlusSetter address parent child plus plus2
+    | Some (child, semantic, semantic2) -> setChildSemSem childAdder childSemSemSetter address parent child semantic semantic2
 
 type [<StructuralEquality; NoComparison>] Button =
     { IsDown : bool
@@ -121,40 +121,20 @@ type [<StructuralEquality; NoComparison>] Gui =
       GuiSemantic : GuiSemantic }
     with
         static member button =
-            { Get = fun this ->
-                match this.GuiSemantic with
-                | Button button -> button
-                | _ -> failwith "Gui is not a button."
-              Set = fun button this ->
-                { this with GuiSemantic = Button button }}
+            { Get = fun this -> match this.GuiSemantic with Button button -> button | _ -> failwith "Gui is not a button."
+              Set = fun button this -> { this with GuiSemantic = Button button }}
 
         static member optButton =
-            { Get = fun this ->
-                match this.GuiSemantic with
-                | Button button -> Some button
-                | _ -> None
-              Set = fun optButton this ->
-                match optButton with
-                | None -> failwith "Cannot set gui to None."
-                | Some button -> { this with GuiSemantic = Button button }}
+            { Get = fun this -> match this.GuiSemantic with Button button -> Some button | _ -> None
+              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some button -> { this with GuiSemantic = Button button }}
         
         static member label =
-            { Get = fun this ->
-                match this.GuiSemantic with
-                | Label label -> label
-                | _ -> failwith "Gui is not a label."
-              Set = fun label this ->
-                { this with GuiSemantic = Label label }}
+            { Get = fun this -> match this.GuiSemantic with Label label -> label | _ -> failwith "Gui is not a label."
+              Set = fun label this -> { this with GuiSemantic = Label label }}
 
         static member optLabel =
-            { Get = fun this ->
-                match this.GuiSemantic with
-                | Label label -> Some label
-                | _ -> None
-              Set = fun optButton this ->
-                match optButton with
-                | None -> failwith "Cannot set semantic to None."
-                | Some label -> { this with GuiSemantic = Label label }}
+            { Get = fun this -> match this.GuiSemantic with Label label -> Some label | _ -> None
+              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some label -> { this with GuiSemantic = Label label }}
 
 type [<StructuralEquality; NoComparison>] Block =
     { PhysicsId : Id
@@ -180,22 +160,12 @@ type [<StructuralEquality; NoComparison>] Actor =
       ActorSemantic : ActorSemantic }
     with
         static member block =
-            { Get = fun this ->
-                match this.ActorSemantic with
-                | Block block -> block
-                | _ -> failwith "Actor is not a block."
-              Set = fun block this ->
-                { this with ActorSemantic = Block block }}
+            { Get = fun this -> match this.ActorSemantic with Block block -> block | _ -> failwith "Actor is not a block."
+              Set = fun block this -> { this with ActorSemantic = Block block }}
 
         static member optBlock =
-            { Get = fun this ->
-                match this.ActorSemantic with
-                | Block block -> Some block
-                | _ -> None
-              Set = fun optBlock this ->
-                match optBlock with
-                | None -> failwith "Cannot set semantic to None."
-                | Some block -> { this with ActorSemantic = Block block }}
+            { Get = fun this -> match this.ActorSemantic with Block block -> Some block | _ -> None
+              Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set semantic to None." | Some block -> { this with ActorSemantic = Block block }}
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
@@ -213,30 +183,16 @@ type [<StructuralEquality; NoComparison>] Entity =
       EntitySemantic : EntitySemantic }
     with
         static member gui =
-            { Get = fun this ->
-                match this.EntitySemantic with
-                | Gui gui -> gui
-                | _ -> failwith "Entity is not a gui."
-              Set = fun gui this ->
-                { this with EntitySemantic = Gui gui }}
+            { Get = fun this -> match this.EntitySemantic with Gui gui -> gui | _ -> failwith "Entity is not a gui."
+              Set = fun gui this -> { this with EntitySemantic = Gui gui }}
         
         static member optGui =
-            { Get = fun this ->
-                match this.EntitySemantic with
-                | Gui gui -> Some gui
-                | _ -> None
-              Set = fun optGui this ->
-                match optGui with
-                | None -> failwith "Cannot set Entity.optGui to None."
-                | Some gui -> set gui this Entity.gui }
+            { Get = fun this -> match this.EntitySemantic with Gui gui -> Some gui | _ -> None
+              Set = fun optGui this -> match optGui with None -> failwith "Cannot set Entity.optGui to None." | Some gui -> set gui this Entity.gui }
         
         static member guiButton =
-            { Get = fun this ->
-                let gui = get this Entity.gui
-                (gui, get gui Gui.button)
-              Set = fun (gui, button) this ->
-                let newGui = set button Gui.button
-                set gui this Entity.gui }
+            { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.button)
+              Set = fun (gui, button) this -> let newGui = set button Gui.button in set gui this Entity.gui }
         
         static member optGuiButton =
             { Get = fun this ->
@@ -254,12 +210,8 @@ type [<StructuralEquality; NoComparison>] Entity =
                 | Some guiButton -> set guiButton this Entity.guiButton }
         
         static member guiLabel =
-            { Get = fun this ->
-                let gui = get this Entity.gui
-                (gui, get gui Gui.label)
-              Set = fun (gui, label) this ->
-                let newGui = set label Gui.label
-                set gui this Entity.gui }
+            { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.label)
+              Set = fun (gui, label) this -> let newGui = set label Gui.label in set gui this Entity.gui }
         
         static member optGuiLabel =
             { Get = fun this ->
@@ -277,30 +229,16 @@ type [<StructuralEquality; NoComparison>] Entity =
                 | Some guiLabel -> set guiLabel this Entity.guiLabel }
 
         static member actor =
-            { Get = fun this ->
-                match this.EntitySemantic with
-                | Actor actor -> actor
-                | _ -> failwith "Entity is not an actor."
-              Set = fun actor this ->
-                { this with EntitySemantic = Actor actor }}
+            { Get = fun this -> match this.EntitySemantic with Actor actor -> actor | _ -> failwith "Entity is not an actor."
+              Set = fun actor this -> { this with EntitySemantic = Actor actor }}
         
         static member optActor =
-            { Get = fun this ->
-                match this.EntitySemantic with
-                | Actor actor -> Some actor
-                | _ -> None
-              Set = fun optActor this ->
-                match optActor with
-                | None -> failwith "Cannot set Entity.optActor to None."
-                | Some actor -> set actor this Entity.actor }
+            { Get = fun this -> match this.EntitySemantic with Actor actor -> Some actor | _ -> None
+              Set = fun optActor this -> match optActor with None -> failwith "Cannot set Entity.optActor to None." | Some actor -> set actor this Entity.actor }
         
         static member actorBlock =
-            { Get = fun this ->
-                let actor = get this Entity.actor
-                (actor, get actor Actor.block)
-              Set = fun (actor, block) this ->
-                let newActor = set block Actor.block
-                set actor this Entity.actor }
+            { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.block)
+              Set = fun (actor, block) this -> let newActor = set block Actor.block in set actor this Entity.actor }
         
         static member optActorBlock =
             { Get = fun this ->
@@ -435,44 +373,44 @@ type [<StructuralEquality; NoComparison>] Group =
               Set = fun optEntity this -> setOptChild Group.childAdder Group.childRemover this address optEntity }
         
         static member entityGui address =
-            { Get = fun this -> getChildPlus Group.childFinder Group.childToGui address this
-              Set = fun (entity, gui) this -> setChildPlus Group.childAdder Group.childGuiSetter address this entity gui }
+            { Get = fun this -> getChildSem Group.childFinder Group.childToGui address this
+              Set = fun (entity, gui) this -> setChildSem Group.childAdder Group.childGuiSetter address this entity gui }
         
         static member optEntityGui address =
-            { Get = fun this -> getOptChildPlus Group.optChildFinder Group.childToOptGui this address
-              Set = fun optEntityGui this -> setOptChildPlus Group.childAdder Group.childRemover Group.childGuiSetter optEntityGui this address }
+            { Get = fun this -> getOptChildSem Group.optChildFinder Group.childToOptGui this address
+              Set = fun optEntityGui this -> setOptChildSem Group.childAdder Group.childRemover Group.childGuiSetter optEntityGui this address }
         
         static member entityGuiButton address =
-            { Get = fun this -> getChildPlusPlus Group.childFinder Group.childToGuiButton address this
-              Set = fun (entity, gui, button) this -> setChildPlusPlus Group.childAdder Group.childGuiButtonSetter address this entity gui button }
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToGuiButton address this
+              Set = fun (entity, gui, button) this -> setChildSemSem Group.childAdder Group.childGuiButtonSetter address this entity gui button }
         
         static member optEntityGuiButton address =
-            { Get = fun this -> getOptChildPlusPlus Group.optChildFinder Group.childToOptGuiButton this address
-              Set = fun optEntityGuiButton this -> setOptChildPlusPlus Group.childAdder Group.childRemover Group.childGuiButtonSetter optEntityGuiButton this address }
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiButton this address
+              Set = fun optEntityGuiButton this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiButtonSetter optEntityGuiButton this address }
         
         static member entityGuiLabel address =
-            { Get = fun this -> getChildPlusPlus Group.childFinder Group.childToGuiLabel address this
-              Set = fun (entity, gui, label) this -> setChildPlusPlus Group.childAdder Group.childGuiLabelSetter address this entity gui label }
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToGuiLabel address this
+              Set = fun (entity, gui, label) this -> setChildSemSem Group.childAdder Group.childGuiLabelSetter address this entity gui label }
         
         static member optEntityGuiLabel address =
-            { Get = fun this -> getOptChildPlusPlus Group.optChildFinder Group.childToOptGuiLabel this address
-              Set = fun optEntityGuiLabel this -> setOptChildPlusPlus Group.childAdder Group.childRemover Group.childGuiLabelSetter optEntityGuiLabel this address }
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiLabel this address
+              Set = fun optEntityGuiLabel this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiLabelSetter optEntityGuiLabel this address }
 
         static member entityActor address =
-            { Get = fun this -> getChildPlus Group.childFinder Group.childToActor address this
-              Set = fun (entity, actor) this -> setChildPlus Group.childAdder Group.childActorSetter address this entity actor }
+            { Get = fun this -> getChildSem Group.childFinder Group.childToActor address this
+              Set = fun (entity, actor) this -> setChildSem Group.childAdder Group.childActorSetter address this entity actor }
         
         static member optEntityActor address =
-            { Get = fun this -> getOptChildPlus Group.optChildFinder Group.childToOptActor this address
-              Set = fun optEntityActor this -> setOptChildPlus Group.childAdder Group.childRemover Group.childActorSetter optEntityActor this address }
+            { Get = fun this -> getOptChildSem Group.optChildFinder Group.childToOptActor this address
+              Set = fun optEntityActor this -> setOptChildSem Group.childAdder Group.childRemover Group.childActorSetter optEntityActor this address }
         
         static member entityActorBlock address =
-            { Get = fun this -> getChildPlusPlus Group.childFinder Group.childToActorBlock address this
-              Set = fun (entity, actor, block) this -> setChildPlusPlus Group.childAdder Group.childActorBlockSetter address this entity actor block }
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToActorBlock address this
+              Set = fun (entity, actor, block) this -> setChildSemSem Group.childAdder Group.childActorBlockSetter address this entity actor block }
         
         static member optEntityActorBlock address =
-            { Get = fun this -> getOptChildPlusPlus Group.optChildFinder Group.childToOptActorBlock this address
-              Set = fun optEntityActorBlock this -> setOptChildPlusPlus Group.childAdder Group.childRemover Group.childActorBlockSetter optEntityActorBlock this address }
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptActorBlock this address
+              Set = fun optEntityActorBlock this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childActorBlockSetter optEntityActorBlock this address }
         
         static member entities =
             { Get = fun this -> this.Entities

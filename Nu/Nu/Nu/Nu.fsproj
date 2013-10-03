@@ -50,8 +50,8 @@
     <Compile Include="Rendering.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
-    <Compile Include="Game.fs" />
-    <Compile Include="World.fs" />
+    <Compile Include="Simulants.fs" />
+    <Compile Include="Simulation.fs" />
     <Compile Include="Program.fs" />
     <None Include="SDL2.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
