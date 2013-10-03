@@ -21,8 +21,8 @@ type [<StructuralEquality; NoComparison>] BodyType =
     | Dynamic
 
 type [<StructuralEquality; NoComparison>] BodyCreateMessage =
-    { PhysicsId : Id
-      EntityAddress : Address
+    { EntityAddress : Address
+      PhysicsId : Id
       Shape : BodyShape
       Position : Vector2
       Rotation : single
