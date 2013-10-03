@@ -14,6 +14,7 @@ open OpenTK
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu.Core
+open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
 
@@ -155,14 +156,17 @@ type [<StructuralEquality; NoComparison>] Gui =
                 | None -> failwith "Cannot set semantic to None."
                 | Some label -> { this with GuiSemantic = Label label }}
 
-type [<StructuralEquality; NoComparison>] Crate =
-    { Sprite : Sprite
+type [<StructuralEquality; NoComparison>] Block =
+    { PhysicsId : Id
+      Density : single
+      BodyType : BodyType
+      Sprite : Sprite
       ContactSound : Sound }
 
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] ActorSemantic =
-    | Crate of Crate
+    | Block of Block
     | Avatar of unit
  // | ...additional actors
  // | UserDefinedActor of IUserDefinedActor (* this would be one way to get open actor semantics, but perhaps at the cost of its value semantics... *)
@@ -175,23 +179,23 @@ type [<StructuralEquality; NoComparison>] Actor =
       Rotation : single
       ActorSemantic : ActorSemantic }
     with
-        static member crate =
+        static member block =
             { Get = fun this ->
                 match this.ActorSemantic with
-                | Crate crate -> crate
-                | _ -> failwith "Actor is not a crate."
-              Set = fun crate this ->
-                { this with ActorSemantic = Crate crate }}
+                | Block block -> block
+                | _ -> failwith "Actor is not a block."
+              Set = fun block this ->
+                { this with ActorSemantic = Block block }}
 
-        static member optCrate =
+        static member optBlock =
             { Get = fun this ->
                 match this.ActorSemantic with
-                | Crate crate -> Some crate
+                | Block block -> Some block
                 | _ -> None
-              Set = fun optCrate this ->
-                match optCrate with
+              Set = fun optBlock this ->
+                match optBlock with
                 | None -> failwith "Cannot set semantic to None."
-                | Some crate -> { this with ActorSemantic = Crate crate }}
+                | Some block -> { this with ActorSemantic = Block block }}
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
@@ -290,28 +294,28 @@ type [<StructuralEquality; NoComparison>] Entity =
                 | None -> failwith "Cannot set Entity.optActor to None."
                 | Some actor -> set actor this Entity.actor }
         
-        static member actorCrate =
+        static member actorBlock =
             { Get = fun this ->
                 let actor = get this Entity.actor
-                (actor, get actor Actor.crate)
-              Set = fun (actor, crate) this ->
-                let newActor = set crate Actor.crate
+                (actor, get actor Actor.block)
+              Set = fun (actor, block) this ->
+                let newActor = set block Actor.block
                 set actor this Entity.actor }
         
-        static member optActorCrate =
+        static member optActorBlock =
             { Get = fun this ->
                 let optActor = get this Entity.optActor
                 match optActor with
                 | None -> None
                 | Some actor ->
-                    let optCrate = get actor Actor.optCrate
-                    match optCrate with
+                    let optBlock = get actor Actor.optBlock
+                    match optBlock with
                     | None -> None
-                    | Some crate -> Some (actor, crate)
-              Set = fun optActorCrate this ->
-                match optActorCrate with
+                    | Some block -> Some (actor, block)
+              Set = fun optActorBlock this ->
+                match optActorBlock with
                 | None -> failwith "Cannot set Entity.optActor to None."
-                | Some actorCrate -> set actorCrate this Entity.actorCrate }
+                | Some actorBlock -> set actorBlock this Entity.actorBlock }
 
 /// A game entity group.
 /// A serializable value type.
@@ -402,23 +406,23 @@ type [<StructuralEquality; NoComparison>] Group =
             | Actor actor -> Some actor
             | _ -> None
         
-        static member private childActorCrateSetter child actor crate =
-            let actor2 = { actor with ActorSemantic = Crate crate }
+        static member private childActorBlockSetter child actor block =
+            let actor2 = { actor with ActorSemantic = Block block }
             { child with EntitySemantic = Actor actor2 }
         
-        static member private childToActorCrate child =
+        static member private childToActorBlock child =
             match child.EntitySemantic with
             | Actor actor ->
                 match actor.ActorSemantic with
-                | Crate crate -> (actor, crate)
+                | Block block -> (actor, block)
                 | _ -> failwith "Semantic of wrong type."
             | _ -> failwith "Semantic of wrong type."
         
-        static member private childToOptActorCrate child =
+        static member private childToOptActorBlock child =
             match child.EntitySemantic with
             | Actor actor ->
                 match actor.ActorSemantic with
-                | Crate crate -> Some (actor, crate)
+                | Block block -> Some (actor, block)
                 | _ -> None
             | _ -> None
         
@@ -462,25 +466,21 @@ type [<StructuralEquality; NoComparison>] Group =
             { Get = fun this -> getOptChildPlus Group.optChildFinder Group.childToOptActor this address
               Set = fun optEntityActor this -> setOptChildPlus Group.childAdder Group.childRemover Group.childActorSetter optEntityActor this address }
         
-        static member entityActorCrate address =
-            { Get = fun this -> getChildPlusPlus Group.childFinder Group.childToActorCrate address this
-              Set = fun (entity, actor, crate) this -> setChildPlusPlus Group.childAdder Group.childActorCrateSetter address this entity actor crate }
+        static member entityActorBlock address =
+            { Get = fun this -> getChildPlusPlus Group.childFinder Group.childToActorBlock address this
+              Set = fun (entity, actor, block) this -> setChildPlusPlus Group.childAdder Group.childActorBlockSetter address this entity actor block }
         
-        static member optEntityActorCrate address =
-            { Get = fun this -> getOptChildPlusPlus Group.optChildFinder Group.childToOptActorCrate this address
-              Set = fun optEntityActorCrate this -> setOptChildPlusPlus Group.childAdder Group.childRemover Group.childActorCrateSetter optEntityActorCrate this address }
+        static member optEntityActorBlock address =
+            { Get = fun this -> getOptChildPlusPlus Group.optChildFinder Group.childToOptActorBlock this address
+              Set = fun optEntityActorBlock this -> setOptChildPlusPlus Group.childAdder Group.childRemover Group.childActorBlockSetter optEntityActorBlock this address }
         
         static member entities =
             { Get = fun this -> this.Entities
               Set = fun entities this -> { this with Entities = entities }}
 
-type [<StructuralEquality; NoComparison>] TestScreen =
-    { Unused : unit }
-
 /// An algabraically-closed semantics for game screens.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] ScreenSemantic =
-    | TestScreen of TestScreen
     | Title // of Title
     | Intro // of Intro
  // | ...additional screens
@@ -509,18 +509,6 @@ type [<StructuralEquality; NoComparison>] Screen =
         
         static member private childRemover addressHead parent =
             { parent with Screen.Groups = LunTrie.remove addressHead parent.Groups }
-        
-        static member group address =
-            { Get = fun this -> getChild Screen.childFinder this address
-              Set = fun group this -> setChild Screen.childAdder this address group }
-        
-        static member optGroup address =
-            { Get = fun this -> getOptChild Screen.optChildFinder this address
-              Set = fun optGroup this -> setOptChild Screen.childAdder Screen.childRemover this address optGroup }
-        
-        static member groups =
-            { Get = fun this -> this.Groups
-              Set = fun groups this -> { this with Groups = groups }}
         
         static member entity address =
             Screen.group [List.head address] >>| Group.entity (List.tail address)
@@ -552,11 +540,23 @@ type [<StructuralEquality; NoComparison>] Screen =
         static member optEntityActor address =
             Screen.group [List.head address] >>| Group.optEntityActor (List.tail address)
         
-        static member entityActorCrate address =
-            Screen.group [List.head address] >>| Group.entityActorCrate (List.tail address)
+        static member entityActorBlock address =
+            Screen.group [List.head address] >>| Group.entityActorBlock (List.tail address)
         
-        static member optEntityActorCrate address =
-            Screen.group [List.head address] >>| Group.optEntityActorCrate (List.tail address)
+        static member optEntityActorBlock address =
+            Screen.group [List.head address] >>| Group.optEntityActorBlock (List.tail address)
+        
+        static member group address =
+            { Get = fun this -> getChild Screen.childFinder this address
+              Set = fun group this -> setChild Screen.childAdder this address group }
+        
+        static member optGroup address =
+            { Get = fun this -> getOptChild Screen.optChildFinder this address
+              Set = fun optGroup this -> setOptChild Screen.childAdder Screen.childRemover this address optGroup }
+        
+        static member groups =
+            { Get = fun this -> this.Groups
+              Set = fun groups this -> { this with Groups = groups }}
 
 /// A game.
 /// A serializable value type.
@@ -580,25 +580,6 @@ type [<StructuralEquality; NoComparison>] Game =
         
         static member private childRemover addressHead parent =
             { parent with Game.Screens = LunTrie.remove addressHead parent.Screens }
-        
-        static member screen address =
-            { Get = fun this -> getChild Game.childFinder this address
-              Set = fun screen this -> setChild Game.childAdder this address screen }
-        
-        static member optScreen address =
-            { Get = fun this -> getOptChild Game.optChildFinder this address
-              Set = fun optScreen this -> setOptChild Game.childAdder Game.childRemover this address optScreen }
-        
-        static member screens =
-            { Get = fun this -> this.Screens
-              Set = fun screens this -> { this with Screens = screens }}
-        
-        static member optActiveScreenAddress =
-            { Get = fun this -> this.OptActiveScreenAddress
-              Set = fun optActiveScreenAddress this -> { this with OptActiveScreenAddress = optActiveScreenAddress }}
-        
-        static member group (address : Address) =
-            Game.screen [List.head address] >>| Screen.group (List.tail address)
         
         static member entity (address : Address) =
             Game.screen [List.head address] >>| Screen.entity (List.tail address)
@@ -630,8 +611,30 @@ type [<StructuralEquality; NoComparison>] Game =
         static member optEntityActor (address : Address) =
             Game.screen [List.head address] >>| Screen.optEntityActor (List.tail address)
         
-        static member entityActorCrate (address : Address) =
-            Game.screen [List.head address] >>| Screen.entityActorCrate (List.tail address)
+        static member entityActorBlock (address : Address) =
+            Game.screen [List.head address] >>| Screen.entityActorBlock (List.tail address)
         
-        static member optEntityActorCrate (address : Address) =
-            Game.screen [List.head address] >>| Screen.optEntityActorCrate (List.tail address)
+        static member optEntityActorBlock (address : Address) =
+            Game.screen [List.head address] >>| Screen.optEntityActorBlock (List.tail address)
+        
+        static member group (address : Address) =
+            Game.screen [List.head address] >>| Screen.group (List.tail address)
+        
+        static member optGroup (address : Address) =
+            Game.screen [List.head address] >>| Screen.optGroup (List.tail address)
+        
+        static member screen address =
+            { Get = fun this -> getChild Game.childFinder this address
+              Set = fun screen this -> setChild Game.childAdder this address screen }
+        
+        static member optScreen address =
+            { Get = fun this -> getOptChild Game.optChildFinder this address
+              Set = fun optScreen this -> setOptChild Game.childAdder Game.childRemover this address optScreen }
+        
+        static member screens =
+            { Get = fun this -> this.Screens
+              Set = fun screens this -> { this with Screens = screens }}
+        
+        static member optActiveScreenAddress =
+            { Get = fun this -> this.OptActiveScreenAddress
+              Set = fun optActiveScreenAddress this -> { this with OptActiveScreenAddress = optActiveScreenAddress }}
