@@ -48,7 +48,7 @@ type [<ReferenceEquality>] Subscription =
 
 /// A map of game message subscriptions.
 /// A reference type due to the reference-typeness of Subscription.
-and Subscriptions = Map<Address, Map<Address, Subscription>>
+and Subscriptions = Map<Address, Map<Address, Subscription>> // TODO: make this imperative
 
 /// The world, in a functional programming sense.
 /// A reference type with some value semantics.

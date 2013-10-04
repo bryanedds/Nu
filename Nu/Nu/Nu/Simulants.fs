@@ -261,7 +261,7 @@ type [<StructuralEquality; NoComparison>] Group =
     { Id : Id // TODO: consider if these IDs are actually necessary
       IsEnabled : bool
       IsVisible : bool
-      Entities : Entity LunTrie }
+      Entities : Entity LunTrie } // TODO: make this imperative
     with
         static member private optChildFinder addressHead parent =
             LunTrie.tryFind addressHead parent.Entities
@@ -430,7 +430,7 @@ type [<StructuralEquality; NoComparison>] Screen =
     { Id : Id // TODO: consider if these IDs are actually necessary
       IsEnabled : bool
       IsVisible : bool
-      Groups : Group LunTrie
+      Groups : Group LunTrie // TODO: make this imperative
       ScreenSemantic : ScreenSemantic }
     with
         static member private optChildFinder addressHead parent =
@@ -501,7 +501,7 @@ type [<StructuralEquality; NoComparison>] Screen =
 type [<StructuralEquality; NoComparison>] Game =
     { Id : Id // TODO: consider if these IDs are actually necessary
       IsEnabled : bool
-      Screens : Screen LunTrie
+      Screens : Screen LunTrie // TODO: make this imperative
       OptActiveScreenAddress : Address option }
     with
         static member private optChildFinder addressHead parent =

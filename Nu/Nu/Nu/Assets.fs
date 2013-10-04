@@ -37,7 +37,7 @@ type [<StructuralEquality; NoComparison>] AssetKey =
     { Name : Lun
       PackageName : Lun }
 
-type 'a AssetMap = ('a LunTrie) LunTrie
+type 'a AssetMap = ('a LunTrie) LunTrie // TODO: make this imperative
 
 let tryLoadAsset packageName (xmlNode : XmlNode) =
     let xmlAttributes = xmlNode.Attributes
