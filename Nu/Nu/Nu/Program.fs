@@ -25,8 +25,8 @@ let createTestBlock () =
         { PhysicsId = getPhysicsId ()
           Density = 0.1f // TODO: ensure this is koscher with the physics system
           BodyType = Dynamic
-          Sprite = { AssetName = Lun.make "Image3"; PackageName = Lun.make "Misc" }
-          ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc" }
+          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testBlockActor =
         { Position = Vector2 (400.0f, 200.0f)
@@ -77,9 +77,9 @@ let createTestWorld (sdlDeps : SdlDeps) =
           
     let testButton =
         { IsDown = false
-          UpSprite = { AssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
-          DownSprite = { AssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
-          ClickSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
+          DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
+          ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testButtonGui =
         { Position = Vector2 100.0f
@@ -96,8 +96,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
         { PhysicsId = getPhysicsId ()
           Density = 0.1f // TODO: ensure this is koscher with the physics system
           BodyType = Static
-          Sprite = { AssetName = Lun.make "Image4"; PackageName = Lun.make "Misc" }
-          ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc" }
+          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testFloorActor =
         { Position = Vector2 (250.0f, 650.0f)

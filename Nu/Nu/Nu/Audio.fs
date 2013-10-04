@@ -1,11 +1,11 @@
 ﻿module Nu.Audio
 
 type [<StructuralEquality; NoComparison>] Sound =
-    { AssetName : Lun
+    { SoundAssetName : Lun
       PackageName : Lun }
 
 type [<StructuralEquality; NoComparison>] Song =
-    { AssetName : Lun
+    { SongAssetName : Lun
       PackageName : Lun }
 
 type [<StructuralEquality; NoComparison>] SongDescriptor =

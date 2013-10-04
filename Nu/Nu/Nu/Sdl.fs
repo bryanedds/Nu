@@ -86,7 +86,7 @@ let rec runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world k
             runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world3 keepRunning2
         else ignore (handleExit world)
 
-let runSdl createWorld handleEvent handleUpdate handleRender handleExit sdlConfig =
+let runSdl createWorld handleEvent handleUpdate handleRender handleExit sdlConfig : int =
     withSdlInit
         (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
         (fun () -> SDL.SDL_Quit ())
