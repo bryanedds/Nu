@@ -75,6 +75,7 @@
     <Content Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FarseerPhysics">
