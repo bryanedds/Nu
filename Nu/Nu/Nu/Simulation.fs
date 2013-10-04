@@ -1,5 +1,6 @@
 ﻿module Nu.Simulation
 open System
+open System.Collections.Generic
 open FSharpx
 open FSharpx.Lens.Operators
 open SDL2
@@ -48,7 +49,7 @@ type [<ReferenceEquality>] Subscription =
 
 /// A map of game message subscriptions.
 /// A reference type due to the reference-typeness of Subscription.
-and Subscriptions = Map<Address, Map<Address, Subscription>> // TODO: make this imperative
+and Subscriptions = Dictionary<Address, Dictionary<Address, Subscription>>
 
 /// The world, in a functional programming sense.
 /// A reference type with some value semantics.
@@ -135,36 +136,40 @@ and IWorldComponent =
 
 /// Publish a message to the given address.
 let publish address message world : World =
-    let optSubMap = Map.tryFind address world.Subscriptions
-    match optSubMap with
+    let optSubDict = Dictionary.tryFind address world.Subscriptions
+    match optSubDict with
     | None -> world
-    | Some subMap ->
-        Map.fold
-            (fun world2 subscriber (Subscription subscription) -> subscription address subscriber message world2)
+    | Some subDict ->
+        Seq.fold
+            (fun world2 (subKvp : KeyValuePair<_, _>) ->
+                match (subKvp.Key, subKvp.Value) with
+                | (subscriber, Subscription subscription) ->
+                    subscription address subscriber message world)
             world
-            subMap
+            subDict
 
 /// Subscribe to messages at the given address.
 let subscribe address subscriber subscription world : World =
     let sub = Subscription subscription
     let subs = world.Subscriptions
-    let optSubMap = Map.tryFind address subs
-    { world with
-        Subscriptions =
-            match optSubMap with
-            | None -> let newSubMap = Map.singleton subscriber sub in Map.add address newSubMap subs
-            | Some subMap -> let newSubMap = Map.add subscriber sub subMap in Map.add address newSubMap subs }
+    let optSubDict = Dictionary.tryFind address subs
+    match optSubDict with
+    | None -> subs.Add (address, Dictionary.singleton (subscriber, sub))
+    | Some subDict -> subDict.Add (subscriber, sub)
+    world
 
 /// Unsubscribe to messages at the given address.
 let unsubscribe address subscriber world : World =
     let subs = world.Subscriptions
-    let optSubMap = Map.tryFind address subs
-    match optSubMap with
-    | None -> world
-    | Some subMap ->
-        let subMap2 = Map.remove subscriber subMap in
-        let subscriptions2 = Map.add address subMap2 subs
-        { world with Subscriptions = subscriptions2 }
+    let optSubDict = Dictionary.tryFind address subs
+    match optSubDict with
+    | None ->
+        debug ("No such subscription found '" + str address + "' / '" + str subscriber + "'.")
+        world
+    | Some subDict ->
+        if not (subDict.Remove subscriber) then
+            debug ("No such subscription found '" + str address + "' / '" + str subscriber + "'.")
+        world
 
 /// Execute a procedure within the context of a given subscription at the given address.
 let withSubscription address subscription subscriber procedure world : World =
@@ -396,7 +401,7 @@ let run sdlConfig =
                   Screens = LunTrie.empty
                   OptActiveScreenAddress = None }
             { Game = game
-              Subscriptions = Map.empty
+              Subscriptions = Dictionary ()
               MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
               AudioPlayer = makeAudioPlayer ()
               Renderer = makeRenderer sdlDeps.RenderContext
