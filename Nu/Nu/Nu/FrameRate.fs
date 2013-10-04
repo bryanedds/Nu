@@ -4,7 +4,7 @@
 should receive an int multiplier of that frame rate factor. Dynamic frame rate degradation should
 last at least one second. *)
 
-let DesiredFps = 60 / 2 // assume 30fps for potentially slow but predicatable GC1s
+let DesiredFps = 60 / 1 // assume 60fps for potentially slow but predicatable GC1s
 
 type FrameSkip =
     | Full = 1

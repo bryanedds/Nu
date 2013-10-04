@@ -1120,7 +1120,7 @@ let skipBy pred (terminatorChars : string) (stream : _ CharStream) (start : _ Ch
 let skip (str : string) (terminatorChars : string) (stream : _ CharStream) (start : _ CharStreamState) =
     skipBy (fun () -> stream.Skip str) terminatorChars stream start
 
-let skipNone (stream : 'a CharStream) start =
+let skipNone (stream : 'a CharStream) (start : 'a CharStreamState)=
     do stream.BacktrackTo start
     true
 

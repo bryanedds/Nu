@@ -14,12 +14,12 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArgModule.usage(Microsoft.FSharp.Collections.FSharpList{System.Tuple`3{System.String,Microsoft.FSharp.Text.ArgType,System.String}},System.String)">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArgModule.usage(Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,Microsoft.FSharp.Text.ArgType,System.String}},System.String)">
 <summary>
  &quot;usage specs use&quot; prints the help for each argument.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArgModule.parse(Microsoft.FSharp.Collections.FSharpList{System.Tuple`3{System.String,Microsoft.FSharp.Text.ArgType,System.String}},Microsoft.FSharp.Core.FSharpFunc`2{System.String,Microsoft.FSharp.Core.Unit},System.String)">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArgModule.parse(Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,Microsoft.FSharp.Text.ArgType,System.String}},Microsoft.FSharp.Core.FSharpFunc{System.String,Microsoft.FSharp.Core.Unit},System.String)">
 <summary>
  &quot;parse specs f use&quot; parses the arguments given by Sys.argv
  according to the argument processing specifications &quot;specs&quot;.
@@ -84,7 +84,7 @@
  to release the pin.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.Array2DModule.pin``2(``0[0:,0:],Microsoft.FSharp.Core.FSharpFunc`2{``0*,``1})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.Array2DModule.pin``2(``0[0:,0:],Microsoft.FSharp.Core.FSharpFunc{``0*,``1})">
 <summary>
  Pin the given array for the duration of a single call to the given function.  A native pointer to
  the first element in the array is passed to the given function.  Cleanup the GCHandle associated with the 
@@ -100,7 +100,7 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.fold_right``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,``1}},``0[],``1)">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.fold_right``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,``1}},``0[],``1)">
 <summary>
  Apply a function to each element of the array, threading an accumulator argument
  through the computation. If the input function is &lt;c&gt;f&lt;/c&gt; and the elements are &lt;c&gt;i0...iN&lt;/c&gt; 
@@ -142,19 +142,19 @@
  to release the pin.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.pin``2(``0[],Microsoft.FSharp.Core.FSharpFunc`2{``0*,``1})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.pin``2(``0[],Microsoft.FSharp.Core.FSharpFunc{``0*,``1})">
 <summary>
  Pin the given array for the duration of a single call to the given function.  A native pointer to
  the first element in the array is passed to the given function.  Cleanup the GCHandle associated with the 
  pin when the function completes, even if an exception is raised.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.scanReduceBack``1(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,``0}},``0[])">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.scanReduceBack``1(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,``0}},``0[])">
 <summary>
  Like reduceBack, but return both the intermediary and final results
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.scanReduce``1(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,``0}},``0[])">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ArrayModule.scanReduce``1(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,``0}},``0[])">
 <summary>
  Like reduce, but return both the intermediary and final results
 </summary>
@@ -646,7 +646,7 @@ that you don&apos;t mixup maps created with different comparison functions
  OCaml compatible type name, for use when not opening module, e.g. Hashtbl.t
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.Make``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,System.Int32},Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,System.Boolean}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.Make``2(Microsoft.FSharp.Core.FSharpFunc{``0,System.Int32},Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean}})">
 <summary>
  Build a collection of operations for creating and using 
  hashtables based on the given hash/equality functions. This returns a record
@@ -707,12 +707,12 @@ that you don&apos;t mixup maps created with different comparison functions
  Test for the existence of any bindings for the given key
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.iter``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,Microsoft.FSharp.Core.Unit}},Microsoft.FSharp.Collections.HashMultiMap{``0,``1})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.iter``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.Unit}},Microsoft.FSharp.Collections.HashMultiMap{``0,``1})">
 <summary>
 Apply the given function to each binding in the hash table 
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.fold``3(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,Microsoft.FSharp.Core.FSharpFunc`2{``2,``2}}},Microsoft.FSharp.Collections.HashMultiMap{``0,``1},``2)">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.fold``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,``2}}},Microsoft.FSharp.Collections.HashMultiMap{``0,``1},``2)">
 <summary>
  Fold over all bindings
 </summary>
@@ -738,12 +738,12 @@ Apply the given function to each binding in the hash table
  Empty the table.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.of_seq``2(System.Collections.Generic.IEnumerable{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.of_seq``2(System.Collections.Generic.IEnumerable{System.Tuple{``0,``1}})">
 <summary>
  Create hash table using the given data
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.of_list``2(Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.HashtblModule.of_list``2(Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  Create a hash table using the given data
 </summary>
@@ -1265,7 +1265,7 @@ before reading/writing if used in a concurrent setting.
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.LazyModule.create``1(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Core.Unit,``0})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.LazyModule.create``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0})">
 <summary>
  Build a lazy (delayed) value from the given computation
 </summary>
@@ -1280,7 +1280,7 @@ before reading/writing if used in a concurrent setting.
  Build a lazy (delayed) value from the given pre-computed value.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.LazyModule.lazy_from_fun``1(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Core.Unit,``0})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.LazyModule.lazy_from_fun``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0})">
 <summary>
  Build a lazy (delayed) value from the given computation
 </summary>
@@ -1360,7 +1360,7 @@ before reading/writing if used in a concurrent setting.
  Return the matched string 
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.LexingModule.from_function(Microsoft.FSharp.Core.FSharpFunc`2{System.Byte[],Microsoft.FSharp.Core.FSharpFunc`2{System.Int32,System.Int32}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.LexingModule.from_function(Microsoft.FSharp.Core.FSharpFunc{System.Byte[],Microsoft.FSharp.Core.FSharpFunc{System.Int32,System.Int32}})">
 <summary>
  Fuel a lexer from function that fills an array of bytes up to the given length, returning the
  number of bytes filled.
@@ -1470,12 +1470,12 @@ before reading/writing if used in a concurrent setting.
  &quot;rev_append l1 l2&quot; evaluates to &quot;append (rev l1) l2&quot;
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.rev_map2``3(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,``2}},Microsoft.FSharp.Collections.FSharpList{``0},Microsoft.FSharp.Collections.FSharpList{``1})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.rev_map2``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,``2}},Microsoft.FSharp.Collections.FSharpList{``0},Microsoft.FSharp.Collections.FSharpList{``1})">
 <summary>
  &quot;rev_map2 f l1 l2&quot; evaluates to &quot;map2 f (rev l1) (rev l2)&quot;
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.rev_map``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,``1},Microsoft.FSharp.Collections.FSharpList{``0})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.rev_map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  &quot;rev_map f l1&quot; evaluates to &quot;map f (rev l1)&quot;
 </summary>
@@ -1490,43 +1490,43 @@ before reading/writing if used in a concurrent setting.
  See &lt;c&gt;mem&lt;/c&gt;, but uses the physical equality operator (==) for equality tests.        
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.remove_assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.remove_assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  See &lt;c&gt;remove_assoc&lt;/c&gt;, but uses the physical equality operator (==) for equality tests.        
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.mem_assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.mem_assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  See &lt;c&gt;mem_assoc&lt;/c&gt;, but uses the physical equality operator (==) for equality tests.      
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.try_assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.try_assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  See &lt;c&gt;try_assoc&lt;/c&gt;, but uses the physical equality operator (==) for equality tests.    
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.assq``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  See &lt;c&gt;assoc&lt;/c&gt;, but uses the physical equality operator (==) for equality tests
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.remove_assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.remove_assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  Remove pair for key from the association list (if it&apos;s there).
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.mem_assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.mem_assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  Does the key have pair in the association list?
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.try_assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.try_assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  Lookup key&apos;s data in association list, uses (=) equality,
  returning &quot;Some data&quot; or &quot;None&quot;.  
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.assoc``2(``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  Lookup key&apos;s data in association list, uses (=) equality.
  Raise &lt;c&gt;System.IndexOutOfRangeException&lt;/c&gt; exception if key not found, in which case you should typically use &lt;c&gt;try_assoc&lt;/c&gt; instead.
@@ -1542,12 +1542,12 @@ before reading/writing if used in a concurrent setting.
  Is an element in the list. Elements are compared using generic equality.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.scanReduceBack``1(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,``0}},Microsoft.FSharp.Collections.FSharpList{``0})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.scanReduceBack``1(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,``0}},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  Like reduceBack, but return both the intermediary and final results
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.scanReduce``1(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,``0}},Microsoft.FSharp.Collections.FSharpList{``0})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.ListModule.scanReduce``1(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,``0}},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  Like reduce, but return both the intermediary and final results
 </summary>
@@ -2765,7 +2765,7 @@ A functor to build a collection of operations for creating and using
  let MyStringSetProvider = Set.MakeTagged(new MyComparer())
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compatibility.OCaml.SetModule.Make``1(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,System.Int32}})">
+<member name="M:Microsoft.FSharp.Compatibility.OCaml.SetModule.Make``1(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,System.Int32}})">
 <summary>
  Build a collection of operations for creating and using 
  maps based on a single consistent comparison function. This returns a record

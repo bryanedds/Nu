@@ -82,9 +82,9 @@ let createBody integrator bodyCreateMessage =
     | BoxShape boxShape ->
         let shapeCenter = toPhysicsVector2 boxShape.Center
         let body = Factories.BodyFactory.CreateRectangle (integrator.PhysicsContext, boxShape.Extent.X * 2.0f, boxShape.Extent.Y * 2.0f, bodyCreateMessage.Density, shapeCenter, bodyCreateMessage.EntityAddress)
-        ignore (body.Position <- toPhysicsVector2 bodyCreateMessage.Position)
-        ignore (body.Rotation <- bodyCreateMessage.Rotation)
-        ignore (body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType)
+        body.Position <- toPhysicsVector2 bodyCreateMessage.Position
+        body.Rotation <- bodyCreateMessage.Rotation
+        body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType
         body.add_OnCollision
             (fun fixture fixture2 contact ->
                 let bodyCollisionMessage =
@@ -93,7 +93,7 @@ let createBody integrator bodyCreateMessage =
                       Normal = toVector2 contact.Manifold.LocalNormal
                       Speed = contact.TangentSpeed }
                 let integrationMessage = BodyCollisionMessage bodyCollisionMessage
-                ignore (integrator.IntegrationMessages.Add integrationMessage)
+                integrator.IntegrationMessages.Add integrationMessage
                 true)
         integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
