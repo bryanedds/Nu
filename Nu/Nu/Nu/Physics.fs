@@ -134,7 +134,9 @@ let integrate (physicsMessages : PhysicsMessage rQueue) integrator : Integration
     handlePhysicsMessages integrator physicsMessages
     integrator.PhysicsContext.Step PhysicsStepRate
     createTransformMessages integrator
-    List.ofSeq integrator.IntegrationMessages
+    let messages = List.ofSeq integrator.IntegrationMessages
+    integrator.IntegrationMessages.Clear ()
+    messages
 
 let makeIntegrator gravity =
      { PhysicsContext = FarseerPhysics.Dynamics.World Gravity

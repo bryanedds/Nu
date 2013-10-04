@@ -64,11 +64,11 @@ let rec addMany kvps trie =
         let trie2 = add (fst kvpHead) (snd kvpHead) trie
         addMany kvpTail trie2
 
-let remove key trie =
-    trie // TODO: implement
+(*let remove key trie =
+    raise (NotImplementedException ()) // TODO: implement
 
 let removeMany keys trie =
-    trie // TODO: implement
+    raise (NotImplementedException ()) // TODO: implement*)
 
 let ofSeq kvps =
     addMany kvps empty
