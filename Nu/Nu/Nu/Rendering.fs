@@ -7,7 +7,7 @@ open Nu.Core
 open Nu.Assets
 
 type [<StructuralEquality; NoComparison>] Sprite =
-    { AssetName : Lun
+    { SpriteAssetName : Lun
       PackageName : Lun }
 
 type [<StructuralEquality; NoComparison>] SpriteDescriptor =
@@ -108,7 +108,7 @@ let doRender renderDescriptors renderer =
             | SpriteDescriptor spriteDescriptor ->
                 let optRenderAsset =
                     Option.reduce
-                        (fun assetTrie -> LunTrie.tryFind spriteDescriptor.Sprite.AssetName assetTrie)
+                        (fun assetTrie -> LunTrie.tryFind spriteDescriptor.Sprite.SpriteAssetName assetTrie)
                         (LunTrie.tryFind spriteDescriptor.Sprite.PackageName renderer.RenderAssetMap)
                 match optRenderAsset with
                 | None -> ()
