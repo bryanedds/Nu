@@ -14,6 +14,21 @@ let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) 
     for kvp in dictionary do dictionary2.Add (kvp.Key, mapper kvp)
     dictionary2
 
+let inline tryFind key (dictionary : Dictionary<'k, 'v>) =
+    let valueRef = ref Unchecked.defaultof<'v>
+    if dictionary.TryGetValue (key, valueRef)
+    then Some valueRef.Value
+    else None
+
+let dictC kvps =
+    let dictionary = Dictionary ()
+    for (key, value) in kvps do dictionary.Add (key, value)
+    dictionary
+
+let addMany kvps (dictionary : Dictionary<'k, 'v>) =
+    for (key, value) in kvps do dictionary.Add (key, value)
+    dictionary
+
 /// Dictionary extension methods.
 type Dictionary<'k, 'v> with
 

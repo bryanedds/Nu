@@ -1,5 +1,6 @@
 ﻿module Nu.Assets
 open System
+open System.Collections.Generic
 open System.Linq
 open System.Xml
 
@@ -37,7 +38,7 @@ type [<StructuralEquality; NoComparison>] AssetKey =
     { Name : Lun
       PackageName : Lun }
 
-type 'a AssetMap = ('a LunTrie) LunTrie // TODO: make this imperative
+type 'a AssetMap = Dictionary<Lun, Dictionary<Lun, 'a> >
 
 let tryLoadAsset packageName (xmlNode : XmlNode) =
     let xmlAttributes = xmlNode.Attributes
