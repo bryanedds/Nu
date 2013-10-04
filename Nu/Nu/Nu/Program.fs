@@ -29,7 +29,7 @@ let createTestBlock () =
           ContactSound = { AssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testBlockActor =
-        { Position = Vector2 (200.0f, 200.0f)
+        { Position = Vector2 (400.0f, 200.0f)
           Size = Vector2 64.0f // TODO: look this up from bitmap file
           Rotation = 0.0f
           ActorSemantic = Block testBlock }
@@ -110,8 +110,6 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsEnabled = true
           IsVisible = true
           EntitySemantic = Actor testFloorActor }
-    
-    let testEntityActorBlock = createTestBlock ()
 
     let testWorld_ = subscribe ClickTestButtonAddress [] (fun _ _ _ world -> let entityActorBlock = createTestBlock () in addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.make (str (getNuId ()))]) world) testWorld
     let testWorld_ = addScreenX testScreen TestScreenAddress testWorld_
@@ -119,7 +117,6 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testWorld_ = addGroup testGroup TestGroupAddress testWorld_
     let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress testWorld_
     let testWorld_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress testWorld_
-    let testWorld_ = addEntityActorBlock testEntityActorBlock TestBlockAddress testWorld_
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
     { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
 
