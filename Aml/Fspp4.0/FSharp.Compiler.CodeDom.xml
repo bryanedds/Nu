@@ -249,7 +249,7 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.generateCompileUnit(System.CodeDom.CodeCompileUnit,Microsoft.FSharp.Core.FSharpFunc`2{System.CodeDom.CodeCompileUnit,Microsoft.FSharp.Core.Unit})">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.generateCompileUnit(System.CodeDom.CodeCompileUnit,Microsoft.FSharp.Core.FSharpFunc{System.CodeDom.CodeCompileUnit,Microsoft.FSharp.Core.Unit})">
 <summary>
  Generate code for compile unit (file)                
 </summary>
@@ -264,7 +264,7 @@
  Generate code for namespace without compilation unit  
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.generateNamespaceInternal``1(System.Tuple`3{System.CodeDom.CodeNamespace,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{Microsoft.FSharp.Collections.FSharpList{System.String},System.CodeDom.CodeTypeDeclaration}},``0},System.Collections.Generic.IEnumerable{System.String})">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.generateNamespaceInternal``1(System.Tuple{System.CodeDom.CodeNamespace,Microsoft.FSharp.Collections.FSharpList{System.Tuple{Microsoft.FSharp.Collections.FSharpList{System.String},System.CodeDom.CodeTypeDeclaration}},``0},System.Collections.Generic.IEnumerable{System.String})">
 <summary>
  Generates namespace code - takes output from &apos;preprocessNamespace&apos;
 </summary>
@@ -325,7 +325,7 @@
  Generates comments and than calls &apos;generatMethod&apos;
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.generateMethod(Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.MemberGenerateType,System.CodeDom.CodeMemberMethod,Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context})">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.generateMethod(Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.MemberGenerateType,System.CodeDom.CodeMemberMethod,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context})">
 <summary>
  By default all CodeDOM generated methods are &apos;virtual&apos; which means that 
  we have to generate &quot;abstract and default&quot; (unless we&apos;re in struct or
@@ -463,7 +463,7 @@
  Are both types numerical types where numeric conversion function can be applied?
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.binaryOp(System.CodeDom.CodeBinaryOperatorType,Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context})">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.binaryOp(System.CodeDom.CodeBinaryOperatorType,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context})">
 <summary>
  Generates code for binary operator using function for left and right operand
 </summary>
@@ -475,7 +475,7 @@
  function to be called to generate &lt; ... &gt; code
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.usingTyParams(System.Collections.Generic.IEnumerable{System.String},Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.usingTyParams(System.Collections.Generic.IEnumerable{System.String},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Record specified type parameters in the context, call generating function
  and then restore the original type parameters
@@ -538,7 +538,7 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_MinusBang(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.String,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_MinusBang(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.String,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Output string as a valid F# identifier
 </summary>
@@ -613,27 +613,27 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.colFilterT``1(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.Collections.IEnumerable,Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context}},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.colFilterT``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.Collections.IEnumerable,Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context}},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Call specified function only on elements of specified type.
  (performs dynamic type test using x.GetType())
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.colT``1(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.Collections.Generic.IEnumerable{``0},Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context}},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.colT``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.Collections.Generic.IEnumerable{``0},Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context}},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Process collection - keeps context through the whole processing
  calls &apos;f&apos; for every element in sequence and &apos;fs&apos; between every two elements 
  as a separator. This is a variant that works on typed collections.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.col``1(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.Collections.IEnumerable,Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context}},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.col``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.Collections.IEnumerable,Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context}},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Process collection - keeps context through the whole processing
  calls &apos;f&apos; for every element in sequence and &apos;fs&apos; between every two elements 
  as a separator
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.mapFilter``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpOption{``1}},Microsoft.FSharp.Collections.FSharpList{``0})">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.mapFilter``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpOption{``1}},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
  Perform map and filter operations in one 
 </summary>
@@ -654,17 +654,17 @@
  Identity function
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.withCtxt``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,``1}},``0)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.withCtxt``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,``1}},``0)">
 <summary>
  Call function, but give it context as an argument      
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_MinusMinus(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.String,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_MinusMinus(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.String,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Append specified string without line-break
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_PlusPlus(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.String,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_PlusPlus(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},System.String,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Break-line and append specified string
 </summary>
@@ -674,7 +674,7 @@
  Print unique id using: &quot;+&gt; uniqid&quot;
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_PlusGreater(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.op_PlusGreater(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context,Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context},Microsoft.FSharp.Compiler.CodeDom.Internal.Generator.Context)">
 <summary>
  Function composition operator
 </summary>
@@ -717,7 +717,7 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Visitor.codeDomCallbackWithScope``4(Microsoft.FSharp.Core.FSharpFunc`2{Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,Microsoft.FSharp.Core.FSharpFunc`2{``2,``1}}},Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,Microsoft.FSharp.Core.FSharpFunc`2{System.Object,``1}}}},``0,``1,``3)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Visitor.codeDomCallbackWithScope``4(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,``1}}},Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{System.Object,``1}}}},``0,``1,``3)">
 <summary>
  Walks through the CodeDom tree and keeps current &quot;scope&quot; and the result.
  The result is collected through entire tree, but the modified scope is 
@@ -728,7 +728,7 @@
  The function argument can be used to walk deeper in the tree if wanted.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Visitor.codeDomFlatFilter``1(Microsoft.FSharp.Core.FSharpFunc`2{System.Object,System.Tuple`2{System.Boolean,System.Boolean}},``0)">
+<member name="M:Microsoft.FSharp.Compiler.CodeDom.Internal.Visitor.codeDomFlatFilter``1(Microsoft.FSharp.Core.FSharpFunc{System.Object,System.Tuple{System.Boolean,System.Boolean}},``0)">
 <summary>
  Search for members and return flat list of selected members
  Function given as an argument returns tuple - first item specifies

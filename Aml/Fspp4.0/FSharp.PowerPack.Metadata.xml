@@ -3819,7 +3819,7 @@
 </member>
 <member name="M:FSComp.SR.optsCopyright">
 <summary>
- Copyright (c) Microsoft Corporation. All Rights Reserved.
+ Copyright (c) Microsoft Corporation. Apache 2.0 License.
  (Originally from C:\fsharp\staging\src\fsharp\FSComp.txt:869)
 </summary>
 </member>
@@ -6722,7 +6722,7 @@
 <member name="">
 
 </member>
-<member name="F:Microsoft.FSharp.Metadata.Microsoft.FSharp.Metadata.FSharpInlineAnnotation.AlwaysInline">
+<member name="F:Microsoft.FSharp.Metadata.FSharpInlineAnnotation.AlwaysInline">
 <summary>
  Indictes the value is inlined but the code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
 </summary>
@@ -10303,7 +10303,7 @@
 <member name="">
 
 </member>
-<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.AbstractIL.IL.lazyMap``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,``1},Microsoft.FSharp.Metadata.Reader.Internal.Prelude.PPLazy{``0})">
+<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.AbstractIL.IL.lazyMap``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Metadata.Reader.Internal.Prelude.PPLazy{``0})">
 <summary>
  A little ugly, but the idea is that if a data structure does not 
  contain lazy values then we don&apos;t add laziness.  So if the thing to map  
@@ -10626,7 +10626,7 @@
  The data that uses a collection of CcuThunks internally
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.Pickle.PickledDataWithReferences`1.OptionalFixup(Microsoft.FSharp.Core.FSharpFunc`2{System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Metadata.Reader.Internal.Tast.CcuThunk}})">
+<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.Pickle.PickledDataWithReferences`1.OptionalFixup(Microsoft.FSharp.Core.FSharpFunc{System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Metadata.Reader.Internal.Tast.CcuThunk}})">
 <summary>
  Like Fixup but loader may return None, in which case there is no fixup.
 </summary>
@@ -11884,14 +11884,14 @@
 <member name="T:Microsoft.FSharp.Metadata.Reader.Internal.Prelude.NameMapModule">
 
 </member>
-<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.Prelude.ListAssoc.containsKey``2(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``0,System.Boolean}},``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``0,``1}})">
+<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.Prelude.ListAssoc.containsKey``2(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean}},``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``0,``1}})">
 <summary>
  Treat a list of key-value pairs as a lookup collection.
  This function returns true if two keys are the same according to the predicate
  function passed in.
 </summary>
 </member>
-<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.Prelude.ListAssoc.find``3(Microsoft.FSharp.Core.FSharpFunc`2{``0,Microsoft.FSharp.Core.FSharpFunc`2{``1,System.Boolean}},``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple`2{``1,``2}})">
+<member name="M:Microsoft.FSharp.Metadata.Reader.Internal.Prelude.ListAssoc.find``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,System.Boolean}},``0,Microsoft.FSharp.Collections.FSharpList{System.Tuple{``1,``2}})">
 <summary>
  Treat a list of key-value pairs as a lookup collection.
  This function looks up a value based on a match from the supplied
