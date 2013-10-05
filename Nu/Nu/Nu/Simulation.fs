@@ -223,11 +223,11 @@ let removeEntityGuiButton address world : World =
     let world2 = set None world (World.optEntityGuiButton address)
     unregisterEntityGuiButton address world2
 
-let addEntityGuiLabel entityGuiButton address world : World =
-    set entityGuiButton world (World.entityGuiButton address)
+let addEntityGuiLabel entityGuiLabel address world : World =
+    set entityGuiLabel world (World.entityGuiLabel address)
 
 let removeEntityGuiLabel address world : World =
-    set None world (World.optEntityGuiButton address)
+    set None world (World.optEntityGuiLabel address)
 
 let unregisterEntityActorBlock (entity, actor, block) address world : World =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
@@ -307,11 +307,11 @@ let getWorldRenderDescriptors world =
                             match entity.EntitySemantic with
                             | Gui gui ->
                                 match gui.GuiSemantic with
-                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
-                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.Sprite })
+                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Depth = gui.Depth; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
+                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Depth = gui.Depth; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite })
                             | Actor actor ->
                                 match actor.ActorSemantic with
-                                | Block block -> Some (SpriteDescriptor { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite })
+                                | Block block -> Some (SpriteDescriptor { Position = actor.Position; Depth = actor.Depth; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite })
                                 | Avatar _ -> None) // TODO: implement Avatar
                         entities)
                 groups

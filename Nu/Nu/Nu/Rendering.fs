@@ -12,6 +12,7 @@ type [<StructuralEquality; NoComparison>] Sprite =
 
 type [<StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
+      Depth : single
       Size : Vector2
       Rotation : single
       Sprite : Sprite }
@@ -97,44 +98,45 @@ let doRender renderDescriptors renderer =
     match targetResult with
     | 0 ->
         ignore (SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD))
-        for descriptor in renderDescriptors do
-            match descriptor with
-            | SpriteDescriptor spriteDescriptor ->
-                let optRenderAsset =
-                    Option.reduce
-                        (fun assetTrie -> LunTrie.tryFind spriteDescriptor.Sprite.SpriteAssetName assetTrie)
-                        (LunTrie.tryFind spriteDescriptor.Sprite.PackageName renderer.RenderAssetMap)
-                match optRenderAsset with
-                | None -> ()
-                | Some renderAsset ->
-                    match renderAsset with
-                    | TextureAsset texture ->
-                        let mutable sourceRect = SDL.SDL_Rect ()
-                        sourceRect.x <- 0
-                        sourceRect.y <- 0
-                        sourceRect.w <- int spriteDescriptor.Size.X
-                        sourceRect.h <- int spriteDescriptor.Size.Y
-                        let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int spriteDescriptor.Position.X
-                        destRect.y <- int spriteDescriptor.Position.Y
-                        destRect.w <- int spriteDescriptor.Size.X
-                        destRect.h <- int spriteDescriptor.Size.Y
-                        let mutable rotationCenter = SDL.SDL_Point ()
-                        rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
-                        rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
-                        let renderResult =
-                            SDL.SDL_RenderCopyEx (
-                                renderContext,
-                                texture,
-                                ref sourceRect,
-                                ref destRect,
-                                double (spriteDescriptor.Rotation * 57.2957795f),
-                                ref rotationCenter,
-                                SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                        match renderResult with
-                        | 0 -> ()
-                        | _ -> debug ("Rendering error - could not render texture for sprite '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
-                    // | _ -> trace "Cannot sprite render with a non-texture asset."
+        let spriteDescriptors = List.map (fun (SpriteDescriptor descriptor) -> descriptor) renderDescriptors
+        //let (spriteDescriptors, renderDescriptors_) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptors
+        let sortedSpriteDescriptors = List.sortBy (fun descriptor -> descriptor.Depth) spriteDescriptors
+        for spriteDescriptor in sortedSpriteDescriptors do
+            let optRenderAsset =
+                Option.reduce
+                    (fun assetTrie -> LunTrie.tryFind spriteDescriptor.Sprite.SpriteAssetName assetTrie)
+                    (LunTrie.tryFind spriteDescriptor.Sprite.PackageName renderer.RenderAssetMap)
+            match optRenderAsset with
+            | None -> ()
+            | Some renderAsset ->
+                match renderAsset with
+                | TextureAsset texture ->
+                    let mutable sourceRect = SDL.SDL_Rect ()
+                    sourceRect.x <- 0
+                    sourceRect.y <- 0
+                    sourceRect.w <- int spriteDescriptor.Size.X
+                    sourceRect.h <- int spriteDescriptor.Size.Y
+                    let mutable destRect = SDL.SDL_Rect ()
+                    destRect.x <- int spriteDescriptor.Position.X
+                    destRect.y <- int spriteDescriptor.Position.Y
+                    destRect.w <- int spriteDescriptor.Size.X
+                    destRect.h <- int spriteDescriptor.Size.Y
+                    let mutable rotationCenter = SDL.SDL_Point ()
+                    rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
+                    rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
+                    let renderResult =
+                        SDL.SDL_RenderCopyEx (
+                            renderContext,
+                            texture,
+                            ref sourceRect,
+                            ref destRect,
+                            double (spriteDescriptor.Rotation * 57.2957795f),
+                            ref rotationCenter,
+                            SDL.SDL_RendererFlip.SDL_FLIP_NONE)
+                    match renderResult with
+                    | 0 -> ()
+                    | _ -> debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                // | _ -> trace "Cannot sprite render with a non-texture asset."
     | _ -> trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
 let render (renderMessages : RenderMessage rQueue) renderDescriptors renderer =
