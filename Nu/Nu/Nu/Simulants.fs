@@ -103,7 +103,7 @@ type [<StructuralEquality; NoComparison>] Button =
       ClickSound : Sound }
 
 type [<StructuralEquality; NoComparison>] Label =
-    { Sprite : Sprite }
+    { LabelSprite : Sprite }
 
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
@@ -117,6 +117,7 @@ type [<StructuralEquality; NoComparison>] GuiSemantic =
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Gui =
     { Position : Vector2
+      Depth : single
       Size : Vector2
       GuiSemantic : GuiSemantic }
     with
@@ -155,6 +156,7 @@ type [<StructuralEquality; NoComparison>] ActorSemantic =
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Actor =
     { Position : Vector2
+      Depth : single
       Size : Vector2
       Rotation : single
       ActorSemantic : ActorSemantic }

@@ -11,6 +11,18 @@ open System.Collections.Generic
 /// Create a singleton list.
 let singleton elem = [elem]
 
+let rec private subpartitionPlus fnOptU list left right =
+    match list with
+    | [] -> (left, right)
+    | head :: tail ->
+        let optU = fnOptU head
+        match optU with
+        | None -> subpartitionPlus fnOptU tail left (head :: right)
+        | Some u -> subpartitionPlus fnOptU tail (u :: left) right
+
+let partitionPlus fnOptU list =
+    subpartitionPlus fnOptU list [] []
+
 /// Query that a list has at least n elements.
 let rec hasAtLeast n (list : 'a list) =
     if n = 0 then true
