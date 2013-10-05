@@ -264,10 +264,10 @@ let addGroup group address world : World =
 let removeGroup address world : World =
     set None world (World.optGroup address)
 
-let addScreenX screen address world : World = // TODO: add plus type
+let addScreen screen address world : World =
     set screen world (World.screen address)
 
-let removeScreenX address world : World =
+let removeScreen address world : World =
     set None world (World.optScreen address)
 
 let getComponentAudioDescriptors world : AudioDescriptor rQueue =
