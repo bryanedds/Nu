@@ -13,6 +13,7 @@ type [<StructuralEquality; NoComparison>] Sprite =
 type [<StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
       Size : Vector2
+      Rotation : single
       Sprite : Sprite }
 
 /// Describes a rendering asset.
@@ -46,22 +47,14 @@ type [<ReferenceEquality>] Renderer =
 let tryLoadRenderAsset renderContext (asset : Asset) =
     let extension = Path.GetExtension asset.FileName
     match extension with
-    | ".bmp" ->
-        // TODO: use withSdlResource here for exception safety!
-        let optSurface = SDL.SDL_LoadBMP asset.FileName
-        if optSurface = IntPtr.Zero then
-            trace ("Could not load bitmap '" + asset.FileName + "'.")
+    | ".bmp"
+    | ".png" ->
+        let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FileName)
+        if optTexture = IntPtr.Zero then
+            trace ("Could not load texture '" + asset.FileName + "'.")
             None
         else
-            let result =
-                let optTexture = SDL.SDL_CreateTextureFromSurface (renderContext, optSurface)
-                if optTexture = IntPtr.Zero then
-                    trace ("Could not create texture from surface for '" + asset.FileName + "'.")
-                    None
-                else
-                    Some (Lun.make asset.Name, TextureAsset optTexture)
-            SDL.SDL_FreeSurface optSurface
-            result
+            Some (Lun.make asset.Name, TextureAsset optTexture)
     | _ ->
         trace ("Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'.")
         None
@@ -103,6 +96,7 @@ let doRender renderDescriptors renderer =
     let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
     match targetResult with
     | 0 ->
+        ignore (SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD))
         for descriptor in renderDescriptors do
             match descriptor with
             | SpriteDescriptor spriteDescriptor ->
@@ -125,7 +119,18 @@ let doRender renderDescriptors renderer =
                         destRect.y <- int spriteDescriptor.Position.Y
                         destRect.w <- int spriteDescriptor.Size.X
                         destRect.h <- int spriteDescriptor.Size.Y
-                        let renderResult = SDL.SDL_RenderCopy (renderContext, texture, ref sourceRect, ref destRect)
+                        let mutable rotationCenter = SDL.SDL_Point ()
+                        rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
+                        rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
+                        let renderResult =
+                            SDL.SDL_RenderCopyEx (
+                                renderContext,
+                                texture,
+                                ref sourceRect,
+                                ref destRect,
+                                double (spriteDescriptor.Rotation * 57.2957795f),
+                                ref rotationCenter,
+                                SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                         match renderResult with
                         | 0 -> ()
                         | _ -> debug ("Rendering error - could not render texture for sprite '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
