@@ -14,6 +14,7 @@ open Nu.Simulation
 
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
+let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
 let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
@@ -30,6 +31,7 @@ let createTestBlock () =
 
     let testBlockActor =
         { Position = Vector2 (400.0f, 200.0f)
+          Depth = 0.0f
           Size = Vector2 64.0f // TODO: look this up from bitmap file
           Rotation = 0.0f
           ActorSemantic = Block testBlock }
@@ -75,6 +77,21 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsVisible = true
           Entities = LunTrie.empty }
           
+    let testLabel =
+        { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc" }}
+
+    let testLabelGui =
+        { Position = Vector2.Zero
+          Depth = -0.1f
+          Size = Vector2 (900.0f, 600.0f) // TODO: look this up from bitmap file
+          GuiSemantic = Label testLabel }
+
+    let testLabelGuiEntity =
+        { Id = getNuId ()
+          IsEnabled = true
+          IsVisible = true
+          EntitySemantic = Gui testLabelGui }
+          
     let testButton =
         { IsDown = false
           UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
@@ -82,7 +99,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
           ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testButtonGui =
-        { Position = Vector2 (600.0f, 100.0f)
+        { Position = Vector2 (310.0f, 20.0f)
+          Depth = 0.1f
           Size = Vector2 (256.0f, 64.0f) // TODO: look this up from bitmap file
           GuiSemantic = Button testButton }
 
@@ -100,7 +118,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
           ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testFloorActor =
-        { Position = Vector2 (250.0f, 650.0f)
+        { Position = Vector2 (120.0f, 520.0f)
+          Depth = 0.0f
           Size = Vector2 (640.0f, 64.0f) // TODO: look this up from bitmap file
           Rotation = 0.0f
           ActorSemantic = Block testFloor }
@@ -115,6 +134,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testWorld_ = addScreenX testScreen TestScreenAddress testWorld_
     let testWorld_ = set (Some TestScreenAddress) testWorld_ World.optActiveScreenAddress
     let testWorld_ = addGroup testGroup TestGroupAddress testWorld_
+    let testWorld_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress testWorld_
     let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress testWorld_
     let testWorld_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress testWorld_
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
@@ -122,7 +142,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 1024 768 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
     run2 createTestWorld sdlConfig
 
 (*module Program
