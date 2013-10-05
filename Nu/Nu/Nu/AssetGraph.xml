@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <root>
   <package name="Misc">
-    <asset name="Image" fileName="Image.bmp" associations="Rendering"/>
-    <asset name="Image2" fileName="Image2.bmp" associations="Rendering"/>
-    <asset name="Image3" fileName="Image3.bmp" associations="Rendering"/>
-    <asset name="Image4" fileName="Image4.bmp" associations="Rendering"/>
+    <asset name="Image" fileName="Image.png" associations="Rendering"/>
+    <asset name="Image2" fileName="Image2.png" associations="Rendering"/>
+    <asset name="Image3" fileName="Image3.png" associations="Rendering"/>
+    <asset name="Image4" fileName="Image4.png" associations="Rendering"/>
     <asset name="Sound" fileName="Sound.wav" associations="Audio"/>
   </package>
 </root>

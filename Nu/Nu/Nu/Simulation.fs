@@ -307,11 +307,11 @@ let getWorldRenderDescriptors world =
                             match entity.EntitySemantic with
                             | Gui gui ->
                                 match gui.GuiSemantic with
-                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
-                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Sprite = label.Sprite })
+                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
+                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.Sprite })
                             | Actor actor ->
                                 match actor.ActorSemantic with
-                                | Block block -> Some (SpriteDescriptor { Position = actor.Position; Size = actor.Size; Sprite = block.Sprite })
+                                | Block block -> Some (SpriteDescriptor { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite })
                                 | Avatar _ -> None) // TODO: implement Avatar
                         entities)
                 groups

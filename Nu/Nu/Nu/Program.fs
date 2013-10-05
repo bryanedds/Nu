@@ -82,7 +82,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
           ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
 
     let testButtonGui =
-        { Position = Vector2 100.0f
+        { Position = Vector2 (600.0f, 100.0f)
           Size = Vector2 (256.0f, 64.0f) // TODO: look this up from bitmap file
           GuiSemantic = Button testButton }
 
@@ -121,7 +121,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
 
 let [<EntryPoint>] main _ =
-    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED (*||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC*))
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 1024 768 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
     run2 createTestWorld sdlConfig
 
