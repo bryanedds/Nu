@@ -9,10 +9,3 @@ type Id = int64
 /// beginning address nodes match the partial address (sort of a wild-card).
 /// A value type.
 type Address = Lun list
-
-// BUG: RQueue does not seem to be auto-opening in practice!
-[<AutoOpen>]
-module RQueue =
-
-    /// Type alias to emphasize that messages arrive in a reversed queue since I am too lazy to write an immutable queue directly.
-    type 'a rQueue = 'a list
