@@ -2,6 +2,7 @@
 open System
 open System.Diagnostics
 open System.Threading
+open OpenTK.Graphics.OpenGL
 open SDL2
 
 let [<Literal>] SuccessCode = 0
@@ -14,27 +15,25 @@ type SdlConfig =
       WindowW : int
       WindowH : int
       WindowFlags : SDL.SDL_WindowFlags
-      RendererFlags : SDL.SDL_RendererFlags
       AudioVolume : single }
 
 type SdlDeps =
-    { RenderContext : nativeint
-      Window : nativeint
+    { Window : nativeint
+      RenderContext : nativeint
       Config : SdlConfig }
 
-let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags rendererFlags audioVolume =
+let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags audioVolume =
     { WindowTitle = windowTitle
       WindowX = windowX
       WindowY = windowY
       WindowW = windowW
       WindowH = windowH
       WindowFlags = windowFlags
-      RendererFlags = rendererFlags
       AudioVolume = audioVolume }
 
-let makeSdlDeps renderer window config =
-    { RenderContext = renderer
-      Window = window
+let makeSdlDeps renderContext window config =
+    { Window = window
+      RenderContext = renderContext
       Config  = config }
 
 let resourceNop (_ : nativeint) = ()
@@ -72,10 +71,13 @@ let advanceSdl handleEvent handleUpdate sdlDeps world =
     result
 
 let renderSdl handleRender sdlDeps world =
-    ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, 0uy, 0uy, 179uy, 255uy))
-    ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
+    GL.BindFramebuffer (FramebufferTarget.Framebuffer, 0)
+    GL.ClearColor (0.0f, 0.0f, 0.0f, 0.5f)
+    GL.ClearDepth 1.0f
+    GL.ClearStencil 0
+    GL.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
     let world2 = handleRender world
-    SDL.SDL_RenderPresent sdlDeps.RenderContext
+    SDL.SDL_GL_SwapWindow sdlDeps.Window
     world2
     
 let rec runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world keepRunning =
@@ -88,18 +90,44 @@ let rec runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world k
 
 let runSdl createWorld handleEvent handleUpdate handleRender handleExit sdlConfig : int =
     withSdlInit
-        (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
-        (fun () -> SDL.SDL_Quit ())
+        (fun () ->
+            SDL.SDL_SetMainReady () // according to flibit, this may keep sdl from blowing up on the iOS
+            let result = SDL.SDL_Init SDL.SDL_INIT_EVERYTHING
+            SDL.SDL_DisableScreenSaver ()
+            result)
+        (fun () ->
+            SDL.SDL_EnableScreenSaver () // NOTE: not sure if this is necessary...
+            SDL.SDL_Quit ())
         (fun () ->
             withSdlResource
-                (fun () -> SDL.SDL_CreateWindow (sdlConfig.WindowTitle, sdlConfig.WindowX, sdlConfig.WindowY, sdlConfig.WindowW, sdlConfig.WindowH, sdlConfig.WindowFlags))
+                (fun () ->
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_RED_SIZE, 8))
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_GREEN_SIZE, 8))
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_BLUE_SIZE, 8))
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ALPHA_SIZE, 8))
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24))
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8))
+                    ignore (SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1))
+                    SDL.SDL_CreateWindow (sdlConfig.WindowTitle, sdlConfig.WindowX, sdlConfig.WindowY, sdlConfig.WindowW, sdlConfig.WindowH, sdlConfig.WindowFlags))
                 (fun window -> SDL.SDL_DestroyWindow window)
                 (fun window ->
                     withSdlResource
-                        (fun () -> SDL.SDL_CreateRenderer (window, -1, uint32 sdlConfig.RendererFlags))
-                        (fun renderer -> SDL.SDL_DestroyRenderer renderer)
-                        (fun renderer ->
-                            let sdlDeps = makeSdlDeps renderer window sdlConfig
+                        (fun () ->
+                            let renderContext = SDL.SDL_GL_CreateContext window
+                            OpenTK.Graphics.GraphicsContext.CurrentContext <- renderContext
+                            OpenTK.Graphics.OpenGL.GL.LoadAll ()
+                            ignore (GL.Enable EnableCap.Texture2D)
+                            ignore (GL.Viewport (0, 0, sdlConfig.WindowW, sdlConfig.WindowH))
+                            ignore (GL.MatrixMode MatrixMode.Projection)
+                            ignore (GL.LoadIdentity ())
+                            ignore (GL.Ortho (0.0, float sdlConfig.WindowW, float sdlConfig.WindowH, 0.0, -1.0, 1.0))
+                            ignore (GL.MatrixMode MatrixMode.Modelview)
+                            ignore (GL.LoadIdentity())
+                            ignore (SDL.SDL_GL_MakeCurrent (window, renderContext))
+                            renderContext)
+                        (fun renderContext -> SDL.SDL_GL_DeleteContext renderContext)
+                        (fun renderContext ->
+                            let sdlDeps = makeSdlDeps window renderContext sdlConfig
                             let world = createWorld sdlDeps
                             runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world true
                             SuccessCode)))
