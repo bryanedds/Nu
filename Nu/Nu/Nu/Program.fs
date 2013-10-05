@@ -121,8 +121,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
     { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
 
 let [<EntryPoint>] main _ =
-    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 1024 768 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
+    let sdlWindowFlags = enum<SDL.SDL_WindowFlags> (int SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| int SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL)
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 1024 768 sdlWindowFlags 1.0f
     run2 createTestWorld sdlConfig
 
 (*module Program
