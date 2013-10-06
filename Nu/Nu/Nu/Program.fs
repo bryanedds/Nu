@@ -33,7 +33,7 @@ let createTestBlock () =
         { Position = Vector2 (400.0f, 200.0f)
           Depth = 0.0f
           Size = Vector2 64.0f // TODO: look this up from bitmap file
-          Rotation = 0.0f
+          Rotation = 2.0f
           ActorSemantic = Block testBlock }
 
     let testBlockActorEntity =
