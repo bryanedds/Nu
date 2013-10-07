@@ -72,7 +72,6 @@ type [<CustomEquality; CustomComparison>] Lun =
                 let thisHash = this.LunHash
                 let thatHash = thatLun.LunHash
                 if thisHash = thatHash then
-                    #if LUN_SPECULATIVE_OPTIMIZATION
                     // do speculatively fast comparison if possible, linear-time comparison otherwise
                     match (this.LunOptNums, thatLun.LunOptNums) with
                     | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
@@ -83,8 +82,7 @@ type [<CustomEquality; CustomComparison>] Lun =
                             else 1
                         elif thisNum2 < thatNum2 then -1
                         else 1
-                    | _ ->*)
-                    #endif
+                    | _ ->
                         // linear-time comparison
                         thatLun.LunStr.CompareTo this.LunStr
                 elif thisHash < thatHash then -1
