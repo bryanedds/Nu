@@ -36,9 +36,9 @@ type Dictionary<'k, 'v> with
 
     /// Check value equality of dictionary.
     /// NOTE: be wary the highly imperative nature of this code.
-    member this.ValueEquals (other : Dictionary<'k, 'v>) =
+    member this.ValueEquals (that : Dictionary<'k, 'v>) =
         let mutable enr = this.GetEnumerator ()
-        let mutable enr2 = other.GetEnumerator ()
+        let mutable enr2 = that.GetEnumerator ()
         let mutable moving = true
         let mutable equal = true
         while moving && equal do
