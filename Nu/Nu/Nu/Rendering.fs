@@ -136,7 +136,7 @@ let doRender renderDescriptors renderer =
                     match renderResult with
                     | 0 -> ()
                     | _ -> debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
-                // | _ -> trace "Cannot sprite render with a non-texture asset."
+                //| _ -> trace "Cannot sprite render with a non-texture asset."
     | _ -> trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
 let render (renderMessages : RenderMessage rQueue) renderDescriptors renderer =
