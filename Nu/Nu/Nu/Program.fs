@@ -130,7 +130,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsVisible = true
           EntitySemantic = Actor testFloorActor }
 
-    let testWorld_ = subscribe ClickTestButtonAddress [] (fun _ _ _ world -> let entityActorBlock = createTestBlock () in addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.make (str (getNuId ()))]) world) testWorld
+    let testWorld_ = subscribe ClickTestButtonAddress [] (fun _ _ _ world -> let entityActorBlock = createTestBlock () in addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world) testWorld
     let testWorld_ = addScreen testScreen TestScreenAddress testWorld_
     let testWorld_ = set (Some TestScreenAddress) testWorld_ World.optActiveScreenAddress
     let testWorld_ = addGroup testGroup TestGroupAddress testWorld_

@@ -209,8 +209,8 @@ let padWithLast count list =
     list @ padding
 
 /// Pad a list with instances of its last elem so that it is proportion to another list.
-let padWithLastToProportion (list : 'b list) (other : 'a list) =
-    let deficit = other.Length - list.Length
+let padWithLastToProportion (list : 'b list) (list2 : 'a list) =
+    let deficit = list2.Length - list.Length
     padWithLast deficit list
 
 /// Join a list into a string separated by sep.

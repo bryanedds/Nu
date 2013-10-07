@@ -8,20 +8,53 @@ open System
 /// The look-up name of a value.
 type [<CustomEquality; CustomComparison>] Lun =
     { LunStr : string
-      LunHash : int }
+      LunHash : int
+      LunOptNums : (int64 * int64) option }
 
-    static member private makeInternal str hash =
-        { LunStr = str; LunHash = hash }
+    static member private strToNum strStart str =
+        let mutable num = 0L;
+        let mutable shl = 0;
+        let mutable idx = strStart
+        let idxMax = Math.Min (String.length str, 9 + strStart)
+        while idx < idxMax do
+            num <- (num ||| (int64 str.[idx] <<< shl))
+            shl <- shl + 7
+            idx <- idx + 1
+        num
+
+    static member private isNonNumableChar chr =
+        chr > '\u0080'
+
+    static member private makeInternal str hash optNums =
+        { LunStr = str; LunHash = hash; LunOptNums = optNums }
 
     static member make str =
-        Lun.makeInternal str (str.GetHashCode ())
+        let strLen = String.length str
+        let optNums =
+            if strLen > 18 ||
+               String.exists Lun.isNonNumableChar str then
+               None
+            else
+                let num = Lun.strToNum 0 str
+                let num2 = if strLen > 9 then Lun.strToNum 9 str else 0L
+                Some (num, num2)
+        Lun.makeInternal str (str.GetHashCode ()) optNums
+
+    static member makeN (num : int64) =
+        let lunStr = str num
+        Lun.makeInternal lunStr (lunStr.GetHashCode ()) (Some (-1L, num))
 
     static member (++) (left, right) =
         Lun.make (left.LunStr + right.LunStr)
 
-    override this.Equals other =
-        match other with
-        | :? Lun as otherLun -> this.LunStr = otherLun.LunStr
+    override this.Equals that =
+        // OPTIMIZATION: this code is highly optimized
+        match that with
+        | :? Lun as thatLun ->
+            match (this.LunOptNums, thatLun.LunOptNums) with
+            | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
+                thisNum = thatNum && thisNum2 = thatNum2
+            | _ -> this.LunStr = thatLun.LunStr
         | _ -> false
 
     override this.ToString () =
@@ -31,12 +64,29 @@ type [<CustomEquality; CustomComparison>] Lun =
         this.LunHash
 
     interface System.IComparable with
-        override this.CompareTo other = 
-            match other with
-            | :? Lun as otherLun ->
+        override this.CompareTo that =
+            // OPTIMIZATION: this code is highly optimized
+            match that with
+            | :? Lun as thatLun ->
+                // first try fast comparison...
                 let thisHash = this.LunHash
-                let otherHash = otherLun.LunHash
-                if thisHash < otherHash then -1
-                elif thisHash > otherHash then 1
-                else otherLun.LunStr.CompareTo this.LunStr
-            | _ -> invalidArg "other" "Cannot compare a Lun value to a different type of object."
+                let thatHash = thatLun.LunHash
+                if thisHash = thatHash then
+                    #if LUN_SPECULATIVE_OPTIMIZATION
+                    // do speculatively fast comparison if possible, linear-time comparison otherwise
+                    match (this.LunOptNums, thatLun.LunOptNums) with
+                    | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
+                        // speculatively fast comparison (this has not (yet?) been emperically shown to be faster!)
+                        if thisNum2 = thatNum2 then
+                            if thisNum = thatNum then 0
+                            elif thisNum < thatNum then -1
+                            else 1
+                        elif thisNum2 < thatNum2 then -1
+                        else 1
+                    | _ ->*)
+                    #endif
+                        // linear-time comparison
+                        thatLun.LunStr.CompareTo this.LunStr
+                elif thisHash < thatHash then -1
+                else 1
+            | _ -> invalidArg "that" "Cannot compare a Lun value to a different type of object."
