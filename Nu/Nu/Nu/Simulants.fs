@@ -263,10 +263,10 @@ type [<StructuralEquality; NoComparison>] Group =
     { Id : Id // TODO: consider if these IDs are actually necessary
       IsEnabled : bool
       IsVisible : bool
-      Entities : Entity LunTrie }
+      Entities : Map<Lun, Entity> }
     with
         static member private optChildFinder addressHead parent =
-            LunTrie.tryFind addressHead parent.Entities
+            Map.tryFind addressHead parent.Entities
         
         static member private childFinder addressHead parent =
             let optChild = Group.optChildFinder addressHead parent
@@ -275,10 +275,10 @@ type [<StructuralEquality; NoComparison>] Group =
             | Some child -> child
         
         static member private childAdder addressHead parent child =
-            { parent with Entities = LunTrie.add addressHead child parent.Entities }
+            { parent with Entities = Map.add addressHead child parent.Entities }
         
         static member private childRemover addressHead parent =
-            { parent with Entities = LunTrie.remove addressHead parent.Entities }
+            { parent with Entities = Map.remove addressHead parent.Entities }
         
         static member private childGuiSetter child gui =
             { child with EntitySemantic = Gui gui }
@@ -432,11 +432,11 @@ type [<StructuralEquality; NoComparison>] Screen =
     { Id : Id // TODO: consider if these IDs are actually necessary
       IsEnabled : bool
       IsVisible : bool
-      Groups : Group LunTrie
+      Groups : Map<Lun, Group>
       ScreenSemantic : ScreenSemantic }
     with
         static member private optChildFinder addressHead parent =
-            LunTrie.tryFind addressHead parent.Groups
+            Map.tryFind addressHead parent.Groups
         
         static member private childFinder addressHead parent =
             let optChild = Screen.optChildFinder addressHead parent
@@ -445,10 +445,10 @@ type [<StructuralEquality; NoComparison>] Screen =
             | Some child -> child
         
         static member private childAdder addressHead parent child =
-            { parent with Screen.Groups = LunTrie.add addressHead child parent.Groups }
+            { parent with Screen.Groups = Map.add addressHead child parent.Groups }
         
         static member private childRemover addressHead parent =
-            { parent with Screen.Groups = LunTrie.remove addressHead parent.Groups }
+            { parent with Screen.Groups = Map.remove addressHead parent.Groups }
         
         static member entity address =
             Screen.group [List.head address] >>| Group.entity (List.tail address)
@@ -503,11 +503,11 @@ type [<StructuralEquality; NoComparison>] Screen =
 type [<StructuralEquality; NoComparison>] Game =
     { Id : Id // TODO: consider if these IDs are actually necessary
       IsEnabled : bool
-      Screens : Screen LunTrie
+      Screens : Map<Lun, Screen>
       OptActiveScreenAddress : Address option }
     with
         static member private optChildFinder addressHead parent =
-            LunTrie.tryFind addressHead parent.Screens
+            Map.tryFind addressHead parent.Screens
         
         static member private childFinder addressHead parent =
             let optChild = Game.optChildFinder addressHead parent
@@ -516,10 +516,10 @@ type [<StructuralEquality; NoComparison>] Game =
             | Some child -> child
         
         static member private childAdder addressHead parent child =
-            { parent with Game.Screens = LunTrie.add addressHead child parent.Screens }
+            { parent with Game.Screens = Map.add addressHead child parent.Screens }
         
         static member private childRemover addressHead parent =
-            { parent with Game.Screens = LunTrie.remove addressHead parent.Screens }
+            { parent with Game.Screens = Map.remove addressHead parent.Screens }
         
         static member entity (address : Address) =
             Game.screen [List.head address] >>| Screen.entity (List.tail address)

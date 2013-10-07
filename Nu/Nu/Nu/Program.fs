@@ -49,7 +49,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testGame =
         { Id = getNuId ()
           IsEnabled = true
-          Screens = LunTrie.empty
+          Screens = Map.empty
           OptActiveScreenAddress = None }
 
     let testWorld =
@@ -68,14 +68,14 @@ let createTestWorld (sdlDeps : SdlDeps) =
         { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
-          Groups = LunTrie.empty
+          Groups = Map.empty
           ScreenSemantic = Title }
 
     let testGroup =
         { Id = getNuId ()
           IsEnabled = true
           IsVisible = true
-          Entities = LunTrie.empty }
+          Entities = Map.empty }
           
     let testLabel =
         { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc" }}
