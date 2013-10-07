@@ -297,11 +297,11 @@ let getWorldRenderDescriptors world =
     | None -> []
     | Some activeScreenAddress ->
         let activeScreen = get world (World.screen activeScreenAddress)
-        let groups = LunTrie.toValueSeq activeScreen.Groups
+        let groups = Map.toValueSeq activeScreen.Groups
         let optDescriptorSeqs =
             Seq.map
                 (fun group ->
-                    let entities = LunTrie.toValueSeq group.Entities
+                    let entities = Map.toValueSeq group.Entities
                     Seq.map
                         (fun entity ->
                             match entity.EntitySemantic with
@@ -393,7 +393,7 @@ let run sdlConfig =
             let game =
                 { Id = getNuId ()
                   IsEnabled = true
-                  Screens = LunTrie.empty
+                  Screens = Map.empty
                   OptActiveScreenAddress = None }
             { Game = game
               Subscriptions = Map.empty
