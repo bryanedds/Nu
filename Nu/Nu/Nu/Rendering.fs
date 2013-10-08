@@ -100,7 +100,7 @@ let doRender renderDescriptors renderer =
         ignore (SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD))
         let spriteDescriptors = List.map (fun (SpriteDescriptor descriptor) -> descriptor) renderDescriptors
         //let (spriteDescriptors, renderDescriptors_) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptors
-        let sortedSpriteDescriptors = List.sortBy (fun descriptor -> descriptor.Depth) spriteDescriptors
+        let sortedSpriteDescriptors = Seq.sortBy (fun descriptor -> descriptor.Depth) spriteDescriptors
         for spriteDescriptor in sortedSpriteDescriptors do
             let optRenderAsset =
                 Option.reduce

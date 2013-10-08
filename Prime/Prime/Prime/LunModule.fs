@@ -25,20 +25,21 @@ type [<CustomEquality; CustomComparison>] Lun =
     static member private isNonNumableChar chr =
         chr > '\u0080'
 
+    static member private makeOptNums str =
+        let strLen = String.length str
+        if strLen > 18 ||
+           String.exists Lun.isNonNumableChar str then
+           None
+        else
+            let num = Lun.strToNum 0 str
+            let num2 = if strLen > 9 then Lun.strToNum 9 str else 0L
+            Some (num, num2)
+
     static member private makeInternal str hash optNums =
         { LunStr = str; LunHash = hash; LunOptNums = optNums }
 
     static member make str =
-        let strLen = String.length str
-        let optNums =
-            if strLen > 18 ||
-               String.exists Lun.isNonNumableChar str then
-               None
-            else
-                let num = Lun.strToNum 0 str
-                let num2 = if strLen > 9 then Lun.strToNum 9 str else 0L
-                Some (num, num2)
-        Lun.makeInternal str (str.GetHashCode ()) optNums
+        Lun.makeInternal str (str.GetHashCode ()) (Lun.makeOptNums str)
 
     static member makeN (num : int64) =
         let lunStr = str num
