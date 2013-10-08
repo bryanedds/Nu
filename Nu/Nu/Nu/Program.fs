@@ -19,7 +19,8 @@ approximate speed-ups -
 2x gain - Run app at 30fps instead of 60
 2x gain - put physics in another process
 1.5x gain - put rendering in another process, perhaps with physics, and / or render with OpenGL directly
-1.3x gain - store loaded assets in a Dictionary<Dictionary, ...>> rather than a Map<Map, ...>>
+1.3x gain - store loaded assets in a Dictionary<Dictionary, ...>> rather than a Map<Map, ...>>, or...
+1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
 1.2x gain - optimize locality of address usage
 ?x gain - as a last resort, the immutable Map<Lun, 'a>s used in the Simulants could be changed to mutable
 Dictionary<Lun, 'a>s or even Dictionary<Lun, ref 'a>s. *)
