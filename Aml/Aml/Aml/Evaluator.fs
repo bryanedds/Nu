@@ -70,7 +70,7 @@ and makeEvalFirstClassViolation env name =
 
 /// Make a an exception violation during evaluation.
 and makeEvalExceptionViolation env (exn : Exception) =
-    makeEvalViolation env ":v/exception" exn.Message
+    makeEvalViolation env ":v/exception" (str exn)
     
 /// Forward a violation from a str during evaluation.
 and forwardEvalViolation env violation =
@@ -134,8 +134,8 @@ and projectSigImpls env pname sigImpls =
     List.map (fun sigImpl -> projectSigImpl env pname sigImpl) sigImpls
 
 /// Apply an unary operator.
-and applyUnop exprToOptNumber numberToExpr env unop (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedUnop" "Unop must have one argument."
+and applyUnop exprToOptNumber numberToExpr env unop (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedUnop" "Unop must have 1 argument."
     else
         let argValue = evalExprDropEnv env args.Head
         let optNumber : 'a option = exprToOptNumber argValue
@@ -147,8 +147,8 @@ and applyUnop exprToOptNumber numberToExpr env unop (args : Expr list) =
         | Some number -> makeEvalResult env (numberToExpr (unop number))
 
 /// Apply a binary operator.
-and applyBinop allExprsToNumbers numberToExpr env binop isZero checkForDivisionByZero (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedBinop" "Binop must have two arguments."
+and applyBinop allExprsToNumbers numberToExpr env binop isZero checkForDivisionByZero (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedBinop" "Binop must have 2 arguments."
     else
         let argValues = evalExprsDropEnv env args
         let numbers : 'a list = allExprsToNumbers argValues
@@ -160,8 +160,8 @@ and applyBinop allExprsToNumbers numberToExpr env binop isZero checkForDivisionB
             else makeEvalViolation env ":v/contract/divByZero" "Division by zero."
 
 /// Apply a comparator.
-and applyComparator comparator env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedComparator" "Comparator must have 2 arguments."
+and applyComparator comparator env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedComparator" "Comparator must have 2 arguments."
     else
         let argValues = evalExprsDropEnv env args
         let comparables : IComparable list = allExprsToComparables argValues
@@ -169,12 +169,12 @@ and applyComparator comparator env name (args : Expr list) =
             if anyViolations argValues then forwardEvalViolation env (firstViolation argValues)
             else makeEvalViolation env ":v/eval/invalidComparatorForm" "Invalid comparator form."
         else
-            let compareResult = List.roll (fun state curr next -> state && comparator curr next) true comparables
+            let compareResult = comparator comparables.[0] comparables.[1]
             makeEvalResult env (Boolean (makeBooleanRecord compareResult None))
 
 /// Apply an and operator.
-and applyAnd env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedAndOperation" "And operation must have 2 arguments."
+and applyAnd env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedAndOperation" "And operation must have 2 arguments."
     else
         let xValue = evalExprDropEnv env args.[0]
         match xValue with
@@ -193,8 +193,8 @@ and applyAnd env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/invalidAndArgumentType" "And expression requires both argumements to be boolean."
 
 /// Apply an or operator.
-and applyOr env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedOrOperation" "Or operation must have 2 arguments."
+and applyOr env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedOrOperation" "Or operation must have 2 arguments."
     else
         let xValue = evalExprDropEnv env args.[0]
         match xValue with
@@ -211,8 +211,8 @@ and applyOr env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/invalidOrArgumentType" "Or expression requires both argumements to be boolean."
 
 /// Apply an if operator.
-and applyIf env name (args : Expr list) =
-    if not (List.hasExactly 3 args) then makeEvalViolation env ":v/eval/malformedIfOperation" "If operation must have 3 arguments."
+and applyIf env name (args : Expr list) argCount =
+    if argCount <> 3 then makeEvalViolation env ":v/eval/malformedIfOperation" "If operation must have 3 arguments."
     else
         let condition = evalExprDropEnv env args.Head
         match condition with
@@ -221,8 +221,8 @@ and applyIf env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/invalidIfCondition" "Condition part of if operator must result in a boolean."
 
 /// Apply the apply operator.
-and applyApply env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedApplyOperation" "Apply operation must have 2 arguments."
+and applyApply env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedApplyOperation" "Apply operation must have 2 arguments."
     else
         let op = args.[0]
         let argList = evalExprDropEnv env args.[1]
@@ -231,8 +231,8 @@ and applyApply env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/invalidApplyArgument" "Apply requires a list as its argument."
 
 /// Apply the doc operator.
-and applyDoc env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedDocOperation" "Doc operation must have 1 argument."
+and applyDoc env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedDocOperation" "Doc operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -253,8 +253,8 @@ and applyDoc env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/eval/invalidDocParameter" "Doc operation requires a keyword argument."
 
 /// Apply a type selector.
-and applyType env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedTypeOperation" "Type operation must have 1 argument."
+and applyType env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedTypeOperation" "Type operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -262,8 +262,8 @@ and applyType env name (args : Expr list) =
         | _ -> let aType = getType env value in makeEvalResult env aType
         
 /// Apply a typeOf operator.
-and applyTypeOf env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedTypeOfOperation" "TypeOf operation must have 1 argument."
+and applyTypeOf env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedTypeOfOperation" "TypeOf operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -277,8 +277,8 @@ and applyTypeOf env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/eval/invalidTypeOfArgumentType" "TypeOf operation requires a keyword argument."
 
 /// Apply a structural equal query.
-and applyEqual env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
+and applyEqual env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         let secondValue = evalExprDropEnv env args.[1]
@@ -288,8 +288,8 @@ and applyEqual env name (args : Expr list) =
         | _ -> makeEvalResult env (Boolean (makeBooleanRecord (firstValue = secondValue) None))
     
 /// Apply a structural inequal query.
-and applyInequal env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedInequalOperation" "Inequal operation must have 2 arguments."
+and applyInequal env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedInequalOperation" "Inequal operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         let secondValue = evalExprDropEnv env args.[1]
@@ -299,8 +299,8 @@ and applyInequal env name (args : Expr list) =
         | _ -> makeEvalResult env (Boolean (makeBooleanRecord (firstValue <> secondValue) None))
 
 /// Apply a ref equality query.
-and applyRefEqual env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
+and applyRefEqual env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         let secondValue = evalExprDropEnv env args.[1]
@@ -313,8 +313,8 @@ and applyRefEqual env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/refEqualityOnNonRef" "Both arguments of reference equal operation must be references."
 
 /// Apply a ref inequality query.
-and applyRefInequal env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
+and applyRefInequal env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         let secondValue = evalExprDropEnv env args.[1]
@@ -327,8 +327,8 @@ and applyRefInequal env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/refInequalityOnNonRef" "Both arguments of reference inequal operation must be references."
     
 /// Apply a cons operation.
-and applyCons env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedConsOperation" "Cons operation must have 2 arguments."
+and applyCons env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedConsOperation" "Cons operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         match firstValue with
@@ -342,8 +342,8 @@ and applyCons env name (args : Expr list) =
             | _ -> makeEvalViolation env ":v/contract/consToNonList" "Cannot cons to a non-list."
     
 /// Apply a head operation.
-and applyHead env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedHeadOperation" "Head operation must have 1 argument."
+and applyHead env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedHeadOperation" "Head operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -353,8 +353,8 @@ and applyHead env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/headOfNonList" "Cannot take the head of a non-list."
     
 /// Apply a tail operation.
-and applyTail env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedTailOperation" "Tail operation must have 1 argument."
+and applyTail env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedTailOperation" "Tail operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -364,8 +364,8 @@ and applyTail env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/tailOfNonList" "Cannot take the tail of a non-list."
     
 /// Apply a string length query.
-and applyStringLength env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedStringLengthOperation" "StringLength operation must have 1 argument."
+and applyStringLength env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedStringLengthOperation" "StringLength operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -374,8 +374,8 @@ and applyStringLength env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/stringLengthOfNonString" "Cannot get the string length of a non-string."
     
 /// Apply a string append.
-and applyStringAppend env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedStringAppendOperation" "StringAppend operation must have 2 arguments."
+and applyStringAppend env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedStringAppendOperation" "StringAppend operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         match firstValue with
@@ -385,12 +385,12 @@ and applyStringAppend env name (args : Expr list) =
             match secondValue with
             | Violation _ as v2 -> forwardEvalViolation env v2
             | String string2 -> makeEvalResult env (String (makeStringRecord (makeLiteralStringValue (string.SRValue.SVValue + string2.SRValue.SVValue)) None))
-            | _ -> makeEvalViolation env ":v/contract/stringAppendOfNonString" "String appending requires two strings as arguments."
-        | _ -> makeEvalViolation env ":v/contract/stringAppendOfNonString" "String appending requires two strings as arguments."
+            | _ -> makeEvalViolation env ":v/contract/stringAppendOfNonString" "String appending requires 2 strings as arguments."
+        | _ -> makeEvalViolation env ":v/contract/stringAppendOfNonString" "String appending requires 2 strings as arguments."
     
 /// Apply a list length query.
-and applyListLength env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedListLengthOperation" "ListLength operation must have 1 argument."
+and applyListLength env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedListLengthOperation" "ListLength operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -399,8 +399,8 @@ and applyListLength env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/listLengthOfNonList" "Cannot get the list length of a non-list."
 
 /// Apply a list append.
-and applyListAppend env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedListAppendOperation" "ListAppend operation must have 2 arguments."
+and applyListAppend env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedListAppendOperation" "ListAppend operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         let secondValue = evalExprDropEnv env args.[1]
@@ -421,8 +421,8 @@ and applyListAppend env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/listAppendOfNonList" "Cannot append a non-list to a list."
 
 /// Apply an array length query.
-and applyArrayLength env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedArrayLengthOperation" "ArrayLength operation must have 1 argument."
+and applyArrayLength env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedArrayLengthOperation" "ArrayLength operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -431,8 +431,8 @@ and applyArrayLength env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/arrayLengthOfNonArray" "Cannot get the array length of a non-array."
 
 /// Apply an array append.
-and applyArrayAppend env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedArrayAppendOperation" "ArrayLength operation must have 2 arguments."
+and applyArrayAppend env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedArrayAppendOperation" "ArrayLength operation must have 2 arguments."
     else
         let firstValue = evalExprDropEnv env args.[0]
         match firstValue with
@@ -446,13 +446,13 @@ and applyArrayAppend env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/arrayAppendOfNonArray" "Array appending requires two arrays as arguments."
 
 /// Apply a steps operation.
-and applySteps env name args =
+and applySteps env name args _ =
     match args with
     | [] -> makeEvalViolation env ":v/eval/malformedStepsOperation" "Steps operation must have at least one argument."
     | _ -> let results = sequentiallyEvalExprs env args false in List.last results
 
 /// Apply a while operation.
-and applyWhile env name args =
+and applyWhile env name args _ =
     match args with
     | [condition; statement] ->
         let mutable conditionResult = evalConditional env condition
@@ -469,8 +469,8 @@ and applyWhile env name args =
     | _ -> makeEvalViolation env ":v/eval/malformedStepsOperation" "While operation must have two arguments."
 
 /// Apply a type query with a predicate.
-and applyIsPred pred env name (args : Expr list) =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedAstPredicateOperation" "AST predicate operation must have 1 argument."
+and applyIsPred pred env name (args : Expr list) argCount =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedAstPredicateOperation" "AST predicate operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         match value with
@@ -478,50 +478,50 @@ and applyIsPred pred env name (args : Expr list) =
         | _ -> let resultValue = Boolean (makeBooleanRecord (pred value) None) in makeEvalResult env resultValue
 
 /// Apply a unit query.
-and applyIsUnit env name (args : Expr list) = applyIsPred isUnit env name args
+and applyIsUnit env name (args : Expr list) argCount = applyIsPred isUnit env name args argCount
 
 /// Apply a boolean query.
-and applyIsBoolean env name (args : Expr list) = applyIsPred isBoolean env name args
+and applyIsBoolean env name (args : Expr list) argCount = applyIsPred isBoolean env name args argCount
 
 /// Apply a character query.
-and applyIsCharacter env name (args : Expr list) = applyIsPred isCharacter env name args
+and applyIsCharacter env name (args : Expr list) argCount = applyIsPred isCharacter env name args argCount
 
 /// Apply a string query.
-and applyIsString env name (args : Expr list) = applyIsPred isString env name args
+and applyIsString env name (args : Expr list) argCount = applyIsPred isString env name args argCount
 
 /// Apply an int query.
-and applyIsInt env name (args : Expr list) = applyIsPred isInt env name args
+and applyIsInt env name (args : Expr list) argCount = applyIsPred isInt env name args argCount
 
 /// Apply an long query.
-and applyIsLong env name (args : Expr list) = applyIsPred isLong env name args
+and applyIsLong env name (args : Expr list) argCount = applyIsPred isLong env name args argCount
 
 /// Apply a float query.
-and applyIsFloat env name (args : Expr list) = applyIsPred isFloat env name args
+and applyIsFloat env name (args : Expr list) argCount = applyIsPred isFloat env name args argCount
 
 /// Apply a double query.
-and applyIsDouble env name (args : Expr list) = applyIsPred isDouble env name args
+and applyIsDouble env name (args : Expr list) argCount = applyIsPred isDouble env name args argCount
 
 /// Apply a keyword query.
-and applyIsKeyword env name (args : Expr list) = applyIsPred isKeyword env name args
+and applyIsKeyword env name (args : Expr list) argCount = applyIsPred isKeyword env name args argCount
 
 /// Apply a package query.
-and applyIsPackage env name (args : Expr list) = applyIsPred isPackage env name args
+and applyIsPackage env name (args : Expr list) argCount = applyIsPred isPackage env name args argCount
 
 /// Apply a lambda query.
-and applyIsLambda env name (args : Expr list) = applyIsPred isLambda env name args
+and applyIsLambda env name (args : Expr list) argCount = applyIsPred isLambda env name args argCount
 
 /// Apply a list query.
-and applyIsList env name (args : Expr list) = applyIsPred isList env name args
+and applyIsList env name (args : Expr list) argCount = applyIsPred isList env name args argCount
 
 /// Apply a array query.
-and applyIsArray env name (args : Expr list) = applyIsPred isArray env name args
+and applyIsArray env name (args : Expr list) argCount = applyIsPred isArray env name args argCount
 
 /// Apply a composite query.
-and applyIsComposite env name (args : Expr list) = applyIsPred isComposite env name args
+and applyIsComposite env name (args : Expr list) argCount = applyIsPred isComposite env name args argCount
 
 /// Apply a has type query.
-and applyHasType env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedHasTypeOperation" "HasType operation must have 2 arguments."
+and applyHasType env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedHasTypeOperation" "HasType operation must have 2 arguments."
     else
         let typeNameValue = evalExprDropEnv env args.[0]
         match typeNameValue with
@@ -535,8 +535,8 @@ and applyHasType env name (args : Expr list) =
         | _ -> makeEvalViolation env ":v/contract/typeLookupWithNonKeyword" "Types can only be looked up with a keyword."
 
 /// Apply a has protocol query.
-and applyHasProtocol env name (args : Expr list) =
-    if not (List.hasExactly 2 args) then makeEvalViolation env ":v/eval/malformedHasProtocolOperation" "HasProtocol operation must have 2 arguments."
+and applyHasProtocol env name (args : Expr list) argCount =
+    if argCount <> 2 then makeEvalViolation env ":v/eval/malformedHasProtocolOperation" "HasProtocol operation must have 2 arguments."
     else
         let protocolNameValue = evalExprDropEnv env args.[0]
         match protocolNameValue with
@@ -550,8 +550,8 @@ and applyHasProtocol env name (args : Expr list) =
         | _ -> makeEvalResult env FalseValue
 
 /// Apply a conversion from one primitive type to another.
-and applyConversion env (converter : Expr -> Expr option) (args : Expr list) typeName =
-    if not (List.hasExactly 1 args) then makeEvalViolation env ":v/eval/malformedConversionOperation" "Conversion operation must have 1 argument."
+and applyConversion env (converter : Expr -> Expr option) (args : Expr list) argCount typeName =
+    if argCount <> 1 then makeEvalViolation env ":v/eval/malformedConversionOperation" "Conversion operation must have 1 argument."
     else
         let value = evalExprDropEnv env args.Head
         let optConvertedValue = converter value
@@ -563,79 +563,79 @@ and applyConversion env (converter : Expr -> Expr option) (args : Expr list) typ
         | Some convertedValue -> makeEvalResult env convertedValue
 
 /// Apply a char to int conversion.
-and applyCharToInt env name (args : Expr list) = applyConversion env (function | Character c -> Some (Int (makeIntRecord (int c.CRValue) None)) | _ -> None) args CharacterStr
+and applyCharToInt env name (args : Expr list) argCount = applyConversion env (function | Character c -> Some (Int (makeIntRecord (int c.CRValue) None)) | _ -> None) args argCount CharacterStr
 
 /// Apply an int to char conversion.
-and applyIntToChar env name (args : Expr list) = applyConversion env (function | Int i -> Some (Character (makeCharacterRecord (char i.IRValue) None)) | _ -> None) args IntStr
+and applyIntToChar env name (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Character (makeCharacterRecord (char i.IRValue) None)) | _ -> None) args argCount IntStr
 
 /// Apply an int to long conversion.
-and applyIntToLong env name (args : Expr list) = applyConversion env (function | Int i -> Some (Long (makeLongRecord (int64 i.IRValue) None)) | _ -> None) args IntStr
+and applyIntToLong env name (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Long (makeLongRecord (int64 i.IRValue) None)) | _ -> None) args argCount IntStr
 
 /// Apply a long to int conversion.
-and applyLongToInt env name (args : Expr list) = applyConversion env (function | Long l -> Some (Int (makeIntRecord (int l.GRValue) None)) | _ -> None) args LongStr
+and applyLongToInt env name (args : Expr list) argCount = applyConversion env (function | Long l -> Some (Int (makeIntRecord (int l.GRValue) None)) | _ -> None) args argCount LongStr
 
 /// Apply a float to double conversion.
-and applyFloatToDouble env name (args : Expr list) = applyConversion env (function | Float f -> Some (Double (makeDoubleRecord (float f.FRValue) None)) | _ -> None) args FloatStr
+and applyFloatToDouble env name (args : Expr list) argCount = applyConversion env (function | Float f -> Some (Double (makeDoubleRecord (float f.FRValue) None)) | _ -> None) args argCount FloatStr
 
 /// Apply a double to float conversion.
-and applyDoubleToFloat env name (args : Expr list) = applyConversion env (function | Double d -> Some (Float (makeFloatRecord (single d.DRValue) None)) | _ -> None) args DoubleStr
+and applyDoubleToFloat env name (args : Expr list) argCount = applyConversion env (function | Double d -> Some (Float (makeFloatRecord (single d.DRValue) None)) | _ -> None) args argCount DoubleStr
 
 /// Apply an int to float conversion.
-and applyIntToFloat env name (args : Expr list) = applyConversion env (function | Int i -> Some (Float (makeFloatRecord (single i.IRValue) None)) | _ -> None) args IntStr
+and applyIntToFloat env name (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Float (makeFloatRecord (single i.IRValue) None)) | _ -> None) args argCount IntStr
 
 /// Apply a float to int conversion.
-and applyFloatToInt env name (args : Expr list) = applyConversion env (function | Float f -> Some (Int (makeIntRecord (int f.FRValue) None)) | _ -> None) args FloatStr
+and applyFloatToInt env name (args : Expr list) argCount = applyConversion env (function | Float f -> Some (Int (makeIntRecord (int f.FRValue) None)) | _ -> None) args argCount FloatStr
 
 /// Apply a long to double conversion.
-and applyLongToDouble env name (args : Expr list) = applyConversion env (function | Long l -> Some (Double (makeDoubleRecord (float l.GRValue) None)) | _ -> None) args LongStr
+and applyLongToDouble env name (args : Expr list) argCount = applyConversion env (function | Long l -> Some (Double (makeDoubleRecord (float l.GRValue) None)) | _ -> None) args argCount LongStr
 
 /// Apply a double to long conversion.
-and applyDoubleToLong env name (args : Expr list) = applyConversion env (function | Double d -> Some (Long (makeLongRecord (int64 d.DRValue) None)) | _ -> None) args DoubleStr
+and applyDoubleToLong env name (args : Expr list) argCount = applyConversion env (function | Double d -> Some (Long (makeLongRecord (int64 d.DRValue) None)) | _ -> None) args argCount DoubleStr
 
 /// Apply a string to array conversion.
-and applyStringToArray env name (args : Expr list) = applyConversion env (function | String s -> Some (stringToArray env s.SRValue.SVValue) | _ -> None) args StringStr
+and applyStringToArray env name (args : Expr list) argCount = applyConversion env (function | String s -> Some (stringToArray env s.SRValue.SVValue) | _ -> None) args argCount StringStr
 
 /// Apply an array to string conversion.
-and applyArrayToString env name (args : Expr list) = applyConversion env (function | Array a -> Some (arrayToString env a) | _ -> None) args ArrayStr
+and applyArrayToString env name (args : Expr list) argCount = applyConversion env (function | Array a -> Some (arrayToString env a) | _ -> None) args argCount ArrayStr
 
 /// Apply a list to array conversion.
-and applyListToArray env name (args : Expr list) = applyConversion env (function | List l -> Some (listToArray env l) | _ -> None) args ListStr
+and applyListToArray env name (args : Expr list) argCount = applyConversion env (function | List l -> Some (listToArray env l) | _ -> None) args argCount ListStr
 
 /// Apply an array to list conversion.
-and applyArrayToList env name (args : Expr list) = applyConversion env (function | Array a -> Some (arrayToList env a) | _ -> None) args ArrayStr
+and applyArrayToList env name (args : Expr list) argCount = applyConversion env (function | Array a -> Some (arrayToList env a) | _ -> None) args argCount ArrayStr
 
 /// Apply an int unop.
-and applyIntUnop intUnop env opName args = applyUnop exprToOptIntValue (fun i -> Int (makeIntRecord i None)) env intUnop args
+and applyIntUnop intUnop env opName args argCount = applyUnop exprToOptIntValue (fun i -> Int (makeIntRecord i None)) env intUnop args argCount
 
 /// Apply a long unop.
-and applyLongUnop longUnop env opName args = applyUnop exprToOptLongValue (fun l -> Long (makeLongRecord l None)) env longUnop args
+and applyLongUnop longUnop env opName args argCount = applyUnop exprToOptLongValue (fun l -> Long (makeLongRecord l None)) env longUnop args argCount
 
 /// Apply a float unop.
-and applyFloatUnop floatUnop env opName args = applyUnop exprToOptFloatValue (fun f -> Float (makeFloatRecord f None)) env floatUnop args
+and applyFloatUnop floatUnop env opName args argCount = applyUnop exprToOptFloatValue (fun f -> Float (makeFloatRecord f None)) env floatUnop args argCount
 
 /// Apply a double unop.
-and applyDoubleUnop doubleUnop env opName args = applyUnop exprToOptDoubleValue (fun d -> Double (makeDoubleRecord d None)) env doubleUnop args
+and applyDoubleUnop doubleUnop env opName args argCount = applyUnop exprToOptDoubleValue (fun d -> Double (makeDoubleRecord d None)) env doubleUnop args argCount
 
 /// Apply an int binop.
-and applyIntBinop intBinop env opName args = applyBinop allExprsToIntValues (fun i -> Int (makeIntRecord i None)) env intBinop (fun i -> i = 0) (usesDivisionOperation opName) args
+and applyIntBinop intBinop env opName args argCount = applyBinop allExprsToIntValues (fun i -> Int (makeIntRecord i None)) env intBinop (fun i -> i = 0) (usesDivisionOperation opName) args argCount
 
 /// Apply a long binop.
-and applyLongBinop longBinop env opName args = applyBinop allExprsToLongValues (fun l -> Long (makeLongRecord l None)) env longBinop (fun l -> l = 0L) (usesDivisionOperation opName) args
+and applyLongBinop longBinop env opName args argCount = applyBinop allExprsToLongValues (fun l -> Long (makeLongRecord l None)) env longBinop (fun l -> l = 0L) (usesDivisionOperation opName) args argCount
 
 /// Apply a float binop.
-and applyFloatBinop floatBinop env opName args = applyBinop allExprsToFloatValues (fun f -> Float (makeFloatRecord f None)) env floatBinop absurdity false args
+and applyFloatBinop floatBinop env opName args argCount = applyBinop allExprsToFloatValues (fun f -> Float (makeFloatRecord f None)) env floatBinop absurdity false args argCount
 
 /// Apply a double binop.
-and applyDoubleBinop doubleBinop env opName args = applyBinop allExprsToDoubleValues (fun d -> Double (makeDoubleRecord d None)) env doubleBinop absurdity false args
+and applyDoubleBinop doubleBinop env opName args argCount = applyBinop allExprsToDoubleValues (fun d -> Double (makeDoubleRecord d None)) env doubleBinop absurdity false args argCount
 
 /// Apply a special builtin operation.
-and applySpecialBuiltin env name args =
+and applySpecialBuiltin env name args argCount =
     match env.EnvOptLanguageModule with
     | None -> makeEvalViolation env ":v/eval/invalidBuiltinOperator" "Built-in operator not found."
-    | Some lm -> lm.ApplySpecialBuiltin env name args
+    | Some lm -> lm.ApplySpecialBuiltin env name args argCount
 
 /// The appliable built-in lambdas.
-and appliableBuiltins : (Lun * (Env -> Lun -> Expr list -> EvalResult)) list =
+and appliableBuiltins : (Lun * (Env -> Lun -> Expr list -> int -> EvalResult)) list =
     [(Lun.make FloatFloorStr, applyFloatUnop floatFloor)
      (Lun.make FloatCeilingStr, applyFloatUnop floatCeiling)
      (Lun.make FloatTruncateStr, applyFloatUnop floatTruncate)
@@ -782,16 +782,16 @@ and appliableBuiltinDict =
     List.toDictionary appliableBuiltins
 
 /// Apply a built-in operator.
-and applyBuiltin env name (args : Expr list) =
-    let appliableBuiltin = ref Unchecked.defaultof<Env -> Lun -> Expr list -> EvalResult>
+and applyBuiltin env name (args : Expr list) argCount =
+    let appliableBuiltin = ref Unchecked.defaultof<Env -> Lun -> Expr list -> int -> EvalResult>
     if appliableBuiltinDict.TryGetValue (name, appliableBuiltin)
-    then !appliableBuiltin env name args
-    else applySpecialBuiltin env name args
+    then !appliableBuiltin env name args argCount
+    else applySpecialBuiltin env name args argCount
 
 /// Apply a built-in symbol.
-and applyBuiltinSymbol env args symbol =
+and applyBuiltinSymbol env args argCount symbol =
     // NOTE: only a built-in function can eval to a symbol expr
-    let builtinResult = applyBuiltin env symbol.SymName args
+    let builtinResult = applyBuiltin env symbol.SymName args argCount
     makeEvalResult env builtinResult.Value
 
 /// Apply a lambda once its been pushed on the stack frame and its arguments have been unified.
@@ -855,7 +855,7 @@ and applyDispatch env args argCount dispatch skipArgEval =
             then makeEvalViolation env ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName.LunStr + "' operation.")
             else
                 match !sigImpl with
-                | Symbol symbol -> applyBuiltinSymbol env argValues symbol
+                | Symbol symbol -> applyBuiltinSymbol env argValues argCount symbol
                 | Lambda lambda as l -> applyLambdaDispatch env argValues argCount lambda.LamArgs lambda.LamArgCount lambda l
                 | Dispatch dispatch2 -> applyDispatch env argValues argCount dispatch2 true
                 | _ -> makeEvalViolation env ":v/eval/invalidDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName.LunStr + "' to either built-in function or lambda.")
@@ -1004,7 +1004,7 @@ and evalOperation env (exprs : Expr list) exprCount optPositions =
 
     match opValue with
     | Violation _ as v -> forwardEvalViolation env v
-    | Symbol symbol -> applyBuiltinSymbol env args symbol
+    | Symbol symbol -> applyBuiltinSymbol env args argCount symbol
     | Dispatch dispatch -> applyDispatch env args argCount dispatch false
     | Lambda lambda as l ->
         

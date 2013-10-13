@@ -317,7 +317,7 @@ let tryWriteExprFromPositions optPositions trimStartOfFirstLine =
     | Some positions ->
         let start = positions.ParStart
         let stop = positions.ParStop
-        let usesFile = start.StreamName.Length <> 0
+        let usesFile = start.StreamName <> null && start.StreamName.Length <> 0 // NOTE: it seems like it's a bug for FParsec to allow StreamName to be null...
         if usesFile then
             let fileLines = File.ReadAllLines start.StreamName
             let firstFileLine = fileLines.[int start.Line - 1]
@@ -355,7 +355,7 @@ let makeViolationWithPositions env category message =
         | Some positions ->
             let start = positions.ParStart
             let stop = positions.ParStop
-            let usesFile = start.StreamName.Length <> 0
+            let usesFile = start.StreamName <> null && start.StreamName.Length <> 0
             let exprStr =
                 if usesFile then
                     let fileLines = System.IO.File.ReadAllLines start.StreamName

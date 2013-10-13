@@ -425,7 +425,7 @@ and ILanguageModule =
     /// Get the type of a special object.
     abstract GetSpecialType : Env -> Expr -> Expr
     /// Apply a special built-in operator.
-    abstract ApplySpecialBuiltin : Env -> Lun -> Expr list -> EvalResult
+    abstract ApplySpecialBuiltin : Env -> Lun -> Expr list -> int -> EvalResult
     /// Apply a selector to a special object.
     abstract ApplySpecialSelector : Env -> Expr -> Expr -> EvalResult
     /// Evaluate a prefixed expression.
