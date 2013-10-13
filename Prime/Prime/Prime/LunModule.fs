@@ -11,6 +11,9 @@ type [<CustomEquality; CustomComparison>] Lun =
       LunHash : int
       LunOptNums : (int64 * int64) option }
 
+    static member private isNonNumableChar chr =
+        chr > '\u0080'
+
     static member private strToNum strStart str =
         let mutable num = 0L;
         let mutable shl = 0;
@@ -21,9 +24,6 @@ type [<CustomEquality; CustomComparison>] Lun =
             shl <- shl + 7
             idx <- idx + 1
         num
-
-    static member private isNonNumableChar chr =
-        chr > '\u0080'
 
     static member private makeOptNums str =
         let strLen = String.length str
@@ -49,13 +49,14 @@ type [<CustomEquality; CustomComparison>] Lun =
         Lun.make (left.LunStr + right.LunStr)
 
     override this.Equals that =
-        // OPTIMIZATION: this code is highly optimized
         match that with
         | :? Lun as thatLun ->
+            (* NOTE: dummied out this optimization as it seems to cause Aml to run slower
             match (this.LunOptNums, thatLun.LunOptNums) with
             | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
                 thisNum = thatNum && thisNum2 = thatNum2
-            | _ -> this.LunStr = thatLun.LunStr
+            | _ ->*)
+                this.LunStr = thatLun.LunStr
         | _ -> false
 
     override this.ToString () =
