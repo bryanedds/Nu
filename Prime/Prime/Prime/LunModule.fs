@@ -51,11 +51,10 @@ type [<CustomEquality; CustomComparison>] Lun =
     override this.Equals that =
         match that with
         | :? Lun as thatLun ->
-            (* NOTE: dummied out this optimization as it seems to cause Aml to run slower
             match (this.LunOptNums, thatLun.LunOptNums) with
             | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
                 thisNum = thatNum && thisNum2 = thatNum2
-            | _ ->*)
+            | _ ->
                 this.LunStr = thatLun.LunStr
         | _ -> false
 
