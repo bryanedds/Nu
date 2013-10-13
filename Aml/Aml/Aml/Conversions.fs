@@ -102,84 +102,16 @@ let exprToOptDoubleValue = exprToOptDouble >> Option.map (fun x -> x.DRValue)
 let exprToOptStringValue = exprToOptString >> Option.map (fun x -> x.SRValue)
 
 /// Convert all exprs to int values or empty list.
-let allExprsToIntValues exprs = List.allOrNothingBy exprToOptIntValue exprs
+let allExprsToIntValues exprs = List.allOrEmptyBy exprToOptIntValue exprs
 
 /// Convert all exprs to long values or empty list.
-let allExprsToLongValues exprs = List.allOrNothingBy exprToOptLongValue exprs
+let allExprsToLongValues exprs = List.allOrEmptyBy exprToOptLongValue exprs
 
 /// Convert all exprs to float values or empty list.
-let allExprsToFloatValues exprs = List.allOrNothingBy exprToOptFloatValue exprs
+let allExprsToFloatValues exprs = List.allOrEmptyBy exprToOptFloatValue exprs
 
 /// Convert all exprs to double values or empty list.
-let allExprsToDoubleValues exprs = List.allOrNothingBy exprToOptDoubleValue exprs
+let allExprsToDoubleValues exprs = List.allOrEmptyBy exprToOptDoubleValue exprs
 
 /// Convert all exprs to comparables or empty list.
-let allExprsToComparables exprs = List.allOrNothingBy exprToOptComparableValue exprs
-
-(*// OPTIMIZATION: unrolled all the conversion function.
-// Would be better still to get rid of List.rev use with TCO'd recursion.
-
-/// Convert all exprs to int values or empty list.
-let allExprsToIntValues (exprs : _ list) =
-    let mutable result = []
-    let mutable passing = true
-    let mutable enr = (exprs :> seq<_>). GetEnumerator ()
-    while enr.MoveNext () do
-        match enr.Current with
-        | Int current -> result <- current.IRValue :: result
-        | _ -> passing <- false
-    if passing then List.rev result
-    else []
-
-/// Convert all exprs to long values or empty list.
-let allExprsToLongValues exprs =
-    let mutable result = []
-    let mutable passing = true
-    let mutable enr = (exprs :> seq<_>). GetEnumerator ()
-    while enr.MoveNext () do
-        match enr.Current with
-        | Long current -> result <- current.GRValue :: result
-        | _ -> passing <- false
-    if passing then List.rev result
-    else []
-
-/// Convert all exprs to float values or empty list.
-let allExprsToFloatValues exprs =
-    let mutable result = []
-    let mutable passing = true
-    let mutable enr = (exprs :> seq<_>). GetEnumerator ()
-    while enr.MoveNext () do
-        match enr.Current with
-        | Float current -> result <- current.FRValue :: result
-        | _ -> passing <- false
-    if passing then List.rev result
-    else []
-
-/// Convert all exprs to double values or empty list.
-let allExprsToDoubleValues exprs =
-    let mutable result = []
-    let mutable passing = true
-    let mutable enr = (exprs :> seq<_>). GetEnumerator ()
-    while enr.MoveNext () do
-        match enr.Current with
-        | Double current -> result <- current.DRValue :: result
-        | _ -> passing <- false
-    if passing then List.rev result
-    else []
-
-/// Convert all exprs to comparables or empty list.
-let allExprsToComparables exprs =
-    let mutable result = []
-    let mutable passing = true
-    let mutable enr = (exprs :> seq<_>). GetEnumerator ()
-    while enr.MoveNext () do
-        match enr.Current with
-        | Character c -> result <- (c.CRValue :> IComparable) :: result
-        | String s -> result <- (s.SRValue.SVType :> IComparable) :: result
-        | Int i -> result <- (i.IRValue :> IComparable) :: result
-        | Long l -> result <- (l.GRValue :> IComparable) :: result
-        | Float f -> result <- (f.FRValue :> IComparable) :: result
-        | Double d -> result <- (d.DRValue :> IComparable) :: result
-        | _ -> passing <- false
-    if passing then List.rev result
-    else []*)
+let allExprsToComparables exprs = List.allOrEmptyBy exprToOptComparableValue exprs

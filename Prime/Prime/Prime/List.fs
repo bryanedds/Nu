@@ -192,13 +192,13 @@ let definitize opts =
 
 /// Make a list of options an all or nothing proposition.
 /// TODO: optimize with program fusion.
-let allOrNothing (opts : 'a option list) =
+let allOrEmpty (opts : 'a option list) =
     let definites = definitize opts
     if areSameLength definites opts then definites else []
 
 /// Make a transformed list of options an all or nothing proposition.
 /// TODO: optimize with program fusion.
-let allOrNothingBy by list =
+let allOrEmptyBy by list =
     let definites = List.choose (fun elem -> by elem) list
     if areSameLength definites list then definites else []
 
