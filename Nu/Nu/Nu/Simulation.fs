@@ -189,9 +189,9 @@ let registerEntityGuiButton address world : World =
                     let (entity, gui, button) = get world (World.entityGuiButton subscriber)
                     if entity.IsEnabled && entity.IsVisible then
                         if isInBox3 mousePosition gui.Position gui.Size then
-                            let button2 = { button with IsDown = true }
-                            let world2 = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                            publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world2
+                            let button_ = { button with IsDown = true }
+                            let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                            publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
                         else world
                     else world
                 | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
@@ -204,13 +204,16 @@ let registerEntityGuiButton address world : World =
             | MouseButtonData (mousePosition, _) ->
                 let (entity, gui, button) = get world (World.entityGuiButton subscriber)
                 if entity.IsEnabled && entity.IsVisible then
-                    let world2 =
-                        let button2 = { button with IsDown = false }
-                        let world2b = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                        publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world2b
+                    let world_ =
+                        let button_ = { button with IsDown = false }
+                        let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                        publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
                     if isInBox3 mousePosition gui.Position gui.Size
-                    then publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world2
-                    else world2
+                    then
+                        let world_ = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
+                        let beep = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
+                        { world_ with AudioMessages = beep :: world_.AudioMessages }
+                    else world_
                 else world
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
         world_
@@ -279,14 +282,14 @@ let getAudioDescriptors world : AudioDescriptor rQueue =
     let worldDescriptors = [] // TODO: get audio descriptors
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
-/// Play the world.
+/// Play the world's audio.
 let play world : World =
     let audioMessages = world.AudioMessages
     let audioDescriptors = getAudioDescriptors world
     let audioPlayer = world.AudioPlayer
-    let newWorld = { world with AudioMessages = [] }
-    Audio.play audioMessages audioDescriptors audioPlayer
-    newWorld
+    let world_ = { world with AudioMessages = [] }
+    let world_ = { world_ with AudioPlayer = Audio.play audioMessages audioDescriptors audioPlayer }
+    world_
 
 let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
@@ -353,8 +356,7 @@ let integrate world : World =
 
 let run2 createWorld sdlConfig =
     runSdl
-        (fun sdlDeps ->
-            createWorld sdlDeps)
+        (fun sdlDeps -> createWorld sdlDeps)
         (fun refEvent world ->
             let event = refEvent.Value
             match event.``type`` with
@@ -377,14 +379,10 @@ let run2 createWorld sdlConfig =
                 else (true, world)
             | _ ->
                 (true, world))
-        (fun world ->
-            let world2 = integrate world
-            (true, world2))
-        (fun world ->
-            let world2 = render world
-            play world2) // TODO: put play in its own callback!
-        (fun world ->
-            { world with Renderer = handleRenderExit world.Renderer })
+        (fun world -> let world2 = integrate world in (true, world2))
+        (fun world -> render world)
+        (fun world -> play world)
+        (fun world -> { world with Renderer = handleRenderExit world.Renderer })
         sdlConfig
 
 let run sdlConfig =

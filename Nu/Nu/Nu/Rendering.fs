@@ -72,14 +72,14 @@ let handleRenderMessage renderer renderMessage =
             let optRenderAssets = List.map (tryLoadRenderAsset renderer.RenderContext) assets
             let renderAssets = List.definitize optRenderAssets
             let packageNameLun = Lun.make hintPackageUse.PackageName
-            let optRenderAssetTrie = Map.tryFind packageNameLun renderer.RenderAssetMap
-            match optRenderAssetTrie with
+            let optRenderAssetMap = Map.tryFind packageNameLun renderer.RenderAssetMap
+            match optRenderAssetMap with
             | None ->
-                let renderAssetTrie = Map.ofSeq renderAssets
-                { renderer with RenderAssetMap = Map.add packageNameLun renderAssetTrie renderer.RenderAssetMap }
-            | Some renderAssetTrie ->
-                let renderAssetTrie2 = Map.addMany renderAssets renderAssetTrie
-                { renderer with RenderAssetMap = Map.add packageNameLun renderAssetTrie2 renderer.RenderAssetMap }
+                let renderAssetMap = Map.ofSeq renderAssets
+                { renderer with RenderAssetMap = Map.add packageNameLun renderAssetMap renderer.RenderAssetMap }
+            | Some renderAssetMap ->
+                let renderAssetMap2 = Map.addMany renderAssets renderAssetMap
+                { renderer with RenderAssetMap = Map.add packageNameLun renderAssetMap2 renderer.RenderAssetMap }
     | HintRenderingPackageDisuse hintPackageDisuse ->
         let optAssets = Assets.tryLoadAssets "Rendering" hintPackageDisuse.PackageName hintPackageDisuse.FileName
         match optAssets with
@@ -104,7 +104,7 @@ let doRender renderDescriptors renderer =
         for spriteDescriptor in sortedSpriteDescriptors do
             let optRenderAsset =
                 Option.reduce
-                    (fun assetTrie -> Map.tryFind spriteDescriptor.Sprite.SpriteAssetName assetTrie)
+                    (fun assetMap -> Map.tryFind spriteDescriptor.Sprite.SpriteAssetName assetMap)
                     (Map.tryFind spriteDescriptor.Sprite.PackageName renderer.RenderAssetMap)
             match optRenderAsset with
             | None -> ()
@@ -130,7 +130,7 @@ let doRender renderDescriptors renderer =
                             texture,
                             ref sourceRect,
                             ref destRect,
-                            double (spriteDescriptor.Rotation * 57.2957795f),
+                            double spriteDescriptor.Rotation * 57.2957795,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                     match renderResult with
@@ -145,8 +145,8 @@ let render (renderMessages : RenderMessage rQueue) renderDescriptors renderer =
     renderer2
 
 let handleRenderExit renderer =
-    let renderAssetTries = Map.toValueSeq renderer.RenderAssetMap
-    let renderAssets = Seq.collect Map.toValueSeq renderAssetTries
+    let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
+    let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
     for renderAsset in renderAssets do
         match renderAsset with
         | TextureAsset texture -> () // apparently there is no need to free textures in SDL
