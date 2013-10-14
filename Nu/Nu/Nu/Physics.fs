@@ -65,11 +65,17 @@ type [<ReferenceEquality>] Integrator =
           Bodies : BodyDictionary
           IntegrationMessages : IntegrationMessage List }
 
-let toVector2 (v2 : Framework.Vector2) =
-    Vector2 (v2.X, v2.Y)
+let toPixel value =
+    value * Constants.PhysicsToPixelRatio
 
-let toPhysicsVector2 (v2 : Vector2) =
-    Framework.Vector2 (v2.X, v2.Y)
+let toPhysics value =
+    value * Constants.PixelToPhysicsRatio
+
+let toPixelV2 (v2 : Framework.Vector2) =
+    Vector2 (toPixel v2.X, toPixel v2.Y)
+
+let toPhysicsV2 (v2 : Vector2) =
+    Framework.Vector2 (toPhysics v2.X, toPhysics v2.Y)
 
 let toPhysicsBodyType bodyType =
     match bodyType with
@@ -80,9 +86,17 @@ let toPhysicsBodyType bodyType =
 let createBody integrator bodyCreateMessage =
     match bodyCreateMessage.Shape with
     | BoxShape boxShape ->
-        let shapeCenter = toPhysicsVector2 boxShape.Center
-        let body = Factories.BodyFactory.CreateRectangle (integrator.PhysicsContext, boxShape.Extent.X * 2.0f, boxShape.Extent.Y * 2.0f, bodyCreateMessage.Density, shapeCenter, bodyCreateMessage.EntityAddress)
-        body.Position <- toPhysicsVector2 bodyCreateMessage.Position
+        let physicsShapeCenter = toPhysicsV2 boxShape.Center
+        let physicsShapeSize = toPhysicsV2 (boxShape.Extent * 2.0f)
+        let body =
+            Factories.BodyFactory.CreateRectangle (
+                integrator.PhysicsContext,
+                physicsShapeSize.X,
+                physicsShapeSize.Y,
+                bodyCreateMessage.Density,
+                physicsShapeCenter,
+                bodyCreateMessage.EntityAddress)
+        body.Position <- toPhysicsV2 bodyCreateMessage.Position
         body.Rotation <- bodyCreateMessage.Rotation
         body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType
         body.add_OnCollision
@@ -90,8 +104,8 @@ let createBody integrator bodyCreateMessage =
                 let bodyCollisionMessage =
                     { EntityAddress = fixture.Body.UserData :?> Address
                       EntityAddress2 = fixture2.Body.UserData :?> Address
-                      Normal = toVector2 contact.Manifold.LocalNormal
-                      Speed = contact.TangentSpeed }
+                      Normal = let localNormal = contact.Manifold.LocalNormal in Vector2 (localNormal.X, localNormal.Y)
+                      Speed = contact.TangentSpeed * PhysicsToPixelRatio }
                 let integrationMessage = BodyCollisionMessage bodyCollisionMessage
                 integrator.IntegrationMessages.Add integrationMessage
                 true)
@@ -107,7 +121,7 @@ let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
 let forceApply integrator forceApplyMessage =
     let body = ref Unchecked.defaultof<Dynamics.Body>
     if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsId, body) then
-        body.Value.ApplyForce (toPhysicsVector2 forceApplyMessage.Force, toPhysicsVector2 forceApplyMessage.Point)
+        body.Value.ApplyForce (toPhysicsV2 forceApplyMessage.Force, toPhysicsV2 forceApplyMessage.Point)
     else debug ("Could not apply force to non-existent body with PhysicsId = " + str forceApplyMessage.PhysicsId + "'.")
 
 let handlePhysicsMessage integrator physicsMessage =
@@ -126,7 +140,7 @@ let createTransformMessages integrator =
             let bodyTransformMessage =
                 BodyTransformMessage
                     { EntityAddress = body.UserData :?> Address
-                      Position = toVector2 body.Position
+                      Position = toPixelV2 body.Position
                       Rotation = body.Rotation }
             integrator.IntegrationMessages.Add bodyTransformMessage
 
@@ -141,4 +155,4 @@ let integrate (physicsMessages : PhysicsMessage rQueue) integrator : Integration
 let makeIntegrator gravity =
      { PhysicsContext = FarseerPhysics.Dynamics.World Gravity
        Bodies = BodyDictionary ()
-       IntegrationMessages = System.Collections.Generic.List<IntegrationMessage> () }
+       IntegrationMessages = List<IntegrationMessage> () }

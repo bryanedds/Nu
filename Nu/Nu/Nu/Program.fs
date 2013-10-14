@@ -153,7 +153,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
                         let entityActorBlock = createTestBlock ()
                         addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world)
                     world
-                    [1..100])
+                    [0..7])
             testWorld
     let testWorld_ = addScreen testScreen TestScreenAddress testWorld_
     let testWorld_ = set (Some TestScreenAddress) testWorld_ World.optActiveScreenAddress
@@ -162,11 +162,13 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress testWorld_
     let testWorld_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress testWorld_
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-    { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
+    let testWorld_ = { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
+    let hintAudioPackageUse = HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HAPU = () }
+    { testWorld_ with AudioMessages = hintAudioPackageUse :: testWorld_.AudioMessages }
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1.0f
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
     run2 createTestWorld sdlConfig
 
 (*module Program
