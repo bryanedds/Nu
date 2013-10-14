@@ -15,14 +15,14 @@ type SdlConfig =
       WindowH : int
       WindowFlags : SDL.SDL_WindowFlags
       RendererFlags : SDL.SDL_RendererFlags
-      AudioVolume : single }
+      AudioChunkSize : int }
 
 type SdlDeps =
     { RenderContext : nativeint
       Window : nativeint
       Config : SdlConfig }
 
-let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags rendererFlags audioVolume =
+let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags rendererFlags audioChunkSize =
     { WindowTitle = windowTitle
       WindowX = windowX
       WindowY = windowY
@@ -30,10 +30,10 @@ let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags render
       WindowH = windowH
       WindowFlags = windowFlags
       RendererFlags = rendererFlags
-      AudioVolume = audioVolume }
+      AudioChunkSize = audioChunkSize }
 
-let makeSdlDeps renderer window config =
-    { RenderContext = renderer
+let makeSdlDeps renderContext window config =
+    { RenderContext = renderContext
       Window = window
       Config  = config }
 
@@ -61,6 +61,17 @@ let withSdlResource create destroy action =
         destroy resource
         result
 
+let withSdlGlobalResource create destroy action =
+    let resource = create ()
+    if resource <> 0 then
+        let error = SDL.SDL_GetError ()
+        Console.WriteLine ("SDL2# global resource creation failed due to '" + error + "'.")
+        FailureCode
+    else
+        let result = action ()
+        destroy ()
+        result
+
 let advanceSdl handleEvent handleUpdate sdlDeps world =
     let mutable result = (true, world)
     let polledEvent = ref (SDL.SDL_Event ())
@@ -77,29 +88,41 @@ let renderSdl handleRender sdlDeps world =
     let world2 = handleRender world
     SDL.SDL_RenderPresent sdlDeps.RenderContext
     world2
-    
-let rec runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world keepRunning =
+
+let playSdl handlePlay world =
+    handlePlay world
+
+let rec runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world keepRunning =
     if keepRunning then
-        let (keepRunning2, world2) = advanceSdl handleEvent handleUpdate sdlDeps world
-        if keepRunning2 then
-            let world3 = renderSdl handleRender sdlDeps world2
-            runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world3 keepRunning2
+        let (keepRunning_, world_) = advanceSdl handleEvent handleUpdate sdlDeps world
+        if keepRunning_ then
+            let world_ = renderSdl handleRender sdlDeps world_
+            let world_ = playSdl handlePlay world_
+            runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning_
         else ignore (handleExit world)
 
-let runSdl createWorld handleEvent handleUpdate handleRender handleExit sdlConfig : int =
+let runSdl createWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
     withSdlInit
         (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
         (fun () -> SDL.SDL_Quit ())
         (fun () ->
+        withSdlResource
+            (fun () -> SDL.SDL_CreateWindow (sdlConfig.WindowTitle, sdlConfig.WindowX, sdlConfig.WindowY, sdlConfig.WindowW, sdlConfig.WindowH, sdlConfig.WindowFlags))
+            (fun window -> SDL.SDL_DestroyWindow window)
+            (fun window ->
             withSdlResource
-                (fun () -> SDL.SDL_CreateWindow (sdlConfig.WindowTitle, sdlConfig.WindowX, sdlConfig.WindowY, sdlConfig.WindowW, sdlConfig.WindowH, sdlConfig.WindowFlags))
-                (fun window -> SDL.SDL_DestroyWindow window)
-                (fun window ->
-                    withSdlResource
-                        (fun () -> SDL.SDL_CreateRenderer (window, -1, uint32 sdlConfig.RendererFlags))
-                        (fun renderer -> SDL.SDL_DestroyRenderer renderer)
-                        (fun renderer ->
-                            let sdlDeps = makeSdlDeps renderer window sdlConfig
+                (fun () -> SDL.SDL_CreateRenderer (window, -1, uint32 sdlConfig.RendererFlags))
+                (fun renderContext -> SDL.SDL_DestroyRenderer renderContext)
+                (fun renderContext ->
+                withSdlGlobalResource
+                    (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG)
+                    (fun () -> SDL_mixer.Mix_Quit ())
+                    (fun () ->
+                    withSdlGlobalResource
+                        (fun () -> SDL_mixer.Mix_OpenAudio (SDL_mixer.MIX_DEFAULT_FREQUENCY, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                        (fun () -> SDL_mixer.Mix_CloseAudio ())
+                        (fun () ->
+                            let sdlDeps = makeSdlDeps renderContext window sdlConfig
                             let world = createWorld sdlDeps
-                            runSdl6 handleEvent handleUpdate handleRender handleExit sdlDeps world true
-                            SuccessCode)))
+                            runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
+                            SuccessCode)))))
