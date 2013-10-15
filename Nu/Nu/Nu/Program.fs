@@ -9,7 +9,6 @@ open Nu.Rendering
 open Nu.Physics
 open Nu.Simulants
 open Nu.Simulation
-open Nu.Scripting
 
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
