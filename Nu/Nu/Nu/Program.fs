@@ -9,6 +9,7 @@ open Nu.Rendering
 open Nu.Physics
 open Nu.Simulants
 open Nu.Simulation
+open Nu.Scripting
 
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
@@ -143,28 +144,29 @@ let createTestWorld (sdlDeps : SdlDeps) =
           IsVisible = true
           EntitySemantic = Actor testFloorActor }
 
-    let testWorld_ =
-        subscribe 
-            ClickTestButtonAddress 
-            [] 
-            (fun _ _ _ world -> 
-                List.fold
-                    (fun world _ ->
-                        let entityActorBlock = createTestBlock ()
-                        addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world)
-                    world
-                    [0..7])
-            testWorld
-    let testWorld_ = addScreen testScreen TestScreenAddress testWorld_
-    let testWorld_ = set (Some TestScreenAddress) testWorld_ World.optActiveScreenAddress
-    let testWorld_ = addGroup testGroup TestGroupAddress testWorld_
-    let testWorld_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress testWorld_
-    let testWorld_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress testWorld_
-    let testWorld_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress testWorld_
+    let addBoxes _ _ _ world =
+        List.fold
+            (fun world2 _ ->
+                let entityActorBlock = createTestBlock ()
+                addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world2)
+            world
+            [0..7]
+
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-    let testWorld_ = { testWorld_ with RenderMessages = hintRenderingPackageUse :: testWorld_.RenderMessages }
+
     let hintAudioPackageUse = HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HAPU = () }
-    { testWorld_ with AudioMessages = hintAudioPackageUse :: testWorld_.AudioMessages }
+
+    // scripting convention
+    let tw_ = testWorld
+    let tw_ = subscribe ClickTestButtonAddress [] addBoxes tw_
+    let tw_ = addScreen testScreen TestScreenAddress tw_
+    let tw_ = setP (Some TestScreenAddress) World.optActiveScreenAddress tw_
+    let tw_ = addGroup testGroup TestGroupAddress tw_
+    let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
+    let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
+    let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
+    let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
+    { tw_ with AudioMessages = hintAudioPackageUse :: tw_.AudioMessages }
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -225,14 +227,14 @@ type Alpha =
 type [<KnownType "GetTypes">] Beta =
     | A of int * Alpha
     | B of Beta option
-    | C of Map<int, Beta>
+    | tw_ of Map<int, Beta>
     static member GetTypes () = getUnionTypes<Beta> ()
 
 let reflectionTest () =
     let alpha = { X = (0, 0); Y = Some { X = (1, 1); Y = None }}
     let betaA = A (0, alpha)
     let betaB = B (Some betaA)
-    let betaC = C (Map.singleton 0 betaB)
+    let betaC = tw_ (Map.singleton 0 betaB)
     let sb = StringBuilder ()
     let xmlSerializer = DataContractSerializer typeof<Beta>
     xmlSerializer.WriteObject (XmlTextWriter (StringWriter sb), betaC)
