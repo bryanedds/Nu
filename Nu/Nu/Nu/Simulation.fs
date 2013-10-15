@@ -183,30 +183,30 @@ let registerEntityGuiButton address world : World =
         subscribe
             DownMouseLeftAddress
             address
-            (fun address subscriber message world ->
+            (fun address subscriber message world_ ->
                 match message.Data with
                 | MouseButtonData (mousePosition, _) ->
-                    let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+                    let (entity, gui, button) = get world_ (World.entityGuiButton subscriber)
                     if entity.IsEnabled && entity.IsVisible then
                         if isInBox3 mousePosition gui.Position gui.Size then
                             let button_ = { button with IsDown = true }
-                            let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                            let world_ = set (entity, gui, button_) world_ (World.entityGuiButton subscriber)
                             publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
-                        else world
-                    else world
+                        else world_
+                    else world_
                 | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
             world_
     subscribe
         UpMouseLeftAddress
         address
-        (fun address subscriber message world ->
+        (fun address subscriber message world_ ->
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+                let (entity, gui, button) = get world_ (World.entityGuiButton subscriber)
                 if entity.IsEnabled && entity.IsVisible then
                     let world_ =
                         let button_ = { button with IsDown = false }
-                        let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                        let world_ = set (entity, gui, button_) world_ (World.entityGuiButton subscriber)
                         publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
                     if isInBox3 mousePosition gui.Position gui.Size
                     then
@@ -214,7 +214,7 @@ let registerEntityGuiButton address world : World =
                         let beep = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         { world_ with AudioMessages = beep :: world_.AudioMessages }
                     else world_
-                else world
+                else world_
             | _ -> failwith ("Expected MouseClickData from address '" + str address + "'."))
         world_
 
