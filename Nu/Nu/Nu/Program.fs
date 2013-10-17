@@ -152,8 +152,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
             [0..7]
 
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-
     let hintAudioPackageUse = HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HAPU = () }
+    let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc" }; FadeOutCurrentSong = true }
 
     // scripting convention
     let tw_ = testWorld
@@ -165,7 +165,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
     let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
     let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
-    { tw_ with AudioMessages = hintAudioPackageUse :: tw_.AudioMessages }
+    { tw_ with AudioMessages = playSong :: hintAudioPackageUse :: tw_.AudioMessages }
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)

@@ -107,7 +107,7 @@ let doRender renderDescriptors renderer =
                     (fun assetMap -> Map.tryFind spriteDescriptor.Sprite.SpriteAssetName assetMap)
                     (Map.tryFind spriteDescriptor.Sprite.PackageName renderer.RenderAssetMap)
             match optRenderAsset with
-            | None -> ()
+            | None -> () // TODO: load and render asset
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->

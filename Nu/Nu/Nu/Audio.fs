@@ -4,6 +4,8 @@ open System.IO
 open SDL2
 open Nu.Assets
 
+let [<Literal>] TimeToFadeOutMs = 5000 // TODO: move to Constants
+
 type [<StructuralEquality; NoComparison>] Sound =
     { SoundAssetName : Lun
       PackageName : Lun }
@@ -12,15 +14,14 @@ type [<StructuralEquality; NoComparison>] Song =
     { SongAssetName : Lun
       PackageName : Lun }
 
-type [<StructuralEquality; NoComparison>] SongDescriptor =
-    { Volume : float
-      Repeat : bool
-      Song : Song }
+type [<StructuralEquality; NoComparison>] PlaySong =
+    { Song : Song
+      FadeOutCurrentSong : bool }
 
 /// Describes an audio asset.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] AudioDescriptor =
-    | SongDescriptor of SongDescriptor
+    | TODO
 
 type [<StructuralEquality; NoComparison>] PlaySound =
     { Volume : single
@@ -40,6 +41,9 @@ type [<StructuralEquality; NoComparison>] AudioMessage =
     | HintAudioPackageUse of HintAudioPackageUse
     | HintAudioPackageDisuse of HintAudioPackageDisuse
     | PlaySound of PlaySound
+    | PlaySong of PlaySong
+    | FadeOutSong
+    | StopSong
 
 type [<ReferenceEquality>] AudioAsset =
     | WavAsset of nativeint
@@ -48,7 +52,9 @@ type [<ReferenceEquality>] AudioAsset =
 type [<ReferenceEquality>] AudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global
-          AudioAssetMap : AudioAsset AssetMap }
+          AudioAssetMap : AudioAsset AssetMap
+          OptCurrentSong : Song option
+          OptNextSong : Song option }
 
 let tryLoadAudioAsset audioContext (asset : Asset) =
     let extension = Path.GetExtension asset.FileName
@@ -70,6 +76,35 @@ let tryLoadAudioAsset audioContext (asset : Asset) =
     | _ ->
         trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'.")
         None
+
+let playSong song audioPlayer =
+    let optAudioAsset =
+        Option.reduce
+            (fun assetMap -> Map.tryFind song.SongAssetName assetMap)
+            (Map.tryFind song.PackageName audioPlayer.AudioAssetMap)
+    match optAudioAsset with
+    | None -> () // TODO: load and play asset
+    | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayMusic (wavAsset, -1))
+    | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayMusic (oggAsset, -1))
+    { audioPlayer with OptCurrentSong = Some song }
+
+let tryUpdateCurrentSong audioPlayer =
+    if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
+    else { audioPlayer with OptCurrentSong = None }
+
+let tryUpdateNextSong audioPlayer =
+    match audioPlayer.OptNextSong with
+    | None -> audioPlayer
+    | Some nextSong ->
+        if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
+        else
+            let audioPlayer2 = playSong nextSong audioPlayer
+            { audioPlayer2 with OptNextSong = None }
+
+let updateAudioPlayer audioPlayer =
+    audioPlayer |>
+        tryUpdateCurrentSong |>
+        tryUpdateNextSong
 
 let handleAudioMessage audioPlayer audioMessage =
     match audioMessage with
@@ -104,9 +139,20 @@ let handleAudioMessage audioPlayer audioMessage =
                 (fun assetMap -> Map.tryFind playSound.Sound.SoundAssetName assetMap)
                 (Map.tryFind playSound.Sound.PackageName audioPlayer.AudioAssetMap)
         match optAudioAsset with
-        | None -> ()
+        | None -> () // TODO: load and play asset
         | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0))
         | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, oggAsset, 0))
+        audioPlayer
+    | PlaySong playSongValue ->
+        if SDL_mixer.Mix_PlayingMusic () = 1 && playSongValue.FadeOutCurrentSong then
+            ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
+            { audioPlayer with OptNextSong = Some playSongValue.Song }
+        else playSong playSongValue.Song audioPlayer
+    | FadeOutSong ->
+        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
+        audioPlayer
+    | StopSong ->
+        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_HaltMusic ())
         audioPlayer
 
 let handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
@@ -114,9 +160,11 @@ let handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
 
 let play audioMessages audioDescriptors audioPlayer =
     let audioPlayer2 = handleAudioMessages audioMessages audioPlayer
-    () // TODO: play music from descriptors
-    audioPlayer2
+    () // TODO: do stuff with descriptors when we have some
+    updateAudioPlayer audioPlayer2
 
 let makeAudioPlayer () =
     { AudioContext = ()
-      AudioAssetMap = Map.empty }
+      AudioAssetMap = Map.empty
+      OptCurrentSong = None
+      OptNextSong = None }
