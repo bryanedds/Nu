@@ -85,6 +85,7 @@ let tryLoadRenderAsset packageName packageFileName assetName renderer =
     let (renderer_, optAssetMap_) =
         match optAssetMap with
         | None ->
+            log ("Loading render package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly.")
             let renderer_ = tryLoadRenderPackage packageName packageFileName renderer
             (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
         | Some assetMap -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
@@ -92,14 +93,17 @@ let tryLoadRenderAsset packageName packageFileName assetName renderer =
 
 let handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
     tryLoadRenderPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName renderer
-
+    
 let handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuse) renderer =
-    let optAssets = tryLoadAssets "Rendering" hintPackageDisuse.PackageName hintPackageDisuse.FileName
+    let packageNameLun = Lun.make hintPackageDisuse.PackageName
+    let optAssets = Map.tryFind packageNameLun renderer.RenderAssetMap
     match optAssets with
-    | Left error ->
-        trace ("HintRenderingPackageDisuse failed due unloadable assets '" + error + "' for '" + str hintPackageDisuse + "'.")
-        renderer
-    | Right assets -> renderer // TODO: unload assets
+    | None -> renderer
+    | Some assets ->
+        for asset in Map.toValueList assets do
+            match asset with
+            | TextureAsset textureAsset -> () // apparently there is no need to free textures in SDL
+        { renderer with RenderAssetMap = Map.remove packageNameLun renderer.RenderAssetMap }
 
 let handleRenderMessage renderer renderMessage =
     match renderMessage with

@@ -340,9 +340,10 @@ let handleIntegrationMessage world integrationMessage : World =
     match integrationMessage with
     | BodyTransformMessage bodyTransformMessage ->
         let (entity, actor) = get world (World.entityActor bodyTransformMessage.EntityAddress)
-        let actor2 = {{ actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f } with Rotation = bodyTransformMessage.Rotation }
+        let actor2 = {{ actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f }
+                              with Rotation = bodyTransformMessage.Rotation }
         set (entity, actor2) world (World.entityActor bodyTransformMessage.EntityAddress)
-    | BodyCollisionMessage bodyCollisionMessage -> world // TODO: play collision sound
+    | BodyCollisionMessage bodyCollisionMessage -> world // TODO: fire collision event
 
 /// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
