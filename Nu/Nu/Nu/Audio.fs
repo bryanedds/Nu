@@ -2,17 +2,18 @@
 open System
 open System.IO
 open SDL2
+open Nu.Constants
 open Nu.Assets
-
-let [<Literal>] TimeToFadeOutMs = 5000 // TODO: move to Constants
 
 type [<StructuralEquality; NoComparison>] Sound =
     { SoundAssetName : Lun
-      PackageName : Lun }
+      PackageName : Lun
+      PackageFileName : string }
 
 type [<StructuralEquality; NoComparison>] Song =
     { SongAssetName : Lun
-      PackageName : Lun }
+      PackageName : Lun
+      PackageFileName : string }
 
 type [<StructuralEquality; NoComparison>] PlaySong =
     { Song : Song
@@ -56,7 +57,7 @@ type [<ReferenceEquality>] AudioPlayer =
           OptCurrentSong : Song option
           OptNextSong : Song option }
 
-let tryLoadAudioAsset audioContext (asset : Asset) =
+let tryLoadAudioAsset2 audioContext (asset : Asset) =
     let extension = Path.GetExtension asset.FileName
     match extension with
     | ".wav" ->
@@ -77,16 +78,41 @@ let tryLoadAudioAsset audioContext (asset : Asset) =
         trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'.")
         None
 
-let playSong song audioPlayer =
-    let optAudioAsset =
-        Option.reduce
-            (fun assetMap -> Map.tryFind song.SongAssetName assetMap)
-            (Map.tryFind song.PackageName audioPlayer.AudioAssetMap)
+let tryLoadAudioPackage packageName fileName audioPlayer =
+    let optAssets = Assets.tryLoadAssets "Audio" packageName.LunStr fileName
+    match optAssets with
+    | Left error ->
+        trace ("HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
+        audioPlayer
+    | Right assets ->
+        let optAudioAssets = List.map (tryLoadAudioAsset2 audioPlayer.AudioContext) assets
+        let audioAssets = List.definitize optAudioAssets
+        let optAudioAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
+        match optAudioAssetMap with
+        | None ->
+            let audioAssetMap = Map.ofSeq audioAssets
+            { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
+        | Some audioAssetMap ->
+            let audioAssetMap2 = Map.addMany audioAssets audioAssetMap
+            { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap2 audioPlayer.AudioAssetMap }
+
+let tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
+    let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
+    let (audioPlayer_, optAssetMap_) =
+        match optAssetMap with
+        | None ->
+            let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer
+            (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
+        | Some assetMap -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
+    (audioPlayer_, Option.reduce (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
+
+let playSong (song : Song) audioPlayer =
+    let (audioPlayer2, optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
     match optAudioAsset with
-    | None -> () // TODO: load and play asset
+    | None -> debug ("PlaySong failed due to unloadable assets for '" + str song + "'.")
     | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayMusic (wavAsset, -1))
     | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayMusic (oggAsset, -1))
-    { audioPlayer with OptCurrentSong = Some song }
+    { audioPlayer2 with OptCurrentSong = Some song }
 
 let tryUpdateCurrentSong audioPlayer =
     if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
@@ -106,58 +132,52 @@ let updateAudioPlayer audioPlayer =
         tryUpdateCurrentSong |>
         tryUpdateNextSong
 
+let handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer =
+    tryLoadAudioPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName audioPlayer
+
+let handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) audioPlayer =
+    let optAssets = tryLoadAssets "Audio" hintPackageDisuse.PackageName hintPackageDisuse.FileName
+    match optAssets with
+    | Left error ->
+        trace ("HintAudioPackageDisuse failed due unloadable assets '" + error + "' for '" + str hintPackageDisuse + "'.")
+        audioPlayer
+    | Right assets -> audioPlayer // TODO: unload assets
+
+let handlePlaySound playSound audioPlayer =
+    let sound = playSound.Sound
+    let (audioPlayer2, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
+    match optAudioAsset with
+    | None -> debug ("PlaySound failed due to unloadable assets for '" + str sound + "'.")
+    | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0))
+    | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, oggAsset, 0))
+    audioPlayer2
+
+let handlePlaySong playSongValue audioPlayer =
+    if SDL_mixer.Mix_PlayingMusic () = 1 then
+        if playSongValue.FadeOutCurrentSong &&
+            not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
+            ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
+        { audioPlayer with OptNextSong = Some playSongValue.Song }
+    else playSong playSongValue.Song audioPlayer
+
+let handleFadeOutSong audioPlayer =
+    if SDL_mixer.Mix_PlayingMusic () = 1 &&
+        not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
+        ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
+    audioPlayer
+
+let handleStopSong audioPlayer =
+    if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_HaltMusic ())
+    audioPlayer
+
 let handleAudioMessage audioPlayer audioMessage =
     match audioMessage with
-    | HintAudioPackageUse hintPackageUse ->
-        let optAssets = Assets.tryLoadAssets "Audio" hintPackageUse.PackageName hintPackageUse.FileName
-        match optAssets with
-        | Left error ->
-            trace ("HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + str hintPackageUse + "'.")
-            audioPlayer
-        | Right assets ->
-            let optAudioAssets = List.map (tryLoadAudioAsset audioPlayer.AudioContext) assets
-            let audioAssets = List.definitize optAudioAssets
-            let packageNameLun = Lun.make hintPackageUse.PackageName
-            let optAudioAssetMap = Map.tryFind packageNameLun audioPlayer.AudioAssetMap
-            match optAudioAssetMap with
-            | None ->
-                let audioAssetMap = Map.ofSeq audioAssets
-                { audioPlayer with AudioAssetMap = Map.add packageNameLun audioAssetMap audioPlayer.AudioAssetMap }
-            | Some audioAssetMap ->
-                let audioAssetMap2 = Map.addMany audioAssets audioAssetMap
-                { audioPlayer with AudioAssetMap = Map.add packageNameLun audioAssetMap2 audioPlayer.AudioAssetMap }
-    | HintAudioPackageDisuse hintPackageDisuse ->
-        let optAssets = Assets.tryLoadAssets "Audio" hintPackageDisuse.PackageName hintPackageDisuse.FileName
-        match optAssets with
-        | Left error ->
-            trace ("HintAudioPackageDisuse failed due unloadable assets '" + error + "' for '" + str hintPackageDisuse + "'.")
-            audioPlayer
-        | Right assets -> audioPlayer // TODO: unload assets
-    | PlaySound playSound ->
-        let optAudioAsset =
-            Option.reduce
-                (fun assetMap -> Map.tryFind playSound.Sound.SoundAssetName assetMap)
-                (Map.tryFind playSound.Sound.PackageName audioPlayer.AudioAssetMap)
-        match optAudioAsset with
-        | None -> () // TODO: load and play asset
-        | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0))
-        | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, oggAsset, 0))
-        audioPlayer
-    | PlaySong playSongValue ->
-        if SDL_mixer.Mix_PlayingMusic () = 1 then
-            if playSongValue.FadeOutCurrentSong &&
-               not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-               ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
-            { audioPlayer with OptNextSong = Some playSongValue.Song }
-        else playSong playSongValue.Song audioPlayer
-    | FadeOutSong ->
-        if SDL_mixer.Mix_PlayingMusic () = 1 &&
-           not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-           ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
-        audioPlayer
-    | StopSong ->
-        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_HaltMusic ())
-        audioPlayer
+    | HintAudioPackageUse hintPackageUse -> handleHintAudioPackageUse hintPackageUse audioPlayer
+    | HintAudioPackageDisuse hintPackageDisuse -> handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
+    | PlaySound playSound -> handlePlaySound playSound audioPlayer
+    | PlaySong playSongValue -> handlePlaySong playSongValue audioPlayer
+    | FadeOutSong -> handleFadeOutSong audioPlayer
+    | StopSong -> handleStopSong audioPlayer
 
 let handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
     List.fold handleAudioMessage audioPlayer (List.rev audioMessages)

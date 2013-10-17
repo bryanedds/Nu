@@ -4,11 +4,13 @@ open System.IO
 open OpenTK
 open SDL2
 open Nu.Core
+open Nu.Constants
 open Nu.Assets
 
 type [<StructuralEquality; NoComparison>] Sprite =
     { SpriteAssetName : Lun
-      PackageName : Lun }
+      PackageName : Lun
+      PackageFileName : string }
 
 type [<StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
@@ -45,7 +47,7 @@ type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap }
 
-let tryLoadRenderAsset renderContext (asset : Asset) =
+let tryLoadRenderAsset2 renderContext (asset : Asset) =
     let extension = Path.GetExtension asset.FileName
     match extension with
     | ".bmp"
@@ -60,89 +62,107 @@ let tryLoadRenderAsset renderContext (asset : Asset) =
         trace ("Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'.")
         None
 
+let tryLoadRenderPackage packageName fileName renderer =
+    let optAssets = Assets.tryLoadAssets "Rendering" packageName.LunStr fileName
+    match optAssets with
+    | Left error ->
+        trace ("HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
+        renderer
+    | Right assets ->
+        let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
+        let renderAssets = List.definitize optRenderAssets
+        let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+        match optRenderAssetMap with
+        | None ->
+            let renderAssetMap = Map.ofSeq renderAssets
+            { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+        | Some renderAssetMap ->
+            let renderAssetMap2 = Map.addMany renderAssets renderAssetMap
+            { renderer with RenderAssetMap = Map.add packageName renderAssetMap2 renderer.RenderAssetMap }
+
+let tryLoadRenderAsset packageName packageFileName assetName renderer =
+    let optAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+    let (renderer_, optAssetMap_) =
+        match optAssetMap with
+        | None ->
+            let renderer_ = tryLoadRenderPackage packageName packageFileName renderer
+            (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
+        | Some assetMap -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
+    (renderer_, Option.reduce (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
+
+let handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
+    tryLoadRenderPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName renderer
+
+let handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuse) renderer =
+    let optAssets = tryLoadAssets "Rendering" hintPackageDisuse.PackageName hintPackageDisuse.FileName
+    match optAssets with
+    | Left error ->
+        trace ("HintRenderingPackageDisuse failed due unloadable assets '" + error + "' for '" + str hintPackageDisuse + "'.")
+        renderer
+    | Right assets -> renderer // TODO: unload assets
+
 let handleRenderMessage renderer renderMessage =
     match renderMessage with
-    | HintRenderingPackageUse hintPackageUse ->
-        let optAssets = Assets.tryLoadAssets "Rendering" hintPackageUse.PackageName hintPackageUse.FileName
-        match optAssets with
-        | Left error ->
-            trace ("HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str hintPackageUse + "'.")
-            renderer
-        | Right assets ->
-            let optRenderAssets = List.map (tryLoadRenderAsset renderer.RenderContext) assets
-            let renderAssets = List.definitize optRenderAssets
-            let packageNameLun = Lun.make hintPackageUse.PackageName
-            let optRenderAssetMap = Map.tryFind packageNameLun renderer.RenderAssetMap
-            match optRenderAssetMap with
-            | None ->
-                let renderAssetMap = Map.ofSeq renderAssets
-                { renderer with RenderAssetMap = Map.add packageNameLun renderAssetMap renderer.RenderAssetMap }
-            | Some renderAssetMap ->
-                let renderAssetMap2 = Map.addMany renderAssets renderAssetMap
-                { renderer with RenderAssetMap = Map.add packageNameLun renderAssetMap2 renderer.RenderAssetMap }
-    | HintRenderingPackageDisuse hintPackageDisuse ->
-        let optAssets = Assets.tryLoadAssets "Rendering" hintPackageDisuse.PackageName hintPackageDisuse.FileName
-        match optAssets with
-        | Left error ->
-            trace ("HintRenderingPackageDisuse failed due unloadable assets '" + error + "' for '" + str hintPackageDisuse + "'.")
-            renderer
-        | Right assets -> renderer // TODO: unload assets
+    | HintRenderingPackageUse hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
+    | HintRenderingPackageDisuse hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
     | ScreenFlash -> renderer // TODO: render screen flash for one frame
 
 let handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
     List.fold handleRenderMessage renderer (List.rev renderMessages)
 
-let doRender renderDescriptors renderer =
+let renderSpriteDescriptor renderer spriteDescriptor =
+    let sprite = spriteDescriptor.Sprite
+    let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+    match optRenderAsset with
+    | None ->
+        debug ("SpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+        renderer2
+    | Some renderAsset ->
+        match renderAsset with
+        | TextureAsset texture ->
+            let mutable sourceRect = SDL.SDL_Rect ()
+            sourceRect.x <- 0
+            sourceRect.y <- 0
+            sourceRect.w <- int spriteDescriptor.Size.X
+            sourceRect.h <- int spriteDescriptor.Size.Y
+            let mutable destRect = SDL.SDL_Rect ()
+            destRect.x <- int spriteDescriptor.Position.X
+            destRect.y <- int spriteDescriptor.Position.Y
+            destRect.w <- int spriteDescriptor.Size.X
+            destRect.h <- int spriteDescriptor.Size.Y
+            let mutable rotationCenter = SDL.SDL_Point ()
+            rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
+            rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
+            let renderResult =
+                SDL.SDL_RenderCopyEx (
+                    renderer2.RenderContext,
+                    texture,
+                    ref sourceRect,
+                    ref destRect,
+                    double spriteDescriptor.Rotation * RadiansToDegrees,
+                    ref rotationCenter,
+                    SDL.SDL_RendererFlip.SDL_FLIP_NONE)
+            if renderResult <> 0 then debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
+            renderer2
+        //| _ -> trace "Cannot sprite render with a non-texture asset."
+
+let renderDescriptors renderDescriptorsValue renderer =
     let renderContext = renderer.RenderContext
     let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
     match targetResult with
     | 0 ->
         ignore (SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD))
-        let spriteDescriptors = List.map (fun (SpriteDescriptor descriptor) -> descriptor) renderDescriptors
-        //let (spriteDescriptors, renderDescriptors_) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptors
+        let spriteDescriptors = List.map (fun (SpriteDescriptor descriptor) -> descriptor) renderDescriptorsValue
+        //let (spriteDescriptors, renderDescriptorsValue_) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptorsValue
         let sortedSpriteDescriptors = Seq.sortBy (fun descriptor -> descriptor.Depth) spriteDescriptors
-        for spriteDescriptor in sortedSpriteDescriptors do
-            let optRenderAsset =
-                Option.reduce
-                    (fun assetMap -> Map.tryFind spriteDescriptor.Sprite.SpriteAssetName assetMap)
-                    (Map.tryFind spriteDescriptor.Sprite.PackageName renderer.RenderAssetMap)
-            match optRenderAsset with
-            | None -> () // TODO: load and render asset
-            | Some renderAsset ->
-                match renderAsset with
-                | TextureAsset texture ->
-                    let mutable sourceRect = SDL.SDL_Rect ()
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- int spriteDescriptor.Size.X
-                    sourceRect.h <- int spriteDescriptor.Size.Y
-                    let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int spriteDescriptor.Position.X
-                    destRect.y <- int spriteDescriptor.Position.Y
-                    destRect.w <- int spriteDescriptor.Size.X
-                    destRect.h <- int spriteDescriptor.Size.Y
-                    let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
-                    rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
-                    let renderResult =
-                        SDL.SDL_RenderCopyEx (
-                            renderContext,
-                            texture,
-                            ref sourceRect,
-                            ref destRect,
-                            double spriteDescriptor.Rotation * 57.2957795,
-                            ref rotationCenter,
-                            SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    match renderResult with
-                    | 0 -> ()
-                    | _ -> debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
-                //| _ -> trace "Cannot sprite render with a non-texture asset."
-    | _ -> trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
+        Seq.fold renderSpriteDescriptor renderer sortedSpriteDescriptors
+    | _ ->
+        trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
+        renderer
 
-let render (renderMessages : RenderMessage rQueue) renderDescriptors renderer =
+let render (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
     let renderer2 = handleRenderMessages renderMessages renderer
-    doRender renderDescriptors renderer2
-    renderer2
+    renderDescriptors renderDescriptorsValue renderer2
 
 let handleRenderExit renderer =
     let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
