@@ -39,8 +39,8 @@ let createTestBlock () =
         { PhysicsId = getPhysicsId ()
           Density = 0.1f // TODO: ensure this is koscher with the physics system
           BodyType = Dynamic
-          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc" }
-          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
     let testBlockActor =
         { Position = Vector2 (400.0f, 200.0f)
@@ -91,7 +91,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
           Entities = Map.empty }
           
     let testLabel =
-        { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc" }}
+        { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
     let testLabelGui =
         { Position = Vector2.Zero
@@ -107,9 +107,9 @@ let createTestWorld (sdlDeps : SdlDeps) =
           
     let testButton =
         { IsDown = false
-          UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Misc" }
-          DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Misc" }
-          ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+          DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+          ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
     let testButtonGui =
         { Position = Vector2 (310.0f, 20.0f)
@@ -127,8 +127,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
         { PhysicsId = getPhysicsId ()
           Density = 0.1f // TODO: ensure this is koscher with the physics system
           BodyType = Static
-          Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc" }
-          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc" }}
+          Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
     let testFloorActor =
         { Position = Vector2 (120.0f, 520.0f)
@@ -152,8 +152,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
             [0..7]
 
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-    let hintAudioPackageUse = HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HAPU = () }
-    let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc" }; FadeOutCurrentSong = true }
+    //let hintAudioPackageUse = HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HAPU = () }
+    let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
     // scripting convention
     let tw_ = testWorld
@@ -164,8 +164,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
     let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
     let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
-    let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
-    { tw_ with AudioMessages = playSong :: hintAudioPackageUse :: tw_.AudioMessages }
+    { tw_ with AudioMessages = playSong :: tw_.AudioMessages }
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
