@@ -55,21 +55,21 @@
     <Compile Include="Simulants.fs" />
     <Compile Include="Simulation.fs" />
     <Compile Include="Program.fs" />
-    <Content Include="Image.png">
+    <None Include="Image.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Image2.png">
+    </None>
+    <None Include="Image2.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Image3.png">
+    </None>
+    <None Include="Image3.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Image4.png">
+    </None>
+    <None Include="Image4.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Image5.png">
+    </None>
+    <None Include="Image5.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
     <None Include="SDL2.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -91,9 +91,12 @@
     <None Include="libogg-0.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Sound.wav">
+    <None Include="Sound.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
+    <None Include="Song.ogg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Content Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
