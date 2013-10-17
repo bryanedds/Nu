@@ -11,6 +11,7 @@ let concat opt =
     | Some None -> None
     | Some (Some s) -> Some s
 
+/// Apply a function to a value if possible, creating a new Option with the result.
 let reduce fn opt =
     match opt with
     | None -> None

@@ -42,7 +42,6 @@
   <ItemGroup>
     <Compile Include="Core.fs" />
     <Compile Include="RQueue.fs" />
-    <Compile Include="FrameRate.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="Voords.fs" />
