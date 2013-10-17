@@ -179,7 +179,7 @@ type [<StructuralEquality; NoComparison>] EntitySemantic =
 /// A game entity.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Entity =
-    { Id : Id // TODO: consider if these IDs are actually necessary
+    { Id : Id
       IsEnabled : bool
       IsVisible : bool
       EntitySemantic : EntitySemantic }
@@ -260,7 +260,7 @@ type [<StructuralEquality; NoComparison>] Entity =
 /// A game entity group.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Group =
-    { Id : Id // TODO: consider if these IDs are actually necessary
+    { Id : Id
       IsEnabled : bool
       IsVisible : bool
       Entities : Map<Lun, Entity> }
@@ -429,7 +429,7 @@ type [<StructuralEquality; NoComparison>] ScreenSemantic =
 /// A game screen.
 /// A serializable value type
 type [<StructuralEquality; NoComparison>] Screen =
-    { Id : Id // TODO: consider if these IDs are actually necessary
+    { Id : Id
       IsEnabled : bool
       IsVisible : bool
       Groups : Map<Lun, Group>
@@ -501,7 +501,7 @@ type [<StructuralEquality; NoComparison>] Screen =
 /// A game.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Game =
-    { Id : Id // TODO: consider if these IDs are actually necessary
+    { Id : Id
       IsEnabled : bool
       Screens : Map<Lun, Screen>
       OptActiveScreenAddress : Address option }
