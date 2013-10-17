@@ -144,12 +144,16 @@ let handleAudioMessage audioPlayer audioMessage =
         | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, oggAsset, 0))
         audioPlayer
     | PlaySong playSongValue ->
-        if SDL_mixer.Mix_PlayingMusic () = 1 && playSongValue.FadeOutCurrentSong then
-            ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
+        if SDL_mixer.Mix_PlayingMusic () = 1 then
+            if playSongValue.FadeOutCurrentSong &&
+               not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
+               ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
             { audioPlayer with OptNextSong = Some playSongValue.Song }
         else playSong playSongValue.Song audioPlayer
     | FadeOutSong ->
-        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
+        if SDL_mixer.Mix_PlayingMusic () = 1 &&
+           not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
+           ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutMs)
         audioPlayer
     | StopSong ->
         if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_HaltMusic ())
