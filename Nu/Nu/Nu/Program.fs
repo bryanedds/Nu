@@ -37,7 +37,7 @@ let createTestBlock () =
 
     let testBlock =
         { PhysicsId = getPhysicsId ()
-          Density = 0.1f // TODO: ensure this is koscher with the physics system
+          Density = NormalDensity
           BodyType = Dynamic
           Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
           ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
@@ -125,7 +125,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     
     let testFloor =
         { PhysicsId = getPhysicsId ()
-          Density = 0.1f // TODO: ensure this is koscher with the physics system
+          Density = NormalDensity
           BodyType = Static
           Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
           ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
@@ -152,7 +152,6 @@ let createTestWorld (sdlDeps : SdlDeps) =
             [0..7]
 
     let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-    //let hintAudioPackageUse = HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HAPU = () }
     let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
     // scripting convention
@@ -164,7 +163,8 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
     let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
     let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
-    { tw_ with AudioMessages = playSong :: tw_.AudioMessages }
+    let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
+    { tw_ with AudioMessages = playSong (*:: hintAudioPackageUse*) :: tw_.AudioMessages }
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)

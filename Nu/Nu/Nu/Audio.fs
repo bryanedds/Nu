@@ -57,6 +57,13 @@ type [<ReferenceEquality>] AudioPlayer =
           OptCurrentSong : Song option
           OptNextSong : Song option }
 
+let haltSound () =
+    ignore (SDL_mixer.Mix_HaltMusic ())
+    let channelCount = ref 0
+    ignore (SDL_mixer.Mix_QuerySpec (ref 0, ref 0us, channelCount))
+    for i in [0 .. channelCount.Value - 1] do
+        ignore (SDL_mixer.Mix_HaltChannel i)
+
 let tryLoadAudioAsset2 audioContext (asset : Asset) =
     let extension = Path.GetExtension asset.FileName
     match extension with
@@ -101,6 +108,7 @@ let tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
     let (audioPlayer_, optAssetMap_) =
         match optAssetMap with
         | None ->
+            log ("Loading audio package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly.")
             let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer
             (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
         | Some assetMap -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
@@ -110,7 +118,7 @@ let playSong (song : Song) audioPlayer =
     let (audioPlayer2, optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
     match optAudioAsset with
     | None -> debug ("PlaySong failed due to unloadable assets for '" + str song + "'.")
-    | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayMusic (wavAsset, -1))
+    | Some (WavAsset wavAsset) -> debug ("Cannot play wav file as song '" + str song + "'.")
     | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayMusic (oggAsset, -1))
     { audioPlayer2 with OptCurrentSong = Some song }
 
@@ -136,12 +144,17 @@ let handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer
     tryLoadAudioPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName audioPlayer
 
 let handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) audioPlayer =
-    let optAssets = tryLoadAssets "Audio" hintPackageDisuse.PackageName hintPackageDisuse.FileName
+    let packageNameLun = Lun.make hintPackageDisuse.PackageName
+    let optAssets = Map.tryFind packageNameLun audioPlayer.AudioAssetMap
     match optAssets with
-    | Left error ->
-        trace ("HintAudioPackageDisuse failed due unloadable assets '" + error + "' for '" + str hintPackageDisuse + "'.")
-        audioPlayer
-    | Right assets -> audioPlayer // TODO: unload assets
+    | None -> audioPlayer
+    | Some assets ->
+        haltSound ()
+        for asset in Map.toValueList assets do
+            match asset with
+            | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
+            | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
+        { audioPlayer with AudioAssetMap = Map.remove packageNameLun audioPlayer.AudioAssetMap }
 
 let handlePlaySound playSound audioPlayer =
     let sound = playSound.Sound
@@ -149,7 +162,7 @@ let handlePlaySound playSound audioPlayer =
     match optAudioAsset with
     | None -> debug ("PlaySound failed due to unloadable assets for '" + str sound + "'.")
     | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0))
-    | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, oggAsset, 0))
+    | Some (OggAsset oggAsset) -> debug ("Cannot play ogg file as sound '" + str sound + "'.")
     audioPlayer2
 
 let handlePlaySong playSongValue audioPlayer =
