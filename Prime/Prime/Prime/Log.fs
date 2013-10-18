@@ -18,5 +18,5 @@ let debug issue =
     log issue
 
 let debugIf predicate issue =
-    Debug.Assert (predicate (), issue)
+    Debug.Assert (not <| predicate (), issue)
     log issue
