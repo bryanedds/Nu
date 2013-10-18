@@ -49,6 +49,7 @@
     <Compile Include="Physics.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="Rendering.fs" />
+    <Compile Include="AssetMetadataMap.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Simulants.fs" />
@@ -118,6 +119,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />

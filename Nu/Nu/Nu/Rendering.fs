@@ -114,6 +114,14 @@ let handleRenderMessage renderer renderMessage =
 let handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
     List.fold handleRenderMessage renderer (List.rev renderMessages)
 
+let handleRenderExit renderer =
+    let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
+    let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
+    for renderAsset in renderAssets do
+        match renderAsset with
+        | TextureAsset texture -> () // apparently there is no need to free textures in SDL
+    { renderer with RenderAssetMap = Map.empty }
+
 let renderSpriteDescriptor renderer spriteDescriptor =
     let sprite = spriteDescriptor.Sprite
     let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
@@ -167,14 +175,6 @@ let renderDescriptors renderDescriptorsValue renderer =
 let render (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
     let renderer2 = handleRenderMessages renderMessages renderer
     renderDescriptors renderDescriptorsValue renderer2
-
-let handleRenderExit renderer =
-    let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
-    let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
-    for renderAsset in renderAssets do
-        match renderAsset with
-        | TextureAsset texture -> () // apparently there is no need to free textures in SDL
-    { renderer with RenderAssetMap = Map.empty }
 
 let makeRenderer renderContext =
     { RenderContext = renderContext; RenderAssetMap = Map.empty }
