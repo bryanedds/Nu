@@ -99,7 +99,7 @@ type [<StructuralEquality; NoComparison>] GuiSemantic =
     | Button of Button
     | Label of Label
  // | ...additional controls
- // | UserDefinedGui of IUserDefinedGui (* this would give us open gui semantics, but perhaps at the cost of its value semantics...  *)
+ // | UserDefinedGui of IUserDefinedGui (* this would give us more open gui semantics, but perhaps at the cost of its value semantics...  *)
 
 /// A game gui element.
 /// A serializable value type.

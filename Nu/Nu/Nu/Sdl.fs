@@ -101,7 +101,7 @@ let rec runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlD
             runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning_
         else ignore (handleExit world)
 
-let runSdl createWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
+let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
     withSdlInit
         (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
         (fun () -> SDL.SDL_Quit ())
@@ -123,6 +123,11 @@ let runSdl createWorld handleEvent handleUpdate handleRender handlePlay handleEx
                         (fun () -> SDL_mixer.Mix_CloseAudio ())
                         (fun () ->
                             let sdlDeps = makeSdlDeps renderContext window sdlConfig
-                            let world = createWorld sdlDeps
-                            runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
-                            SuccessReturnCode)))))
+                            let optWorld = tryCreateWorld sdlDeps
+                            match optWorld with
+                            | Left errorMsg ->
+                                trace errorMsg
+                                FailureReturnCode
+                            | Right world ->
+                                runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
+                                SuccessReturnCode)))))
