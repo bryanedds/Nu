@@ -365,9 +365,9 @@ let integrate world : World =
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
 
-let run2 createWorld sdlConfig =
+let run2 tryCreateWorld sdlConfig =
     runSdl
-        (fun sdlDeps -> createWorld sdlDeps)
+        (fun sdlDeps -> tryCreateWorld sdlDeps)
         (fun refEvent world ->
             let event = refEvent.Value
             match event.``type`` with
@@ -397,20 +397,22 @@ let run2 createWorld sdlConfig =
 let run sdlConfig =
     run2
         (fun sdlDeps ->
-            let game =
-                { Id = getNuId ()
-                  IsEnabled = true
-                  Screens = Map.empty
-                  OptActiveScreenAddress = None }
-            { Game = game
-              Subscriptions = Map.empty
-              MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-              AudioPlayer = makeAudioPlayer ()
-              Renderer = makeRenderer sdlDeps.RenderContext
-              Integrator = makeIntegrator Gravity
-              AssetMetadataMap = Map.empty
-              AudioMessages = []
-              RenderMessages = []
-              PhysicsMessages = []
-              Components = [] })
+            let game = {
+                Id = getNuId ()
+                IsEnabled = true
+                Screens = Map.empty
+                OptActiveScreenAddress = None }
+            let world = {
+                Game = game
+                Subscriptions = Map.empty
+                MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+                AudioPlayer = makeAudioPlayer ()
+                Renderer = makeRenderer sdlDeps.RenderContext
+                Integrator = makeIntegrator Gravity
+                AssetMetadataMap = Map.empty
+                AudioMessages = []
+                RenderMessages = []
+                PhysicsMessages = []
+                Components = [] }
+            Right world)
         sdlConfig
