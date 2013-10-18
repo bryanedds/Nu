@@ -6,22 +6,13 @@ open Nu.Core
 open Nu.Entity
 open Nu.Group
 
-/// An algabraically-closed semantics for game screens.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] ScreenSemantic =
-    | Title // of Title
-    | Intro // of Intro
- // | ...additional screens
- // | UserDefinedScreen of IUserDefinedScreen (* this would give us more open screen semantics, but perhaps at the cost of its value semantics...  *)
-    
 /// A game screen.
 /// A serializable value type
 type [<StructuralEquality; NoComparison>] Screen =
     { Id : Id
       IsEnabled : bool
       IsVisible : bool
-      Groups : Map<Lun, Group>
-      ScreenSemantic : ScreenSemantic }
+      Groups : Map<Lun, Group> }
     with
         static member private optChildFinder addressHead parent =
             Map.tryFind addressHead parent.Groups
