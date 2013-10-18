@@ -33,6 +33,7 @@ let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
 /// Describes data relevant to specific event messages.
 type [<ReferenceEquality>] MessageData =
     | MouseButtonData of Vector2 * MouseButton
+    | CollisionData of Vector2 * single * Address
     | OtherData of obj
     | NoData
 
@@ -281,7 +282,7 @@ let getComponentAudioDescriptors world : AudioDescriptor rQueue =
 
 let getAudioDescriptors world : AudioDescriptor rQueue =
     let componentDescriptors = getComponentAudioDescriptors world
-    let worldDescriptors = [] // TODO: get audio descriptors
+    let worldDescriptors = [] // TODO: get audio descriptors when there are some
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Play the world's audio.
@@ -345,7 +346,11 @@ let handleIntegrationMessage world integrationMessage : World =
         let actor2 = {{ actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f }
                               with Rotation = bodyTransformMessage.Rotation }
         set (entity, actor2) world (World.entityActor bodyTransformMessage.EntityAddress)
-    | BodyCollisionMessage bodyCollisionMessage -> world // TODO: fire collision event
+    | BodyCollisionMessage bodyCollisionMessage ->
+        let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
+        let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
+        let collisionMessage = { Handled = false; Data = collisionData }
+        publish collisionAddress collisionMessage world
 
 /// Handle physics integration messages.
 let handleIntegrationMessages integrationMessages world : World =
@@ -363,8 +368,7 @@ let run2 createWorld sdlConfig =
         (fun refEvent world ->
             let event = refEvent.Value
             match event.``type`` with
-            | SDL.SDL_EventType.SDL_QUIT ->
-                (false, world)
+            | SDL.SDL_EventType.SDL_QUIT -> (false, world)
             | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                 if event.button.button = byte SDL.SDL_BUTTON_LEFT then
                     let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
@@ -380,8 +384,7 @@ let run2 createWorld sdlConfig =
                     let world3 = publish UpMouseLeftAddress { Handled = false; Data = messageData } world2
                     (true, world3)
                 else (true, world)
-            | _ ->
-                (true, world))
+            | _ -> (true, world))
         (fun world -> let world2 = integrate world in (true, world2))
         (fun world -> render world)
         (fun world -> play world)

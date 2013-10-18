@@ -10,9 +10,9 @@
 
 module Nu.Simulants
 open System
-open OpenTK
 open FSharpx
 open FSharpx.Lens.Operators
+open OpenTK
 open Nu.Core
 open Nu.Physics
 open Nu.Audio
