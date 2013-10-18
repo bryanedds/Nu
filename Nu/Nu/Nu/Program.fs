@@ -28,7 +28,7 @@ approximate speed-ups -
 1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
 1.2x gain - optimize locality of address usage *)
 
-let tryCreateChronoBladeWorld (sdlDeps : SdlDeps) =
+(*let tryCreateChronoBladeWorld (sdlDeps : SdlDeps) =
     let game =
         { Id = getNuId ()
           IsEnabled = true
@@ -54,9 +54,9 @@ let tryCreateChronoBladeWorld (sdlDeps : SdlDeps) =
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Chrono Blade" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run2 tryCreateChronoBladeWorld sdlConfig
+    run2 tryCreateChronoBladeWorld sdlConfig*)
 
-(*let TestScreenAddress = [Lun.make "testScreen"]
+let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
 let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
@@ -204,7 +204,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run2 tryCreateTestWorld sdlConfig*)
+    run2 tryCreateTestWorld sdlConfig
 
 (*module Program
 open System
