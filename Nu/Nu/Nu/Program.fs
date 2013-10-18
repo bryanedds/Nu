@@ -28,7 +28,35 @@ approximate speed-ups -
 1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
 1.2x gain - optimize locality of address usage *)
 
-let TestScreenAddress = [Lun.make "testScreen"]
+let tryCreateChronoBladeWorld (sdlDeps : SdlDeps) =
+    let game =
+        { Id = getNuId ()
+          IsEnabled = true
+          Screens = Map.empty
+          OptActiveScreenAddress = None }
+    match tryGenerateAssetMetadataMap "AssetGraph.xml" with
+    | Left errorMsg -> Left errorMsg
+    | Right assetMetadataMap ->
+        let world =
+            { Game = game
+              Subscriptions = Map.empty
+              MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+              AudioPlayer = makeAudioPlayer ()
+              Renderer = makeRenderer sdlDeps.RenderContext
+              Integrator = makeIntegrator Gravity
+              AssetMetadataMap = assetMetadataMap
+              AudioMessages = []
+              RenderMessages = []
+              PhysicsMessages = []
+              Components = [] }
+        Right world
+
+let [<EntryPoint>] main _ =
+    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+    let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
+    run2 tryCreateChronoBladeWorld sdlConfig
+
+(*let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
 let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
@@ -177,7 +205,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run2 tryCreateTestWorld sdlConfig
+    run2 tryCreateTestWorld sdlConfig*)
 
 (*module Program
 open System
