@@ -7,6 +7,7 @@ open Nu.Sdl
 open Nu.Audio
 open Nu.Rendering
 open Nu.Physics
+open Nu.AssetMetadataMap
 open Nu.Simulants
 open Nu.Simulation
 
@@ -33,7 +34,7 @@ let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
 let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
 let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
 
-let createTestBlock () =
+let createTestBlock assetMetadataMap =
 
     let testBlock =
         { PhysicsId = getPhysicsId ()
@@ -45,7 +46,7 @@ let createTestBlock () =
     let testBlockActor =
         { Position = Vector2 (400.0f, 200.0f)
           Depth = 0.0f
-          Size = Vector2 64.0f // TODO: look this up from bitmap file
+          Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
           Rotation = 2.0f
           ActorSemantic = Block testBlock }
 
@@ -65,6 +66,11 @@ let createTestWorld (sdlDeps : SdlDeps) =
           Screens = Map.empty
           OptActiveScreenAddress = None }
 
+    let assetMetadataMap =
+        match tryGenerateAssetMetadataMap "AssetGraph.xml" with
+        | Left errorMsg -> failwith errorMsg
+        | Right map -> map
+
     let testWorld =
         { Game = testGame
           Subscriptions = Map.empty
@@ -72,6 +78,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
           AudioPlayer = makeAudioPlayer ()
           Renderer = makeRenderer sdlDeps.RenderContext
           Integrator = makeIntegrator Gravity
+          AssetMetadataMap = assetMetadataMap
           AudioMessages = []
           RenderMessages = []
           PhysicsMessages = []
@@ -96,7 +103,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testLabelGui =
         { Position = Vector2.Zero
           Depth = -0.1f
-          Size = Vector2 (900.0f, 600.0f) // TODO: look this up from bitmap file
+          Size = getTextureSizeAsVector2 (Lun.make "Image5") (Lun.make "Misc") assetMetadataMap
           GuiSemantic = Label testLabel }
 
     let testLabelGuiEntity =
@@ -114,7 +121,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testButtonGui =
         { Position = Vector2 (310.0f, 20.0f)
           Depth = 0.1f
-          Size = Vector2 (256.0f, 64.0f) // TODO: look this up from bitmap file
+          Size = getTextureSizeAsVector2 (Lun.make "Image") (Lun.make "Misc") assetMetadataMap
           GuiSemantic = Button testButton }
 
     let testButtonGuiEntity =
@@ -133,7 +140,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let testFloorActor =
         { Position = Vector2 (120.0f, 520.0f)
           Depth = 0.0f
-          Size = Vector2 (640.0f, 64.0f) // TODO: look this up from bitmap file
+          Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Misc") assetMetadataMap
           Rotation = 0.0f
           ActorSemantic = Block testFloor }
 
@@ -146,7 +153,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let addBoxes _ _ _ world =
         List.fold
             (fun world2 _ ->
-                let entityActorBlock = createTestBlock ()
+                let entityActorBlock = createTestBlock assetMetadataMap
                 addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world2)
             world
             [0..7]
@@ -164,7 +171,7 @@ let createTestWorld (sdlDeps : SdlDeps) =
     let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
     let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
     let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
-    { tw_ with AudioMessages = playSong (*:: hintAudioPackageUse*) :: tw_.AudioMessages }
+    { tw_ with AudioMessages = playSong :: playSong :: tw_.AudioMessages }
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)

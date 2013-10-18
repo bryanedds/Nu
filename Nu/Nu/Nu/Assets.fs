@@ -64,16 +64,15 @@ let tryLoadAssets association packageName (assetGraphFileName : string) =
         | null -> Left ("Root node is missing from asset graph file '" + assetGraphFileName + "'.")
         | rootNode ->
             let possiblePackageNodes = rootNode.OfType<XmlNode> ()
-            let optPackageNodes = Seq.filter (fun (node : XmlNode) -> (node.Attributes.GetNamedItem "name").InnerText = packageName) possiblePackageNodes
-            let optPackageNode = Seq.tryHead optPackageNodes
+            let packageNodes = Seq.filter (fun (node : XmlNode) -> node.Name = "package" && (node.Attributes.GetNamedItem "name").InnerText = packageName) possiblePackageNodes
+            let optPackageNode = Seq.tryHead packageNodes
             match optPackageNode with
             | None -> Left ("Package node '" + packageName + "' is missing from asset graph file '" + assetGraphFileName + "'.")
             | Some packageNode ->
                 let optAssets = Seq.map (fun assetNode -> tryLoadAsset packageName assetNode) (packageNode.OfType<XmlNode> ())
                 let assets = Seq.definitize optAssets
-                if assets.Count () <> optAssets.Count () then Left ("Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'.")
-                else
-                    let associatedAssets = Seq.filter (fun asset -> asset.Associations.Contains association) assets
-                    let associatedAssetList = List.ofSeq associatedAssets
-                    Right associatedAssetList
+                debugIf (fun () -> assets.Count () <> optAssets.Count ()) ("Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'.")
+                let associatedAssets = Seq.filter (fun asset -> asset.Associations.Contains association) assets
+                let associatedAssetList = List.ofSeq associatedAssets
+                Right associatedAssetList
     with exn -> Left (str exn)

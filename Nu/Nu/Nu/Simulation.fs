@@ -9,6 +9,7 @@ open Nu.Constants
 open Nu.Math
 open Nu.Physics
 open Nu.Rendering
+open Nu.AssetMetadataMap
 open Nu.Input
 open Nu.Audio
 open Nu.Simulants
@@ -59,6 +60,7 @@ and [<ReferenceEquality>] World =
       AudioPlayer : AudioPlayer
       Renderer : Renderer
       Integrator : Integrator
+      AssetMetadataMap : AssetMetadataMap
       AudioMessages : AudioMessage rQueue
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
@@ -400,6 +402,7 @@ let run sdlConfig =
               AudioPlayer = makeAudioPlayer ()
               Renderer = makeRenderer sdlDeps.RenderContext
               Integrator = makeIntegrator Gravity
+              AssetMetadataMap = Map.empty
               AudioMessages = []
               RenderMessages = []
               PhysicsMessages = []
