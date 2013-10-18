@@ -69,18 +69,17 @@ let tryLoadAudioAsset2 audioContext (asset : Asset) =
     match extension with
     | ".wav" ->
         let optWav = SDL_mixer.Mix_LoadWAV asset.FileName
-        if optWav = IntPtr.Zero then
+        if optWav <> IntPtr.Zero then Some (Lun.make asset.Name, WavAsset optWav)
+        else
             trace ("Could not load wav '" + asset.FileName + "'.")
             None
-        else
-            Some (Lun.make asset.Name, WavAsset optWav)
+            
     | ".ogg" ->
         let optOgg = SDL_mixer.Mix_LoadMUS asset.FileName
-        if optOgg = IntPtr.Zero then
+        if optOgg <> IntPtr.Zero then Some (Lun.make asset.Name, OggAsset optOgg)
+        else
             trace ("Could not load ogg '" + asset.FileName + "'.")
             None
-        else
-            Some (Lun.make asset.Name, OggAsset optOgg)
     | _ ->
         trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'.")
         None
@@ -169,14 +168,14 @@ let handlePlaySound playSound audioPlayer =
 
 let handlePlaySong playSongValue audioPlayer =
     if SDL_mixer.Mix_PlayingMusic () = 1 then
-        if playSongValue.FadeOutCurrentSong &&
+        if  playSongValue.FadeOutCurrentSong &&
             not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
             ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
         { audioPlayer with OptNextSong = Some playSongValue.Song }
     else playSong playSongValue.Song audioPlayer
 
 let handleFadeOutSong audioPlayer =
-    if SDL_mixer.Mix_PlayingMusic () = 1 &&
+    if  SDL_mixer.Mix_PlayingMusic () = 1 &&
         not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
         ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
     audioPlayer

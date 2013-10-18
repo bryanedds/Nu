@@ -53,11 +53,10 @@ let tryLoadRenderAsset2 renderContext (asset : Asset) =
     | ".bmp"
     | ".png" ->
         let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FileName)
-        if optTexture = IntPtr.Zero then
+        if optTexture <> IntPtr.Zero then Some (Lun.make asset.Name, TextureAsset optTexture)
+        else
             trace ("Could not load texture '" + asset.FileName + "'.")
             None
-        else
-            Some (Lun.make asset.Name, TextureAsset optTexture)
     | _ ->
         trace ("Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'.")
         None
