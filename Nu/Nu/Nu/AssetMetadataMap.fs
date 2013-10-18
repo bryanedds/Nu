@@ -14,7 +14,8 @@ type [<StructuralEquality; NoComparison>] AssetMetadata =
     | OtherMetadata of obj
     | InvalidMetadata of string
 
-type AssetMetadataMap = Map<Lun, Map<Lun, AssetMetadata>>
+type AssetMetadataMap =
+    Map<Lun, Map<Lun, AssetMetadata>>
 
 let tryGenerateAssetMetadataMap (assetGraphFileName : string) =
     try let document = XmlDocument ()
