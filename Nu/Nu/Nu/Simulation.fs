@@ -12,8 +12,11 @@ open Nu.Rendering
 open Nu.AssetMetadataMap
 open Nu.Input
 open Nu.Audio
-open Nu.Simulants
 open Nu.Sdl
+open Nu.Entity
+open Nu.Group
+open Nu.Screen
+open Nu.Game
 
 let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
 let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress

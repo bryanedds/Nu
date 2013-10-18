@@ -11,6 +11,7 @@ type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of int * int
     | SoundMetadata
     | SongMetadata
+    | OtherMetadata of obj
     | InvalidMetadata of string
 
 type AssetMetadataMap = Map<Lun, Map<Lun, AssetMetadata>>
