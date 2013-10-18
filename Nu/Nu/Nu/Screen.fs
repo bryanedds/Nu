@@ -12,7 +12,7 @@ type [<StructuralEquality; NoComparison>] ScreenSemantic =
     | Title // of Title
     | Intro // of Intro
  // | ...additional screens
- // | UserDefinedScreen of IUserDefinedScreen (* this would give us open screen semantics, but perhaps at the cost of its value semantics...  *)
+ // | UserDefinedScreen of IUserDefinedScreen (* this would give us more open screen semantics, but perhaps at the cost of its value semantics...  *)
     
 /// A game screen.
 /// A serializable value type
