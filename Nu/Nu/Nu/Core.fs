@@ -9,3 +9,5 @@ type Id = int64
 /// beginning address nodes match the partial address (sort of a wild-card).
 /// A value type.
 type Address = Lun list
+
+let getNuId = createGetNextId ()

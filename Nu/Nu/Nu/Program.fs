@@ -2,13 +2,17 @@
 open System
 open SDL2
 open OpenTK
+open Nu.Core
 open Nu.Constants
 open Nu.Sdl
 open Nu.Audio
 open Nu.Rendering
 open Nu.Physics
 open Nu.AssetMetadataMap
-open Nu.Simulants
+open Nu.Entity
+open Nu.Group
+open Nu.Screen
+open Nu.Game
 open Nu.Simulation
 
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)

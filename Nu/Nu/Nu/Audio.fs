@@ -149,6 +149,8 @@ let handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) au
     match optAssets with
     | None -> audioPlayer
     | Some assets ->
+        // all sounds / music must be halted because one of them might be playing during unload
+        // (which is very bad according to the API docs).
         haltSound ()
         for asset in Map.toValueList assets do
             match asset with
