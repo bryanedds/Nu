@@ -70,6 +70,12 @@ type [<StructuralEquality; NoComparison>] Game =
         static member optEntityGuiTextBox (address : Address) =
             Game.screen [List.head address] >>| Screen.optEntityGuiTextBox (List.tail address)
         
+        static member entityGuiToggle (address : Address) =
+            Game.screen [List.head address] >>| Screen.entityGuiToggle (List.tail address)
+        
+        static member optEntityGuiToggle (address : Address) =
+            Game.screen [List.head address] >>| Screen.optEntityGuiToggle (List.tail address)
+        
         static member entityActor (address : Address) =
             Game.screen [List.head address] >>| Screen.entityActor (List.tail address)
         
