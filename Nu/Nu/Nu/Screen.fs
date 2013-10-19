@@ -53,6 +53,12 @@ type [<StructuralEquality; NoComparison>] Screen =
         static member optEntityGuiLabel address =
             Screen.group [List.head address] >>| Group.optEntityGuiLabel (List.tail address)
         
+        static member entityGuiTextBox address =
+            Screen.group [List.head address] >>| Group.entityGuiTextBox (List.tail address)
+        
+        static member optEntityGuiTextBox address =
+            Screen.group [List.head address] >>| Group.optEntityGuiTextBox (List.tail address)
+        
         static member entityActor address =
             Screen.group [List.head address] >>| Group.entityActor (List.tail address)
         

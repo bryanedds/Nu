@@ -93,11 +93,19 @@ type [<StructuralEquality; NoComparison>] Button =
 type [<StructuralEquality; NoComparison>] Label =
     { LabelSprite : Sprite }
 
+type [<StructuralEquality; NoComparison>] TextBox =
+    { BoxSprite : Sprite
+      Text : string
+      TextFont : Font
+      TextOffset : Vector2
+      TextColor : Vector4 }
+
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] GuiSemantic =
     | Button of Button
     | Label of Label
+    | TextBox of TextBox
  // | ...additional controls
  // | UserDefinedGui of IUserDefinedGui (* this would give us more open gui semantics, but perhaps at the cost of its value semantics...  *)
 
@@ -124,6 +132,14 @@ type [<StructuralEquality; NoComparison>] Gui =
         static member optLabel =
             { Get = fun this -> match this.GuiSemantic with Label label -> Some label | _ -> None
               Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some label -> { this with GuiSemantic = Label label }}
+        
+        static member textBox =
+            { Get = fun this -> match this.GuiSemantic with TextBox textBox -> textBox | _ -> failwith "Gui is not a textBox."
+              Set = fun textBox this -> { this with GuiSemantic = TextBox textBox }}
+
+        static member optTextBox =
+            { Get = fun this -> match this.GuiSemantic with TextBox textBox -> Some textBox | _ -> None
+              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some textBox -> { this with GuiSemantic = TextBox textBox }}
 
 type [<StructuralEquality; NoComparison>] Block =
     { PhysicsId : Id
@@ -217,6 +233,25 @@ type [<StructuralEquality; NoComparison>] Entity =
                 match optGuiLabel with
                 | None -> failwith "Cannot set Entity.optGui to None."
                 | Some guiLabel -> set guiLabel this Entity.guiLabel }
+        
+        static member guiTextBox =
+            { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.textBox)
+              Set = fun (gui, textBox) this -> let newGui = set textBox Gui.textBox in set gui this Entity.gui }
+        
+        static member optGuiTextBox =
+            { Get = fun this ->
+                let optGui = get this Entity.optGui
+                match optGui with
+                | None -> None
+                | Some gui ->
+                    let optTextBox = get gui Gui.optTextBox
+                    match optTextBox with
+                    | None -> None
+                    | Some textBox -> Some (gui, textBox)
+              Set = fun optGuiTextBox this ->
+                match optGuiTextBox with
+                | None -> failwith "Cannot set Entity.optGui to None."
+                | Some guiTextBox -> set guiTextBox this Entity.guiTextBox }
 
         static member actor =
             { Get = fun this -> match this.EntitySemantic with Actor actor -> actor | _ -> failwith "Entity is not an actor."
