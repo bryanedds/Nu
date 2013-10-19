@@ -59,6 +59,7 @@ let [<EntryPoint>] main _ =
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
 let TestTextBoxAddress = TestGroupAddress @ [Lun.make "testTextBox"]
+let TestToggleAddress = TestGroupAddress @ [Lun.make "testToggle"]
 let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
@@ -145,6 +146,25 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               IsVisible = true
               EntitySemantic = Gui testTextBoxGui }
           
+        let testToggle =
+            { IsOn = false
+              IsPressed = false
+              OffSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              OnSprite = { SpriteAssetName = Lun.make "Image6"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
+
+        let testToggleGui =
+            { Position = Vector2 (720.0f, 50.0f)
+              Depth = 0.1f
+              Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
+              GuiSemantic = Toggle testToggle }
+
+        let testToggleGuiEntity =
+            { Id = getNuId ()
+              IsEnabled = true
+              IsVisible = true
+              EntitySemantic = Gui testToggleGui }
+          
         let testLabel =
             { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
@@ -216,6 +236,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let tw_ = setP (Some TestScreenAddress) World.optActiveScreenAddress tw_
         let tw_ = addGroup testGroup TestGroupAddress tw_
         let tw_ = addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) TestTextBoxAddress tw_
+        let tw_ = addEntityGuiToggle (testToggleGuiEntity, testToggleGui, testToggle) TestToggleAddress tw_
         let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
         let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
         let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
