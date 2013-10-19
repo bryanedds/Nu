@@ -319,7 +319,7 @@ let getWorldRenderDescriptors world =
     | Some activeScreenAddress ->
         let activeScreen = get world (World.screen activeScreenAddress)
         let groups = Map.toValueSeq activeScreen.Groups
-        let optDescriptorSeqs =
+        let descriptorSeqLists =
             Seq.map
                 (fun group ->
                     let entities = Map.toValueSeq group.Entities
@@ -328,18 +328,19 @@ let getWorldRenderDescriptors world =
                             match entity.EntitySemantic with
                             | Gui gui ->
                                 match gui.GuiSemantic with
-                                | Button button -> Some (LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth }))
-                                | Label label -> Some (LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth }))
-                                | TextBox textBox -> Some (LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth }))
+                                | Button button -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
+                                | Label label -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
+                                | TextBox textBox ->
+                                    [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
+                                     LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
                             | Actor actor ->
                                 match actor.ActorSemantic with
-                                | Block block -> Some (LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth }))
-                                | Avatar _ -> None) // TODO: implement Avatar
+                                | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+                                | Avatar _ -> []) // TODO: implement Avatar
                         entities)
                 groups
-        let optDescriptors = Seq.concat optDescriptorSeqs
-        let descriptors = Seq.definitize optDescriptors
-        List.ofSeq descriptors
+        let descriptorSeq = Seq.concat descriptorSeqLists
+        List.concat descriptorSeq
 
 let getRenderDescriptors world : RenderDescriptor rQueue =
     let componentDescriptors = getComponentRenderDescriptors world
