@@ -81,6 +81,26 @@ type [<StructuralEquality; NoComparison>] Group =
                 | _ -> None
             | _ -> None
         
+        static member private childGuiTextBoxSetter child gui textBox =
+            let gui2 = { gui with GuiSemantic = TextBox textBox }
+            { child with EntitySemantic = Gui gui2 }
+        
+        static member private childToGuiTextBox child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | TextBox textBox -> (gui, textBox)
+                | _ -> failwith "Semantic of wrong type."
+            | _ -> failwith "Semantic of wrong type."
+        
+        static member private childToOptGuiTextBox child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | TextBox textBox -> Some (gui, textBox)
+                | _ -> None
+            | _ -> None
+        
         static member private childActorSetter child actor =
             { child with EntitySemantic = Actor actor }
         
@@ -145,6 +165,14 @@ type [<StructuralEquality; NoComparison>] Group =
         static member optEntityGuiLabel address =
             { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiLabel this address
               Set = fun optEntityGuiLabel this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiLabelSetter optEntityGuiLabel this address }
+        
+        static member entityGuiTextBox address =
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToGuiTextBox address this
+              Set = fun (entity, gui, textBox) this -> setChildSemSem Group.childAdder Group.childGuiTextBoxSetter address this entity gui textBox }
+        
+        static member optEntityGuiTextBox address =
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiTextBox this address
+              Set = fun optEntityGuiTextBox this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiTextBoxSetter optEntityGuiTextBox this address }
 
         static member entityActor address =
             { Get = fun this -> getChildSem Group.childFinder Group.childToActor address this

@@ -102,6 +102,12 @@ and [<ReferenceEquality>] World =
         static member optEntityGuiLabel (address : Address) =
             World.game >>| Game.optEntityGuiLabel address
         
+        static member entityGuiTextBox (address : Address) =
+            World.game >>| Game.entityGuiTextBox address
+        
+        static member optEntityGuiTextBox (address : Address) =
+            World.game >>| Game.optEntityGuiTextBox address
+        
         static member entityActor (address : Address) =
             World.game >>| Game.entityActor address
         
@@ -238,6 +244,12 @@ let addEntityGuiLabel entityGuiLabel address world : World =
 let removeEntityGuiLabel address world : World =
     set None world (World.optEntityGuiLabel address)
 
+let addEntityGuiTextBox entityGuiTextBox address world : World =
+    set entityGuiTextBox world (World.entityGuiTextBox address)
+
+let removeEntityGuiTextBox address world : World =
+    set None world (World.optEntityGuiTextBox address)
+
 let unregisterEntityActorBlock (entity, actor, block) address world : World =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
@@ -316,11 +328,12 @@ let getWorldRenderDescriptors world =
                             match entity.EntitySemantic with
                             | Gui gui ->
                                 match gui.GuiSemantic with
-                                | Button button -> Some (SpriteDescriptor { Position = gui.Position; Depth = gui.Depth; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite })
-                                | Label label -> Some (SpriteDescriptor { Position = gui.Position; Depth = gui.Depth; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite })
+                                | Button button -> Some (LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth }))
+                                | Label label -> Some (LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth }))
+                                | TextBox textBox -> Some (LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth }))
                             | Actor actor ->
                                 match actor.ActorSemantic with
-                                | Block block -> Some (SpriteDescriptor { Position = actor.Position; Depth = actor.Depth; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite })
+                                | Block block -> Some (LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth }))
                                 | Avatar _ -> None) // TODO: implement Avatar
                         entities)
                 groups

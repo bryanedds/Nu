@@ -6,6 +6,7 @@
     <asset name="Image3" fileName="Image3.png" associations="Rendering"/>
     <asset name="Image4" fileName="Image4.png" associations="Rendering"/>
     <asset name="Image5" fileName="Image5.png" associations="Rendering"/>
+    <asset name="Font" fileName="FreeMonoBold.032.ttf" associations="Rendering"/>
     <asset name="Sound" fileName="Sound.wav" associations="Audio"/>
     <asset name="Song" fileName="Song.ogg" associations="Audio"/>
   </package>

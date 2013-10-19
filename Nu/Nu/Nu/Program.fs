@@ -58,6 +58,7 @@ let [<EntryPoint>] main _ =
 
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
+let TestTextBoxAddress = TestGroupAddress @ [Lun.make "testTextBox"]
 let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
@@ -124,6 +125,25 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               IsEnabled = true
               IsVisible = true
               Entities = Map.empty }
+          
+        let testTextBox =
+            { BoxSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              Text = "Hello pure functional world!"
+              TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              TextOffset = Vector2 16.0f
+              TextColor = Vector4.One }
+
+        let testTextBoxGui =
+            { Position = Vector2 (120.0f, 507.0f)
+              Depth = 0.1f
+              Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Misc") assetMetadataMap
+              GuiSemantic = TextBox testTextBox }
+
+        let testTextBoxGuiEntity =
+            { Id = getNuId ()
+              IsEnabled = true
+              IsVisible = true
+              EntitySemantic = Gui testTextBoxGui }
           
         let testLabel =
             { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
@@ -195,6 +215,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let tw_ = addScreen testScreen TestScreenAddress tw_
         let tw_ = setP (Some TestScreenAddress) World.optActiveScreenAddress tw_
         let tw_ = addGroup testGroup TestGroupAddress tw_
+        let tw_ = addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) TestTextBoxAddress tw_
         let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
         let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
         let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
