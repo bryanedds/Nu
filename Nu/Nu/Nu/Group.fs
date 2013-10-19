@@ -101,6 +101,26 @@ type [<StructuralEquality; NoComparison>] Group =
                 | _ -> None
             | _ -> None
         
+        static member private childGuiToggleSetter child gui toggle =
+            let gui2 = { gui with GuiSemantic = Toggle toggle }
+            { child with EntitySemantic = Gui gui2 }
+        
+        static member private childToGuiToggle child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | Toggle toggle -> (gui, toggle)
+                | _ -> failwith "Semantic of wrong type."
+            | _ -> failwith "Semantic of wrong type."
+        
+        static member private childToOptGuiToggle child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | Toggle toggle -> Some (gui, toggle)
+                | _ -> None
+            | _ -> None
+        
         static member private childActorSetter child actor =
             { child with EntitySemantic = Actor actor }
         
@@ -173,6 +193,14 @@ type [<StructuralEquality; NoComparison>] Group =
         static member optEntityGuiTextBox address =
             { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiTextBox this address
               Set = fun optEntityGuiTextBox this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiTextBoxSetter optEntityGuiTextBox this address }
+        
+        static member entityGuiToggle address =
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToGuiToggle address this
+              Set = fun (entity, gui, toggle) this -> setChildSemSem Group.childAdder Group.childGuiToggleSetter address this entity gui toggle }
+        
+        static member optEntityGuiToggle address =
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiToggle this address
+              Set = fun optEntityGuiToggle this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiToggleSetter optEntityGuiToggle this address }
 
         static member entityActor address =
             { Get = fun this -> getChildSem Group.childFinder Group.childToActor address this
