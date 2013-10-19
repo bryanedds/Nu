@@ -115,19 +115,23 @@ let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handl
                 (fun renderContext -> SDL.SDL_DestroyRenderer renderContext)
                 (fun renderContext ->
                 withSdlGlobalResource
-                    (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG)
-                    (fun () -> SDL_mixer.Mix_Quit ())
+                    (fun () -> SDL_ttf.TTF_Init ())
+                    (fun () -> SDL_ttf.TTF_Quit ())
                     (fun () ->
                     withSdlGlobalResource
-                        (fun () -> SDL_mixer.Mix_OpenAudio (SDL_mixer.MIX_DEFAULT_FREQUENCY, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
-                        (fun () -> SDL_mixer.Mix_CloseAudio ())
+                        (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG)
+                        (fun () -> SDL_mixer.Mix_Quit ())
                         (fun () ->
-                            let sdlDeps = makeSdlDeps renderContext window sdlConfig
-                            let optWorld = tryCreateWorld sdlDeps
-                            match optWorld with
-                            | Left errorMsg ->
-                                trace errorMsg
-                                FailureReturnCode
-                            | Right world ->
-                                runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
-                                SuccessReturnCode)))))
+                        withSdlGlobalResource
+                            (fun () -> SDL_mixer.Mix_OpenAudio (SDL_mixer.MIX_DEFAULT_FREQUENCY, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                            (fun () -> SDL_mixer.Mix_CloseAudio ())
+                            (fun () ->
+                                let sdlDeps = makeSdlDeps renderContext window sdlConfig
+                                let optWorld = tryCreateWorld sdlDeps
+                                match optWorld with
+                                | Left errorMsg ->
+                                    trace errorMsg
+                                    FailureReturnCode
+                                | Right world ->
+                                    runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
+                                    SuccessReturnCode))))))
