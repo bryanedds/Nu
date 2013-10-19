@@ -127,16 +127,16 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               Entities = Map.empty }
           
         let testTextBox =
-            { BoxSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              Text = "Hello pure functional world!"
+            { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              Text = "Hi!"
               TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              TextOffset = Vector2 16.0f
+              TextOffset = Vector2 4.0f
               TextColor = Vector4.One }
 
         let testTextBoxGui =
-            { Position = Vector2 (120.0f, 507.0f)
+            { Position = Vector2 (120.0f, 50.0f)
               Depth = 0.1f
-              Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Misc") assetMetadataMap
+              Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
               GuiSemantic = TextBox testTextBox }
 
         let testTextBoxGuiEntity =
