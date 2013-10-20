@@ -8,7 +8,9 @@
     <asset name="Image5" fileName="Image5.png" associations="Rendering"/>
     <asset name="Image6" fileName="Image6.png" associations="Rendering"/>
     <asset name="Font" fileName="FreeMonoBold.032.ttf" associations="Rendering"/>
+    <asset name="TileSet" fileName="TileSet.png" associations="Rendering"/>
     <asset name="Sound" fileName="Sound.wav" associations="Audio"/>
     <asset name="Song" fileName="Song.ogg" associations="Audio"/>
+    <asset name="TileMap" fileName="TileMap.tmx" associations=""/>
   </package>
 </root>

@@ -18,6 +18,18 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       Rotation : single
       Sprite : Sprite }
 
+type [<StructuralEquality; NoComparison>] TileMapAsset =
+    { TileMapAssetName : Lun
+      PackageName : Lun
+      PackageFileName : string }
+
+type [<StructuralEquality; NoComparison>] TileDescriptor =
+    { Position : Vector2
+      Size : Vector2
+      Rotation : single
+      TileSetSprite : Sprite
+      TileSetPosition : Vector2 }
+
 type [<StructuralEquality; NoComparison>] Font =
     { FontAssetName : Lun
       PackageName : Lun
@@ -36,6 +48,7 @@ type [<StructuralEquality; NoComparison>] 'd LayeredDescriptor =
 
 type [<StructuralEquality; NoComparison>] LayerableDescriptor =
     | LayeredSpriteDescriptor of SpriteDescriptor LayeredDescriptor
+    | LayeredTileDescriptor of TileDescriptor LayeredDescriptor
     | LayeredTextDescriptor of TextDescriptor LayeredDescriptor
 
 /// Describes a rendering asset.
@@ -70,6 +83,7 @@ type [<ReferenceEquality>] Renderer =
 let getLayerableDepth layerable =
     match layerable with
     | LayeredSpriteDescriptor descriptor -> descriptor.Depth
+    | LayeredTileDescriptor descriptor -> descriptor.Depth
     | LayeredTextDescriptor descriptor -> descriptor.Depth
 
 let freeRenderAsset renderAsset =
@@ -161,6 +175,82 @@ let handleRenderExit renderer =
 
 let renderLayerableDescriptor renderer layerableDescriptor =
     match layerableDescriptor with
+    | LayeredSpriteDescriptor lsd ->
+        let spriteDescriptor = lsd.Descriptor
+        let sprite = spriteDescriptor.Sprite
+        let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+        match optRenderAsset with
+        | None ->
+            debug ("LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+            renderer2
+        | Some renderAsset ->
+            match renderAsset with
+            | TextureAsset texture ->
+                let mutable sourceRect = SDL.SDL_Rect ()
+                sourceRect.x <- 0
+                sourceRect.y <- 0
+                sourceRect.w <- int spriteDescriptor.Size.X
+                sourceRect.h <- int spriteDescriptor.Size.Y
+                let mutable destRect = SDL.SDL_Rect ()
+                destRect.x <- int spriteDescriptor.Position.X
+                destRect.y <- int spriteDescriptor.Position.Y
+                destRect.w <- int spriteDescriptor.Size.X
+                destRect.h <- int spriteDescriptor.Size.Y
+                let mutable rotationCenter = SDL.SDL_Point ()
+                rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
+                rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
+                let renderResult =
+                    SDL.SDL_RenderCopyEx
+                        (renderer2.RenderContext,
+                         texture,
+                         ref sourceRect,
+                         ref destRect,
+                         double spriteDescriptor.Rotation * RadiansToDegrees,
+                         ref rotationCenter,
+                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
+                if renderResult <> 0 then debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                renderer2
+            | _ ->
+                trace "Cannot render sprite with a non-texture asset."
+                renderer2
+    | LayeredTileDescriptor ltd ->
+        let tileDescriptor = ltd.Descriptor
+        let sprite = tileDescriptor.TileSetSprite
+        let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+        match optRenderAsset with
+        | None ->
+            debug ("LayeredTileDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+            renderer2
+        | Some renderAsset ->
+            match renderAsset with
+            | TextureAsset texture ->
+                let mutable sourceRect = SDL.SDL_Rect ()
+                sourceRect.x <- int tileDescriptor.TileSetPosition.X
+                sourceRect.y <- int tileDescriptor.TileSetPosition.Y
+                sourceRect.w <- int tileDescriptor.Size.X
+                sourceRect.h <- int tileDescriptor.Size.Y
+                let mutable destRect = SDL.SDL_Rect ()
+                destRect.x <- int tileDescriptor.Position.X
+                destRect.y <- int tileDescriptor.Position.Y
+                destRect.w <- int tileDescriptor.Size.X
+                destRect.h <- int tileDescriptor.Size.Y
+                let mutable rotationCenter = SDL.SDL_Point ()
+                rotationCenter.x <- int (tileDescriptor.Size.X * 0.5f)
+                rotationCenter.y <- int (tileDescriptor.Size.Y * 0.5f)
+                let renderResult =
+                    SDL.SDL_RenderCopyEx
+                        (renderer2.RenderContext,
+                         texture,
+                         ref sourceRect,
+                         ref destRect,
+                         double tileDescriptor.Rotation * RadiansToDegrees,
+                         ref rotationCenter,
+                         SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                if renderResult <> 0 then debug ("Rendering error - could not render texture for tile '" + str tileDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                renderer2
+            | _ ->
+                trace "Cannot render tile with a non-texture asset."
+                renderer2
     | LayeredTextDescriptor ltd ->
         let textDescriptor = ltd.Descriptor
         let font = textDescriptor.Font
@@ -199,44 +289,6 @@ let renderLayerableDescriptor renderer layerableDescriptor =
                 renderer2
             | _ ->
                 trace "Cannot render text with a non-font asset."
-                renderer2
-    | LayeredSpriteDescriptor lsd ->
-        let spriteDescriptor = lsd.Descriptor
-        let sprite = spriteDescriptor.Sprite
-        let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
-        match optRenderAsset with
-        | None ->
-            debug ("LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
-            renderer2
-        | Some renderAsset ->
-            match renderAsset with
-            | TextureAsset texture ->
-                let mutable sourceRect = SDL.SDL_Rect ()
-                sourceRect.x <- 0
-                sourceRect.y <- 0
-                sourceRect.w <- int spriteDescriptor.Size.X
-                sourceRect.h <- int spriteDescriptor.Size.Y
-                let mutable destRect = SDL.SDL_Rect ()
-                destRect.x <- int spriteDescriptor.Position.X
-                destRect.y <- int spriteDescriptor.Position.Y
-                destRect.w <- int spriteDescriptor.Size.X
-                destRect.h <- int spriteDescriptor.Size.Y
-                let mutable rotationCenter = SDL.SDL_Point ()
-                rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
-                rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
-                let renderResult =
-                    SDL.SDL_RenderCopyEx
-                        (renderer2.RenderContext,
-                         texture,
-                         ref sourceRect,
-                         ref destRect,
-                         double spriteDescriptor.Rotation * RadiansToDegrees,
-                         ref rotationCenter,
-                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                if renderResult <> 0 then debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
-                renderer2
-            | _ ->
-                trace "Cannot render sprite with a non-texture asset."
                 renderer2
 
 let renderDescriptors renderDescriptorsValue renderer =
