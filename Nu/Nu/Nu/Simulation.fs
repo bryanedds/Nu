@@ -18,10 +18,7 @@ open Nu.Entity
 open Nu.Group
 open Nu.Screen
 open Nu.Game
-
-let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
-let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
-let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
+open Nu.Camera
 
 // WISDOM: On avoiding threads where possible...
 //
@@ -33,6 +30,10 @@ let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
 // physics system queries is to copy the relevant portion of the physics state from the PPU to main
 // memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
 // need for complex intermediate states (albeit against a physics state that is one frame old).
+
+let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
+let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
+let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
 
 /// Describes data relevant to specific event messages.
 type [<ReferenceEquality>] MessageData =
@@ -60,6 +61,7 @@ and Subscriptions = Map<Address, Map<Address, Subscription>>
 /// A reference type with some value semantics.
 and [<ReferenceEquality>] World =
     { Game : Game
+      Camera : Camera
       Subscriptions : Subscriptions
       MouseState : MouseState
       AudioPlayer : AudioPlayer
@@ -74,6 +76,10 @@ and [<ReferenceEquality>] World =
         static member game =
             { Get = fun this -> this.Game
               Set = fun game this -> { this with Game = game }}
+              
+        static member camera =
+            { Get = fun this -> this.Camera
+              Set = fun camera this -> { this with Camera = camera }}
 
         static member mouseState =
             { Get = fun this -> this.MouseState
@@ -126,6 +132,12 @@ and [<ReferenceEquality>] World =
         
         static member optEntityActorBlock (address : Address) =
             World.game >>| Game.optEntityActorBlock address
+        
+        static member entityActorAvatar (address : Address) =
+            World.game >>| Game.entityActorAvatar address
+        
+        static member optEntityActorAvatar (address : Address) =
+            World.game >>| Game.optEntityActorAvatar address
         
         static member entityActorTileMap (address : Address) =
             World.game >>| Game.entityActorTileMap address
@@ -302,11 +314,11 @@ let addEntityGuiToggle entityGuiToggle address world : World =
     let world2 = registerEntityGuiToggle address world
     set entityGuiToggle world2 (World.entityGuiToggle address)
 
-let unregisterEntityActorBlock (entity, actor, block) address world : World =
+let unregisterEntityActorBlock (entity, actor, (block : Block)) address world : World =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorBlock (entity, actor, block) address world : World =
+let registerEntityActorBlock (entity, actor, (block : Block)) address world : World =
     let optOldEntityActorBlock = get world (World.optEntityActorBlock address)
     let world2 =
         match optOldEntityActorBlock with
@@ -330,6 +342,35 @@ let addEntityActorBlock entityActorBlock address world : World =
 let removeEntityActorBlock entityActorBlock address world : World =
     let world2 = set None world (World.optEntityActorBlock address)
     unregisterEntityActorBlock entityActorBlock address world2
+
+let unregisterEntityActorAvatar (entity, actor, avatar) address world : World =
+    let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
+    { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+
+let registerEntityActorAvatar (entity, actor, avatar) address world : World =
+    let optOldEntityActorAvatar = get world (World.optEntityActorAvatar address)
+    let world2 =
+        match optOldEntityActorAvatar with
+        | None -> world
+        | Some oldEntityActorAvatar -> unregisterEntityActorAvatar oldEntityActorAvatar address world
+    let bodyCreateMessage =
+        BodyCreateMessage
+            { EntityAddress = address
+              PhysicsId = avatar.PhysicsId
+              Shape = CircleShape { Center = Vector2.Zero; Radius = actor.Size.X * 0.5f }
+              Position = actor.Position + actor.Size * 0.5f
+              Rotation = actor.Rotation
+              Density = avatar.Density
+              BodyType = BodyType.Dynamic }
+    { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
+
+let addEntityActorAvatar entityActorAvatar address world : World =
+    let world2 = registerEntityActorAvatar entityActorAvatar address world
+    set entityActorAvatar world2 (World.entityActorAvatar address)
+
+let removeEntityActorAvatar entityActorAvatar address world : World =
+    let world2 = set None world (World.optEntityActorAvatar address)
+    unregisterEntityActorAvatar entityActorAvatar address world2
 
 let unregisterEntityActorTileMap (entity, actor, tileMap) address world : World =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = tileMap.PhysicsIds.[0] }
@@ -395,7 +436,7 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
     List.collect (fun descs -> descs) descriptorLists
 
-let getEntityRenderDescriptors entity =
+let getEntityRenderDescriptors actorViewPosition entity =
     match entity.EntitySemantic with
     | Gui gui ->
         match gui.GuiSemantic with
@@ -407,8 +448,8 @@ let getEntityRenderDescriptors entity =
         | Toggle toggle -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
     | Actor actor ->
         match actor.ActorSemantic with
-        | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
-        | Avatar _ -> [] // TODO: implement Avatar
+        | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorViewPosition; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+        | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorViewPosition; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
         | TileMap tileMap ->
             let map = tileMap.TmxMap
             let mapWidth = map.Width
@@ -424,7 +465,7 @@ let getEntityRenderDescriptors entity =
                         List.mapi
                             (fun n tile ->
                                 let (i, j) = (n % mapWidth, n / mapWidth)
-                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j))
+                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorViewPosition
                                 let size = Vector2 (single tileWidth, single tileHeight)
                                 let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * tileWidth
@@ -436,9 +477,10 @@ let getEntityRenderDescriptors entity =
                     layers
             List.concat tileLayers
 
-let getGroupRenderDescriptors group =
+let getGroupRenderDescriptors camera group =
+    let actorViewPosition = camera.EyePosition - camera.EyeSize * 0.5f
     let entities = Map.toValueSeq group.Entities
-    Seq.map getEntityRenderDescriptors entities
+    Seq.map (getEntityRenderDescriptors actorViewPosition) entities
 
 let getWorldRenderDescriptors world =
     match get world World.optActiveScreenAddress with
@@ -446,7 +488,7 @@ let getWorldRenderDescriptors world =
     | Some activeScreenAddress ->
         let activeScreen = get world (World.screen activeScreenAddress)
         let groups = Map.toValueSeq activeScreen.Groups
-        let descriptorSeqLists = Seq.map getGroupRenderDescriptors groups
+        let descriptorSeqLists = Seq.map (getGroupRenderDescriptors world.Camera) groups
         let descriptorSeq = Seq.concat descriptorSeqLists
         List.concat descriptorSeq
 
@@ -487,7 +529,7 @@ let integrate world : World =
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
 
-let run2 tryCreateWorld sdlConfig =
+let run3 tryCreateWorld handleUpdate sdlConfig =
     runSdl
         (fun sdlDeps -> tryCreateWorld sdlDeps)
         (fun refEvent world ->
@@ -510,14 +552,14 @@ let run2 tryCreateWorld sdlConfig =
                     (true, world3)
                 else (true, world)
             | _ -> (true, world))
-        (fun world -> let world2 = integrate world in (true, world2))
+        (fun world -> let world2 = integrate world in handleUpdate world2)
         (fun world -> render world)
         (fun world -> play world)
         (fun world -> { world with Renderer = handleRenderExit world.Renderer })
         sdlConfig
 
-let run sdlConfig =
-    run2
+let run sdlConfig handleUpdate =
+    run3
         (fun sdlDeps ->
             let game = {
                 Id = getNuId ()
@@ -526,6 +568,7 @@ let run sdlConfig =
                 OptActiveScreenAddress = None }
             let world = {
                 Game = game
+                Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH) }
                 Subscriptions = Map.empty
                 MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
                 AudioPlayer = makeAudioPlayer ()
@@ -537,4 +580,5 @@ let run sdlConfig =
                 PhysicsMessages = []
                 Components = [] }
             Right world)
+        handleUpdate
         sdlConfig

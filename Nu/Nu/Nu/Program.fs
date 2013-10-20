@@ -42,6 +42,7 @@ approximate speed-ups -
     | Right assetMetadataMap ->
         let world =
             { Game = game
+              Camera = { EyePosition = Vector2.Zero }
               Subscriptions = Map.empty
               MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
               AudioPlayer = makeAudioPlayer ()
@@ -68,6 +69,7 @@ let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
 let TestTileMapAddress = TestGroupAddress @ [Lun.make "testTileMap"]
 let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
+let TestAvatarAddress = TestGroupAddress @ [Lun.make "testAvatar"]
 let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
 
 let createTestBlock assetMetadataMap =
@@ -108,6 +110,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
     
         let testWorld =
             { Game = testGame
+              Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH) }
               Subscriptions = Map.empty
               MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
               AudioPlayer = makeAudioPlayer ()
@@ -244,6 +247,24 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               IsEnabled = true
               IsVisible = true
               EntitySemantic = Actor testFloorActor }
+    
+        let testAvatar =
+            { PhysicsId = getPhysicsId ()
+              Density = NormalDensity
+              Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
+
+        let testAvatarActor =
+            { Position = Vector2 (300.0f, 300.0f)
+              Depth = 0.0f
+              Size = getTextureSizeAsVector2 (Lun.make "Image7") (Lun.make "Misc") assetMetadataMap
+              Rotation = 0.0f
+              ActorSemantic = Avatar testAvatar }
+
+        let testAvatarActorEntity =
+            { Id = getNuId ()
+              IsEnabled = true
+              IsVisible = true
+              EntitySemantic = Actor testAvatarActor }
 
         let addBoxes _ _ _ world =
             List.fold
@@ -268,13 +289,20 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
         let tw_ = addEntityActorTileMap (testTileMapActorEntity, testTileMapActor, testTileMap) TestTileMapAddress tw_
         let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
+        let tw_ = addEntityActorAvatar (testAvatarActorEntity, testAvatarActor, testAvatar) TestAvatarAddress tw_
+        let tw_ = { tw_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: tw_.PhysicsMessages }
         let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
         Right { tw_ with AudioMessages = playSong :: playSong :: tw_.AudioMessages }
+
+let testHandleUpdate world =
+    let (_, actor, _) = get world (World.entityActorAvatar TestAvatarAddress)
+    let camera = { world.Camera with EyePosition = actor.Position }
+    (true, { world with Camera = camera })
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run2 tryCreateTestWorld sdlConfig
+    run3 tryCreateTestWorld testHandleUpdate sdlConfig
 
 (*module Program
 open System
