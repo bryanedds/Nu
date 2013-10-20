@@ -77,6 +77,12 @@ type [<StructuralEquality; NoComparison>] Screen =
         static member optEntityActorBlock address =
             Screen.group [List.head address] >>| Group.optEntityActorBlock (List.tail address)
         
+        static member entityActorTileMap address =
+            Screen.group [List.head address] >>| Group.entityActorTileMap (List.tail address)
+        
+        static member optEntityActorTileMap address =
+            Screen.group [List.head address] >>| Group.optEntityActorTileMap (List.tail address)
+        
         static member group address =
             { Get = fun this -> getChild Screen.childFinder this address
               Set = fun group this -> setChild Screen.childAdder this address group }

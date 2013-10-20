@@ -2,6 +2,7 @@
 open System
 open SDL2
 open OpenTK
+open TiledSharp
 open Nu.Core
 open Nu.Constants
 open Nu.Sdl
@@ -26,7 +27,9 @@ approximate speed-ups -
 1.5x gain - put rendering in another process, perhaps with physics, and / or render with OpenGL directly
 1.3x gain - store loaded assets in a Dictionary<Dictionary, ...>> rather than a Map<Map, ...>>, or...
 1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
-1.2x gain - optimize locality of address usage *)
+1.2x gain - optimize locality of address usage
+1.1x gain - send entire tile layers over to the renderer instead of one tile at a time
+? gain - avoid rendering clear tiles! *)
 
 (*let tryCreateChronoBladeWorld (sdlDeps : SdlDeps) =
     let game =
@@ -63,6 +66,7 @@ let TestToggleAddress = TestGroupAddress @ [Lun.make "testToggle"]
 let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
 let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
+let TestTileMapAddress = TestGroupAddress @ [Lun.make "testTileMap"]
 let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
 let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
 
@@ -198,6 +202,29 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               IsVisible = true
               EntitySemantic = Gui testButtonGui }
     
+        let tmxMap =
+            TmxMap "TileMap.tmx"
+
+        let testTileMap =
+            { PhysicsIds = [getPhysicsId ()]
+              Density = NormalDensity
+              TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              TmxMap = tmxMap
+              TileMapMetadata = getTileMapMetadata (Lun.make "TileMap") (Lun.make "Misc") assetMetadataMap }
+
+        let testTileMapActor =
+            { Position = Vector2.Zero
+              Depth = -0.1f
+              Size = Vector2 (single (tmxMap.Width * tmxMap.TileWidth), single (tmxMap.Height * tmxMap.TileHeight))
+              Rotation = 0.0f
+              ActorSemantic = TileMap testTileMap }
+
+        let testTileMapActorEntity =
+            { Id = getNuId ()
+              IsEnabled = true
+              IsVisible = true
+              EntitySemantic = Actor testTileMapActor }
+    
         let testFloor =
             { PhysicsId = getPhysicsId ()
               Density = NormalDensity
@@ -239,6 +266,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let tw_ = addEntityGuiToggle (testToggleGuiEntity, testToggleGui, testToggle) TestToggleAddress tw_
         let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
         let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
+        let tw_ = addEntityActorTileMap (testTileMapActorEntity, testTileMapActor, testTileMap) TestTileMapAddress tw_
         let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
         let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
         Right { tw_ with AudioMessages = playSong :: playSong :: tw_.AudioMessages }

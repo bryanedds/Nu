@@ -109,13 +109,19 @@
     <None Include="Image6.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="FreeMonoBold.032.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="TileSet.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Sound.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Song.ogg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="FreeMonoBold.032.ttf">
+    <None Include="TileMap.tmx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="App.config" />
@@ -141,6 +147,10 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="TiledSharp">
+      <HintPath>..\..\TiledSharp\Release\TiledSharp.dll</HintPath>
+    </Reference>
     <Reference Include="xunit">
       <HintPath>..\..\xUnit\xunit.dll</HintPath>
     </Reference>

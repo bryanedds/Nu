@@ -88,6 +88,12 @@ type [<StructuralEquality; NoComparison>] Game =
         static member optEntityActorBlock (address : Address) =
             Game.screen [List.head address] >>| Screen.optEntityActorBlock (List.tail address)
         
+        static member entityActorTileMap (address : Address) =
+            Game.screen [List.head address] >>| Screen.entityActorTileMap (List.tail address)
+        
+        static member optEntityActorTileMap (address : Address) =
+            Game.screen [List.head address] >>| Screen.optEntityActorTileMap (List.tail address)
+        
         static member group (address : Address) =
             Game.screen [List.head address] >>| Screen.group (List.tail address)
         

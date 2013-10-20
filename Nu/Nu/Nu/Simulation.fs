@@ -4,6 +4,7 @@ open FSharpx
 open FSharpx.Lens.Operators
 open SDL2
 open OpenTK
+open TiledSharp
 open Nu.Core
 open Nu.Constants
 open Nu.Math
@@ -125,6 +126,12 @@ and [<ReferenceEquality>] World =
         
         static member optEntityActorBlock (address : Address) =
             World.game >>| Game.optEntityActorBlock address
+        
+        static member entityActorTileMap (address : Address) =
+            World.game >>| Game.entityActorTileMap address
+        
+        static member optEntityActorTileMap (address : Address) =
+            World.game >>| Game.optEntityActorTileMap address
         
         static member group (address : Address) =
             World.game >>| Game.group address
@@ -324,6 +331,36 @@ let removeEntityActorBlock entityActorBlock address world : World =
     let world2 = set None world (World.optEntityActorBlock address)
     unregisterEntityActorBlock entityActorBlock address world2
 
+let unregisterEntityActorTileMap (entity, actor, tileMap) address world : World =
+    let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = tileMap.PhysicsIds.[0] }
+    { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+
+let registerEntityActorTileMap (entity, actor, tileMap) address world : World =
+    let optOldEntityActorTileMap = get world (World.optEntityActorTileMap address)
+    let world2 =
+        match optOldEntityActorTileMap with
+        | None -> world
+        | Some oldEntityActorTileMap -> unregisterEntityActorTileMap oldEntityActorTileMap address world
+    (*let bodyCreateMessage =
+        BodyCreateMessage
+            { EntityAddress = address
+              PhysicsId = tileMap.PhysicsIds.[0]
+              Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size * 0.5f }
+              Position = actor.Position + actor.Size * 0.5f
+              Rotation = actor.Rotation
+              Density = tileMap.Density
+              BodyType = BodyType.Static }
+    { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }*)
+    world2
+
+let addEntityActorTileMap entityActorTileMap address world : World =
+    let world2 = registerEntityActorTileMap entityActorTileMap address world
+    set entityActorTileMap world2 (World.entityActorTileMap address)
+
+let removeEntityActorTileMap entityActorTileMap address world : World =
+    let world2 = set None world (World.optEntityActorTileMap address)
+    unregisterEntityActorTileMap entityActorTileMap address world2
+
 let addGroup group address world : World =
     set group world (World.group address)
 
@@ -372,6 +409,32 @@ let getEntityRenderDescriptors entity =
         match actor.ActorSemantic with
         | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
         | Avatar _ -> [] // TODO: implement Avatar
+        | TileMap tileMap ->
+            let map = tileMap.TmxMap
+            let mapWidth = map.Width
+            let tileWidth = map.TileWidth
+            let tileHeight = map.TileHeight
+            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+            let tileSetSprite = tileMap.TileMapMetadata.[0] // MAGIC_VALUE: for same reason as above
+            let layers = List.ofSeq map.Layers
+            let tileLayers =
+                List.map
+                    (fun (layer : TmxLayer) ->
+                        let tiles = List.ofSeq layer.Tiles
+                        List.mapi
+                            (fun n tile ->
+                                let (i, j) = (n % mapWidth, n / mapWidth)
+                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j))
+                                let size = Vector2 (single tileWidth, single tileHeight)
+                                let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
+                                let gidPosition = gid * tileWidth
+                                let optTileSetWidth = tileSet.Image.Width
+                                let tileSetWidth = optTileSetWidth.Value
+                                let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, single <| gidPosition / tileSetWidth * tileHeight)
+                                LayerableDescriptor (LayeredTileDescriptor { Descriptor = { TileSetPosition = tileSetPosition; Position = position; Size = size; Rotation = actor.Rotation; TileSetSprite = tileSetSprite }; Depth = actor.Depth }))
+                            tiles)
+                    layers
+            List.concat tileLayers
 
 let getGroupRenderDescriptors group =
     let entities = Map.toValueSeq group.Entities
