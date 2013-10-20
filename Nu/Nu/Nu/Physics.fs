@@ -12,8 +12,13 @@ type [<StructuralEquality; NoComparison>] BoxShape =
     { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
       Extent : Vector2 }
 
+type [<StructuralEquality; NoComparison>] CircleShape =
+    { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
+      Radius : single }
+
 type [<StructuralEquality; NoComparison>] BodyShape =
     | BoxShape of BoxShape
+    | CircleShape of CircleShape
 
 type [<StructuralEquality; NoComparison>] BodyType =
     | Static
@@ -54,6 +59,7 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | BodyCreateMessage of BodyCreateMessage
     | BodyDestroyMessage of BodyDestroyMessage
     | ForceApplyMessage of ForceApplyMessage
+    | SetGravityMessage of Vector2
 
 type  [<StructuralEquality; NoComparison>] IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage
@@ -83,6 +89,20 @@ let toPhysicsBodyType bodyType =
     | Kinematic -> Dynamics.BodyType.Kinematic
     | Dynamic -> Dynamics.BodyType.Dynamic
 
+let handlePhysicsCollision
+    integrator
+    (fixture : Dynamics.Fixture)
+    (fixture2 : Dynamics.Fixture)
+    (contact : Dynamics.Contacts.Contact) =
+    let bodyCollisionMessage =
+        { EntityAddress = fixture.Body.UserData :?> Address
+          EntityAddress2 = fixture2.Body.UserData :?> Address
+          Normal = let localNormal = contact.Manifold.LocalNormal in Vector2 (localNormal.X, localNormal.Y)
+          Speed = contact.TangentSpeed * PhysicsToPixelRatio }
+    let integrationMessage = BodyCollisionMessage bodyCollisionMessage
+    integrator.IntegrationMessages.Add integrationMessage
+    true
+
 let createBody integrator bodyCreateMessage =
     match bodyCreateMessage.Shape with
     | BoxShape boxShape ->
@@ -99,28 +119,35 @@ let createBody integrator bodyCreateMessage =
         body.Position <- toPhysicsV2 bodyCreateMessage.Position
         body.Rotation <- bodyCreateMessage.Rotation
         body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType
-        body.add_OnCollision
-            (fun fixture fixture2 contact ->
-                let bodyCollisionMessage =
-                    { EntityAddress = fixture.Body.UserData :?> Address
-                      EntityAddress2 = fixture2.Body.UserData :?> Address
-                      Normal = let localNormal = contact.Manifold.LocalNormal in Vector2 (localNormal.X, localNormal.Y)
-                      Speed = contact.TangentSpeed * PhysicsToPixelRatio }
-                let integrationMessage = BodyCollisionMessage bodyCollisionMessage
-                integrator.IntegrationMessages.Add integrationMessage
-                true)
+        body.add_OnCollision (fun f f2 c -> handlePhysicsCollision integrator f f2 c) // NOTE: F# requires us to use an lambda inline here (no idea why)
+        integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
+    | CircleShape circleShape ->
+        let physicsShapeCenter = toPhysicsV2 circleShape.Center
+        let physicsShapeRadius = toPhysics circleShape.Radius
+        let body =
+            Factories.BodyFactory.CreateCircle (
+                integrator.PhysicsContext,
+                physicsShapeRadius,
+                bodyCreateMessage.Density,
+                physicsShapeCenter,
+                bodyCreateMessage.EntityAddress) // BUG: Farseer doesn't set the UserData with the parameter I give it here...
+        body.UserData <- bodyCreateMessage.EntityAddress // BUG: ...so I set it again here :/
+        body.Position <- toPhysicsV2 bodyCreateMessage.Position
+        body.Rotation <- bodyCreateMessage.Rotation
+        body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType
+        body.add_OnCollision (fun f f2 c -> handlePhysicsCollision integrator f f2 c) // NOTE: F# requires us to use an lambda inline here (no idea why)
         integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
 let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
     let body = ref Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
+    if  integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
         ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
         integrator.PhysicsContext.RemoveBody body.Value
     else debug ("Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'.")
 
 let forceApply integrator forceApplyMessage =
     let body = ref Unchecked.defaultof<Dynamics.Body>
-    if integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsId, body) then
+    if  integrator.Bodies.TryGetValue (forceApplyMessage.PhysicsId, body) then
         body.Value.ApplyForce (toPhysicsV2 forceApplyMessage.Force, toPhysicsV2 forceApplyMessage.Point)
     else debug ("Could not apply force to non-existent body with PhysicsId = " + str forceApplyMessage.PhysicsId + "'.")
 
@@ -129,6 +156,7 @@ let handlePhysicsMessage integrator physicsMessage =
     | BodyCreateMessage bodyCreateMessage -> createBody integrator bodyCreateMessage
     | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
     | ForceApplyMessage forceApplyMessage -> forceApply integrator forceApplyMessage
+    | SetGravityMessage gravity -> integrator.PhysicsContext.Gravity <- Framework.Vector2 (gravity.X, gravity.Y)
     
 let handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
     for physicsMessage in List.rev physicsMessages do
