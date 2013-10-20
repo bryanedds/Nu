@@ -56,6 +56,7 @@
     <Compile Include="Group.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Game.fs" />
+    <Compile Include="Camera.fs" />
     <Compile Include="Simulation.fs" />
     <Compile Include="Program.fs" />
     <None Include="SDL2.dll">
@@ -107,6 +108,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Image6.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Image7.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="FreeMonoBold.032.ttf">

@@ -77,6 +77,12 @@ type [<StructuralEquality; NoComparison>] Screen =
         static member optEntityActorBlock address =
             Screen.group [List.head address] >>| Group.optEntityActorBlock (List.tail address)
         
+        static member entityActorAvatar address =
+            Screen.group [List.head address] >>| Group.entityActorAvatar (List.tail address)
+        
+        static member optEntityActorAvatar address =
+            Screen.group [List.head address] >>| Group.optEntityActorAvatar (List.tail address)
+        
         static member entityActorTileMap address =
             Screen.group [List.head address] >>| Group.entityActorTileMap (List.tail address)
         

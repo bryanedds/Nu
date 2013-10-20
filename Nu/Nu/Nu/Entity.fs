@@ -163,7 +163,12 @@ type [<StructuralEquality; NoComparison>] Block =
       Density : single
       BodyType : BodyType
       Sprite : Sprite
-      ContactSound : Sound }
+      ContactSound : Sound } // TODO: remove this
+
+type [<StructuralEquality; NoComparison>] Avatar =
+    { PhysicsId : Id
+      Density : single
+      Sprite : Sprite }
       
 type [<StructuralEquality; NoComparison>] TileMap =
     { PhysicsIds : Id list
@@ -176,7 +181,7 @@ type [<StructuralEquality; NoComparison>] TileMap =
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] ActorSemantic =
     | Block of Block
-    | Avatar of unit // TODO: implement
+    | Avatar of Avatar
     | TileMap of TileMap
  // | ...additional actors
  // | UserDefinedActor of IUserDefinedActor (* this would be one way to get open actor semantics, but perhaps at the cost of its value semantics... *)
@@ -197,6 +202,14 @@ type [<StructuralEquality; NoComparison>] Actor =
         static member optBlock =
             { Get = fun this -> match this.ActorSemantic with Block block -> Some block | _ -> None
               Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set semantic to None." | Some block -> { this with ActorSemantic = Block block }}
+              
+        static member avatar =
+            { Get = fun this -> match this.ActorSemantic with Avatar avatar -> avatar | _ -> failwith "Actor is not a avatar."
+              Set = fun avatar this -> { this with ActorSemantic = Avatar avatar }}
+
+        static member optAvatar =
+            { Get = fun this -> match this.ActorSemantic with Avatar avatar -> Some avatar | _ -> None
+              Set = fun optAvatar this -> match optAvatar with None -> failwith "Cannot set semantic to None." | Some avatar -> { this with ActorSemantic = Avatar avatar }}
 
         static member tileMap =
             { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
@@ -331,6 +344,25 @@ type [<StructuralEquality; NoComparison>] Entity =
                 match optActorBlock with
                 | None -> failwith "Cannot set Entity.optActor to None."
                 | Some actorBlock -> set actorBlock this Entity.actorBlock }
+        
+        static member actorAvatar =
+            { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.avatar)
+              Set = fun (actor, avatar) this -> let newActor = set avatar Actor.avatar in set actor this Entity.actor }
+        
+        static member optActorAvatar =
+            { Get = fun this ->
+                let optActor = get this Entity.optActor
+                match optActor with
+                | None -> None
+                | Some actor ->
+                    let optAvatar = get actor Actor.optAvatar
+                    match optAvatar with
+                    | None -> None
+                    | Some avatar -> Some (actor, avatar)
+              Set = fun optActorAvatar this ->
+                match optActorAvatar with
+                | None -> failwith "Cannot set Entity.optActor to None."
+                | Some actorAvatar -> set actorAvatar this Entity.actorAvatar }
         
         static member actorTileMap =
             { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.tileMap)
