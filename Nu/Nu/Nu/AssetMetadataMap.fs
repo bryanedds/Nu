@@ -5,10 +5,13 @@ open System.IO
 open System.Linq
 open System.Xml
 open OpenTK
+open TiledSharp
 open Nu.Assets
+open Nu.Rendering
 
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of int * int
+    | TileMapMetadata of Sprite list
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -41,6 +44,18 @@ let tryGenerateAssetMetadataMap (assetGraphFileName : string) =
                                         match extension with
                                         | ".bmp"
                                         | ".png" -> use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
+                                        | ".tmx" ->
+                                            let tmxMap = new TmxMap (asset.FileName)
+                                            let tileSets = List.ofSeq tmxMap.Tilesets
+                                            let tileSetSprites =
+                                                List.map
+                                                    (fun (tileSet : TmxTileset) ->
+                                                        let tileSetProperties = tileSet.Properties
+                                                        { SpriteAssetName = Lun.make tileSetProperties.["SpriteAssetName"]
+                                                          PackageName = Lun.make tileSetProperties.["PackageName"]
+                                                          PackageFileName = tileSetProperties.["PackageFileName"] })
+                                                    tileSets
+                                            TileMapMetadata tileSetSprites
                                         | ".wav" -> SoundMetadata
                                         | ".ogg" -> SongMetadata
                                         | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
@@ -77,3 +92,13 @@ let tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap =
 
 let getTextureSizeAsVector2 assetName packageName assetMetadataMap =
     (tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap).Value
+
+let tryGetTileMapMetadata assetName packageName assetMetadataMap =
+    let optAsset = tryGetMetadata assetName packageName assetMetadataMap
+    match optAsset with
+    | None -> None
+    | Some (TileMapMetadata metadata) -> Some metadata
+    | _ -> None
+
+let getTileMapMetadata assetName packageName assetMetadataMap =
+    (tryGetTileMapMetadata assetName packageName assetMetadataMap).Value

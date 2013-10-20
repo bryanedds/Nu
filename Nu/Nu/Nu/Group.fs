@@ -154,6 +154,26 @@ type [<StructuralEquality; NoComparison>] Group =
                 | _ -> None
             | _ -> None
         
+        static member private childActorTileMapSetter child actor tileMap =
+            let actor2 = { actor with ActorSemantic = TileMap tileMap }
+            { child with EntitySemantic = Actor actor2 }
+        
+        static member private childToActorTileMap child =
+            match child.EntitySemantic with
+            | Actor actor ->
+                match actor.ActorSemantic with
+                | TileMap tileMap -> (actor, tileMap)
+                | _ -> failwith "Semantic of wrong type."
+            | _ -> failwith "Semantic of wrong type."
+        
+        static member private childToOptActorTileMap child =
+            match child.EntitySemantic with
+            | Actor actor ->
+                match actor.ActorSemantic with
+                | TileMap tileMap -> Some (actor, tileMap)
+                | _ -> None
+            | _ -> None
+        
         static member entity address =
             { Get = fun this -> getChild Group.childFinder this address
               Set = fun entity this -> setChild Group.childAdder this address entity }
@@ -217,6 +237,14 @@ type [<StructuralEquality; NoComparison>] Group =
         static member optEntityActorBlock address =
             { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptActorBlock this address
               Set = fun optEntityActorBlock this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childActorBlockSetter optEntityActorBlock this address }
+        
+        static member entityActorTileMap address =
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToActorTileMap address this
+              Set = fun (entity, actor, tileMap) this -> setChildSemSem Group.childAdder Group.childActorTileMapSetter address this entity actor tileMap }
+        
+        static member optEntityActorTileMap address =
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptActorTileMap this address
+              Set = fun optEntityActorTileMap this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childActorTileMapSetter optEntityActorTileMap this address }
         
         static member entities =
             { Get = fun this -> this.Entities

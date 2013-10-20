@@ -3,6 +3,7 @@ open System
 open FSharpx
 open FSharpx.Lens.Operators
 open OpenTK
+open TiledSharp
 open Nu.Core
 open Nu.Physics
 open Nu.Audio
@@ -163,12 +164,20 @@ type [<StructuralEquality; NoComparison>] Block =
       BodyType : BodyType
       Sprite : Sprite
       ContactSound : Sound }
+      
+type [<StructuralEquality; NoComparison>] TileMap =
+    { PhysicsIds : Id list
+      Density : single
+      TileMapAsset : TileMapAsset
+      TmxMap : TmxMap
+      TileMapMetadata : Sprite list }
 
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] ActorSemantic =
     | Block of Block
-    | Avatar of unit
+    | Avatar of unit // TODO: implement
+    | TileMap of TileMap
  // | ...additional actors
  // | UserDefinedActor of IUserDefinedActor (* this would be one way to get open actor semantics, but perhaps at the cost of its value semantics... *)
 
@@ -188,6 +197,14 @@ type [<StructuralEquality; NoComparison>] Actor =
         static member optBlock =
             { Get = fun this -> match this.ActorSemantic with Block block -> Some block | _ -> None
               Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set semantic to None." | Some block -> { this with ActorSemantic = Block block }}
+
+        static member tileMap =
+            { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
+              Set = fun tileMap this -> { this with ActorSemantic = TileMap tileMap }}
+
+        static member optTileMap =
+            { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> Some tileMap | _ -> None
+              Set = fun optTileMap this -> match optTileMap with None -> failwith "Cannot set semantic to None." | Some tileMap -> { this with ActorSemantic = TileMap tileMap }}
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
@@ -314,3 +331,22 @@ type [<StructuralEquality; NoComparison>] Entity =
                 match optActorBlock with
                 | None -> failwith "Cannot set Entity.optActor to None."
                 | Some actorBlock -> set actorBlock this Entity.actorBlock }
+        
+        static member actorTileMap =
+            { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.tileMap)
+              Set = fun (actor, tileMap) this -> let newActor = set tileMap Actor.tileMap in set actor this Entity.actor }
+        
+        static member optActorTileMap =
+            { Get = fun this ->
+                let optActor = get this Entity.optActor
+                match optActor with
+                | None -> None
+                | Some actor ->
+                    let optTileMap = get actor Actor.optTileMap
+                    match optTileMap with
+                    | None -> None
+                    | Some tileMap -> Some (actor, tileMap)
+              Set = fun optActorTileMap this ->
+                match optActorTileMap with
+                | None -> failwith "Cannot set Entity.optActor to None."
+                | Some actorTileMap -> set actorTileMap this Entity.actorTileMap }
