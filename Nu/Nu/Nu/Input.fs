@@ -16,6 +16,7 @@ type [<StructuralEquality; NoComparison>] MouseEvent =
       Position : Vector2 }
 
 type [<StructuralEquality; NoComparison>] MouseState =
-    { MouseLeftDown : bool
+    { MousePosition : Vector2
+      MouseLeftDown : bool
       MouseRightDown : bool
       MouseCenterDown : bool }
