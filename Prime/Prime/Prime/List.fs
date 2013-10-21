@@ -290,8 +290,9 @@ let toHashSet list =
 let foldWhile f initial (input : 'a list) =
     Seq.foldWhile f initial input
 
+/// TODO: test this code!!!
 let rec remove pred list =
-    List.fold
-        (fun list_ elem -> if pred elem then list_ else elem :: remove pred list_)
+    List.foldBack
+        (fun elem list_ -> if pred elem then list_ else elem :: remove pred list_)
         []
         list

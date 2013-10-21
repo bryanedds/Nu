@@ -217,7 +217,7 @@ let unsubscribe address subscriber world : World =
     match optSubList with
     | None -> world
     | Some subList ->
-        let subList2 = List.remove (fun (address, _) -> address = subscriber) subList
+        let subList2 = List.remove (fun (address, _) -> address = subscriber) subList // TODO: consider using List.removeFirst
         let subscriptions2 = Map.add address subList2 subs
         { world with Subscriptions = subscriptions2 }
 
