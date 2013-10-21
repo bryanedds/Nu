@@ -36,7 +36,7 @@ let tryGenerateAssetMetadataMap (assetGraphFileName : string) =
                         let optAssets = List.map (fun assetNode -> tryLoadAsset packageName assetNode) (List.ofSeq <| packageNode.OfType<XmlNode> ())
                         let assets = List.definitize optAssets
                         debugIf (fun () -> assets.Count () <> optAssets.Count ()) ("Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'.")
-                        let submap =
+                        let subMap =
                             Map.ofListBy
                                 (fun (asset : Asset) ->
                                     let extension = Path.GetExtension asset.FileName
@@ -61,7 +61,7 @@ let tryGenerateAssetMetadataMap (assetGraphFileName : string) =
                                         | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
                                     (Lun.make asset.Name, metadata))
                                 assets
-                        Map.add (Lun.make packageName) submap assetMetadataMap_)
+                        Map.add (Lun.make packageName) subMap assetMetadataMap_)
                     Map.empty
                     packageNodes
             Right assetMetadataMap

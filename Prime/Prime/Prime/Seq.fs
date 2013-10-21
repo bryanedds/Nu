@@ -16,3 +16,12 @@ let definitize opts =
 let fornone pred (seq : 'a seq) =
     let notPred = not << pred
     Seq.forall notPred seq
+
+/// Implement a fold while predicate f passes.
+/// Implementation thanks to Tomas Petricek!
+let foldWhile f initial input =
+    input |>
+        Seq.scan (fun stateOpt inp -> stateOpt |> Option.bind (fun state -> f state inp)) (Some initial) |>
+        Seq.takeWhile Option.isSome |>
+        Seq.last |>
+        Option.get

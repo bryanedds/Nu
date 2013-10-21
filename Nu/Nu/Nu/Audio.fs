@@ -111,7 +111,7 @@ let tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
             let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer
             (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
         | Some assetMap -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
-    (audioPlayer_, Option.reduce (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
+    (audioPlayer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
 let playSong (song : Song) audioPlayer =
     let (audioPlayer2, optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer

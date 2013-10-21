@@ -108,6 +108,9 @@ type [<StructuralEquality; NoComparison>] Toggle =
       OnSprite : Sprite
       ToggleSound : Sound }
 
+type [<StructuralEquality; NoComparison>] Feeler =
+    { IsTouched : bool }
+
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] GuiSemantic =
@@ -115,6 +118,7 @@ type [<StructuralEquality; NoComparison>] GuiSemantic =
     | Label of Label
     | TextBox of TextBox
     | Toggle of Toggle
+    | Feeler of Feeler
  // | ...additional controls
  // | UserDefinedGui of IUserDefinedGui (* this would give us more open gui semantics, but perhaps at the cost of its value semantics...  *)
 
@@ -157,13 +161,20 @@ type [<StructuralEquality; NoComparison>] Gui =
         static member optToggle =
             { Get = fun this -> match this.GuiSemantic with Toggle toggle -> Some toggle | _ -> None
               Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some toggle -> { this with GuiSemantic = Toggle toggle }}
+        
+        static member feeler =
+            { Get = fun this -> match this.GuiSemantic with Feeler feeler -> feeler | _ -> failwith "Gui is not a feeler."
+              Set = fun feeler this -> { this with GuiSemantic = Feeler feeler }}
+
+        static member optFeeler =
+            { Get = fun this -> match this.GuiSemantic with Feeler feeler -> Some feeler | _ -> None
+              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some feeler -> { this with GuiSemantic = Feeler feeler }}
 
 type [<StructuralEquality; NoComparison>] Block =
     { PhysicsId : Id
       Density : single
       BodyType : BodyType
-      Sprite : Sprite
-      ContactSound : Sound } // TODO: remove this
+      Sprite : Sprite }
 
 type [<StructuralEquality; NoComparison>] Avatar =
     { PhysicsId : Id
@@ -317,6 +328,25 @@ type [<StructuralEquality; NoComparison>] Entity =
                 match optGuiToggle with
                 | None -> failwith "Cannot set Entity.optGui to None."
                 | Some guiToggle -> set guiToggle this Entity.guiToggle }
+        
+        static member guiFeeler =
+            { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.feeler)
+              Set = fun (gui, feeler) this -> let newGui = set feeler Gui.feeler in set gui this Entity.gui }
+        
+        static member optGuiFeeler =
+            { Get = fun this ->
+                let optGui = get this Entity.optGui
+                match optGui with
+                | None -> None
+                | Some gui ->
+                    let optFeeler = get gui Gui.optFeeler
+                    match optFeeler with
+                    | None -> None
+                    | Some feeler -> Some (gui, feeler)
+              Set = fun optGuiFeeler this ->
+                match optGuiFeeler with
+                | None -> failwith "Cannot set Entity.optGui to None."
+                | Some guiFeeler -> set guiFeeler this Entity.guiFeeler }
 
         static member actor =
             { Get = fun this -> match this.EntitySemantic with Actor actor -> actor | _ -> failwith "Entity is not an actor."
