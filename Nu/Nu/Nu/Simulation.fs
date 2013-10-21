@@ -31,12 +31,16 @@ open Nu.Camera
 // memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
 // need for complex intermediate states (albeit against a physics state that is one frame old).
 
+let TickAddress = [Lun.make "tick"]
+let MouseDragAddress = [Lun.make "mouse"; Lun.make "drag"]
+let MouseMoveAddress = [Lun.make "mouse"; Lun.make "move"]
 let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
 let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
 let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
 
 /// Describes data relevant to specific event messages.
 type [<ReferenceEquality>] MessageData =
+    | MouseMoveData of Vector2
     | MouseButtonData of Vector2 * MouseButton
     | CollisionData of Vector2 * single * Address
     | OtherData of obj
@@ -51,11 +55,11 @@ type [<ReferenceEquality>] Message =
 /// Describes a game message subscription.
 /// A reference type.
 type [<ReferenceEquality>] Subscription =
-    Subscription of (Address -> Address -> Message -> World -> World)
+    Subscription of (Address -> Address -> Message -> World -> (Message * World))
 
 /// A map of game message subscriptions.
 /// A reference type due to the reference-typeness of Subscription.
-and Subscriptions = Map<Address, Map<Address, Subscription>>
+and Subscriptions = Map<Address, (Address * Subscription) list>
 
 /// The world, in a functional programming sense.
 /// A reference type with some value semantics.
@@ -121,6 +125,12 @@ and [<ReferenceEquality>] World =
         static member optEntityGuiToggle (address : Address) =
             World.game >>| Game.optEntityGuiToggle address
         
+        static member entityGuiFeeler (address : Address) =
+            World.game >>| Game.entityGuiFeeler address
+        
+        static member optEntityGuiFeeler (address : Address) =
+            World.game >>| Game.optEntityGuiFeeler address
+        
         static member entityActor (address : Address) =
             World.game >>| Game.entityActor address
         
@@ -170,37 +180,45 @@ and IWorldComponent =
         // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
         end
 
+/// Mark a message as handled.
+let handle message =
+    { Handled = true; Data = message.Data }
+
 /// Publish a message to the given address.
 let publish address message world : World =
-    let optSubMap = Map.tryFind address world.Subscriptions
-    match optSubMap with
+    let optSubList = Map.tryFind address world.Subscriptions
+    match optSubList with
     | None -> world
-    | Some subMap ->
-        Map.fold
-            (fun world2 subscriber (Subscription subscription) -> subscription address subscriber message world2)
-            world
-            subMap
+    | Some subList ->
+        let (_, world_) =
+            List.foldWhile
+                (fun (message_, world_) (subscriber, (Subscription subscription)) ->
+                    if message_.Handled then None
+                    else Some (subscription address subscriber message_ world_))
+                (message, world)
+                subList
+        world_
 
 /// Subscribe to messages at the given address.
 let subscribe address subscriber subscription world : World =
     let sub = Subscription subscription
     let subs = world.Subscriptions
-    let optSubMap = Map.tryFind address subs
+    let optSubList = Map.tryFind address subs
     { world with
         Subscriptions =
-            match optSubMap with
-            | None -> let newSubMap = Map.singleton subscriber sub in Map.add address newSubMap subs
-            | Some subMap -> let newSubMap = Map.add subscriber sub subMap in Map.add address newSubMap subs }
+            match optSubList with
+            | None -> Map.add address [(subscriber, sub)] subs
+            | Some subList -> Map.add address ((subscriber, sub) :: subList) subs }
 
 /// Unsubscribe to messages at the given address.
 let unsubscribe address subscriber world : World =
     let subs = world.Subscriptions
-    let optSubMap = Map.tryFind address subs
-    match optSubMap with
+    let optSubList = Map.tryFind address subs
+    match optSubList with
     | None -> world
-    | Some subMap ->
-        let subMap2 = Map.remove subscriber subMap in
-        let subscriptions2 = Map.add address subMap2 subs
+    | Some subList ->
+        let subList2 = List.remove (fun (address, _) -> address = subscriber) subList
+        let subscriptions2 = Map.add address subList2 subs
         { world with Subscriptions = subscriptions2 }
 
 /// Execute a procedure within the context of a given subscription at the given address.
@@ -220,12 +238,13 @@ let handleButtonEventDownMouseLeft address subscriber message world =
         let (entity, gui, button) = get world (World.entityGuiButton subscriber)
         if entity.IsEnabled && entity.IsVisible then
             if isInBox3 mousePosition gui.Position gui.Size then
-                let button2 = { button with IsDown = true }
-                let world2 = set (entity, gui, button2) world (World.entityGuiButton subscriber)
-                publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world2
-            else world
-        else world
-    | _ -> failwith ("Expected MouseClickData from address '" + str address + "'.")
+                let button_ = { button with IsDown = true }
+                let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                let world_ = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
+                (handle message, world_)
+            else (message, world)
+        else (message, world)
+    | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
 let handleButtonEventUpMouseLeft address subscriber message world =
     match message.Data with
@@ -236,13 +255,14 @@ let handleButtonEventUpMouseLeft address subscriber message world =
                 let button_ = { button with IsDown = false }
                 let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
                 publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
-            if isInBox3 mousePosition gui.Position gui.Size then
+            if isInBox3 mousePosition gui.Position gui.Size && button.IsDown then
                 let world_ = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
                 let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
-                { world_ with AudioMessages = sound :: world_.AudioMessages }
-            else world_
-        else world
-    | _ -> failwith ("Expected MouseClickData from address '" + str address + "'.")
+                let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
+                (handle message, world_)
+            else (message, world_)
+        else (message, world)
+    | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
 let registerEntityGuiButton address world : World =
     let optOldEntityGuiButton = get world (World.optEntityGuiButton address)
@@ -281,17 +301,18 @@ let handleToggleEventDownMouseLeft address subscriber message world =
         let (entity, gui, toggle) = get world (World.entityGuiToggle subscriber)
         if entity.IsEnabled && entity.IsVisible then
             if isInBox3 mousePosition gui.Position gui.Size then
-                let toggle2 = { toggle with IsPressed = true }
-                set (entity, gui, toggle2) world (World.entityGuiToggle subscriber)
-            else world
-        else world
-    | _ -> failwith ("Expected MouseClickData from address '" + str address + "'.")
+                let toggle_ = { toggle with IsPressed = true }
+                let world_ = set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
+                (handle message, world_)
+            else (message, world)
+        else (message, world)
+    | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
 let handleToggleEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
         let (entity, gui, toggle) = get world (World.entityGuiToggle subscriber)
-        if entity.IsEnabled && entity.IsVisible then
+        if entity.IsEnabled && entity.IsVisible && toggle.IsPressed then
             let toggle_ = { toggle with IsPressed = false }
             if isInBox3 mousePosition gui.Position gui.Size then
                 let toggle_ = { toggle_ with IsOn = not toggle_.IsOn }
@@ -299,10 +320,13 @@ let handleToggleEventUpMouseLeft address subscriber message world =
                 let messageType = if toggle.IsOn then "on" else "off"
                 let world_ = publish (Lun.make messageType :: subscriber) { Handled = false; Data = NoData } world_
                 let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
-                { world_ with AudioMessages = sound :: world_.AudioMessages }
-            else set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
-        else world
-    | _ -> failwith ("Expected MouseClickData from address '" + str address + "'.")
+                let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
+                (handle message, world_)
+            else
+                let world_ = set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
+                (message, world_)
+        else (message, world)
+    | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
 let registerEntityGuiToggle address world : World =
     let optOldEntityGuiToggle = get world (World.optEntityGuiToggle address)
@@ -313,6 +337,47 @@ let registerEntityGuiToggle address world : World =
 let addEntityGuiToggle entityGuiToggle address world : World =
     let world2 = registerEntityGuiToggle address world
     set entityGuiToggle world2 (World.entityGuiToggle address)
+
+let unregisterEntityGuiFeeler address world : World =
+    world |>
+        unsubscribe UpMouseLeftAddress address |>
+        unsubscribe DownMouseLeftAddress address
+
+let handleFeelerEventDownMouseLeft address subscriber message world =
+    match message.Data with
+    | MouseButtonData (mousePosition, _) as mouseButtonData ->
+        let (entity, gui, feeler) = get world (World.entityGuiFeeler subscriber)
+        if entity.IsEnabled && entity.IsVisible then
+            if isInBox3 mousePosition gui.Position gui.Size then
+                let feeler_ = { feeler with IsTouched = true }
+                let world_ = set (entity, gui, feeler_) world (World.entityGuiFeeler subscriber)
+                let world_ = publish (Lun.make "touch" :: subscriber) { Handled = false; Data = mouseButtonData } world_
+                (handle message, world_)
+            else (message, world)
+        else (message, world)
+    | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+    
+let handleFeelerEventUpMouseLeft address subscriber message world =
+    match message.Data with
+    | MouseButtonData _ ->
+        let (entity, gui, feeler) = get world (World.entityGuiFeeler subscriber)
+        if entity.IsEnabled && entity.IsVisible then
+            let feeler_ = { feeler with IsTouched = false }
+            let world_ = set (entity, gui, feeler_) world (World.entityGuiFeeler subscriber)
+            let world_ = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
+            (handle message, world_)
+        else (message, world)
+    | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+    
+let registerEntityGuiFeeler address world : World =
+    let optOldEntityGuiFeeler = get world (World.optEntityGuiFeeler address)
+    let world_ = if optOldEntityGuiFeeler.IsSome then unregisterEntityGuiFeeler address world else world
+    let world_ = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world_
+    subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world_
+
+let addEntityGuiFeeler entityGuiFeeler address world : World =
+    let world2 = registerEntityGuiFeeler address world
+    set entityGuiFeeler world2 (World.entityGuiFeeler address)
 
 let unregisterEntityActorBlock (entity, actor, (block : Block)) address world : World =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
@@ -328,7 +393,15 @@ let registerEntityActorBlock (entity, actor, (block : Block)) address world : Wo
         BodyCreateMessage
             { EntityAddress = address
               PhysicsId = block.PhysicsId
-              Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size * 0.5f }
+              Shape =
+                BoxShape
+                    { Extent = actor.Size * 0.5f
+                      Properties =
+                        { Center = Vector2.Zero
+                          Restitution = 0.5f
+                          FixedRotation = false
+                          LinearDamping = 5.0f
+                          AngularDamping = 5.0f }}
               Position = actor.Position + actor.Size * 0.5f
               Rotation = actor.Rotation
               Density = block.Density
@@ -357,7 +430,15 @@ let registerEntityActorAvatar (entity, actor, avatar) address world : World =
         BodyCreateMessage
             { EntityAddress = address
               PhysicsId = avatar.PhysicsId
-              Shape = CircleShape { Center = Vector2.Zero; Radius = actor.Size.X * 0.5f }
+              Shape =
+                CircleShape
+                    { Radius = actor.Size.X * 0.5f
+                      Properties =
+                        { Center = Vector2.Zero
+                          Restitution = 0.0f
+                          FixedRotation = true
+                          LinearDamping = 10.0f
+                          AngularDamping = 0.0f }}
               Position = actor.Position + actor.Size * 0.5f
               Rotation = actor.Rotation
               Density = avatar.Density
@@ -436,7 +517,7 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
     List.collect (fun descs -> descs) descriptorLists
 
-let getEntityRenderDescriptors actorViewPosition entity =
+let getEntityRenderDescriptors actorView entity =
     match entity.EntitySemantic with
     | Gui gui ->
         match gui.GuiSemantic with
@@ -446,10 +527,11 @@ let getEntityRenderDescriptors actorViewPosition entity =
             [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
              LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
         | Toggle toggle -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
+        | Feeler _ -> []
     | Actor actor ->
         match actor.ActorSemantic with
-        | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorViewPosition; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
-        | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorViewPosition; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
+        | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+        | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
         | TileMap tileMap ->
             let map = tileMap.TmxMap
             let mapWidth = map.Width
@@ -465,7 +547,7 @@ let getEntityRenderDescriptors actorViewPosition entity =
                         List.mapi
                             (fun n tile ->
                                 let (i, j) = (n % mapWidth, n / mapWidth)
-                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorViewPosition
+                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorView
                                 let size = Vector2 (single tileWidth, single tileHeight)
                                 let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * tileWidth
@@ -478,9 +560,9 @@ let getEntityRenderDescriptors actorViewPosition entity =
             List.concat tileLayers
 
 let getGroupRenderDescriptors camera group =
-    let actorViewPosition = camera.EyePosition - camera.EyeSize * 0.5f
+    let actorView = camera.EyePosition - camera.EyeSize * 0.5f
     let entities = Map.toValueSeq group.Entities
-    Seq.map (getEntityRenderDescriptors actorViewPosition) entities
+    Seq.map (getEntityRenderDescriptors actorView) entities
 
 let getWorldRenderDescriptors world =
     match get world World.optActiveScreenAddress with
@@ -536,9 +618,16 @@ let run3 tryCreateWorld handleUpdate sdlConfig =
             let event = refEvent.Value
             match event.``type`` with
             | SDL.SDL_EventType.SDL_QUIT -> (false, world)
+            | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                let mousePosition = Vector2 (single event.button.x, single event.button.y)
+                let world2 = set { world.MouseState with MousePosition = mousePosition } world World.mouseState
+                let world3 =
+                    if world2.MouseState.MouseLeftDown then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world2
+                    else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world2
+                (true, world3)
             | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                 if event.button.button = byte SDL.SDL_BUTTON_LEFT then
-                    let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
+                    let messageData = MouseButtonData (world.MouseState.MousePosition, MouseLeft)
                     let world2 = set { world.MouseState with MouseLeftDown = true } world World.mouseState
                     let world3 = publish DownMouseLeftAddress { Handled = false; Data = messageData } world2
                     (true, world3)
@@ -546,13 +635,16 @@ let run3 tryCreateWorld handleUpdate sdlConfig =
             | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                 let mouseState = world.MouseState
                 if mouseState.MouseLeftDown && event.button.button = byte SDL.SDL_BUTTON_LEFT then
-                    let messageData = MouseButtonData (Vector2 (single event.button.x, single event.button.y), MouseLeft)
+                    let messageData = MouseButtonData (world.MouseState.MousePosition, MouseLeft)
                     let world2 = set { world.MouseState with MouseLeftDown = false } world World.mouseState
                     let world3 = publish UpMouseLeftAddress { Handled = false; Data = messageData } world2
                     (true, world3)
                 else (true, world)
             | _ -> (true, world))
-        (fun world -> let world2 = integrate world in handleUpdate world2)
+        (fun world ->
+            let world2 = integrate world
+            let world3 = publish TickAddress { Handled = false; Data = NoData } world2
+            handleUpdate world3)
         (fun world -> render world)
         (fun world -> play world)
         (fun world -> { world with Renderer = handleRenderExit world.Renderer })
@@ -570,7 +662,7 @@ let run sdlConfig handleUpdate =
                 Game = game
                 Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH) }
                 Subscriptions = Map.empty
-                MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+                MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
                 AudioPlayer = makeAudioPlayer ()
                 Renderer = makeRenderer sdlDeps.RenderContext
                 Integrator = makeIntegrator Gravity

@@ -144,7 +144,7 @@ let tryLoadRenderAsset packageName packageFileName assetName renderer =
             let renderer_ = tryLoadRenderPackage packageName packageFileName renderer
             (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
         | Some assetMap -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
-    (renderer_, Option.reduce (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
+    (renderer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
 let handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
     tryLoadRenderPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName renderer

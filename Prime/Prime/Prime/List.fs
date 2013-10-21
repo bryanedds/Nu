@@ -286,3 +286,12 @@ let toHashSet list =
     let hashSet = HashSet ()
     List.iter (fun elem -> ignore (hashSet.Add elem)) list
     hashSet
+
+let foldWhile f initial (input : 'a list) =
+    Seq.foldWhile f initial input
+
+let rec remove pred list =
+    List.fold
+        (fun list_ elem -> if pred elem then list_ else elem :: remove pred list_)
+        []
+        list

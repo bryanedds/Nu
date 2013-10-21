@@ -62,6 +62,7 @@ let [<EntryPoint>] main _ =
 
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
+let TestFeelerAddress = TestGroupAddress @ [Lun.make "testFeeler"]
 let TestTextBoxAddress = TestGroupAddress @ [Lun.make "testTextBox"]
 let TestToggleAddress = TestGroupAddress @ [Lun.make "testToggle"]
 let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
@@ -70,6 +71,7 @@ let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
 let TestTileMapAddress = TestGroupAddress @ [Lun.make "testTileMap"]
 let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
 let TestAvatarAddress = TestGroupAddress @ [Lun.make "testAvatar"]
+let TouchFeelerAddress = Lun.make "touch" :: TestFeelerAddress
 let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
 
 let createTestBlock assetMetadataMap =
@@ -78,8 +80,7 @@ let createTestBlock assetMetadataMap =
         { PhysicsId = getPhysicsId ()
           Density = NormalDensity
           BodyType = Dynamic
-          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-          ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
+          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
     let testBlockActor =
         { Position = Vector2 (400.0f, 200.0f)
@@ -112,7 +113,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
             { Game = testGame
               Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH) }
               Subscriptions = Map.empty
-              MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+              MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
               AudioPlayer = makeAudioPlayer ()
               Renderer = makeRenderer sdlDeps.RenderContext
               Integrator = makeIntegrator Gravity
@@ -133,6 +134,21 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               IsEnabled = true
               IsVisible = true
               Entities = Map.empty }
+          
+        let testFeeler =
+            { IsTouched = false }
+
+        let testFeelerGui =
+            { Position = Vector2.Zero
+              Depth = -0.1f
+              Size = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH)
+              GuiSemantic = Feeler testFeeler }
+
+        let testFeelerGuiEntity =
+            { Id = getNuId ()
+              IsEnabled = true
+              IsVisible = true
+              EntitySemantic = Gui testFeelerGui }
           
         let testTextBox =
             { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
@@ -232,8 +248,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
             { PhysicsId = getPhysicsId ()
               Density = NormalDensity
               BodyType = Static
-              Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              ContactSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
+              Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
         let testFloorActor =
             { Position = Vector2 (120.0f, 520.0f)
@@ -266,23 +281,41 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               IsVisible = true
               EntitySemantic = Actor testAvatarActor }
 
-        let addBoxes _ _ _ world =
-            List.fold
-                (fun world2 _ ->
-                    let entityActorBlock = createTestBlock assetMetadataMap
-                    addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world2)
-                world
-                [0..7]
+        let moveAvatar address _ message world =
+            let (_, _, feeler) = get world (World.entityGuiFeeler TestFeelerAddress)
+            if feeler.IsTouched then
+                let (entity, actor, avatar) = get world (World.entityActorAvatar TestAvatarAddress)
+                let camera = world.Camera
+                let inverseView = camera.EyePosition - camera.EyeSize * 0.5f
+                let mousePositionWorld = world.MouseState.MousePosition + inverseView
+                let actorCenter = actor.Position + actor.Size * 0.5f
+                let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
+                let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
+                let world_ = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
+                (message, world_)
+            else (message, world)
+
+        let addBoxes _ _ message world =
+            let world_ =
+                List.fold
+                    (fun world_ _ ->
+                        let entityActorBlock = createTestBlock assetMetadataMap
+                        addEntityActorBlock entityActorBlock (TestGroupAddress @ [Lun.makeN (getNuId ())]) world_)
+                    world
+                    [0..7]
+            (handle message, world_)
 
         let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
         let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
         // scripting convention
         let tw_ = testWorld
+        let tw_ = subscribe TickAddress [] moveAvatar tw_
         let tw_ = subscribe ClickTestButtonAddress [] addBoxes tw_
         let tw_ = addScreen testScreen TestScreenAddress tw_
         let tw_ = setP (Some TestScreenAddress) World.optActiveScreenAddress tw_
         let tw_ = addGroup testGroup TestGroupAddress tw_
+        let tw_ = addEntityGuiFeeler (testFeelerGuiEntity, testFeelerGui, testFeeler) TestFeelerAddress tw_
         let tw_ = addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) TestTextBoxAddress tw_
         let tw_ = addEntityGuiToggle (testToggleGuiEntity, testToggleGui, testToggle) TestToggleAddress tw_
         let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
@@ -292,11 +325,11 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let tw_ = addEntityActorAvatar (testAvatarActorEntity, testAvatarActor, testAvatar) TestAvatarAddress tw_
         let tw_ = { tw_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: tw_.PhysicsMessages }
         let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
-        Right { tw_ with AudioMessages = playSong :: playSong :: tw_.AudioMessages }
+        Right { tw_ with AudioMessages = FadeOutSong :: playSong :: tw_.AudioMessages }
 
 let testHandleUpdate world =
     let (_, actor, _) = get world (World.entityActorAvatar TestAvatarAddress)
-    let camera = { world.Camera with EyePosition = actor.Position }
+    let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
     (true, { world with Camera = camera })
 
 let [<EntryPoint>] main _ =

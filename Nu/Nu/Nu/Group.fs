@@ -121,6 +121,26 @@ type [<StructuralEquality; NoComparison>] Group =
                 | _ -> None
             | _ -> None
         
+        static member private childGuiFeelerSetter child gui feeler =
+            let gui2 = { gui with GuiSemantic = Feeler feeler }
+            { child with EntitySemantic = Gui gui2 }
+        
+        static member private childToGuiFeeler child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | Feeler feeler -> (gui, feeler)
+                | _ -> failwith "Semantic of wrong type."
+            | _ -> failwith "Semantic of wrong type."
+        
+        static member private childToOptGuiFeeler child =
+            match child.EntitySemantic with
+            | Gui gui ->
+                match gui.GuiSemantic with
+                | Feeler feeler -> Some (gui, feeler)
+                | _ -> None
+            | _ -> None
+        
         static member private childActorSetter child actor =
             { child with EntitySemantic = Actor actor }
         
@@ -241,6 +261,14 @@ type [<StructuralEquality; NoComparison>] Group =
         static member optEntityGuiToggle address =
             { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiToggle this address
               Set = fun optEntityGuiToggle this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiToggleSetter optEntityGuiToggle this address }
+        
+        static member entityGuiFeeler address =
+            { Get = fun this -> getChildSemSem Group.childFinder Group.childToGuiFeeler address this
+              Set = fun (entity, gui, feeler) this -> setChildSemSem Group.childAdder Group.childGuiFeelerSetter address this entity gui feeler }
+        
+        static member optEntityGuiFeeler address =
+            { Get = fun this -> getOptChildSemSem Group.optChildFinder Group.childToOptGuiFeeler this address
+              Set = fun optEntityGuiFeeler this -> setOptChildSemSem Group.childAdder Group.childRemover Group.childGuiFeelerSetter optEntityGuiFeeler this address }
 
         static member entityActor address =
             { Get = fun this -> getChildSem Group.childFinder Group.childToActor address this
