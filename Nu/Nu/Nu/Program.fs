@@ -31,7 +31,7 @@ approximate speed-ups -
 1.1x gain - send entire tile layers over to the renderer instead of one tile at a time
 ? gain - avoid rendering clear tiles! *)
 
-(*let tryCreateChronoBladeWorld (sdlDeps : SdlDeps) =
+(*let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
     let game =
         { Id = getNuId ()
           IsEnabled = true
@@ -57,8 +57,8 @@ approximate speed-ups -
 
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Chrono Blade" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run2 tryCreateChronoBladeWorld sdlConfig*)
+    let sdlConfig = makeSdlConfig "Omni Blade" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
+    run2 tryCreateOmniBladeWorld sdlConfig*)
 
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
