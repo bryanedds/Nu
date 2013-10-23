@@ -70,19 +70,12 @@ let tryLoadAudioAsset2 audioContext (asset : Asset) =
     | ".wav" ->
         let optWav = SDL_mixer.Mix_LoadWAV asset.FileName
         if optWav <> IntPtr.Zero then Some (Lun.make asset.Name, WavAsset optWav)
-        else
-            trace ("Could not load wav '" + asset.FileName + "'.")
-            None
-            
+        else trace ("Could not load wav '" + asset.FileName + "'."); None
     | ".ogg" ->
         let optOgg = SDL_mixer.Mix_LoadMUS asset.FileName
         if optOgg <> IntPtr.Zero then Some (Lun.make asset.Name, OggAsset optOgg)
-        else
-            trace ("Could not load ogg '" + asset.FileName + "'.")
-            None
-    | _ ->
-        trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'.")
-        None
+        else trace ("Could not load ogg '" + asset.FileName + "'."); None
+    | _ -> trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'."); None
 
 let tryLoadAudioPackage packageName fileName audioPlayer =
     let optAssets = Assets.tryLoadAssets "Audio" packageName.LunStr fileName

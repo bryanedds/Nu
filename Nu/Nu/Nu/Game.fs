@@ -21,7 +21,6 @@ open Nu.Screen
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Game =
     { Id : Id
-      IsEnabled : bool
       Screens : Map<Lun, Screen>
       OptActiveScreenAddress : Address option }
     with
