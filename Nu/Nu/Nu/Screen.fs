@@ -10,8 +10,6 @@ open Nu.Group
 /// A serializable value type
 type [<StructuralEquality; NoComparison>] Screen =
     { Id : Id
-      IsEnabled : bool
-      IsVisible : bool
       Groups : Map<Lun, Group> }
     with
         static member private optChildFinder addressHead parent =

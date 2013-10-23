@@ -655,7 +655,6 @@ let run sdlConfig handleUpdate =
         (fun sdlDeps ->
             let game = {
                 Id = getNuId ()
-                IsEnabled = true
                 Screens = Map.empty
                 OptActiveScreenAddress = None }
             let world = {
