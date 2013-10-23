@@ -101,7 +101,6 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
     let testGame =
         { Id = getNuId ()
-          IsEnabled = true
           Screens = Map.empty
           OptActiveScreenAddress = None }
 
@@ -125,14 +124,10 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testScreen =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
               Groups = Map.empty }
 
         let testGroup =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
               Entities = Map.empty }
           
         let testFeeler =
