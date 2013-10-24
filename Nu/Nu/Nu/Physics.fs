@@ -78,10 +78,10 @@ type [<ReferenceEquality>] Integrator =
           IntegrationMessages : IntegrationMessage List }
 
 let toPixel value =
-    value * Constants.PhysicsToPixelRatio
+    value * Nu.Constants.PhysicsToPixelRatio
 
 let toPhysics value =
-    value * Constants.PixelToPhysicsRatio
+    value * Nu.Constants.PixelToPhysicsRatio
 
 let toPixelV2 (v2 : Framework.Vector2) =
     Vector2 (toPixel v2.X, toPixel v2.Y)

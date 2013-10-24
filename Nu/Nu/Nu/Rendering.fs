@@ -118,7 +118,7 @@ let tryLoadRenderAsset2 renderContext (asset : Asset) =
         None
 
 let tryLoadRenderPackage packageName fileName renderer =
-    let optAssets = Assets.tryLoadAssets "Rendering" packageName.LunStr fileName
+    let optAssets = tryLoadAssets "Rendering" packageName.LunStr fileName
     match optAssets with
     | Left error ->
         trace ("HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")

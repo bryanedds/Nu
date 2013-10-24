@@ -6,7 +6,7 @@
 #r "C:/Uber/Aml/FParsec/Bin/FParsecCS.dll"
 #r "C:/Uber/Aml/FParsec/Bin/FParsec.dll"
 #r "C:/Uber/Aml/xUnit/xunit.dll"
-#r "C:/Uber/Prime/Prime/Prime/bin/Debug/Prime.exe"
+#r "C:/Uber/Prime/Prime/Prime/bin/Release/Prime.exe"
 
 #load "Ast.fs"
 #load "Constants.fs"

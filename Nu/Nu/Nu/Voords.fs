@@ -1,4 +1,4 @@
-﻿module Voords
+﻿module Nu.Voords
 
 (* WISDOM: Virtual coordinates are necessary, but they should be 1-to-1, 1-to-2, or 2-to-1 on the
 device most likely to be used. Devices with other ratio will just have to suffer aliasing. *)
