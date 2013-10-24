@@ -4,6 +4,9 @@ open System.Diagnostics
 open System.Threading
 open SDL2
 
+let [<Literal>] SuccessReturnCode = 0
+let [<Literal>] FailureReturnCode = 1
+
 type SdlConfig =
     { WindowTitle : string
       WindowX : int
@@ -41,7 +44,7 @@ let withSdlInit create destroy action =
     let error = SDL.SDL_GetError ()
     if initResult <> 0 && error <> "CoInitialize() DirectX error -2147417850" then
         trace ("SDL2# initialization failed due to '" + error + "'.")
-        None
+        FailureReturnCode
     else
         let result = action ()
         destroy ()
@@ -52,7 +55,7 @@ let withSdlResource create destroy action =
     if resource = IntPtr.Zero then
         let error = SDL.SDL_GetError ()
         Console.WriteLine ("SDL2# resource creation failed due to '" + error + "'.")
-        None
+        FailureReturnCode
     else
         let result = action resource
         destroy resource
@@ -63,7 +66,7 @@ let withSdlGlobalResource create destroy action =
     if resource <> 0 then
         let error = SDL.SDL_GetError ()
         Console.WriteLine ("SDL2# global resource creation failed due to '" + error + "'.")
-        None
+        FailureReturnCode
     else
         let result = action ()
         destroy ()
@@ -98,7 +101,7 @@ let rec runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlD
             runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning_
         else ignore (handleExit world)
 
-let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : 'a option =
+let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
     withSdlInit
         (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
         (fun () -> SDL.SDL_Quit ())
@@ -128,7 +131,7 @@ let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handl
                                 match optWorld with
                                 | Left errorMsg ->
                                     trace errorMsg
-                                    None
+                                    FailureReturnCode
                                 | Right world ->
                                     runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
-                                    Some world))))))
+                                    SuccessReturnCode))))))
