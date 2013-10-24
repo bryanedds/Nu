@@ -58,7 +58,9 @@
     <Compile Include="Game.fs" />
     <Compile Include="Camera.fs" />
     <Compile Include="Simulation.fs" />
+    <Compile Include="OmniBlade.fs" />
     <Compile Include="Program.fs" />
+    <None Include="Interactive.fsx" />
     <None Include="SDL2.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

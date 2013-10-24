@@ -510,7 +510,7 @@ let play world : World =
     let audioDescriptors = getAudioDescriptors world
     let audioPlayer = world.AudioPlayer
     let world_ = { world with AudioMessages = [] }
-    let world_ = { world_ with AudioPlayer = Audio.play audioMessages audioDescriptors audioPlayer }
+    let world_ = { world_ with AudioPlayer = Nu.Audio.play audioMessages audioDescriptors audioPlayer }
     world_
 
 let getComponentRenderDescriptors world : RenderDescriptor rQueue =
@@ -584,7 +584,7 @@ let render world : World =
     let renderMessages = world.RenderMessages
     let renderDescriptors = getRenderDescriptors world
     let renderer = world.Renderer
-    let renderer2 = Rendering.render renderMessages renderDescriptors renderer
+    let renderer2 = Nu.Rendering.render renderMessages renderDescriptors renderer
     let world2 = {{ world with RenderMessages = [] } with Renderer = renderer2 }
     world2
 
@@ -607,7 +607,7 @@ let handleIntegrationMessages integrationMessages world : World =
 
 /// Integrate the world.
 let integrate world : World =
-    let integrationMessages = Physics.integrate world.PhysicsMessages world.Integrator
+    let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
 

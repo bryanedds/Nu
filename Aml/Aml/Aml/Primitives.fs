@@ -725,7 +725,7 @@ let appendProceduralEntry env appendType name entry =
 let tryAppendDeclarationEntries env entries =
     let declarationFrame = env.EnvDeclarationFrame
     if env.EnvAllowRedeclaration then 
-        for entry in entries do ignore (declarationFrame.ForceAdd entry)
+        for (name, value) in entries do ignore (declarationFrame.ForceAdd (name, value))
         Some env
     else
         let existences = Seq.map (fun (key, _) -> declarationFrame.ContainsKey key) entries
