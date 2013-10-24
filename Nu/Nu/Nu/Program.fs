@@ -16,6 +16,9 @@ open Nu.Screen
 open Nu.Game
 open Nu.Simulation
 
+let [<Literal>] SuccessReturnCode = 0
+let [<Literal>] FailureReturnCode = 1
+
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
 (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 75% to 90%
@@ -30,35 +33,6 @@ approximate speed-ups -
 1.2x gain - optimize locality of address usage
 1.1x gain - send entire tile layers over to the renderer instead of one tile at a time
 ? gain - avoid rendering clear tiles! *)
-
-(*let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
-    let game =
-        { Id = getNuId ()
-          IsEnabled = true
-          Screens = Map.empty
-          OptActiveScreenAddress = None }
-    match tryGenerateAssetMetadataMap "AssetGraph.xml" with
-    | Left errorMsg -> Left errorMsg
-    | Right assetMetadataMap ->
-        let world =
-            { Game = game
-              Camera = { EyePosition = Vector2.Zero }
-              Subscriptions = Map.empty
-              MouseState = { MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-              AudioPlayer = makeAudioPlayer ()
-              Renderer = makeRenderer sdlDeps.RenderContext
-              Integrator = makeIntegrator Gravity
-              AssetMetadataMap = assetMetadataMap
-              AudioMessages = []
-              RenderMessages = []
-              PhysicsMessages = []
-              Components = [] }
-        Right world
-
-let [<EntryPoint>] main _ =
-    let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig "Omni Blade" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run2 tryCreateOmniBladeWorld sdlConfig*)
 
 let TestScreenAddress = [Lun.make "testScreen"]
 let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
@@ -330,7 +304,8 @@ let testHandleUpdate world =
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    run3 tryCreateTestWorld testHandleUpdate sdlConfig
+    let result = run3 tryCreateTestWorld testHandleUpdate sdlConfig
+    if result.IsSome then SuccessReturnCode else FailureReturnCode
 
 (*module Program
 open System

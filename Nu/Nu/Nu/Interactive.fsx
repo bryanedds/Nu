@@ -1,0 +1,60 @@
+﻿// IMPORTANT!
+// NOTE: this MUST be run in the 64-bit FSI (In VS, Tools -> Options... -> F# Tools -> 64-bit F# Interactive [set to true]).
+// IMPORTANT!
+
+// IMPORTANT!
+// NOTE: change these paths to make this script run with your Nu installation.
+// IMPORTANT!
+#r "C:/Uber/Prime/xUnit/xunit.dll"
+#r "C:/Uber/Prime/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Uber/Prime/Prime/Prime/bin/Release/Prime.exe"
+#r "C:/Uber/Aml/Aml/Aml/bin/Optimized/Aml.exe"
+#r "C:/Uber/Nu/xUnit/xunit.dll"
+#r "C:/Uber/Nu/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Uber/Nu/Farseer/FarseerPhysics.dll"
+#r "C:/Uber/Nu/SDL2#/Release/SDL2#.dll"
+#r "C:/Uber/Nu/TiledSharp/Release/TiledSharp.dll"
+System.IO.Directory.SetCurrentDirectory "C:/Uber/Nu/Nu/Nu/bin/Release"
+
+#load "Core.fs"
+#load "RQueue.fs"
+#load "Constants.fs"
+#load "Math.fs"
+#load "Voords.fs"
+#load "Assets.fs"
+#load "Physics.fs"
+#load "Audio.fs"
+#load "Rendering.fs"
+#load "AssetMetadataMap.fs"
+#load "Input.fs"
+#load "Sdl.fs"
+#load "Entity.fs"
+#load "Group.fs"
+#load "Screen.fs"
+#load "Game.fs"
+#load "Camera.fs"
+#load "Simulation.fs"
+#load "OmniBlade.fs"
+
+open System
+open SDL2
+open OpenTK
+open TiledSharp
+open Nu.Core
+open Nu.Constants
+open Nu.Math
+open Nu.Voords
+open Nu.Assets
+open Nu.Physics
+open Nu.Audio
+open Nu.Rendering
+open Nu.AssetMetadataMap
+open Nu.Input
+open Nu.Sdl
+open Nu.Entity
+open Nu.Group
+open Nu.Screen
+open Nu.Game
+open Nu.Camera
+open Nu.Simulation
+open Nu.OmniBlade

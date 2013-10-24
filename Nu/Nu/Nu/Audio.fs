@@ -78,7 +78,7 @@ let tryLoadAudioAsset2 audioContext (asset : Asset) =
     | _ -> trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'."); None
 
 let tryLoadAudioPackage packageName fileName audioPlayer =
-    let optAssets = Assets.tryLoadAssets "Audio" packageName.LunStr fileName
+    let optAssets = tryLoadAssets "Audio" packageName.LunStr fileName
     match optAssets with
     | Left error ->
         trace ("HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
