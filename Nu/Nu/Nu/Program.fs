@@ -16,9 +16,6 @@ open Nu.Screen
 open Nu.Game
 open Nu.Simulation
 
-let [<Literal>] SuccessReturnCode = 0
-let [<Literal>] FailureReturnCode = 1
-
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
 (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 75% to 90%
@@ -304,8 +301,7 @@ let testHandleUpdate world =
 let [<EntryPoint>] main _ =
     let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig "Nu Game Engine" 100 100 900 600 SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN sdlRendererFlags 1024
-    let result = run3 tryCreateTestWorld testHandleUpdate sdlConfig
-    if result.IsSome then SuccessReturnCode else FailureReturnCode
+    run3 tryCreateTestWorld testHandleUpdate sdlConfig
 
 (*module Program
 open System
