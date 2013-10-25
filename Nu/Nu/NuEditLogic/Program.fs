@@ -5,7 +5,7 @@ open System
 open System.Windows.Forms
 open System.Threading
 
-[<EntryPoint>]
+[<STAThread; EntryPoint>] // NOTE: do we need BOTH of these attributes?
 let main _ =
 
     use form = new NuEditForm ()
