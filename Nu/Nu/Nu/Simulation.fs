@@ -611,7 +611,21 @@ let integrate world : World =
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
 
-let run3 tryCreateWorld handleUpdate sdlConfig =
+let createEmptyWorld sdlDeps =
+    { Game = { Id = getNuId (); Screens = Map.empty; OptActiveScreenAddress = None }
+      Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
+      Subscriptions = Map.empty
+      MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+      AudioPlayer = makeAudioPlayer ()
+      Renderer = makeRenderer sdlDeps.RenderContext
+      Integrator = makeIntegrator Gravity
+      AssetMetadataMap = Map.empty
+      AudioMessages = []
+      RenderMessages = []
+      PhysicsMessages = []
+      Components = [] }
+
+let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
     runSdl
         (fun sdlDeps -> tryCreateWorld sdlDeps)
         (fun refEvent world ->
@@ -645,31 +659,10 @@ let run3 tryCreateWorld handleUpdate sdlConfig =
             let world2 = integrate world
             let world3 = publish TickAddress { Handled = false; Data = NoData } world2
             handleUpdate world3)
-        (fun world -> render world)
+        (fun world -> let world2 = render world in handleRender world2)
         (fun world -> play world)
         (fun world -> { world with Renderer = handleRenderExit world.Renderer })
         sdlConfig
 
-let run sdlConfig handleUpdate =
-    run3
-        (fun sdlDeps ->
-            let game = {
-                Id = getNuId ()
-                Screens = Map.empty
-                OptActiveScreenAddress = None }
-            let world = {
-                Game = game
-                Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH) }
-                Subscriptions = Map.empty
-                MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-                AudioPlayer = makeAudioPlayer ()
-                Renderer = makeRenderer sdlDeps.RenderContext
-                Integrator = makeIntegrator Gravity
-                AssetMetadataMap = Map.empty
-                AudioMessages = []
-                RenderMessages = []
-                PhysicsMessages = []
-                Components = [] }
-            Right world)
-        handleUpdate
-        sdlConfig
+let run tryCreateWorld handleUpdate sdlConfig =
+    run4 tryCreateWorld handleUpdate id sdlConfig
