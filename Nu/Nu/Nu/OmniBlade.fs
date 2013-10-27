@@ -26,7 +26,7 @@ let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
     | Right assetMetadataMap ->
         let world =
             { Game = game
-              Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.WindowW, single sdlDeps.Config.WindowH) }
+              Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
               Subscriptions = Map.empty
               MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
               AudioPlayer = makeAudioPlayer ()
