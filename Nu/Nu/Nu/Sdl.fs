@@ -7,13 +7,21 @@ open SDL2
 let [<Literal>] SuccessReturnCode = 0
 let [<Literal>] FailureReturnCode = 1
 
-type SdlConfig =
+type SdlWindowConfig =
     { WindowTitle : string
       WindowX : int
       WindowY : int
-      WindowW : int
-      WindowH : int
-      WindowFlags : SDL.SDL_WindowFlags
+      WindowFlags : SDL.SDL_WindowFlags }
+
+type SdlViewConfig =
+    | NewWindow of SdlWindowConfig
+    | ExistingWindow of nativeint
+    //| FullScreen
+
+type SdlConfig =
+    { ViewConfig : SdlViewConfig
+      ViewW : int
+      ViewH : int
       RendererFlags : SDL.SDL_RendererFlags
       AudioChunkSize : int }
 
@@ -22,13 +30,10 @@ type SdlDeps =
       Window : nativeint
       Config : SdlConfig }
 
-let makeSdlConfig windowTitle windowX windowY windowW windowH windowFlags rendererFlags audioChunkSize =
-    { WindowTitle = windowTitle
-      WindowX = windowX
-      WindowY = windowY
-      WindowW = windowW
-      WindowH = windowH
-      WindowFlags = windowFlags
+let makeSdlConfig viewConfig viewW viewH rendererFlags audioChunkSize =
+    { ViewConfig = viewConfig
+      ViewW = viewW
+      ViewH = viewH
       RendererFlags = rendererFlags
       AudioChunkSize = audioChunkSize }
 
@@ -107,7 +112,10 @@ let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handl
         (fun () -> SDL.SDL_Quit ())
         (fun () ->
         withSdlResource
-            (fun () -> SDL.SDL_CreateWindow (sdlConfig.WindowTitle, sdlConfig.WindowX, sdlConfig.WindowY, sdlConfig.WindowW, sdlConfig.WindowH, sdlConfig.WindowFlags))
+            (fun () ->
+                match sdlConfig.ViewConfig with
+                | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
+                | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
             (fun window -> SDL.SDL_DestroyWindow window)
             (fun window ->
             withSdlResource
