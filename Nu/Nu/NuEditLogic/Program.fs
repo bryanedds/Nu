@@ -27,7 +27,7 @@ let gEntityChanges = List<EntityPropertyChange> ()
 let applyEntityChange world (change : EntityPropertyChange) =
     let entityLens = World.entity change.Address
     let entity = get world entityLens
-    let entity2 = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity
+    let entity2 = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity without reflection
     change.FieldInfo.SetValue (entity2, change.Value)
     set entity2 world entityLens
 
@@ -36,7 +36,7 @@ let applyEntityChanges entityChanges world =
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
     { Address : Address
-      RefRefWorld : World ref ref }
+      RefWorld : World ref }
 
 and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     inherit PropertyDescriptor (fieldInfo.Name.Substring (0, fieldInfo.Name.Length - 1), Array.empty)
@@ -49,19 +49,19 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     override this.GetValue source =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityLens = World.entity entityTds.Address
-        let entity = get entityTds.RefRefWorld.Value.Value entityLens
+        let entity = get entityTds.RefWorld.Value entityLens
         fieldInfo.GetValue entity
     override this.SetValue (source, value) =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityChange = { Address = entityTds.Address; FieldInfo = fieldInfo; Value = value }
-        entityTds.RefRefWorld.Value := applyEntityChange entityTds.RefRefWorld.Value.Value entityChange
+        entityTds.RefWorld := applyEntityChange entityTds.RefWorld.Value entityChange
         gEntityChanges.Add entityChange
 
 and EntityTypeDescriptor () =
     inherit CustomTypeDescriptor ()
     let Pdc =
-        let ty = typeof<Entity>
-        let fields = ty.GetFields (BindingFlags.Instance ||| BindingFlags.NonPublic)
+        let aType = typeof<Entity>
+        let fields = aType.GetFields (BindingFlags.Instance ||| BindingFlags.NonPublic)
         let propertyDescriptors = Array.map (fun field -> new EntityPropertyDescriptor (field) :> PropertyDescriptor) fields
         PropertyDescriptorCollection propertyDescriptors
     override this.GetProperties optAttributes = Pdc
@@ -71,17 +71,16 @@ and EntityTypeDescriptorProvider () =
     let Etd = EntityTypeDescriptor () :> ICustomTypeDescriptor
     override this.GetTypeDescriptor (_, _) = Etd
 
-[<EntryPoint; STAThread>]
-let main _ =
+let [<EntryPoint; STAThread>] main _ =
     use form = new NuEditForm ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
-    let refRefWorld = ref <| ref Unchecked.defaultof<World> // ugh
+    let refWorld = ref Unchecked.defaultof<World> // ugh
     run4
         (fun sdlDeps ->
 
-            refRefWorld.Value := createEmptyWorld sdlDeps
+            refWorld := createEmptyWorld sdlDeps
 
             match tryGenerateAssetMetadataMap "AssetGraph.xml" with
             | Left errorMsg -> Left errorMsg
@@ -119,20 +118,21 @@ let main _ =
                       IsVisible = true
                       EntitySemantic = Gui testTextBoxGui }
         
-                refRefWorld.Value := addScreen testScreen testScreenAddress refRefWorld.Value.Value
-                refRefWorld.Value := setP (Some testScreenAddress) World.optActiveScreenAddress refRefWorld.Value.Value
-                refRefWorld.Value := addGroup testGroup testGroupAddress refRefWorld.Value.Value
-                refRefWorld.Value := addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) testTextBoxAddress refRefWorld.Value.Value
+                refWorld := addScreen testScreen testScreenAddress refWorld.Value
+                refWorld := setP (Some testScreenAddress) World.optActiveScreenAddress refWorld.Value
+                refWorld := addGroup testGroup testGroupAddress refWorld.Value
+                refWorld := addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) testTextBoxAddress refWorld.Value
 
-                let testTypeSource = { Address = testTextBoxAddress; RefRefWorld = refRefWorld }
+                let testTypeSource = { Address = testTextBoxAddress; RefWorld = refWorld }
                 form.propertyGrid.SelectedObject <- testTypeSource
 
                 form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
                 form.Show ()
-                Right refRefWorld.Value.Value)
+                Right refWorld.Value)
         (fun world ->
-            refRefWorld.Value := applyEntityChanges gEntityChanges world
-            (not form.IsDisposed, refRefWorld.Value.Value))
+            // NOTE: the old refWorld will be blown away here!
+            refWorld := applyEntityChanges gEntityChanges world
+            (not form.IsDisposed, refWorld.Value))
         (fun world ->
             form.displayPanel.Invalidate ()
             world)
