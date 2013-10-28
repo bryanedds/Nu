@@ -241,8 +241,8 @@ type [<StructuralEquality; NoComparison>] EntitySemantic =
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Entity =
     { Id : Id
-      IsEnabled : bool
-      IsVisible : bool
+      Enabled : bool
+      Visible : bool
       EntitySemantic : EntitySemantic }
     with
         static member gui =

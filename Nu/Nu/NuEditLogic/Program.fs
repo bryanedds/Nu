@@ -27,7 +27,7 @@ let gEntityChanges = List<EntityPropertyChange> ()
 let applyEntityChange world (change : EntityPropertyChange) =
     let entityLens = World.entity change.Address
     let entity = get world entityLens
-    let entity2 = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity without reflection
+    let entity2 = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity in lieu of reflection
     change.FieldInfo.SetValue (entity2, change.Value)
     set entity2 world entityLens
 
@@ -39,13 +39,13 @@ type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTy
       RefWorld : World ref }
 
 and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
-    inherit PropertyDescriptor (fieldInfo.Name.Substring (0, fieldInfo.Name.Length - 1), Array.empty)
+    inherit PropertyDescriptor (fieldInfo.Name, Array.empty)
     override this.ComponentType with get () = typeof<obj>
     override this.PropertyType with get () = fieldInfo.FieldType
     override this.CanResetValue source = false
     override this.ResetValue source = ()
     override this.ShouldSerializeValue source = true
-    override this.IsReadOnly with get () = false
+    override this.IsReadOnly with get () = fieldInfo.Name = "Id@"
     override this.GetValue source =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityLens = World.entity entityTds.Address
@@ -72,11 +72,11 @@ and EntityTypeDescriptorProvider () =
     override this.GetTypeDescriptor (_, _) = Etd
 
 let [<EntryPoint; STAThread>] main _ =
+    let refWorld = ref Unchecked.defaultof<World>
     use form = new NuEditForm ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
-    let refWorld = ref Unchecked.defaultof<World> // ugh
     run4
         (fun sdlDeps ->
 
@@ -114,8 +114,8 @@ let [<EntryPoint; STAThread>] main _ =
 
                 let testTextBoxGuiEntity =
                     { Id = getNuId ()
-                      IsEnabled = true
-                      IsVisible = true
+                      Enabled = true
+                      Visible = true
                       EntitySemantic = Gui testTextBoxGui }
         
                 refWorld := addScreen testScreen testScreenAddress refWorld.Value
@@ -132,6 +132,7 @@ let [<EntryPoint; STAThread>] main _ =
         (fun world ->
             // NOTE: the old refWorld will be blown away here!
             refWorld := applyEntityChanges gEntityChanges world
+            gEntityChanges.Clear ()
             (not form.IsDisposed, refWorld.Value))
         (fun world ->
             form.displayPanel.Invalidate ()

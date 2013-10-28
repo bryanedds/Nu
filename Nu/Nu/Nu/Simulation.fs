@@ -236,7 +236,7 @@ let handleButtonEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
         let (entity, gui, button) = get world (World.entityGuiButton subscriber)
-        if entity.IsEnabled && entity.IsVisible then
+        if entity.Enabled && entity.Visible then
             if isInBox3 mousePosition gui.Position gui.Size then
                 let button_ = { button with IsDown = true }
                 let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
@@ -250,7 +250,7 @@ let handleButtonEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
         let (entity, gui, button) = get world (World.entityGuiButton subscriber)
-        if entity.IsEnabled && entity.IsVisible then
+        if entity.Enabled && entity.Visible then
             let world_ =
                 let button_ = { button with IsDown = false }
                 let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
@@ -299,7 +299,7 @@ let handleToggleEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
         let (entity, gui, toggle) = get world (World.entityGuiToggle subscriber)
-        if entity.IsEnabled && entity.IsVisible then
+        if entity.Enabled && entity.Visible then
             if isInBox3 mousePosition gui.Position gui.Size then
                 let toggle_ = { toggle with IsPressed = true }
                 let world_ = set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
@@ -312,7 +312,7 @@ let handleToggleEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
         let (entity, gui, toggle) = get world (World.entityGuiToggle subscriber)
-        if entity.IsEnabled && entity.IsVisible && toggle.IsPressed then
+        if entity.Enabled && entity.Visible && toggle.IsPressed then
             let toggle_ = { toggle with IsPressed = false }
             if isInBox3 mousePosition gui.Position gui.Size then
                 let toggle_ = { toggle_ with IsOn = not toggle_.IsOn }
@@ -347,7 +347,7 @@ let handleFeelerEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) as mouseButtonData ->
         let (entity, gui, feeler) = get world (World.entityGuiFeeler subscriber)
-        if entity.IsEnabled && entity.IsVisible then
+        if entity.Enabled && entity.Visible then
             if isInBox3 mousePosition gui.Position gui.Size then
                 let feeler_ = { feeler with IsTouched = true }
                 let world_ = set (entity, gui, feeler_) world (World.entityGuiFeeler subscriber)
@@ -361,7 +361,7 @@ let handleFeelerEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData _ ->
         let (entity, gui, feeler) = get world (World.entityGuiFeeler subscriber)
-        if entity.IsEnabled && entity.IsVisible then
+        if entity.Enabled && entity.Visible then
             let feeler_ = { feeler with IsTouched = false }
             let world_ = set (entity, gui, feeler_) world (World.entityGuiFeeler subscriber)
             let world_ = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
@@ -518,7 +518,7 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     List.collect (fun descs -> descs) descriptorLists
 
 let getEntityRenderDescriptors actorView entity =
-    if not entity.IsVisible then []
+    if not entity.Visible then []
     else
         match entity.EntitySemantic with
         | Gui gui ->
