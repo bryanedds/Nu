@@ -62,8 +62,8 @@ let createTestBlock assetMetadataMap =
 
     let testBlockActorEntity =
         { Id = getNuId ()
-          IsEnabled = true
-          IsVisible = true
+          Enabled = true
+          Visible = true
           EntitySemantic = Actor testBlockActor }
 
     (testBlockActorEntity, testBlockActor, testBlock)
@@ -112,8 +112,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testFeelerGuiEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Gui testFeelerGui }
           
         let testTextBox =
@@ -131,8 +131,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testTextBoxGuiEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Gui testTextBoxGui }
           
         let testToggle =
@@ -150,8 +150,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testToggleGuiEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Gui testToggleGui }
           
         let testLabel =
@@ -165,8 +165,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testLabelGuiEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Gui testLabelGui }
           
         let testButton =
@@ -183,8 +183,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testButtonGuiEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Gui testButtonGui }
     
         let tmxMap =
@@ -206,8 +206,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testTileMapActorEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Actor testTileMapActor }
     
         let testFloor =
@@ -225,8 +225,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testFloorActorEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Actor testFloorActor }
     
         let testAvatar =
@@ -243,8 +243,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let testAvatarActorEntity =
             { Id = getNuId ()
-              IsEnabled = true
-              IsVisible = true
+              Enabled = true
+              Visible = true
               EntitySemantic = Actor testAvatarActor }
 
         let moveAvatar address _ message world =
