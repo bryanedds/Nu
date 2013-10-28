@@ -70,14 +70,14 @@ let createTestBlock assetMetadataMap =
 
 let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
-    let testGame =
-        { Id = getNuId ()
-          Screens = Map.empty
-          OptActiveScreenAddress = None }
-
     match tryGenerateAssetMetadataMap "AssetGraph.xml" with
     | Left errorMsg -> Left errorMsg
     | Right assetMetadataMap ->
+
+        let testGame =
+            { Id = getNuId ()
+              Screens = Map.empty
+              OptActiveScreenAddress = None }
     
         let testWorld =
             { Game = testGame

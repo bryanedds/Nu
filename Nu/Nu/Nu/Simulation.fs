@@ -518,46 +518,48 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     List.collect (fun descs -> descs) descriptorLists
 
 let getEntityRenderDescriptors actorView entity =
-    match entity.EntitySemantic with
-    | Gui gui ->
-        match gui.GuiSemantic with
-        | Button button -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
-        | Label label -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
-        | TextBox textBox ->
-            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
-             LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
-        | Toggle toggle -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
-        | Feeler _ -> []
-    | Actor actor ->
-        match actor.ActorSemantic with
-        | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
-        | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
-        | TileMap tileMap ->
-            let map = tileMap.TmxMap
-            let mapWidth = map.Width
-            let tileWidth = map.TileWidth
-            let tileHeight = map.TileHeight
-            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-            let tileSetSprite = tileMap.TileMapMetadata.[0] // MAGIC_VALUE: for same reason as above
-            let layers = List.ofSeq map.Layers
-            let tileLayers =
-                List.map
-                    (fun (layer : TmxLayer) ->
-                        let tiles = List.ofSeq layer.Tiles
-                        List.mapi
-                            (fun n tile ->
-                                let (i, j) = (n % mapWidth, n / mapWidth)
-                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorView
-                                let size = Vector2 (single tileWidth, single tileHeight)
-                                let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
-                                let gidPosition = gid * tileWidth
-                                let optTileSetWidth = tileSet.Image.Width
-                                let tileSetWidth = optTileSetWidth.Value
-                                let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, single <| gidPosition / tileSetWidth * tileHeight)
-                                LayerableDescriptor (LayeredTileDescriptor { Descriptor = { TileSetPosition = tileSetPosition; Position = position; Size = size; Rotation = actor.Rotation; TileSetSprite = tileSetSprite }; Depth = actor.Depth }))
-                            tiles)
-                    layers
-            List.concat tileLayers
+    if not entity.IsVisible then []
+    else
+        match entity.EntitySemantic with
+        | Gui gui ->
+            match gui.GuiSemantic with
+            | Button button -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
+            | Label label -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
+            | TextBox textBox ->
+                [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
+                 LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
+            | Toggle toggle -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
+            | Feeler _ -> []
+        | Actor actor ->
+            match actor.ActorSemantic with
+            | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+            | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
+            | TileMap tileMap ->
+                let map = tileMap.TmxMap
+                let mapWidth = map.Width
+                let tileWidth = map.TileWidth
+                let tileHeight = map.TileHeight
+                let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                let tileSetSprite = tileMap.TileMapMetadata.[0] // MAGIC_VALUE: for same reason as above
+                let layers = List.ofSeq map.Layers
+                let tileLayers =
+                    List.map
+                        (fun (layer : TmxLayer) ->
+                            let tiles = List.ofSeq layer.Tiles
+                            List.mapi
+                                (fun n tile ->
+                                    let (i, j) = (n % mapWidth, n / mapWidth)
+                                    let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorView
+                                    let size = Vector2 (single tileWidth, single tileHeight)
+                                    let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
+                                    let gidPosition = gid * tileWidth
+                                    let optTileSetWidth = tileSet.Image.Width
+                                    let tileSetWidth = optTileSetWidth.Value
+                                    let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, single <| gidPosition / tileSetWidth * tileHeight)
+                                    LayerableDescriptor (LayeredTileDescriptor { Descriptor = { TileSetPosition = tileSetPosition; Position = position; Size = size; Rotation = actor.Rotation; TileSetSprite = tileSetSprite }; Depth = actor.Depth }))
+                                tiles)
+                        layers
+                List.concat tileLayers
 
 let getGroupRenderDescriptors camera group =
     let actorView = camera.EyePosition - camera.EyeSize * 0.5f
