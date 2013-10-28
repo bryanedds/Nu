@@ -16,23 +16,24 @@ open Nu.Screen
 open Nu.Game
 open Nu.Simulation
 
-type EntityPropertyChange =
+type EntityChange =
     { Address : Address
       FieldInfo : FieldInfo
       Value : obj }
 
-// NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global.
-let gEntityChanges = List<EntityPropertyChange> ()
-
-let applyEntityChange world (change : EntityPropertyChange) =
+let applyEntityChange world (change : EntityChange) =
     let entityLens = World.entity change.Address
     let entity = get world entityLens
     let entity2 = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity in lieu of reflection
     change.FieldInfo.SetValue (entity2, change.Value)
     set entity2 world entityLens
 
-let applyEntityChanges entityChanges world =
-    Seq.fold applyEntityChange world entityChanges
+let applyEntityChanges changes world =
+    Seq.fold applyEntityChange world changes
+
+// NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
+// style variable (but perhaps I've merely overlooked how to parameterize this?)
+let private gEntityChanges = List<EntityChange> ()
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
     { Address : Address
@@ -45,7 +46,9 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     override this.CanResetValue source = false
     override this.ResetValue source = ()
     override this.ShouldSerializeValue source = true
-    override this.IsReadOnly with get () = fieldInfo.Name = "Id@"
+    override this.IsReadOnly
+        // NOTE: we make entity id read-only
+        with get () = fieldInfo.Name = "Id@"
     override this.GetValue source =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityLens = World.entity entityTds.Address
@@ -54,6 +57,8 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     override this.SetValue (source, value) =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityChange = { Address = entityTds.Address; FieldInfo = fieldInfo; Value = value }
+        // NOTE: even though this ref world will eventually get blown away, it must still be
+        // updated here so that the change is reflected immediately by the property grid.
         entityTds.RefWorld := applyEntityChange entityTds.RefWorld.Value entityChange
         gEntityChanges.Add entityChange
 
@@ -72,11 +77,11 @@ and EntityTypeDescriptorProvider () =
     override this.GetTypeDescriptor (_, _) = Etd
 
 let [<EntryPoint; STAThread>] main _ =
-    let refWorld = ref Unchecked.defaultof<World>
     use form = new NuEditForm ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
+    let refWorld = ref Unchecked.defaultof<World>
     run4
         (fun sdlDeps ->
 
@@ -88,7 +93,6 @@ let [<EntryPoint; STAThread>] main _ =
 
                 let testScreenAddress = [Lun.make "testScreen"]
                 let testGroupAddress = testScreenAddress @ [Lun.make "testGroup"]
-                let testFeelerAddress = testGroupAddress @ [Lun.make "testFeeler"]
                 let testTextBoxAddress = testGroupAddress @ [Lun.make "testTextBox"]
 
                 let testScreen =
@@ -129,6 +133,7 @@ let [<EntryPoint; STAThread>] main _ =
                 form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
                 form.Show ()
                 Right refWorld.Value)
+
         (fun world ->
             // NOTE: the old refWorld will be blown away here!
             refWorld := applyEntityChanges gEntityChanges world
