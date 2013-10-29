@@ -33,11 +33,11 @@
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveasToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.displayPanel = new System.Windows.Forms.Panel();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -51,7 +51,7 @@
             this.fileToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(631, 26);
+            this.menuStrip1.Size = new System.Drawing.Size(1016, 26);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -85,6 +85,11 @@
             this.saveasToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.saveasToolStripMenuItem.Text = "Save &as";
             // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(149, 6);
+            // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
@@ -96,7 +101,7 @@
             this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(410, 431);
+            this.displayPanel.Size = new System.Drawing.Size(742, 710);
             this.displayPanel.TabIndex = 1;
             // 
             // propertyGrid
@@ -104,7 +109,7 @@
             this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(217, 431);
+            this.propertyGrid.Size = new System.Drawing.Size(270, 710);
             this.propertyGrid.TabIndex = 2;
             // 
             // splitContainer1
@@ -120,20 +125,15 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer1.Size = new System.Drawing.Size(631, 431);
-            this.splitContainer1.SplitterDistance = 410;
+            this.splitContainer1.Size = new System.Drawing.Size(1016, 710);
+            this.splitContainer1.SplitterDistance = 742;
             this.splitContainer1.TabIndex = 3;
-            // 
-            // toolStripMenuItem1
-            // 
-            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(149, 6);
             // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(631, 457);
+            this.ClientSize = new System.Drawing.Size(1016, 736);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
