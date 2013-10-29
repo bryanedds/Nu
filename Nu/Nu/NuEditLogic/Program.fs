@@ -29,13 +29,13 @@ let applyEntityChange world (change : EntityChange) =
     let value = change.Value
     let entity_ =
         let entity_ = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity in lieu of reflection
-        if entity_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
+        if entity_.GetType(). GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
         then let _ = fieldInfo.SetValue (entity_, value) in entity_
         else
             match entity.EntitySemantic with
             | Gui gui ->
                 let gui_ = { gui with Position = gui.Position } // NOTE: hacky copy
-                if gui_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
+                if gui_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
                 then let _ = fieldInfo.SetValue (gui_, value) in { entity with EntitySemantic = Gui gui_ }
                 else
                     match gui.GuiSemantic with
@@ -61,7 +61,7 @@ let applyEntityChange world (change : EntityChange) =
                         { entity with EntitySemantic = Gui { gui with GuiSemantic = Feeler feeler_ }}
             | Actor actor ->
                 let actor_ = { actor with Position = actor.Position } // NOTE: hacky copy
-                if actor_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
+                if actor_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
                 then let _ = fieldInfo.SetValue (actor_, value) in { entity with EntitySemantic = Actor actor_ }
                 else
                     match actor.ActorSemantic with
@@ -105,12 +105,12 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityLens = World.entity entityTds.Address
         let entity = get entityTds.RefWorld.Value entityLens
-        if entity.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
+        if entity.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
         then fieldInfo.GetValue entity
         else
             match entity.EntitySemantic with
             | Gui gui ->
-                if gui.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
+                if gui.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
                 then fieldInfo.GetValue gui
                 else
                     match gui.GuiSemantic with
@@ -120,7 +120,7 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
                     | Toggle toggle -> fieldInfo.GetValue toggle
                     | Feeler feeler -> fieldInfo.GetValue feeler
             | Actor actor ->
-                if actor.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
+                if actor.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
                 then fieldInfo.GetValue actor
                 else
                     match actor.ActorSemantic with
@@ -137,7 +137,7 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     static member GetPropertyDescriptors (aType : Type) =
         let fields = aType.GetFields (BindingFlags.Instance ||| BindingFlags.NonPublic)
         let propertyDescriptors = Seq.map (fun field -> new EntityPropertyDescriptor (field) :> PropertyDescriptor) fields
-        // TODO: use attribute from the corresponding property here instead
+        // TODO: use attribute from the corresponding property here instead of name pattern
         let propertyDescriptors2 = Seq.filter (fun (propertyDescriptor : PropertyDescriptor) -> not <| propertyDescriptor.Name.EndsWith "Semantic@") propertyDescriptors
         List.ofSeq propertyDescriptors2
 
@@ -195,12 +195,11 @@ let [<EntryPoint; STAThread>] main _ =
                 form.Show ()
                 Right refWorld.Value)
         (fun world ->
-            // NOTE: the old refWorld will be blown away here!
-            refWorld := applyEntityChanges gEntityChanges world
+            let world_ = applyEntityChanges gEntityChanges world
             gEntityChanges.Clear ()
-            let (keepRunning, world2) = testHandleUpdate refWorld.Value
-            refWorld := world2
-            (keepRunning && not form.IsDisposed, refWorld.Value))
+            let (keepRunning, world_) = testHandleUpdate world_
+            refWorld := world_ // the old refWorld is blown away here
+            (keepRunning && not form.IsDisposed, world_))
         (fun world ->
             form.displayPanel.Invalidate ()
             world)
