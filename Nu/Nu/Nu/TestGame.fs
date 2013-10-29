@@ -16,18 +16,17 @@ open Nu.Screen
 open Nu.Game
 open Nu.Simulation
 
-let TestScreenAddress = [Lun.make "testScreen"]
-let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
-let TestFeelerAddress = TestGroupAddress @ [Lun.make "testFeeler"]
-let TestTextBoxAddress = TestGroupAddress @ [Lun.make "testTextBox"]
-let TestToggleAddress = TestGroupAddress @ [Lun.make "testToggle"]
-let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
-let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
+let TestScreenAddress = [Lun.make "screen"]
+let TestGroupAddress = TestScreenAddress @ [Lun.make "group"]
+let TestFeelerAddress = TestGroupAddress @ [Lun.make "feeler"]
+let TestTextBoxAddress = TestGroupAddress @ [Lun.make "textBox"]
+let TestToggleAddress = TestGroupAddress @ [Lun.make "toggle"]
+let TestLabelAddress = TestGroupAddress @ [Lun.make "label"]
+let TestButtonAddress = TestGroupAddress @ [Lun.make "button"]
 let TestBlockAddress = TestGroupAddress @ [Lun.make "testBlock"]
-let TestTileMapAddress = TestGroupAddress @ [Lun.make "testTileMap"]
-let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
-let TestAvatarAddress = TestGroupAddress @ [Lun.make "testAvatar"]
-let TouchFeelerAddress = Lun.make "touch" :: TestFeelerAddress
+let TestTileMapAddress = TestGroupAddress @ [Lun.make "tileMap"]
+let TestFloorAddress = TestGroupAddress @ [Lun.make "floor"]
+let TestAvatarAddress = TestGroupAddress @ [Lun.make "avatar"]
 let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
 
 let createTestBlock assetMetadataMap =
@@ -59,13 +58,13 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
     | Left errorMsg -> Left errorMsg
     | Right assetMetadataMap ->
 
-        let testGame =
+        let game =
             { Id = getNuId ()
               Screens = Map.empty
               OptActiveScreenAddress = None }
     
-        let testWorld =
-            { Game = testGame
+        let world =
+            { Game = game
               Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
               Subscriptions = Map.empty
               MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
@@ -78,159 +77,159 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               PhysicsMessages = []
               Components = [] }
 
-        let testScreen =
+        let screen =
             { Id = getNuId ()
               Groups = Map.empty }
 
-        let testGroup =
+        let group =
             { Id = getNuId ()
               Entities = Map.empty }
           
-        let testFeeler =
+        let feeler =
             { IsTouched = false }
 
-        let testFeelerGui =
+        let feelerGui =
             { Position = Vector2.Zero
               Depth = -0.1f
               Size = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
-              GuiSemantic = Feeler testFeeler }
+              GuiSemantic = Feeler feeler }
 
-        let testFeelerGuiEntity =
+        let feelerEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui testFeelerGui }
+              EntitySemantic = Gui feelerGui }
           
-        let testTextBox =
+        let textBox =
             { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               Text = "Hi!"
               TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               TextOffset = Vector2 4.0f
               TextColor = Vector4.One }
 
-        let testTextBoxGui =
+        let textBoxGui =
             { Position = Vector2 (120.0f, 50.0f)
               Depth = 0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = TextBox testTextBox }
+              GuiSemantic = TextBox textBox }
 
-        let testTextBoxGuiEntity =
+        let textBoxEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui testTextBoxGui }
+              EntitySemantic = Gui textBoxGui }
           
-        let testToggle =
+        let toggle =
             { IsOn = false
               IsPressed = false
               OffSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               OnSprite = { SpriteAssetName = Lun.make "Image6"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
-        let testToggleGui =
+        let toggleGui =
             { Position = Vector2 (720.0f, 50.0f)
               Depth = 0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = Toggle testToggle }
+              GuiSemantic = Toggle toggle }
 
-        let testToggleGuiEntity =
+        let toggleEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui testToggleGui }
+              EntitySemantic = Gui toggleGui }
           
-        let testLabel =
+        let label =
             { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
-        let testLabelGui =
+        let labelGui =
             { Position = Vector2.Zero
               Depth = -0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image5") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = Label testLabel }
+              GuiSemantic = Label label }
 
-        let testLabelGuiEntity =
+        let labelEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui testLabelGui }
+              EntitySemantic = Gui labelGui }
           
-        let testButton =
+        let button =
             { IsDown = false
               UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
-        let testButtonGui =
+        let buttonGui =
             { Position = Vector2 (310.0f, 20.0f)
               Depth = 0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = Button testButton }
+              GuiSemantic = Button button }
 
-        let testButtonGuiEntity =
+        let buttonEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui testButtonGui }
+              EntitySemantic = Gui buttonGui }
     
         let tmxMap =
             TmxMap "TileMap.tmx"
 
-        let testTileMap =
+        let tileMap =
             { PhysicsIds = [getPhysicsId ()]
               Density = NormalDensity
               TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
               TmxMap = tmxMap
               TileMapMetadata = getTileMapMetadata (Lun.make "TileMap") (Lun.make "Misc") assetMetadataMap }
 
-        let testTileMapActor =
+        let tileMapActor =
             { Position = Vector2.Zero
               Depth = -0.1f
               Size = Vector2 (single (tmxMap.Width * tmxMap.TileWidth), single (tmxMap.Height * tmxMap.TileHeight))
               Rotation = 0.0f
-              ActorSemantic = TileMap testTileMap }
+              ActorSemantic = TileMap tileMap }
 
-        let testTileMapActorEntity =
+        let tileMapEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Actor testTileMapActor }
+              EntitySemantic = Actor tileMapActor }
     
-        let testFloor =
+        let floor =
             { PhysicsId = getPhysicsId ()
               Density = NormalDensity
               BodyType = Static
               Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
-        let testFloorActor =
+        let floorActor =
             { Position = Vector2 (120.0f, 520.0f)
               Depth = 0.0f
               Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Misc") assetMetadataMap
               Rotation = 0.0f
-              ActorSemantic = Block testFloor }
+              ActorSemantic = Block floor }
 
-        let testFloorActorEntity =
+        let floorEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Actor testFloorActor }
+              EntitySemantic = Actor floorActor }
     
-        let testAvatar =
+        let avatar =
             { PhysicsId = getPhysicsId ()
               Density = NormalDensity
               Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
-        let testAvatarActor =
+        let avatarActor =
             { Position = Vector2 (300.0f, 300.0f)
               Depth = 0.0f
               Size = getTextureSizeAsVector2 (Lun.make "Image7") (Lun.make "Misc") assetMetadataMap
               Rotation = 0.0f
-              ActorSemantic = Avatar testAvatar }
+              ActorSemantic = Avatar avatar }
 
-        let testAvatarActorEntity =
+        let avatarEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Actor testAvatarActor }
+              EntitySemantic = Actor avatarActor }
 
         let moveAvatar address _ message world =
             let (_, _, feeler) = get world (World.entityGuiFeeler TestFeelerAddress)
@@ -260,23 +259,24 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
         // scripting convention
-        let tw_ = testWorld
-        let tw_ = subscribe TickAddress [] moveAvatar tw_
-        let tw_ = subscribe ClickTestButtonAddress [] addBoxes tw_
-        let tw_ = addScreen testScreen TestScreenAddress tw_
-        let tw_ = setP (Some TestScreenAddress) World.optActiveScreenAddress tw_
-        let tw_ = addGroup testGroup TestGroupAddress tw_
-        let tw_ = addEntityGuiFeeler (testFeelerGuiEntity, testFeelerGui, testFeeler) TestFeelerAddress tw_
-        let tw_ = addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) TestTextBoxAddress tw_
-        let tw_ = addEntityGuiToggle (testToggleGuiEntity, testToggleGui, testToggle) TestToggleAddress tw_
-        let tw_ = addEntityGuiLabel (testLabelGuiEntity, testLabelGui, testLabel) TestLabelAddress tw_
-        let tw_ = addEntityGuiButton (testButtonGuiEntity, testButtonGui, testButton) TestButtonAddress tw_
-        let tw_ = addEntityActorTileMap (testTileMapActorEntity, testTileMapActor, testTileMap) TestTileMapAddress tw_
-        let tw_ = addEntityActorBlock (testFloorActorEntity, testFloorActor, testFloor) TestFloorAddress tw_
-        let tw_ = addEntityActorAvatar (testAvatarActorEntity, testAvatarActor, testAvatar) TestAvatarAddress tw_
-        let tw_ = { tw_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: tw_.PhysicsMessages }
-        let tw_ = { tw_ with RenderMessages = hintRenderingPackageUse :: tw_.RenderMessages }
-        Right { tw_ with AudioMessages = FadeOutSong :: playSong :: tw_.AudioMessages }
+        let w_ = world
+        let w_ = subscribe TickAddress [] moveAvatar w_
+        let w_ = subscribe ClickTestButtonAddress [] addBoxes w_
+        let w_ = addScreen screen TestScreenAddress w_
+        let w_ = set (Some TestScreenAddress) w_ World.optActiveScreenAddress
+        let w_ = addGroup group TestGroupAddress w_
+        let w_ = addEntityGuiFeeler (feelerEntity, feelerGui, feeler) TestFeelerAddress w_
+        let w_ = addEntityGuiTextBox (textBoxEntity, textBoxGui, textBox) TestTextBoxAddress w_
+        let w_ = addEntityGuiToggle (toggleEntity, toggleGui, toggle) TestToggleAddress w_
+        let w_ = addEntityGuiLabel (labelEntity, labelGui, label) TestLabelAddress w_
+        let w_ = addEntityGuiButton (buttonEntity, buttonGui, button) TestButtonAddress w_
+        let w_ = addEntityActorTileMap (tileMapEntity, tileMapActor, tileMap) TestTileMapAddress w_
+        let w_ = addEntityActorBlock (floorEntity, floorActor, floor) TestFloorAddress w_
+        let w_ = addEntityActorAvatar (avatarEntity, avatarActor, avatar) TestAvatarAddress w_
+        let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
+        let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
+        let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
+        Right w_
 
 let testHandleUpdate world =
     let (_, actor, _) = get world (World.entityActorAvatar TestAvatarAddress)
