@@ -1,4 +1,4 @@
-﻿module Nu.AssetMetadataMap
+﻿module Nu.AssetMetadata
 open System
 open System.Drawing // NOTE: I'm not real sure I like having this dependency...
 open System.IO

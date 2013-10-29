@@ -51,7 +51,7 @@
     <Compile Include="Physics.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="Rendering.fs" />
-    <Compile Include="AssetMetadataMap.fs" />
+    <Compile Include="AssetMetadata.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Entity.fs" />
