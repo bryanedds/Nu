@@ -76,99 +76,99 @@ and [<ReferenceEquality>] World =
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list }
-    with
-        static member game =
-            { Get = fun this -> this.Game
-              Set = fun game this -> { this with Game = game }}
-              
-        static member camera =
-            { Get = fun this -> this.Camera
-              Set = fun camera this -> { this with Camera = camera }}
+    
+    static member game =
+        { Get = fun this -> this.Game
+          Set = fun game this -> { this with Game = game }}
+          
+    static member camera =
+        { Get = fun this -> this.Camera
+          Set = fun camera this -> { this with Camera = camera }}
 
-        static member mouseState =
-            { Get = fun this -> this.MouseState
-              Set = fun mouseState this -> { this with MouseState = mouseState }}
-        
-        static member entity (address : Address) =
-            World.game >>| Game.entity address
-        
-        static member optEntity (address : Address) =
-            World.game >>| Game.optEntity address
-        
-        static member entityGui (address : Address) =
-            World.game >>| Game.entityGui address
-        
-        static member optEntityGui (address : Address) =
-            World.game >>| Game.optEntityGui address
-        
-        static member entityGuiButton (address : Address) =
-            World.game >>| Game.entityGuiButton address
-        
-        static member optEntityGuiButton (address : Address) =
-            World.game >>| Game.optEntityGuiButton address
-        
-        static member entityGuiLabel (address : Address) =
-            World.game >>| Game.entityGuiLabel address
-        
-        static member optEntityGuiLabel (address : Address) =
-            World.game >>| Game.optEntityGuiLabel address
-        
-        static member entityGuiTextBox (address : Address) =
-            World.game >>| Game.entityGuiTextBox address
-        
-        static member optEntityGuiTextBox (address : Address) =
-            World.game >>| Game.optEntityGuiTextBox address
-        
-        static member entityGuiToggle (address : Address) =
-            World.game >>| Game.entityGuiToggle address
-        
-        static member optEntityGuiToggle (address : Address) =
-            World.game >>| Game.optEntityGuiToggle address
-        
-        static member entityGuiFeeler (address : Address) =
-            World.game >>| Game.entityGuiFeeler address
-        
-        static member optEntityGuiFeeler (address : Address) =
-            World.game >>| Game.optEntityGuiFeeler address
-        
-        static member entityActor (address : Address) =
-            World.game >>| Game.entityActor address
-        
-        static member optEntityActor (address : Address) =
-            World.game >>| Game.optEntityActor address
-        
-        static member entityActorBlock (address : Address) =
-            World.game >>| Game.entityActorBlock address
-        
-        static member optEntityActorBlock (address : Address) =
-            World.game >>| Game.optEntityActorBlock address
-        
-        static member entityActorAvatar (address : Address) =
-            World.game >>| Game.entityActorAvatar address
-        
-        static member optEntityActorAvatar (address : Address) =
-            World.game >>| Game.optEntityActorAvatar address
-        
-        static member entityActorTileMap (address : Address) =
-            World.game >>| Game.entityActorTileMap address
-        
-        static member optEntityActorTileMap (address : Address) =
-            World.game >>| Game.optEntityActorTileMap address
-        
-        static member group (address : Address) =
-            World.game >>| Game.group address
-        
-        static member optGroup (address : Address) =
-            World.game >>| Game.optGroup address
-        
-        static member screen (address : Address) =
-            World.game >>| Game.screen address
-        
-        static member optScreen (address : Address) =
-            World.game >>| Game.optScreen address
-        
-        static member optActiveScreenAddress =
-            World.game >>| Game.optActiveScreenAddress
+    static member mouseState =
+        { Get = fun this -> this.MouseState
+          Set = fun mouseState this -> { this with MouseState = mouseState }}
+    
+    static member entity (address : Address) =
+        World.game >>| Game.entity address
+    
+    static member optEntity (address : Address) =
+        World.game >>| Game.optEntity address
+    
+    static member entityGui (address : Address) =
+        World.game >>| Game.entityGui address
+    
+    static member optEntityGui (address : Address) =
+        World.game >>| Game.optEntityGui address
+    
+    static member entityGuiButton (address : Address) =
+        World.game >>| Game.entityGuiButton address
+    
+    static member optEntityGuiButton (address : Address) =
+        World.game >>| Game.optEntityGuiButton address
+    
+    static member entityGuiLabel (address : Address) =
+        World.game >>| Game.entityGuiLabel address
+    
+    static member optEntityGuiLabel (address : Address) =
+        World.game >>| Game.optEntityGuiLabel address
+    
+    static member entityGuiTextBox (address : Address) =
+        World.game >>| Game.entityGuiTextBox address
+    
+    static member optEntityGuiTextBox (address : Address) =
+        World.game >>| Game.optEntityGuiTextBox address
+    
+    static member entityGuiToggle (address : Address) =
+        World.game >>| Game.entityGuiToggle address
+    
+    static member optEntityGuiToggle (address : Address) =
+        World.game >>| Game.optEntityGuiToggle address
+    
+    static member entityGuiFeeler (address : Address) =
+        World.game >>| Game.entityGuiFeeler address
+    
+    static member optEntityGuiFeeler (address : Address) =
+        World.game >>| Game.optEntityGuiFeeler address
+    
+    static member entityActor (address : Address) =
+        World.game >>| Game.entityActor address
+    
+    static member optEntityActor (address : Address) =
+        World.game >>| Game.optEntityActor address
+    
+    static member entityActorBlock (address : Address) =
+        World.game >>| Game.entityActorBlock address
+    
+    static member optEntityActorBlock (address : Address) =
+        World.game >>| Game.optEntityActorBlock address
+    
+    static member entityActorAvatar (address : Address) =
+        World.game >>| Game.entityActorAvatar address
+    
+    static member optEntityActorAvatar (address : Address) =
+        World.game >>| Game.optEntityActorAvatar address
+    
+    static member entityActorTileMap (address : Address) =
+        World.game >>| Game.entityActorTileMap address
+    
+    static member optEntityActorTileMap (address : Address) =
+        World.game >>| Game.optEntityActorTileMap address
+    
+    static member group (address : Address) =
+        World.game >>| Game.group address
+    
+    static member optGroup (address : Address) =
+        World.game >>| Game.optGroup address
+    
+    static member screen (address : Address) =
+        World.game >>| Game.screen address
+    
+    static member optScreen (address : Address) =
+        World.game >>| Game.optScreen address
+    
+    static member optActiveScreenAddress =
+        World.game >>| Game.optActiveScreenAddress
 
 /// Enables components that open the world for extension.
 and IWorldComponent =

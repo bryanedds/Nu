@@ -3,10 +3,13 @@ open NuEditDesign
 open SDL2
 open OpenTK
 open System
+open System.IO
 open System.Collections.Generic
 open System.Reflection
 open System.Windows.Forms
 open System.ComponentModel
+open System.Xml
+open System.Xml.Serialization
 open Nu.Core
 open Nu.AssetMetadata
 open Nu.Sdl
@@ -96,6 +99,22 @@ let [<EntryPoint; STAThread>] main _ =
                 let testTypeSource = { Address = TestButtonAddress; RefWorld = refWorld }
                 form.propertyGrid.SelectedObject <- testTypeSource
                 form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
+                form.saveToolStripMenuItem.Click.Add (fun _ ->
+                    use file = File.Open ("temp.xml", FileMode.Create)
+                    let writerSettings = XmlWriterSettings ()
+                    writerSettings.Indent <- true
+                    use writer = XmlWriter.Create (file, writerSettings)
+                    writer.WriteStartDocument ()
+                    let testEntity = get refWorld.Value (World.entity TestButtonAddress) :> IXmlSerializable
+                    testEntity.WriteXml writer
+                    writer.WriteEndDocument ())
+                form.openToolStripMenuItem.Click.Add (fun _ ->
+                    use file = File.Open ("temp.xml", FileMode.Open)
+                    use reader = XmlReader.Create file
+                    let testEntity = { get refWorld.Value (World.entity TestButtonAddress) with Id = 0L } :> IXmlSerializable
+                    testEntity.ReadXml reader
+                    ())
+
                 form.Show ()
                 Right refWorld.Value)
         (fun world ->
