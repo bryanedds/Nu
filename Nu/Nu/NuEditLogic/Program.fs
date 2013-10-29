@@ -15,6 +15,7 @@ open Nu.Group
 open Nu.Screen
 open Nu.Game
 open Nu.Simulation
+open Nu.TestGame
 
 type EntityChange =
     { Address : Address
@@ -26,7 +27,7 @@ let applyEntityChange world (change : EntityChange) =
     let entity = get world entityLens
     let fieldInfo = change.FieldInfo
     let value = change.Value
-    let entity2 =
+    let entity_ =
         let entity_ = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity in lieu of reflection
         if entity_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) <> null
         then let _ = fieldInfo.SetValue (entity_, value) in entity_
@@ -76,7 +77,7 @@ let applyEntityChange world (change : EntityChange) =
                         let tileMap_ = { tileMap with PhysicsIds = tileMap.PhysicsIds } // NOTE: hacky copy
                         fieldInfo.SetValue (tileMap_, value)
                         { entity with EntitySemantic = Actor { actor with ActorSemantic = TileMap tileMap_ }}
-    set entity2 world entityLens
+    set entity_ world entityLens
 
 let applyEntityChanges changes world =
     Seq.fold applyEntityChange world changes
@@ -98,6 +99,7 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     override this.ShouldSerializeValue source = true
     override this.IsReadOnly
         // NOTE: we make entity id read-only
+        // TODO: use attribute from the corresponding property here instead
         with get () = fieldInfo.Name = "Id@"
     override this.GetValue source =
         let entityTds = source :?> EntityTypeDescriptorSource
@@ -135,13 +137,14 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     static member GetPropertyDescriptors (aType : Type) =
         let fields = aType.GetFields (BindingFlags.Instance ||| BindingFlags.NonPublic)
         let propertyDescriptors = Seq.map (fun field -> new EntityPropertyDescriptor (field) :> PropertyDescriptor) fields
+        // TODO: use attribute from the corresponding property here instead
         let propertyDescriptors2 = Seq.filter (fun (propertyDescriptor : PropertyDescriptor) -> not <| propertyDescriptor.Name.EndsWith "Semantic@") propertyDescriptors
         List.ofSeq propertyDescriptors2
 
 and EntityTypeDescriptor (optSource : obj) =
     inherit CustomTypeDescriptor ()
     override this.GetProperties _ =
-        let propertyDescriptorList =
+        let propertyDescriptors =
             match optSource with
             | :? EntityTypeDescriptorSource as source ->
                 let entityLens = World.entity source.Address
@@ -164,13 +167,10 @@ and EntityTypeDescriptor (optSource : obj) =
                             | Avatar _ -> typeof<Block>
                             | TileMap _ -> typeof<Block>
                         [typeof<Entity>; typeof<Actor>; actorSemType]
-                List.fold
-                    (fun propertyDescriptors aType -> EntityPropertyDescriptor.GetPropertyDescriptors aType @ propertyDescriptors )
-                    []
-                    types
+                // NOTE: this line could be simplified by a List.concatBy function.
+                List.fold (fun propertyDescriptors aType -> EntityPropertyDescriptor.GetPropertyDescriptors aType @ propertyDescriptors) [] types
             | _ -> EntityPropertyDescriptor.GetPropertyDescriptors typeof<Entity>
-        let propertyDescriptorArray = Array.ofList propertyDescriptorList
-        PropertyDescriptorCollection propertyDescriptorArray
+        PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
 and EntityTypeDescriptorProvider () =
     inherit TypeDescriptionProvider ()
@@ -184,61 +184,23 @@ let [<EntryPoint; STAThread>] main _ =
     let refWorld = ref Unchecked.defaultof<World>
     run4
         (fun sdlDeps ->
-
-            refWorld := createEmptyWorld sdlDeps
-
-            match tryGenerateAssetMetadataMap "AssetGraph.xml" with
+            let optTestWorld = tryCreateTestWorld sdlDeps
+            match optTestWorld with
             | Left errorMsg -> Left errorMsg
-            | Right assetMetadataMap ->
-
-                let testScreenAddress = [Lun.make "testScreen"]
-                let testGroupAddress = testScreenAddress @ [Lun.make "testGroup"]
-                let testTextBoxAddress = testGroupAddress @ [Lun.make "testTextBox"]
-
-                let testScreen =
-                    { Id = getNuId ()
-                      Groups = Map.empty }
-
-                let testGroup =
-                    { Id = getNuId ()
-                      Entities = Map.empty }
-          
-                let testTextBox =
-                    { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-                      Text = "Hi!"
-                      TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-                      TextOffset = Vector2 4.0f
-                      TextColor = Vector4.One }
-
-                let testTextBoxGui =
-                    { Position = Vector2 (120.0f, 50.0f)
-                      Depth = 0.1f
-                      Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
-                      GuiSemantic = TextBox testTextBox }
-
-                let testTextBoxGuiEntity =
-                    { Id = getNuId ()
-                      Enabled = true
-                      Visible = true
-                      EntitySemantic = Gui testTextBoxGui }
-        
-                refWorld := addScreen testScreen testScreenAddress refWorld.Value
-                refWorld := setP (Some testScreenAddress) World.optActiveScreenAddress refWorld.Value
-                refWorld := addGroup testGroup testGroupAddress refWorld.Value
-                refWorld := addEntityGuiTextBox (testTextBoxGuiEntity, testTextBoxGui, testTextBox) testTextBoxAddress refWorld.Value
-
-                let testTypeSource = { Address = testTextBoxAddress; RefWorld = refWorld }
+            | Right testWorld ->
+                refWorld := testWorld
+                let testTypeSource = { Address = TestButtonAddress; RefWorld = refWorld }
                 form.propertyGrid.SelectedObject <- testTypeSource
-
                 form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
                 form.Show ()
                 Right refWorld.Value)
-
         (fun world ->
             // NOTE: the old refWorld will be blown away here!
             refWorld := applyEntityChanges gEntityChanges world
             gEntityChanges.Clear ()
-            (not form.IsDisposed, refWorld.Value))
+            let (keepRunning, world2) = testHandleUpdate refWorld.Value
+            refWorld := world2
+            (keepRunning && not form.IsDisposed, refWorld.Value))
         (fun world ->
             form.displayPanel.Invalidate ()
             world)
