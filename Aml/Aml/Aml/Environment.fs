@@ -56,7 +56,7 @@ let makeInitialEnv () =
     let newEnv2 =
         List.fold
             (fun env initialType ->
-                let typeNameStr = (Triple.fst initialType).LunStr
+                let typeNameStr = (a__ initialType).LunStr
                 let rawTypeNameStr = typeNameStr.Substring TypePrefixStr.Length
                 let rawTypeName = Lun.make rawTypeNameStr
                 instantiateEquatable env rawTypeName)

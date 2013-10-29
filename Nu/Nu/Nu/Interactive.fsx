@@ -48,7 +48,7 @@ open Nu.Assets
 open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
-open Nu.AssetMetadataMap
+open Nu.AssetMetadata
 open Nu.Input
 open Nu.Sdl
 open Nu.Entity
