@@ -10,7 +10,7 @@ open Nu.Constants
 open Nu.Math
 open Nu.Physics
 open Nu.Rendering
-open Nu.AssetMetadataMap
+open Nu.AssetMetadata
 open Nu.Input
 open Nu.Audio
 open Nu.Sdl

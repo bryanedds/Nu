@@ -9,7 +9,7 @@ open System.Windows.Forms
 open System.ComponentModel
 open Nu.Sdl
 open Nu.Core
-open Nu.AssetMetadataMap
+open Nu.AssetMetadata
 open Nu.Entity
 open Nu.Group
 open Nu.Screen

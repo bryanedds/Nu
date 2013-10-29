@@ -9,7 +9,7 @@ open Nu.Sdl
 open Nu.Audio
 open Nu.Rendering
 open Nu.Physics
-open Nu.AssetMetadataMap
+open Nu.AssetMetadata
 open Nu.Entity
 open Nu.Group
 open Nu.Screen

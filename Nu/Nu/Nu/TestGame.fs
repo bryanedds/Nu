@@ -9,7 +9,7 @@ open Nu.Sdl
 open Nu.Audio
 open Nu.Rendering
 open Nu.Physics
-open Nu.AssetMetadataMap
+open Nu.AssetMetadata
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
@@ -235,7 +235,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let moveAvatar address _ message world =
             let (_, _, feeler) = get world (World.entityGuiFeeler TestFeelerAddress)
             if feeler.IsTouched then
-                let (entity, actor, avatar) = get world (World.entityActorAvatar TestAvatarAddress)
+                let (_, actor, avatar) = get world (World.entityActorAvatar TestAvatarAddress)
                 let camera = world.Camera
                 let inverseView = camera.EyePosition - camera.EyeSize * 0.5f
                 let mousePositionWorld = world.MouseState.MousePosition + inverseView
