@@ -164,8 +164,8 @@ and EntityTypeDescriptor (optSource : obj) =
                         let actorSemType =
                             match actor.ActorSemantic with
                             | Block _ -> typeof<Block>
-                            | Avatar _ -> typeof<Block>
-                            | TileMap _ -> typeof<Block>
+                            | Avatar _ -> typeof<Avatar>
+                            | TileMap _ -> typeof<TileMap>
                         [typeof<Entity>; typeof<Actor>; actorSemType]
                 // NOTE: this line could be simplified by a List.concatBy function.
                 List.fold (fun propertyDescriptors aType -> EntityPropertyDescriptor.GetPropertyDescriptors aType @ propertyDescriptors) [] types
