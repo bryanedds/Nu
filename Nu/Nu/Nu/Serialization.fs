@@ -4,14 +4,14 @@ open System.Reflection
 open System.Xml
 open System.Xml.Serialization
 
-let writePublicProperties (writer : XmlWriter) obj =
+let writeNuProperties (writer : XmlWriter) obj =
     let aType = obj.GetType ()
     let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
     for property in publicProperties do
         if not <| property.Name.EndsWith "Semantic" then // TODO: use attribute to filter, not name pattern!
             writer.WriteElementString (property.Name, str <| property.GetValue obj)
 
-let readPublicProperties (reader : XmlReader) obj =
+let readNuProperties (reader : XmlReader) obj =
     let aType = obj.GetType ()
     let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
     for property in publicProperties do
