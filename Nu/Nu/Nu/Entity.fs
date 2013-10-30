@@ -1,6 +1,7 @@
 ﻿module Nu.Entity
 open System
 open System.Reflection
+open System.Xml
 open System.Xml.Serialization
 open FSharpx
 open FSharpx.Lens.Operators
@@ -248,94 +249,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Visible : bool
       EntitySemantic : EntitySemantic }
 
-    interface IXmlSerializable with
-
-        member this.GetSchema () = null
-
-        member this.WriteXml writer =
-            writer.WriteStartElement typeof<Entity>.Name
-            writeNuProperties writer this
-            match this.EntitySemantic with
-            | Gui gui ->
-                writer.WriteElementString ("EntitySemanticType", "Gui")
-                writeNuProperties writer gui
-                match gui.GuiSemantic with
-                | Button button ->
-                    writer.WriteElementString ("GuiSemanticType", "Button")
-                    writeNuProperties writer button
-                | Label label ->
-                    writer.WriteElementString ("GuiSemanticType", "Label")
-                    writeNuProperties writer label
-                | TextBox textBox ->
-                    writer.WriteElementString ("GuiSemanticType", "TextBox")
-                    writeNuProperties writer textBox
-                | Toggle toggle ->
-                    writer.WriteElementString ("GuiSemanticType", "Toggle")
-                    writeNuProperties writer toggle
-                | Feeler feeler ->
-                    writer.WriteElementString ("GuiSemanticType", "Feeler")
-                    writeNuProperties writer feeler
-            | Actor actor ->
-                writer.WriteElementString ("EntitySemanticType", "Actor")
-                writeNuProperties writer actor
-                match actor.ActorSemantic with
-                | Block block ->
-                    writer.WriteElementString ("ActorSemanticType", "Block")
-                    writeNuProperties writer block
-                | Avatar avatar ->
-                    writer.WriteElementString ("ActorSemanticType", "Avatar")
-                    writeNuProperties writer avatar
-                | TileMap tileMap ->
-                    writer.WriteElementString ("ActorSemanticType", "TileMap")
-                    writeNuProperties writer tileMap
-            writer.WriteEndElement ()
-
-        // CLOSURE_LEAK: adding entity, actor, or gui types could cause errors without compile-time
-        // notice in this method!
-        member this.ReadXml reader =
-            reader.ReadStartElement ()
-            readNuProperties reader this
-            let entitySemanticType = reader.ReadElementString ("EntitySemanticType")
-            match entitySemanticType with
-            | "Gui" ->
-                let gui = Activator.CreateInstance typeof<Gui> :?> Gui
-                readNuProperties reader gui
-                let guiSemanticType = reader.ReadElementString ("GuiSemanticType")
-                match guiSemanticType with
-                | "Button" ->
-                    let button = Activator.CreateInstance typeof<Button> :?> Button
-                    readNuProperties reader button
-                | "Label" ->
-                    let label = Activator.CreateInstance typeof<Label> :?> Label
-                    readNuProperties reader label
-                | "TextBox" ->
-                    let textBox = Activator.CreateInstance typeof<TextBox> :?> TextBox
-                    readNuProperties reader textBox
-                | "Toggle" ->
-                    let toggle = Activator.CreateInstance typeof<Toggle> :?> Toggle
-                    readNuProperties reader toggle
-                | "Feeler" ->
-                    let feeler = Activator.CreateInstance typeof<Feeler> :?> Feeler
-                    readNuProperties reader feeler
-                | _ -> failwith <| "Invalid GuiSemanticType '" + guiSemanticType + "'."
-            | "Actor" ->
-                let actor = Activator.CreateInstance typeof<Actor> :?> Actor
-                readNuProperties reader actor
-                let actorSemanticType = reader.ReadElementString ("ActorSemanticType")
-                match actorSemanticType with
-                | "Block" ->
-                    let block = Activator.CreateInstance typeof<Block> :?> Block
-                    readNuProperties reader block
-                | "Avatar" ->
-                    let avatar = Activator.CreateInstance typeof<Avatar> :?> Avatar
-                    readNuProperties reader avatar
-                | "TileMap" ->
-                    let tileMap = Activator.CreateInstance typeof<TileMap> :?> TileMap
-                    readNuProperties reader tileMap
-                | _ -> failwith <| "Invalid ActorSemanticType '" + actorSemanticType + "'."
-            | _ -> failwith <| "Invalid EntitySemanticType '" + entitySemanticType + "'."
-            reader.ReadEndElement ()
-
     static member gui =
         { Get = fun this -> match this.EntitySemantic with Gui gui -> gui | _ -> failwith "Entity is not a gui."
           Set = fun gui this -> { this with EntitySemantic = Gui gui }}
@@ -503,3 +416,60 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
             match optActorTileMap with
             | None -> failwith "Cannot set Entity.optActor to None."
             | Some actorTileMap -> set actorTileMap this Entity.actorTileMap }
+
+let writeEntityXml (writer : XmlWriter) entity =
+    writer.WriteStartElement typeof<Entity>.Name
+    writeNuProperties writer entity
+    match entity.EntitySemantic with
+    | Gui gui ->
+        writer.WriteElementString ("EntitySemanticType", "Gui")
+        writeNuProperties writer gui
+        match gui.GuiSemantic with
+        | Button button ->
+            writer.WriteElementString ("EntitySemSemType", "Button")
+            writeNuProperties writer button
+        | Label label ->
+            writer.WriteElementString ("EntitySemSemType", "Label")
+            writeNuProperties writer label
+        | TextBox textBox ->
+            writer.WriteElementString ("EntitySemSemType", "TextBox")
+            writeNuProperties writer textBox
+        | Toggle toggle ->
+            writer.WriteElementString ("EntitySemSemType", "Toggle")
+            writeNuProperties writer toggle
+        | Feeler feeler ->
+            writer.WriteElementString ("EntitySemSemType", "Feeler")
+            writeNuProperties writer feeler
+    | Actor actor ->
+        writer.WriteElementString ("EntitySemanticType", "Actor")
+        writeNuProperties writer actor
+        match actor.ActorSemantic with
+        | Block block ->
+            writer.WriteElementString ("EntitySemSemType", "Block")
+            writeNuProperties writer block
+        | Avatar avatar ->
+            writer.WriteElementString ("EntitySemSemType", "Avatar")
+            writeNuProperties writer avatar
+        | TileMap tileMap ->
+            writer.WriteElementString ("EntitySemSemType", "TileMap")
+            writeNuProperties writer tileMap
+    writer.WriteEndElement ()
+
+let readEntityXml (reader : XmlReader) =
+    // TODO: make this arbitrarily recursive on semantics
+    let entity = (Activator.CreateInstance ("Nu", typeof<Entity>.FullName)).Unwrap ()
+    reader.ReadStartElement ()
+    readNuProperties reader entity
+    let entitySemanticType = reader.ReadElementString ("EntitySemanticType")
+    let entitySemantic = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemanticType)).Unwrap ()
+    readNuProperties reader entitySemantic
+    let entitySemanticProperty = typeof<Entity>.GetProperty "EntitySemantic"
+    let entitySemanticValue = (Activator.CreateInstance ("Nu", "Nu.Entity+EntitySemantic+" + entitySemanticType, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|entitySemantic|], null, null)).Unwrap ()
+    entitySemanticProperty.SetValue (entity, entitySemanticValue)
+    let entitySemSemType = reader.ReadElementString ("EntitySemSemType")
+    let entitySemSem = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemSemType)).Unwrap ()
+    readNuProperties reader entitySemSem
+    let entitySemSemProperty = (entitySemSem.GetType ()).GetProperty (entitySemanticType + "Semantic")
+    let entitySemSemValue = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemanticType + "+" + entitySemSemType, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|entitySemSem|], null, null)).Unwrap ()
+    entitySemSemProperty.SetValue (entitySemantic, entitySemSemValue)
+    reader.ReadEndElement ()
