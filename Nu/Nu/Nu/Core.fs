@@ -11,5 +11,5 @@ type Id = int64
 type Address = Lun list
 
 /// Create a Nu Id.
-/// Ironically, not purely functional (maybe address this?)
+/// NOTE: Ironically, not purely functional (TODO: maybe address this?)
 let getNuId = createGetNextId ()
