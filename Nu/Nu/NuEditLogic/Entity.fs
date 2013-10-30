@@ -5,9 +5,9 @@ open Nu.Core
 open Nu.Entity
 open Nu.Simulation
 
-type EntityFieldChange =
+type EntityPropertyChange =
     { Address : Address
-      FieldInfo : FieldInfo
+      PropertyInfo : PropertyInfo
       Value : obj }
 
 let getEntityTypes entity =
@@ -29,86 +29,86 @@ let getEntityTypes entity =
             | TileMap _ -> typeof<TileMap>
         [typeof<Entity>; typeof<Actor>; actorSemType]
 
-let getEntityFieldValue (fieldInfo : FieldInfo) entity =
-    if entity.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
-    then fieldInfo.GetValue entity
+let getEntityPropertyValue (property : PropertyInfo) entity =
+    if typeof<Entity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+    then property.GetValue entity
     else
         match entity.EntitySemantic with
         | Gui gui ->
-            if gui.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
-            then fieldInfo.GetValue gui
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue gui
             else
                 match gui.GuiSemantic with
-                | Button button -> fieldInfo.GetValue button
-                | Label label -> fieldInfo.GetValue label
-                | TextBox textBox -> fieldInfo.GetValue textBox
-                | Toggle toggle -> fieldInfo.GetValue toggle
-                | Feeler feeler -> fieldInfo.GetValue feeler
+                | Button button -> property.GetValue button
+                | Label label -> property.GetValue label
+                | TextBox textBox -> property.GetValue textBox
+                | Toggle toggle -> property.GetValue toggle
+                | Feeler feeler -> property.GetValue feeler
         | Actor actor ->
-            if actor.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
-            then fieldInfo.GetValue actor
+            if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue actor
             else
                 match actor.ActorSemantic with
-                | Block block -> fieldInfo.GetValue block
-                | Avatar avatar -> fieldInfo.GetValue avatar
-                | TileMap tileMap -> fieldInfo.GetValue tileMap
+                | Block block -> property.GetValue block
+                | Avatar avatar -> property.GetValue avatar
+                | TileMap tileMap -> property.GetValue tileMap
 
-let setEntityFieldValue world (change : EntityFieldChange) =
+let setEntityPropertyValue world (change : EntityPropertyChange) =
     let entityLens = World.entity change.Address
     let entity = get world entityLens
-    let fieldInfo = change.FieldInfo
+    let property = change.PropertyInfo
     let value = change.Value
     let entity_ =
         let entity_ = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity in lieu of reflection
-        if entity_.GetType(). GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
-        then let _ = fieldInfo.SetValue (entity_, value) in entity_
+        if typeof<Entity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then let _ = property.SetValue (entity_, value) in entity_
         else
             match entity.EntitySemantic with
             | Gui gui ->
                 let gui_ = { gui with Position = gui.Position } // NOTE: hacky copy
-                if gui_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
-                then let _ = fieldInfo.SetValue (gui_, value) in { entity with EntitySemantic = Gui gui_ }
+                if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                then let _ = property.SetValue (gui_, value) in { entity with EntitySemantic = Gui gui_ }
                 else
                     match gui.GuiSemantic with
                     | Button button ->
                         let button_ = { button with IsDown = button.IsDown } // NOTE: hacky copy
-                        fieldInfo.SetValue (button_, value)
+                        property.SetValue (button_, value)
                         { entity with EntitySemantic = Gui { gui with GuiSemantic = Button button_ }}
                     | Label label ->
                         let label_ = { label with LabelSprite = label.LabelSprite } // NOTE: hacky copy
-                        fieldInfo.SetValue (label_, value)
+                        property.SetValue (label_, value)
                         { entity with EntitySemantic = Gui { gui with GuiSemantic = Label label_ }}
                     | TextBox textBox ->
                         let textBox_ = { textBox with BoxSprite = textBox.BoxSprite } // NOTE: hacky copy
-                        fieldInfo.SetValue (textBox_, value)
+                        property.SetValue (textBox_, value)
                         { entity with EntitySemantic = Gui { gui with GuiSemantic = TextBox textBox_ }}
                     | Toggle toggle ->
                         let toggle_ = { toggle with IsPressed = toggle.IsPressed } // NOTE: hacky copy
-                        fieldInfo.SetValue (toggle_, value)
+                        property.SetValue (toggle_, value)
                         { entity with EntitySemantic = Gui { gui with GuiSemantic = Toggle toggle_ }}
                     | Feeler feeler ->
                         let feeler_ = { feeler with IsTouched = feeler.IsTouched } // NOTE: hacky copy
-                        fieldInfo.SetValue (feeler_, value)
+                        property.SetValue (feeler_, value)
                         { entity with EntitySemantic = Gui { gui with GuiSemantic = Feeler feeler_ }}
             | Actor actor ->
                 let actor_ = { actor with Position = actor.Position } // NOTE: hacky copy
-                if actor_.GetType().GetField (fieldInfo.Name, BindingFlags.Instance ||| BindingFlags.NonPublic) = fieldInfo
-                then let _ = fieldInfo.SetValue (actor_, value) in { entity with EntitySemantic = Actor actor_ }
+                if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                then let _ = property.SetValue (actor_, value) in { entity with EntitySemantic = Actor actor_ }
                 else
                     match actor.ActorSemantic with
                     | Block block ->
                         let block_ = { block with PhysicsId = block.PhysicsId } // NOTE: hacky copy
-                        fieldInfo.SetValue (block_, value)
+                        property.SetValue (block_, value)
                         { entity with EntitySemantic = Actor { actor with ActorSemantic = Block block_ }}
                     | Avatar avatar ->
                         let avatar_ = { avatar with PhysicsId = avatar.PhysicsId } // NOTE: hacky copy
-                        fieldInfo.SetValue (avatar_, value)
+                        property.SetValue (avatar_, value)
                         { entity with EntitySemantic = Actor { actor with ActorSemantic = Avatar avatar_ }}
                     | TileMap tileMap ->
                         let tileMap_ = { tileMap with PhysicsIds = tileMap.PhysicsIds } // NOTE: hacky copy
-                        fieldInfo.SetValue (tileMap_, value)
+                        property.SetValue (tileMap_, value)
                         { entity with EntitySemantic = Actor { actor with ActorSemantic = TileMap tileMap_ }}
     set entity_ world entityLens
 
-let setEntityFieldValues changes world =
-    Seq.fold setEntityFieldValue world changes
+let setEntityPropertyValues changes world =
+    Seq.fold setEntityPropertyValue world changes
