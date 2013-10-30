@@ -55,6 +55,11 @@ type Vector4TypeConverter () =
             let argFs = Array.map (fun arg -> Single.Parse arg) args
             Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
+let initMathConverters () =
+    AssignTypeConverter<Vector2, Vector2TypeConverter> ()
+    AssignTypeConverter<Vector3, Vector3TypeConverter> ()
+    AssignTypeConverter<Vector4, Vector4TypeConverter> ()
+
 let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
     point.X >= boxPos.X &&
     point.X < boxPos.X + boxSize.X &&

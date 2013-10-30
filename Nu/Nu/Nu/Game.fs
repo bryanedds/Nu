@@ -3,6 +3,7 @@ open System
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu.Core
+open Nu.LensHelper
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
