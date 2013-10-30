@@ -254,84 +254,84 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
 
         member this.WriteXml writer =
             writer.WriteStartElement typeof<Entity>.Name
-            writePublicProperties writer this
+            writeNuProperties writer this
             match this.EntitySemantic with
             | Gui gui ->
                 writer.WriteElementString ("EntitySemanticType", "Gui")
-                writePublicProperties writer gui
+                writeNuProperties writer gui
                 match gui.GuiSemantic with
                 | Button button ->
                     writer.WriteElementString ("GuiSemanticType", "Button")
-                    writePublicProperties writer button
+                    writeNuProperties writer button
                 | Label label ->
                     writer.WriteElementString ("GuiSemanticType", "Label")
-                    writePublicProperties writer label
+                    writeNuProperties writer label
                 | TextBox textBox ->
                     writer.WriteElementString ("GuiSemanticType", "TextBox")
-                    writePublicProperties writer textBox
+                    writeNuProperties writer textBox
                 | Toggle toggle ->
                     writer.WriteElementString ("GuiSemanticType", "Toggle")
-                    writePublicProperties writer toggle
+                    writeNuProperties writer toggle
                 | Feeler feeler ->
                     writer.WriteElementString ("GuiSemanticType", "Feeler")
-                    writePublicProperties writer feeler
+                    writeNuProperties writer feeler
             | Actor actor ->
                 writer.WriteElementString ("EntitySemanticType", "Actor")
-                writePublicProperties writer actor
+                writeNuProperties writer actor
                 match actor.ActorSemantic with
                 | Block block ->
                     writer.WriteElementString ("ActorSemanticType", "Block")
-                    writePublicProperties writer block
+                    writeNuProperties writer block
                 | Avatar avatar ->
                     writer.WriteElementString ("ActorSemanticType", "Avatar")
-                    writePublicProperties writer avatar
+                    writeNuProperties writer avatar
                 | TileMap tileMap ->
                     writer.WriteElementString ("ActorSemanticType", "TileMap")
-                    writePublicProperties writer tileMap
+                    writeNuProperties writer tileMap
             writer.WriteEndElement ()
 
         // CLOSURE_LEAK: adding entity, actor, or gui types will cause error without compile-time
         // notice in this method!
         member this.ReadXml reader =
             reader.ReadStartElement ()
-            readPublicProperties reader this
+            readNuProperties reader this
             let entitySemanticType = reader.ReadElementString ("EntitySemanticType")
             match entitySemanticType with
             | "Gui" ->
                 let gui = Activator.CreateInstance typeof<Gui> :?> Gui
-                readPublicProperties reader gui
+                readNuProperties reader gui
                 let guiSemanticType = reader.ReadElementString ("GuiSemanticType")
                 match guiSemanticType with
                 | "Button" ->
                     let button = Activator.CreateInstance typeof<Button> :?> Button
-                    readPublicProperties reader button
+                    readNuProperties reader button
                 | "Label" ->
                     let label = Activator.CreateInstance typeof<Label> :?> Label
-                    readPublicProperties reader label
+                    readNuProperties reader label
                 | "TextBox" ->
                     let textBox = Activator.CreateInstance typeof<TextBox> :?> TextBox
-                    readPublicProperties reader textBox
+                    readNuProperties reader textBox
                 | "Toggle" ->
                     let toggle = Activator.CreateInstance typeof<Toggle> :?> Toggle
-                    readPublicProperties reader toggle
+                    readNuProperties reader toggle
                 | "Feeler" ->
                     let feeler = Activator.CreateInstance typeof<Feeler> :?> Feeler
-                    readPublicProperties reader feeler
+                    readNuProperties reader feeler
                 | _ -> failwith <| "Invalid GuiSemanticType '" + guiSemanticType + "'."
             | "Actor" ->
                 let actor = Activator.CreateInstance typeof<Actor> :?> Actor
-                readPublicProperties reader actor
+                readNuProperties reader actor
                 let actorSemanticType = reader.ReadElementString ("ActorSemanticType")
                 match actorSemanticType with
                 | "Block" ->
                     let block = Activator.CreateInstance typeof<Block> :?> Block
-                    readPublicProperties reader block
+                    readNuProperties reader block
                 | "Avatar" ->
                     let avatar = Activator.CreateInstance typeof<Avatar> :?> Avatar
-                    readPublicProperties reader avatar
+                    readNuProperties reader avatar
                 | "TileMap" ->
                     let tileMap = Activator.CreateInstance typeof<TileMap> :?> TileMap
-                    readPublicProperties reader tileMap
+                    readNuProperties reader tileMap
                 | _ -> failwith <| "Invalid ActorSemanticType '" + actorSemanticType + "'."
             | _ -> failwith <| "Invalid EntitySemanticType '" + entitySemanticType + "'."
             reader.ReadEndElement ()
