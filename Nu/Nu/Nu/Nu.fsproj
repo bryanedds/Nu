@@ -54,12 +54,12 @@
     <Compile Include="Rendering.fs" />
     <Compile Include="AssetMetadata.fs" />
     <Compile Include="Input.fs" />
-    <Compile Include="Sdl.fs" />
+    <Compile Include="Camera.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Group.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Game.fs" />
-    <Compile Include="Camera.fs" />
+    <Compile Include="Sdl.fs" />
     <Compile Include="Simulation.fs" />
     <Compile Include="TestGame.fs" />
     <Compile Include="OmniBlade.fs" />
