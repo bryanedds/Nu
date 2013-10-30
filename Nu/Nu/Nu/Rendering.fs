@@ -1,6 +1,7 @@
 ﻿module Nu.Rendering
 open System
 open System.IO
+open System.ComponentModel
 open OpenTK
 open SDL2
 open Nu.Core
@@ -79,6 +80,42 @@ type [<ReferenceEquality>] Renderer =
     private
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap }
+
+type SpriteTypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let s = obj :?> Sprite
+        String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Sprite> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Sprite> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            { SpriteAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+
+type FontTypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let s = obj :?> Font
+        String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Font> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Font> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+
+let initRenderConverters () =
+    AssignTypeConverter<Sprite, SpriteTypeConverter> ()
+    AssignTypeConverter<Font, FontTypeConverter> ()
 
 let getLayerableDepth layerable =
     match layerable with

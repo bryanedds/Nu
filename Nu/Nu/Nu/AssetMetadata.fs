@@ -1,7 +1,7 @@
 ﻿module Nu.AssetMetadata
 open System
 open System.ComponentModel
-open System.Drawing // TODO: see if this dependency can be elegantly removed / replaced with something lighter
+open System.Drawing // TODO: see if this dependency can be elegantly removed or replaced with something lighter
 open System.IO
 open System.Linq
 open System.Xml
@@ -10,54 +10,6 @@ open TiledSharp
 open Nu.Assets
 open Nu.Audio
 open Nu.Rendering
-
-type SoundTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Sound
-        String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Sound> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Sound> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { SoundAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
-
-type SongTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Song
-        String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Song> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Song> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { SongAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
-
-type SpriteTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Sprite
-        String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Sprite> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Sprite> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { SpriteAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of int * int

@@ -47,6 +47,7 @@
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="Serialization.fs" />
+    <Compile Include="LensHelper.fs" />
     <Compile Include="Voords.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />
