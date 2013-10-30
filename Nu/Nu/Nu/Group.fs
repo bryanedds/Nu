@@ -9,7 +9,8 @@ open Nu.Entity
 /// A serializable value type.
 type [<StructuralEquality; NoComparison>] Group =
     { Id : Id
-      Entities : Map<Lun, Entity> }
+      Entities : Map<Lun, Entity>
+      GroupSemantic : unit }
        
     static member private optChildFinder addressHead parent =
         Map.tryFind addressHead parent.Entities

@@ -20,7 +20,8 @@ let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
     let game =
         { Id = getNuId ()
           Screens = Map.empty
-          OptActiveScreenAddress = None }
+          OptActiveScreenAddress = None
+          GameSemantic = () }
     match tryGenerateAssetMetadataMap "AssetGraph.xml" with
     | Left errorMsg -> Left errorMsg
     | Right assetMetadataMap ->

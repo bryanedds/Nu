@@ -10,7 +10,8 @@ open Nu.Group
 /// A serializable value type
 type [<StructuralEquality; NoComparison>] Screen =
     { Id : Id
-      Groups : Map<Lun, Group> }
+      Groups : Map<Lun, Group>
+      ScreenSemantic : unit }
      
     static member private optChildFinder addressHead parent =
         Map.tryFind addressHead parent.Groups

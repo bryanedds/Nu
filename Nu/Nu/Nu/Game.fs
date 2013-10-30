@@ -22,7 +22,8 @@ open Nu.Screen
 type [<StructuralEquality; NoComparison>] Game =
     { Id : Id
       Screens : Map<Lun, Screen>
-      OptActiveScreenAddress : Address option }
+      OptActiveScreenAddress : Address option
+      GameSemantic : unit }
         
     static member private optChildFinder addressHead parent =
         Map.tryFind addressHead parent.Screens
