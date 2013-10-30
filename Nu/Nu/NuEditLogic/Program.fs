@@ -105,14 +105,13 @@ let [<EntryPoint; STAThread>] main _ =
                     writerSettings.Indent <- true
                     use writer = XmlWriter.Create (file, writerSettings)
                     writer.WriteStartDocument ()
-                    let testEntity = get refWorld.Value (World.entity TestButtonAddress) :> IXmlSerializable
-                    testEntity.WriteXml writer
+                    let testEntity = get refWorld.Value (World.entity TestButtonAddress)
+                    writeEntityXml writer testEntity
                     writer.WriteEndDocument ())
                 form.openToolStripMenuItem.Click.Add (fun _ ->
                     use file = File.Open ("temp.xml", FileMode.Open)
                     use reader = XmlReader.Create file
-                    let testEntity = { get refWorld.Value (World.entity TestButtonAddress) with Id = 0L } :> IXmlSerializable
-                    testEntity.ReadXml reader
+                    let testEntity = readEntityXml reader
                     ())
                 form.Show ()
                 Right refWorld.Value)
