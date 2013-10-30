@@ -677,3 +677,11 @@ let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
 
 let run tryCreateWorld handleUpdate sdlConfig =
     run4 tryCreateWorld handleUpdate id sdlConfig
+
+let initTypeConverters () =
+    AssignTypeConverter<Vector2, Vector2TypeConverter> ()
+    AssignTypeConverter<Vector3, Vector3TypeConverter> ()
+    AssignTypeConverter<Vector4, Vector4TypeConverter> ()
+    AssignTypeConverter<Sound, SoundTypeConverter> ()
+    AssignTypeConverter<Song, SongTypeConverter> ()
+    AssignTypeConverter<Sprite, SpriteTypeConverter> ()

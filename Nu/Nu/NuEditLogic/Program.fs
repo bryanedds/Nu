@@ -84,6 +84,7 @@ and EntityTypeDescriptorProvider () =
         EntityTypeDescriptor optSource :> ICustomTypeDescriptor
 
 let [<EntryPoint; STAThread>] main _ =
+    initTypeConverters ()
     use form = new NuEditForm ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
