@@ -61,7 +61,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let game =
             { Id = getNuId ()
               Screens = Map.empty
-              OptActiveScreenAddress = None
+              OptSelectedScreenAddress = None
               GameSemantic = () }
     
         let world =

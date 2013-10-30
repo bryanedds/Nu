@@ -22,7 +22,7 @@ open Nu.Screen
 type [<StructuralEquality; NoComparison>] Game =
     { Id : Id
       Screens : Map<Lun, Screen>
-      OptActiveScreenAddress : Address option
+      OptSelectedScreenAddress : Address option
       GameSemantic : unit }
         
     static member private optChildFinder addressHead parent =
@@ -125,5 +125,5 @@ type [<StructuralEquality; NoComparison>] Game =
           Set = fun screens this -> { this with Screens = screens }}
     
     static member optActiveScreenAddress =
-        { Get = fun this -> this.OptActiveScreenAddress
-          Set = fun optActiveScreenAddress this -> { this with OptActiveScreenAddress = optActiveScreenAddress }}
+        { Get = fun this -> this.OptSelectedScreenAddress
+          Set = fun optActiveScreenAddress this -> { this with OptSelectedScreenAddress = optActiveScreenAddress }}
