@@ -506,10 +506,10 @@ let writeConstraintFailures constraintProjections =
     let constraintFailuresString = List.joinBy writeConstraintFailure SpaceStr constraintFailures
     "Could not satisfy constraint(s) '" + constraintFailuresString + "'."
 
-let projectConstraintToProtocolArg (instances, matches) ((constr, parg) as instance) =
-    let optPrevConstraint = LunTrie.tryFind parg matches
+let projectConstraintToProtocolArg (instances, matches) ((constr, parg : Lun) as instance) =
+    let optPrevConstraint = Map.tryFind parg matches
     match optPrevConstraint with
-    | None -> ((true, instance) :: instances, LunTrie.add parg constr matches)
+    | None -> ((true, instance) :: instances, Map.add parg constr matches)
     | Some prevConstraint ->
         if prevConstraint.ConstrName = constr.ConstrName then ((true, instance) :: instances, matches)
         else ((false, instance) :: instances, matches)
@@ -517,6 +517,6 @@ let projectConstraintToProtocolArg (instances, matches) ((constr, parg) as insta
 let projectConstraintsToProtocolArg (constraints : Constraint list) parg =
     let paddedPargs = List.padWithLastToProportion [parg] constraints
     let zipped = List.zip constraints paddedPargs
-    let (constraintInstances, _) = List.fold projectConstraintToProtocolArg (List.empty, LunTrie.empty) zipped
+    let (constraintInstances, _) = List.fold projectConstraintToProtocolArg (List.empty, Map.empty) zipped
     let allConstraintsSuccessful = List.fornone (fun (result, _) -> not result) constraintInstances
     (allConstraintsSuccessful, constraintInstances)
