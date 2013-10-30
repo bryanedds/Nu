@@ -23,16 +23,16 @@ open NuEditLogic.Entity
 
 // NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
 // style variable (but perhaps I've merely overlooked how to parameterize this?)
-let private gEntityFieldChanges = List<EntityFieldChange> ()
+let private gEntityPropertyChanges = List<EntityPropertyChange> ()
 
 type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
     { Address : Address
       RefWorld : World ref }
 
-and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
-    inherit PropertyDescriptor (fieldInfo.Name, Array.empty)
+and EntityPropertyDescriptor (property : PropertyInfo) =
+    inherit PropertyDescriptor (property.Name, Array.empty)
     override this.ComponentType with get () = null // TODO: figure out what this definition should be!
-    override this.PropertyType with get () = fieldInfo.FieldType
+    override this.PropertyType with get () = property.PropertyType
     override this.CanResetValue source = false
     override this.ResetValue source = ()
     override this.ShouldSerializeValue source = true
@@ -40,28 +40,28 @@ and EntityPropertyDescriptor (fieldInfo : FieldInfo) =
     override this.IsReadOnly
         // NOTE: we make entity id read-only
         // TODO: use attribute from the corresponding property here instead
-        with get () = fieldInfo.Name = "Id@"
+        with get () = property.Name = "Id"
 
     override this.GetValue source =
         let entityTds = source :?> EntityTypeDescriptorSource
         let entityLens = World.entity entityTds.Address
         let entity = get entityTds.RefWorld.Value entityLens
-        getEntityFieldValue fieldInfo entity
+        getEntityPropertyValue property entity
 
     override this.SetValue (source, value) =
         let entityTds = source :?> EntityTypeDescriptorSource
-        let entityFieldChange = { Address = entityTds.Address; FieldInfo = fieldInfo; Value = value }
+        let entityPropertyChange = { Address = entityTds.Address; PropertyInfo = property; Value = value }
         // NOTE: even though this ref world will eventually get blown away, it must still be
         // updated here so that the change is reflected immediately by the property grid.
-        entityTds.RefWorld := setEntityFieldValue entityTds.RefWorld.Value entityFieldChange
-        gEntityFieldChanges.Add entityFieldChange
+        entityTds.RefWorld := setEntityPropertyValue entityTds.RefWorld.Value entityPropertyChange
+        gEntityPropertyChanges.Add entityPropertyChange
 
     // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
     static member GetPropertyDescriptors (aType : Type) =
-        let fields = aType.GetFields (BindingFlags.Instance ||| BindingFlags.NonPublic)
-        let propertyDescriptors = Seq.map (fun field -> new EntityPropertyDescriptor (field) :> PropertyDescriptor) fields
+        let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
+        let propertyDescriptors = Seq.map (fun property -> new EntityPropertyDescriptor (property) :> PropertyDescriptor) properties
         // TODO: use attribute from the corresponding property here instead of name pattern
-        let propertyDescriptors2 = Seq.filter (fun (propertyDescriptor : PropertyDescriptor) -> not <| propertyDescriptor.Name.EndsWith "Semantic@") propertyDescriptors
+        let propertyDescriptors2 = Seq.filter (fun (propertyDescriptor : PropertyDescriptor) -> not <| propertyDescriptor.Name.EndsWith "Semantic") propertyDescriptors
         List.ofSeq propertyDescriptors2
 
 and EntityTypeDescriptor (optSource : obj) =
@@ -118,8 +118,8 @@ let [<EntryPoint; STAThread>] main _ =
                 form.Show ()
                 Right refWorld.Value)
         (fun world ->
-            let world_ = setEntityFieldValues gEntityFieldChanges world
-            gEntityFieldChanges.Clear ()
+            let world_ = setEntityPropertyValues gEntityPropertyChanges world
+            gEntityPropertyChanges.Clear ()
             let (keepRunning, world_) = testHandleUpdate world_
             refWorld := world_ // the old refWorld is blown away here
             (keepRunning && not form.IsDisposed, world_))
