@@ -193,7 +193,7 @@ let isAddressSelected address world =
         else false
 
 /// Publish a message to the given address.
-let publish address message world : World =
+let publish address message world =
     let optSubList = Map.tryFind address world.Subscriptions
     match optSubList with
     | None -> world
@@ -209,7 +209,7 @@ let publish address message world : World =
         world_
 
 /// Subscribe to messages at the given address.
-let subscribe address subscriber subscription world : World =
+let subscribe address subscriber subscription world =
     let sub = Subscription subscription
     let subs = world.Subscriptions
     let optSubList = Map.tryFind address subs
@@ -220,7 +220,7 @@ let subscribe address subscriber subscription world : World =
             | Some subList -> Map.add address ((subscriber, sub) :: subList) subs }
 
 /// Unsubscribe to messages at the given address.
-let unsubscribe address subscriber world : World =
+let unsubscribe address subscriber world =
     let subs = world.Subscriptions
     let optSubList = Map.tryFind address subs
     match optSubList with
@@ -231,12 +231,12 @@ let unsubscribe address subscriber world : World =
         { world with Subscriptions = subscriptions2 }
 
 /// Execute a procedure within the context of a given subscription at the given address.
-let withSubscription address subscription subscriber procedure world : World =
+let withSubscription address subscription subscriber procedure world =
     let world2 = subscribe address subscriber subscription world
     let world3 = procedure world2
     unsubscribe address subscriber world3
 
-let unregisterEntityGuiButton address world : World =
+let unregisterEntityGuiButton address world =
     world |>
         unsubscribe DownMouseLeftAddress address |>
         unsubscribe UpMouseLeftAddress address
@@ -273,33 +273,33 @@ let handleButtonEventUpMouseLeft address subscriber message world =
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
-let registerEntityGuiButton address world : World =
+let registerEntityGuiButton address world =
     let optOldEntityGuiButton = get world (World.optEntityGuiButton address)
     let world_ = if optOldEntityGuiButton.IsSome then unregisterEntityGuiButton address world else world
     let world_ = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world_
 
-let addEntityGuiButton entityGuiButton address world : World =
+let addEntityGuiButton entityGuiButton address world =
     let world2 = registerEntityGuiButton address world
     set entityGuiButton world2 (World.entityGuiButton address)
 
-let removeEntityGuiButton address world : World =
+let removeEntityGuiButton address world =
     let world2 = set None world (World.optEntityGuiButton address)
     unregisterEntityGuiButton address world2
 
-let addEntityGuiLabel entityGuiLabel address world : World =
+let addEntityGuiLabel entityGuiLabel address world =
     set entityGuiLabel world (World.entityGuiLabel address)
 
-let removeEntityGuiLabel address world : World =
+let removeEntityGuiLabel address world =
     set None world (World.optEntityGuiLabel address)
 
-let addEntityGuiTextBox entityGuiTextBox address world : World =
+let addEntityGuiTextBox entityGuiTextBox address world =
     set entityGuiTextBox world (World.entityGuiTextBox address)
 
-let removeEntityGuiTextBox address world : World =
+let removeEntityGuiTextBox address world =
     set None world (World.optEntityGuiTextBox address)
 
-let unregisterEntityGuiToggle address world : World =
+let unregisterEntityGuiToggle address world =
     world |>
         unsubscribe DownMouseLeftAddress address |>
         unsubscribe UpMouseLeftAddress address
@@ -337,17 +337,17 @@ let handleToggleEventUpMouseLeft address subscriber message world =
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
-let registerEntityGuiToggle address world : World =
+let registerEntityGuiToggle address world =
     let optOldEntityGuiToggle = get world (World.optEntityGuiToggle address)
     let world_ = if optOldEntityGuiToggle.IsSome then unregisterEntityGuiToggle address world else world
     let world_ = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world_
 
-let addEntityGuiToggle entityGuiToggle address world : World =
+let addEntityGuiToggle entityGuiToggle address world =
     let world2 = registerEntityGuiToggle address world
     set entityGuiToggle world2 (World.entityGuiToggle address)
 
-let unregisterEntityGuiFeeler address world : World =
+let unregisterEntityGuiFeeler address world =
     world |>
         unsubscribe UpMouseLeftAddress address |>
         unsubscribe DownMouseLeftAddress address
@@ -378,21 +378,21 @@ let handleFeelerEventUpMouseLeft address subscriber message world =
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
-let registerEntityGuiFeeler address world : World =
+let registerEntityGuiFeeler address world =
     let optOldEntityGuiFeeler = get world (World.optEntityGuiFeeler address)
     let world_ = if optOldEntityGuiFeeler.IsSome then unregisterEntityGuiFeeler address world else world
     let world_ = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world_
 
-let addEntityGuiFeeler entityGuiFeeler address world : World =
+let addEntityGuiFeeler entityGuiFeeler address world =
     let world2 = registerEntityGuiFeeler address world
     set entityGuiFeeler world2 (World.entityGuiFeeler address)
 
-let unregisterEntityActorBlock (entity, actor, (block : Block)) address world : World =
+let unregisterEntityActorBlock (entity, actor, block : Block) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorBlock (entity, actor, (block : Block)) address world : World =
+let registerEntityActorBlock (entity, actor, block : Block) address world =
     let optOldEntityActorBlock = get world (World.optEntityActorBlock address)
     let world2 =
         match optOldEntityActorBlock with
@@ -417,19 +417,19 @@ let registerEntityActorBlock (entity, actor, (block : Block)) address world : Wo
               BodyType = block.BodyType }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
-let addEntityActorBlock entityActorBlock address world : World =
+let addEntityActorBlock entityActorBlock address world =
     let world2 = registerEntityActorBlock entityActorBlock address world
     set entityActorBlock world2 (World.entityActorBlock address)
 
-let removeEntityActorBlock entityActorBlock address world : World =
+let removeEntityActorBlock entityActorBlock address world =
     let world2 = set None world (World.optEntityActorBlock address)
     unregisterEntityActorBlock entityActorBlock address world2
 
-let unregisterEntityActorAvatar (entity, actor, avatar) address world : World =
+let unregisterEntityActorAvatar (entity, actor, avatar) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorAvatar (entity, actor, avatar) address world : World =
+let registerEntityActorAvatar (entity, actor, avatar) address world =
     let optOldEntityActorAvatar = get world (World.optEntityActorAvatar address)
     let world2 =
         match optOldEntityActorAvatar with
@@ -454,19 +454,19 @@ let registerEntityActorAvatar (entity, actor, avatar) address world : World =
               BodyType = BodyType.Dynamic }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
-let addEntityActorAvatar entityActorAvatar address world : World =
+let addEntityActorAvatar entityActorAvatar address world =
     let world2 = registerEntityActorAvatar entityActorAvatar address world
     set entityActorAvatar world2 (World.entityActorAvatar address)
 
-let removeEntityActorAvatar entityActorAvatar address world : World =
+let removeEntityActorAvatar entityActorAvatar address world =
     let world2 = set None world (World.optEntityActorAvatar address)
     unregisterEntityActorAvatar entityActorAvatar address world2
 
-let unregisterEntityActorTileMap (entity, actor, tileMap) address world : World =
+let unregisterEntityActorTileMap (entity, actor, tileMap) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = tileMap.PhysicsIds.[0] }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorTileMap (entity, actor, tileMap) address world : World =
+let registerEntityActorTileMap (entity, actor, tileMap) address world =
     let optOldEntityActorTileMap = get world (World.optEntityActorTileMap address)
     let world2 =
         match optOldEntityActorTileMap with
@@ -484,24 +484,24 @@ let registerEntityActorTileMap (entity, actor, tileMap) address world : World =
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }*)
     world2
 
-let addEntityActorTileMap entityActorTileMap address world : World =
+let addEntityActorTileMap entityActorTileMap address world =
     let world2 = registerEntityActorTileMap entityActorTileMap address world
     set entityActorTileMap world2 (World.entityActorTileMap address)
 
-let removeEntityActorTileMap entityActorTileMap address world : World =
+let removeEntityActorTileMap entityActorTileMap address world =
     let world2 = set None world (World.optEntityActorTileMap address)
     unregisterEntityActorTileMap entityActorTileMap address world2
 
-let addGroup group address world : World =
+let addGroup group address world =
     set group world (World.group address)
 
-let removeGroup address world : World =
+let removeGroup address world =
     set None world (World.optGroup address)
 
-let addScreen screen address world : World =
+let addScreen screen address world =
     set screen world (World.screen address)
 
-let removeScreen address world : World =
+let removeScreen address world =
     set None world (World.optScreen address)
 
 let getComponentAudioDescriptors world : AudioDescriptor rQueue =
@@ -514,7 +514,7 @@ let getAudioDescriptors world : AudioDescriptor rQueue =
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Play the world's audio.
-let play world : World =
+let play world =
     let audioMessages = world.AudioMessages
     let audioDescriptors = getAudioDescriptors world
     let audioPlayer = world.AudioPlayer
@@ -591,7 +591,7 @@ let getRenderDescriptors world : RenderDescriptor rQueue =
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Render the world.
-let render world : World =
+let render world =
     let renderMessages = world.RenderMessages
     let renderDescriptors = getRenderDescriptors world
     let renderer = world.Renderer
@@ -599,7 +599,7 @@ let render world : World =
     let world2 = {{ world with RenderMessages = [] } with Renderer = renderer2 }
     world2
 
-let handleIntegrationMessage world integrationMessage : World =
+let handleIntegrationMessage world integrationMessage =
     match integrationMessage with
     | BodyTransformMessage bodyTransformMessage ->
         let (entity, actor) = get world (World.entityActor bodyTransformMessage.EntityAddress)
@@ -613,11 +613,11 @@ let handleIntegrationMessage world integrationMessage : World =
         publish collisionAddress collisionMessage world
 
 /// Handle physics integration messages.
-let handleIntegrationMessages integrationMessages world : World =
+let handleIntegrationMessages integrationMessages world =
     List.fold handleIntegrationMessage world integrationMessages
 
 /// Integrate the world.
-let integrate world : World =
+let integrate world =
     let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
     let world2 = { world with PhysicsMessages = [] }
     handleIntegrationMessages integrationMessages world2
