@@ -614,7 +614,7 @@ let integrate world : World =
     handleIntegrationMessages integrationMessages world2
 
 let createEmptyWorld sdlDeps =
-    { Game = { Id = getNuId (); Screens = Map.empty; OptActiveScreenAddress = None }
+    { Game = { Id = getNuId (); Screens = Map.empty; OptActiveScreenAddress = None; GameSemantic = () }
       Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
       Subscriptions = Map.empty
       MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }

@@ -61,7 +61,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let game =
             { Id = getNuId ()
               Screens = Map.empty
-              OptActiveScreenAddress = None }
+              OptActiveScreenAddress = None
+              GameSemantic = () }
     
         let world =
             { Game = game
@@ -79,11 +80,13 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
 
         let screen =
             { Id = getNuId ()
-              Groups = Map.empty }
+              Groups = Map.empty
+              ScreenSemantic = () }
 
         let group =
             { Id = getNuId ()
-              Entities = Map.empty }
+              Entities = Map.empty
+              GroupSemantic = () }
           
         let feeler =
             { IsTouched = false }
