@@ -184,6 +184,14 @@ and IWorldComponent =
 let handle message =
     { Handled = true; Data = message.Data }
 
+let isAddressSelected address world =
+    match (address, world.Game.OptSelectedScreenAddress) with
+    | ([], _) -> true
+    | (_, None) -> false
+    | (_, Some screenAddress) ->
+        if List.head screenAddress = List.head address then true // TODO: test also to see if group and entity are selected
+        else false
+
 /// Publish a message to the given address.
 let publish address message world : World =
     let optSubList = Map.tryFind address world.Subscriptions
@@ -194,7 +202,8 @@ let publish address message world : World =
             List.foldWhile
                 (fun (message_, world_) (subscriber, (Subscription subscription)) ->
                     if message_.Handled then None
-                    else Some (subscription address subscriber message_ world_))
+                    elif isAddressSelected subscriber world_ then Some (subscription address subscriber message_ world_)
+                    else Some (message_, world_))
                 (message, world)
                 subList
         world_
@@ -614,7 +623,7 @@ let integrate world : World =
     handleIntegrationMessages integrationMessages world2
 
 let createEmptyWorld sdlDeps =
-    { Game = { Id = getNuId (); Screens = Map.empty; OptActiveScreenAddress = None; GameSemantic = () }
+    { Game = { Id = getNuId (); Screens = Map.empty; OptSelectedScreenAddress = None; GameSemantic = () }
       Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
       Subscriptions = Map.empty
       MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }

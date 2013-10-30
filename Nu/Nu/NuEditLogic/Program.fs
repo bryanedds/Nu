@@ -114,7 +114,6 @@ let [<EntryPoint; STAThread>] main _ =
                     let testEntity = { get refWorld.Value (World.entity TestButtonAddress) with Id = 0L } :> IXmlSerializable
                     testEntity.ReadXml reader
                     ())
-
                 form.Show ()
                 Right refWorld.Value)
         (fun world ->
