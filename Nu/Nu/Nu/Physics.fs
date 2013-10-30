@@ -6,6 +6,7 @@ open Microsoft.Xna
 open Nu.Core
 open Nu.Constants
 
+/// NOTE: Ironically, not purely functional (TODO: maybe address this?)
 let getPhysicsId = createGetNextId ()
 
 type [<StructuralEquality; NoComparison>] CommonShapeProperties =

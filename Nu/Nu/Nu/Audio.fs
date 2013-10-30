@@ -1,7 +1,9 @@
 ﻿module Nu.Audio
 open System
 open System.IO
+open System.ComponentModel
 open SDL2
+open Nu.Core
 open Nu.Constants
 open Nu.Assets
 
@@ -56,6 +58,42 @@ type [<ReferenceEquality>] AudioPlayer =
           AudioAssetMap : AudioAsset AssetMap
           OptCurrentSong : Song option
           OptNextSong : Song option }
+
+type SoundTypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let s = obj :?> Sound
+        String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Sound> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Sound> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            { SoundAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+
+type SongTypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let s = obj :?> Song
+        String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Song> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Song> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            { SongAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+
+let initAudioConverters () =
+    AssignTypeConverter<Sound, SoundTypeConverter> ()
+    AssignTypeConverter<Song, SongTypeConverter> ()
 
 let haltSound () =
     ignore (SDL_mixer.Mix_HaltMusic ())
