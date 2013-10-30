@@ -1,6 +1,6 @@
 ﻿module Nu.AssetMetadata
 open System
-open System.Drawing // NOTE: I'm not real sure I like having this dependency...
+open System.Drawing // TODO: see if this dependency can be elegantly removed / replaced with something lighter
 open System.IO
 open System.Linq
 open System.Xml

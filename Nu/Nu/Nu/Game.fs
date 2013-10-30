@@ -40,76 +40,76 @@ type [<StructuralEquality; NoComparison>] Game =
     static member private childRemover addressHead parent =
         { parent with Game.Screens = Map.remove addressHead parent.Screens }
     
-    static member entity (address : Address) =
+    static member entity address =
         Game.screen [List.head address] >>| Screen.entity (List.tail address)
     
-    static member optEntity (address : Address) =
+    static member optEntity address =
         Game.screen [List.head address] >>| Screen.optEntity (List.tail address)
     
-    static member entityGui (address : Address) =
+    static member entityGui address =
         Game.screen [List.head address] >>| Screen.entityGui (List.tail address)
     
-    static member optEntityGui (address : Address) =
+    static member optEntityGui address =
         Game.screen [List.head address] >>| Screen.optEntityGui (List.tail address)
     
-    static member entityGuiButton (address : Address) =
+    static member entityGuiButton address =
         Game.screen [List.head address] >>| Screen.entityGuiButton (List.tail address)
     
-    static member optEntityGuiButton (address : Address) =
+    static member optEntityGuiButton address =
         Game.screen [List.head address] >>| Screen.optEntityGuiButton (List.tail address)
     
-    static member entityGuiLabel (address : Address) =
+    static member entityGuiLabel address =
         Game.screen [List.head address] >>| Screen.entityGuiLabel (List.tail address)
     
-    static member optEntityGuiLabel (address : Address) =
+    static member optEntityGuiLabel address =
         Game.screen [List.head address] >>| Screen.optEntityGuiLabel (List.tail address)
     
-    static member entityGuiTextBox (address : Address) =
+    static member entityGuiTextBox address =
         Game.screen [List.head address] >>| Screen.entityGuiTextBox (List.tail address)
     
-    static member optEntityGuiTextBox (address : Address) =
+    static member optEntityGuiTextBox address =
         Game.screen [List.head address] >>| Screen.optEntityGuiTextBox (List.tail address)
     
-    static member entityGuiToggle (address : Address) =
+    static member entityGuiToggle address =
         Game.screen [List.head address] >>| Screen.entityGuiToggle (List.tail address)
     
-    static member optEntityGuiToggle (address : Address) =
+    static member optEntityGuiToggle address =
         Game.screen [List.head address] >>| Screen.optEntityGuiToggle (List.tail address)
     
-    static member entityGuiFeeler (address : Address) =
+    static member entityGuiFeeler address =
         Game.screen [List.head address] >>| Screen.entityGuiFeeler (List.tail address)
     
-    static member optEntityGuiFeeler (address : Address) =
+    static member optEntityGuiFeeler address =
         Game.screen [List.head address] >>| Screen.optEntityGuiFeeler (List.tail address)
     
-    static member entityActor (address : Address) =
+    static member entityActor address =
         Game.screen [List.head address] >>| Screen.entityActor (List.tail address)
     
-    static member optEntityActor (address : Address) =
+    static member optEntityActor address =
         Game.screen [List.head address] >>| Screen.optEntityActor (List.tail address)
     
-    static member entityActorBlock (address : Address) =
+    static member entityActorBlock address =
         Game.screen [List.head address] >>| Screen.entityActorBlock (List.tail address)
     
-    static member optEntityActorBlock (address : Address) =
+    static member optEntityActorBlock address =
         Game.screen [List.head address] >>| Screen.optEntityActorBlock (List.tail address)
     
-    static member entityActorAvatar (address : Address) =
+    static member entityActorAvatar address =
         Game.screen [List.head address] >>| Screen.entityActorAvatar (List.tail address)
     
-    static member optEntityActorAvatar (address : Address) =
+    static member optEntityActorAvatar address =
         Game.screen [List.head address] >>| Screen.optEntityActorAvatar (List.tail address)
     
-    static member entityActorTileMap (address : Address) =
+    static member entityActorTileMap address =
         Game.screen [List.head address] >>| Screen.entityActorTileMap (List.tail address)
     
-    static member optEntityActorTileMap (address : Address) =
+    static member optEntityActorTileMap address =
         Game.screen [List.head address] >>| Screen.optEntityActorTileMap (List.tail address)
     
-    static member group (address : Address) =
+    static member group address =
         Game.screen [List.head address] >>| Screen.group (List.tail address)
     
-    static member optGroup (address : Address) =
+    static member optGroup address =
         Game.screen [List.head address] >>| Screen.optGroup (List.tail address)
     
     static member screen address =

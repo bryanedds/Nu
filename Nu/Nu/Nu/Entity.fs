@@ -12,12 +12,12 @@ open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
                         
-let getChild childFinder parent (address : Address) =
+let getChild childFinder parent address =
     match address with
     | [head] -> childFinder head parent
     | _ -> failwith ("Invalid address '" + str address + "'.")
 
-let setChild childAdder parent (address : Address) child =
+let setChild childAdder parent address child =
     match address with
     | [head] -> childAdder head parent child
     | _ -> failwith ("Invalid address '" + str address + "'.")
@@ -40,7 +40,7 @@ let setChildSemSem childAdder childSemSemSetter address parent child semantic se
     let child2 = childSemSemSetter child semantic semantic2
     setChild childAdder parent address child2
 
-let getOptChild optChildFinder parent (address : Address) =
+let getOptChild optChildFinder parent address =
     match address with
     | [] -> None
     | [head] ->
@@ -50,7 +50,7 @@ let getOptChild optChildFinder parent (address : Address) =
         | Some child -> Some child
     | _ :: _ -> None
 
-let setOptChild addChild removeChild parent (address : Address) optChild =
+let setOptChild addChild removeChild parent address optChild =
     match address with
     | [head] ->
         match optChild with
@@ -290,7 +290,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                     writeNuProperties writer tileMap
             writer.WriteEndElement ()
 
-        // CLOSURE_LEAK: adding entity, actor, or gui types will cause error without compile-time
+        // CLOSURE_LEAK: adding entity, actor, or gui types could cause errors without compile-time
         // notice in this method!
         member this.ReadXml reader =
             reader.ReadStartElement ()
