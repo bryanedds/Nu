@@ -1,5 +1,59 @@
 ﻿module Nu.Math
+open System
+open System.ComponentModel
 open OpenTK
+open Nu.Core
+
+type Vector2TypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let v2 = obj :?> Vector2
+        String.Format (culture, "{0};{1}", v2.X, v2.Y) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Vector2> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Vector2> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            let argFs = Array.map (fun arg -> Single.Parse arg) args
+            Vector2 (argFs.[0], argFs.[1]) :> obj
+
+type Vector3TypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let v3 = obj :?> Vector3
+        String.Format (culture, "{0};{1};{2}", v3.X, v3.Y, v3.Z) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Vector3> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Vector3> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            let argFs = Array.map (fun arg -> Single.Parse arg) args
+            Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
+
+type Vector4TypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let v4 = obj :?> Vector4
+        String.Format (culture, "{0};{1};{2};{3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Vector4> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<Vector4> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            let argFs = Array.map (fun arg -> Single.Parse arg) args
+            Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
 let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
     point.X >= boxPos.X &&

@@ -469,7 +469,8 @@ let readEntityXml (reader : XmlReader) =
     let entitySemSemType = reader.ReadElementString ("EntitySemSemType")
     let entitySemSem = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemSemType)).Unwrap ()
     readNuProperties reader entitySemSem
-    let entitySemSemProperty = (entitySemSem.GetType ()).GetProperty (entitySemanticType + "Semantic")
-    let entitySemSemValue = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemanticType + "+" + entitySemSemType, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|entitySemSem|], null, null)).Unwrap ()
+    let entitySemSemProperty = (entitySemantic.GetType ()).GetProperty (entitySemanticType + "Semantic")
+    let entitySemSemValue = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemanticType + "Semantic+" + entitySemSemType, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|entitySemSem|], null, null)).Unwrap ()
     entitySemSemProperty.SetValue (entitySemantic, entitySemSemValue)
     reader.ReadEndElement ()
+    entity
