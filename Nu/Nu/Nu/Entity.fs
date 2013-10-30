@@ -132,46 +132,46 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
       Depth : single
       Size : Vector2
       GuiSemantic : GuiSemantic }
-    with
-        static member button =
-            { Get = fun this -> match this.GuiSemantic with Button button -> button | _ -> failwith "Gui is not a button."
-              Set = fun button this -> { this with GuiSemantic = Button button }}
 
-        static member optButton =
-            { Get = fun this -> match this.GuiSemantic with Button button -> Some button | _ -> None
-              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some button -> { this with GuiSemantic = Button button }}
-        
-        static member label =
-            { Get = fun this -> match this.GuiSemantic with Label label -> label | _ -> failwith "Gui is not a label."
-              Set = fun label this -> { this with GuiSemantic = Label label }}
+    static member button =
+        { Get = fun this -> match this.GuiSemantic with Button button -> button | _ -> failwith "Gui is not a button."
+          Set = fun button this -> { this with GuiSemantic = Button button }}
 
-        static member optLabel =
-            { Get = fun this -> match this.GuiSemantic with Label label -> Some label | _ -> None
-              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some label -> { this with GuiSemantic = Label label }}
-        
-        static member textBox =
-            { Get = fun this -> match this.GuiSemantic with TextBox textBox -> textBox | _ -> failwith "Gui is not a textBox."
-              Set = fun textBox this -> { this with GuiSemantic = TextBox textBox }}
+    static member optButton =
+        { Get = fun this -> match this.GuiSemantic with Button button -> Some button | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some button -> { this with GuiSemantic = Button button }}
+    
+    static member label =
+        { Get = fun this -> match this.GuiSemantic with Label label -> label | _ -> failwith "Gui is not a label."
+          Set = fun label this -> { this with GuiSemantic = Label label }}
 
-        static member optTextBox =
-            { Get = fun this -> match this.GuiSemantic with TextBox textBox -> Some textBox | _ -> None
-              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some textBox -> { this with GuiSemantic = TextBox textBox }}
-        
-        static member toggle =
-            { Get = fun this -> match this.GuiSemantic with Toggle toggle -> toggle | _ -> failwith "Gui is not a toggle."
-              Set = fun toggle this -> { this with GuiSemantic = Toggle toggle }}
+    static member optLabel =
+        { Get = fun this -> match this.GuiSemantic with Label label -> Some label | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some label -> { this with GuiSemantic = Label label }}
+    
+    static member textBox =
+        { Get = fun this -> match this.GuiSemantic with TextBox textBox -> textBox | _ -> failwith "Gui is not a textBox."
+          Set = fun textBox this -> { this with GuiSemantic = TextBox textBox }}
 
-        static member optToggle =
-            { Get = fun this -> match this.GuiSemantic with Toggle toggle -> Some toggle | _ -> None
-              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some toggle -> { this with GuiSemantic = Toggle toggle }}
-        
-        static member feeler =
-            { Get = fun this -> match this.GuiSemantic with Feeler feeler -> feeler | _ -> failwith "Gui is not a feeler."
-              Set = fun feeler this -> { this with GuiSemantic = Feeler feeler }}
+    static member optTextBox =
+        { Get = fun this -> match this.GuiSemantic with TextBox textBox -> Some textBox | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some textBox -> { this with GuiSemantic = TextBox textBox }}
+    
+    static member toggle =
+        { Get = fun this -> match this.GuiSemantic with Toggle toggle -> toggle | _ -> failwith "Gui is not a toggle."
+          Set = fun toggle this -> { this with GuiSemantic = Toggle toggle }}
 
-        static member optFeeler =
-            { Get = fun this -> match this.GuiSemantic with Feeler feeler -> Some feeler | _ -> None
-              Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some feeler -> { this with GuiSemantic = Feeler feeler }}
+    static member optToggle =
+        { Get = fun this -> match this.GuiSemantic with Toggle toggle -> Some toggle | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some toggle -> { this with GuiSemantic = Toggle toggle }}
+    
+    static member feeler =
+        { Get = fun this -> match this.GuiSemantic with Feeler feeler -> feeler | _ -> failwith "Gui is not a feeler."
+          Set = fun feeler this -> { this with GuiSemantic = Feeler feeler }}
+
+    static member optFeeler =
+        { Get = fun this -> match this.GuiSemantic with Feeler feeler -> Some feeler | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some feeler -> { this with GuiSemantic = Feeler feeler }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { PhysicsId : Id
@@ -208,30 +208,30 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
       Size : Vector2
       Rotation : single
       ActorSemantic : ActorSemantic }
-    with
-        static member block =
-            { Get = fun this -> match this.ActorSemantic with Block block -> block | _ -> failwith "Actor is not a block."
-              Set = fun block this -> { this with ActorSemantic = Block block }}
 
-        static member optBlock =
-            { Get = fun this -> match this.ActorSemantic with Block block -> Some block | _ -> None
-              Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set semantic to None." | Some block -> { this with ActorSemantic = Block block }}
-              
-        static member avatar =
-            { Get = fun this -> match this.ActorSemantic with Avatar avatar -> avatar | _ -> failwith "Actor is not a avatar."
-              Set = fun avatar this -> { this with ActorSemantic = Avatar avatar }}
+    static member block =
+        { Get = fun this -> match this.ActorSemantic with Block block -> block | _ -> failwith "Actor is not a block."
+          Set = fun block this -> { this with ActorSemantic = Block block }}
 
-        static member optAvatar =
-            { Get = fun this -> match this.ActorSemantic with Avatar avatar -> Some avatar | _ -> None
-              Set = fun optAvatar this -> match optAvatar with None -> failwith "Cannot set semantic to None." | Some avatar -> { this with ActorSemantic = Avatar avatar }}
+    static member optBlock =
+        { Get = fun this -> match this.ActorSemantic with Block block -> Some block | _ -> None
+          Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set semantic to None." | Some block -> { this with ActorSemantic = Block block }}
+          
+    static member avatar =
+        { Get = fun this -> match this.ActorSemantic with Avatar avatar -> avatar | _ -> failwith "Actor is not a avatar."
+          Set = fun avatar this -> { this with ActorSemantic = Avatar avatar }}
 
-        static member tileMap =
-            { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
-              Set = fun tileMap this -> { this with ActorSemantic = TileMap tileMap }}
+    static member optAvatar =
+        { Get = fun this -> match this.ActorSemantic with Avatar avatar -> Some avatar | _ -> None
+          Set = fun optAvatar this -> match optAvatar with None -> failwith "Cannot set semantic to None." | Some avatar -> { this with ActorSemantic = Avatar avatar }}
 
-        static member optTileMap =
-            { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> Some tileMap | _ -> None
-              Set = fun optTileMap this -> match optTileMap with None -> failwith "Cannot set semantic to None." | Some tileMap -> { this with ActorSemantic = TileMap tileMap }}
+    static member tileMap =
+        { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
+          Set = fun tileMap this -> { this with ActorSemantic = TileMap tileMap }}
+
+    static member optTileMap =
+        { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> Some tileMap | _ -> None
+          Set = fun optTileMap this -> match optTileMap with None -> failwith "Cannot set semantic to None." | Some tileMap -> { this with ActorSemantic = TileMap tileMap }}
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
@@ -290,6 +290,8 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                     writePublicProperties writer tileMap
             writer.WriteEndElement ()
 
+        // CLOSURE_LEAK: adding entity, actor, or gui types will cause error without compile-time
+        // notice in this method!
         member this.ReadXml reader =
             reader.ReadStartElement ()
             readPublicProperties reader this
