@@ -1,4 +1,5 @@
 ﻿module Nu.Core
+open System.ComponentModel
 
 /// A generic identification code type.
 /// A serializable value type.
@@ -13,3 +14,7 @@ type Address = Lun list
 /// Create a Nu Id.
 /// NOTE: Ironically, not purely functional (TODO: maybe address this?)
 let getNuId = createGetNextId ()
+
+/// Add a custom TypeConverter to an existing type.
+let AssignTypeConverter<'t, 'ct> () =
+    ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'ct>)

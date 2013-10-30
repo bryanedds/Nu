@@ -33,6 +33,7 @@ approximate speed-ups -
 ? gain - avoid rendering clear tiles! *)
 
 let [<EntryPoint>] main _ =
+    initTypeConverters ()
     let sdlViewConfig = NewWindow { WindowTitle = "Nu Game Engine"; WindowX = 100; WindowY = 100; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
