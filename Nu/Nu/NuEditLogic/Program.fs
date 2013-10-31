@@ -39,7 +39,6 @@ and EntityPropertyDescriptor (property : PropertyInfo) =
 
     override this.IsReadOnly
         // NOTE: we make entity id read-only
-        // TODO: use attribute from the corresponding property here instead
         with get () = property.Name = "Id"
 
     override this.GetValue source =
@@ -60,8 +59,7 @@ and EntityPropertyDescriptor (property : PropertyInfo) =
     static member GetPropertyDescriptors (aType : Type) =
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
         let propertyDescriptors = Seq.map (fun property -> new EntityPropertyDescriptor (property) :> PropertyDescriptor) properties
-        // TODO: use attribute from the corresponding property here instead of name pattern
-        let propertyDescriptors2 = Seq.filter (fun (propertyDescriptor : PropertyDescriptor) -> not <| propertyDescriptor.Name.EndsWith "Semantic") propertyDescriptors
+        let propertyDescriptors2 = Seq.filter (fun (propertyDescriptor : PropertyDescriptor) -> not <| propertyDescriptor.Name.Contains "Subtype") propertyDescriptors
         List.ofSeq propertyDescriptors2
 
 and EntityTypeDescriptor (optSource : obj) =
@@ -107,12 +105,12 @@ let [<EntryPoint; STAThread>] main _ =
                     use writer = XmlWriter.Create (file, writerSettings)
                     writer.WriteStartDocument ()
                     let testEntity = get refWorld.Value (World.entity TestButtonAddress)
-                    writeEntityXml writer testEntity
+                    writeEntityToXml writer testEntity
                     writer.WriteEndDocument ())
                 form.openToolStripMenuItem.Click.Add (fun _ ->
                     use file = File.Open ("temp.xml", FileMode.Open)
                     use reader = XmlReader.Create file
-                    let testEntity = readEntityXml reader
+                    let testEntity = readEntityFromXml reader
                     ())
                 form.Show ()
                 Right refWorld.Value)

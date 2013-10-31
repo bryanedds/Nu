@@ -46,8 +46,6 @@
     <Compile Include="RQueue.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
-    <Compile Include="Serialization.fs" />
-    <Compile Include="LensHelper.fs" />
     <Compile Include="Voords.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />
@@ -56,6 +54,7 @@
     <Compile Include="AssetMetadata.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Camera.fs" />
+    <Compile Include="DataModel.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Group.fs" />
     <Compile Include="Screen.fs" />

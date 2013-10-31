@@ -8,11 +8,10 @@ open FSharpx.Lens.Operators
 open OpenTK
 open TiledSharp
 open Nu.Core
-open Nu.Serialization
 open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
-open Nu.LensHelper
+open Nu.DataModel
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
     { IsDown : bool
@@ -42,7 +41,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Feeler =
 
 /// An algabraically-closed semantics for game gui elements.
 /// A serializable value type.
-type [<StructuralEquality; NoComparison>] GuiSemantic =
+type [<StructuralEquality; NoComparison>] GuiSubtype =
     | Button of Button
     | Label of Label
     | TextBox of TextBox
@@ -57,47 +56,47 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
     { Position : Vector2
       Depth : single
       Size : Vector2
-      GuiSemantic : GuiSemantic }
+      SubSubtype : GuiSubtype }
 
     static member button =
-        { Get = fun this -> match this.GuiSemantic with Button button -> button | _ -> failwith "Gui is not a button."
-          Set = fun button this -> { this with GuiSemantic = Button button }}
+        { Get = fun this -> match this.SubSubtype with Button button -> button | _ -> failwith "Gui is not a button."
+          Set = fun button this -> { this with SubSubtype = Button button }}
 
     static member optButton =
-        { Get = fun this -> match this.GuiSemantic with Button button -> Some button | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some button -> { this with GuiSemantic = Button button }}
+        { Get = fun this -> match this.SubSubtype with Button button -> Some button | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some button -> { this with SubSubtype = Button button }}
     
     static member label =
-        { Get = fun this -> match this.GuiSemantic with Label label -> label | _ -> failwith "Gui is not a label."
-          Set = fun label this -> { this with GuiSemantic = Label label }}
+        { Get = fun this -> match this.SubSubtype with Label label -> label | _ -> failwith "Gui is not a label."
+          Set = fun label this -> { this with SubSubtype = Label label }}
 
     static member optLabel =
-        { Get = fun this -> match this.GuiSemantic with Label label -> Some label | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some label -> { this with GuiSemantic = Label label }}
+        { Get = fun this -> match this.SubSubtype with Label label -> Some label | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some label -> { this with SubSubtype = Label label }}
     
     static member textBox =
-        { Get = fun this -> match this.GuiSemantic with TextBox textBox -> textBox | _ -> failwith "Gui is not a textBox."
-          Set = fun textBox this -> { this with GuiSemantic = TextBox textBox }}
+        { Get = fun this -> match this.SubSubtype with TextBox textBox -> textBox | _ -> failwith "Gui is not a textBox."
+          Set = fun textBox this -> { this with SubSubtype = TextBox textBox }}
 
     static member optTextBox =
-        { Get = fun this -> match this.GuiSemantic with TextBox textBox -> Some textBox | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some textBox -> { this with GuiSemantic = TextBox textBox }}
+        { Get = fun this -> match this.SubSubtype with TextBox textBox -> Some textBox | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some textBox -> { this with SubSubtype = TextBox textBox }}
     
     static member toggle =
-        { Get = fun this -> match this.GuiSemantic with Toggle toggle -> toggle | _ -> failwith "Gui is not a toggle."
-          Set = fun toggle this -> { this with GuiSemantic = Toggle toggle }}
+        { Get = fun this -> match this.SubSubtype with Toggle toggle -> toggle | _ -> failwith "Gui is not a toggle."
+          Set = fun toggle this -> { this with SubSubtype = Toggle toggle }}
 
     static member optToggle =
-        { Get = fun this -> match this.GuiSemantic with Toggle toggle -> Some toggle | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some toggle -> { this with GuiSemantic = Toggle toggle }}
+        { Get = fun this -> match this.SubSubtype with Toggle toggle -> Some toggle | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some toggle -> { this with SubSubtype = Toggle toggle }}
     
     static member feeler =
-        { Get = fun this -> match this.GuiSemantic with Feeler feeler -> feeler | _ -> failwith "Gui is not a feeler."
-          Set = fun feeler this -> { this with GuiSemantic = Feeler feeler }}
+        { Get = fun this -> match this.SubSubtype with Feeler feeler -> feeler | _ -> failwith "Gui is not a feeler."
+          Set = fun feeler this -> { this with SubSubtype = Feeler feeler }}
 
     static member optFeeler =
-        { Get = fun this -> match this.GuiSemantic with Feeler feeler -> Some feeler | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set semantic to None." | Some feeler -> { this with GuiSemantic = Feeler feeler }}
+        { Get = fun this -> match this.SubSubtype with Feeler feeler -> Some feeler | _ -> None
+          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some feeler -> { this with SubSubtype = Feeler feeler }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { PhysicsId : Id
@@ -119,7 +118,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
 
 /// An algabraically-closed semantics for game actors.
 /// A serializable value type.
-type [<StructuralEquality; NoComparison>] ActorSemantic =
+type [<StructuralEquality; NoComparison>] ActorSubtype =
     | Block of Block
     | Avatar of Avatar
     | TileMap of TileMap
@@ -133,35 +132,35 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
       Depth : single
       Size : Vector2
       Rotation : single
-      ActorSemantic : ActorSemantic }
+      SubSubtype : ActorSubtype }
 
     static member block =
-        { Get = fun this -> match this.ActorSemantic with Block block -> block | _ -> failwith "Actor is not a block."
-          Set = fun block this -> { this with ActorSemantic = Block block }}
+        { Get = fun this -> match this.SubSubtype with Block block -> block | _ -> failwith "Actor is not a block."
+          Set = fun block this -> { this with SubSubtype = Block block }}
 
     static member optBlock =
-        { Get = fun this -> match this.ActorSemantic with Block block -> Some block | _ -> None
-          Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set semantic to None." | Some block -> { this with ActorSemantic = Block block }}
+        { Get = fun this -> match this.SubSubtype with Block block -> Some block | _ -> None
+          Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set subtype to None." | Some block -> { this with SubSubtype = Block block }}
           
     static member avatar =
-        { Get = fun this -> match this.ActorSemantic with Avatar avatar -> avatar | _ -> failwith "Actor is not a avatar."
-          Set = fun avatar this -> { this with ActorSemantic = Avatar avatar }}
+        { Get = fun this -> match this.SubSubtype with Avatar avatar -> avatar | _ -> failwith "Actor is not a avatar."
+          Set = fun avatar this -> { this with SubSubtype = Avatar avatar }}
 
     static member optAvatar =
-        { Get = fun this -> match this.ActorSemantic with Avatar avatar -> Some avatar | _ -> None
-          Set = fun optAvatar this -> match optAvatar with None -> failwith "Cannot set semantic to None." | Some avatar -> { this with ActorSemantic = Avatar avatar }}
+        { Get = fun this -> match this.SubSubtype with Avatar avatar -> Some avatar | _ -> None
+          Set = fun optAvatar this -> match optAvatar with None -> failwith "Cannot set subtype to None." | Some avatar -> { this with SubSubtype = Avatar avatar }}
 
     static member tileMap =
-        { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
-          Set = fun tileMap this -> { this with ActorSemantic = TileMap tileMap }}
+        { Get = fun this -> match this.SubSubtype with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
+          Set = fun tileMap this -> { this with SubSubtype = TileMap tileMap }}
 
     static member optTileMap =
-        { Get = fun this -> match this.ActorSemantic with TileMap tileMap -> Some tileMap | _ -> None
-          Set = fun optTileMap this -> match optTileMap with None -> failwith "Cannot set semantic to None." | Some tileMap -> { this with ActorSemantic = TileMap tileMap }}
+        { Get = fun this -> match this.SubSubtype with TileMap tileMap -> Some tileMap | _ -> None
+          Set = fun optTileMap this -> match optTileMap with None -> failwith "Cannot set subtype to None." | Some tileMap -> { this with SubSubtype = TileMap tileMap }}
 
 /// An algabraically-closed semantics for game entities.
 /// A serializable value type.
-type [<StructuralEquality; NoComparison>] EntitySemantic =
+type [<StructuralEquality; NoComparison>] EntitySubtype =
     | Gui of Gui
     | Actor of Actor
  // | Actor3d of Actor3d
@@ -172,15 +171,15 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
     { Id : Id
       Enabled : bool
       Visible : bool
-      EntitySemantic : EntitySemantic }
+      Subtype : EntitySubtype }
 
     static member gui =
-        { Get = fun this -> match this.EntitySemantic with Gui gui -> gui | _ -> failwith "Entity is not a gui."
-          Set = fun gui this -> { this with EntitySemantic = Gui gui }}
+        { Get = fun this -> match this.Subtype with Gui gui -> gui | _ -> failwith "Entity is not a gui."
+          Set = fun gui this -> { this with Subtype = Gui gui }}
     
     static member optGui =
-        { Get = fun this -> match this.EntitySemantic with Gui gui -> Some gui | _ -> None
-          Set = fun optGui this -> match optGui with None -> failwith "Cannot set Entity.optGui to None." | Some gui -> set gui this Entity.gui }
+        { Get = fun this -> match this.Subtype with Gui gui -> Some gui | _ -> None
+          Set = fun optGui this -> match optGui with None -> failwith "Cannot set subtype to None." | Some gui -> set gui this Entity.gui }
     
     static member guiButton =
         { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.button)
@@ -198,7 +197,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some button -> Some (gui, button)
           Set = fun optGuiButton this ->
             match optGuiButton with
-            | None -> failwith "Cannot set Entity.optGui to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some guiButton -> set guiButton this Entity.guiButton }
     
     static member guiLabel =
@@ -217,7 +216,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some label -> Some (gui, label)
           Set = fun optGuiLabel this ->
             match optGuiLabel with
-            | None -> failwith "Cannot set Entity.optGui to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some guiLabel -> set guiLabel this Entity.guiLabel }
     
     static member guiTextBox =
@@ -236,7 +235,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some textBox -> Some (gui, textBox)
           Set = fun optGuiTextBox this ->
             match optGuiTextBox with
-            | None -> failwith "Cannot set Entity.optGui to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some guiTextBox -> set guiTextBox this Entity.guiTextBox }
     
     static member guiToggle =
@@ -255,7 +254,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some toggle -> Some (gui, toggle)
           Set = fun optGuiToggle this ->
             match optGuiToggle with
-            | None -> failwith "Cannot set Entity.optGui to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some guiToggle -> set guiToggle this Entity.guiToggle }
     
     static member guiFeeler =
@@ -274,16 +273,16 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some feeler -> Some (gui, feeler)
           Set = fun optGuiFeeler this ->
             match optGuiFeeler with
-            | None -> failwith "Cannot set Entity.optGui to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some guiFeeler -> set guiFeeler this Entity.guiFeeler }
 
     static member actor =
-        { Get = fun this -> match this.EntitySemantic with Actor actor -> actor | _ -> failwith "Entity is not an actor."
-          Set = fun actor this -> { this with EntitySemantic = Actor actor }}
+        { Get = fun this -> match this.Subtype with Actor actor -> actor | _ -> failwith "Entity is not an actor."
+          Set = fun actor this -> { this with Subtype = Actor actor }}
     
     static member optActor =
-        { Get = fun this -> match this.EntitySemantic with Actor actor -> Some actor | _ -> None
-          Set = fun optActor this -> match optActor with None -> failwith "Cannot set Entity.optActor to None." | Some actor -> set actor this Entity.actor }
+        { Get = fun this -> match this.Subtype with Actor actor -> Some actor | _ -> None
+          Set = fun optActor this -> match optActor with None -> failwith "Cannot set subtype to None." | Some actor -> set actor this Entity.actor }
     
     static member actorBlock =
         { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.block)
@@ -301,7 +300,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some block -> Some (actor, block)
           Set = fun optActorBlock this ->
             match optActorBlock with
-            | None -> failwith "Cannot set Entity.optActor to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some actorBlock -> set actorBlock this Entity.actorBlock }
     
     static member actorAvatar =
@@ -320,7 +319,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some avatar -> Some (actor, avatar)
           Set = fun optActorAvatar this ->
             match optActorAvatar with
-            | None -> failwith "Cannot set Entity.optActor to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some actorAvatar -> set actorAvatar this Entity.actorAvatar }
     
     static member actorTileMap =
@@ -339,63 +338,45 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
                 | Some tileMap -> Some (actor, tileMap)
           Set = fun optActorTileMap this ->
             match optActorTileMap with
-            | None -> failwith "Cannot set Entity.optActor to None."
+            | None -> failwith "Cannot set subtype to None."
             | Some actorTileMap -> set actorTileMap this Entity.actorTileMap }
 
-let writeEntityXml (writer : XmlWriter) entity =
+let writeEntityToXml (writer : XmlWriter) entity =
     writer.WriteStartElement typeof<Entity>.Name
     writeNuProperties writer entity
-    match entity.EntitySemantic with
+    match entity.Subtype with
     | Gui gui ->
-        writer.WriteElementString ("EntitySemanticType", "Gui")
-        writeNuProperties writer gui
-        match gui.GuiSemantic with
-        | Button button ->
-            writer.WriteElementString ("EntitySemSemType", "Button")
-            writeNuProperties writer button
-        | Label label ->
-            writer.WriteElementString ("EntitySemSemType", "Label")
-            writeNuProperties writer label
-        | TextBox textBox ->
-            writer.WriteElementString ("EntitySemSemType", "TextBox")
-            writeNuProperties writer textBox
-        | Toggle toggle ->
-            writer.WriteElementString ("EntitySemSemType", "Toggle")
-            writeNuProperties writer toggle
-        | Feeler feeler ->
-            writer.WriteElementString ("EntitySemSemType", "Feeler")
-            writeNuProperties writer feeler
+        writeSubtypeToXml writer "Nu.Entity+Gui" "Nu.Entity+EntitySubtype+Gui" "" gui
+        match gui.SubSubtype with
+        | Button button -> writeSubtypeToXml writer "Nu.Entity+Button" "Nu.Entity+GuiSubtype+Button" "Sub" button
+        | Label label -> writeSubtypeToXml writer "Nu.Entity+Label" "Nu.Entity+GuiSubtype+Label" "Sub" label
+        | TextBox textBox -> writeSubtypeToXml writer "Nu.Entity+TextBox" "Nu.Entity+GuiSubtype+TextBox" "Sub" textBox
+        | Toggle toggle -> writeSubtypeToXml writer "Nu.Entity+Toggle" "Nu.Entity+GuiSubtype+Toggle" "Sub" toggle
+        | Feeler feeler -> writeSubtypeToXml writer "Nu.Entity+Feeler" "Nu.Entity+GuiSubtype+Feeler" "Sub" feeler
     | Actor actor ->
-        writer.WriteElementString ("EntitySemanticType", "Actor")
-        writeNuProperties writer actor
-        match actor.ActorSemantic with
-        | Block block ->
-            writer.WriteElementString ("EntitySemSemType", "Block")
-            writeNuProperties writer block
-        | Avatar avatar ->
-            writer.WriteElementString ("EntitySemSemType", "Avatar")
-            writeNuProperties writer avatar
-        | TileMap tileMap ->
-            writer.WriteElementString ("EntitySemSemType", "TileMap")
-            writeNuProperties writer tileMap
+        writeSubtypeToXml writer "Nu.Entity+Actor" "Nu.Entity+EntitySubtype+Actor" "" actor
+        match actor.SubSubtype with
+        | Block block -> writeSubtypeToXml writer "Nu.Entity+Block" "Nu.Entity+ActorSubtype+Block" "Sub" block
+        | Avatar avatar -> writeSubtypeToXml writer "Nu.Entity+Avatar" "Nu.Entity+ActorSubtype+Avatar" "Sub" avatar
+        | TileMap tileMap -> writeSubtypeToXml writer "Nu.Entity+TileMap" "Nu.Entity+ActorSubtype+TileMap" "Sub" tileMap
     writer.WriteEndElement ()
 
-let readEntityXml (reader : XmlReader) =
-    // TODO: make this arbitrarily recursive on semantics
-    let entity = (Activator.CreateInstance ("Nu", typeof<Entity>.FullName)).Unwrap ()
-    reader.ReadStartElement ()
+let readEntityFromXml (reader : XmlReader) =
+
+    // read start
+    reader.ReadStartElement "Entity"
+
+    // read simple properties
+    let entityAssemblyName = "Nu"
+    let entityType = typeof<Entity>
+    let entity = (Activator.CreateInstance (entityAssemblyName, entityType.FullName)).Unwrap () :?> Entity
     readNuProperties reader entity
-    let entitySemanticType = reader.ReadElementString ("EntitySemanticType")
-    let entitySemantic = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemanticType)).Unwrap ()
-    readNuProperties reader entitySemantic
-    let entitySemanticProperty = typeof<Entity>.GetProperty "EntitySemantic"
-    let entitySemanticValue = (Activator.CreateInstance ("Nu", "Nu.Entity+EntitySemantic+" + entitySemanticType, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|entitySemantic|], null, null)).Unwrap ()
-    entitySemanticProperty.SetValue (entity, entitySemanticValue)
-    let entitySemSemType = reader.ReadElementString ("EntitySemSemType")
-    let entitySemSem = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemSemType)).Unwrap ()
-    readNuProperties reader entitySemSem
-    let entitySemSemProperty = (entitySemantic.GetType ()).GetProperty (entitySemanticType + "Semantic")
-    let entitySemSemValue = (Activator.CreateInstance ("Nu", "Nu.Entity+" + entitySemanticType + "Semantic+" + entitySemSemType, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|entitySemSem|], null, null)).Unwrap ()
-    entitySemSemProperty.SetValue (entitySemantic, entitySemSemValue)
+
+    // read subtype
+    let subtypeRecord = readSubtypeFromXml reader entityAssemblyName "" entity
+
+    // read sub-subtype
+    ignore <| readSubtypeFromXml reader entityAssemblyName "Sub" subtypeRecord
+
+    // read end
     reader.ReadEndElement ()
-    entity

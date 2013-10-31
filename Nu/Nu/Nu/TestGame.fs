@@ -42,13 +42,13 @@ let createTestBlock assetMetadataMap =
           Depth = 0.0f
           Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
           Rotation = 2.0f
-          ActorSemantic = Block testBlock }
+          SubSubtype = Block testBlock }
 
     let testBlockActorEntity =
         { Id = getNuId ()
           Enabled = true
           Visible = true
-          EntitySemantic = Actor testBlockActor }
+          Subtype = Actor testBlockActor }
 
     (testBlockActorEntity, testBlockActor, testBlock)
 
@@ -62,7 +62,7 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
             { Id = getNuId ()
               Screens = Map.empty
               OptSelectedScreenAddress = None
-              GameSemantic = () }
+              Subtype = () }
     
         let world =
             { Game = game
@@ -81,27 +81,27 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let screen =
             { Id = getNuId ()
               Groups = Map.empty
-              ScreenSemantic = () }
+              Subtype = () }
 
         let group =
             { Id = getNuId ()
               Entities = Map.empty
-              GroupSemantic = () }
+              Subtype = () }
           
         let feeler =
             { IsTouched = false }
 
         let feelerGui =
-            { Position = Vector2.Zero
+            { Gui.Position = Vector2.Zero
               Depth = -0.1f
               Size = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH)
-              GuiSemantic = Feeler feeler }
+              SubSubtype = Feeler feeler }
 
         let feelerEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui feelerGui }
+              Subtype = Gui feelerGui }
           
         let textBox =
             { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
@@ -111,16 +111,16 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               TextColor = Vector4.One }
 
         let textBoxGui =
-            { Position = Vector2 (120.0f, 50.0f)
+            { Gui.Position = Vector2 (120.0f, 50.0f)
               Depth = 0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = TextBox textBox }
+              SubSubtype = TextBox textBox }
 
         let textBoxEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui textBoxGui }
+              Subtype = Gui textBoxGui }
           
         let toggle =
             { IsOn = false
@@ -130,31 +130,31 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
         let toggleGui =
-            { Position = Vector2 (720.0f, 50.0f)
+            { Gui.Position = Vector2 (720.0f, 50.0f)
               Depth = 0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = Toggle toggle }
+              SubSubtype = Toggle toggle }
 
         let toggleEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui toggleGui }
+              Subtype = Gui toggleGui }
           
         let label =
             { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
         let labelGui =
-            { Position = Vector2.Zero
+            { Gui.Position = Vector2.Zero
               Depth = -0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image5") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = Label label }
+              SubSubtype = Label label }
 
         let labelEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui labelGui }
+              Subtype = Gui labelGui }
           
         let button =
             { IsDown = false
@@ -163,16 +163,16 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }}
 
         let buttonGui =
-            { Position = Vector2 (310.0f, 20.0f)
+            { Gui.Position = Vector2 (310.0f, 20.0f)
               Depth = 0.1f
               Size = getTextureSizeAsVector2 (Lun.make "Image") (Lun.make "Misc") assetMetadataMap
-              GuiSemantic = Button button }
+              SubSubtype = Button button }
 
         let buttonEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Gui buttonGui }
+              Subtype = Gui buttonGui }
     
         let tmxMap =
             TmxMap "TileMap.tmx"
@@ -189,13 +189,13 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               Depth = -0.1f
               Size = Vector2 (single (tmxMap.Width * tmxMap.TileWidth), single (tmxMap.Height * tmxMap.TileHeight))
               Rotation = 0.0f
-              ActorSemantic = TileMap tileMap }
+              SubSubtype = TileMap tileMap }
 
         let tileMapEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Actor tileMapActor }
+              Subtype = Actor tileMapActor }
     
         let floor =
             { PhysicsId = getPhysicsId ()
@@ -208,13 +208,13 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               Depth = 0.0f
               Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Misc") assetMetadataMap
               Rotation = 0.0f
-              ActorSemantic = Block floor }
+              SubSubtype = Block floor }
 
         let floorEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Actor floorActor }
+              Subtype = Actor floorActor }
     
         let avatar =
             { PhysicsId = getPhysicsId ()
@@ -226,13 +226,13 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
               Depth = 0.0f
               Size = getTextureSizeAsVector2 (Lun.make "Image7") (Lun.make "Misc") assetMetadataMap
               Rotation = 0.0f
-              ActorSemantic = Avatar avatar }
+              SubSubtype = Avatar avatar }
 
         let avatarEntity =
             { Id = getNuId ()
               Enabled = true
               Visible = true
-              EntitySemantic = Actor avatarActor }
+              Subtype = Actor avatarActor }
 
         let moveAvatar address _ message world =
             let (_, _, feeler) = get world (World.entityGuiFeeler TestFeelerAddress)
