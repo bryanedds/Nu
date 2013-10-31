@@ -10,11 +10,11 @@ type EntityPropertyChange =
       PropertyInfo : PropertyInfo
       Value : obj }
 
-let getEntityTypes entity =
-    match entity.EntitySemantic with
+let getEntityTypes (entity : Entity) =
+    match entity.Subtype with
     | Gui gui ->
         let guiSemType =
-            match gui.GuiSemantic with
+            match gui.SubSubtype with
             | Button _ -> typeof<Button>
             | Label _ -> typeof<Label>
             | TextBox _ -> typeof<TextBox>
@@ -23,22 +23,22 @@ let getEntityTypes entity =
         [typeof<Entity>; typeof<Gui>; guiSemType]
     | Actor actor ->
         let actorSemType =
-            match actor.ActorSemantic with
+            match actor.SubSubtype with
             | Block _ -> typeof<Block>
             | Avatar _ -> typeof<Avatar>
             | TileMap _ -> typeof<TileMap>
         [typeof<Entity>; typeof<Actor>; actorSemType]
 
-let getEntityPropertyValue (property : PropertyInfo) entity =
+let getEntityPropertyValue (property : PropertyInfo) (entity : Entity) =
     if typeof<Entity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
     then property.GetValue entity
     else
-        match entity.EntitySemantic with
+        match entity.Subtype with
         | Gui gui ->
             if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then property.GetValue gui
             else
-                match gui.GuiSemantic with
+                match gui.SubSubtype with
                 | Button button -> property.GetValue button
                 | Label label -> property.GetValue label
                 | TextBox textBox -> property.GetValue textBox
@@ -48,7 +48,7 @@ let getEntityPropertyValue (property : PropertyInfo) entity =
             if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then property.GetValue actor
             else
-                match actor.ActorSemantic with
+                match actor.SubSubtype with
                 | Block block -> property.GetValue block
                 | Avatar avatar -> property.GetValue avatar
                 | TileMap tileMap -> property.GetValue tileMap
@@ -63,51 +63,51 @@ let setEntityPropertyValue world (change : EntityPropertyChange) =
         if typeof<Entity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
         then let _ = property.SetValue (entity_, value) in entity_
         else
-            match entity.EntitySemantic with
+            match entity.Subtype with
             | Gui gui ->
                 let gui_ = { gui with Position = gui.Position } // NOTE: hacky copy
                 if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-                then let _ = property.SetValue (gui_, value) in { entity with EntitySemantic = Gui gui_ }
+                then let _ = property.SetValue (gui_, value) in { entity with Subtype = Gui gui_ }
                 else
-                    match gui.GuiSemantic with
+                    match gui.SubSubtype with
                     | Button button ->
                         let button_ = { button with IsDown = button.IsDown } // NOTE: hacky copy
                         property.SetValue (button_, value)
-                        { entity with EntitySemantic = Gui { gui with GuiSemantic = Button button_ }}
+                        { entity with Subtype = Gui { gui with SubSubtype = Button button_ }}
                     | Label label ->
                         let label_ = { label with LabelSprite = label.LabelSprite } // NOTE: hacky copy
                         property.SetValue (label_, value)
-                        { entity with EntitySemantic = Gui { gui with GuiSemantic = Label label_ }}
+                        { entity with Subtype = Gui { gui with SubSubtype = Label label_ }}
                     | TextBox textBox ->
                         let textBox_ = { textBox with BoxSprite = textBox.BoxSprite } // NOTE: hacky copy
                         property.SetValue (textBox_, value)
-                        { entity with EntitySemantic = Gui { gui with GuiSemantic = TextBox textBox_ }}
+                        { entity with Subtype = Gui { gui with SubSubtype = TextBox textBox_ }}
                     | Toggle toggle ->
                         let toggle_ = { toggle with IsPressed = toggle.IsPressed } // NOTE: hacky copy
                         property.SetValue (toggle_, value)
-                        { entity with EntitySemantic = Gui { gui with GuiSemantic = Toggle toggle_ }}
+                        { entity with Subtype = Gui { gui with SubSubtype = Toggle toggle_ }}
                     | Feeler feeler ->
                         let feeler_ = { feeler with IsTouched = feeler.IsTouched } // NOTE: hacky copy
                         property.SetValue (feeler_, value)
-                        { entity with EntitySemantic = Gui { gui with GuiSemantic = Feeler feeler_ }}
+                        { entity with Subtype = Gui { gui with SubSubtype = Feeler feeler_ }}
             | Actor actor ->
                 let actor_ = { actor with Position = actor.Position } // NOTE: hacky copy
                 if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-                then let _ = property.SetValue (actor_, value) in { entity with EntitySemantic = Actor actor_ }
+                then let _ = property.SetValue (actor_, value) in { entity with Subtype = Actor actor_ }
                 else
-                    match actor.ActorSemantic with
+                    match actor.SubSubtype with
                     | Block block ->
                         let block_ = { block with PhysicsId = block.PhysicsId } // NOTE: hacky copy
                         property.SetValue (block_, value)
-                        { entity with EntitySemantic = Actor { actor with ActorSemantic = Block block_ }}
+                        { entity with Subtype = Actor { actor with SubSubtype = Block block_ }}
                     | Avatar avatar ->
                         let avatar_ = { avatar with PhysicsId = avatar.PhysicsId } // NOTE: hacky copy
                         property.SetValue (avatar_, value)
-                        { entity with EntitySemantic = Actor { actor with ActorSemantic = Avatar avatar_ }}
+                        { entity with Subtype = Actor { actor with SubSubtype = Avatar avatar_ }}
                     | TileMap tileMap ->
                         let tileMap_ = { tileMap with PhysicsIds = tileMap.PhysicsIds } // NOTE: hacky copy
                         property.SetValue (tileMap_, value)
-                        { entity with EntitySemantic = Actor { actor with ActorSemantic = TileMap tileMap_ }}
+                        { entity with Subtype = Actor { actor with SubSubtype = TileMap tileMap_ }}
     set entity_ world entityLens
 
 let setEntityPropertyValues changes world =

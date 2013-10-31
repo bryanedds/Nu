@@ -3,7 +3,7 @@ open System
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu.Core
-open Nu.LensHelper
+open Nu.DataModel
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison>] Game =
     { Id : Id
       Screens : Map<Lun, Screen>
       OptSelectedScreenAddress : Address option
-      GameSemantic : unit }
+      Subtype : unit }
         
     static member private optChildFinder addressHead parent =
         Map.tryFind addressHead parent.Screens
