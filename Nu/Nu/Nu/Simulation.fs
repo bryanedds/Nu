@@ -536,9 +536,9 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
 let getEntityRenderDescriptors actorView entity =
     if not entity.Visible then []
     else
-        match entity.EntitySemantic with
+        match entity.Subtype with
         | Gui gui ->
-            match gui.GuiSemantic with
+            match gui.SubSubtype with
             | Button button -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
             | Label label -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
             | TextBox textBox ->
@@ -547,7 +547,7 @@ let getEntityRenderDescriptors actorView entity =
             | Toggle toggle -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
             | Feeler _ -> []
         | Actor actor ->
-            match actor.ActorSemantic with
+            match actor.SubSubtype with
             | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
             | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
             | TileMap tileMap ->
@@ -630,7 +630,7 @@ let integrate world =
     handleIntegrationMessages integrationMessages world2
 
 let createEmptyWorld sdlDeps =
-    { Game = { Id = getNuId (); Screens = Map.empty; OptSelectedScreenAddress = None; GameSemantic = () }
+    { Game = { Id = getNuId (); Screens = Map.empty; OptSelectedScreenAddress = None; Subtype = () }
       Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
       Subscriptions = Map.empty
       MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }

@@ -3,7 +3,7 @@ open System
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu.Core
-open Nu.LensHelper
+open Nu.DataModel
 open Nu.Entity
 open Nu.Group
 
@@ -12,7 +12,7 @@ open Nu.Group
 type [<StructuralEquality; NoComparison>] Screen =
     { Id : Id
       Groups : Map<Lun, Group>
-      ScreenSemantic : unit }
+      Subtype : unit }
      
     static member private optChildFinder addressHead parent =
         Map.tryFind addressHead parent.Groups
