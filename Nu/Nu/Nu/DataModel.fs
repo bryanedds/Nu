@@ -5,34 +5,6 @@ open System.Reflection
 open System.Xml
 open System.Xml.Serialization
 open Nu.Core
-                        
-let getChild childFinder parent address =
-    match address with
-    | [head] -> childFinder head parent
-    | _ -> failwith ("Invalid address '" + str address + "'.")
-
-let setChild childAdder parent address child =
-    match address with
-    | [head] -> childAdder head parent child
-    | _ -> failwith ("Invalid address '" + str address + "'.")
-
-let getChildSubtype childFinder childToSubtype address parent =
-    let child = getChild childFinder parent address
-    let subtype = childToSubtype child
-    (child, subtype)
-
-let setChildSubtype childAdder childSubtypeSetter address parent child subtype =
-    let child2 = childSubtypeSetter child subtype
-    setChild childAdder parent address child2
-
-let getChildSubSubtype childFinder childToSubSubtype address parent =
-    let child = getChild childFinder parent address
-    let (subtype, subSubtype) = childToSubSubtype child
-    (child, subtype, subSubtype)
-
-let setChildSubSubtype childAdder childSubSubtypeSetter address parent child subtype subSubtype =
-    let child2 = childSubSubtypeSetter child subtype subSubtype
-    setChild childAdder parent address child2
 
 let getOptChild optChildFinder parent address =
     match address with
@@ -51,36 +23,12 @@ let setOptChild addChild removeChild parent address optChild =
         | None -> removeChild head parent
         | Some child -> addChild head parent child
     | _ -> failwith ("Invalid address '" + str address + "'.")
+                        
+let getChild optChildFinder parent address =
+    Option.get <| getOptChild optChildFinder parent address
 
-let getOptChildSubtype optChildFinder childToOptSubtype parent address =
-    let optChild = getOptChild optChildFinder parent address
-    match optChild with
-    | None -> None
-    | Some child ->
-        let optSubtype = childToOptSubtype child
-        match optSubtype with
-        | None -> None
-        | Some subtype -> Some (child, subtype)
-
-let setOptChildSubtype childAdder childRemover childSubtypeSetter optChildSubtype parent address =
-    match optChildSubtype with
-    | None -> setOptChild childAdder childRemover parent address None
-    | Some (child, subtype) -> setChildSubtype childAdder childSubtypeSetter address parent child subtype
-    
-let getOptChildSubSubtype optChildFinder childToOptSubSubtype parent address =
-    let optChild = getOptChild optChildFinder parent address
-    match optChild with
-    | None -> None
-    | Some child ->
-        let optSubSubtype = childToOptSubSubtype child
-        match optSubSubtype with
-        | None -> None
-        | Some (subtype, subSubtype) -> Some (child, subtype, subSubtype)
-
-let setOptChildSubSubtype childAdder childRemover childSubSubtypeSetter optChildSubSubtype parent address =
-    match optChildSubSubtype with
-    | None -> setOptChild childAdder childRemover parent address None
-    | Some (child, subtype, subSubtype) -> setChildSubSubtype childAdder childSubSubtypeSetter address parent child subtype subSubtype
+let setChild childAdder childRemover parent address child =
+    setOptChild childAdder childRemover parent address (Some child)
 
 let writeNuProperties (writer : XmlWriter) obj =
     let aType = obj.GetType ()

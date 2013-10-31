@@ -7,102 +7,101 @@ open Nu.DataModel
 open Nu.Entity
 open Nu.Group
 
-/// A game screen.
-/// A serializable value type
-type [<StructuralEquality; NoComparison>] Screen =
+type [<StructuralEquality; NoComparison; CLIMutable>] ScreenRcd =
     { Id : Id
-      Groups : Map<Lun, Group>
-      Subtype : unit }
-     
-    static member private optChildFinder addressHead parent =
-        Map.tryFind addressHead parent.Groups
+      Groups : Map<Lun, Group> }
+
+type [<StructuralEquality; NoComparison>] Screen =
+    | Screen of ScreenRcd
+       
+    static member private optChildFinder addressHead this =
+        let screenRcd = get this Screen.screenRcd
+        Map.tryFind addressHead screenRcd.Groups
     
-    static member private childFinder addressHead parent =
-        let optChild = Screen.optChildFinder addressHead parent
+    static member private childAdder addressHead this (child : Group) =
+        let screenRcd = get this Screen.screenRcd
+        let screenRcd2 = { screenRcd with Groups = Map.add addressHead child screenRcd.Groups }
+        set screenRcd2 this Screen.screenRcd
+    
+    static member private childRemover addressHead this =
+        let screenRcd = get this Screen.screenRcd
+        let screenRcd2 = { screenRcd with Groups = Map.remove addressHead screenRcd.Groups }
+        set screenRcd2 this Screen.screenRcd
+
+    static member private getChildWithLens this address lens =
+        get (getChild Screen.optChildFinder this address) lens
+
+    static member private setChildWithLens child this address lens =
+        let group = getChild Screen.optChildFinder this address
+        let group2 = set child group lens
+        setChild Screen.childAdder Screen.childRemover this address group2
+
+    static member private getOptChildWithLens this address lens =
+        let optChild = getOptChild Screen.optChildFinder this address
         match optChild with
-        | None -> failwith ("Could not find child at address '" + str addressHead + "'.")
-        | Some child -> child
-    
-    static member private childAdder addressHead parent child =
-        { parent with Screen.Groups = Map.add addressHead child parent.Groups }
-    
-    static member private childRemover addressHead parent =
-        { parent with Screen.Groups = Map.remove addressHead parent.Groups }
-    
-    static member entity address =
-        Screen.group [List.head address] >>| Group.entity (List.tail address)
-    
-    static member optEntity address =
-        Screen.group [List.head address] >>| Group.optEntity (List.tail address)
-    
-    static member entityGui address =
-        Screen.group [List.head address] >>| Group.entityGui (List.tail address)
-    
-    static member optEntityGui address =
-        Screen.group [List.head address] >>| Group.optEntityGui (List.tail address)
-    
-    static member entityGuiButton address =
-        Screen.group [List.head address] >>| Group.entityGuiButton (List.tail address)
-    
-    static member optEntityGuiButton address =
-        Screen.group [List.head address] >>| Group.optEntityGuiButton (List.tail address)
-    
-    static member entityGuiLabel address =
-        Screen.group [List.head address] >>| Group.entityGuiLabel (List.tail address)
-    
-    static member optEntityGuiLabel address =
-        Screen.group [List.head address] >>| Group.optEntityGuiLabel (List.tail address)
-    
-    static member entityGuiTextBox address =
-        Screen.group [List.head address] >>| Group.entityGuiTextBox (List.tail address)
-    
-    static member optEntityGuiTextBox address =
-        Screen.group [List.head address] >>| Group.optEntityGuiTextBox (List.tail address)
-    
-    static member entityGuiToggle address =
-        Screen.group [List.head address] >>| Group.entityGuiToggle (List.tail address)
-    
-    static member optEntityGuiToggle address =
-        Screen.group [List.head address] >>| Group.optEntityGuiToggle (List.tail address)
-    
-    static member entityGuiFeeler address =
-        Screen.group [List.head address] >>| Group.entityGuiFeeler (List.tail address)
-    
-    static member optEntityGuiFeeler address =
-        Screen.group [List.head address] >>| Group.optEntityGuiFeeler (List.tail address)
-    
-    static member entityActor address =
-        Screen.group [List.head address] >>| Group.entityActor (List.tail address)
-    
-    static member optEntityActor address =
-        Screen.group [List.head address] >>| Group.optEntityActor (List.tail address)
-    
-    static member entityActorBlock address =
-        Screen.group [List.head address] >>| Group.entityActorBlock (List.tail address)
-    
-    static member optEntityActorBlock address =
-        Screen.group [List.head address] >>| Group.optEntityActorBlock (List.tail address)
-    
-    static member entityActorAvatar address =
-        Screen.group [List.head address] >>| Group.entityActorAvatar (List.tail address)
-    
-    static member optEntityActorAvatar address =
-        Screen.group [List.head address] >>| Group.optEntityActorAvatar (List.tail address)
-    
-    static member entityActorTileMap address =
-        Screen.group [List.head address] >>| Group.entityActorTileMap (List.tail address)
-    
-    static member optEntityActorTileMap address =
-        Screen.group [List.head address] >>| Group.optEntityActorTileMap (List.tail address)
-    
+        | None -> None
+        | Some child -> Some (get child lens)
+
+    static member private setOptChildWithLens optChildRcd this address lens =
+        match optChildRcd with
+        | None -> setOptChild Screen.childAdder Screen.childRemover this address None
+        | Some childRcd ->
+            let optChild = getOptChild Screen.optChildFinder this address
+            match optChild with
+            | None -> failwith "Cannot change a non-existent group."
+            | Some child ->
+                let child2 = set childRcd child lens
+                setChild Screen.childAdder Screen.childRemover this address child2
+
+    static member screenRcd =
+        { Get = fun this ->
+            match this with
+            | Screen screenRcd -> screenRcd
+          Set = fun screenRcd this ->
+            match this with
+            | Screen _ -> Screen screenRcd }
+
     static member group address =
-        { Get = fun this -> getChild Screen.childFinder this address
-          Set = fun group this -> setChild Screen.childAdder this address group }
+        { Get = fun this -> Screen.getChildWithLens this address Lens.id
+          Set = fun groupRcd this -> Screen.setChildWithLens groupRcd this address Lens.id }
+
+    static member groupRcd address =
+        { Get = fun this -> Screen.getChildWithLens this address Group.groupRcd
+          Set = fun groupRcd this -> Screen.setChildWithLens groupRcd this address Group.groupRcd }
     
-    static member optGroup address =
-        { Get = fun this -> getOptChild Screen.optChildFinder this address
-          Set = fun optGroup this -> setOptChild Screen.childAdder Screen.childRemover this address optGroup }
+    static member optGroupRcd address =
+        { Get = fun this -> Screen.getOptChildWithLens this address Group.groupRcd
+          Set = fun optGroupRcd this -> Screen.setOptChildWithLens optGroupRcd this address Group.groupRcd }
     
-    static member groups =
-        { Get = fun this -> this.Groups
-          Set = fun groups this -> { this with Groups = groups }}
+    static member entityRcd address = Screen.group [List.head address] >>| Group.entityRcd (List.tail address)
+    static member optEntityRcd address = Screen.group [List.head address] >>| Group.optEntityRcd (List.tail address)
+
+    static member gui address = Screen.group [List.head address] >>| Group.gui (List.tail address)
+    static member optGui address = Screen.group [List.head address] >>| Group.optGui (List.tail address)
+
+    static member button address = Screen.group [List.head address] >>| Group.button (List.tail address)
+    static member optButton address = Screen.group [List.head address] >>| Group.optButton (List.tail address)
+
+    static member label address = Screen.group [List.head address] >>| Group.label (List.tail address)
+    static member optLabel address = Screen.group [List.head address] >>| Group.optLabel (List.tail address)
+
+    static member textBox address = Screen.group [List.head address] >>| Group.textBox (List.tail address)
+    static member optTextBox address = Screen.group [List.head address] >>| Group.optTextBox (List.tail address)
+
+    static member toggle address = Screen.group [List.head address] >>| Group.toggle (List.tail address)
+    static member optToggle address = Screen.group [List.head address] >>| Group.optToggle (List.tail address)
+
+    static member feeler address = Screen.group [List.head address] >>| Group.feeler (List.tail address)
+    static member optFeeler address = Screen.group [List.head address] >>| Group.optFeeler (List.tail address)
+
+    static member actor address = Screen.group [List.head address] >>| Group.actor (List.tail address)
+    static member optActor address = Screen.group [List.head address] >>| Group.optActor (List.tail address)
+
+    static member block address = Screen.group [List.head address] >>| Group.block (List.tail address)
+    static member optBlock address = Screen.group [List.head address] >>| Group.optBlock (List.tail address)
+
+    static member avatar address = Screen.group [List.head address] >>| Group.avatar (List.tail address)
+    static member optAvatar address = Screen.group [List.head address] >>| Group.optAvatar (List.tail address)
+
+    static member tileMap address = Screen.group [List.head address] >>| Group.tileMap (List.tail address)
+    static member optTileMap address = Screen.group [List.head address] >>| Group.optTileMap (List.tail address)

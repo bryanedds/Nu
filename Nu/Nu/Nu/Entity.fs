@@ -13,335 +13,219 @@ open Nu.Audio
 open Nu.Rendering
 open Nu.DataModel
 
+type [<StructuralEquality; NoComparison; CLIMutable>] EntityRcd =
+    { Id : Id
+      Enabled : bool
+      Visible : bool }
+
+type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
+    { EntityRcd : EntityRcd
+      Position : Vector2
+      Depth : single
+      Size : Vector2 }
+
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
-    { IsDown : bool
+    { Gui : Gui
+      IsDown : bool
       UpSprite : Sprite
       DownSprite : Sprite
       ClickSound : Sound }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Label =
-    { LabelSprite : Sprite }
+    { Gui : Gui
+      LabelSprite : Sprite }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
-    { BoxSprite : Sprite
+    { Gui : Gui
+      BoxSprite : Sprite
       Text : string
       TextFont : Font
       TextOffset : Vector2
       TextColor : Vector4 }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
-    { IsOn : bool
+    { Gui : Gui
+      IsOn : bool
       IsPressed : bool
       OffSprite : Sprite
       OnSprite : Sprite
       ToggleSound : Sound }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Feeler =
-    { IsTouched : bool }
+    { Gui : Gui
+      IsTouched : bool }
 
-/// An algabraically-closed semantics for game gui elements.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] GuiSubtype =
-    | Button of Button
-    | Label of Label
-    | TextBox of TextBox
-    | Toggle of Toggle
-    | Feeler of Feeler
- // | ...additional controls
- // | UserDefinedGui of IUserDefinedGui (* this would give us more open gui semantics, but perhaps at the cost of its value semantics...  *)
-
-/// A game gui element.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
-    { Position : Vector2
+type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
+    { EntityRcd : EntityRcd
+      Position : Vector2
       Depth : single
       Size : Vector2
-      SubSubtype : GuiSubtype }
-
-    static member button =
-        { Get = fun this -> match this.SubSubtype with Button button -> button | _ -> failwith "Gui is not a button."
-          Set = fun button this -> { this with SubSubtype = Button button }}
-
-    static member optButton =
-        { Get = fun this -> match this.SubSubtype with Button button -> Some button | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some button -> { this with SubSubtype = Button button }}
-    
-    static member label =
-        { Get = fun this -> match this.SubSubtype with Label label -> label | _ -> failwith "Gui is not a label."
-          Set = fun label this -> { this with SubSubtype = Label label }}
-
-    static member optLabel =
-        { Get = fun this -> match this.SubSubtype with Label label -> Some label | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some label -> { this with SubSubtype = Label label }}
-    
-    static member textBox =
-        { Get = fun this -> match this.SubSubtype with TextBox textBox -> textBox | _ -> failwith "Gui is not a textBox."
-          Set = fun textBox this -> { this with SubSubtype = TextBox textBox }}
-
-    static member optTextBox =
-        { Get = fun this -> match this.SubSubtype with TextBox textBox -> Some textBox | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some textBox -> { this with SubSubtype = TextBox textBox }}
-    
-    static member toggle =
-        { Get = fun this -> match this.SubSubtype with Toggle toggle -> toggle | _ -> failwith "Gui is not a toggle."
-          Set = fun toggle this -> { this with SubSubtype = Toggle toggle }}
-
-    static member optToggle =
-        { Get = fun this -> match this.SubSubtype with Toggle toggle -> Some toggle | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some toggle -> { this with SubSubtype = Toggle toggle }}
-    
-    static member feeler =
-        { Get = fun this -> match this.SubSubtype with Feeler feeler -> feeler | _ -> failwith "Gui is not a feeler."
-          Set = fun feeler this -> { this with SubSubtype = Feeler feeler }}
-
-    static member optFeeler =
-        { Get = fun this -> match this.SubSubtype with Feeler feeler -> Some feeler | _ -> None
-          Set = fun optButton this -> match optButton with None -> failwith "Cannot set subtype to None." | Some feeler -> { this with SubSubtype = Feeler feeler }}
-
+      Rotation : single }      
+      
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
-    { PhysicsId : Id
+    { Actor : Actor
+      PhysicsId : Id
       Density : single
       BodyType : BodyType
       Sprite : Sprite }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
-    { PhysicsId : Id
+    { Actor : Actor
+      PhysicsId : Id
       Density : single
       Sprite : Sprite }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
-    { PhysicsIds : Id list
+    { Actor : Actor
+      PhysicsIds : Id list
       Density : single
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
       TileMapMetadata : Sprite list }
 
-/// An algabraically-closed semantics for game actors.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] ActorSubtype =
+type [<StructuralEquality; NoComparison>] Entity =
+    | Button of Button
+    | Label of Label
+    | TextBox of TextBox
+    | Toggle of Toggle
+    | Feeler of Feeler
     | Block of Block
     | Avatar of Avatar
     | TileMap of TileMap
- // | ...additional actors
- // | UserDefinedActor of IUserDefinedActor (* this would be one way to get open actor semantics, but perhaps at the cost of its value semantics... *)
 
-/// A game actor.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
-    { Position : Vector2
-      Depth : single
-      Size : Vector2
-      Rotation : single
-      SubSubtype : ActorSubtype }
+    static member entity =
+        { Get = fun (this : Entity) -> this
+          Set = fun entity _ -> entity }
 
-    static member block =
-        { Get = fun this -> match this.SubSubtype with Block block -> block | _ -> failwith "Actor is not a block."
-          Set = fun block this -> { this with SubSubtype = Block block }}
+    static member entityRcd =
+        { Get = fun this ->
+            match this with
+            | Button button -> button.Gui.EntityRcd
+            | Label label -> label.Gui.EntityRcd
+            | TextBox textBox -> textBox.Gui.EntityRcd
+            | Toggle toggle -> toggle.Gui.EntityRcd
+            | Feeler feeler -> feeler.Gui.EntityRcd
+            | Block block -> block.Actor.EntityRcd
+            | Avatar avatar -> avatar.Actor.EntityRcd
+            | TileMap tileMap -> tileMap.Actor.EntityRcd
+          Set = fun entityRcd this ->
+            match this with
+            | Button button -> Button { button with Gui = { button.Gui with EntityRcd = entityRcd }}
+            | Label label -> Label { label with Gui = { label.Gui with EntityRcd = entityRcd }}
+            | TextBox textBox -> TextBox { textBox with Gui = { textBox.Gui with EntityRcd = entityRcd }}
+            | Toggle toggle -> Toggle { toggle with Gui = { toggle.Gui with EntityRcd = entityRcd }}
+            | Feeler feeler -> Feeler { feeler with Gui = { feeler.Gui with EntityRcd = entityRcd }}
+            | Block block -> Block { block with Actor = { block.Actor with EntityRcd = entityRcd }}
+            | Avatar avatar -> Avatar { avatar with Actor = { avatar.Actor with EntityRcd = entityRcd }}
+            | TileMap tileMap -> TileMap { tileMap with Actor = { tileMap.Actor with EntityRcd = entityRcd }}}
 
-    static member optBlock =
-        { Get = fun this -> match this.SubSubtype with Block block -> Some block | _ -> None
-          Set = fun optBlock this -> match optBlock with None -> failwith "Cannot set subtype to None." | Some block -> { this with SubSubtype = Block block }}
-          
-    static member avatar =
-        { Get = fun this -> match this.SubSubtype with Avatar avatar -> avatar | _ -> failwith "Actor is not a avatar."
-          Set = fun avatar this -> { this with SubSubtype = Avatar avatar }}
-
-    static member optAvatar =
-        { Get = fun this -> match this.SubSubtype with Avatar avatar -> Some avatar | _ -> None
-          Set = fun optAvatar this -> match optAvatar with None -> failwith "Cannot set subtype to None." | Some avatar -> { this with SubSubtype = Avatar avatar }}
-
-    static member tileMap =
-        { Get = fun this -> match this.SubSubtype with TileMap tileMap -> tileMap | _ -> failwith "Actor is not a tileMap."
-          Set = fun tileMap this -> { this with SubSubtype = TileMap tileMap }}
-
-    static member optTileMap =
-        { Get = fun this -> match this.SubSubtype with TileMap tileMap -> Some tileMap | _ -> None
-          Set = fun optTileMap this -> match optTileMap with None -> failwith "Cannot set subtype to None." | Some tileMap -> { this with SubSubtype = TileMap tileMap }}
-
-/// An algabraically-closed semantics for game entities.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] EntitySubtype =
-    | Gui of Gui
-    | Actor of Actor
- // | Actor3d of Actor3d
-
-/// A game entity.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
-    { Id : Id
-      Enabled : bool
-      Visible : bool
-      Subtype : EntitySubtype }
+    static member optGui =
+        { Get = fun this ->
+            match this with
+            | Button button -> Some (button.Gui, button.Gui.EntityRcd)
+            | Label label -> Some (label.Gui, label.Gui.EntityRcd)
+            | TextBox textBox -> Some (textBox.Gui, textBox.Gui.EntityRcd)
+            | Toggle toggle -> Some (toggle.Gui, toggle.Gui.EntityRcd)
+            | Feeler feeler -> Some (feeler.Gui, feeler.Gui.EntityRcd)
+            | Block _ | Avatar _ | TileMap _ -> None
+          Set = fun optGui this ->
+            let (gui, entityRcd) = Option.get optGui
+            match this with
+            | Button button -> Button { button with Gui = { gui with EntityRcd = entityRcd }}
+            | Label label -> Label { label with Gui = { gui with EntityRcd = entityRcd }}
+            | TextBox textBox -> TextBox { textBox with Gui = { gui with EntityRcd = entityRcd }}
+            | Toggle toggle -> Toggle { toggle with Gui = { gui with EntityRcd = entityRcd }}
+            | Feeler feeler -> Feeler { feeler with Gui = { gui with EntityRcd = entityRcd }}
+            | Block _ | Avatar _ | TileMap _ -> failwith "Entity is not a gui." }
 
     static member gui =
-        { Get = fun this -> match this.Subtype with Gui gui -> gui | _ -> failwith "Entity is not a gui."
-          Set = fun gui this -> { this with Subtype = Gui gui }}
-    
-    static member optGui =
-        { Get = fun this -> match this.Subtype with Gui gui -> Some gui | _ -> None
-          Set = fun optGui this -> match optGui with None -> failwith "Cannot set subtype to None." | Some gui -> set gui this Entity.gui }
-    
-    static member guiButton =
-        { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.button)
-          Set = fun (gui, button) this -> let newGui = set button Gui.button in set gui this Entity.gui }
-    
-    static member optGuiButton =
+        { Get = fun this -> Option.get (get this Entity.optGui)
+          Set = fun gui this -> set (Some gui) this Entity.optGui }
+
+    static member optButton =
+        { Get = fun this -> match this with Button button -> Some (button, button.Gui, button.Gui.EntityRcd) | _ -> None
+          Set = fun optButton this -> let (button, gui, entityRcd) = Option.get optButton in Button { button with Gui = { gui with EntityRcd = entityRcd }}}
+
+    static member button =
+        { Get = fun this -> Option.get (get this Entity.optButton)
+          Set = fun button this -> set (Some button) this Entity.optButton }
+
+    static member optLabel =
+        { Get = fun this -> match this with Label label -> Some (label, label.Gui, label.Gui.EntityRcd) | _ -> None
+          Set = fun optLabel this -> let (label, gui, entityRcd) = Option.get optLabel in Label { label with Gui = { gui with EntityRcd = entityRcd }}}
+
+    static member label =
+        { Get = fun this -> Option.get (get this Entity.optLabel)
+          Set = fun label this -> set (Some label) this Entity.optLabel }
+
+    static member optTextBox =
+        { Get = fun this -> match this with TextBox textBox -> Some (textBox, textBox.Gui, textBox.Gui.EntityRcd) | _ -> None
+          Set = fun optTextBox this -> let (textBox, gui, entityRcd) = Option.get optTextBox in TextBox { textBox with Gui = { gui with EntityRcd = entityRcd }}}
+
+    static member textBox =
+        { Get = fun this -> Option.get (get this Entity.optTextBox)
+          Set = fun textBox this -> set (Some textBox) this Entity.optTextBox }
+
+    static member optToggle =
+        { Get = fun this -> match this with Toggle toggle -> Some (toggle, toggle.Gui, toggle.Gui.EntityRcd) | _ -> None
+          Set = fun optToggle this -> let (toggle, gui, entityRcd) = Option.get optToggle in Toggle { toggle with Gui = { gui with EntityRcd = entityRcd }}}
+
+    static member toggle =
+        { Get = fun this -> Option.get (get this Entity.optToggle)
+          Set = fun toggle this -> set (Some toggle) this Entity.optToggle }
+
+    static member optFeeler =
+        { Get = fun this -> match this with Feeler feeler -> Some (feeler, feeler.Gui, feeler.Gui.EntityRcd) | _ -> None
+          Set = fun optFeeler this -> let (feeler, gui, entityRcd) = Option.get optFeeler in Feeler { feeler with Gui = { gui with EntityRcd = entityRcd }}}
+
+    static member feeler =
+        { Get = fun this -> Option.get (get this Entity.optFeeler)
+          Set = fun feeler this -> set (Some feeler) this Entity.optFeeler }
+
+    static member optActor =
         { Get = fun this ->
-            let optGui = get this Entity.optGui
-            match optGui with
-            | None -> None
-            | Some gui ->
-                let optButton = get gui Gui.optButton
-                match optButton with
-                | None -> None
-                | Some button -> Some (gui, button)
-          Set = fun optGuiButton this ->
-            match optGuiButton with
-            | None -> failwith "Cannot set subtype to None."
-            | Some guiButton -> set guiButton this Entity.guiButton }
-    
-    static member guiLabel =
-        { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.label)
-          Set = fun (gui, label) this -> let newGui = set label Gui.label in set gui this Entity.gui }
-    
-    static member optGuiLabel =
-        { Get = fun this ->
-            let optGui = get this Entity.optGui
-            match optGui with
-            | None -> None
-            | Some gui ->
-                let optLabel = get gui Gui.optLabel
-                match optLabel with
-                | None -> None
-                | Some label -> Some (gui, label)
-          Set = fun optGuiLabel this ->
-            match optGuiLabel with
-            | None -> failwith "Cannot set subtype to None."
-            | Some guiLabel -> set guiLabel this Entity.guiLabel }
-    
-    static member guiTextBox =
-        { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.textBox)
-          Set = fun (gui, textBox) this -> let newGui = set textBox Gui.textBox in set gui this Entity.gui }
-    
-    static member optGuiTextBox =
-        { Get = fun this ->
-            let optGui = get this Entity.optGui
-            match optGui with
-            | None -> None
-            | Some gui ->
-                let optTextBox = get gui Gui.optTextBox
-                match optTextBox with
-                | None -> None
-                | Some textBox -> Some (gui, textBox)
-          Set = fun optGuiTextBox this ->
-            match optGuiTextBox with
-            | None -> failwith "Cannot set subtype to None."
-            | Some guiTextBox -> set guiTextBox this Entity.guiTextBox }
-    
-    static member guiToggle =
-        { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.toggle)
-          Set = fun (gui, toggle) this -> let newGui = set toggle Gui.toggle in set gui this Entity.gui }
-    
-    static member optGuiToggle =
-        { Get = fun this ->
-            let optGui = get this Entity.optGui
-            match optGui with
-            | None -> None
-            | Some gui ->
-                let optToggle = get gui Gui.optToggle
-                match optToggle with
-                | None -> None
-                | Some toggle -> Some (gui, toggle)
-          Set = fun optGuiToggle this ->
-            match optGuiToggle with
-            | None -> failwith "Cannot set subtype to None."
-            | Some guiToggle -> set guiToggle this Entity.guiToggle }
-    
-    static member guiFeeler =
-        { Get = fun this -> let gui = get this Entity.gui in (gui, get gui Gui.feeler)
-          Set = fun (gui, feeler) this -> let newGui = set feeler Gui.feeler in set gui this Entity.gui }
-    
-    static member optGuiFeeler =
-        { Get = fun this ->
-            let optGui = get this Entity.optGui
-            match optGui with
-            | None -> None
-            | Some gui ->
-                let optFeeler = get gui Gui.optFeeler
-                match optFeeler with
-                | None -> None
-                | Some feeler -> Some (gui, feeler)
-          Set = fun optGuiFeeler this ->
-            match optGuiFeeler with
-            | None -> failwith "Cannot set subtype to None."
-            | Some guiFeeler -> set guiFeeler this Entity.guiFeeler }
+            match this with
+            | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> None
+            | Block block -> Some block.Actor
+            | Avatar avatar -> Some avatar.Actor
+            | TileMap tileMap -> Some tileMap.Actor
+          Set = fun optActor this ->
+            let actor = Option.get optActor
+            match this with
+            | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> failwith "Entity is not an actor."
+            | Block block -> Block { block with Actor = actor }
+            | Avatar avatar -> Avatar { avatar with Actor = actor }
+            | TileMap tileMap -> TileMap { tileMap with Actor = actor }}
 
     static member actor =
-        { Get = fun this -> match this.Subtype with Actor actor -> actor | _ -> failwith "Entity is not an actor."
-          Set = fun actor this -> { this with Subtype = Actor actor }}
-    
-    static member optActor =
-        { Get = fun this -> match this.Subtype with Actor actor -> Some actor | _ -> None
-          Set = fun optActor this -> match optActor with None -> failwith "Cannot set subtype to None." | Some actor -> set actor this Entity.actor }
-    
-    static member actorBlock =
-        { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.block)
-          Set = fun (actor, block) this -> let newActor = set block Actor.block in set actor this Entity.actor }
-    
-    static member optActorBlock =
-        { Get = fun this ->
-            let optActor = get this Entity.optActor
-            match optActor with
-            | None -> None
-            | Some actor ->
-                let optBlock = get actor Actor.optBlock
-                match optBlock with
-                | None -> None
-                | Some block -> Some (actor, block)
-          Set = fun optActorBlock this ->
-            match optActorBlock with
-            | None -> failwith "Cannot set subtype to None."
-            | Some actorBlock -> set actorBlock this Entity.actorBlock }
-    
-    static member actorAvatar =
-        { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.avatar)
-          Set = fun (actor, avatar) this -> let newActor = set avatar Actor.avatar in set actor this Entity.actor }
-    
-    static member optActorAvatar =
-        { Get = fun this ->
-            let optActor = get this Entity.optActor
-            match optActor with
-            | None -> None
-            | Some actor ->
-                let optAvatar = get actor Actor.optAvatar
-                match optAvatar with
-                | None -> None
-                | Some avatar -> Some (actor, avatar)
-          Set = fun optActorAvatar this ->
-            match optActorAvatar with
-            | None -> failwith "Cannot set subtype to None."
-            | Some actorAvatar -> set actorAvatar this Entity.actorAvatar }
-    
-    static member actorTileMap =
-        { Get = fun this -> let actor = get this Entity.actor in (actor, get actor Actor.tileMap)
-          Set = fun (actor, tileMap) this -> let newActor = set tileMap Actor.tileMap in set actor this Entity.actor }
-    
-    static member optActorTileMap =
-        { Get = fun this ->
-            let optActor = get this Entity.optActor
-            match optActor with
-            | None -> None
-            | Some actor ->
-                let optTileMap = get actor Actor.optTileMap
-                match optTileMap with
-                | None -> None
-                | Some tileMap -> Some (actor, tileMap)
-          Set = fun optActorTileMap this ->
-            match optActorTileMap with
-            | None -> failwith "Cannot set subtype to None."
-            | Some actorTileMap -> set actorTileMap this Entity.actorTileMap }
+        { Get = fun this -> Option.get (get this Entity.optActor)
+          Set = fun actor this -> set (Some actor) this Entity.optActor }
 
-let writeEntityToXml (writer : XmlWriter) entity =
+    static member optBlock =
+        { Get = fun this -> match this with Block block -> Some (block, block.Actor, block.Actor.EntityRcd) | _ -> None
+          Set = fun optBlock this -> let (block, actor, entityRcd) = Option.get optBlock in Block { block with Actor = { actor with EntityRcd = entityRcd }}}
+
+    static member block =
+        { Get = fun this -> Option.get (get this Entity.optBlock)
+          Set = fun block this -> set (Some block) this Entity.optBlock }
+
+    static member optAvatar =
+        { Get = fun this -> match this with Avatar avatar -> Some (avatar, avatar.Actor, avatar.Actor.EntityRcd) | _ -> None
+          Set = fun optAvatar this -> let (avatar, actor, entityRcd) = Option.get optAvatar in Avatar { avatar with Actor = { actor with EntityRcd = entityRcd }}}
+
+    static member avatar =
+        { Get = fun this -> Option.get (get this Entity.optAvatar)
+          Set = fun avatar this -> set (Some avatar) this Entity.optAvatar }
+
+    static member optTileMap =
+        { Get = fun this -> match this with TileMap tileMap -> Some (tileMap, tileMap.Actor, tileMap.Actor.EntityRcd) | _ -> None
+          Set = fun optTileMap this -> let (tileMap, actor, entityRcd) = Option.get optTileMap in TileMap { tileMap with Actor = { actor with EntityRcd = entityRcd }}}
+
+    static member tileMap =
+        { Get = fun this -> Option.get (get this Entity.optTileMap)
+          Set = fun tileMap this -> set (Some tileMap) this Entity.optTileMap }
+
+(*let writeEntityToXml (writer : XmlWriter) entity =
     writer.WriteStartElement typeof<Entity>.Name
     writeNuProperties writer entity
     match entity.Subtype with
@@ -379,4 +263,4 @@ let readEntityFromXml (reader : XmlReader) =
     ignore <| readSubtypeFromXml reader entityAssemblyName "Sub" subtypeRecord
 
     // read end
-    reader.ReadEndElement ()
+    reader.ReadEndElement ()*)

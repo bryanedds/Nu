@@ -80,6 +80,10 @@ and [<ReferenceEquality>] World =
     static member game =
         { Get = fun this -> this.Game
           Set = fun game this -> { this with Game = game }}
+
+    static member gameRcd =
+        { Get = fun this -> get this.Game Game.gameRcd
+          Set = fun game this -> { this with Game = set game this.Game Game.gameRcd }}
           
     static member camera =
         { Get = fun this -> this.Camera
@@ -89,86 +93,44 @@ and [<ReferenceEquality>] World =
         { Get = fun this -> this.MouseState
           Set = fun mouseState this -> { this with MouseState = mouseState }}
     
-    static member entity (address : Address) =
-        World.game >>| Game.entity address
+    static member entityRcd (address : Address) = World.game >>| Game.entityRcd address
+    static member optEntity (address : Address) = World.game >>| Game.optEntityRcd address
     
-    static member optEntity (address : Address) =
-        World.game >>| Game.optEntity address
+    static member gui (address : Address) = World.game >>| Game.gui address
+    static member optGui (address : Address) = World.game >>| Game.optGui address
     
-    static member entityGui (address : Address) =
-        World.game >>| Game.entityGui address
+    static member button (address : Address) = World.game >>| Game.button address
+    static member optButton (address : Address) = World.game >>| Game.optButton address
     
-    static member optEntityGui (address : Address) =
-        World.game >>| Game.optEntityGui address
+    static member label (address : Address) = World.game >>| Game.label address
+    static member optLabel (address : Address) = World.game >>| Game.optLabel address
     
-    static member entityGuiButton (address : Address) =
-        World.game >>| Game.entityGuiButton address
+    static member textBox (address : Address) = World.game >>| Game.textBox address
+    static member optTextBox (address : Address) = World.game >>| Game.optTextBox address
     
-    static member optEntityGuiButton (address : Address) =
-        World.game >>| Game.optEntityGuiButton address
+    static member toggle (address : Address) = World.game >>| Game.toggle address
+    static member optToggle (address : Address) = World.game >>| Game.optToggle address
     
-    static member entityGuiLabel (address : Address) =
-        World.game >>| Game.entityGuiLabel address
+    static member feeler (address : Address) = World.game >>| Game.feeler address
+    static member optFeeler (address : Address) = World.game >>| Game.optFeeler address
     
-    static member optEntityGuiLabel (address : Address) =
-        World.game >>| Game.optEntityGuiLabel address
+    static member entityActor (address : Address) = World.game >>| Game.actor address
+    static member optActor (address : Address) = World.game >>| Game.optActor address
     
-    static member entityGuiTextBox (address : Address) =
-        World.game >>| Game.entityGuiTextBox address
+    static member block (address : Address) = World.game >>| Game.block address
+    static member optBlock (address : Address) = World.game >>| Game.optBlock address
     
-    static member optEntityGuiTextBox (address : Address) =
-        World.game >>| Game.optEntityGuiTextBox address
+    static member avatar (address : Address) = World.game >>| Game.avatar address
+    static member optAvatar (address : Address) = World.game >>| Game.optAvatar address
     
-    static member entityGuiToggle (address : Address) =
-        World.game >>| Game.entityGuiToggle address
+    static member tileMap (address : Address) = World.game >>| Game.tileMap address
+    static member optTileMap (address : Address) = World.game >>| Game.optTileMap address
     
-    static member optEntityGuiToggle (address : Address) =
-        World.game >>| Game.optEntityGuiToggle address
+    static member groupRcd (address : Address) = World.game >>| Game.groupRcd address
+    static member optGroupRcd (address : Address) = World.game >>| Game.optGroupRcd address
     
-    static member entityGuiFeeler (address : Address) =
-        World.game >>| Game.entityGuiFeeler address
-    
-    static member optEntityGuiFeeler (address : Address) =
-        World.game >>| Game.optEntityGuiFeeler address
-    
-    static member entityActor (address : Address) =
-        World.game >>| Game.entityActor address
-    
-    static member optEntityActor (address : Address) =
-        World.game >>| Game.optEntityActor address
-    
-    static member entityActorBlock (address : Address) =
-        World.game >>| Game.entityActorBlock address
-    
-    static member optEntityActorBlock (address : Address) =
-        World.game >>| Game.optEntityActorBlock address
-    
-    static member entityActorAvatar (address : Address) =
-        World.game >>| Game.entityActorAvatar address
-    
-    static member optEntityActorAvatar (address : Address) =
-        World.game >>| Game.optEntityActorAvatar address
-    
-    static member entityActorTileMap (address : Address) =
-        World.game >>| Game.entityActorTileMap address
-    
-    static member optEntityActorTileMap (address : Address) =
-        World.game >>| Game.optEntityActorTileMap address
-    
-    static member group (address : Address) =
-        World.game >>| Game.group address
-    
-    static member optGroup (address : Address) =
-        World.game >>| Game.optGroup address
-    
-    static member screen (address : Address) =
-        World.game >>| Game.screen address
-    
-    static member optScreen (address : Address) =
-        World.game >>| Game.optScreen address
-    
-    static member optActiveScreenAddress =
-        World.game >>| Game.optActiveScreenAddress
+    static member screenRcd (address : Address) = World.game >>| Game.screenRcd address
+    static member optScreenRcd (address : Address) = World.game >>| Game.optScreenRcd address
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -192,7 +154,8 @@ let handle message =
     { Handled = true; Data = message.Data }
 
 let isAddressSelected address world =
-    match (address, world.Game.OptSelectedScreenAddress) with
+    let optScreenAddress = (get world World.gameRcd).OptSelectedScreenAddress
+    match (address, optScreenAddress) with
     | ([], _) -> true
     | (_, None) -> false
     | (_, Some screenAddress) ->
@@ -243,7 +206,7 @@ let withSubscription address subscription subscriber procedure world =
     let world3 = procedure world2
     unsubscribe address subscriber world3
 
-let unregisterEntityGuiButton address world =
+let unregisterButton address world =
     world |>
         unsubscribe DownMouseLeftAddress address |>
         unsubscribe UpMouseLeftAddress address
@@ -251,11 +214,11 @@ let unregisterEntityGuiButton address world =
 let handleButtonEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+        let (button, gui, entity) = get world (World.button subscriber)
         if entity.Enabled && entity.Visible then
             if isInBox3 mousePosition gui.Position gui.Size then
                 let button_ = { button with IsDown = true }
-                let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                let world_ = set (button_, gui, entity) world (World.button subscriber)
                 let world_ = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
                 (handle message, world_)
             else (message, world)
@@ -265,11 +228,11 @@ let handleButtonEventDownMouseLeft address subscriber message world =
 let handleButtonEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (entity, gui, button) = get world (World.entityGuiButton subscriber)
+        let (button, gui, entity) = get world (World.button subscriber)
         if entity.Enabled && entity.Visible then
             let world_ =
                 let button_ = { button with IsDown = false }
-                let world_ = set (entity, gui, button_) world (World.entityGuiButton subscriber)
+                let world_ = set (button_, gui, entity) world (World.button subscriber)
                 publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
             if isInBox3 mousePosition gui.Position gui.Size && button.IsDown then
                 let world_ = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
@@ -280,33 +243,33 @@ let handleButtonEventUpMouseLeft address subscriber message world =
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
-let registerEntityGuiButton address world =
-    let optOldEntityGuiButton = get world (World.optEntityGuiButton address)
-    let world_ = if optOldEntityGuiButton.IsSome then unregisterEntityGuiButton address world else world
+let registerButton address world =
+    let optOldButton = get world (World.optButton address)
+    let world_ = if optOldButton.IsSome then unregisterButton address world else world
     let world_ = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world_
 
-let addEntityGuiButton entityGuiButton address world =
-    let world2 = registerEntityGuiButton address world
-    set entityGuiButton world2 (World.entityGuiButton address)
+let addButton button address world =
+    let world2 = registerButton address world
+    set button world2 (World.button address)
 
-let removeEntityGuiButton address world =
-    let world2 = set None world (World.optEntityGuiButton address)
-    unregisterEntityGuiButton address world2
+let removeButton address world =
+    let world2 = set None world (World.optButton address)
+    unregisterButton address world2
 
-let addEntityGuiLabel entityGuiLabel address world =
-    set entityGuiLabel world (World.entityGuiLabel address)
+let addLabel label address world =
+    set label world (World.label address)
 
-let removeEntityGuiLabel address world =
-    set None world (World.optEntityGuiLabel address)
+let removeLabel address world =
+    set None world (World.optLabel address)
 
-let addEntityGuiTextBox entityGuiTextBox address world =
-    set entityGuiTextBox world (World.entityGuiTextBox address)
+let addTextBox textBox address world =
+    set textBox world (World.textBox address)
 
-let removeEntityGuiTextBox address world =
-    set None world (World.optEntityGuiTextBox address)
+let removeTextBox address world =
+    set None world (World.optTextBox address)
 
-let unregisterEntityGuiToggle address world =
+let unregisterToggle address world =
     world |>
         unsubscribe DownMouseLeftAddress address |>
         unsubscribe UpMouseLeftAddress address
@@ -314,11 +277,11 @@ let unregisterEntityGuiToggle address world =
 let handleToggleEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (entity, gui, toggle) = get world (World.entityGuiToggle subscriber)
+        let (toggle, gui, entity) = get world (World.toggle subscriber)
         if entity.Enabled && entity.Visible then
             if isInBox3 mousePosition gui.Position gui.Size then
                 let toggle_ = { toggle with IsPressed = true }
-                let world_ = set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
+                let world_ = set (toggle_, gui, entity) world (World.toggle subscriber)
                 (handle message, world_)
             else (message, world)
         else (message, world)
@@ -327,34 +290,34 @@ let handleToggleEventDownMouseLeft address subscriber message world =
 let handleToggleEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (entity, gui, toggle) = get world (World.entityGuiToggle subscriber)
+        let (toggle, gui, entity) = get world (World.toggle subscriber)
         if entity.Enabled && entity.Visible && toggle.IsPressed then
             let toggle_ = { toggle with IsPressed = false }
             if isInBox3 mousePosition gui.Position gui.Size then
                 let toggle_ = { toggle_ with IsOn = not toggle_.IsOn }
-                let world_ = set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
+                let world_ = set (toggle_, gui, entity) world (World.toggle subscriber)
                 let messageType = if toggle.IsOn then "on" else "off"
                 let world_ = publish (Lun.make messageType :: subscriber) { Handled = false; Data = NoData } world_
                 let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                 let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                 (handle message, world_)
             else
-                let world_ = set (entity, gui, toggle_) world (World.entityGuiToggle subscriber)
+                let world_ = set (toggle_, gui, entity) world (World.toggle subscriber)
                 (message, world_)
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
-let registerEntityGuiToggle address world =
-    let optOldEntityGuiToggle = get world (World.optEntityGuiToggle address)
-    let world_ = if optOldEntityGuiToggle.IsSome then unregisterEntityGuiToggle address world else world
+let registerToggle address world =
+    let optOldToggle = get world (World.optToggle address)
+    let world_ = if optOldToggle.IsSome then unregisterToggle address world else world
     let world_ = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world_
 
-let addEntityGuiToggle entityGuiToggle address world =
-    let world2 = registerEntityGuiToggle address world
-    set entityGuiToggle world2 (World.entityGuiToggle address)
+let addToggle toggle address world =
+    let world2 = registerToggle address world
+    set toggle world2 (World.toggle address)
 
-let unregisterEntityGuiFeeler address world =
+let unregisterFeeler address world =
     world |>
         unsubscribe UpMouseLeftAddress address |>
         unsubscribe DownMouseLeftAddress address
@@ -362,11 +325,11 @@ let unregisterEntityGuiFeeler address world =
 let handleFeelerEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) as mouseButtonData ->
-        let (entity, gui, feeler) = get world (World.entityGuiFeeler subscriber)
+        let (feeler, gui, entity) = get world (World.feeler subscriber)
         if entity.Enabled && entity.Visible then
             if isInBox3 mousePosition gui.Position gui.Size then
                 let feeler_ = { feeler with IsTouched = true }
-                let world_ = set (entity, gui, feeler_) world (World.entityGuiFeeler subscriber)
+                let world_ = set (feeler_, gui, entity) world (World.feeler subscriber)
                 let world_ = publish (Lun.make "touch" :: subscriber) { Handled = false; Data = mouseButtonData } world_
                 (handle message, world_)
             else (message, world)
@@ -376,35 +339,35 @@ let handleFeelerEventDownMouseLeft address subscriber message world =
 let handleFeelerEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData _ ->
-        let (entity, gui, feeler) = get world (World.entityGuiFeeler subscriber)
+        let (feeler, gui, entity) = get world (World.feeler subscriber)
         if entity.Enabled && entity.Visible then
             let feeler_ = { feeler with IsTouched = false }
-            let world_ = set (entity, gui, feeler_) world (World.entityGuiFeeler subscriber)
+            let world_ = set (feeler_, gui, entity) world (World.feeler subscriber)
             let world_ = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
             (handle message, world_)
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
-let registerEntityGuiFeeler address world =
-    let optOldEntityGuiFeeler = get world (World.optEntityGuiFeeler address)
-    let world_ = if optOldEntityGuiFeeler.IsSome then unregisterEntityGuiFeeler address world else world
+let registerFeeler address world =
+    let optOldFeeler = get world (World.optFeeler address)
+    let world_ = if optOldFeeler.IsSome then unregisterFeeler address world else world
     let world_ = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world_
 
-let addEntityGuiFeeler entityGuiFeeler address world =
-    let world2 = registerEntityGuiFeeler address world
-    set entityGuiFeeler world2 (World.entityGuiFeeler address)
+let addFeeler feeler address world =
+    let world2 = registerFeeler address world
+    set feeler world2 (World.feeler address)
 
-let unregisterEntityActorBlock (entity, actor, block : Block) address world =
+let unregisterBlock (block : Block, actor, entity) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorBlock (entity, actor, block : Block) address world =
-    let optOldEntityActorBlock = get world (World.optEntityActorBlock address)
+let registerBlock (block : Block, actor, entity) address world =
+    let optOldBlock = get world (World.optBlock address)
     let world2 =
-        match optOldEntityActorBlock with
+        match optOldBlock with
         | None -> world
-        | Some oldEntityActorBlock -> unregisterEntityActorBlock oldEntityActorBlock address world
+        | Some oldBlock -> unregisterBlock oldBlock address world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -424,24 +387,24 @@ let registerEntityActorBlock (entity, actor, block : Block) address world =
               BodyType = block.BodyType }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
-let addEntityActorBlock entityActorBlock address world =
-    let world2 = registerEntityActorBlock entityActorBlock address world
-    set entityActorBlock world2 (World.entityActorBlock address)
+let addBlock block address world =
+    let world2 = registerBlock block address world
+    set block world2 (World.block address)
 
-let removeEntityActorBlock entityActorBlock address world =
-    let world2 = set None world (World.optEntityActorBlock address)
-    unregisterEntityActorBlock entityActorBlock address world2
+let removeBlock block address world =
+    let world2 = set None world (World.optBlock address)
+    unregisterBlock block address world2
 
-let unregisterEntityActorAvatar (entity, actor, avatar) address world =
+let unregisterAvatar (avatar, actor, entity) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorAvatar (entity, actor, avatar) address world =
-    let optOldEntityActorAvatar = get world (World.optEntityActorAvatar address)
+let registerAvatar (avatar, actor, entity) address world =
+    let optOldAvatar = get world (World.optAvatar address)
     let world2 =
-        match optOldEntityActorAvatar with
+        match optOldAvatar with
         | None -> world
-        | Some oldEntityActorAvatar -> unregisterEntityActorAvatar oldEntityActorAvatar address world
+        | Some oldAvatar -> unregisterAvatar oldAvatar address world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -461,24 +424,24 @@ let registerEntityActorAvatar (entity, actor, avatar) address world =
               BodyType = BodyType.Dynamic }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
-let addEntityActorAvatar entityActorAvatar address world =
-    let world2 = registerEntityActorAvatar entityActorAvatar address world
-    set entityActorAvatar world2 (World.entityActorAvatar address)
+let addAvatar avatar address world =
+    let world2 = registerAvatar avatar address world
+    set avatar world2 (World.avatar address)
 
-let removeEntityActorAvatar entityActorAvatar address world =
-    let world2 = set None world (World.optEntityActorAvatar address)
-    unregisterEntityActorAvatar entityActorAvatar address world2
+let removeAvatar avatar address world =
+    let world2 = set None world (World.optAvatar address)
+    unregisterAvatar avatar address world2
 
-let unregisterEntityActorTileMap (entity, actor, tileMap) address world =
+let unregisterTileMap (tileMap, actor, entity) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = tileMap.PhysicsIds.[0] }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerEntityActorTileMap (entity, actor, tileMap) address world =
-    let optOldEntityActorTileMap = get world (World.optEntityActorTileMap address)
+let registerTileMap (tileMap, actor, entity) address world =
+    let optOldTileMap = get world (World.optTileMap address)
     let world2 =
-        match optOldEntityActorTileMap with
+        match optOldTileMap with
         | None -> world
-        | Some oldEntityActorTileMap -> unregisterEntityActorTileMap oldEntityActorTileMap address world
+        | Some oldTileMap -> unregisterTileMap oldTileMap address world
     (*let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -491,25 +454,25 @@ let registerEntityActorTileMap (entity, actor, tileMap) address world =
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }*)
     world2
 
-let addEntityActorTileMap entityActorTileMap address world =
-    let world2 = registerEntityActorTileMap entityActorTileMap address world
-    set entityActorTileMap world2 (World.entityActorTileMap address)
+let addTileMap tileMap address world =
+    let world2 = registerTileMap tileMap address world
+    set tileMap world2 (World.tileMap address)
 
-let removeEntityActorTileMap entityActorTileMap address world =
-    let world2 = set None world (World.optEntityActorTileMap address)
-    unregisterEntityActorTileMap entityActorTileMap address world2
+let removeTileMap tileMap address world =
+    let world2 = set None world (World.optTileMap address)
+    unregisterTileMap tileMap address world2
 
-let addGroup group address world =
-    set group world (World.group address)
+let addGroupRcd group address world =
+    set group world (World.groupRcd address)
 
-let removeGroup address world =
-    set None world (World.optGroup address)
+let removeGroupRcd address world =
+    set None world (World.optGroupRcd address)
 
-let addScreen screen address world =
-    set screen world (World.screen address)
+let addScreenRcd screen address world =
+    set screen world (World.screenRcd address)
 
-let removeScreen address world =
-    set None world (World.optScreen address)
+let removeScreenRcd address world =
+    set None world (World.optScreenRcd address)
 
 let getComponentAudioDescriptors world : AudioDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
