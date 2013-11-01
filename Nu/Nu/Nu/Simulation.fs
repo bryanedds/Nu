@@ -229,7 +229,7 @@ let handleButtonEventDownMouseLeft address subscriber message world =
         if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
             if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
                 let button_ = { button with IsDown = true }
-                let world_ = set button world (World.button subscriber)
+                let world_ = set button_ world (World.button subscriber)
                 let world_ = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
                 (handle message, world_)
             else (message, world)
@@ -519,30 +519,30 @@ let getEntityRenderDescriptors actorView entity =
         else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
     | Label label ->
         let (_, gui, entity) = Label.sep label
-        if label.Gui.Entity.Visible then []
+        if not label.Gui.Entity.Visible then []
         else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
     | TextBox textBox ->
         let (_, gui, entity) = TextBox.sep textBox
-        if entity.Visible then []
+        if not entity.Visible then []
         else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
               LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
     | Toggle toggle ->
         let (_, gui, entity) = Toggle.sep toggle
-        if entity.Visible then []
+        if not entity.Visible then []
         else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
     | Feeler _ ->
         []
     | Block block ->
         let (_, actor, entity) = Block.sep block
-        if entity.Visible then []
+        if not entity.Visible then []
         else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
     | Avatar avatar ->
         let (_, actor, entity) = Avatar.sep avatar
-        if entity.Visible then []
+        if not entity.Visible then []
         else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
     | TileMap tileMap ->
         let (_, actor, entity) = TileMap.sep tileMap
-        if entity.Visible then []
+        if not entity.Visible then []
         else
             let map = tileMap.TmxMap
             let mapWidth = map.Width

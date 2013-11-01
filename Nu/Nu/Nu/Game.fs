@@ -76,12 +76,12 @@ type [<StructuralEquality; NoComparison>] GameModel =
           Set = fun optSelectedScreenAddress this -> set { (get this GameModel.game) with OptSelectedScreenAddress = optSelectedScreenAddress } this GameModel.game}
 
     static member screenModel address =
-        { Get = fun this -> GameModel.getChildWithLens this address Lens.id
-          Set = fun screen this -> GameModel.setChildWithLens screen this address Lens.id }
-
+        { Get = fun this -> Option.get <| GameModel.optChildModelFinder (List.head address) this
+          Set = fun screen this -> GameModel.childModelAdder (List.head address) this screen }
+    
     static member optScreenModel address =
-        { Get = fun this -> GameModel.getOptChildWithLens this address Lens.id
-          Set = fun screenModel this -> GameModel.setOptChildWithLens screenModel this address Lens.id }
+        { Get = fun this -> GameModel.optChildModelFinder (List.head address) this
+          Set = fun optScreen this -> match optScreen with None -> GameModel.childModelRemover (List.head address) this | Some entity -> GameModel.childModelAdder (List.head address) this entity }
 
     static member screen address =
         { Get = fun this -> GameModel.getChildWithLens this address ScreenModel.screen
