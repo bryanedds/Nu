@@ -60,21 +60,13 @@ type [<StructuralEquality; NoComparison>] GroupModel =
             match this with
             | Group _ -> Group group }
 
-    (*static member entityModel address =
+    static member entityModel address =
         { Get = fun this -> Option.get <| GroupModel.optChildModelFinder (List.head address) this
           Set = fun entity this -> GroupModel.childModelAdder (List.head address) this entity }
     
     static member optEntityModel address =
         { Get = fun this -> GroupModel.optChildModelFinder (List.head address) this
-          Set = fun optEntity this -> match optEntity with None -> GroupModel.childModelRemover (List.head address) this | Some entity -> GroupModel.childModelAdder (List.head address) this entity }*)
-
-    static member entityModel address =
-        { Get = fun this -> GroupModel.getChildWithLens this address Lens.id
-          Set = fun entityModel this -> GroupModel.setChildWithLens entityModel this address Lens.id }
-
-    static member optEntityModel address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address Lens.id
-          Set = fun entityModel this -> GroupModel.setOptChildWithLens entityModel this address Lens.id }
+          Set = fun optEntity this -> match optEntity with None -> GroupModel.childModelRemover (List.head address) this | Some entity -> GroupModel.childModelAdder (List.head address) this entity }
 
     static member entity address =
         { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.entity
