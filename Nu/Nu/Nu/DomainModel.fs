@@ -1,4 +1,4 @@
-﻿module Nu.DataModel
+﻿module Nu.DomainModel
 open System
 open System.ComponentModel
 open System.Reflection
