@@ -42,9 +42,12 @@ type [<StructuralEquality; NoComparison>] GameModel =
         get (getChild GameModel.optChildModelFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let screen = getChild GameModel.optChildModelFinder this address
-        let screen2 = set child screen lens
-        setChild GameModel.childModelAdder GameModel.childModelRemover this address screen2
+        let optScreen = getOptChild GameModel.optChildModelFinder this address
+        match optScreen with
+        | None -> GameModel.childModelAdder (List.head address) this child
+        | Some screen ->
+            let screen2 = set child screen lens
+            setChild GameModel.childModelAdder GameModel.childModelRemover this address screen2
 
     static member private getOptChildWithLens this address lens =
         let optChild = getOptChild GameModel.optChildModelFinder this address

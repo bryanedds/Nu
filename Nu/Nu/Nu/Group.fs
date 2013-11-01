@@ -13,44 +13,47 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Group =
 type [<StructuralEquality; NoComparison>] GroupModel =
     | Group of Group
        
-    static member private optChildFinder addressHead this =
+    static member private optChildModelFinder addressHead this =
         let group = get this GroupModel.group
         Map.tryFind addressHead group.EntityModels
     
-    static member private childAdder addressHead this (child : EntityModel) =
+    static member private childModelAdder addressHead this (child : EntityModel) =
         let group = get this GroupModel.group
         let group2 = { group with EntityModels = Map.add addressHead child group.EntityModels }
         set group2 this GroupModel.group
     
-    static member private childRemover addressHead this =
+    static member private childModelRemover addressHead this =
         let group = get this GroupModel.group
         let group2 = { group with EntityModels = Map.remove addressHead group.EntityModels }
         set group2 this GroupModel.group
 
     static member private getChildWithLens this address lens =
-        get (getChild GroupModel.optChildFinder this address) lens
+        get (getChild GroupModel.optChildModelFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let entity = getChild GroupModel.optChildFinder this address
-        let entity2 = set child entity lens
-        setChild GroupModel.childAdder GroupModel.childRemover this address entity2
+        let optEntity = getOptChild GroupModel.optChildModelFinder this address
+        match optEntity with
+        | None -> GroupModel.childModelAdder (List.head address) this child
+        | Some entity ->
+            let entity2 = set child entity lens
+            setChild GroupModel.childModelAdder GroupModel.childModelRemover this address entity2
 
     static member private getOptChildWithLens this address lens =
-        let optChild = getOptChild GroupModel.optChildFinder this address
+        let optChild = getOptChild GroupModel.optChildModelFinder this address
         match optChild with
         | None -> None
         | Some child -> Some (get child lens)
 
     static member private setOptChildWithLens optChild this address lens =
         match optChild with
-        | None -> setOptChild GroupModel.childAdder GroupModel.childRemover this address None
+        | None -> setOptChild GroupModel.childModelAdder GroupModel.childModelRemover this address None
         | Some child ->
-            let optChildModel = getOptChild GroupModel.optChildFinder this address
+            let optChildModel = getOptChild GroupModel.optChildModelFinder this address
             match optChildModel with
             | None -> failwith "Cannot change a non-existent entity."
             | Some childModel ->
                 let childModel2 = set child childModel lens
-                setChild GroupModel.childAdder GroupModel.childRemover this address childModel2
+                setChild GroupModel.childModelAdder GroupModel.childModelRemover this address childModel2
 
     static member group =
         { Get = fun this ->
