@@ -3,147 +3,147 @@ open System
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu.Core
-open Nu.DataModel
+open Nu.DomainModel
 open Nu.Entity
 
-type [<StructuralEquality; NoComparison; CLIMutable>] GroupRcd =
+type [<StructuralEquality; NoComparison; CLIMutable>] Group =
     { Id : Id
-      Entities : Map<Lun, Entity> }
+      EntityModels : Map<Lun, EntityModel> }
 
-type [<StructuralEquality; NoComparison>] Group =
-    | Group of GroupRcd
+type [<StructuralEquality; NoComparison>] GroupModel =
+    | Group of Group
        
     static member private optChildFinder addressHead this =
-        let groupRcd = get this Group.groupRcd
-        Map.tryFind addressHead groupRcd.Entities
+        let group = get this GroupModel.group
+        Map.tryFind addressHead group.EntityModels
     
-    static member private childAdder addressHead this (child : Entity) =
-        let groupRcd = get this Group.groupRcd
-        let groupRcd2 = { groupRcd with Entities = Map.add addressHead child groupRcd.Entities }
-        set groupRcd2 this Group.groupRcd
+    static member private childAdder addressHead this (child : EntityModel) =
+        let group = get this GroupModel.group
+        let group2 = { group with EntityModels = Map.add addressHead child group.EntityModels }
+        set group2 this GroupModel.group
     
     static member private childRemover addressHead this =
-        let groupRcd = get this Group.groupRcd
-        let groupRcd2 = { groupRcd with Entities = Map.remove addressHead groupRcd.Entities }
-        set groupRcd2 this Group.groupRcd
+        let group = get this GroupModel.group
+        let group2 = { group with EntityModels = Map.remove addressHead group.EntityModels }
+        set group2 this GroupModel.group
 
     static member private getChildWithLens this address lens =
-        get (getChild Group.optChildFinder this address) lens
+        get (getChild GroupModel.optChildFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let entity = getChild Group.optChildFinder this address
+        let entity = getChild GroupModel.optChildFinder this address
         let entity2 = set child entity lens
-        setChild Group.childAdder Group.childRemover this address entity2
+        setChild GroupModel.childAdder GroupModel.childRemover this address entity2
 
     static member private getOptChildWithLens this address lens =
-        let optChild = getOptChild Group.optChildFinder this address
+        let optChild = getOptChild GroupModel.optChildFinder this address
         match optChild with
         | None -> None
         | Some child -> Some (get child lens)
 
-    static member private setOptChildWithLens optChildRcd this address lens =
-        match optChildRcd with
-        | None -> setOptChild Group.childAdder Group.childRemover this address None
-        | Some childRcd ->
-            let optChild = getOptChild Group.optChildFinder this address
-            match optChild with
+    static member private setOptChildWithLens optChild this address lens =
+        match optChild with
+        | None -> setOptChild GroupModel.childAdder GroupModel.childRemover this address None
+        | Some child ->
+            let optChildModel = getOptChild GroupModel.optChildFinder this address
+            match optChildModel with
             | None -> failwith "Cannot change a non-existent entity."
-            | Some child ->
-                let child2 = set childRcd child lens
-                setChild Group.childAdder Group.childRemover this address child2
+            | Some childModel ->
+                let childModel2 = set child childModel lens
+                setChild GroupModel.childAdder GroupModel.childRemover this address childModel2
 
-    static member groupRcd =
+    static member group =
         { Get = fun this ->
             match this with
-            | Group groupRcd -> groupRcd
-          Set = fun groupRcd this ->
+            | Group group -> group
+          Set = fun group this ->
             match this with
-            | Group _ -> Group groupRcd }
+            | Group _ -> Group group }
 
-    static member entityRcd address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.entityRcd
-          Set = fun entityRcd this -> Group.setChildWithLens entityRcd this address Entity.entityRcd }
+    static member entity address =
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.entity
+          Set = fun entity this -> GroupModel.setChildWithLens entity this address EntityModel.entity }
     
-    static member optEntityRcd address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.entityRcd
-          Set = fun optEntityRcd this -> Group.setOptChildWithLens optEntityRcd this address Entity.entityRcd }
+    static member optEntity address =
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.entity
+          Set = fun optEntity this -> GroupModel.setOptChildWithLens optEntity this address EntityModel.entity }
 
     static member gui address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.gui
-          Set = fun entityRcd this -> Group.setChildWithLens entityRcd this address Entity.gui }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.gui
+          Set = fun entity this -> GroupModel.setChildWithLens entity this address EntityModel.gui }
     
     static member optGui address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.gui
-          Set = fun optGui this -> Group.setOptChildWithLens optGui this address Entity.gui }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.gui
+          Set = fun optGui this -> GroupModel.setOptChildWithLens optGui this address EntityModel.gui }
 
     static member button address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.button
-          Set = fun button this -> Group.setChildWithLens button this address Entity.button }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.button
+          Set = fun button this -> GroupModel.setChildWithLens button this address EntityModel.button }
     
     static member optButton address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.button
-          Set = fun button this -> Group.setOptChildWithLens button this address Entity.button }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.button
+          Set = fun button this -> GroupModel.setOptChildWithLens button this address EntityModel.button }
 
     static member label address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.label
-          Set = fun label this -> Group.setChildWithLens label this address Entity.label }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.label
+          Set = fun label this -> GroupModel.setChildWithLens label this address EntityModel.label }
     
     static member optLabel address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.label
-          Set = fun label this -> Group.setOptChildWithLens label this address Entity.label }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.label
+          Set = fun label this -> GroupModel.setOptChildWithLens label this address EntityModel.label }
 
     static member textBox address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.textBox
-          Set = fun textBox this -> Group.setChildWithLens textBox this address Entity.textBox }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.textBox
+          Set = fun textBox this -> GroupModel.setChildWithLens textBox this address EntityModel.textBox }
     
     static member optTextBox address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.textBox
-          Set = fun textBox this -> Group.setOptChildWithLens textBox this address Entity.textBox }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.textBox
+          Set = fun textBox this -> GroupModel.setOptChildWithLens textBox this address EntityModel.textBox }
 
     static member toggle address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.toggle
-          Set = fun toggle this -> Group.setChildWithLens toggle this address Entity.toggle }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.toggle
+          Set = fun toggle this -> GroupModel.setChildWithLens toggle this address EntityModel.toggle }
     
     static member optToggle address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.toggle
-          Set = fun toggle this -> Group.setOptChildWithLens toggle this address Entity.toggle }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.toggle
+          Set = fun toggle this -> GroupModel.setOptChildWithLens toggle this address EntityModel.toggle }
 
     static member feeler address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.feeler
-          Set = fun feeler this -> Group.setChildWithLens feeler this address Entity.feeler }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.feeler
+          Set = fun feeler this -> GroupModel.setChildWithLens feeler this address EntityModel.feeler }
     
     static member optFeeler address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.feeler
-          Set = fun feeler this -> Group.setOptChildWithLens feeler this address Entity.feeler }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.feeler
+          Set = fun feeler this -> GroupModel.setOptChildWithLens feeler this address EntityModel.feeler }
 
     static member actor address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.actor
-          Set = fun actor this -> Group.setChildWithLens actor this address Entity.actor }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.actor
+          Set = fun actor this -> GroupModel.setChildWithLens actor this address EntityModel.actor }
     
     static member optActor address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.optActor
-          Set = fun optActor this -> Group.setOptChildWithLens optActor this address Entity.optActor }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.optActor
+          Set = fun optActor this -> GroupModel.setOptChildWithLens optActor this address EntityModel.optActor }
 
     static member block address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.block
-          Set = fun block this -> Group.setChildWithLens block this address Entity.block }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.block
+          Set = fun block this -> GroupModel.setChildWithLens block this address EntityModel.block }
     
     static member optBlock address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.block
-          Set = fun block this -> Group.setOptChildWithLens block this address Entity.block }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.block
+          Set = fun block this -> GroupModel.setOptChildWithLens block this address EntityModel.block }
 
     static member avatar address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.avatar
-          Set = fun avatar this -> Group.setChildWithLens avatar this address Entity.avatar }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.avatar
+          Set = fun avatar this -> GroupModel.setChildWithLens avatar this address EntityModel.avatar }
     
     static member optAvatar address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.avatar
-          Set = fun avatar this -> Group.setOptChildWithLens avatar this address Entity.avatar }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.avatar
+          Set = fun avatar this -> GroupModel.setOptChildWithLens avatar this address EntityModel.avatar }
 
     static member tileMap address =
-        { Get = fun this -> Group.getChildWithLens this address Entity.tileMap
-          Set = fun tileMap this -> Group.setChildWithLens tileMap this address Entity.tileMap }
+        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.tileMap
+          Set = fun tileMap this -> GroupModel.setChildWithLens tileMap this address EntityModel.tileMap }
     
     static member optTileMap address =
-        { Get = fun this -> Group.getOptChildWithLens this address Entity.tileMap
-          Set = fun tileMap this -> Group.setOptChildWithLens tileMap this address Entity.tileMap }
+        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.tileMap
+          Set = fun tileMap this -> GroupModel.setOptChildWithLens tileMap this address EntityModel.tileMap }

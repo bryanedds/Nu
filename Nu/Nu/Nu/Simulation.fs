@@ -64,7 +64,7 @@ and Subscriptions = Map<Address, (Address * Subscription) list>
 /// The world, in a functional programming sense.
 /// A reference type with some value semantics.
 and [<ReferenceEquality>] World =
-    { Game : Game
+    { GameModel : GameModel
       Camera : Camera
       Subscriptions : Subscriptions
       MouseState : MouseState
@@ -77,13 +77,13 @@ and [<ReferenceEquality>] World =
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list }
     
-    static member game =
-        { Get = fun this -> this.Game
-          Set = fun game this -> { this with Game = game }}
+    static member gameModel =
+        { Get = fun this -> this.GameModel
+          Set = fun gameModel this -> { this with GameModel = gameModel }}
 
-    static member gameRcd =
-        { Get = fun this -> get this.Game Game.gameRcd
-          Set = fun game this -> { this with Game = set game this.Game Game.gameRcd }}
+    static member game =
+        { Get = fun this -> get this.GameModel GameModel.game
+          Set = fun game this -> { this with GameModel = set game this.GameModel GameModel.game }}
           
     static member camera =
         { Get = fun this -> this.Camera
@@ -92,45 +92,47 @@ and [<ReferenceEquality>] World =
     static member mouseState =
         { Get = fun this -> this.MouseState
           Set = fun mouseState this -> { this with MouseState = mouseState }}
+
+    static member optActiveScreenAddress = World.gameModel >>| GameModel.optActiveScreenAddress
     
-    static member entityRcd (address : Address) = World.game >>| Game.entityRcd address
-    static member optEntity (address : Address) = World.game >>| Game.optEntityRcd address
+    static member entity (address : Address) = World.gameModel >>| GameModel.entity address
+    static member optEntity (address : Address) = World.gameModel >>| GameModel.optEntity address
     
-    static member gui (address : Address) = World.game >>| Game.gui address
-    static member optGui (address : Address) = World.game >>| Game.optGui address
+    static member gui (address : Address) = World.gameModel >>| GameModel.gui address
+    static member optGui (address : Address) = World.gameModel >>| GameModel.optGui address
     
-    static member button (address : Address) = World.game >>| Game.button address
-    static member optButton (address : Address) = World.game >>| Game.optButton address
+    static member button (address : Address) = World.gameModel >>| GameModel.button address
+    static member optButton (address : Address) = World.gameModel >>| GameModel.optButton address
     
-    static member label (address : Address) = World.game >>| Game.label address
-    static member optLabel (address : Address) = World.game >>| Game.optLabel address
+    static member label (address : Address) = World.gameModel >>| GameModel.label address
+    static member optLabel (address : Address) = World.gameModel >>| GameModel.optLabel address
     
-    static member textBox (address : Address) = World.game >>| Game.textBox address
-    static member optTextBox (address : Address) = World.game >>| Game.optTextBox address
+    static member textBox (address : Address) = World.gameModel >>| GameModel.textBox address
+    static member optTextBox (address : Address) = World.gameModel >>| GameModel.optTextBox address
     
-    static member toggle (address : Address) = World.game >>| Game.toggle address
-    static member optToggle (address : Address) = World.game >>| Game.optToggle address
+    static member toggle (address : Address) = World.gameModel >>| GameModel.toggle address
+    static member optToggle (address : Address) = World.gameModel >>| GameModel.optToggle address
     
-    static member feeler (address : Address) = World.game >>| Game.feeler address
-    static member optFeeler (address : Address) = World.game >>| Game.optFeeler address
+    static member feeler (address : Address) = World.gameModel >>| GameModel.feeler address
+    static member optFeeler (address : Address) = World.gameModel >>| GameModel.optFeeler address
     
-    static member entityActor (address : Address) = World.game >>| Game.actor address
-    static member optActor (address : Address) = World.game >>| Game.optActor address
+    static member actor (address : Address) = World.gameModel >>| GameModel.actor address
+    static member optActor (address : Address) = World.gameModel >>| GameModel.optActor address
     
-    static member block (address : Address) = World.game >>| Game.block address
-    static member optBlock (address : Address) = World.game >>| Game.optBlock address
+    static member block (address : Address) = World.gameModel >>| GameModel.block address
+    static member optBlock (address : Address) = World.gameModel >>| GameModel.optBlock address
     
-    static member avatar (address : Address) = World.game >>| Game.avatar address
-    static member optAvatar (address : Address) = World.game >>| Game.optAvatar address
+    static member avatar (address : Address) = World.gameModel >>| GameModel.avatar address
+    static member optAvatar (address : Address) = World.gameModel >>| GameModel.optAvatar address
     
-    static member tileMap (address : Address) = World.game >>| Game.tileMap address
-    static member optTileMap (address : Address) = World.game >>| Game.optTileMap address
+    static member tileMap (address : Address) = World.gameModel >>| GameModel.tileMap address
+    static member optTileMap (address : Address) = World.gameModel >>| GameModel.optTileMap address
     
-    static member groupRcd (address : Address) = World.game >>| Game.groupRcd address
-    static member optGroupRcd (address : Address) = World.game >>| Game.optGroupRcd address
+    static member group (address : Address) = World.gameModel >>| GameModel.group address
+    static member optGroup (address : Address) = World.gameModel >>| GameModel.optGroup address
     
-    static member screenRcd (address : Address) = World.game >>| Game.screenRcd address
-    static member optScreenRcd (address : Address) = World.game >>| Game.optScreenRcd address
+    static member screen (address : Address) = World.gameModel >>| GameModel.screen address
+    static member optScreen (address : Address) = World.gameModel >>| GameModel.optScreen address
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -154,7 +156,7 @@ let handle message =
     { Handled = true; Data = message.Data }
 
 let isAddressSelected address world =
-    let optScreenAddress = (get world World.gameRcd).OptSelectedScreenAddress
+    let optScreenAddress = (get world World.game).OptSelectedScreenAddress
     match (address, optScreenAddress) with
     | ([], _) -> true
     | (_, None) -> false
@@ -214,11 +216,11 @@ let unregisterButton address world =
 let handleButtonEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (button, gui, entity) = get world (World.button subscriber)
-        if entity.Enabled && entity.Visible then
-            if isInBox3 mousePosition gui.Position gui.Size then
+        let button = get world (World.button subscriber)
+        if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
+            if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
                 let button_ = { button with IsDown = true }
-                let world_ = set (button_, gui, entity) world (World.button subscriber)
+                let world_ = set button world (World.button subscriber)
                 let world_ = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
                 (handle message, world_)
             else (message, world)
@@ -228,13 +230,13 @@ let handleButtonEventDownMouseLeft address subscriber message world =
 let handleButtonEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (button, gui, entity) = get world (World.button subscriber)
-        if entity.Enabled && entity.Visible then
+        let button = get world (World.button subscriber)
+        if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
             let world_ =
                 let button_ = { button with IsDown = false }
-                let world_ = set (button_, gui, entity) world (World.button subscriber)
+                let world_ = set button_ world (World.button subscriber)
                 publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
-            if isInBox3 mousePosition gui.Position gui.Size && button.IsDown then
+            if isInBox3 mousePosition button.Gui.Position button.Gui.Size && button.IsDown then
                 let world_ = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
                 let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                 let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
@@ -277,11 +279,11 @@ let unregisterToggle address world =
 let handleToggleEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (toggle, gui, entity) = get world (World.toggle subscriber)
-        if entity.Enabled && entity.Visible then
-            if isInBox3 mousePosition gui.Position gui.Size then
+        let toggle = get world (World.toggle subscriber)
+        if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible then
+            if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
                 let toggle_ = { toggle with IsPressed = true }
-                let world_ = set (toggle_, gui, entity) world (World.toggle subscriber)
+                let world_ = set toggle_ world (World.toggle subscriber)
                 (handle message, world_)
             else (message, world)
         else (message, world)
@@ -290,19 +292,19 @@ let handleToggleEventDownMouseLeft address subscriber message world =
 let handleToggleEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let (toggle, gui, entity) = get world (World.toggle subscriber)
-        if entity.Enabled && entity.Visible && toggle.IsPressed then
+        let toggle = get world (World.toggle subscriber)
+        if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible && toggle.IsPressed then
             let toggle_ = { toggle with IsPressed = false }
-            if isInBox3 mousePosition gui.Position gui.Size then
+            if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
                 let toggle_ = { toggle_ with IsOn = not toggle_.IsOn }
-                let world_ = set (toggle_, gui, entity) world (World.toggle subscriber)
+                let world_ = set toggle_ world (World.toggle subscriber)
                 let messageType = if toggle.IsOn then "on" else "off"
                 let world_ = publish (Lun.make messageType :: subscriber) { Handled = false; Data = NoData } world_
                 let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                 let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                 (handle message, world_)
             else
-                let world_ = set (toggle_, gui, entity) world (World.toggle subscriber)
+                let world_ = set toggle_ world (World.toggle subscriber)
                 (message, world_)
         else (message, world)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -325,11 +327,11 @@ let unregisterFeeler address world =
 let handleFeelerEventDownMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData (mousePosition, _) as mouseButtonData ->
-        let (feeler, gui, entity) = get world (World.feeler subscriber)
-        if entity.Enabled && entity.Visible then
-            if isInBox3 mousePosition gui.Position gui.Size then
+        let feeler = get world (World.feeler subscriber)
+        if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
+            if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
                 let feeler_ = { feeler with IsTouched = true }
-                let world_ = set (feeler_, gui, entity) world (World.feeler subscriber)
+                let world_ = set feeler_ world (World.feeler subscriber)
                 let world_ = publish (Lun.make "touch" :: subscriber) { Handled = false; Data = mouseButtonData } world_
                 (handle message, world_)
             else (message, world)
@@ -339,10 +341,10 @@ let handleFeelerEventDownMouseLeft address subscriber message world =
 let handleFeelerEventUpMouseLeft address subscriber message world =
     match message.Data with
     | MouseButtonData _ ->
-        let (feeler, gui, entity) = get world (World.feeler subscriber)
-        if entity.Enabled && entity.Visible then
+        let feeler = get world (World.feeler subscriber)
+        if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
             let feeler_ = { feeler with IsTouched = false }
-            let world_ = set (feeler_, gui, entity) world (World.feeler subscriber)
+            let world_ = set feeler_ world (World.feeler subscriber)
             let world_ = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
             (handle message, world_)
         else (message, world)
@@ -358,11 +360,11 @@ let addFeeler feeler address world =
     let world2 = registerFeeler address world
     set feeler world2 (World.feeler address)
 
-let unregisterBlock (block : Block, actor, entity) address world =
+let unregisterBlock (block : Block) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerBlock (block : Block, actor, entity) address world =
+let registerBlock (block : Block) address world =
     let optOldBlock = get world (World.optBlock address)
     let world2 =
         match optOldBlock with
@@ -374,15 +376,15 @@ let registerBlock (block : Block, actor, entity) address world =
               PhysicsId = block.PhysicsId
               Shape =
                 BoxShape
-                    { Extent = actor.Size * 0.5f
+                    { Extent = block.Actor.Size * 0.5f
                       Properties =
                         { Center = Vector2.Zero
                           Restitution = 0.5f
                           FixedRotation = false
                           LinearDamping = 5.0f
                           AngularDamping = 5.0f }}
-              Position = actor.Position + actor.Size * 0.5f
-              Rotation = actor.Rotation
+              Position = block.Actor.Position + block.Actor.Size * 0.5f
+              Rotation = block.Actor.Rotation
               Density = block.Density
               BodyType = block.BodyType }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
@@ -395,11 +397,11 @@ let removeBlock block address world =
     let world2 = set None world (World.optBlock address)
     unregisterBlock block address world2
 
-let unregisterAvatar (avatar, actor, entity) address world =
+let unregisterAvatar avatar address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerAvatar (avatar, actor, entity) address world =
+let registerAvatar avatar address world =
     let optOldAvatar = get world (World.optAvatar address)
     let world2 =
         match optOldAvatar with
@@ -411,15 +413,15 @@ let registerAvatar (avatar, actor, entity) address world =
               PhysicsId = avatar.PhysicsId
               Shape =
                 CircleShape
-                    { Radius = actor.Size.X * 0.5f
+                    { Radius = avatar.Actor.Size.X * 0.5f
                       Properties =
                         { Center = Vector2.Zero
                           Restitution = 0.0f
                           FixedRotation = true
                           LinearDamping = 10.0f
                           AngularDamping = 0.0f }}
-              Position = actor.Position + actor.Size * 0.5f
-              Rotation = actor.Rotation
+              Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f
+              Rotation = avatar.Actor.Rotation
               Density = avatar.Density
               BodyType = BodyType.Dynamic }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
@@ -432,11 +434,11 @@ let removeAvatar avatar address world =
     let world2 = set None world (World.optAvatar address)
     unregisterAvatar avatar address world2
 
-let unregisterTileMap (tileMap, actor, entity) address world =
+let unregisterTileMap tileMap address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = tileMap.PhysicsIds.[0] }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerTileMap (tileMap, actor, entity) address world =
+let registerTileMap tileMap address world =
     let optOldTileMap = get world (World.optTileMap address)
     let world2 =
         match optOldTileMap with
@@ -462,17 +464,17 @@ let removeTileMap tileMap address world =
     let world2 = set None world (World.optTileMap address)
     unregisterTileMap tileMap address world2
 
-let addGroupRcd group address world =
-    set group world (World.groupRcd address)
+let addGroup group address world =
+    set group world (World.group address)
 
-let removeGroupRcd address world =
-    set None world (World.optGroupRcd address)
+let removeGroup address world =
+    set None world (World.optGroup address)
 
-let addScreenRcd screen address world =
-    set screen world (World.screenRcd address)
+let addScreen screen address world =
+    set screen world (World.screen address)
 
-let removeScreenRcd address world =
-    set None world (World.optScreenRcd address)
+let removeScreen address world =
+    set None world (World.optScreen address)
 
 let getComponentAudioDescriptors world : AudioDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
@@ -497,52 +499,68 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     List.collect (fun descs -> descs) descriptorLists
 
 let getEntityRenderDescriptors actorView entity =
-    if not entity.Visible then []
-    else
-        match entity.Subtype with
-        | Gui gui ->
-            match gui.SubSubtype with
-            | Button button -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
-            | Label label -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
-            | TextBox textBox ->
-                [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
-                 LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
-            | Toggle toggle -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
-            | Feeler _ -> []
-        | Actor actor ->
-            match actor.SubSubtype with
-            | Block block -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
-            | Avatar avatar -> [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
-            | TileMap tileMap ->
-                let map = tileMap.TmxMap
-                let mapWidth = map.Width
-                let tileWidth = map.TileWidth
-                let tileHeight = map.TileHeight
-                let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                let tileSetSprite = tileMap.TileMapMetadata.[0] // MAGIC_VALUE: for same reason as above
-                let layers = List.ofSeq map.Layers
-                let tileLayers =
-                    List.map
-                        (fun (layer : TmxLayer) ->
-                            let tiles = List.ofSeq layer.Tiles
-                            List.mapi
-                                (fun n tile ->
-                                    let (i, j) = (n % mapWidth, n / mapWidth)
-                                    let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorView
-                                    let size = Vector2 (single tileWidth, single tileHeight)
-                                    let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
-                                    let gidPosition = gid * tileWidth
-                                    let optTileSetWidth = tileSet.Image.Width
-                                    let tileSetWidth = optTileSetWidth.Value
-                                    let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, single <| gidPosition / tileSetWidth * tileHeight)
-                                    LayerableDescriptor (LayeredTileDescriptor { Descriptor = { TileSetPosition = tileSetPosition; Position = position; Size = size; Rotation = actor.Rotation; TileSetSprite = tileSetSprite }; Depth = actor.Depth }))
-                                tiles)
-                        layers
-                List.concat tileLayers
+    match entity with
+    | Button button ->
+        let (_, gui, entity) = Button.sep button
+        if not entity.Visible then []
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
+    | Label label ->
+        let (_, gui, entity) = Label.sep label
+        if label.Gui.Entity.Visible then []
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
+    | TextBox textBox ->
+        let (_, gui, entity) = TextBox.sep textBox
+        if entity.Visible then []
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
+              LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
+    | Toggle toggle ->
+        let (_, gui, entity) = Toggle.sep toggle
+        if entity.Visible then []
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
+    | Feeler _ ->
+        []
+    | Block block ->
+        let (_, actor, entity) = Block.sep block
+        if entity.Visible then []
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+    | Avatar avatar ->
+        let (_, actor, entity) = Avatar.sep avatar
+        if entity.Visible then []
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
+    | TileMap tileMap ->
+        let (_, actor, entity) = TileMap.sep tileMap
+        if entity.Visible then []
+        else
+            let map = tileMap.TmxMap
+            let mapWidth = map.Width
+            let tileWidth = map.TileWidth
+            let tileHeight = map.TileHeight
+            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+            let tileSetSprite = tileMap.TileMapMetadata.[0] // MAGIC_VALUE: for same reason as above
+            let layers = List.ofSeq map.Layers
+            let tileLayers =
+                List.map
+                    (fun (layer : TmxLayer) ->
+                        let tiles = List.ofSeq layer.Tiles
+                        List.mapi
+                            (fun n tile ->
+                                let (i, j) = (n % mapWidth, n / mapWidth)
+                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorView
+                                let size = Vector2 (single tileWidth, single tileHeight)
+                                let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
+                                let gidPosition = gid * tileWidth
+                                let optTileSetWidth = tileSet.Image.Width
+                                let tileSetWidth = optTileSetWidth.Value
+                                let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, single <| gidPosition / tileSetWidth * tileHeight)
+                                LayerableDescriptor (LayeredTileDescriptor { Descriptor = { TileSetPosition = tileSetPosition; Position = position; Size = size; Rotation = actor.Rotation; TileSetSprite = tileSetSprite }; Depth = actor.Depth }))
+                            tiles)
+                    layers
+            List.concat tileLayers
 
-let getGroupRenderDescriptors camera group =
+let getGroupModelRenderDescriptors camera groupModel =
+    let group = get groupModel GroupModel.group
     let actorView = camera.EyePosition - camera.EyeSize * 0.5f
-    let entities = Map.toValueSeq group.Entities
+    let entities = Map.toValueSeq group.EntityModels
     Seq.map (getEntityRenderDescriptors actorView) entities
 
 let getWorldRenderDescriptors world =
@@ -550,8 +568,8 @@ let getWorldRenderDescriptors world =
     | None -> []
     | Some activeScreenAddress ->
         let activeScreen = get world (World.screen activeScreenAddress)
-        let groups = Map.toValueSeq activeScreen.Groups
-        let descriptorSeqLists = Seq.map (getGroupRenderDescriptors world.Camera) groups
+        let groups = Map.toValueSeq activeScreen.GroupModels
+        let descriptorSeqLists = Seq.map (getGroupModelRenderDescriptors world.Camera) groups
         let descriptorSeq = Seq.concat descriptorSeqLists
         List.concat descriptorSeq
 
@@ -572,10 +590,10 @@ let render world =
 let handleIntegrationMessage world integrationMessage =
     match integrationMessage with
     | BodyTransformMessage bodyTransformMessage ->
-        let (entity, actor) = get world (World.entityActor bodyTransformMessage.EntityAddress)
+        let actor = get world (World.actor bodyTransformMessage.EntityAddress)
         let actor2 = {{ actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f }
                               with Rotation = bodyTransformMessage.Rotation }
-        set (entity, actor2) world (World.entityActor bodyTransformMessage.EntityAddress)
+        set actor2 world (World.actor bodyTransformMessage.EntityAddress)
     | BodyCollisionMessage bodyCollisionMessage ->
         let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
         let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
@@ -593,7 +611,7 @@ let integrate world =
     handleIntegrationMessages integrationMessages world2
 
 let createEmptyWorld sdlDeps =
-    { Game = { Id = getNuId (); Screens = Map.empty; OptSelectedScreenAddress = None; Subtype = () }
+    { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenAddress = None }
       Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
       Subscriptions = Map.empty
       MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
