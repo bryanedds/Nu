@@ -42,17 +42,17 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
         with get () = property.Name = "Id"
 
     override this.GetValue source =
-        let entityMtds = source :?> EntityModelTypeDescriptorSource
-        let entityModelLens = World.entityModel entityMtds.Address
-        let entityModel = get entityMtds.RefWorld.Value entityModelLens
+        let entityModelTds = source :?> EntityModelTypeDescriptorSource
+        let entityModelLens = World.entityModel entityModelTds.Address
+        let entityModel = get entityModelTds.RefWorld.Value entityModelLens
         getEntityModelPropertyValue property entityModel
 
     override this.SetValue (source, value) =
-        let entityMtds = source :?> EntityModelTypeDescriptorSource
-        let entityModelChange = { Address = entityMtds.Address; PropertyInfo = property; Value = value }
+        let entityModelTds = source :?> EntityModelTypeDescriptorSource
+        let entityModelChange = { Address = entityModelTds.Address; PropertyInfo = property; Value = value }
         // NOTE: even though this ref world will eventually get blown away, it must still be
         // updated here so that the change is reflected immediately by the property grid.
-        entityMtds.RefWorld := setEntityModelPropertyValue entityMtds.RefWorld.Value entityModelChange
+        entityModelTds.RefWorld := setEntityModelPropertyValue entityModelTds.RefWorld.Value entityModelChange
         gEntityModelChanges.Add entityModelChange
 
     // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
@@ -103,13 +103,15 @@ let [<EntryPoint; STAThread>] main _ =
                     writerSettings.Indent <- true
                     use writer = XmlWriter.Create (file, writerSettings)
                     writer.WriteStartDocument ()
-                    let testEntity = get refWorld.Value (World.entity TestButtonAddress)
-                    //writeEntityToXml writer testEntity
+                    writer.WriteStartElement "Root"
+                    let testEntityModel = get refWorld.Value (World.entityModel TestButtonAddress)
+                    writeEntityModelToXml writer testEntityModel
+                    writer.WriteEndElement ()
                     writer.WriteEndDocument ())
                 form.openToolStripMenuItem.Click.Add (fun _ ->
-                    use file = File.Open ("temp.xml", FileMode.Open)
-                    use reader = XmlReader.Create file
-                    //let testEntity = readEntityFromXml reader
+                    let document = XmlDocument ()
+                    document.Load "temp.xml"
+                    let testEntityModel = loadEntityModelFromXml document
                     ())
                 form.Show ()
                 Right refWorld.Value)

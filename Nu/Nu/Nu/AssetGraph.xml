@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <root>
-  <package name="Misc">
+  <package name="Default">
     <asset name="Image" fileName="Image.png" associations="Rendering"/>
     <asset name="Image2" fileName="Image2.png" associations="Rendering"/>
     <asset name="Image3" fileName="Image3.png" associations="Rendering"/>
