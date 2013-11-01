@@ -34,10 +34,15 @@ let writeNuProperties (writer : XmlWriter) obj =
     let aType = obj.GetType ()
     let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
     for property in publicProperties do
-        if not <| property.Name.Contains "Subtype" && property.Name <> "Id" then
+        if property.Name <> "Id" then
             let converter = TypeDescriptor.GetConverter property.PropertyType
             let valueStr = converter.ConvertTo (property.GetValue obj, typeof<string>) :?> string
             writer.WriteElementString (property.Name, valueStr)
+
+let writeNuPropertiesMany (writer : XmlWriter) modelTypeName objs =
+    writer.WriteElementString ("ModelType", modelTypeName)
+    for obj in objs do
+        writeNuProperties writer obj
 
 let readNuProperties (reader : XmlReader) obj =
     let aType = obj.GetType ()
@@ -51,11 +56,6 @@ let readNuProperties (reader : XmlReader) obj =
                     let converter = TypeDescriptor.GetConverter property.PropertyType
                     converter.ConvertFrom valueStr
             property.SetValue (obj, value)
-
-let writeSubtypeToXml (writer : XmlWriter) subtypeRecordName subtypeDuName subs subtype =
-    writer.WriteElementString (subs + "SubtypeDu", subtypeRecordName)
-    writer.WriteElementString (subs + "SubtypeRcd", subtypeDuName)
-    writeNuProperties writer subtype
 
 let readSubtypeFromXml (reader : XmlReader) assemblyName (subs : string) record =
 
