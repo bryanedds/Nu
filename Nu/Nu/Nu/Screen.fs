@@ -32,9 +32,12 @@ type [<StructuralEquality; NoComparison>] ScreenModel =
         get (getChild ScreenModel.optChildModelFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let group = getChild ScreenModel.optChildModelFinder this address
-        let group2 = set child group lens
-        setChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address group2
+        let optGroup = getOptChild ScreenModel.optChildModelFinder this address
+        match optGroup with
+        | None -> ScreenModel.childModelAdder (List.head address) this child
+        | Some group ->
+            let group2 = set child group lens
+            setChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address group2
 
     static member private getOptChildWithLens this address lens =
         let optChild = getOptChild ScreenModel.optChildModelFinder this address
