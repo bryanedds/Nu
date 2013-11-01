@@ -19,14 +19,13 @@ open Nu.Simulation
 let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
     let game =
         { Id = getNuId ()
-          Screens = Map.empty
-          OptSelectedScreenAddress = None
-          Subtype = () }
+          ScreenModels = Map.empty
+          OptSelectedScreenAddress = None }
     match tryGenerateAssetMetadataMap "AssetGraph.xml" with
     | Left errorMsg -> Left errorMsg
     | Right assetMetadataMap ->
         let world =
-            { Game = game
+            { GameModel = Game game
               Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
               Subscriptions = Map.empty
               MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
