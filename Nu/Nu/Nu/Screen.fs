@@ -62,12 +62,12 @@ type [<StructuralEquality; NoComparison>] ScreenModel =
             | Screen _ -> Screen screen }
 
     static member groupModel address =
-        { Get = fun this -> ScreenModel.getChildWithLens this address Lens.id
-          Set = fun groupModel this -> ScreenModel.setChildWithLens groupModel this address Lens.id }
-
+        { Get = fun this -> Option.get <| ScreenModel.optChildModelFinder (List.head address) this
+          Set = fun group this -> ScreenModel.childModelAdder (List.head address) this group }
+    
     static member optGroupModel address =
-        { Get = fun this -> ScreenModel.getOptChildWithLens this address Lens.id
-          Set = fun groupModel this -> ScreenModel.setOptChildWithLens groupModel this address Lens.id }
+        { Get = fun this -> ScreenModel.optChildModelFinder (List.head address) this
+          Set = fun optGroup this -> match optGroup with None -> ScreenModel.childModelRemover (List.head address) this | Some entity -> ScreenModel.childModelAdder (List.head address) this entity }
 
     static member group address =
         { Get = fun this -> ScreenModel.getChildWithLens this address GroupModel.group
