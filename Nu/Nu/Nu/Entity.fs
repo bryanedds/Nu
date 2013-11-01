@@ -1,5 +1,6 @@
 ﻿module Nu.Entity
 open System
+open System.ComponentModel
 open System.Reflection
 open System.Xml
 open System.Xml.Serialization
@@ -8,9 +9,11 @@ open FSharpx.Lens.Operators
 open OpenTK
 open TiledSharp
 open Nu.Core
+open Nu.Constants
 open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
+open Nu.AssetMetadata
 open Nu.DomainModel
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
@@ -241,42 +244,137 @@ type [<StructuralEquality; NoComparison>] EntityModel =
         { Get = fun this -> Option.get (get this EntityModel.optTileMap)
           Set = fun tileMap this -> set (Some tileMap) this EntityModel.optTileMap }
 
-(*let writeEntityToXml (writer : XmlWriter) entity =
-    writer.WriteStartElement typeof<Entity>.Name
-    writeNuProperties writer entity
-    match entity.Subtype with
-    | Gui gui ->
-        writeSubtypeToXml writer "Nu.Entity+Gui" "Nu.Entity+EntitySubtype+Gui" "" gui
-        match gui.SubSubtype with
-        | Button button -> writeSubtypeToXml writer "Nu.Entity+Button" "Nu.Entity+GuiSubtype+Button" "Sub" button
-        | Label label -> writeSubtypeToXml writer "Nu.Entity+Label" "Nu.Entity+GuiSubtype+Label" "Sub" label
-        | TextBox textBox -> writeSubtypeToXml writer "Nu.Entity+TextBox" "Nu.Entity+GuiSubtype+TextBox" "Sub" textBox
-        | Toggle toggle -> writeSubtypeToXml writer "Nu.Entity+Toggle" "Nu.Entity+GuiSubtype+Toggle" "Sub" toggle
-        | Feeler feeler -> writeSubtypeToXml writer "Nu.Entity+Feeler" "Nu.Entity+GuiSubtype+Feeler" "Sub" feeler
-    | Actor actor ->
-        writeSubtypeToXml writer "Nu.Entity+Actor" "Nu.Entity+EntitySubtype+Actor" "" actor
-        match actor.SubSubtype with
-        | Block block -> writeSubtypeToXml writer "Nu.Entity+Block" "Nu.Entity+ActorSubtype+Block" "Sub" block
-        | Avatar avatar -> writeSubtypeToXml writer "Nu.Entity+Avatar" "Nu.Entity+ActorSubtype+Avatar" "Sub" avatar
-        | TileMap tileMap -> writeSubtypeToXml writer "Nu.Entity+TileMap" "Nu.Entity+ActorSubtype+TileMap" "Sub" tileMap
+let makeDefaultEntity () =
+    { Id = getNuId ()
+      Enabled = true
+      Visible = true }
+
+let makeDefaultGui () =
+    { Gui.Entity = makeDefaultEntity ()
+      Position = Vector2.Zero
+      Depth = 0.0f
+      Size = Vector2.One }
+
+let makeDefaultActor () =
+    { Actor.Entity = makeDefaultEntity ()
+      Position = Vector2.Zero
+      Depth = 0.0f
+      Size = Vector2.One
+      Rotation = 0.0f }
+
+let makeDefaultEntityModel typeName =
+    let entityModel = (Activator.CreateInstance ("Nu", typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
+    match entityModel with
+    | Button button ->
+        Button
+            { Gui = makeDefaultGui ()
+              IsDown = false
+              UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+    | Label label ->
+        Label
+            { Gui = makeDefaultGui ()
+              LabelSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+    | TextBox textBox ->
+        TextBox
+            { Gui = makeDefaultGui ()
+              BoxSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              Text = String.Empty
+              TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              TextOffset = Vector2.Zero
+              TextColor = Vector4.One }
+    | Toggle toggle ->
+        Toggle
+            { Gui = makeDefaultGui ()
+              IsOn = false
+              IsPressed = false
+              OffSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              OnSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+    | Feeler feeler ->
+        Feeler
+            { Gui = makeDefaultGui ()
+              IsTouched = false }
+    | Block block ->
+        Block
+            { Actor = makeDefaultActor ()
+              PhysicsId = getPhysicsId ()
+              Density = NormalDensity
+              BodyType = BodyType.Dynamic
+              Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+    | Avatar avatar ->
+        Avatar
+            { Actor = makeDefaultActor ()
+              PhysicsId = getPhysicsId ()
+              Density = NormalDensity
+              Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+    | TileMap tileMap ->
+        let tmxMap = TmxMap "TileMap.tmx"
+        TileMap
+            { Actor = makeDefaultActor ()
+              PhysicsIds = []
+              Density = NormalDensity
+              TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              TmxMap = tmxMap
+              TileMapMetadata = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
+
+let writeEntityModelToXml (writer : XmlWriter) entityModel =
+    writer.WriteStartElement typeof<EntityModel>.Name
+    match entityModel with
+    | Button button -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Button" [button :> obj; button.Gui :> obj; button.Gui.Entity :> obj]
+    | Label label -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Label" [label :> obj; label.Gui :> obj; label.Gui.Entity :> obj]
+    | TextBox textBox -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+TextBox" [textBox :> obj; textBox.Gui :> obj; textBox.Gui.Entity :> obj]
+    | Toggle toggle -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Toggle" [toggle :> obj; toggle.Gui :> obj; toggle.Gui.Entity :> obj]
+    | Feeler feeler -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Feeler" [feeler :> obj; feeler.Gui :> obj; feeler.Gui.Entity :> obj]
+    | Block block -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Block" [block :> obj; block.Actor :> obj; block.Actor.Entity :> obj]
+    | Avatar avatar -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Avatar" [avatar :> obj; avatar.Actor :> obj; avatar.Actor.Entity :> obj]
+    | TileMap tileMap -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+TileMap" [tileMap :> obj; tileMap.Actor :> obj; tileMap.Actor.Entity :> obj]
     writer.WriteEndElement ()
 
-let readEntityFromXml (reader : XmlReader) =
+let setProperty (property : PropertyInfo) valueStr obj =
+    let converter = TypeDescriptor.GetConverter property.PropertyType
+    if converter.CanConvertFrom (valueStr.GetType ()) then
+        let value = converter.ConvertFrom valueStr
+        property.SetValue (obj, value)
 
-    // read start
-    reader.ReadStartElement "Entity"
+let setEntityProperty<'a, 'b, 'c>
+    (getterB : 'a -> 'b)
+    (getterC : 'a -> 'c)
+    (entityModelNode : XmlNode)
+    (obj : 'a) =
+    for node in entityModelNode.ChildNodes do
+        let valueStr = node.InnerText
+        let optProperty_ = typeof<'a>.GetProperty node.Name
+        match optProperty_ with
+        | null ->
+            let optProperty_ = typeof<'b>.GetProperty node.Name
+            match optProperty_ with
+            | null ->
+                let optProperty_ = typeof<'c>.GetProperty node.Name
+                match optProperty_ with
+                | null -> ()
+                | property -> setProperty property valueStr <| getterC obj
+            | property -> setProperty property valueStr <| getterB obj
+        | property -> setProperty property valueStr <| obj
 
-    // read simple properties
-    let entityAssemblyName = "Nu"
-    let entityType = typeof<Entity>
-    let entity = (Activator.CreateInstance (entityAssemblyName, entityType.FullName)).Unwrap () :?> Entity
-    readNuProperties reader entity
+let setEntityProperties<'a, 'b, 'c> getterB getterC (entityModelNode : XmlNode) (obj : 'a) =
+    for node in entityModelNode.ChildNodes do
+        setEntityProperty<'a, 'b, 'c> getterB getterC node obj
 
-    // read subtype
-    let subtypeRecord = readSubtypeFromXml reader entityAssemblyName "" entity
-
-    // read sub-subtype
-    ignore <| readSubtypeFromXml reader entityAssemblyName "Sub" subtypeRecord
-
-    // read end
-    reader.ReadEndElement ()*)
+let loadEntityModelFromXml (document : XmlDocument) =
+    let rootNode = document.Item "Root"
+    let entityModelNode = rootNode.FirstChild
+    let entityModelTypeNode = entityModelNode.Item "ModelType"
+    let entityModelTypeName = entityModelTypeNode.InnerText
+    let entityModel = makeDefaultEntityModel entityModelTypeName
+    match entityModel with
+    | Button button -> setEntityProperties<Button, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode button
+    | Label label -> setEntityProperties<Label, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode label
+    | TextBox textBox -> setEntityProperties<TextBox, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode textBox
+    | Toggle toggle -> setEntityProperties<Toggle, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode toggle
+    | Feeler feeler -> setEntityProperties<Feeler, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode feeler
+    | Block block -> setEntityProperties<Block, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode block
+    | Avatar avatar -> setEntityProperties<Avatar, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode avatar
+    | TileMap tileMap -> setEntityProperties<TileMap, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode tileMap
+    entityModel

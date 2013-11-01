@@ -3,7 +3,7 @@
  <tileset firstgid="1" name="TileSet" tilewidth="24" tileheight="24">
   <properties>
    <property name="PackageFileName" value="AssetGraph.xml"/>
-   <property name="PackageName" value="Misc"/>
+   <property name="PackageName" value="Default"/>
    <property name="SpriteAssetName" value="TileSet"/>
   </properties>
   <image source="sewer_tileset.png" trans="ff00ff" width="192" height="217"/>

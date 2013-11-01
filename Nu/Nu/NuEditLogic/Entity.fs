@@ -21,22 +21,6 @@ let getEntityModelTypes (entityModel : EntityModel) =
     | Avatar _ -> [typeof<Avatar>; typeof<Actor>; typeof<Entity>]
     | TileMap _ -> [typeof<TileMap>; typeof<Actor>; typeof<Entity>]
 
-let getTGuiEntityProperty<'t> (property : PropertyInfo) (entityModel : EntityModel) (tLens : FSharpx.Lens<EntityModel, 'a>) =
-    if typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-    then property.GetValue (get entityModel tLens)
-    else
-        if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.gui)
-        else property.GetValue (get entityModel EntityModel.entity)
-
-let getTActorEntityProperty<'t> (property : PropertyInfo) (entityModel : EntityModel) tLens =
-    if typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-    then property.GetValue (get entityModel tLens)
-    else
-        if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.actor)
-        else property.GetValue (get entityModel EntityModel.entity)
-
 let getEntityModelPropertyValue (property : PropertyInfo) (entityModel : EntityModel) =
     // TODO: fix this awful, AWFUL code duplication!
     match entityModel with

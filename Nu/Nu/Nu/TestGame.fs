@@ -34,11 +34,11 @@ let createTestBlock assetMetadataMap =
         { PhysicsId = getPhysicsId ()
           Density = NormalDensity
           BodyType = Dynamic
-          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+          Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
           Actor =
           { Position = Vector2 (400.0f, 200.0f)
             Depth = 0.0f
-            Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
+            Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Default") assetMetadataMap
             Rotation = 2.0f
             Entity =
             { Id = getNuId ()
@@ -91,15 +91,15 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
                   Visible = true }}}
           
         let textBox =
-            { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+            { BoxSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               Text = "Hi!"
-              TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               TextOffset = Vector2 4.0f
               TextColor = Vector4.One
               Gui =
               { Gui.Position = Vector2 (120.0f, 50.0f)
                 Depth = 0.1f
-                Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
+                Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Default") assetMetadataMap
                 Entity =
                 { Id = getNuId ()
                   Enabled = true
@@ -108,24 +108,24 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let toggle =
             { IsOn = false
               IsPressed = false
-              OffSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              OnSprite = { SpriteAssetName = Lun.make "Image6"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              OffSprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              OnSprite = { SpriteAssetName = Lun.make "Image6"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               Gui =
               { Gui.Position = Vector2 (720.0f, 50.0f)
                 Depth = 0.1f
-                Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Misc") assetMetadataMap
+                Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Default") assetMetadataMap
                 Entity =
                 { Id = getNuId ()
                   Enabled = true
                   Visible = true }}}
           
         let label =
-            { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+            { LabelSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               Gui =
               { Gui.Position = Vector2.Zero
                 Depth = -0.1f
-                Size = getTextureSizeAsVector2 (Lun.make "Image5") (Lun.make "Misc") assetMetadataMap
+                Size = getTextureSizeAsVector2 (Lun.make "Image5") (Lun.make "Default") assetMetadataMap
                 Entity =
                 { Id = getNuId ()
                   Enabled = true
@@ -133,13 +133,13 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
           
         let button =
             { IsDown = false
-              UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
-              ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+              ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               Gui =
               { Gui.Position = Vector2 (310.0f, 20.0f)
                 Depth = 0.1f
-                Size = getTextureSizeAsVector2 (Lun.make "Image") (Lun.make "Misc") assetMetadataMap
+                Size = getTextureSizeAsVector2 (Lun.make "Image") (Lun.make "Default") assetMetadataMap
                 Entity =
                 { Id = getNuId ()
                   Enabled = true
@@ -151,9 +151,9 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let tileMap =
             { PhysicsIds = [getPhysicsId ()]
               Density = NormalDensity
-              TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               TmxMap = tmxMap
-              TileMapMetadata = getTileMapMetadata (Lun.make "TileMap") (Lun.make "Misc") assetMetadataMap
+              TileMapMetadata = getTileMapMetadata (Lun.make "TileMap") (Lun.make "Default") assetMetadataMap
               Actor =
               { Position = Vector2.Zero
                 Depth = -0.1f
@@ -168,11 +168,11 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
             { PhysicsId = getPhysicsId ()
               Density = NormalDensity
               BodyType = Static
-              Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              Sprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               Actor =
               { Position = Vector2 (120.0f, 520.0f)
                 Depth = 0.0f
-                Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Misc") assetMetadataMap
+                Size = getTextureSizeAsVector2 (Lun.make "Image4") (Lun.make "Default") assetMetadataMap
                 Rotation = 0.0f
                 Entity =
                 { Id = getNuId ()
@@ -182,11 +182,11 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
         let avatar =
             { PhysicsId = getPhysicsId ()
               Density = NormalDensity
-              Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }
+              Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               Actor =
               { Position = Vector2 (300.0f, 300.0f)
                 Depth = 0.0f
-                Size = getTextureSizeAsVector2 (Lun.make "Image7") (Lun.make "Misc") assetMetadataMap
+                Size = getTextureSizeAsVector2 (Lun.make "Image7") (Lun.make "Default") assetMetadataMap
                 Rotation = 0.0f
                 Entity =
                 { Id = getNuId ()
@@ -217,8 +217,8 @@ let tryCreateTestWorld (sdlDeps : SdlDeps) =
                     [0..7]
             (handle message, world_)
 
-        let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Misc"; HRPU = () }
-        let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Misc"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
+        let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
+        let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
         // scripting convention
         let w_ = world
