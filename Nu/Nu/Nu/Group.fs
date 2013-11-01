@@ -31,12 +31,9 @@ type [<StructuralEquality; NoComparison>] GroupModel =
         get (getChild GroupModel.optChildModelFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let optEntity = getOptChild GroupModel.optChildModelFinder this address
-        match optEntity with
-        | None -> GroupModel.childModelAdder (List.head address) this child
-        | Some entity ->
-            let entity2 = set child entity lens
-            setChild GroupModel.childModelAdder GroupModel.childModelRemover this address entity2
+        let entity = getChild GroupModel.optChildModelFinder this address
+        let entity2 = set child entity lens
+        setChild GroupModel.childModelAdder GroupModel.childModelRemover this address entity2
 
     static member private getOptChildWithLens this address lens =
         let optChild = getOptChild GroupModel.optChildModelFinder this address
@@ -63,6 +60,22 @@ type [<StructuralEquality; NoComparison>] GroupModel =
             match this with
             | Group _ -> Group group }
 
+    (*static member entityModel address =
+        { Get = fun this -> Option.get <| GroupModel.optChildModelFinder (List.head address) this
+          Set = fun entity this -> GroupModel.childModelAdder (List.head address) this entity }
+    
+    static member optEntityModel address =
+        { Get = fun this -> GroupModel.optChildModelFinder (List.head address) this
+          Set = fun optEntity this -> match optEntity with None -> GroupModel.childModelRemover (List.head address) this | Some entity -> GroupModel.childModelAdder (List.head address) this entity }*)
+
+    static member entityModel address =
+        { Get = fun this -> GroupModel.getChildWithLens this address Lens.id
+          Set = fun entityModel this -> GroupModel.setChildWithLens entityModel this address Lens.id }
+
+    static member optEntityModel address =
+        { Get = fun this -> GroupModel.getOptChildWithLens this address Lens.id
+          Set = fun entityModel this -> GroupModel.setOptChildWithLens entityModel this address Lens.id }
+
     static member entity address =
         { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.entity
           Set = fun entity this -> GroupModel.setChildWithLens entity this address EntityModel.entity }
@@ -73,7 +86,7 @@ type [<StructuralEquality; NoComparison>] GroupModel =
 
     static member gui address =
         { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.gui
-          Set = fun entity this -> GroupModel.setChildWithLens entity this address EntityModel.gui }
+          Set = fun gui this -> GroupModel.setChildWithLens gui this address EntityModel.gui }
     
     static member optGui address =
         { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.gui
