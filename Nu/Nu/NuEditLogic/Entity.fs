@@ -5,110 +5,201 @@ open Nu.Core
 open Nu.Entity
 open Nu.Simulation
 
-type EntityPropertyChange =
+type EntityModelPropertyChange =
     { Address : Address
       PropertyInfo : PropertyInfo
       Value : obj }
 
-let getEntityTypes (entity : Entity) =
-    match entity.Subtype with
-    | Gui gui ->
-        let guiSemType =
-            match gui.SubSubtype with
-            | Button _ -> typeof<Button>
-            | Label _ -> typeof<Label>
-            | TextBox _ -> typeof<TextBox>
-            | Toggle _ -> typeof<Toggle>
-            | Feeler _ -> typeof<Feeler>
-        [typeof<Entity>; typeof<Gui>; guiSemType]
-    | Actor actor ->
-        let actorSemType =
-            match actor.SubSubtype with
-            | Block _ -> typeof<Block>
-            | Avatar _ -> typeof<Avatar>
-            | TileMap _ -> typeof<TileMap>
-        [typeof<Entity>; typeof<Actor>; actorSemType]
+let getEntityModelTypes (entityModel : EntityModel) =
+    match entityModel with
+    | Button _ -> [typeof<Button>; typeof<Gui>; typeof<Entity>]
+    | Label _ -> [typeof<Label>; typeof<Gui>; typeof<Entity>]
+    | TextBox _ -> [typeof<TextBox>; typeof<Gui>; typeof<Entity>]
+    | Toggle _ -> [typeof<Toggle>; typeof<Gui>; typeof<Entity>]
+    | Feeler _ -> [typeof<Feeler>; typeof<Gui>; typeof<Entity>]
+    | Block _ -> [typeof<Block>; typeof<Actor>; typeof<Entity>]
+    | Avatar _ -> [typeof<Avatar>; typeof<Actor>; typeof<Entity>]
+    | TileMap _ -> [typeof<TileMap>; typeof<Actor>; typeof<Entity>]
 
-let getEntityPropertyValue (property : PropertyInfo) (entity : Entity) =
-    if typeof<Entity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-    then property.GetValue entity
+let getTGuiEntityProperty<'t> (property : PropertyInfo) (entityModel : EntityModel) (tLens : FSharpx.Lens<EntityModel, 'a>) =
+    if typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+    then property.GetValue (get entityModel tLens)
     else
-        match entity.Subtype with
-        | Gui gui ->
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue gui
-            else
-                match gui.SubSubtype with
-                | Button button -> property.GetValue button
-                | Label label -> property.GetValue label
-                | TextBox textBox -> property.GetValue textBox
-                | Toggle toggle -> property.GetValue toggle
-                | Feeler feeler -> property.GetValue feeler
-        | Actor actor ->
-            if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue actor
-            else
-                match actor.SubSubtype with
-                | Block block -> property.GetValue block
-                | Avatar avatar -> property.GetValue avatar
-                | TileMap tileMap -> property.GetValue tileMap
+        if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.gui)
+        else property.GetValue (get entityModel EntityModel.entity)
 
-let setEntityPropertyValue world (change : EntityPropertyChange) =
-    let entityLens = World.entity change.Address
-    let entity = get world entityLens
-    let property = change.PropertyInfo
-    let value = change.Value
-    let entity_ =
-        let entity_ = { entity with Id = entity.Id } // NOTE: this is just a hacky way to copy an entity in lieu of reflection
-        if typeof<Entity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then let _ = property.SetValue (entity_, value) in entity_
+let getTActorEntityProperty<'t> (property : PropertyInfo) (entityModel : EntityModel) tLens =
+    if typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+    then property.GetValue (get entityModel tLens)
+    else
+        if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.actor)
+        else property.GetValue (get entityModel EntityModel.entity)
+
+let getEntityModelPropertyValue (property : PropertyInfo) (entityModel : EntityModel) =
+    // TODO: fix this awful, AWFUL code duplication!
+    match entityModel with
+    | Button button ->
+        if typeof<Button>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.button)
         else
-            match entity.Subtype with
-            | Gui gui ->
-                let gui_ = { gui with Position = gui.Position } // NOTE: hacky copy
-                if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-                then let _ = property.SetValue (gui_, value) in { entity with Subtype = Gui gui_ }
-                else
-                    match gui.SubSubtype with
-                    | Button button ->
-                        let button_ = { button with IsDown = button.IsDown } // NOTE: hacky copy
-                        property.SetValue (button_, value)
-                        { entity with Subtype = Gui { gui with SubSubtype = Button button_ }}
-                    | Label label ->
-                        let label_ = { label with LabelSprite = label.LabelSprite } // NOTE: hacky copy
-                        property.SetValue (label_, value)
-                        { entity with Subtype = Gui { gui with SubSubtype = Label label_ }}
-                    | TextBox textBox ->
-                        let textBox_ = { textBox with BoxSprite = textBox.BoxSprite } // NOTE: hacky copy
-                        property.SetValue (textBox_, value)
-                        { entity with Subtype = Gui { gui with SubSubtype = TextBox textBox_ }}
-                    | Toggle toggle ->
-                        let toggle_ = { toggle with IsPressed = toggle.IsPressed } // NOTE: hacky copy
-                        property.SetValue (toggle_, value)
-                        { entity with Subtype = Gui { gui with SubSubtype = Toggle toggle_ }}
-                    | Feeler feeler ->
-                        let feeler_ = { feeler with IsTouched = feeler.IsTouched } // NOTE: hacky copy
-                        property.SetValue (feeler_, value)
-                        { entity with Subtype = Gui { gui with SubSubtype = Feeler feeler_ }}
-            | Actor actor ->
-                let actor_ = { actor with Position = actor.Position } // NOTE: hacky copy
-                if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-                then let _ = property.SetValue (actor_, value) in { entity with Subtype = Actor actor_ }
-                else
-                    match actor.SubSubtype with
-                    | Block block ->
-                        let block_ = { block with PhysicsId = block.PhysicsId } // NOTE: hacky copy
-                        property.SetValue (block_, value)
-                        { entity with Subtype = Actor { actor with SubSubtype = Block block_ }}
-                    | Avatar avatar ->
-                        let avatar_ = { avatar with PhysicsId = avatar.PhysicsId } // NOTE: hacky copy
-                        property.SetValue (avatar_, value)
-                        { entity with Subtype = Actor { actor with SubSubtype = Avatar avatar_ }}
-                    | TileMap tileMap ->
-                        let tileMap_ = { tileMap with PhysicsIds = tileMap.PhysicsIds } // NOTE: hacky copy
-                        property.SetValue (tileMap_, value)
-                        { entity with Subtype = Actor { actor with SubSubtype = TileMap tileMap_ }}
-    set entity_ world entityLens
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | Label label ->
+        if typeof<Label>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.label)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | TextBox textBox ->
+        if typeof<TextBox>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.textBox)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | Toggle toggle ->
+        if typeof<Toggle>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.toggle)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | Feeler feeler ->
+        if typeof<Feeler>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.feeler)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | Block block ->
+        if typeof<Block>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.block)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | Avatar avatar ->
+        if typeof<Avatar>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.avatar)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
+    | TileMap tileMap ->
+        if typeof<TileMap>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        then property.GetValue (get entityModel EntityModel.tileMap)
+        else
+            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+            then property.GetValue (get entityModel EntityModel.gui)
+            else property.GetValue (get entityModel EntityModel.entity)
 
-let setEntityPropertyValues changes world =
-    Seq.fold setEntityPropertyValue world changes
+let setEntityModelPropertyValue world (change : EntityModelPropertyChange) =
+    let entityModelLens = World.entityModel change.Address
+    let entityModel = get world entityModelLens
+    let entityModel_ =
+        // TODO: so much code duplication, make me wanna slap your momma!
+        match entityModel with
+        | Button button ->
+            let button_ = { button with Gui = button.Gui } // NOTE: this is just a hacky way to copy a record in lieu of reflection
+            if typeof<Button>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (button_, change.Value) in Button button_
+            else
+                let gui_ = { button_.Gui with Position = button_.Gui.Position } // NOTE: hacky copy
+                if typeof<Gui>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (gui_, change.Value) in Button { button_ with Gui = gui_ }
+                else
+                    let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    Button { button_ with Gui = { gui_ with Entity = entity_ }}
+        | Label label ->
+            let label_ = { label with Gui = label.Gui } // NOTE: hacky copy
+            if typeof<Button>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (label_, change.Value) in Label label_
+            else
+                let gui_ = { label_.Gui with Position = label_.Gui.Position } // NOTE: hacky copy
+                if typeof<Gui>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (gui_, change.Value) in Label { label_ with Gui = gui_ }
+                else
+                    let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    Label { label_ with Gui = { gui_ with Entity = entity_ }}
+        | TextBox textBox ->
+            let textBox_ = { textBox with Gui = textBox.Gui } // NOTE: hacky copy
+            if typeof<TextBox>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (textBox_, change.Value) in TextBox textBox_
+            else
+                let gui_ = { textBox_.Gui with Position = textBox_.Gui.Position } // NOTE: hacky copy
+                if typeof<Gui>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (gui_, change.Value) in TextBox { textBox_ with Gui = gui_ }
+                else
+                    let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    TextBox { textBox_ with Gui = { gui_ with Entity = entity_ }}
+        | Toggle toggle ->
+            let toggle_ = { toggle with Gui = toggle.Gui } // NOTE: hacky copy
+            if typeof<Toggle>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (toggle_, change.Value) in Toggle toggle_
+            else
+                let gui_ = { toggle_.Gui with Position = toggle_.Gui.Position } // NOTE: hacky copy
+                if typeof<Gui>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (gui_, change.Value) in Toggle { toggle_ with Gui = gui_ }
+                else
+                    let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    Toggle { toggle_ with Gui = { gui_ with Entity = entity_ }}
+        | Feeler feeler ->
+            let feeler_ = { feeler with Gui = feeler.Gui } // NOTE: hacky copy
+            if typeof<Feeler>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (feeler_, change.Value) in Feeler feeler_
+            else
+                let gui_ = { feeler_.Gui with Position = feeler_.Gui.Position } // NOTE: hacky copy
+                if typeof<Gui>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (gui_, change.Value) in Feeler { feeler_ with Gui = gui_ }
+                else
+                    let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    Feeler { feeler_ with Gui = { gui_ with Entity = entity_ }}
+        | Block block ->
+            let block_ = { block with Actor = block.Actor } // NOTE: hacky copy
+            if typeof<Block>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (block_, change.Value) in Block block_
+            else
+                let actor_ = { block_.Actor with Position = block_.Actor.Position } // NOTE: hacky copy
+                if typeof<Actor>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (actor_, change.Value) in Block { block_ with Actor = actor_ }
+                else
+                    let entity_ = { actor_.Entity with Id = actor_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    Block { block_ with Actor = { actor_ with Entity = entity_ }}
+        | Avatar avatar ->
+            let avatar_ = { avatar with Actor = avatar.Actor } // NOTE: hacky copy
+            if typeof<Avatar>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (avatar_, change.Value) in Avatar avatar_
+            else
+                let actor_ = { avatar_.Actor with Position = avatar_.Actor.Position } // NOTE: hacky copy
+                if typeof<Actor>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (actor_, change.Value) in Avatar { avatar_ with Actor = actor_ }
+                else
+                    let entity_ = { actor_.Entity with Id = actor_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    Avatar { avatar_ with Actor = { actor_ with Entity = entity_ }}
+        | TileMap tileMap ->
+            let tileMap_ = { tileMap with Actor = tileMap.Actor } // NOTE: hacky copy
+            if typeof<TileMap>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+            then let _ = change.PropertyInfo.SetValue (tileMap_, change.Value) in TileMap tileMap_
+            else
+                let actor_ = { tileMap_.Actor with Position = tileMap_.Actor.Position } // NOTE: hacky copy
+                if typeof<Actor>.GetProperty (change.PropertyInfo.Name, BindingFlags.Instance ||| BindingFlags.Public) = change.PropertyInfo
+                then let _ = change.PropertyInfo.SetValue (actor_, change.Value) in TileMap { tileMap_ with Actor = actor_ }
+                else
+                    let entity_ = { actor_.Entity with Id = actor_.Entity.Id } // NOTE: hacky copy
+                    change.PropertyInfo.SetValue (entity_, change.Value)
+                    TileMap { tileMap_ with Actor = { actor_ with Entity = entity_ }}
+    set entityModel_ world entityModelLens
+
+let setEntityModelPropertyValues changes world =
+    Seq.fold setEntityModelPropertyValue world changes
