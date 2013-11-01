@@ -42,12 +42,9 @@ type [<StructuralEquality; NoComparison>] GameModel =
         get (getChild GameModel.optChildModelFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let optScreen = getOptChild GameModel.optChildModelFinder this address
-        match optScreen with
-        | None -> GameModel.childModelAdder (List.head address) this child
-        | Some screen ->
-            let screen2 = set child screen lens
-            setChild GameModel.childModelAdder GameModel.childModelRemover this address screen2
+        let screen = getChild GameModel.optChildModelFinder this address
+        let screen2 = set child screen lens
+        setChild GameModel.childModelAdder GameModel.childModelRemover this address screen2
 
     static member private getOptChildWithLens this address lens =
         let optChild = getOptChild GameModel.optChildModelFinder this address
@@ -82,6 +79,10 @@ type [<StructuralEquality; NoComparison>] GameModel =
         { Get = fun this -> GameModel.getChildWithLens this address Lens.id
           Set = fun screen this -> GameModel.setChildWithLens screen this address Lens.id }
 
+    static member optScreenModel address =
+        { Get = fun this -> GameModel.getOptChildWithLens this address Lens.id
+          Set = fun screenModel this -> GameModel.setOptChildWithLens screenModel this address Lens.id }
+
     static member screen address =
         { Get = fun this -> GameModel.getChildWithLens this address ScreenModel.screen
           Set = fun screen this -> GameModel.setChildWithLens screen this address ScreenModel.screen }
@@ -89,6 +90,15 @@ type [<StructuralEquality; NoComparison>] GameModel =
     static member optScreen address =
         { Get = fun this -> GameModel.getOptChildWithLens this address ScreenModel.screen
           Set = fun optScreen this -> GameModel.setOptChildWithLens optScreen this address ScreenModel.screen }
+    
+    static member groupModel address = GameModel.screenModel [List.head address] >>| ScreenModel.groupModel (List.tail address)
+    static member optGroupModel address = GameModel.screenModel [List.head address] >>| ScreenModel.optGroupModel (List.tail address)
+    
+    static member group address = GameModel.screenModel [List.head address] >>| ScreenModel.group (List.tail address)
+    static member optGroup address = GameModel.screenModel [List.head address] >>| ScreenModel.optGroup (List.tail address)
+    
+    static member entityModel address = GameModel.screenModel [List.head address] >>| ScreenModel.entityModel (List.tail address)
+    static member optEntityModel address = GameModel.screenModel [List.head address] >>| ScreenModel.optEntityModel (List.tail address)
     
     static member entity address = GameModel.screenModel [List.head address] >>| ScreenModel.entity (List.tail address)
     static member optEntity address = GameModel.screenModel [List.head address] >>| ScreenModel.optEntity (List.tail address)
@@ -122,6 +132,3 @@ type [<StructuralEquality; NoComparison>] GameModel =
 
     static member tileMap address = GameModel.screenModel [List.head address] >>| ScreenModel.tileMap (List.tail address)
     static member optTileMap address = GameModel.screenModel [List.head address] >>| ScreenModel.optTileMap (List.tail address)
-    
-    static member group address = GameModel.screenModel [List.head address] >>| ScreenModel.group (List.tail address)
-    static member optGroup address = GameModel.screenModel [List.head address] >>| ScreenModel.optGroup (List.tail address)
