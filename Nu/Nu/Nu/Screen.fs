@@ -32,12 +32,9 @@ type [<StructuralEquality; NoComparison>] ScreenModel =
         get (getChild ScreenModel.optChildModelFinder this address) lens
 
     static member private setChildWithLens child this address lens =
-        let optGroup = getOptChild ScreenModel.optChildModelFinder this address
-        match optGroup with
-        | None -> ScreenModel.childModelAdder (List.head address) this child
-        | Some group ->
-            let group2 = set child group lens
-            setChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address group2
+        let group = getChild ScreenModel.optChildModelFinder this address
+        let group2 = set child group lens
+        setChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address group2
 
     static member private getOptChildWithLens this address lens =
         let optChild = getOptChild ScreenModel.optChildModelFinder this address
@@ -64,9 +61,13 @@ type [<StructuralEquality; NoComparison>] ScreenModel =
             match this with
             | Screen _ -> Screen screen }
 
-    static member groupDu address =
+    static member groupModel address =
         { Get = fun this -> ScreenModel.getChildWithLens this address Lens.id
-          Set = fun group this -> ScreenModel.setChildWithLens group this address Lens.id }
+          Set = fun groupModel this -> ScreenModel.setChildWithLens groupModel this address Lens.id }
+
+    static member optGroupModel address =
+        { Get = fun this -> ScreenModel.getOptChildWithLens this address Lens.id
+          Set = fun groupModel this -> ScreenModel.setOptChildWithLens groupModel this address Lens.id }
 
     static member group address =
         { Get = fun this -> ScreenModel.getChildWithLens this address GroupModel.group
@@ -76,35 +77,38 @@ type [<StructuralEquality; NoComparison>] ScreenModel =
         { Get = fun this -> ScreenModel.getOptChildWithLens this address GroupModel.group
           Set = fun optGroup this -> ScreenModel.setOptChildWithLens optGroup this address GroupModel.group }
     
-    static member entity address = ScreenModel.groupDu [List.head address] >>| GroupModel.entity (List.tail address)
-    static member optEntity address = ScreenModel.groupDu [List.head address] >>| GroupModel.optEntity (List.tail address)
+    static member entityModel address = ScreenModel.groupModel [List.head address] >>| GroupModel.entityModel (List.tail address)
+    static member optEntityModel address = ScreenModel.groupModel [List.head address] >>| GroupModel.optEntityModel (List.tail address)
+    
+    static member entity address = ScreenModel.groupModel [List.head address] >>| GroupModel.entity (List.tail address)
+    static member optEntity address = ScreenModel.groupModel [List.head address] >>| GroupModel.optEntity (List.tail address)
 
-    static member gui address = ScreenModel.groupDu [List.head address] >>| GroupModel.gui (List.tail address)
-    static member optGui address = ScreenModel.groupDu [List.head address] >>| GroupModel.optGui (List.tail address)
+    static member gui address = ScreenModel.groupModel [List.head address] >>| GroupModel.gui (List.tail address)
+    static member optGui address = ScreenModel.groupModel [List.head address] >>| GroupModel.optGui (List.tail address)
 
-    static member button address = ScreenModel.groupDu [List.head address] >>| GroupModel.button (List.tail address)
-    static member optButton address = ScreenModel.groupDu [List.head address] >>| GroupModel.optButton (List.tail address)
+    static member button address = ScreenModel.groupModel [List.head address] >>| GroupModel.button (List.tail address)
+    static member optButton address = ScreenModel.groupModel [List.head address] >>| GroupModel.optButton (List.tail address)
 
-    static member label address = ScreenModel.groupDu [List.head address] >>| GroupModel.label (List.tail address)
-    static member optLabel address = ScreenModel.groupDu [List.head address] >>| GroupModel.optLabel (List.tail address)
+    static member label address = ScreenModel.groupModel [List.head address] >>| GroupModel.label (List.tail address)
+    static member optLabel address = ScreenModel.groupModel [List.head address] >>| GroupModel.optLabel (List.tail address)
 
-    static member textBox address = ScreenModel.groupDu [List.head address] >>| GroupModel.textBox (List.tail address)
-    static member optTextBox address = ScreenModel.groupDu [List.head address] >>| GroupModel.optTextBox (List.tail address)
+    static member textBox address = ScreenModel.groupModel [List.head address] >>| GroupModel.textBox (List.tail address)
+    static member optTextBox address = ScreenModel.groupModel [List.head address] >>| GroupModel.optTextBox (List.tail address)
 
-    static member toggle address = ScreenModel.groupDu [List.head address] >>| GroupModel.toggle (List.tail address)
-    static member optToggle address = ScreenModel.groupDu [List.head address] >>| GroupModel.optToggle (List.tail address)
+    static member toggle address = ScreenModel.groupModel [List.head address] >>| GroupModel.toggle (List.tail address)
+    static member optToggle address = ScreenModel.groupModel [List.head address] >>| GroupModel.optToggle (List.tail address)
 
-    static member feeler address = ScreenModel.groupDu [List.head address] >>| GroupModel.feeler (List.tail address)
-    static member optFeeler address = ScreenModel.groupDu [List.head address] >>| GroupModel.optFeeler (List.tail address)
+    static member feeler address = ScreenModel.groupModel [List.head address] >>| GroupModel.feeler (List.tail address)
+    static member optFeeler address = ScreenModel.groupModel [List.head address] >>| GroupModel.optFeeler (List.tail address)
 
-    static member actor address = ScreenModel.groupDu [List.head address] >>| GroupModel.actor (List.tail address)
-    static member optActor address = ScreenModel.groupDu [List.head address] >>| GroupModel.optActor (List.tail address)
+    static member actor address = ScreenModel.groupModel [List.head address] >>| GroupModel.actor (List.tail address)
+    static member optActor address = ScreenModel.groupModel [List.head address] >>| GroupModel.optActor (List.tail address)
 
-    static member block address = ScreenModel.groupDu [List.head address] >>| GroupModel.block (List.tail address)
-    static member optBlock address = ScreenModel.groupDu [List.head address] >>| GroupModel.optBlock (List.tail address)
+    static member block address = ScreenModel.groupModel [List.head address] >>| GroupModel.block (List.tail address)
+    static member optBlock address = ScreenModel.groupModel [List.head address] >>| GroupModel.optBlock (List.tail address)
 
-    static member avatar address = ScreenModel.groupDu [List.head address] >>| GroupModel.avatar (List.tail address)
-    static member optAvatar address = ScreenModel.groupDu [List.head address] >>| GroupModel.optAvatar (List.tail address)
+    static member avatar address = ScreenModel.groupModel [List.head address] >>| GroupModel.avatar (List.tail address)
+    static member optAvatar address = ScreenModel.groupModel [List.head address] >>| GroupModel.optAvatar (List.tail address)
 
-    static member tileMap address = ScreenModel.groupDu [List.head address] >>| GroupModel.tileMap (List.tail address)
-    static member optTileMap address = ScreenModel.groupDu [List.head address] >>| GroupModel.optTileMap (List.tail address)
+    static member tileMap address = ScreenModel.groupModel [List.head address] >>| GroupModel.tileMap (List.tail address)
+    static member optTileMap address = ScreenModel.groupModel [List.head address] >>| GroupModel.optTileMap (List.tail address)

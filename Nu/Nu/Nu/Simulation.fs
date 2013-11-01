@@ -95,6 +95,21 @@ and [<ReferenceEquality>] World =
 
     static member optActiveScreenAddress = World.gameModel >>| GameModel.optActiveScreenAddress
     
+    static member screenModel (address : Address) = World.gameModel >>| GameModel.screenModel address
+    static member optScreenModel (address : Address) = World.gameModel >>| GameModel.optScreenModel address
+    
+    static member screen (address : Address) = World.gameModel >>| GameModel.screen address
+    static member optScreen (address : Address) = World.gameModel >>| GameModel.optScreen address
+    
+    static member groupModel (address : Address) = World.gameModel >>| GameModel.groupModel address
+    static member optGroupModel (address : Address) = World.gameModel >>| GameModel.optGroupModel address
+    
+    static member group (address : Address) = World.gameModel >>| GameModel.group address
+    static member optGroup (address : Address) = World.gameModel >>| GameModel.optGroup address
+    
+    static member entityModel (address : Address) = World.gameModel >>| GameModel.entityModel address
+    static member optEntityModel (address : Address) = World.gameModel >>| GameModel.optEntityModel address
+    
     static member entity (address : Address) = World.gameModel >>| GameModel.entity address
     static member optEntity (address : Address) = World.gameModel >>| GameModel.optEntity address
     
@@ -127,12 +142,6 @@ and [<ReferenceEquality>] World =
     
     static member tileMap (address : Address) = World.gameModel >>| GameModel.tileMap address
     static member optTileMap (address : Address) = World.gameModel >>| GameModel.optTileMap address
-    
-    static member group (address : Address) = World.gameModel >>| GameModel.group address
-    static member optGroup (address : Address) = World.gameModel >>| GameModel.optGroup address
-    
-    static member screen (address : Address) = World.gameModel >>| GameModel.screen address
-    static member optScreen (address : Address) = World.gameModel >>| GameModel.optScreen address
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -253,23 +262,23 @@ let registerButton address world =
 
 let addButton button address world =
     let world2 = registerButton address world
-    set button world2 (World.button address)
+    set (Button button) world2 (World.entityModel address)
 
 let removeButton address world =
-    let world2 = set None world (World.optButton address)
+    let world2 = set None world (World.optEntityModel address)
     unregisterButton address world2
 
 let addLabel label address world =
-    set label world (World.label address)
+    set (Label label) world (World.entityModel address)
 
 let removeLabel address world =
-    set None world (World.optLabel address)
+    set None world (World.optEntityModel address)
 
 let addTextBox textBox address world =
-    set textBox world (World.textBox address)
+    set (TextBox textBox) world (World.entityModel address)
 
 let removeTextBox address world =
-    set None world (World.optTextBox address)
+    set None world (World.optEntityModel address)
 
 let unregisterToggle address world =
     world |>
@@ -317,7 +326,9 @@ let registerToggle address world =
 
 let addToggle toggle address world =
     let world2 = registerToggle address world
-    set toggle world2 (World.toggle address)
+    set (Toggle toggle) world2 (World.entityModel address)
+
+// TODO: implement removeToggle
 
 let unregisterFeeler address world =
     world |>
@@ -358,7 +369,9 @@ let registerFeeler address world =
 
 let addFeeler feeler address world =
     let world2 = registerFeeler address world
-    set feeler world2 (World.feeler address)
+    set (Feeler feeler) world2 (World.entityModel address)
+
+// TODO: implement removeFeeler
 
 let unregisterBlock (block : Block) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
@@ -391,10 +404,10 @@ let registerBlock (block : Block) address world =
 
 let addBlock block address world =
     let world2 = registerBlock block address world
-    set block world2 (World.block address)
+    set (Block block) world2 (World.entityModel address)
 
 let removeBlock block address world =
-    let world2 = set None world (World.optBlock address)
+    let world2 = set None world (World.optEntityModel address)
     unregisterBlock block address world2
 
 let unregisterAvatar avatar address world =
@@ -428,10 +441,10 @@ let registerAvatar avatar address world =
 
 let addAvatar avatar address world =
     let world2 = registerAvatar avatar address world
-    set avatar world2 (World.avatar address)
+    set (Avatar avatar) world2 (World.entityModel address)
 
 let removeAvatar avatar address world =
-    let world2 = set None world (World.optAvatar address)
+    let world2 = set None world (World.optEntityModel address)
     unregisterAvatar avatar address world2
 
 let unregisterTileMap tileMap address world =
@@ -458,23 +471,23 @@ let registerTileMap tileMap address world =
 
 let addTileMap tileMap address world =
     let world2 = registerTileMap tileMap address world
-    set tileMap world2 (World.tileMap address)
+    set (TileMap tileMap) world2 (World.entityModel address)
 
 let removeTileMap tileMap address world =
-    let world2 = set None world (World.optTileMap address)
+    let world2 = set None world (World.optEntityModel address)
     unregisterTileMap tileMap address world2
 
 let addGroup group address world =
-    set group world (World.group address)
+    set (Group group) world (World.groupModel address)
 
 let removeGroup address world =
-    set None world (World.optGroup address)
+    set None world (World.optGroupModel address)
 
 let addScreen screen address world =
-    set screen world (World.screen address)
+    set (Screen screen) world (World.screenModel address)
 
 let removeScreen address world =
-    set None world (World.optScreen address)
+    set None world (World.optScreenModel address)
 
 let getComponentAudioDescriptors world : AudioDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
