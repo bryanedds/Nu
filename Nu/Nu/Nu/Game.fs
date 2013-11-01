@@ -73,7 +73,7 @@ type [<StructuralEquality; NoComparison>] GameModel =
     
     static member optActiveScreenAddress =
         { Get = fun this -> (get this GameModel.game).OptSelectedScreenAddress
-          Set = fun optSelectedScreenAddress this -> set { (get this GameModel.game) with OptSelectedScreenAddress = optSelectedScreenAddress } this  World.game }
+          Set = fun optSelectedScreenAddress this -> set { (get this GameModel.game) with OptSelectedScreenAddress = optSelectedScreenAddress } this GameModel.game}
 
     static member screenModel address =
         { Get = fun this -> GameModel.getChildWithLens this address Lens.id
