@@ -21,65 +21,25 @@ let getEntityModelTypes (entityModel : EntityModel) =
     | Avatar _ -> [typeof<Avatar>; typeof<Actor>; typeof<Entity>]
     | TileMap _ -> [typeof<TileMap>; typeof<Actor>; typeof<Entity>]
 
+let containsProperty<'m> (property : PropertyInfo) =
+    typeof<'m>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+
+let getValue (property : PropertyInfo) (entityModel : EntityModel) (lens : FSharpx.Lens<EntityModel, 'm>) =
+    if containsProperty<'m> property then property.GetValue ( get entityModel lens )
+    elif containsProperty<Gui> property then property.GetValue (get entityModel EntityModel.gui)
+    elif containsProperty<Actor> property then property.GetValue (get entityModel EntityModel.actor)
+    else property.GetValue (get entityModel EntityModel.entity)
+
 let getEntityModelPropertyValue (property : PropertyInfo) (entityModel : EntityModel) =
-    // TODO: fix this awful, AWFUL code duplication!
     match entityModel with
-    | Button button ->
-        if typeof<Button>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.button)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | Label label ->
-        if typeof<Label>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.label)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | TextBox textBox ->
-        if typeof<TextBox>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.textBox)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | Toggle toggle ->
-        if typeof<Toggle>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.toggle)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | Feeler feeler ->
-        if typeof<Feeler>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.feeler)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | Block block ->
-        if typeof<Block>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.block)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | Avatar avatar ->
-        if typeof<Avatar>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.avatar)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
-    | TileMap tileMap ->
-        if typeof<TileMap>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-        then property.GetValue (get entityModel EntityModel.tileMap)
-        else
-            if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
-            then property.GetValue (get entityModel EntityModel.gui)
-            else property.GetValue (get entityModel EntityModel.entity)
+    | Button _ -> getValue property entityModel EntityModel.button
+    | Label _ -> getValue property entityModel EntityModel.label
+    | TextBox _ -> getValue property entityModel EntityModel.textBox
+    | Toggle _ -> getValue property entityModel EntityModel.toggle
+    | Feeler _ -> getValue property entityModel EntityModel.feeler
+    | Block _ -> getValue property entityModel EntityModel.block
+    | Avatar _ -> getValue property entityModel EntityModel.avatar
+    | TileMap _ -> getValue property entityModel EntityModel.tileMap
 
 let setEntityModelPropertyValue world (change : EntityModelPropertyChange) =
     let entityModelLens = World.entityModel change.Address
