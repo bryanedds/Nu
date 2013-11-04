@@ -169,9 +169,22 @@ let isAddressSelected address world =
     match (address, optScreenAddress) with
     | ([], _) -> true
     | (_, None) -> false
-    | (_, Some screenAddress) ->
-        if List.head screenAddress = List.head address then true // TODO: test also to see if group and entity are selected
-        else false
+    | (_, Some []) -> false
+    | (addressHead :: addressTail, Some [screenAddressHead]) ->
+        match addressTail with
+        | [] -> screenAddressHead = addressHead
+        | addressHead2 :: addressTail2 ->
+            let screenModel = get world <| World.screenModel [addressHead]
+            let screen = get screenModel ScreenModel.screen
+            match addressTail2 with
+            | [] -> screen.GroupModels.ContainsKey addressHead2
+            | addressHead3 :: addressTail3 ->
+                let groupModel = Map.find addressHead2 screen.GroupModels
+                let group = get groupModel GroupModel.group
+                match addressTail3 with
+                | [] -> group.EntityModels.ContainsKey addressHead3
+                | _ -> false
+    | (_, Some (_ :: _)) -> false
 
 /// Publish a message to the given address.
 let publish address message world =
@@ -207,7 +220,7 @@ let unsubscribe address subscriber world =
     match optSubList with
     | None -> world
     | Some subList ->
-        let subList2 = List.remove (fun (address, _) -> address = subscriber) subList // TODO: consider using List.removeFirst
+        let subList2 = List.remove (fun (address, _) -> address = subscriber) subList
         let subscriptions2 = Map.add address subList2 subs
         { world with Subscriptions = subscriptions2 }
 
@@ -260,7 +273,7 @@ let registerButton address world =
     let world_ = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world_
 
-let addButton button address world =
+let addButton address button world =
     let world2 = registerButton address world
     set (Button button) world2 (World.entityModel address)
 
@@ -268,13 +281,13 @@ let removeButton address world =
     let world2 = set None world (World.optEntityModel address)
     unregisterButton address world2
 
-let addLabel label address world =
+let addLabel address label world =
     set (Label label) world (World.entityModel address)
 
 let removeLabel address world =
     set None world (World.optEntityModel address)
 
-let addTextBox textBox address world =
+let addTextBox address textBox world =
     set (TextBox textBox) world (World.entityModel address)
 
 let removeTextBox address world =
@@ -324,12 +337,13 @@ let registerToggle address world =
     let world_ = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world_
 
-let addToggle toggle address world =
+let addToggle address toggle world =
     let world2 = registerToggle address world
     set (Toggle toggle) world2 (World.entityModel address)
 
 let removeToggle address world =
-    set None world (World.optEntityModel address) // TODO: unregister events
+    let world2 = set None world (World.optEntityModel address)
+    unregisterToggle address world2
 
 let unregisterFeeler address world =
     world |>
@@ -368,23 +382,24 @@ let registerFeeler address world =
     let world_ = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world_
 
-let addFeeler feeler address world =
+let addFeeler address feeler world =
     let world2 = registerFeeler address world
     set (Feeler feeler) world2 (World.entityModel address)
 
 let removeFeeler address world =
-    set None world (World.optEntityModel address) // TODO: unregister events
+    let world2 = set None world (World.optEntityModel address)
+    unregisterFeeler address world2
 
-let unregisterBlock (block : Block) address world =
+let unregisterBlock address (block : Block) world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerBlock (block : Block) address world =
+let registerBlock address (block : Block) world =
     let optOldBlock = get world (World.optBlock address)
     let world2 =
         match optOldBlock with
         | None -> world
-        | Some oldBlock -> unregisterBlock oldBlock address world
+        | Some oldBlock -> unregisterBlock address oldBlock world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -404,24 +419,24 @@ let registerBlock (block : Block) address world =
               BodyType = block.BodyType }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
-let addBlock block address world =
-    let world2 = registerBlock block address world
+let addBlock address block world =
+    let world2 = registerBlock address block world
     set (Block block) world2 (World.entityModel address)
 
-let removeBlock block address world =
+let removeBlock address block world =
     let world2 = set None world (World.optEntityModel address)
-    unregisterBlock block address world2
+    unregisterBlock address block world2
 
-let unregisterAvatar avatar address world =
+let unregisterAvatar address avatar world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerAvatar avatar address world =
+let registerAvatar address avatar world =
     let optOldAvatar = get world (World.optAvatar address)
     let world2 =
         match optOldAvatar with
         | None -> world
-        | Some oldAvatar -> unregisterAvatar oldAvatar address world
+        | Some oldAvatar -> unregisterAvatar address oldAvatar world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -441,23 +456,23 @@ let registerAvatar avatar address world =
               BodyType = BodyType.Dynamic }
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
 
-let addAvatar avatar address world =
-    let world2 = registerAvatar avatar address world
+let addAvatar address avatar world =
+    let world2 = registerAvatar address avatar world
     set (Avatar avatar) world2 (World.entityModel address)
 
-let removeAvatar avatar address world =
+let removeAvatar address avatar world =
     let world2 = set None world (World.optEntityModel address)
-    unregisterAvatar avatar address world2
+    unregisterAvatar address avatar world2
 
-let unregisterTileMap tileMap address world =
+let unregisterTileMap address tileMap world =
     world
 
-let registerTileMap tileMap address world =
+let registerTileMap address tileMap world =
     let optOldTileMap = get world (World.optTileMap address)
     let world2 =
         match optOldTileMap with
         | None -> world
-        | Some oldTileMap -> unregisterTileMap oldTileMap address world
+        | Some oldTileMap -> unregisterTileMap address oldTileMap world
     (*let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -469,31 +484,31 @@ let registerTileMap tileMap address world =
     { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }*)
     world2
 
-let addTileMap tileMap address world =
-    let world2 = registerTileMap tileMap address world
+let addTileMap address tileMap world =
+    let world2 = registerTileMap address tileMap world
     set (TileMap tileMap) world2 (World.entityModel address)
 
-let removeTileMap tileMap address world =
+let removeTileMap address tileMap world =
     let world2 = set None world (World.optEntityModel address)
     unregisterTileMap tileMap address world2
 
-let addEntityModel entityModel address world = // TODO: reorder first and second args
+let addEntityModel address entityModel world =
     match entityModel with
-    | Button button -> addButton button address world
-    | Label label -> addLabel label address world
-    | TextBox textBox -> addTextBox textBox address world
-    | Toggle toggle -> addToggle toggle address world
-    | Feeler feeler -> addFeeler feeler address world
-    | Block block -> addBlock block address world
-    | Avatar avatar -> addAvatar avatar address world
-    | TileMap tileMap -> addTileMap tileMap address world
+    | Button button -> addButton address button world
+    | Label label -> addLabel address label world
+    | TextBox textBox -> addTextBox address textBox world
+    | Toggle toggle -> addToggle address toggle world
+    | Feeler feeler -> addFeeler address feeler world
+    | Block block -> addBlock address block world
+    | Avatar avatar -> addAvatar address avatar world
+    | TileMap tileMap -> addTileMap address tileMap world
 
 let addEntityModelsToGroup entityModels address world =
     let group = get world (World.group address)
     List.fold
         (fun world_ entityModel ->
             let entity = get entityModel EntityModel.entity
-            addEntityModel entityModel (address @ [Lun.make entity.Name]) world_)
+            addEntityModel (address @ [Lun.make entity.Name]) entityModel world_)
         world
         entityModels
 
@@ -505,9 +520,9 @@ let removeEntityModel address world =
     | TextBox textBox -> removeTextBox address world
     | Toggle toggle -> removeToggle address world
     | Feeler feeler -> removeFeeler address world
-    | Block block -> removeBlock block address world
-    | Avatar avatar -> removeAvatar avatar address world
-    | TileMap tileMap -> removeTileMap tileMap address world
+    | Block block -> removeBlock address block world
+    | Avatar avatar -> removeAvatar address avatar world
+    | TileMap tileMap -> removeTileMap address tileMap world
 
 let removeEntityModelsFromGroup address world =
     let group = get world (World.group address)
@@ -516,7 +531,7 @@ let removeEntityModelsFromGroup address world =
         world
         (Map.toKeySeq group.EntityModels)
 
-let addGroup group address world =
+let addGroup address group world =
     traceIf (not <| Map.isEmpty group.EntityModels) "Adding populated groups to the world is not supported."
     set (Group group) world (World.groupModel address)
 
@@ -524,27 +539,26 @@ let removeGroup address world =
     let world2 = removeEntityModelsFromGroup address world
     set None world2 (World.optGroupModel address)
 
-// TODO: see if there's a nicer place to put this stuff
-let TestScreenAddress = [Lun.make "testScreen"]
-let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
-let TestFeelerAddress = TestGroupAddress @ [Lun.make "testFeeler"]
-let TestTextBoxAddress = TestGroupAddress @ [Lun.make "testTextBox"]
-let TestToggleAddress = TestGroupAddress @ [Lun.make "testToggle"]
-let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
-let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
-let TestBlockAddress = TestGroupAddress @ [Lun.make "testTestBlock"]
-let TestTileMapAddress = TestGroupAddress @ [Lun.make "testTileMap"]
-let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
-let TestAvatarAddress = TestGroupAddress @ [Lun.make "testAvatar"]
-let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
+// TODO: see if there's a nice way to put this module in another file
+[<RequireQualifiedAccess>] 
+module Test =
 
-let addGroupModel groupModel address world =
+    let ScreenAddress = [Lun.make "testScreen"]
+    let GroupAddress = ScreenAddress @ [Lun.make "testGroup"]
+    let FeelerAddress = GroupAddress @ [Lun.make "testFeeler"]
+    let TextBoxAddress = GroupAddress @ [Lun.make "testTextBox"]
+    let ToggleAddress = GroupAddress @ [Lun.make "testToggle"]
+    let LabelAddress = GroupAddress @ [Lun.make "testLabel"]
+    let ButtonAddress = GroupAddress @ [Lun.make "testButton"]
+    let BlockAddress = GroupAddress @ [Lun.make "testBlock"]
+    let TileMapAddress = GroupAddress @ [Lun.make "testTileMap"]
+    let FloorAddress = GroupAddress @ [Lun.make "testFloor"]
+    let AvatarAddress = GroupAddress @ [Lun.make "testAvatar"]
+    let ClickButtonAddress = Lun.make "click" :: ButtonAddress
 
-    match groupModel with
-    | Group group -> addGroup group address world
-    | TestGroup testGroup ->
+    let addTestGroup address testGroup world =
 
-        let assetMetadataMap = 
+        let assetMetadataMap =
             match tryGenerateAssetMetadataMap "AssetGraph.xml" with
             | Left errorMsg -> failwith errorMsg
             | Right assetMetadataMap -> assetMetadataMap
@@ -569,14 +583,14 @@ let addGroupModel groupModel address world =
             testBlock
                   
         let adjustCamera _ _ message world =
-            let actor = get world (World.actor TestAvatarAddress)
+            let actor = get world (World.actor AvatarAddress)
             let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
             (message, { world with Camera = camera })
 
         let moveAvatar address _ message world =
-            let feeler = get world (World.feeler TestFeelerAddress)
+            let feeler = get world (World.feeler FeelerAddress)
             if feeler.IsTouched then
-                let avatar = get world (World.avatar TestAvatarAddress)
+                let avatar = get world (World.avatar AvatarAddress)
                 let camera = world.Camera
                 let inverseView = camera.EyePosition - camera.EyeSize * 0.5f
                 let mousePositionWorld = world.MouseState.MousePosition + inverseView
@@ -592,7 +606,7 @@ let addGroupModel groupModel address world =
                 List.fold
                     (fun world_ _ ->
                         let block = createTestBlock assetMetadataMap
-                        addBlock block (TestGroupAddress @ [Lun.makeN (getNuId ())]) world_)
+                        addBlock (GroupAddress @ [Lun.makeN (getNuId ())]) block world_)
                     world
                     [0..7]
             (handle message, world_)
@@ -600,30 +614,36 @@ let addGroupModel groupModel address world =
         let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
         let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
-        // scripting convention
         let w_ = world
         let w_ = subscribe TickAddress [] adjustCamera w_
         let w_ = subscribe TickAddress [] moveAvatar w_
-        let w_ = subscribe ClickTestButtonAddress [] addBoxes w_
-        let w_ = set (Some TestScreenAddress) w_ World.optActiveScreenAddress
+        let w_ = subscribe ClickButtonAddress [] addBoxes w_
+        let w_ = set (Some ScreenAddress) w_ World.optActiveScreenAddress
         let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
         let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
         let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
-        addGroup testGroup.Group address w_
+        addGroup address testGroup.Group w_
+
+    let removeTestGroup address world =
+        let w_ = world
+        let w_ = unsubscribe TickAddress [] w_
+        let w_ = unsubscribe TickAddress [] w_
+        let w_ = unsubscribe ClickButtonAddress [] w_
+        let w_ = set None w_ World.optActiveScreenAddress
+        removeGroup address w_
+
+let addGroupModel address groupModel world =
+    match groupModel with
+    | Group group -> addGroup address group world
+    | TestGroup testGroup -> Test.addTestGroup address testGroup world
 
 let removeGroupModel address world =
     let groupModel = get world <| World.groupModel address
     match groupModel with
     | Group group -> removeGroup address world
-    | TestGroup testGroup ->
-        let w_ = world
-        let w_ = unsubscribe TickAddress [] w_
-        let w_ = unsubscribe TickAddress [] w_
-        let w_ = unsubscribe ClickTestButtonAddress [] w_
-        let w_ = set None w_ World.optActiveScreenAddress
-        removeGroup address w_
+    | TestGroup testGroup -> Test.removeTestGroup address world
 
-let addScreen screen address world =
+let addScreen address screen world =
     set (Screen screen) world (World.screenModel address)
 
 let removeScreen address world =

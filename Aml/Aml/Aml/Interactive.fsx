@@ -2,11 +2,11 @@
 // Copyright (C) Bryan Edds, 2012-2013.
 
 // NOTE: change these paths to make this script run with your Aml installation.
-#r "C:/Uber/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
-#r "C:/Uber/Aml/FParsec/Bin/FParsecCS.dll"
-#r "C:/Uber/Aml/FParsec/Bin/FParsec.dll"
-#r "C:/Uber/Aml/xUnit/xunit.dll"
-#r "C:/Uber/Prime/Prime/Prime/bin/Release/Prime.exe"
+#r "C:/OmniBlade/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
+#r "C:/OmniBlade/Aml/FParsec/Bin/FParsecCS.dll"
+#r "C:/OmniBlade/Aml/FParsec/Bin/FParsec.dll"
+#r "C:/OmniBlade/Aml/xUnit/xunit.dll"
+#r "C:/OmniBlade/Prime/Prime/Prime/bin/Release/Prime.exe"
 
 #load "Ast.fs"
 #load "Constants.fs"
