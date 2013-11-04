@@ -5,16 +5,16 @@
 // IMPORTANT!
 // NOTE: change these paths to make this script run with your Nu installation.
 // IMPORTANT!
-#r "C:/Uber/Prime/xUnit/xunit.dll"
-#r "C:/Uber/Prime/FSharpx.Core/FSharpx.Core.dll"
-#r "C:/Uber/Prime/Prime/Prime/bin/Release/Prime.exe"
-#r "C:/Uber/Aml/Aml/Aml/bin/Optimized/Aml.exe"
-#r "C:/Uber/Nu/xUnit/xunit.dll"
-#r "C:/Uber/Nu/FSharpx.Core/FSharpx.Core.dll"
-#r "C:/Uber/Nu/Farseer/FarseerPhysics.dll"
-#r "C:/Uber/Nu/SDL2#/Release/SDL2#.dll"
-#r "C:/Uber/Nu/TiledSharp/Release/TiledSharp.dll"
-System.IO.Directory.SetCurrentDirectory "C:/Uber/Nu/Nu/Nu/bin/Release"
+#r "C:/OmniBlade/Prime/xUnit/xunit.dll"
+#r "C:/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/OmniBlade/Prime/Prime/Prime/bin/Release/Prime.exe"
+#r "C:/OmniBlade/Aml/Aml/Aml/bin/Optimized/Aml.exe"
+#r "C:/OmniBlade/Nu/xUnit/xunit.dll"
+#r "C:/OmniBlade/Nu/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/OmniBlade/Nu/Farseer/FarseerPhysics.dll"
+#r "C:/OmniBlade/Nu/SDL2#/Release/SDL2#.dll"
+#r "C:/OmniBlade/Nu/TiledSharp/Release/TiledSharp.dll"
+System.IO.Directory.SetCurrentDirectory "C:/OmniBlade/Nu/Nu/Nu/bin/Release"
 
 #load "Core.fs"
 #load "RQueue.fs"

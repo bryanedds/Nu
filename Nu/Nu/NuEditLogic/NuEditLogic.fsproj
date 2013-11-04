@@ -61,9 +61,6 @@
     <Compile Include="Entity.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <None Include="SDL2.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">

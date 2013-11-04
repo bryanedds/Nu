@@ -131,14 +131,12 @@ let truncate count list =
     List.ofSeq results
 
 /// Forall for lists.
-/// TODO: make this tail-recursive.
 let rec forall pred list =
     match list with
     | [] -> true
     | head :: tail -> pred head && forall pred tail
 
 /// Fornone for lists.
-/// TODO: make this tail-recursive.
 let rec fornone pred list =
     match list with
     | [] -> true
@@ -290,9 +288,11 @@ let toHashSet list =
 let foldWhile f initial (input : 'a list) =
     Seq.foldWhile f initial input
 
-/// TODO: test this code!!!
+/// TODO: see if List.rev can be removed.
 let rec remove pred list =
-    List.foldBack
-        (fun elem list_ -> if pred elem then list_ else elem :: remove pred list_)
-        []
-        list
+    let list_ =
+        List.fold
+            (fun list_ elem -> if pred elem then list_ else elem :: remove pred list_)
+            []
+            list
+    List.rev list_

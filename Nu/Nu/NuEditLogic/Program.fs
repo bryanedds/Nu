@@ -30,7 +30,7 @@ type [<TypeDescriptionProvider (typeof<EntityModelTypeDescriptorProvider>)>] Ent
 
 and EntityModelPropertyDescriptor (property : PropertyInfo) =
     inherit PropertyDescriptor (property.Name, Array.empty)
-    override this.ComponentType with get () = null // TODO: figure out what this definition should be!
+    override this.ComponentType with get () = property.DeclaringType
     override this.PropertyType with get () = property.PropertyType
     override this.CanResetValue source = false
     override this.ResetValue source = ()
@@ -90,10 +90,10 @@ let [<EntryPoint; STAThread>] main _ =
         (fun sdlDeps ->
             refWorld := createEmptyWorld sdlDeps
             let screen = { Id = getNuId (); GroupModels = Map.empty }
-            refWorld := addScreen screen TestScreenAddress refWorld.Value
+            refWorld := addScreen Test.ScreenAddress screen refWorld.Value
             let group = { Id = getNuId (); EntityModels = Map.empty }
-            refWorld := addGroup group TestGroupAddress refWorld.Value
-            let testTypeSource = { Address = TestButtonAddress; RefWorld = refWorld }
+            refWorld := addGroup Test.GroupAddress group refWorld.Value
+            let testTypeSource = { Address = Test.ButtonAddress; RefWorld = refWorld }
             form.propertyGrid.SelectedObject <- testTypeSource
             form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
             form.saveToolStripMenuItem.Click.Add (fun _ ->
@@ -106,7 +106,7 @@ let [<EntryPoint; STAThread>] main _ =
                     use writer = XmlWriter.Create (file, writerSettings)
                     writer.WriteStartDocument ()
                     writer.WriteStartElement "Root"
-                    let testGroupModel = get refWorld.Value <| World.groupModel TestGroupAddress
+                    let testGroupModel = get refWorld.Value <| World.groupModel Test.GroupAddress
                     writeGroupModelToXml writer testGroupModel
                     writer.WriteEndElement ()
                     writer.WriteEndDocument ()
@@ -121,9 +121,9 @@ let [<EntryPoint; STAThread>] main _ =
                         let rootNode = document.Item "Root"
                         let testGroupModelNode = rootNode.FirstChild
                         let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
-                        let w_ = removeGroupModel TestGroupAddress world
-                        let w_ = addGroupModel testGroupModel TestGroupAddress w_
-                        addEntityModelsToGroup testEntityModels TestGroupAddress w_)
+                        let w_ = removeGroupModel Test.GroupAddress world
+                        let w_ = addGroupModel Test.GroupAddress testGroupModel w_
+                        addEntityModelsToGroup testEntityModels Test.GroupAddress w_)
                     refWorld := changer refWorld.Value
                     gWorldChangers.Add changer
                 | _ -> ())
