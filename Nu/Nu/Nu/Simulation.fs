@@ -662,8 +662,8 @@ module Test =
         let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
         let w_ = world
-        let w_ = subscribe TickAddress [] adjustCamera w_
         let w_ = subscribe TickAddress [] moveAvatar w_
+        let w_ = subscribe TickAddress [] adjustCamera w_
         let w_ = subscribe ClickButtonAddress [] addBoxes w_
         let w_ = set (Some ScreenAddress) w_ World.optActiveScreenAddress
         let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
@@ -752,30 +752,23 @@ let getEntityRenderDescriptors actorView entity =
         if not entity.Visible then []
         else
             let map = tileMap.TmxMap
-            let mapWidth = map.Width
-            let tileWidth = map.TileWidth
-            let tileHeight = map.TileHeight
-            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-            let tileSetSprite = tileMap.TileMapMetadata.[0] // MAGIC_VALUE: for same reason as above
             let layers = List.ofSeq map.Layers
-            let tileLayers =
-                List.map
-                    (fun (layer : TmxLayer) ->
-                        let tiles = List.ofSeq layer.Tiles
-                        List.mapi
-                            (fun n tile ->
-                                let (i, j) = (n % mapWidth, n / mapWidth)
-                                let position = Vector2 (actor.Position.X + single (tileWidth * i), actor.Position.Y + single (tileHeight * j)) - actorView
-                                let size = Vector2 (single tileWidth, single tileHeight)
-                                let gid = layer.Tiles.[n].Gid - tileSet.FirstGid
-                                let gidPosition = gid * tileWidth
-                                let optTileSetWidth = tileSet.Image.Width
-                                let tileSetWidth = optTileSetWidth.Value
-                                let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, single <| gidPosition / tileSetWidth * tileHeight)
-                                LayerableDescriptor (LayeredTileDescriptor { Descriptor = { TileSetPosition = tileSetPosition; Position = position; Size = size; Rotation = actor.Rotation; TileSetSprite = tileSetSprite }; Depth = actor.Depth }))
-                            tiles)
-                    layers
-            List.concat tileLayers
+            List.map
+                (fun (layer : TmxLayer) ->
+                    let layeredTileLayerDescriptor =
+                        LayeredTileLayerDescriptor
+                            { Descriptor =
+                                { Position = tileMap.Actor.Position - actorView
+                                  Size = tileMap.Actor.Size
+                                  Rotation = actor.Rotation
+                                  MapSize = Vector2 (single map.Width, single map.Height)
+                                  Tiles = layer.Tiles
+                                  TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                                  TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                  TileSetSprite = tileMap.TileMapMetadata.[0] } // MAGIC_VALUE: for same reason as above
+                              Depth = actor.Depth }
+                    LayerableDescriptor layeredTileLayerDescriptor)
+                layers
 
 let getGroupModelRenderDescriptors camera groupModel =
     let group = get groupModel GroupModel.group

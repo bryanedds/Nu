@@ -1,9 +1,11 @@
 ﻿module Nu.Rendering
 open System
+open System.Collections.Generic
 open System.IO
 open System.ComponentModel
 open OpenTK
 open SDL2
+open TiledSharp
 open Nu.Core
 open Nu.Constants
 open Nu.Assets
@@ -24,12 +26,15 @@ type [<StructuralEquality; NoComparison>] TileMapAsset =
       PackageName : Lun
       PackageFileName : string }
 
-type [<StructuralEquality; NoComparison>] TileDescriptor =
+type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
-      TileSetSprite : Sprite
-      TileSetPosition : Vector2 }
+      MapSize : Vector2
+      Tiles : TmxLayerTile Collections.Generic.List
+      TileSize : Vector2
+      TileSet : TmxTileset
+      TileSetSprite : Sprite }
 
 type [<StructuralEquality; NoComparison>] Font =
     { FontAssetName : Lun
@@ -49,7 +54,7 @@ type [<StructuralEquality; NoComparison>] 'd LayeredDescriptor =
 
 type [<StructuralEquality; NoComparison>] LayerableDescriptor =
     | LayeredSpriteDescriptor of SpriteDescriptor LayeredDescriptor
-    | LayeredTileDescriptor of TileDescriptor LayeredDescriptor
+    | LayeredTileLayerDescriptor of TileLayerDescriptor LayeredDescriptor
     | LayeredTextDescriptor of TextDescriptor LayeredDescriptor
 
 /// Describes a rendering asset.
@@ -120,7 +125,7 @@ let initRenderConverters () =
 let getLayerableDepth layerable =
     match layerable with
     | LayeredSpriteDescriptor descriptor -> descriptor.Depth
-    | LayeredTileDescriptor descriptor -> descriptor.Depth
+    | LayeredTileLayerDescriptor descriptor -> descriptor.Depth
     | LayeredTextDescriptor descriptor -> descriptor.Depth
 
 let freeRenderAsset renderAsset =
@@ -250,40 +255,55 @@ let renderLayerableDescriptor renderer layerableDescriptor =
             | _ ->
                 trace "Cannot render sprite with a non-texture asset."
                 renderer2
-    | LayeredTileDescriptor ltd ->
-        let tileDescriptor = ltd.Descriptor
-        let sprite = tileDescriptor.TileSetSprite
+    | LayeredTileLayerDescriptor ltd ->
+        let descriptor = ltd.Descriptor
+        let tiles = descriptor.Tiles
+        let tileSet = descriptor.TileSet
+        let mapSize = descriptor.MapSize
+        let tileSize = descriptor.TileSize
+        let tileRotation = descriptor.Rotation
+        let sprite = descriptor.TileSetSprite
+        let optTileSetWidth = tileSet.Image.Width
+        let tileSetWidthInt = optTileSetWidth.Value
         let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
         match optRenderAsset with
         | None ->
-            debug ("LayeredTileDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+            debug ("LayeredTileLayerDescriptor failed due to unloadable assets for '" + str sprite + "'.")
             renderer2
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
-                let mutable sourceRect = SDL.SDL_Rect ()
-                sourceRect.x <- int tileDescriptor.TileSetPosition.X
-                sourceRect.y <- int tileDescriptor.TileSetPosition.Y
-                sourceRect.w <- int tileDescriptor.Size.X
-                sourceRect.h <- int tileDescriptor.Size.Y
-                let mutable destRect = SDL.SDL_Rect ()
-                destRect.x <- int tileDescriptor.Position.X
-                destRect.y <- int tileDescriptor.Position.Y
-                destRect.w <- int tileDescriptor.Size.X
-                destRect.h <- int tileDescriptor.Size.Y
-                let mutable rotationCenter = SDL.SDL_Point ()
-                rotationCenter.x <- int (tileDescriptor.Size.X * 0.5f)
-                rotationCenter.y <- int (tileDescriptor.Size.Y * 0.5f)
-                let renderResult =
-                    SDL.SDL_RenderCopyEx
-                        (renderer2.RenderContext,
-                         texture,
-                         ref sourceRect,
-                         ref destRect,
-                         double tileDescriptor.Rotation * RadiansToDegrees,
-                         ref rotationCenter,
-                         SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                if renderResult <> 0 then debug ("Rendering error - could not render texture for tile '" + str tileDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                Seq.iteri
+                    (fun n tile ->
+                        let (i, j) = (n % (int mapSize.X), n / (int mapSize.Y))
+                        let tilePosition = Vector2 (descriptor.Position.X + (tileSize.Y * single i), descriptor.Position.Y + (tileSize.Y * single j))
+                        let gid = tiles.[n].Gid - tileSet.FirstGid
+                        let gidPosition = gid * int tileSize.X
+                        let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidthInt, (single <| gidPosition / tileSetWidthInt) * tileSize.Y)
+                        let mutable sourceRect = SDL.SDL_Rect ()
+                        sourceRect.x <- int tileSetPosition.X
+                        sourceRect.y <- int tileSetPosition.Y
+                        sourceRect.w <- int tileSize.X
+                        sourceRect.h <- int tileSize.Y
+                        let mutable destRect = SDL.SDL_Rect ()
+                        destRect.x <- int tilePosition.X
+                        destRect.y <- int tilePosition.Y
+                        destRect.w <- int tileSize.X
+                        destRect.h <- int tileSize.Y
+                        let mutable rotationCenter = SDL.SDL_Point ()
+                        rotationCenter.x <- int (tileSize.X * 0.5f)
+                        rotationCenter.y <- int (tileSize.Y * 0.5f)
+                        let renderResult =
+                            SDL.SDL_RenderCopyEx
+                                (renderer2.RenderContext,
+                                    texture,
+                                    ref sourceRect,
+                                    ref destRect,
+                                    double tileRotation * RadiansToDegrees,
+                                    ref rotationCenter,
+                                    SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                        if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                    tiles
                 renderer2
             | _ ->
                 trace "Cannot render tile with a non-texture asset."
