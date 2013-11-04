@@ -177,7 +177,7 @@ and [<NoEquality; NoComparison>] PrefixedRecord =
 /// Record for a Dispatch expression.
 and [<NoEquality; NoComparison>] DispatchRecord =
     { DispName : Lun
-      DispContingentArg : int // NOTE: only one arg is currently contingent
+      DispContingentArg : int
       DispOptPositions : ParserPositions option }
 
 /// Record for a SpecialValue expression.
@@ -483,7 +483,7 @@ and [<CustomEquality; NoComparison>] Expr =
     override this.Equals other =
         match other with
         | :? Expr as expr ->
-            match (this, expr) with // NOTE: this tupling should be optimized away by the compiler
+            match (this, expr) with
             | (Boolean xb, Boolean yb) -> xb.BRValue = yb.BRValue
             | (Character xc, Character yc) -> xc.CRValue = yc.CRValue
             | (String xs, String ys) -> xs.SRValue = ys.SRValue
