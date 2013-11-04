@@ -37,6 +37,9 @@ let MouseMoveAddress = [Lun.make "mouse"; Lun.make "move"]
 let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
 let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
 let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
+let GameModelPublishingPriority = Single.MaxValue
+let ScreenModelPublishingPriority = GameModelPublishingPriority * 0.5f
+let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
 
 /// Describes data relevant to specific event messages.
 type [<ReferenceEquality>] MessageData =
@@ -51,6 +54,12 @@ type [<ReferenceEquality>] MessageData =
 type [<ReferenceEquality>] Message =
     { Handled : bool
       Data : MessageData }
+
+type [<StructuralEquality; NoComparison>] Simulant =
+    | EntityModel of EntityModel
+    | GroupModel of GroupModel
+    | ScreenModel of ScreenModel
+    | GameModel of GameModel
 
 /// Describes a game message subscription.
 /// A reference type.
@@ -153,12 +162,49 @@ and IWorldComponent =
         // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
         end
 
+let getSimulant address world =
+    match address with
+    | [] -> GameModel <| get world World.gameModel
+    | [_] as screenAddress -> ScreenModel <| get world (World.screenModel screenAddress)
+    | [_; _] as groupAddress -> GroupModel <| get world (World.groupModel groupAddress)
+    | [_; _; _] as entityAddress -> EntityModel <| get world (World.entityModel entityAddress)
+    | _ -> failwith <| "Invalid simulant address '" + str address + "'."
+
 /// Initialize Nu's various type converters.
 /// Must be called for reflection to work in Nu.
 let initTypeConverters () =
     initMathConverters ()
     initAudioConverters ()
     initRenderConverters ()
+
+let getSimulants subscriptions world =
+    List.map (fun (address, _) -> getSimulant address world) subscriptions
+
+let getPublishingPriority simulant =
+    match simulant with
+    | GameModel _ -> GameModelPublishingPriority
+    | ScreenModel _ -> ScreenModelPublishingPriority
+    | GroupModel _ -> GroupModelPublishingPriority
+    | EntityModel entityModel ->
+        match entityModel with
+        | Button button -> button.Gui.Depth
+        | Label label -> label.Gui.Depth
+        | TextBox textBox -> textBox.Gui.Depth
+        | Toggle toggle -> toggle.Gui.Depth
+        | Feeler feeler -> feeler.Gui.Depth
+        | Block block -> block.Actor.Depth
+        | Avatar avatar -> avatar.Actor.Depth
+        | TileMap tileMap -> tileMap.Actor.Depth
+
+let sort subscriptions world =
+    let simulants = getSimulants subscriptions world
+    let priorities = List.map (fun simulant -> getPublishingPriority simulant) simulants
+    let prioritiesAndSubscriptions = List.zip priorities subscriptions
+    let prioritiesAndSubscriptionsSorted =
+        List.sortWith
+            (fun (priority, _) (priority2, _) -> if priority = priority2 then 0 elif priority > priority2 then -1 else 1)
+            prioritiesAndSubscriptions
+    List.map snd prioritiesAndSubscriptionsSorted
 
 /// Mark a message as handled.
 let handle message =
@@ -192,6 +238,7 @@ let publish address message world =
     match optSubList with
     | None -> world
     | Some subList ->
+        let subListSorted = sort subList world
         let (_, world_) =
             List.foldWhile
                 (fun (message_, world_) (subscriber, (Subscription subscription)) ->
@@ -199,7 +246,7 @@ let publish address message world =
                     elif isAddressSelected subscriber world_ then Some (subscription address subscriber message_ world_)
                     else Some (message_, world_))
                 (message, world)
-                subList
+                subListSorted
         world_
 
 /// Subscribe to messages at the given address.
