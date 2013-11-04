@@ -1,5 +1,7 @@
 ﻿module Nu.Group
 open System
+open System.Xml
+open System.Reflection
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu.Core
@@ -10,8 +12,12 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Group =
     { Id : Id
       EntityModels : Map<Lun, EntityModel> }
 
+type [<StructuralEquality; NoComparison; CLIMutable>] TestGroup =
+    { Group : Group }
+
 type [<StructuralEquality; NoComparison>] GroupModel =
     | Group of Group
+    | TestGroup of TestGroup
        
     static member private optChildModelFinder addressHead this =
         let group = get this GroupModel.group
@@ -56,9 +62,15 @@ type [<StructuralEquality; NoComparison>] GroupModel =
         { Get = fun this ->
             match this with
             | Group group -> group
+            | TestGroup testGroup -> testGroup.Group
           Set = fun group this ->
             match this with
-            | Group _ -> Group group }
+            | Group _ -> Group group
+            | TestGroup testGroup -> TestGroup { testGroup with Group = group }}
+
+    static member entityModels =
+        { Get = fun this -> (get this GroupModel.group).EntityModels
+          Set = fun entityModels this -> set { (get this GroupModel.group) with EntityModels = entityModels } this GroupModel.group }
 
     static member entityModel address =
         { Get = fun this -> Option.get <| GroupModel.optChildModelFinder (List.head address) this
@@ -155,3 +167,45 @@ type [<StructuralEquality; NoComparison>] GroupModel =
     static member optTileMap address =
         { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.tileMap
           Set = fun tileMap this -> GroupModel.setOptChildWithLens tileMap this address EntityModel.tileMap }
+          
+let makeDefaultGroup () =
+    { Id = getNuId ()
+      EntityModels = Map.empty }
+
+let makeDefaultGroupModel typeName =
+    let groupModel = (Activator.CreateInstance ("Nu", typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> GroupModel
+    match groupModel with
+    | Group _ ->
+        Group <|
+            makeDefaultGroup ()
+    | TestGroup _ ->
+        TestGroup
+            { Group = makeDefaultGroup () }
+
+let writeGroupEntitiesToXml (writer : XmlWriter) group =
+    for entityModelKvp in group.EntityModels do
+        writeEntityModelToXml writer entityModelKvp.Value
+
+let writeGroupModelToXml (writer : XmlWriter) groupModel =
+    writer.WriteStartElement typeof<GroupModel>.Name
+    match groupModel with
+    | Group group ->
+        writeModelPropertiesMany writer "Nu.Group+GroupModel+Group" [group :> obj]
+        writeGroupEntitiesToXml writer group
+    | TestGroup testGroup ->
+        writeModelPropertiesMany writer "Nu.Group+GroupModel+TestGroup" [testGroup :> obj; testGroup.Group :> obj]
+        writeGroupEntitiesToXml writer testGroup.Group
+
+let loadEntityModelsFromXml (groupModelNode : XmlNode) =
+    let entityModelNodes = groupModelNode.SelectNodes "EntityModel"
+    Seq.toList <| Seq.map loadEntityModelFromXml (System.Linq.Enumerable.Cast entityModelNodes)
+
+let loadGroupModelFromXml (groupModelNode : XmlNode) =
+    let groupModelTypeNode = groupModelNode.Item "ModelType"
+    let groupModelTypeName = groupModelTypeNode.InnerText
+    let groupModel = makeDefaultGroupModel groupModelTypeName
+    let entityModels = loadEntityModelsFromXml (groupModelNode : XmlNode)
+    match groupModel with
+    | Group group -> setModelProperties3 (fun _ -> ()) groupModelNode group
+    | TestGroup testGroup -> setModelProperties3 (fun _ -> testGroup.Group) groupModelNode testGroup
+    (groupModel, entityModels)

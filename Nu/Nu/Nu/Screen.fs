@@ -61,6 +61,10 @@ type [<StructuralEquality; NoComparison>] ScreenModel =
             match this with
             | Screen _ -> Screen screen }
 
+    static member groupModels =
+        { Get = fun this -> (get this ScreenModel.screen).GroupModels
+          Set = fun groupModels this -> set { (get this ScreenModel.screen) with GroupModels = groupModels } this ScreenModel.screen }
+
     static member groupModel address =
         { Get = fun this -> Option.get <| ScreenModel.optChildModelFinder (List.head address) this
           Set = fun group this -> ScreenModel.childModelAdder (List.head address) this group }

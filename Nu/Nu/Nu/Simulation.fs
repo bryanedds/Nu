@@ -328,7 +328,8 @@ let addToggle toggle address world =
     let world2 = registerToggle address world
     set (Toggle toggle) world2 (World.entityModel address)
 
-// TODO: implement removeToggle
+let removeToggle address world =
+    set None world (World.optEntityModel address) // TODO: unregister events
 
 let unregisterFeeler address world =
     world |>
@@ -371,7 +372,8 @@ let addFeeler feeler address world =
     let world2 = registerFeeler address world
     set (Feeler feeler) world2 (World.entityModel address)
 
-// TODO: implement removeFeeler
+let removeFeeler address world =
+    set None world (World.optEntityModel address) // TODO: unregister events
 
 let unregisterBlock (block : Block) address world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
@@ -448,8 +450,7 @@ let removeAvatar avatar address world =
     unregisterAvatar avatar address world2
 
 let unregisterTileMap tileMap address world =
-    let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = tileMap.PhysicsIds.[0] }
-    { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+    world
 
 let registerTileMap tileMap address world =
     let optOldTileMap = get world (World.optTileMap address)
@@ -460,7 +461,6 @@ let registerTileMap tileMap address world =
     (*let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
-              PhysicsId = tileMap.PhysicsIds.[0]
               Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size * 0.5f }
               Position = actor.Position + actor.Size * 0.5f
               Rotation = actor.Rotation
@@ -477,11 +477,151 @@ let removeTileMap tileMap address world =
     let world2 = set None world (World.optEntityModel address)
     unregisterTileMap tileMap address world2
 
+let addEntityModel entityModel address world = // TODO: reorder first and second args
+    match entityModel with
+    | Button button -> addButton button address world
+    | Label label -> addLabel label address world
+    | TextBox textBox -> addTextBox textBox address world
+    | Toggle toggle -> addToggle toggle address world
+    | Feeler feeler -> addFeeler feeler address world
+    | Block block -> addBlock block address world
+    | Avatar avatar -> addAvatar avatar address world
+    | TileMap tileMap -> addTileMap tileMap address world
+
+let addEntityModelsToGroup entityModels address world =
+    let group = get world (World.group address)
+    List.fold
+        (fun world_ entityModel ->
+            let entity = get entityModel EntityModel.entity
+            addEntityModel entityModel (address @ [Lun.make entity.Name]) world_)
+        world
+        entityModels
+
+let removeEntityModel address world =
+    let entityModel = get world <| World.entityModel address
+    match entityModel with
+    | Button button -> removeButton address world
+    | Label label -> removeLabel address world
+    | TextBox textBox -> removeTextBox address world
+    | Toggle toggle -> removeToggle address world
+    | Feeler feeler -> removeFeeler address world
+    | Block block -> removeBlock block address world
+    | Avatar avatar -> removeAvatar avatar address world
+    | TileMap tileMap -> removeTileMap tileMap address world
+
+let removeEntityModelsFromGroup address world =
+    let group = get world (World.group address)
+    Seq.fold
+        (fun world_ entityModelAddress -> removeEntityModel (address @ [entityModelAddress]) world_)
+        world
+        (Map.toKeySeq group.EntityModels)
+
 let addGroup group address world =
+    traceIf (not <| Map.isEmpty group.EntityModels) "Adding populated groups to the world is not supported."
     set (Group group) world (World.groupModel address)
 
 let removeGroup address world =
-    set None world (World.optGroupModel address)
+    let world2 = removeEntityModelsFromGroup address world
+    set None world2 (World.optGroupModel address)
+
+// TODO: see if there's a nicer place to put this stuff
+let TestScreenAddress = [Lun.make "testScreen"]
+let TestGroupAddress = TestScreenAddress @ [Lun.make "testGroup"]
+let TestFeelerAddress = TestGroupAddress @ [Lun.make "testFeeler"]
+let TestTextBoxAddress = TestGroupAddress @ [Lun.make "testTextBox"]
+let TestToggleAddress = TestGroupAddress @ [Lun.make "testToggle"]
+let TestLabelAddress = TestGroupAddress @ [Lun.make "testLabel"]
+let TestButtonAddress = TestGroupAddress @ [Lun.make "testButton"]
+let TestBlockAddress = TestGroupAddress @ [Lun.make "testTestBlock"]
+let TestTileMapAddress = TestGroupAddress @ [Lun.make "testTileMap"]
+let TestFloorAddress = TestGroupAddress @ [Lun.make "testFloor"]
+let TestAvatarAddress = TestGroupAddress @ [Lun.make "testAvatar"]
+let ClickTestButtonAddress = Lun.make "click" :: TestButtonAddress
+
+let addGroupModel groupModel address world =
+
+    match groupModel with
+    | Group group -> addGroup group address world
+    | TestGroup testGroup ->
+
+        let assetMetadataMap = 
+            match tryGenerateAssetMetadataMap "AssetGraph.xml" with
+            | Left errorMsg -> failwith errorMsg
+            | Right assetMetadataMap -> assetMetadataMap
+
+        let createTestBlock assetMetadataMap =
+            let id = getNuId ()
+            let testBlock =
+                { PhysicsId = getPhysicsId ()
+                  Density = NormalDensity
+                  BodyType = Dynamic
+                  Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+                  Actor =
+                  { Position = Vector2 (400.0f, 200.0f)
+                    Depth = 0.0f
+                    Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Default") assetMetadataMap
+                    Rotation = 2.0f
+                    Entity =
+                    { Id = id
+                      Name = str id
+                      Enabled = true
+                      Visible = true }}}
+            testBlock
+                  
+        let adjustCamera _ _ message world =
+            let actor = get world (World.actor TestAvatarAddress)
+            let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
+            (message, { world with Camera = camera })
+
+        let moveAvatar address _ message world =
+            let feeler = get world (World.feeler TestFeelerAddress)
+            if feeler.IsTouched then
+                let avatar = get world (World.avatar TestAvatarAddress)
+                let camera = world.Camera
+                let inverseView = camera.EyePosition - camera.EyeSize * 0.5f
+                let mousePositionWorld = world.MouseState.MousePosition + inverseView
+                let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
+                let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
+                let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
+                let world_ = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
+                (message, world_)
+            else (message, world)
+
+        let addBoxes _ _ message world =
+            let world_ =
+                List.fold
+                    (fun world_ _ ->
+                        let block = createTestBlock assetMetadataMap
+                        addBlock block (TestGroupAddress @ [Lun.makeN (getNuId ())]) world_)
+                    world
+                    [0..7]
+            (handle message, world_)
+
+        let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
+        let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
+
+        // scripting convention
+        let w_ = world
+        let w_ = subscribe TickAddress [] adjustCamera w_
+        let w_ = subscribe TickAddress [] moveAvatar w_
+        let w_ = subscribe ClickTestButtonAddress [] addBoxes w_
+        let w_ = set (Some TestScreenAddress) w_ World.optActiveScreenAddress
+        let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
+        let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
+        let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
+        addGroup testGroup.Group address w_
+
+let removeGroupModel address world =
+    let groupModel = get world <| World.groupModel address
+    match groupModel with
+    | Group group -> removeGroup address world
+    | TestGroup testGroup ->
+        let w_ = world
+        let w_ = unsubscribe TickAddress [] w_
+        let w_ = unsubscribe TickAddress [] w_
+        let w_ = unsubscribe ClickTestButtonAddress [] w_
+        let w_ = set None w_ World.optActiveScreenAddress
+        removeGroup address w_
 
 let addScreen screen address world =
     set (Screen screen) world (World.screenModel address)
