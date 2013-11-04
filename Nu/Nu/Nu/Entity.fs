@@ -18,6 +18,7 @@ open Nu.DomainModel
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
     { Id : Id
+      Name : string
       Enabled : bool
       Visible : bool }
 
@@ -98,7 +99,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
     { Actor : Actor
-      PhysicsIds : Id list
+      //PhysicsIds : Id list
       Density : single
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
@@ -245,7 +246,9 @@ type [<StructuralEquality; NoComparison>] EntityModel =
           Set = fun tileMap this -> set (Some tileMap) this EntityModel.optTileMap }
 
 let makeDefaultEntity () =
-    { Id = getNuId ()
+    let id = getNuId ()
+    { Id = id
+      Name = str id
       Enabled = true
       Visible = true }
 
@@ -265,18 +268,18 @@ let makeDefaultActor () =
 let makeDefaultEntityModel typeName =
     let entityModel = (Activator.CreateInstance ("Nu", typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
     match entityModel with
-    | Button button ->
+    | Button _ ->
         Button
             { Gui = makeDefaultGui ()
               IsDown = false
               UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
-    | Label label ->
+    | Label _ ->
         Label
             { Gui = makeDefaultGui ()
               LabelSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
-    | TextBox textBox ->
+    | TextBox _ ->
         TextBox
             { Gui = makeDefaultGui ()
               BoxSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -284,7 +287,7 @@ let makeDefaultEntityModel typeName =
               TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               TextOffset = Vector2.Zero
               TextColor = Vector4.One }
-    | Toggle toggle ->
+    | Toggle _ ->
         Toggle
             { Gui = makeDefaultGui ()
               IsOn = false
@@ -292,28 +295,27 @@ let makeDefaultEntityModel typeName =
               OffSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               OnSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
-    | Feeler feeler ->
+    | Feeler _ ->
         Feeler
             { Gui = makeDefaultGui ()
               IsTouched = false }
-    | Block block ->
+    | Block _ ->
         Block
             { Actor = makeDefaultActor ()
               PhysicsId = getPhysicsId ()
               Density = NormalDensity
               BodyType = BodyType.Dynamic
               Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
-    | Avatar avatar ->
+    | Avatar _ ->
         Avatar
             { Actor = makeDefaultActor ()
               PhysicsId = getPhysicsId ()
               Density = NormalDensity
               Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
-    | TileMap tileMap ->
+    | TileMap _ ->
         let tmxMap = TmxMap "TileMap.tmx"
         TileMap
             { Actor = makeDefaultActor ()
-              PhysicsIds = []
               Density = NormalDensity
               TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               TmxMap = tmxMap
@@ -322,59 +324,27 @@ let makeDefaultEntityModel typeName =
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name
     match entityModel with
-    | Button button -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Button" [button :> obj; button.Gui :> obj; button.Gui.Entity :> obj]
-    | Label label -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Label" [label :> obj; label.Gui :> obj; label.Gui.Entity :> obj]
-    | TextBox textBox -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+TextBox" [textBox :> obj; textBox.Gui :> obj; textBox.Gui.Entity :> obj]
-    | Toggle toggle -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Toggle" [toggle :> obj; toggle.Gui :> obj; toggle.Gui.Entity :> obj]
-    | Feeler feeler -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Feeler" [feeler :> obj; feeler.Gui :> obj; feeler.Gui.Entity :> obj]
-    | Block block -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Block" [block :> obj; block.Actor :> obj; block.Actor.Entity :> obj]
-    | Avatar avatar -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+Avatar" [avatar :> obj; avatar.Actor :> obj; avatar.Actor.Entity :> obj]
-    | TileMap tileMap -> writeNuPropertiesMany writer "Nu.Entity+EntityModel+TileMap" [tileMap :> obj; tileMap.Actor :> obj; tileMap.Actor.Entity :> obj]
+    | Button button -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+Button" [button :> obj; button.Gui :> obj; button.Gui.Entity :> obj]
+    | Label label -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+Label" [label :> obj; label.Gui :> obj; label.Gui.Entity :> obj]
+    | TextBox textBox -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+TextBox" [textBox :> obj; textBox.Gui :> obj; textBox.Gui.Entity :> obj]
+    | Toggle toggle -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+Toggle" [toggle :> obj; toggle.Gui :> obj; toggle.Gui.Entity :> obj]
+    | Feeler feeler -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+Feeler" [feeler :> obj; feeler.Gui :> obj; feeler.Gui.Entity :> obj]
+    | Block block -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+Block" [block :> obj; block.Actor :> obj; block.Actor.Entity :> obj]
+    | Avatar avatar -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+Avatar" [avatar :> obj; avatar.Actor :> obj; avatar.Actor.Entity :> obj]
+    | TileMap tileMap -> writeModelPropertiesMany writer "Nu.Entity+EntityModel+TileMap" [tileMap :> obj; tileMap.Actor :> obj; tileMap.Actor.Entity :> obj]
     writer.WriteEndElement ()
 
-let setProperty (property : PropertyInfo) valueStr obj =
-    let converter = TypeDescriptor.GetConverter property.PropertyType
-    if converter.CanConvertFrom (valueStr.GetType ()) then
-        let value = converter.ConvertFrom valueStr
-        property.SetValue (obj, value)
-
-let setEntityProperty<'a, 'b, 'c>
-    (getterB : 'a -> 'b)
-    (getterC : 'a -> 'c)
-    (entityModelNode : XmlNode)
-    (obj : 'a) =
-    for node in entityModelNode.ChildNodes do
-        let valueStr = node.InnerText
-        let optProperty_ = typeof<'a>.GetProperty node.Name
-        match optProperty_ with
-        | null ->
-            let optProperty_ = typeof<'b>.GetProperty node.Name
-            match optProperty_ with
-            | null ->
-                let optProperty_ = typeof<'c>.GetProperty node.Name
-                match optProperty_ with
-                | null -> ()
-                | property -> setProperty property valueStr <| getterC obj
-            | property -> setProperty property valueStr <| getterB obj
-        | property -> setProperty property valueStr <| obj
-
-let setEntityProperties<'a, 'b, 'c> getterB getterC (entityModelNode : XmlNode) (obj : 'a) =
-    for node in entityModelNode.ChildNodes do
-        setEntityProperty<'a, 'b, 'c> getterB getterC node obj
-
-let loadEntityModelFromXml (document : XmlDocument) =
-    let rootNode = document.Item "Root"
-    let entityModelNode = rootNode.FirstChild
+let loadEntityModelFromXml (entityModelNode : XmlNode) =
     let entityModelTypeNode = entityModelNode.Item "ModelType"
     let entityModelTypeName = entityModelTypeNode.InnerText
     let entityModel = makeDefaultEntityModel entityModelTypeName
     match entityModel with
-    | Button button -> setEntityProperties<Button, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode button
-    | Label label -> setEntityProperties<Label, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode label
-    | TextBox textBox -> setEntityProperties<TextBox, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode textBox
-    | Toggle toggle -> setEntityProperties<Toggle, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode toggle
-    | Feeler feeler -> setEntityProperties<Feeler, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode feeler
-    | Block block -> setEntityProperties<Block, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode block
-    | Avatar avatar -> setEntityProperties<Avatar, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode avatar
-    | TileMap tileMap -> setEntityProperties<TileMap, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode tileMap
+    | Button button -> setModelProperties4<Button, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode button
+    | Label label -> setModelProperties4<Label, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode label
+    | TextBox textBox -> setModelProperties4<TextBox, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode textBox
+    | Toggle toggle -> setModelProperties4<Toggle, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode toggle
+    | Feeler feeler -> setModelProperties4<Feeler, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode feeler
+    | Block block -> setModelProperties4<Block, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode block
+    | Avatar avatar -> setModelProperties4<Avatar, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode avatar
+    | TileMap tileMap -> setModelProperties4<TileMap, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode tileMap
     entityModel

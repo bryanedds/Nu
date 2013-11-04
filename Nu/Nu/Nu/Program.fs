@@ -15,7 +15,6 @@ open Nu.Group
 open Nu.Screen
 open Nu.Game
 open Nu.Simulation
-open Nu.TestGame
 
 (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
@@ -37,7 +36,7 @@ let [<EntryPoint>] main _ =
     let sdlViewConfig = NewWindow { WindowTitle = "Nu Game Engine"; WindowX = 100; WindowY = 100; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
-    run tryCreateTestWorld testHandleUpdate sdlConfig
+    run (fun sdlDeps -> Right <| createEmptyWorld sdlDeps) (fun world -> (true, world)) sdlConfig
 
 (*module Nu.Program
 open System
