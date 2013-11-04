@@ -61,7 +61,6 @@
     <Compile Include="Game.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Simulation.fs" />
-    <Compile Include="TestGame.fs" />
     <Compile Include="OmniBlade.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />

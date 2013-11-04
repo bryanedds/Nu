@@ -70,6 +70,10 @@ type [<StructuralEquality; NoComparison>] GameModel =
           Set = fun game this ->
             match this with
             | Game _ -> Game game }
+
+    static member screenModels =
+        { Get = fun this -> (get this GameModel.game).ScreenModels
+          Set = fun screenModels this -> set { (get this GameModel.game) with ScreenModels = screenModels } this GameModel.game }
     
     static member optActiveScreenAddress =
         { Get = fun this -> (get this GameModel.game).OptSelectedScreenAddress

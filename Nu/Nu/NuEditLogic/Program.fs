@@ -18,12 +18,11 @@ open Nu.Group
 open Nu.Screen
 open Nu.Game
 open Nu.Simulation
-open Nu.TestGame
 open NuEditLogic.Entity
 
 // NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
 // style variable (but perhaps I've merely overlooked how to parameterize this?)
-let private gEntityModelChanges = List<EntityModelPropertyChange> ()
+let private gWorldChangers = List<World -> World> ()
 
 type [<TypeDescriptionProvider (typeof<EntityModelTypeDescriptorProvider>)>] EntityModelTypeDescriptorSource =
     { Address : Address
@@ -49,11 +48,11 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
 
     override this.SetValue (source, value) =
         let entityModelTds = source :?> EntityModelTypeDescriptorSource
-        let entityModelChange = { Address = entityModelTds.Address; PropertyInfo = property; Value = value }
+        let changer = (fun world -> setEntityModelPropertyValue entityModelTds.Address property value world)
         // NOTE: even though this ref world will eventually get blown away, it must still be
         // updated here so that the change is reflected immediately by the property grid.
-        entityModelTds.RefWorld := setEntityModelPropertyValue entityModelTds.RefWorld.Value entityModelChange
-        gEntityModelChanges.Add entityModelChange
+        entityModelTds.RefWorld := changer entityModelTds.RefWorld.Value
+        gWorldChangers.Add changer
 
     // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
     static member GetPropertyDescriptors (aType : Type) =
@@ -89,38 +88,51 @@ let [<EntryPoint; STAThread>] main _ =
     let refWorld = ref Unchecked.defaultof<World>
     run4
         (fun sdlDeps ->
-            let optTestWorld = tryCreateTestWorld sdlDeps
-            match optTestWorld with
-            | Left errorMsg -> Left errorMsg
-            | Right testWorld ->
-                refWorld := testWorld
-                let testTypeSource = { Address = TestButtonAddress; RefWorld = refWorld }
-                form.propertyGrid.SelectedObject <- testTypeSource
-                form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
-                form.saveToolStripMenuItem.Click.Add (fun _ ->
-                    use file = File.Open ("temp.xml", FileMode.Create)
+            refWorld := createEmptyWorld sdlDeps
+            let screen = { Id = getNuId (); GroupModels = Map.empty }
+            refWorld := addScreen screen TestScreenAddress refWorld.Value
+            let group = { Id = getNuId (); EntityModels = Map.empty }
+            refWorld := addGroup group TestGroupAddress refWorld.Value
+            let testTypeSource = { Address = TestButtonAddress; RefWorld = refWorld }
+            form.propertyGrid.SelectedObject <- testTypeSource
+            form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
+            form.saveToolStripMenuItem.Click.Add (fun _ ->
+                let saveFileResult = form.saveFileDialog.ShowDialog form
+                match saveFileResult with
+                | DialogResult.OK ->
+                    use file = File.Open (form.saveFileDialog.FileName, FileMode.Create)
                     let writerSettings = XmlWriterSettings ()
                     writerSettings.Indent <- true
                     use writer = XmlWriter.Create (file, writerSettings)
                     writer.WriteStartDocument ()
                     writer.WriteStartElement "Root"
-                    let testEntityModel = get refWorld.Value (World.entityModel TestButtonAddress)
-                    writeEntityModelToXml writer testEntityModel
+                    let testGroupModel = get refWorld.Value <| World.groupModel TestGroupAddress
+                    writeGroupModelToXml writer testGroupModel
                     writer.WriteEndElement ()
-                    writer.WriteEndDocument ())
-                form.openToolStripMenuItem.Click.Add (fun _ ->
-                    let document = XmlDocument ()
-                    document.Load "temp.xml"
-                    let testEntityModel = loadEntityModelFromXml document
-                    ())
-                form.Show ()
-                Right refWorld.Value)
+                    writer.WriteEndDocument ()
+                | _ -> ())
+            form.openToolStripMenuItem.Click.Add (fun _ ->
+                let openFileResult = form.openFileDialog.ShowDialog form
+                match openFileResult with
+                | DialogResult.OK ->
+                    let changer = (fun world ->
+                        let document = XmlDocument ()
+                        document.Load form.openFileDialog.FileName
+                        let rootNode = document.Item "Root"
+                        let testGroupModelNode = rootNode.FirstChild
+                        let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
+                        let w_ = removeGroupModel TestGroupAddress world
+                        let w_ = addGroupModel testGroupModel TestGroupAddress w_
+                        addEntityModelsToGroup testEntityModels TestGroupAddress w_)
+                    refWorld := changer refWorld.Value
+                    gWorldChangers.Add changer
+                | _ -> ())
+            form.Show ()
+            Right refWorld.Value)
         (fun world ->
-            let world_ = setEntityModelPropertyValues gEntityModelChanges world
-            gEntityModelChanges.Clear ()
-            let (keepRunning, world_) = testHandleUpdate world_
-            refWorld := world_ // the old refWorld is blown away here
-            (keepRunning && not form.IsDisposed, world_))
+            refWorld := Seq.fold (fun world changer -> changer world) world gWorldChangers
+            gWorldChangers.Clear ()
+            (not form.IsDisposed, refWorld.Value))
         (fun world ->
             form.displayPanel.Invalidate ()
             world)

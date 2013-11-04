@@ -30,7 +30,58 @@ let getChild optChildFinder parent address =
 let setChild childAdder childRemover parent address child =
     setOptChild childAdder childRemover parent address (Some child)
 
-let writeNuProperties (writer : XmlWriter) obj =
+let trySetProperty (property : PropertyInfo) valueStr obj =
+    let converter = TypeDescriptor.GetConverter property.PropertyType
+    if converter.CanConvertFrom (valueStr.GetType ()) then
+        let value = converter.ConvertFrom valueStr
+        property.SetValue (obj, value)
+
+let setModelProperty3<'a, 'b>
+    (getterB : 'a -> 'b)
+    (modelNode : XmlNode)
+    (obj : 'a) =
+    let modelName = modelNode.Name
+    for node in modelNode.ChildNodes do
+        let valueStr = node.InnerText
+        let optProperty_ = typeof<'a>.GetProperty modelName
+        match optProperty_ with
+        | null ->
+            let optProperty_ = typeof<'b>.GetProperty modelName
+            match optProperty_ with
+            | null -> ()
+            | property -> trySetProperty property valueStr <| getterB obj
+        | property -> trySetProperty property valueStr <| obj
+
+let setModelProperties3<'a, 'b> getterB (groupModelNode : XmlNode) (obj : 'a) =
+    for node in groupModelNode.ChildNodes do
+        setModelProperty3<'a, 'b> getterB node obj
+
+let setModelProperty4<'a, 'b, 'c>
+    (getterB : 'a -> 'b)
+    (getterC : 'a -> 'c)
+    (modelNode : XmlNode)
+    (obj : 'a) =
+    let modelName = modelNode.Name
+    for node in modelNode.ChildNodes do
+        let valueStr = node.InnerText
+        let optProperty_ = typeof<'a>.GetProperty modelName
+        match optProperty_ with
+        | null ->
+            let optProperty_ = typeof<'b>.GetProperty modelName
+            match optProperty_ with
+            | null ->
+                let optProperty_ = typeof<'c>.GetProperty modelName
+                match optProperty_ with
+                | null -> ()
+                | property -> trySetProperty property valueStr <| getterC obj
+            | property -> trySetProperty property valueStr <| getterB obj
+        | property -> trySetProperty property valueStr <| obj
+
+let setModelProperties4<'a, 'b, 'c> getterB getterC (modelNode : XmlNode) (obj : 'a) =
+    for node in modelNode.ChildNodes do
+        setModelProperty4<'a, 'b, 'c> getterB getterC node obj
+
+let writeModelProperties (writer : XmlWriter) obj =
     let aType = obj.GetType ()
     let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
     for property in publicProperties do
@@ -39,42 +90,7 @@ let writeNuProperties (writer : XmlWriter) obj =
             let valueStr = converter.ConvertTo (property.GetValue obj, typeof<string>) :?> string
             writer.WriteElementString (property.Name, valueStr)
 
-let writeNuPropertiesMany (writer : XmlWriter) modelTypeName objs =
+let writeModelPropertiesMany (writer : XmlWriter) modelTypeName objs =
     writer.WriteElementString ("ModelType", modelTypeName)
     for obj in objs do
-        writeNuProperties writer obj
-
-let readNuProperties (reader : XmlReader) obj =
-    let aType = obj.GetType ()
-    let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
-    for property in publicProperties do
-        if not <| property.Name.Contains "Subtype" then
-            let value =
-                if property.Name = "Id" then getNuId () :> obj
-                else
-                    let valueStr = reader.ReadElementString property.Name
-                    let converter = TypeDescriptor.GetConverter property.PropertyType
-                    converter.ConvertFrom valueStr
-            property.SetValue (obj, value)
-
-let readSubtypeFromXml (reader : XmlReader) assemblyName (subs : string) record =
-
-    // read record and DU names
-    let subtypeRecordName = reader.ReadElementString <| subs + "SubtypeDu"
-    let subtypeDuName = reader.ReadElementString  <| subs + "SubtypeRcd"
-    
-    // read record
-    let subtypeRecordValue = (Activator.CreateInstance (assemblyName, subtypeRecordName)).Unwrap ()
-    readNuProperties reader subtypeRecordValue
-
-    // create subtype DU
-    let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic
-    let subtypeDuCtorArgs = [|subtypeRecordValue|]
-    let subtypeDuValue = (Activator.CreateInstance (assemblyName, subtypeDuName, false, bindingFlags, null, subtypeDuCtorArgs, null, null)).Unwrap ()
-    
-    // set subtype property to DU
-    let recordType = record.GetType ()
-    let subtypePropertyName = subs + "Subtype"
-    let subtypeProperty = recordType.GetProperty subtypePropertyName
-    subtypeProperty.SetValue (record, subtypeDuValue)
-    subtypeRecordValue
+        writeModelProperties writer obj

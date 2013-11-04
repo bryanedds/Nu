@@ -1,4 +1,5 @@
 ﻿module Nu.Physics
+open System.ComponentModel
 open System.Collections.Generic
 open FarseerPhysics
 open OpenTK
@@ -28,10 +29,29 @@ type [<StructuralEquality; NoComparison>] BodyShape =
     | BoxShape of BoxShape
     | CircleShape of CircleShape
 
-type [<StructuralEquality; NoComparison>] BodyType =
+type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] BodyType =
     | Static
     | Kinematic
     | Dynamic
+
+and BodyTypeTypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let bodyType = obj :?> BodyType
+        Seq.last <| (bodyType.GetType ()).Name.Split '+' :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Vector2> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<BodyType> then obj
+        else
+            match obj :?> string with
+            | "Static" -> Static :> obj
+            | "Kinematic" -> Static :> obj
+            | "Dynamic" -> Static :> obj
+            | other -> failwith <| "Unknown BodyType '" + other + "'."
 
 type [<StructuralEquality; NoComparison>] BodyCreateMessage =
     { EntityAddress : Address
