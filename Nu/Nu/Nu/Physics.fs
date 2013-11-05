@@ -40,7 +40,10 @@ and BodyTypeTypeConverter () =
         destType = typeof<string>
     override this.ConvertTo (_, culture, obj : obj, _) =
         let bodyType = obj :?> BodyType
-        Seq.last <| (bodyType.GetType ()).Name.Split '+' :> obj
+        match bodyType with
+        | Static -> "Static" :> obj
+        | Kinematic -> "Kinematic" :> obj
+        | Dynamic -> "Dynamic" :> obj
     override this.CanConvertFrom (_, sourceType) =
         sourceType = typeof<Vector2> || sourceType = typeof<string>
     override this.ConvertFrom (_, culture, obj : obj) =
@@ -49,8 +52,8 @@ and BodyTypeTypeConverter () =
         else
             match obj :?> string with
             | "Static" -> Static :> obj
-            | "Kinematic" -> Static :> obj
-            | "Dynamic" -> Static :> obj
+            | "Kinematic" -> Kinematic :> obj
+            | "Dynamic" -> Dynamic :> obj
             | other -> failwith <| "Unknown BodyType '" + other + "'."
 
 type [<StructuralEquality; NoComparison>] BodyCreateMessage =
