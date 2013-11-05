@@ -669,7 +669,9 @@ module Test =
         let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
         let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
         let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
-        addGroup address testGroup.Group w_
+
+        traceIf (not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
+        set (TestGroup testGroup) w_ (World.groupModel address)
 
     let removeTestGroup address world =
         let w_ = world
@@ -677,7 +679,9 @@ module Test =
         let w_ = unsubscribe TickAddress [] w_
         let w_ = unsubscribe ClickButtonAddress [] w_
         let w_ = set None w_ World.optActiveScreenAddress
-        removeGroup address w_
+
+        let w_ = removeEntityModelsFromGroup address w_
+        set None w_ (World.optGroupModel address)
 
 let addGroupModel address groupModel world =
     match groupModel with
