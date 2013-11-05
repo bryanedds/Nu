@@ -379,10 +379,8 @@ let handleToggleEventUpMouseLeft address subscriber message world =
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
 let registerToggle address world =
-    let optOldToggle = get world (World.optToggle address)
-    let world_ = if optOldToggle.IsSome then unregisterToggle address world else world
-    let world_ = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world_
-    subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world_
+    let world2 = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world
+    subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world2
 
 let addToggle address toggle world =
     let world2 = registerToggle address world
@@ -424,10 +422,8 @@ let handleFeelerEventUpMouseLeft address subscriber message world =
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
 let registerFeeler address world =
-    let optOldFeeler = get world (World.optFeeler address)
-    let world_ = if optOldFeeler.IsSome then unregisterFeeler address world else world
-    let world_ = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world_
-    subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world_
+    let world2 = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world
+    subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world2
 
 let addFeeler address feeler world =
     let world2 = registerFeeler address world
@@ -442,11 +438,6 @@ let unregisterBlock address (block : Block) world =
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
 let registerBlock address (block : Block) world =
-    let optOldBlock = get world (World.optBlock address)
-    let world2 =
-        match optOldBlock with
-        | None -> world
-        | Some oldBlock -> unregisterBlock address oldBlock world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -464,7 +455,7 @@ let registerBlock address (block : Block) world =
               Rotation = block.Actor.Rotation
               Density = block.Density
               BodyType = block.BodyType }
-    { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
+    { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
 let addBlock address block world =
     let world2 = registerBlock address block world
@@ -479,11 +470,6 @@ let unregisterAvatar address avatar world =
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
 let registerAvatar address avatar world =
-    let optOldAvatar = get world (World.optAvatar address)
-    let world2 =
-        match optOldAvatar with
-        | None -> world
-        | Some oldAvatar -> unregisterAvatar address oldAvatar world
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -501,7 +487,7 @@ let registerAvatar address avatar world =
               Rotation = avatar.Actor.Rotation
               Density = avatar.Density
               BodyType = BodyType.Dynamic }
-    { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }
+    { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
 let addAvatar address avatar world =
     let world2 = registerAvatar address avatar world
@@ -515,11 +501,6 @@ let unregisterTileMap address tileMap world =
     world
 
 let registerTileMap address tileMap world =
-    let optOldTileMap = get world (World.optTileMap address)
-    let world2 =
-        match optOldTileMap with
-        | None -> world
-        | Some oldTileMap -> unregisterTileMap address oldTileMap world
     (*let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -528,8 +509,8 @@ let registerTileMap address tileMap world =
               Rotation = actor.Rotation
               Density = tileMap.Density
               BodyType = BodyType.Static }
-    { world2 with PhysicsMessages = bodyCreateMessage :: world2.PhysicsMessages }*)
-    world2
+    { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }*)
+    world
 
 let addTileMap address tileMap world =
     let world2 = registerTileMap address tileMap world
@@ -587,7 +568,7 @@ let removeGroup address world =
     set None world2 (World.optGroupModel address)
 
 // TODO: see if there's a nice way to put this module in another file
-[<RequireQualifiedAccess>] 
+[<RequireQualifiedAccess>]
 module Test =
 
     let ScreenAddress = [Lun.make "testScreen"]
@@ -669,7 +650,6 @@ module Test =
         let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
         let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
         let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
-
         traceIf (not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
         set (TestGroup testGroup) w_ (World.groupModel address)
 
@@ -679,7 +659,6 @@ module Test =
         let w_ = unsubscribe TickAddress [] w_
         let w_ = unsubscribe ClickButtonAddress [] w_
         let w_ = set None w_ World.optActiveScreenAddress
-
         let w_ = removeEntityModelsFromGroup address w_
         set None w_ (World.optGroupModel address)
 
