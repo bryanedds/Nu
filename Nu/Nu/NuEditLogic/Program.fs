@@ -121,7 +121,8 @@ let [<EntryPoint; STAThread>] main _ =
                         let rootNode = document.Item "Root"
                         let testGroupModelNode = rootNode.FirstChild
                         let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
-                        let w_ = removeGroupModel Test.GroupAddress world
+                        let w_ = world
+                        let w_ = removeGroupModel Test.GroupAddress w_
                         let w_ = addGroupModel Test.GroupAddress testGroupModel w_
                         addEntityModelsToGroup testEntityModels Test.GroupAddress w_)
                     refWorld := changer refWorld.Value
