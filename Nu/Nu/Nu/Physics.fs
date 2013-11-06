@@ -146,10 +146,11 @@ let createBody integrator bodyCreateMessage =
                 physicsShapeSize.Y,
                 bodyCreateMessage.Density,
                 physicsShapeCenter,
+                0.0f,
+                toPhysicsBodyType bodyCreateMessage.BodyType,
                 bodyCreateMessage.EntityAddress)
         body.Position <- toPhysicsV2 bodyCreateMessage.Position
         body.Rotation <- bodyCreateMessage.Rotation
-        body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType
         body.Restitution <- boxShape.Properties.Restitution
         body.FixedRotation <- boxShape.Properties.FixedRotation
         body.LinearDamping <- boxShape.Properties.LinearDamping
@@ -166,11 +167,11 @@ let createBody integrator bodyCreateMessage =
                 physicsShapeRadius,
                 bodyCreateMessage.Density,
                 physicsShapeCenter,
-                bodyCreateMessage.EntityAddress) // BUG: Farseer doesn't set the UserData with the parameter I give it here...
+                toPhysicsBodyType bodyCreateMessage.BodyType, // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+                bodyCreateMessage.EntityAddress)
         body.UserData <- bodyCreateMessage.EntityAddress // BUG: ...so I set it again here :/
         body.Position <- toPhysicsV2 bodyCreateMessage.Position
         body.Rotation <- bodyCreateMessage.Rotation
-        body.BodyType <- toPhysicsBodyType bodyCreateMessage.BodyType
         body.Restitution <- circleShape.Properties.Restitution
         body.FixedRotation <- circleShape.Properties.FixedRotation
         body.LinearDamping <- circleShape.Properties.LinearDamping
