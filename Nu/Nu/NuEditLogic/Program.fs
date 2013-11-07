@@ -20,8 +20,6 @@ open Nu.Game
 open Nu.Simulation
 open NuEditLogic.Entity
 
-GC.RemoveMemoryPressure 100000000L
-
 // NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
 // style variable (but perhaps I've merely overlooked how to parameterize this?)
 let private gWorldChangers = List<World -> World> ()
