@@ -1,9 +1,15 @@
 ﻿module NuEditLogic.Entity
 open System
+open System.IO
 open System.Reflection
+open System.Xml
+open System.Xml.Serialization
 open Nu.Core
 open Nu.Entity
+open Nu.Group
 open Nu.Simulation
+
+// TODO: rename this file
 
 let getEntityModelTypes (entityModel : EntityModel) =
     match entityModel with
@@ -139,3 +145,25 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     property.SetValue (entity_, value)
                     TileMap { tileMap_ with Actor = { actor_ with Entity = entity_ }}
     set entityModel_ world entityModelLens
+
+let writeFile fileName world =
+    use file = File.Open (fileName, FileMode.Create)
+    let writerSettings = XmlWriterSettings ()
+    writerSettings.Indent <- true
+    use writer = XmlWriter.Create (file, writerSettings)
+    writer.WriteStartDocument ()
+    writer.WriteStartElement "Root"
+    let testGroupModel = get world <| World.groupModel Test.GroupModelAddress
+    writeGroupModelToXml writer testGroupModel
+    writer.WriteEndElement ()
+    writer.WriteEndDocument ()
+
+let readFile (fileName : string) world =
+    let document = XmlDocument ()
+    document.Load fileName
+    let rootNode = document.Item "Root"
+    let testGroupModelNode = rootNode.FirstChild
+    let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
+    let world_ = removeGroupModel Test.GroupModelAddress world
+    let world_ = addGroupModel Test.GroupModelAddress testGroupModel world_
+    addEntityModelsToGroup testEntityModels Test.GroupModelAddress world_

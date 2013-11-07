@@ -41,10 +41,6 @@ type [<CustomEquality; CustomComparison>] Lun =
     static member make str =
         Lun.makeInternal str (str.GetHashCode ()) (Lun.makeOptNums str)
 
-    static member makeN (num : int64) =
-        let lunStr = str num
-        Lun.makeInternal lunStr (lunStr.GetHashCode ()) (Some (-1L, num))
-
     static member (++) (left, right) =
         Lun.make (left.LunStr + right.LunStr)
 
