@@ -102,7 +102,7 @@ and [<ReferenceEquality>] World =
         { Get = fun this -> this.MouseState
           Set = fun mouseState this -> { this with MouseState = mouseState }}
 
-    static member optActiveScreenAddress = World.gameModel >>| GameModel.optActiveScreenAddress
+    static member optSelectedScreenModelAddress = World.gameModel >>| GameModel.optSelectedScreenModelAddress
     
     static member screenModel (address : Address) = World.gameModel >>| GameModel.screenModel address
     static member optScreenModel (address : Address) = World.gameModel >>| GameModel.optScreenModel address
@@ -177,33 +177,43 @@ let initTypeConverters () =
     initAudioConverters ()
     initRenderConverters ()
 
-let getSimulants subscriptions world =
-    List.map (fun (address, _) -> getSimulant address world) subscriptions
+let sortFstAsc (priority, _) (priority2, _) =
+    if priority = priority2 then 0
+    elif priority > priority2 then -1
+    else 1
 
 let getPublishingPriority simulant =
     match simulant with
     | GameModel _ -> GameModelPublishingPriority
     | ScreenModel _ -> ScreenModelPublishingPriority
     | GroupModel _ -> GroupModelPublishingPriority
-    | EntityModel entityModel ->
-        match entityModel with
-        | Button button -> button.Gui.Depth
-        | Label label -> label.Gui.Depth
-        | TextBox textBox -> textBox.Gui.Depth
-        | Toggle toggle -> toggle.Gui.Depth
-        | Feeler feeler -> feeler.Gui.Depth
-        | Block block -> block.Actor.Depth
-        | Avatar avatar -> avatar.Actor.Depth
-        | TileMap tileMap -> tileMap.Actor.Depth
+    | EntityModel entityModel -> getPickingPriority entityModel
 
-let sort subscriptions world =
+let getSimulants subscriptions world =
+    List.map (fun (address, _) -> getSimulant address world) subscriptions
+
+let pickingSort entityModels world =
+    let priorities = List.map getPickingPriority entityModels
+    let prioritiesAndEntityModels = List.zip priorities entityModels
+    let prioritiesAndEntityModelsSorted = List.sortWith sortFstAsc prioritiesAndEntityModels
+    List.map snd prioritiesAndEntityModelsSorted
+
+let tryPick (position : Vector2) entityModels world = 
+    let entityModelsSorted = pickingSort entityModels world
+    List.tryFind
+        (fun entityModel ->
+            let rectangle = getEntityRectangle true world.Camera entityModel
+            position.X >= rectangle.X &&
+                position.X < rectangle.X + rectangle.Z &&
+                position.Y >= rectangle.Y &&
+                position.Y < rectangle.Y + rectangle.W)
+        entityModelsSorted
+
+let subscriptionSort subscriptions world =
     let simulants = getSimulants subscriptions world
-    let priorities = List.map (fun simulant -> getPublishingPriority simulant) simulants
+    let priorities = List.map getPublishingPriority simulants
     let prioritiesAndSubscriptions = List.zip priorities subscriptions
-    let prioritiesAndSubscriptionsSorted =
-        List.sortWith
-            (fun (priority, _) (priority2, _) -> if priority = priority2 then 0 elif priority > priority2 then -1 else 1)
-            prioritiesAndSubscriptions
+    let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
     List.map snd prioritiesAndSubscriptionsSorted
 
 /// Mark a message as handled.
@@ -211,7 +221,7 @@ let handle message =
     { Handled = true; Data = message.Data }
 
 let isAddressSelected address world =
-    let optScreenAddress = (get world World.game).OptSelectedScreenAddress
+    let optScreenAddress = (get world World.game).OptSelectedScreenModelAddress
     match (address, optScreenAddress) with
     | ([], _) -> true
     | (_, None) -> false
@@ -238,7 +248,7 @@ let publish address message world =
     match optSubList with
     | None -> world
     | Some subList ->
-        let subListSorted = sort subList world
+        let subListSorted = subscriptionSort subList world
         let (_, world_) =
             List.foldWhile
                 (fun (message_, world_) (subscriber, (Subscription subscription)) ->
@@ -571,17 +581,17 @@ let removeGroup address world =
 [<RequireQualifiedAccess>]
 module Test =
 
-    let ScreenAddress = [Lun.make "testScreen"]
-    let GroupAddress = ScreenAddress @ [Lun.make "testGroup"]
-    let FeelerAddress = GroupAddress @ [Lun.make "testFeeler"]
-    let TextBoxAddress = GroupAddress @ [Lun.make "testTextBox"]
-    let ToggleAddress = GroupAddress @ [Lun.make "testToggle"]
-    let LabelAddress = GroupAddress @ [Lun.make "testLabel"]
-    let ButtonAddress = GroupAddress @ [Lun.make "testButton"]
-    let BlockAddress = GroupAddress @ [Lun.make "testBlock"]
-    let TileMapAddress = GroupAddress @ [Lun.make "testTileMap"]
-    let FloorAddress = GroupAddress @ [Lun.make "testFloor"]
-    let AvatarAddress = GroupAddress @ [Lun.make "testAvatar"]
+    let ScreenModelAddress = [Lun.make "testScreenModel"]
+    let GroupModelAddress = ScreenModelAddress @ [Lun.make "testGroupModel"]
+    let FeelerAddress = GroupModelAddress @ [Lun.make "testFeeler"]
+    let TextBoxAddress = GroupModelAddress @ [Lun.make "testTextBox"]
+    let ToggleAddress = GroupModelAddress @ [Lun.make "testToggle"]
+    let LabelAddress = GroupModelAddress @ [Lun.make "testLabel"]
+    let ButtonAddress = GroupModelAddress @ [Lun.make "testButton"]
+    let BlockAddress = GroupModelAddress @ [Lun.make "testBlock"]
+    let TileMapAddress = GroupModelAddress @ [Lun.make "testTileMap"]
+    let FloorAddress = GroupModelAddress @ [Lun.make "testFloor"]
+    let AvatarAddress = GroupModelAddress @ [Lun.make "testAvatar"]
     let ClickButtonAddress = Lun.make "click" :: ButtonAddress
 
     let addTestGroup address testGroup world =
@@ -620,8 +630,8 @@ module Test =
             if feeler.IsTouched then
                 let avatar = get world (World.avatar AvatarAddress)
                 let camera = world.Camera
-                let inverseView = camera.EyePosition - camera.EyeSize * 0.5f
-                let mousePositionWorld = world.MouseState.MousePosition + inverseView
+                let view = invertView camera
+                let mousePositionWorld = world.MouseState.MousePosition + view
                 let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
                 let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
@@ -634,7 +644,7 @@ module Test =
                 List.fold
                     (fun world_ _ ->
                         let block = createTestBlock assetMetadataMap
-                        addBlock (GroupAddress @ [Lun.makeN (getNuId ())]) block world_)
+                        addBlock (GroupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_)
                     world
                     [0..7]
             (handle message, world_)
@@ -646,7 +656,7 @@ module Test =
         let w_ = subscribe TickAddress [] moveAvatar w_
         let w_ = subscribe TickAddress [] adjustCamera w_
         let w_ = subscribe ClickButtonAddress [] addBoxes w_
-        let w_ = set (Some ScreenAddress) w_ World.optActiveScreenAddress
+        let w_ = set (Some ScreenModelAddress) w_ World.optSelectedScreenModelAddress
         let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
         let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
         let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
@@ -658,7 +668,7 @@ module Test =
         let w_ = unsubscribe TickAddress [] w_
         let w_ = unsubscribe TickAddress [] w_
         let w_ = unsubscribe ClickButtonAddress [] w_
-        let w_ = set None w_ World.optActiveScreenAddress
+        let w_ = set None w_ World.optSelectedScreenModelAddress
         let w_ = removeEntityModelsFromGroup address w_
         set None w_ (World.optGroupModel address)
 
@@ -701,7 +711,7 @@ let getComponentRenderDescriptors world : RenderDescriptor rQueue =
     let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
     List.collect (fun descs -> descs) descriptorLists
 
-let getEntityRenderDescriptors actorView entity =
+let getEntityRenderDescriptors view entity =
     match entity with
     | Button button ->
         let (_, gui, entity) = Button.sep button
@@ -725,11 +735,11 @@ let getEntityRenderDescriptors actorView entity =
     | Block block ->
         let (_, actor, entity) = Block.sep block
         if not entity.Visible then []
-        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
     | Avatar avatar ->
         let (_, actor, entity) = Avatar.sep avatar
         if not entity.Visible then []
-        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - actorView; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
+        else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
     | TileMap tileMap ->
         let (_, actor, entity) = TileMap.sep tileMap
         if not entity.Visible then []
@@ -741,7 +751,7 @@ let getEntityRenderDescriptors actorView entity =
                     let layeredTileLayerDescriptor =
                         LayeredTileLayerDescriptor
                             { Descriptor =
-                                { Position = tileMap.Actor.Position - actorView
+                                { Position = tileMap.Actor.Position - view
                                   Size = tileMap.Actor.Size
                                   Rotation = actor.Rotation
                                   MapSize = Vector2 (single map.Width, single map.Height)
@@ -755,12 +765,12 @@ let getEntityRenderDescriptors actorView entity =
 
 let getGroupModelRenderDescriptors camera groupModel =
     let group = get groupModel GroupModel.group
-    let actorView = camera.EyePosition - camera.EyeSize * 0.5f
+    let view = inverseView camera
     let entities = Map.toValueSeq group.EntityModels
-    Seq.map (getEntityRenderDescriptors actorView) entities
+    Seq.map (getEntityRenderDescriptors view) entities
 
 let getWorldRenderDescriptors world =
-    match get world World.optActiveScreenAddress with
+    match get world World.optSelectedScreenModelAddress with
     | None -> []
     | Some activeScreenAddress ->
         let activeScreen = get world (World.screen activeScreenAddress)
@@ -807,7 +817,7 @@ let integrate world =
     handleIntegrationMessages integrationMessages world2
 
 let createEmptyWorld sdlDeps =
-    { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenAddress = None }
+    { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenModelAddress = None }
       Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
       Subscriptions = Map.empty
       MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }

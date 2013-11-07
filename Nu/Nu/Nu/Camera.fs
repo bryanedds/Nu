@@ -5,3 +5,6 @@ open OpenTK
 type [<StructuralEquality; NoComparison>] Camera =
     { EyePosition : Vector2
       EyeSize : Vector2 }
+
+let inverseView camera =
+    camera.EyePosition - camera.EyeSize * 0.5f

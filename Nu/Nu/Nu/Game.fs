@@ -19,7 +19,7 @@ open Nu.Screen
 type [<StructuralEquality; NoComparison; CLIMutable>] Game =
     { Id : Id
       ScreenModels : Map<Lun, ScreenModel>
-      OptSelectedScreenAddress : Address option }
+      OptSelectedScreenModelAddress : Address option }
         
 type [<StructuralEquality; NoComparison>] GameModel =
     | Game of Game
@@ -75,9 +75,9 @@ type [<StructuralEquality; NoComparison>] GameModel =
         { Get = fun this -> (get this GameModel.game).ScreenModels
           Set = fun screenModels this -> set { (get this GameModel.game) with ScreenModels = screenModels } this GameModel.game }
     
-    static member optActiveScreenAddress =
-        { Get = fun this -> (get this GameModel.game).OptSelectedScreenAddress
-          Set = fun optSelectedScreenAddress this -> set { (get this GameModel.game) with OptSelectedScreenAddress = optSelectedScreenAddress } this GameModel.game}
+    static member optSelectedScreenModelAddress =
+        { Get = fun this -> (get this GameModel.game).OptSelectedScreenModelAddress
+          Set = fun optSelectedScreenModelAddress this -> set { (get this GameModel.game) with OptSelectedScreenModelAddress = optSelectedScreenModelAddress } this GameModel.game}
 
     static member screenModel address =
         { Get = fun this -> Option.get <| GameModel.optChildModelFinder (List.head address) this

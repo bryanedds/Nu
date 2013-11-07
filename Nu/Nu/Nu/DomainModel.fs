@@ -85,7 +85,7 @@ let writeModelProperties (writer : XmlWriter) obj =
     let aType = obj.GetType ()
     let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
     for property in publicProperties do
-        if property.Name <> "Id" then
+        if not <| property.Name.Contains "Id" then
             let converter = TypeDescriptor.GetConverter property.PropertyType
             let valueStr = converter.ConvertTo (property.GetValue obj, typeof<string>) :?> string
             writer.WriteElementString (property.Name, valueStr)

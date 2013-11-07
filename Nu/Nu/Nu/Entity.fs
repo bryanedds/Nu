@@ -15,6 +15,7 @@ open Nu.Audio
 open Nu.Rendering
 open Nu.AssetMetadata
 open Nu.DomainModel
+open Nu.Camera
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
     { Id : Id
@@ -320,6 +321,38 @@ let makeDefaultEntityModel typeName =
               TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               TmxMap = tmxMap
               TileMapMetadata = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
+
+let guiRectangle (gui : Gui) =
+    Vector4 (gui.Position.X, gui.Position.Y, gui.Size.X, gui.Size.Y)
+
+let actorRectangle (actor : Actor) =
+    Vector4 (actor.Position.X, actor.Position.Y, actor.Size.X, actor.Size.Y)
+
+let actorRectangleRelative (view : Vector2) (actor : Actor) =
+    Vector4 (actor.Position.X - view.X, actor.Position.Y - view.Y, actor.Size.X, actor.Size.Y)
+
+let getPickingPriority entityModel =
+    match entityModel with
+    | Button button -> button.Gui.Depth
+    | Label label -> label.Gui.Depth
+    | TextBox textBox -> textBox.Gui.Depth
+    | Toggle toggle -> toggle.Gui.Depth
+    | Feeler feeler -> feeler.Gui.Depth
+    | Block block -> block.Actor.Depth
+    | Avatar avatar -> avatar.Actor.Depth
+    | TileMap tileMap -> tileMap.Actor.Depth
+
+let getEntityRectangle relativeToView camera entityModel =
+    let view = if relativeToView then inverseView camera else Vector2.Zero
+    match entityModel with
+    | Button button -> guiRectangle button.Gui
+    | Label label -> guiRectangle label.Gui
+    | TextBox textBox -> guiRectangle textBox.Gui
+    | Toggle toggle -> guiRectangle toggle.Gui
+    | Feeler feeler -> guiRectangle feeler.Gui
+    | Block block -> actorRectangleRelative view block.Actor
+    | Avatar avatar -> actorRectangleRelative view avatar.Actor
+    | TileMap tileMap -> actorRectangleRelative view tileMap.Actor
 
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name
