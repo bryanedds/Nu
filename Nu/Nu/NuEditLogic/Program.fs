@@ -37,8 +37,8 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
     override this.ShouldSerializeValue source = true
 
     override this.IsReadOnly
-        // NOTE: we make entity id read-only
-        with get () = property.Name = "Id"
+        // NOTE: we make entity ids read-only
+        with get () = property.Name.Contains "Id"
 
     override this.GetValue source =
         let entityModelTds = source :?> EntityModelTypeDescriptorSource
@@ -80,6 +80,7 @@ and EntityModelTypeDescriptorProvider () =
         EntityModelTypeDescriptor optSource :> ICustomTypeDescriptor
 
 let [<EntryPoint; STAThread>] main _ =
+
     initTypeConverters ()
     use form = new NuEditForm ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
@@ -87,54 +88,66 @@ let [<EntryPoint; STAThread>] main _ =
     let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
     let refWorld = ref Unchecked.defaultof<World>
     run4
+
         (fun sdlDeps ->
             refWorld := createEmptyWorld sdlDeps
             let screen = { Id = getNuId (); GroupModels = Map.empty }
-            refWorld := addScreen Test.ScreenAddress screen refWorld.Value
+            refWorld := addScreen Test.ScreenModelAddress screen refWorld.Value
             let group = { Id = getNuId (); EntityModels = Map.empty }
-            refWorld := addGroup Test.GroupAddress group refWorld.Value
+            refWorld := addGroup Test.GroupModelAddress group refWorld.Value
+
+            refWorld := subscribe
+                DownMouseLeftAddress
+                []
+                (fun _ _ message world ->
+                    match message.Data with
+                    | MouseButtonData (position, _) ->
+                        if form.InteractButton.Checked then (message, world)
+                        else
+                            let groupModelAddress = Test.GroupModelAddress
+                            let groupModel = get world (World.groupModel groupModelAddress)
+                            let entityModels = Map.toValueList <| (get groupModel GroupModel.group).EntityModels
+                            let optPicked = tryPick position entityModels world
+                            match optPicked with
+                            | None -> (handle message, world)
+                            | Some picked ->
+                                let entity = get picked EntityModel.entity
+                                let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
+                                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
+                                (handle message, world)
+                    | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
+                refWorld.Value
+
             let testTypeSource = { Address = Test.ButtonAddress; RefWorld = refWorld }
             form.propertyGrid.SelectedObject <- testTypeSource
+
             form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
+
             form.saveToolStripMenuItem.Click.Add (fun _ ->
                 let saveFileResult = form.saveFileDialog.ShowDialog form
                 match saveFileResult with
-                | DialogResult.OK ->
-                    use file = File.Open (form.saveFileDialog.FileName, FileMode.Create)
-                    let writerSettings = XmlWriterSettings ()
-                    writerSettings.Indent <- true
-                    use writer = XmlWriter.Create (file, writerSettings)
-                    writer.WriteStartDocument ()
-                    writer.WriteStartElement "Root"
-                    let testGroupModel = get refWorld.Value <| World.groupModel Test.GroupAddress
-                    writeGroupModelToXml writer testGroupModel
-                    writer.WriteEndElement ()
-                    writer.WriteEndDocument ()
+                | DialogResult.OK -> writeFile form.saveFileDialog.FileName refWorld.Value
                 | _ -> ())
+
             form.openToolStripMenuItem.Click.Add (fun _ ->
                 let openFileResult = form.openFileDialog.ShowDialog form
                 match openFileResult with
                 | DialogResult.OK ->
-                    let changer = (fun world ->
-                        let document = XmlDocument ()
-                        document.Load form.openFileDialog.FileName
-                        let rootNode = document.Item "Root"
-                        let testGroupModelNode = rootNode.FirstChild
-                        let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
-                        let w_ = world
-                        let w_ = removeGroupModel Test.GroupAddress w_
-                        let w_ = addGroupModel Test.GroupAddress testGroupModel w_
-                        addEntityModelsToGroup testEntityModels Test.GroupAddress w_)
+                    let changer = readFile form.openFileDialog.FileName
                     refWorld := changer refWorld.Value
                     gWorldChangers.Add changer
                 | _ -> ())
+
             form.Show ()
             Right refWorld.Value)
+
         (fun world ->
             refWorld := Seq.fold (fun world changer -> changer world) world gWorldChangers
             gWorldChangers.Clear ()
             (not form.IsDisposed, refWorld.Value))
+
         (fun world ->
             form.displayPanel.Invalidate ()
             world)
+
         sdlConfig

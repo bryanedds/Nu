@@ -7,7 +7,6 @@
     <EntityModel>
       <ModelType>Nu.Entity+EntityModel+Avatar</ModelType>
       <Actor>Nu.Entity+Actor</Actor>
-      <PhysicsId>3</PhysicsId>
       <Density>10</Density>
       <Sprite>Image7;Default;AssetGraph.xml</Sprite>
       <Entity>Nu.Entity+Entity</Entity>
@@ -25,7 +24,7 @@
       <IsTouched>False</IsTouched>
       <Entity>Nu.Entity+Entity</Entity>
       <Position>0;0</Position>
-      <Depth>-0.1</Depth>
+      <Depth>-0.2</Depth>
       <Size>900;600</Size>
       <Name>testFeeler</Name>
       <Enabled>True</Enabled>
@@ -34,9 +33,8 @@
     <EntityModel>
       <ModelType>Nu.Entity+EntityModel+Block</ModelType>
       <Actor>Nu.Entity+Actor</Actor>
-      <PhysicsId>2</PhysicsId>
       <Density>10</Density>
-      <BodyType>Dynamic</BodyType>
+      <BodyType>Static</BodyType>
       <Sprite>Image4;Default;AssetGraph.xml</Sprite>
       <Entity>Nu.Entity+Entity</Entity>
       <Position>118.4167;528.1516</Position>
@@ -68,7 +66,7 @@
       <LabelSprite>Image5;Default;AssetGraph.xml</LabelSprite>
       <Entity>Nu.Entity+Entity</Entity>
       <Position>0;0</Position>
-      <Depth>-0.1</Depth>
+      <Depth>-0.3</Depth>
       <Size>900;600</Size>
       <Name>testLabel</Name>
       <Enabled>True</Enabled>
