@@ -19,154 +19,155 @@ type [<StructuralEquality; NoComparison>] GroupModel =
     | Group of Group
     | TestGroup of TestGroup
        
-    static member private optChildModelFinder addressHead this =
-        let group = get this GroupModel.group
-        Map.tryFind addressHead group.EntityModels
-    
-    static member private childModelAdder addressHead this (child : EntityModel) =
-        let group = get this GroupModel.group
-        let group2 = { group with EntityModels = Map.add addressHead child group.EntityModels }
-        set group2 this GroupModel.group
-    
-    static member private childModelRemover addressHead this =
-        let group = get this GroupModel.group
-        let group2 = { group with EntityModels = Map.remove addressHead group.EntityModels }
-        set group2 this GroupModel.group
 
-    static member private getChildWithLens this address lens =
-        get (getChild GroupModel.optChildModelFinder this address) lens
+let groupModelGroup =
+    { Get = fun this ->
+        match this with
+        | Group group -> group
+        | TestGroup testGroup -> testGroup.Group
+      Set = fun group this ->
+        match this with
+        | Group _ -> Group group
+        | TestGroup testGroup -> TestGroup { testGroup with Group = group }}
+        
+let private groupModelOptChildModelFinder addressHead this =
+    let group = get this groupModelGroup
+    Map.tryFind addressHead group.EntityModels
 
-    static member private setChildWithLens child this address lens =
-        let entity = getChild GroupModel.optChildModelFinder this address
-        let entity2 = set child entity lens
-        setChild GroupModel.childModelAdder GroupModel.childModelRemover this address entity2
+let private groupModelChildModelAdder addressHead this (child : EntityModel) =
+    let group = get this groupModelGroup
+    let group2 = { group with EntityModels = Map.add addressHead child group.EntityModels }
+    set group2 this groupModelGroup
 
-    static member private getOptChildWithLens this address lens =
-        let optChild = getOptChild GroupModel.optChildModelFinder this address
-        match optChild with
-        | None -> None
-        | Some child -> Some (get child lens)
+let private groupModelChildModelRemover addressHead this =
+    let group = get this groupModelGroup
+    let group2 = { group with EntityModels = Map.remove addressHead group.EntityModels }
+    set group2 this groupModelGroup
 
-    static member private setOptChildWithLens optChild this address lens =
-        match optChild with
-        | None -> setOptChild GroupModel.childModelAdder GroupModel.childModelRemover this address None
-        | Some child ->
-            let optChildModel = getOptChild GroupModel.optChildModelFinder this address
-            match optChildModel with
-            | None -> failwith "Cannot change a non-existent entity."
-            | Some childModel ->
-                let childModel2 = set child childModel lens
-                setChild GroupModel.childModelAdder GroupModel.childModelRemover this address childModel2
+let private groupModelGetChildWithLens this address lens =
+    get (getChild groupModelOptChildModelFinder this address) lens
 
-    static member group =
-        { Get = fun this ->
-            match this with
-            | Group group -> group
-            | TestGroup testGroup -> testGroup.Group
-          Set = fun group this ->
-            match this with
-            | Group _ -> Group group
-            | TestGroup testGroup -> TestGroup { testGroup with Group = group }}
+let private groupModelSetChildWithLens child this address lens =
+    let entity = getChild groupModelOptChildModelFinder this address
+    let entity2 = set child entity lens
+    setChild groupModelChildModelAdder groupModelChildModelRemover this address entity2
 
-    static member entityModels =
-        { Get = fun this -> (get this GroupModel.group).EntityModels
-          Set = fun entityModels this -> set { (get this GroupModel.group) with EntityModels = entityModels } this GroupModel.group }
+let private groupModelGetOptChildWithLens this address lens =
+    let optChild = getOptChild groupModelOptChildModelFinder this address
+    match optChild with
+    | None -> None
+    | Some child -> Some (get child lens)
 
-    static member entityModel address =
-        { Get = fun this -> Option.get <| GroupModel.optChildModelFinder (List.head address) this
-          Set = fun entity this -> GroupModel.childModelAdder (List.head address) this entity }
-    
-    static member optEntityModel address =
-        { Get = fun this -> GroupModel.optChildModelFinder (List.head address) this
-          Set = fun optEntity this -> match optEntity with None -> GroupModel.childModelRemover (List.head address) this | Some entity -> GroupModel.childModelAdder (List.head address) this entity }
+let private groupModelSetOptChildWithLens optChild this address lens =
+    match optChild with
+    | None -> setOptChild groupModelChildModelAdder groupModelChildModelRemover this address None
+    | Some child ->
+        let optChildModel = getOptChild groupModelOptChildModelFinder this address
+        match optChildModel with
+        | None -> failwith "Cannot change a non-existent entity."
+        | Some childModel ->
+            let childModel2 = set child childModel lens
+            setChild groupModelChildModelAdder groupModelChildModelRemover this address childModel2
 
-    static member entity address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.entity
-          Set = fun entity this -> GroupModel.setChildWithLens entity this address EntityModel.entity }
-    
-    static member optEntity address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.entity
-          Set = fun optEntity this -> GroupModel.setOptChildWithLens optEntity this address EntityModel.entity }
+let groupModelEntityModels =
+    { Get = fun this -> (get this groupModelGroup).EntityModels
+      Set = fun entityModels this -> set { (get this groupModelGroup) with EntityModels = entityModels } this groupModelGroup }
 
-    static member gui address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.gui
-          Set = fun gui this -> GroupModel.setChildWithLens gui this address EntityModel.gui }
-    
-    static member optGui address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.gui
-          Set = fun optGui this -> GroupModel.setOptChildWithLens optGui this address EntityModel.gui }
+let groupModelEntityModel address =
+    { Get = fun this -> Option.get <| groupModelOptChildModelFinder (List.head address) this
+      Set = fun entity this -> groupModelChildModelAdder (List.head address) this entity }
 
-    static member button address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.button
-          Set = fun button this -> GroupModel.setChildWithLens button this address EntityModel.button }
-    
-    static member optButton address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.button
-          Set = fun button this -> GroupModel.setOptChildWithLens button this address EntityModel.button }
+let groupModelOptEntityModel address =
+    { Get = fun this -> groupModelOptChildModelFinder (List.head address) this
+      Set = fun optEntity this -> match optEntity with None -> groupModelChildModelRemover (List.head address) this | Some entity -> groupModelChildModelAdder (List.head address) this entity }
 
-    static member label address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.label
-          Set = fun label this -> GroupModel.setChildWithLens label this address EntityModel.label }
-    
-    static member optLabel address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.label
-          Set = fun label this -> GroupModel.setOptChildWithLens label this address EntityModel.label }
+let groupModelEntity address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelEntity
+      Set = fun entity this -> groupModelSetChildWithLens entity this address entityModelEntity }
 
-    static member textBox address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.textBox
-          Set = fun textBox this -> GroupModel.setChildWithLens textBox this address EntityModel.textBox }
-    
-    static member optTextBox address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.textBox
-          Set = fun textBox this -> GroupModel.setOptChildWithLens textBox this address EntityModel.textBox }
+let groupModelOptEntity address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelEntity
+      Set = fun optEntity this -> groupModelSetOptChildWithLens optEntity this address entityModelEntity }
 
-    static member toggle address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.toggle
-          Set = fun toggle this -> GroupModel.setChildWithLens toggle this address EntityModel.toggle }
-    
-    static member optToggle address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.toggle
-          Set = fun toggle this -> GroupModel.setOptChildWithLens toggle this address EntityModel.toggle }
+let groupModelGui address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelGui
+      Set = fun gui this -> groupModelSetChildWithLens gui this address entityModelGui }
 
-    static member feeler address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.feeler
-          Set = fun feeler this -> GroupModel.setChildWithLens feeler this address EntityModel.feeler }
-    
-    static member optFeeler address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.feeler
-          Set = fun feeler this -> GroupModel.setOptChildWithLens feeler this address EntityModel.feeler }
+let groupModelOptGui address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelGui
+      Set = fun optGui this -> groupModelSetOptChildWithLens optGui this address entityModelGui }
 
-    static member actor address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.actor
-          Set = fun actor this -> GroupModel.setChildWithLens actor this address EntityModel.actor }
-    
-    static member optActor address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.optActor
-          Set = fun optActor this -> GroupModel.setOptChildWithLens optActor this address EntityModel.optActor }
+let groupModelButton address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelButton
+      Set = fun button this -> groupModelSetChildWithLens button this address entityModelButton }
 
-    static member block address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.block
-          Set = fun block this -> GroupModel.setChildWithLens block this address EntityModel.block }
-    
-    static member optBlock address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.block
-          Set = fun block this -> GroupModel.setOptChildWithLens block this address EntityModel.block }
+let groupModelOptButton address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelButton
+      Set = fun button this -> groupModelSetOptChildWithLens button this address entityModelButton }
 
-    static member avatar address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.avatar
-          Set = fun avatar this -> GroupModel.setChildWithLens avatar this address EntityModel.avatar }
-    
-    static member optAvatar address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.avatar
-          Set = fun avatar this -> GroupModel.setOptChildWithLens avatar this address EntityModel.avatar }
+let groupModelLabel address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelLabel
+      Set = fun label this -> groupModelSetChildWithLens label this address entityModelLabel }
 
-    static member tileMap address =
-        { Get = fun this -> GroupModel.getChildWithLens this address EntityModel.tileMap
-          Set = fun tileMap this -> GroupModel.setChildWithLens tileMap this address EntityModel.tileMap }
-    
-    static member optTileMap address =
-        { Get = fun this -> GroupModel.getOptChildWithLens this address EntityModel.tileMap
-          Set = fun tileMap this -> GroupModel.setOptChildWithLens tileMap this address EntityModel.tileMap }
+let groupModelOptLabel address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelLabel
+      Set = fun label this -> groupModelSetOptChildWithLens label this address entityModelLabel }
+
+let groupModelTextBox address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelTextBox
+      Set = fun textBox this -> groupModelSetChildWithLens textBox this address entityModelTextBox }
+
+let groupModelOptTextBox address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelTextBox
+      Set = fun textBox this -> groupModelSetOptChildWithLens textBox this address entityModelTextBox }
+
+let groupModelToggle address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelToggle
+      Set = fun toggle this -> groupModelSetChildWithLens toggle this address entityModelToggle }
+
+let groupModelOptToggle address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelToggle
+      Set = fun toggle this -> groupModelSetOptChildWithLens toggle this address entityModelToggle }
+
+let groupModelFeeler address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelFeeler
+      Set = fun feeler this -> groupModelSetChildWithLens feeler this address entityModelFeeler }
+
+let groupModelOptFeeler address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelFeeler
+      Set = fun feeler this -> groupModelSetOptChildWithLens feeler this address entityModelFeeler }
+
+let groupModelActor address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelActor
+      Set = fun actor this -> groupModelSetChildWithLens actor this address entityModelActor }
+
+let groupModelOptActor address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelOptActor
+      Set = fun optActor this -> groupModelSetOptChildWithLens optActor this address entityModelOptActor }
+
+let groupModelBlock address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelBlock
+      Set = fun block this -> groupModelSetChildWithLens block this address entityModelBlock }
+
+let groupModelOptBlock address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelBlock
+      Set = fun block this -> groupModelSetOptChildWithLens block this address entityModelBlock }
+
+let groupModelAvatar address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelAvatar
+      Set = fun avatar this -> groupModelSetChildWithLens avatar this address entityModelAvatar }
+
+let groupModelOptAvatar address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelAvatar
+      Set = fun avatar this -> groupModelSetOptChildWithLens avatar this address entityModelAvatar }
+
+let groupModelTileMap address =
+    { Get = fun this -> groupModelGetChildWithLens this address entityModelTileMap
+      Set = fun tileMap this -> groupModelSetChildWithLens tileMap this address entityModelTileMap }
+
+let groupModelOptTileMap address =
+    { Get = fun this -> groupModelGetOptChildWithLens this address entityModelTileMap
+      Set = fun tileMap this -> groupModelSetOptChildWithLens tileMap this address entityModelTileMap }
           
 let makeDefaultGroup () =
     { Id = getNuId ()

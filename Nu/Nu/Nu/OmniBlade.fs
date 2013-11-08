@@ -36,5 +36,6 @@ let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
               AudioMessages = []
               RenderMessages = []
               PhysicsMessages = []
-              Components = [] }
+              Components = []
+              ExtData = () }
         Right world

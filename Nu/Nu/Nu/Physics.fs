@@ -184,13 +184,13 @@ let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
     let body = ref Unchecked.defaultof<Dynamics.Body>
     if  integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
         ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
-        integrator.PhysicsContext.RemoveBody body.Value
+        integrator.PhysicsContext.RemoveBody !body
     else debug ("Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'.")
 
 let applyImpulse integrator applyImpulseMessage =
     let body = ref Unchecked.defaultof<Dynamics.Body>
     if  integrator.Bodies.TryGetValue (applyImpulseMessage.PhysicsId, body) then
-        body.Value.ApplyLinearImpulse (toPhysicsV2 applyImpulseMessage.Impulse)
+        (!body).ApplyLinearImpulse (toPhysicsV2 applyImpulseMessage.Impulse)
     else debug ("Could not apply impulse to non-existent body with PhysicsId = " + str applyImpulseMessage.PhysicsId + "'.")
 
 let handlePhysicsMessage integrator physicsMessage =

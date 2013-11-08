@@ -13,106 +13,106 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
 
 type [<StructuralEquality; NoComparison>] ScreenModel =
     | Screen of Screen
+
+let screenModelscreen =
+    { Get = fun this ->
+        match this with
+        | Screen screen -> screen
+      Set = fun screen this ->
+        match this with
+        | Screen _ -> Screen screen }
        
-    static member private optChildModelFinder addressHead this =
-        let screen = get this ScreenModel.screen
-        Map.tryFind addressHead screen.GroupModels
-    
-    static member private childModelAdder addressHead this (child : GroupModel) =
-        let screen = get this ScreenModel.screen
-        let screen2 = { screen with GroupModels = Map.add addressHead child screen.GroupModels }
-        set screen2 this ScreenModel.screen
-    
-    static member private childModelRemover addressHead this =
-        let screen = get this ScreenModel.screen
-        let screen2 = { screen with GroupModels = Map.remove addressHead screen.GroupModels }
-        set screen2 this ScreenModel.screen
+let private screenModelOptChildModelFinder addressHead this =
+    let screen = get this screenModelscreen
+    Map.tryFind addressHead screen.GroupModels
 
-    static member private getChildWithLens this address lens =
-        get (getChild ScreenModel.optChildModelFinder this address) lens
+let private screenModelChildModelAdder addressHead this (child : GroupModel) =
+    let screen = get this screenModelscreen
+    let screen2 = { screen with GroupModels = Map.add addressHead child screen.GroupModels }
+    set screen2 this screenModelscreen
 
-    static member private setChildWithLens child this address lens =
-        let group = getChild ScreenModel.optChildModelFinder this address
-        let group2 = set child group lens
-        setChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address group2
+let private screenModelChildModelRemover addressHead this =
+    let screen = get this screenModelscreen
+    let screen2 = { screen with GroupModels = Map.remove addressHead screen.GroupModels }
+    set screen2 this screenModelscreen
 
-    static member private getOptChildWithLens this address lens =
-        let optChild = getOptChild ScreenModel.optChildModelFinder this address
-        match optChild with
-        | None -> None
-        | Some child -> Some (get child lens)
+let private screenModelGetChildWithLens this address lens =
+    get (getChild screenModelOptChildModelFinder this address) lens
 
-    static member private setOptChildWithLens optChild this address lens =
-        match optChild with
-        | None -> setOptChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address None
-        | Some child ->
-            let optChildModel = getOptChild ScreenModel.optChildModelFinder this address
-            match optChildModel with
-            | None -> failwith "Cannot change a non-existent group."
-            | Some childModel ->
-                let childModel2 = set child childModel lens
-                setChild ScreenModel.childModelAdder ScreenModel.childModelRemover this address childModel2
+let private screenModelSetChildWithLens child this address lens =
+    let group = getChild screenModelOptChildModelFinder this address
+    let group2 = set child group lens
+    setChild screenModelChildModelAdder screenModelChildModelRemover this address group2
 
-    static member screen =
-        { Get = fun this ->
-            match this with
-            | Screen screen -> screen
-          Set = fun screen this ->
-            match this with
-            | Screen _ -> Screen screen }
+let private screenModelGetOptChildWithLens this address lens =
+    let optChild = getOptChild screenModelOptChildModelFinder this address
+    match optChild with
+    | None -> None
+    | Some child -> Some (get child lens)
 
-    static member groupModels =
-        { Get = fun this -> (get this ScreenModel.screen).GroupModels
-          Set = fun groupModels this -> set { (get this ScreenModel.screen) with GroupModels = groupModels } this ScreenModel.screen }
+let private screenModelSetOptChildWithLens optChild this address lens =
+    match optChild with
+    | None -> setOptChild screenModelChildModelAdder screenModelChildModelRemover this address None
+    | Some child ->
+        let optChildModel = getOptChild screenModelOptChildModelFinder this address
+        match optChildModel with
+        | None -> failwith "Cannot change a non-existent group."
+        | Some childModel ->
+            let childModel2 = set child childModel lens
+            setChild screenModelChildModelAdder screenModelChildModelRemover this address childModel2
 
-    static member groupModel address =
-        { Get = fun this -> Option.get <| ScreenModel.optChildModelFinder (List.head address) this
-          Set = fun group this -> ScreenModel.childModelAdder (List.head address) this group }
-    
-    static member optGroupModel address =
-        { Get = fun this -> ScreenModel.optChildModelFinder (List.head address) this
-          Set = fun optGroup this -> match optGroup with None -> ScreenModel.childModelRemover (List.head address) this | Some entity -> ScreenModel.childModelAdder (List.head address) this entity }
+let screenModelGroupModels =
+    { Get = fun this -> (get this screenModelscreen).GroupModels
+      Set = fun groupModels this -> set { (get this screenModelscreen) with GroupModels = groupModels } this screenModelscreen }
 
-    static member group address =
-        { Get = fun this -> ScreenModel.getChildWithLens this address GroupModel.group
-          Set = fun group this -> ScreenModel.setChildWithLens group this address GroupModel.group }
-    
-    static member optGroup address =
-        { Get = fun this -> ScreenModel.getOptChildWithLens this address GroupModel.group
-          Set = fun optGroup this -> ScreenModel.setOptChildWithLens optGroup this address GroupModel.group }
-    
-    static member entityModel address = ScreenModel.groupModel [List.head address] >>| GroupModel.entityModel (List.tail address)
-    static member optEntityModel address = ScreenModel.groupModel [List.head address] >>| GroupModel.optEntityModel (List.tail address)
-    
-    static member entity address = ScreenModel.groupModel [List.head address] >>| GroupModel.entity (List.tail address)
-    static member optEntity address = ScreenModel.groupModel [List.head address] >>| GroupModel.optEntity (List.tail address)
+let screenModelGroupModel address =
+    { Get = fun this -> Option.get <| screenModelOptChildModelFinder (List.head address) this
+      Set = fun group this -> screenModelChildModelAdder (List.head address) this group }
 
-    static member gui address = ScreenModel.groupModel [List.head address] >>| GroupModel.gui (List.tail address)
-    static member optGui address = ScreenModel.groupModel [List.head address] >>| GroupModel.optGui (List.tail address)
+let screenModelOptGroupModel address =
+    { Get = fun this -> screenModelOptChildModelFinder (List.head address) this
+      Set = fun optGroup this -> match optGroup with None -> screenModelChildModelRemover (List.head address) this | Some entity -> screenModelChildModelAdder (List.head address) this entity }
 
-    static member button address = ScreenModel.groupModel [List.head address] >>| GroupModel.button (List.tail address)
-    static member optButton address = ScreenModel.groupModel [List.head address] >>| GroupModel.optButton (List.tail address)
+let screenModelGroup address =
+    { Get = fun this -> screenModelGetChildWithLens this address groupModelGroup
+      Set = fun group this -> screenModelSetChildWithLens group this address groupModelGroup }
 
-    static member label address = ScreenModel.groupModel [List.head address] >>| GroupModel.label (List.tail address)
-    static member optLabel address = ScreenModel.groupModel [List.head address] >>| GroupModel.optLabel (List.tail address)
+let screenModelOptGroup address =
+    { Get = fun this -> screenModelGetOptChildWithLens this address groupModelGroup
+      Set = fun optGroup this -> screenModelSetOptChildWithLens optGroup this address groupModelGroup }
 
-    static member textBox address = ScreenModel.groupModel [List.head address] >>| GroupModel.textBox (List.tail address)
-    static member optTextBox address = ScreenModel.groupModel [List.head address] >>| GroupModel.optTextBox (List.tail address)
+let screenModelEntityModel address = screenModelGroupModel [List.head address] >>| groupModelEntityModel (List.tail address)
+let screenModelOptEntityModel address = screenModelGroupModel [List.head address] >>| groupModelOptEntityModel (List.tail address)
 
-    static member toggle address = ScreenModel.groupModel [List.head address] >>| GroupModel.toggle (List.tail address)
-    static member optToggle address = ScreenModel.groupModel [List.head address] >>| GroupModel.optToggle (List.tail address)
+let screenModelEntity address = screenModelGroupModel [List.head address] >>| groupModelEntity (List.tail address)
+let screenModelOptEntity address = screenModelGroupModel [List.head address] >>| groupModelOptEntity (List.tail address)
 
-    static member feeler address = ScreenModel.groupModel [List.head address] >>| GroupModel.feeler (List.tail address)
-    static member optFeeler address = ScreenModel.groupModel [List.head address] >>| GroupModel.optFeeler (List.tail address)
+let screenModelGui address = screenModelGroupModel [List.head address] >>| groupModelGui (List.tail address)
+let screenModelOptGui address = screenModelGroupModel [List.head address] >>| groupModelOptGui (List.tail address)
 
-    static member actor address = ScreenModel.groupModel [List.head address] >>| GroupModel.actor (List.tail address)
-    static member optActor address = ScreenModel.groupModel [List.head address] >>| GroupModel.optActor (List.tail address)
+let screenModelButton address = screenModelGroupModel [List.head address] >>| groupModelButton (List.tail address)
+let screenModelOptButton address = screenModelGroupModel [List.head address] >>| groupModelOptButton (List.tail address)
 
-    static member block address = ScreenModel.groupModel [List.head address] >>| GroupModel.block (List.tail address)
-    static member optBlock address = ScreenModel.groupModel [List.head address] >>| GroupModel.optBlock (List.tail address)
+let screenModelLabel address = screenModelGroupModel [List.head address] >>| groupModelLabel (List.tail address)
+let screenModelOptLabel address = screenModelGroupModel [List.head address] >>| groupModelOptLabel (List.tail address)
 
-    static member avatar address = ScreenModel.groupModel [List.head address] >>| GroupModel.avatar (List.tail address)
-    static member optAvatar address = ScreenModel.groupModel [List.head address] >>| GroupModel.optAvatar (List.tail address)
+let screenModeltextBox address = screenModelGroupModel [List.head address] >>| groupModelTextBox (List.tail address)
+let screenModelOptTextBox address = screenModelGroupModel [List.head address] >>| groupModelOptTextBox (List.tail address)
 
-    static member tileMap address = ScreenModel.groupModel [List.head address] >>| GroupModel.tileMap (List.tail address)
-    static member optTileMap address = ScreenModel.groupModel [List.head address] >>| GroupModel.optTileMap (List.tail address)
+let screenModelToggle address = screenModelGroupModel [List.head address] >>| groupModelToggle (List.tail address)
+let screenModelOptToggle address = screenModelGroupModel [List.head address] >>| groupModelOptToggle (List.tail address)
+
+let screenModelFeeler address = screenModelGroupModel [List.head address] >>| groupModelFeeler (List.tail address)
+let screenModelOptFeeler address = screenModelGroupModel [List.head address] >>| groupModelOptFeeler (List.tail address)
+
+let screenModelActor address = screenModelGroupModel [List.head address] >>| groupModelActor (List.tail address)
+let screenModelOptActor address = screenModelGroupModel [List.head address] >>| groupModelOptActor (List.tail address)
+
+let screenModelBlock address = screenModelGroupModel [List.head address] >>| groupModelBlock (List.tail address)
+let screenModelOptBlock address = screenModelGroupModel [List.head address] >>| groupModelOptBlock (List.tail address)
+
+let screenModelAvatar address = screenModelGroupModel [List.head address] >>| groupModelAvatar (List.tail address)
+let screenModelOptAvatar address = screenModelGroupModel [List.head address] >>| groupModelOptAvatar (List.tail address)
+
+let screenModelTileMap address = screenModelGroupModel [List.head address] >>| groupModelTileMap (List.tail address)
+let screenModelOptTileMap address = screenModelGroupModel [List.head address] >>| groupModelOptTileMap (List.tail address)

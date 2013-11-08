@@ -93,7 +93,7 @@ let tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap =
     | Some metadata -> Some (Vector2 (single <| fst metadata, single <| snd metadata))
 
 let getTextureSizeAsVector2 assetName packageName assetMetadataMap =
-    (tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap).Value
+    Option.get <| tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap
 
 let tryGetTileMapMetadata assetName packageName assetMetadataMap =
     let optAsset = tryGetMetadata assetName packageName assetMetadataMap
@@ -103,4 +103,4 @@ let tryGetTileMapMetadata assetName packageName assetMetadataMap =
     | _ -> None
 
 let getTileMapMetadata assetName packageName assetMetadataMap =
-    (tryGetTileMapMetadata assetName packageName assetMetadataMap).Value
+    Option.get <| tryGetTileMapMetadata assetName packageName assetMetadataMap

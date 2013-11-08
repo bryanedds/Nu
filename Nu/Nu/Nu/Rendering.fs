@@ -150,8 +150,8 @@ let tryLoadRenderAsset2 renderContext (asset : Asset) =
             let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
             let fontSize = ref 0
             if Int32.TryParse (fontSizeText, fontSize) then
-                let optFont = SDL_ttf.TTF_OpenFont (asset.FileName, fontSize.Value)
-                if optFont <> IntPtr.Zero then Some (Lun.make asset.Name, FontAsset (optFont, fontSize.Value))
+                let optFont = SDL_ttf.TTF_OpenFont (asset.FileName, !fontSize)
+                if optFont <> IntPtr.Zero then Some (Lun.make asset.Name, FontAsset (optFont, !fontSize))
                 else trace ("Could not load font due to unparsable font size in file name '" + asset.FileName + "'."); None
             else trace ("Could not load font due to file name being too short: '" + asset.FileName + "'."); None
         else trace ("Could not load font '" + asset.FileName + "'."); None

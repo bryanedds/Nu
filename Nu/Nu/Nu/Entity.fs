@@ -28,8 +28,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
       Position : Vector2
       Depth : single
       Size : Vector2 }
-    static member sep (gui : Gui) = (gui, gui.Entity)
-    static member cmb (gui : Gui, entity) = { gui with Entity = entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
     { Gui : Gui
@@ -37,14 +35,10 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Button =
       UpSprite : Sprite
       DownSprite : Sprite
       ClickSound : Sound }
-    static member sep (button : Button) = (button, button.Gui, button.Gui.Entity)
-    static member cmb (button : Button, gui, entity) = { button with Gui = { gui with Entity = entity }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Label =
     { Gui : Gui
       LabelSprite : Sprite }
-    static member sep (label : Label) = (label, label.Gui, label.Gui.Entity)
-    static member cmb (label : Label, gui, entity) = { label with Gui = { gui with Entity = entity }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
     { Gui : Gui
@@ -53,8 +47,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
       TextFont : Font
       TextOffset : Vector2
       TextColor : Vector4 }
-    static member sep (textBox : TextBox) = (textBox, textBox.Gui, textBox.Gui.Entity)
-    static member cmb (textBox : TextBox, gui, entity) = { textBox with Gui = { gui with Entity = entity }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
     { Gui : Gui
@@ -63,23 +55,20 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
       OffSprite : Sprite
       OnSprite : Sprite
       ToggleSound : Sound }
-    static member sep (toggle : Toggle) = (toggle, toggle.Gui, toggle.Gui.Entity)
-    static member cmb (toggle : Toggle, gui, entity) = { toggle with Gui = { gui with Entity = entity }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Feeler =
     { Gui : Gui
       IsTouched : bool }
-    static member sep (feeler : Feeler) = (feeler, feeler.Gui, feeler.Gui.Entity)
-    static member cmb (feeler : Feeler, gui, entity) = { feeler with Gui = { gui with Entity = entity }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
     { Entity : Entity
       Position : Vector2
       Depth : single
       Size : Vector2
-      Rotation : single }      
-    static member sep (actor : Actor) = actor.Entity
-    static member cmb (actor : Actor, entity) = { actor with Entity = entity }
+      Rotation : single }    
+        
+let actorSep (actor : Actor) = actor.Entity
+let actorCmb (actor : Actor, entity) = { actor with Entity = entity }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { Actor : Actor
@@ -87,16 +76,12 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Block =
       Density : single
       BodyType : BodyType
       Sprite : Sprite }
-    static member sep (block : Block) = (block, block.Actor, block.Actor.Entity)
-    static member cmb (block : Block, actor, entity) = { block with Actor = { actor with Entity = entity }}
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
     { Actor : Actor
       PhysicsId : Id
       Density : single
       Sprite : Sprite }
-    static member sep (avatar : Avatar) = (avatar, avatar.Actor, avatar.Actor.Entity)
-    static member cmb (avatar : Avatar, actor, entity) = { avatar with Actor = { actor with Entity = entity }}
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
     { Actor : Actor
@@ -105,8 +90,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
       TileMapMetadata : Sprite list }
-    static member sep (tileMap : TileMap) = (tileMap, tileMap.Actor, tileMap.Actor.Entity)
-    static member cmb (tileMap : TileMap, actor, entity) = { tileMap with Actor = { actor with Entity = entity }}
 
 type [<StructuralEquality; NoComparison>] EntityModel =
     | Button of Button
@@ -118,133 +101,160 @@ type [<StructuralEquality; NoComparison>] EntityModel =
     | Avatar of Avatar
     | TileMap of TileMap
 
-    static member entity =
-        { Get = fun this ->
-            match this with
-            | Button button -> button.Gui.Entity
-            | Label label -> label.Gui.Entity
-            | TextBox textBox -> textBox.Gui.Entity
-            | Toggle toggle -> toggle.Gui.Entity
-            | Feeler feeler -> feeler.Gui.Entity
-            | Block block -> block.Actor.Entity
-            | Avatar avatar -> avatar.Actor.Entity
-            | TileMap tileMap -> tileMap.Actor.Entity
-          Set = fun entity this ->
-            match this with
-            | Button button -> Button { button with Gui = { button.Gui with Entity = entity }}
-            | Label label -> Label { label with Gui = { label.Gui with Entity = entity }}
-            | TextBox textBox -> TextBox { textBox with Gui = { textBox.Gui with Entity = entity }}
-            | Toggle toggle -> Toggle { toggle with Gui = { toggle.Gui with Entity = entity }}
-            | Feeler feeler -> Feeler { feeler with Gui = { feeler.Gui with Entity = entity }}
-            | Block block -> Block { block with Actor = { block.Actor with Entity = entity }}
-            | Avatar avatar -> Avatar { avatar with Actor = { avatar.Actor with Entity = entity }}
-            | TileMap tileMap -> TileMap { tileMap with Actor = { tileMap.Actor with Entity = entity }}}
+let entityModelEntity =
+    { Get = fun this ->
+        match this with
+        | Button button -> button.Gui.Entity
+        | Label label -> label.Gui.Entity
+        | TextBox textBox -> textBox.Gui.Entity
+        | Toggle toggle -> toggle.Gui.Entity
+        | Feeler feeler -> feeler.Gui.Entity
+        | Block block -> block.Actor.Entity
+        | Avatar avatar -> avatar.Actor.Entity
+        | TileMap tileMap -> tileMap.Actor.Entity
+      Set = fun entity this ->
+        match this with
+        | Button button -> Button { button with Gui = { button.Gui with Entity = entity }}
+        | Label label -> Label { label with Gui = { label.Gui with Entity = entity }}
+        | TextBox textBox -> TextBox { textBox with Gui = { textBox.Gui with Entity = entity }}
+        | Toggle toggle -> Toggle { toggle with Gui = { toggle.Gui with Entity = entity }}
+        | Feeler feeler -> Feeler { feeler with Gui = { feeler.Gui with Entity = entity }}
+        | Block block -> Block { block with Actor = { block.Actor with Entity = entity }}
+        | Avatar avatar -> Avatar { avatar with Actor = { avatar.Actor with Entity = entity }}
+        | TileMap tileMap -> TileMap { tileMap with Actor = { tileMap.Actor with Entity = entity }}}
 
-    static member optGui =
-        { Get = fun this ->
-            match this with
-            | Button button -> Some button.Gui
-            | Label label -> Some label.Gui
-            | TextBox textBox -> Some textBox.Gui
-            | Toggle toggle -> Some toggle.Gui
-            | Feeler feeler -> Some feeler.Gui
-            | Block _ | Avatar _ | TileMap _ -> None
-          Set = fun optGui this ->
-            let gui = Option.get optGui
-            match this with
-            | Button button -> Button { button with Gui = gui }
-            | Label label -> Label { label with Gui = gui }
-            | TextBox textBox -> TextBox { textBox with Gui = gui }
-            | Toggle toggle -> Toggle { toggle with Gui = gui }
-            | Feeler feeler -> Feeler { feeler with Gui = gui }
-            | Block _ | Avatar _ | TileMap _ -> failwith "Entity is not a gui." }
+let guiSep (gui : Gui) = (gui, gui.Entity)
+let guiCmb (gui : Gui, entity) = { gui with Entity = entity }
 
-    static member gui =
-        { Get = fun this -> Option.get (get this EntityModel.optGui)
-          Set = fun gui this -> set (Some gui) this EntityModel.optGui }
+let entityModelOptGui =
+    { Get = fun this ->
+        match this with
+        | Button button -> Some button.Gui
+        | Label label -> Some label.Gui
+        | TextBox textBox -> Some textBox.Gui
+        | Toggle toggle -> Some toggle.Gui
+        | Feeler feeler -> Some feeler.Gui
+        | Block _ | Avatar _ | TileMap _ -> None
+      Set = fun optGui this ->
+        let gui = Option.get optGui
+        match this with
+        | Button button -> Button { button with Gui = gui }
+        | Label label -> Label { label with Gui = gui }
+        | TextBox textBox -> TextBox { textBox with Gui = gui }
+        | Toggle toggle -> Toggle { toggle with Gui = gui }
+        | Feeler feeler -> Feeler { feeler with Gui = gui }
+        | Block _ | Avatar _ | TileMap _ -> failwith "Entity is not a gui." }
 
-    static member optButton =
-        { Get = fun this -> match this with Button button -> Some button | _ -> None
-          Set = fun optButton this -> Button <| Option.get optButton }
+let entityModelGui =
+    { Get = fun this -> Option.get (get this entityModelOptGui)
+      Set = fun gui this -> set (Some gui) this entityModelOptGui }
 
-    static member button =
-        { Get = fun this -> Option.get (get this EntityModel.optButton)
-          Set = fun button this -> set (Some button) this EntityModel.optButton }
+let buttonSep (button : Button) = (button, button.Gui, button.Gui.Entity)
+let buttonCmb (button : Button, gui, entity) = { button with Gui = { gui with Entity = entity }}
 
-    static member optLabel =
-        { Get = fun this -> match this with Label label -> Some label | _ -> None
-          Set = fun optLabel this -> Label <| Option.get optLabel }
+let entityModelOptButton =
+    { Get = fun this -> match this with Button button -> Some button | _ -> None
+      Set = fun optButton this -> Button <| Option.get optButton }
 
-    static member label =
-        { Get = fun this -> Option.get (get this EntityModel.optLabel)
-          Set = fun label this -> set (Some label) this EntityModel.optLabel }
+let entityModelButton =
+    { Get = fun this -> Option.get (get this entityModelOptButton)
+      Set = fun button this -> set (Some button) this entityModelOptButton }
 
-    static member optTextBox =
-        { Get = fun this -> match this with TextBox textBox -> Some textBox | _ -> None
-          Set = fun optTextBox this -> TextBox <| Option.get optTextBox }
+let labelSep (label : Label) = (label, label.Gui, label.Gui.Entity)
+let labelCmb (label : Label, gui, entity) = { label with Gui = { gui with Entity = entity }}
 
-    static member textBox =
-        { Get = fun this -> Option.get (get this EntityModel.optTextBox)
-          Set = fun textBox this -> set (Some textBox) this EntityModel.optTextBox }
+let entityModelOptLabel =
+    { Get = fun this -> match this with Label label -> Some label | _ -> None
+      Set = fun optLabel this -> Label <| Option.get optLabel }
 
-    static member optToggle =
-        { Get = fun this -> match this with Toggle toggle -> Some toggle | _ -> None
-          Set = fun optToggle this -> Toggle <| Option.get optToggle }
+let entityModelLabel =
+    { Get = fun this -> Option.get (get this entityModelOptLabel)
+      Set = fun label this -> set (Some label) this entityModelOptLabel }
 
-    static member toggle =
-        { Get = fun this -> Option.get (get this EntityModel.optToggle)
-          Set = fun toggle this -> set (Some toggle) this EntityModel.optToggle }
+let textBoxSep (textBox : TextBox) = (textBox, textBox.Gui, textBox.Gui.Entity)
+let textBoxCmb (textBox : TextBox, gui, entity) = { textBox with Gui = { gui with Entity = entity }}
 
-    static member optFeeler =
-        { Get = fun this -> match this with Feeler feeler -> Some feeler | _ -> None
-          Set = fun optFeeler this -> Feeler <| Option.get optFeeler }
+let entityModelOptTextBox =
+    { Get = fun this -> match this with TextBox textBox -> Some textBox | _ -> None
+      Set = fun optTextBox this -> TextBox <| Option.get optTextBox }
 
-    static member feeler =
-        { Get = fun this -> Option.get (get this EntityModel.optFeeler)
-          Set = fun feeler this -> set (Some feeler) this EntityModel.optFeeler }
+let entityModelTextBox =
+    { Get = fun this -> Option.get (get this entityModelOptTextBox)
+      Set = fun textBox this -> set (Some textBox) this entityModelOptTextBox }
 
-    static member optActor =
-        { Get = fun this ->
-            match this with
-            | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> None
-            | Block block -> Some block.Actor
-            | Avatar avatar -> Some avatar.Actor
-            | TileMap tileMap -> Some tileMap.Actor
-          Set = fun optActor this ->
-            let actor = Option.get optActor
-            match this with
-            | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> failwith "EntityModel is not an actor."
-            | Block block -> Block { block with Actor = actor }
-            | Avatar avatar -> Avatar { avatar with Actor = actor }
-            | TileMap tileMap -> TileMap { tileMap with Actor = actor }}
+let toggleSep (toggle : Toggle) = (toggle, toggle.Gui, toggle.Gui.Entity)
+let toggleCmb (toggle : Toggle, gui, entity) = { toggle with Gui = { gui with Entity = entity }}
 
-    static member actor =
-        { Get = fun this -> Option.get (get this EntityModel.optActor)
-          Set = fun actor this -> set (Some actor) this EntityModel.optActor }
+let entityModelOptToggle =
+    { Get = fun this -> match this with Toggle toggle -> Some toggle | _ -> None
+      Set = fun optToggle this -> Toggle <| Option.get optToggle }
 
-    static member optBlock =
-        { Get = fun this -> match this with Block block -> Some block | _ -> None
-          Set = fun optBlock this -> Block <| Option.get optBlock }
+let entityModelToggle =
+    { Get = fun this -> Option.get (get this entityModelOptToggle)
+      Set = fun toggle this -> set (Some toggle) this entityModelOptToggle }
 
-    static member block =
-        { Get = fun this -> Option.get (get this EntityModel.optBlock)
-          Set = fun block this -> set (Some block) this EntityModel.optBlock }
+let feelerSep (feeler : Feeler) = (feeler, feeler.Gui, feeler.Gui.Entity)
+let feelerCmb (feeler : Feeler, gui, entity) = { feeler with Gui = { gui with Entity = entity }}
 
-    static member optAvatar =
-        { Get = fun this -> match this with Avatar avatar -> Some avatar | _ -> None
-          Set = fun optAvatar this -> Avatar <| Option.get optAvatar }
+let entityModelOptFeeler =
+    { Get = fun this -> match this with Feeler feeler -> Some feeler | _ -> None
+      Set = fun optFeeler this -> Feeler <| Option.get optFeeler }
 
-    static member avatar =
-        { Get = fun this -> Option.get (get this EntityModel.optAvatar)
-          Set = fun avatar this -> set (Some avatar) this EntityModel.optAvatar }
+let entityModelFeeler =
+    { Get = fun this -> Option.get (get this entityModelOptFeeler)
+      Set = fun feeler this -> set (Some feeler) this entityModelOptFeeler }
 
-    static member optTileMap =
-        { Get = fun this -> match this with TileMap tileMap -> Some tileMap | _ -> None
-          Set = fun optTileMap this -> TileMap <| Option.get optTileMap }
+let entityModelOptActor =
+    { Get = fun this ->
+        match this with
+        | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> None
+        | Block block -> Some block.Actor
+        | Avatar avatar -> Some avatar.Actor
+        | TileMap tileMap -> Some tileMap.Actor
+      Set = fun optActor this ->
+        let actor = Option.get optActor
+        match this with
+        | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> failwith "EntityModel is not an actor."
+        | Block block -> Block { block with Actor = actor }
+        | Avatar avatar -> Avatar { avatar with Actor = actor }
+        | TileMap tileMap -> TileMap { tileMap with Actor = actor }}
 
-    static member tileMap =
-        { Get = fun this -> Option.get (get this EntityModel.optTileMap)
-          Set = fun tileMap this -> set (Some tileMap) this EntityModel.optTileMap }
+let entityModelActor =
+    { Get = fun this -> Option.get (get this entityModelOptActor)
+      Set = fun actor this -> set (Some actor) this entityModelOptActor }
+
+let blockSep (block : Block) = (block, block.Actor, block.Actor.Entity)
+let blockCmb (block : Block, actor, entity) = { block with Actor = { actor with Entity = entity }}
+
+let entityModelOptBlock =
+    { Get = fun this -> match this with Block block -> Some block | _ -> None
+      Set = fun optBlock this -> Block <| Option.get optBlock }
+
+let entityModelBlock =
+    { Get = fun this -> Option.get (get this entityModelOptBlock)
+      Set = fun block this -> set (Some block) this entityModelOptBlock }
+
+let avatarSep (avatar : Avatar) = (avatar, avatar.Actor, avatar.Actor.Entity)
+let avatarCmb (avatar : Avatar, actor, entity) = { avatar with Actor = { actor with Entity = entity }}
+
+let entityModelOptAvatar =
+    { Get = fun this -> match this with Avatar avatar -> Some avatar | _ -> None
+      Set = fun optAvatar this -> Avatar <| Option.get optAvatar }
+
+let entityModelAvatar =
+    { Get = fun this -> Option.get (get this entityModelOptAvatar)
+      Set = fun avatar this -> set (Some avatar) this entityModelOptAvatar }
+
+let tileMapSep (tileMap : TileMap) = (tileMap, tileMap.Actor, tileMap.Actor.Entity)
+let tileMapCmb (tileMap : TileMap, actor, entity) = { tileMap with Actor = { actor with Entity = entity }}
+
+let entityModelOptTileMap =
+    { Get = fun this -> match this with TileMap tileMap -> Some tileMap | _ -> None
+      Set = fun optTileMap this -> TileMap <| Option.get optTileMap }
+
+let entityModelTileMap =
+    { Get = fun this -> Option.get (get this entityModelOptTileMap)
+      Set = fun tileMap this -> set (Some tileMap) this entityModelOptTileMap }
 
 let makeDefaultEntity () =
     let id = getNuId ()
