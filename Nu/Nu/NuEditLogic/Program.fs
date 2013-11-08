@@ -132,11 +132,12 @@ let [<EntryPoint; STAThread>] main _ =
                             let optPicked = tryPick position entityModels world
                             match optPicked with
                             | None -> (handle message, world)
-                            | Some picked ->
-                                let entity = get picked entityModelEntity
+                            | Some entityModel ->
+                                let entity = get entityModel entityModelEntity
                                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                                 form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
-                                let newDrag = DragPosition (world.MouseState.MousePosition, position, entityModelAddress)
+                                let entityModelTransform = getEntityModelTransform true world.Camera entityModel
+                                let newDrag = DragPosition (entityModelTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityModelAddress)
                                 let world_ = { world with ExtData = newDrag }
                                 (handle message, world_)
                     | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
@@ -171,15 +172,15 @@ let [<EntryPoint; STAThread>] main _ =
             refWorld :=
                 match dragState with
                 | DragNone -> world
-                | DragPosition (prevMousePosition, origPosition, address) ->
+                | DragPosition (pickOffset, origMousePosition, address) ->
                     let entityModel = get world <| worldEntityModel address
                     let transform = getEntityModelTransform true world.Camera entityModel
-                    let transform_ = { transform with Position = transform.Position + (world.MouseState.MousePosition - prevMousePosition) }
+                    let transform_ = { transform with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
                     let entityModel_ = setEntityModelTransform true world.Camera transform_ entityModel
                     let world_ = set entityModel_ world <| worldEntityModel address
                     let world_ = trySetEntityModelTransformToPhysics entityModel_ world_
-                    { world_ with ExtData = DragPosition (world.MouseState.MousePosition, origPosition, address) }
-                | DragRotation (prevMousePosition, origPosition, address) -> world
+                    { world_ with ExtData = DragPosition (pickOffset, origMousePosition, address) }
+                | DragRotation (pickOffset, origPosition, address) -> world
 
             refWorld := Seq.fold (fun world changer -> changer world) !refWorld gWorldChangers
             gWorldChangers.Clear ()
