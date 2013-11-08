@@ -388,6 +388,13 @@ let setActorTransform (transform : EntityModelTransform) entityModel lens =
                            with Rotation = transform.Rotation }
     set actor_ entityModel lens
 
+let setActorTransformRelative (view : Vector2) (transform : EntityModelTransform) entityModel lens =
+    let actor = get entityModel lens
+    let actor_ = {{{ actor with Actor.Position = transform.Position + view }
+                           with Size = transform.Size }
+                           with Rotation = transform.Rotation }
+    set actor_ entityModel lens
+
 let setEntityModelTransform relativeToView camera transform entityModel =
     let view = if relativeToView then inverseView camera else Vector2.Zero
     match entityModel with
@@ -398,7 +405,7 @@ let setEntityModelTransform relativeToView camera transform entityModel =
     | Feeler _ -> setGuiTransform transform entityModel entityModelGui
     | Block _
     | Avatar _
-    | TileMap _ ->  setActorTransform transform entityModel entityModelActor
+    | TileMap _ ->  setActorTransformRelative view transform entityModel entityModelActor
 
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name
