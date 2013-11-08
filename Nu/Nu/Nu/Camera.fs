@@ -6,5 +6,11 @@ type [<StructuralEquality; NoComparison>] Camera =
     { EyePosition : Vector2
       EyeSize : Vector2 }
 
-let inverseView camera =
+/// The inverse view of the camera, with floating-point accuracy (not good for rendering).
+let inverseViewF camera =
     camera.EyePosition - camera.EyeSize * 0.5f
+
+/// The inverse view of the camera, with pixel-level accuracy (good for rendering).
+let inverseView camera =
+    let inverseViewF = inverseViewF camera
+    Vector2 (single <| int inverseViewF.X, single <| int inverseViewF.Y)

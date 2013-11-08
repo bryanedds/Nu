@@ -202,6 +202,7 @@ let applyImpulse integrator applyImpulseMessage =
 let transformBody integrator (bodyTransformInMessage : BodyTransformInMessage) =
     let body = ref Unchecked.defaultof<Dynamics.Body>
     if  integrator.Bodies.TryGetValue (bodyTransformInMessage.PhysicsId, body) then
+        (!body).Awake <- true
         (!body).SetTransform (toPhysicsV2 bodyTransformInMessage.Position, bodyTransformInMessage.Rotation)
     else debug ("Could not apply impulse to non-existent body with PhysicsId = " + str bodyTransformInMessage.PhysicsId + "'.")
 

@@ -218,11 +218,11 @@ let subscriptionSort subscriptions world =
     List.map snd prioritiesAndSubscriptionsSorted
 
 let setBlockTransformToPhysics (block : Block) world =
-    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position; Rotation = block.Actor.Rotation }
+    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position + block.Actor.Size * 0.5f; Rotation = block.Actor.Rotation }
     { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
 
 let setAvatarTransformToPhysics (avatar : Avatar) world =
-    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position; Rotation = avatar.Actor.Rotation }
+    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f; Rotation = avatar.Actor.Rotation }
     { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
 
 let trySetEntityModelTransformToPhysics entityModel world =
@@ -650,7 +650,7 @@ module Test =
             if feeler.IsTouched then
                 let avatar = get world (worldAvatar AvatarAddress)
                 let camera = world.Camera
-                let view = inverseView camera
+                let view = inverseViewF camera
                 let mousePositionWorld = world.MouseState.MousePosition + view
                 let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
                 let impulseVector = (mousePositionWorld - actorCenter) * 5.0f

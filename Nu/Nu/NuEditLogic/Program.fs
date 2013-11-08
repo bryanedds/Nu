@@ -84,6 +84,53 @@ and EntityModelTypeDescriptorProvider () =
     override this.GetTypeDescriptor (_, optSource) =
         EntityModelTypeDescriptor optSource :> ICustomTypeDescriptor
 
+let beginDrag (form : NuEditForm) refWorld _ _ message world =
+    refWorld := world
+    match message.Data with
+    | MouseButtonData (position, _) ->
+        if form.InteractButton.Checked then (message, !refWorld)
+        else
+            let groupModelAddress = Test.GroupModelAddress
+            let groupModel = get !refWorld (worldGroupModel groupModelAddress)
+            let entityModels = Map.toValueList <| (get groupModel groupModelGroup).EntityModels
+            let optPicked = tryPick position entityModels !refWorld
+            match optPicked with
+            | None -> (handle message, !refWorld)
+            | Some entityModel ->
+                let entity = get entityModel entityModelEntity
+                let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
+                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
+                let entityModelTransform = getEntityModelTransform true (!refWorld).Camera entityModel
+                let newDragState = DragPosition (entityModelTransform.Position + (!refWorld).MouseState.MousePosition, (!refWorld).MouseState.MousePosition, entityModelAddress)
+                refWorld := { !refWorld with ExtData = newDragState }
+                (handle message, !refWorld)
+    | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+
+let endDrag (form : NuEditForm) _ _ message world =
+    match message.Data with
+    | MouseButtonData (position, _) ->
+        if form.InteractButton.Checked then (message, world)
+        else
+            match world.ExtData :?> DragState with
+            | DragNone -> (handle message, world)
+            | DragPosition _ -> (handle message, { world with ExtData = DragNone })
+            | DragRotation _ -> (handle message, { world with ExtData = DragNone })
+    | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+
+let updateDrag world =
+    let dragState = world.ExtData :?> DragState
+    match dragState with
+    | DragNone -> world
+    | DragPosition (pickOffset, origMousePosition, address) ->
+        let entityModel = get world <| worldEntityModel address
+        let transform = getEntityModelTransform true world.Camera entityModel
+        let transform_ = { transform with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
+        let entityModel_ = setEntityModelTransform true world.Camera transform_ entityModel
+        let world_ = set entityModel_ world <| worldEntityModel address
+        let world_ = trySetEntityModelTransformToPhysics entityModel_ world_
+        { world_ with ExtData = DragPosition (pickOffset, origMousePosition, address) }
+    | DragRotation (pickOffset, origPosition, address) -> world
+
 let [<EntryPoint; STAThread>] main _ =
 
     initTypeConverters ()
@@ -102,58 +149,14 @@ let [<EntryPoint; STAThread>] main _ =
             refWorld := addScreen Test.ScreenModelAddress screen !refWorld
             let group = { Id = getNuId (); EntityModels = Map.empty }
             refWorld := addGroup Test.GroupModelAddress group !refWorld
-
-            refWorld := subscribe
-                UpMouseLeftAddress
-                []
-                (fun _ _ message world ->
-                    match message.Data with
-                    | MouseButtonData (position, _) ->
-                        if form.InteractButton.Checked then (message, world)
-                        else
-                            match world.ExtData :?> DragState with
-                            | DragNone -> (handle message, world)
-                            | DragPosition _ -> (handle message, { world with ExtData = DragNone })
-                            | DragRotation _ -> (handle message, { world with ExtData = DragNone })
-                    | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
-                !refWorld
-
-            refWorld := subscribe
-                DownMouseLeftAddress
-                []
-                (fun _ _ message world ->
-                    match message.Data with
-                    | MouseButtonData (position, _) ->
-                        if form.InteractButton.Checked then (message, world)
-                        else
-                            let groupModelAddress = Test.GroupModelAddress
-                            let groupModel = get world (worldGroupModel groupModelAddress)
-                            let entityModels = Map.toValueList <| (get groupModel groupModelGroup).EntityModels
-                            let optPicked = tryPick position entityModels world
-                            match optPicked with
-                            | None -> (handle message, world)
-                            | Some entityModel ->
-                                let entity = get entityModel entityModelEntity
-                                let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
-                                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
-                                let entityModelTransform = getEntityModelTransform true world.Camera entityModel
-                                let newDrag = DragPosition (entityModelTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityModelAddress)
-                                let world_ = { world with ExtData = newDrag }
-                                (handle message, world_)
-                    | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
-                !refWorld
-
-            let testTypeSource = { Address = Test.ButtonAddress; RefWorld = refWorld }
-            form.propertyGrid.SelectedObject <- testTypeSource
-
+            refWorld := subscribe DownMouseLeftAddress [] (beginDrag form refWorld) !refWorld
+            refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
             form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
-
             form.saveToolStripMenuItem.Click.Add (fun _ ->
                 let saveFileResult = form.saveFileDialog.ShowDialog form
                 match saveFileResult with
                 | DialogResult.OK -> writeFile form.saveFileDialog.FileName !refWorld
                 | _ -> ())
-
             form.openToolStripMenuItem.Click.Add (fun _ ->
                 let openFileResult = form.openFileDialog.ShowDialog form
                 match openFileResult with
@@ -162,26 +165,11 @@ let [<EntryPoint; STAThread>] main _ =
                     refWorld := changer !refWorld
                     gWorldChangers.Add changer
                 | _ -> ())
-
             form.Show ()
             Right !refWorld)
 
         (fun world ->
-
-            let dragState = world.ExtData :?> DragState
-            refWorld :=
-                match dragState with
-                | DragNone -> world
-                | DragPosition (pickOffset, origMousePosition, address) ->
-                    let entityModel = get world <| worldEntityModel address
-                    let transform = getEntityModelTransform true world.Camera entityModel
-                    let transform_ = { transform with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
-                    let entityModel_ = setEntityModelTransform true world.Camera transform_ entityModel
-                    let world_ = set entityModel_ world <| worldEntityModel address
-                    let world_ = trySetEntityModelTransformToPhysics entityModel_ world_
-                    { world_ with ExtData = DragPosition (pickOffset, origMousePosition, address) }
-                | DragRotation (pickOffset, origPosition, address) -> world
-
+            refWorld := updateDrag world
             refWorld := Seq.fold (fun world changer -> changer world) !refWorld gWorldChangers
             gWorldChangers.Clear ()
             (not form.IsDisposed, !refWorld))
