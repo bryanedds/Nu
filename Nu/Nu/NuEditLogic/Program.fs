@@ -177,6 +177,7 @@ let [<EntryPoint; STAThread>] main _ =
                     let transform_ = { transform with Position = transform.Position + (world.MouseState.MousePosition - prevMousePosition) }
                     let entityModel_ = setEntityModelTransform true world.Camera transform_ entityModel
                     let world_ = set entityModel_ world <| worldEntityModel address
+                    let world_ = trySetEntityModelTransformToPhysics entityModel_ world_
                     { world_ with ExtData = DragPosition (world.MouseState.MousePosition, origPosition, address) }
                 | DragRotation (prevMousePosition, origPosition, address) -> world
 

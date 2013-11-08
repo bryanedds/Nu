@@ -405,7 +405,7 @@ let setEntityModelTransform relativeToView camera transform entityModel =
     | Feeler _ -> setGuiTransform transform entityModel entityModelGui
     | Block _
     | Avatar _
-    | TileMap _ ->  setActorTransformRelative view transform entityModel entityModelActor
+    | TileMap _ -> setActorTransformRelative view transform entityModel entityModelActor
 
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name

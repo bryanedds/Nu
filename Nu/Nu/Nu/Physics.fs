@@ -68,6 +68,11 @@ type [<StructuralEquality; NoComparison>] BodyCreateMessage =
 type [<StructuralEquality; NoComparison>] BodyDestroyMessage =
     { PhysicsId : Id }
 
+type [<StructuralEquality; NoComparison>] BodyTransformInMessage =
+    { PhysicsId : Id
+      Position : Vector2
+      Rotation : single }
+
 type [<StructuralEquality; NoComparison>] ApplyImpulseMessage =
     { PhysicsId : Id
       Impulse : Vector2 }
@@ -78,7 +83,7 @@ type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
       Normal : Vector2
       Speed : single }
 
-type [<StructuralEquality; NoComparison>] BodyTransformMessage =
+type [<StructuralEquality; NoComparison>] BodyTransformOutMessage =
     { EntityAddress : Address
       Position : Vector2
       Rotation : single }
@@ -88,12 +93,13 @@ type BodyDictionary = Dictionary<Id, Dynamics.Body>
 type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | BodyCreateMessage of BodyCreateMessage
     | BodyDestroyMessage of BodyDestroyMessage
+    | BodyTransformInMessage of BodyTransformInMessage
     | ApplyImpulseMessage of ApplyImpulseMessage
     | SetGravityMessage of Vector2
 
 type  [<StructuralEquality; NoComparison>] IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage
-    | BodyTransformMessage of BodyTransformMessage
+    | BodyTransformOutMessage of BodyTransformOutMessage
 
 type [<ReferenceEquality>] Integrator =
     private
@@ -193,10 +199,17 @@ let applyImpulse integrator applyImpulseMessage =
         (!body).ApplyLinearImpulse (toPhysicsV2 applyImpulseMessage.Impulse)
     else debug ("Could not apply impulse to non-existent body with PhysicsId = " + str applyImpulseMessage.PhysicsId + "'.")
 
+let transformBody integrator (bodyTransformInMessage : BodyTransformInMessage) =
+    let body = ref Unchecked.defaultof<Dynamics.Body>
+    if  integrator.Bodies.TryGetValue (bodyTransformInMessage.PhysicsId, body) then
+        (!body).SetTransform (toPhysicsV2 bodyTransformInMessage.Position, bodyTransformInMessage.Rotation)
+    else debug ("Could not apply impulse to non-existent body with PhysicsId = " + str bodyTransformInMessage.PhysicsId + "'.")
+
 let handlePhysicsMessage integrator physicsMessage =
     match physicsMessage with
     | BodyCreateMessage bodyCreateMessage -> createBody integrator bodyCreateMessage
     | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
+    | BodyTransformInMessage bodyTransformInMessage -> transformBody integrator bodyTransformInMessage
     | ApplyImpulseMessage applyImpulseMessage -> applyImpulse integrator applyImpulseMessage
     | SetGravityMessage gravity -> integrator.PhysicsContext.Gravity <- Framework.Vector2 (gravity.X, gravity.Y)
     
@@ -207,12 +220,12 @@ let handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
 let createTransformMessages integrator =
     for body in integrator.Bodies.Values do
         if body.Awake then
-            let bodyTransformMessage =
-                BodyTransformMessage
+            let bodyTransformOutMessage =
+                BodyTransformOutMessage
                     { EntityAddress = body.UserData :?> Address
                       Position = toPixelV2 body.Position
                       Rotation = body.Rotation }
-            integrator.IntegrationMessages.Add bodyTransformMessage
+            integrator.IntegrationMessages.Add bodyTransformOutMessage
 
 let integrate (physicsMessages : PhysicsMessage rQueue) integrator : IntegrationMessage list =
     handlePhysicsMessages integrator physicsMessages

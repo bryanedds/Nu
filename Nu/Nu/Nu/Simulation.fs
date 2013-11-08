@@ -217,6 +217,25 @@ let subscriptionSort subscriptions world =
     let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
     List.map snd prioritiesAndSubscriptionsSorted
 
+let setBlockTransformToPhysics (block : Block) world =
+    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position; Rotation = block.Actor.Rotation }
+    { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
+
+let setAvatarTransformToPhysics (avatar : Avatar) world =
+    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position; Rotation = avatar.Actor.Rotation }
+    { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
+
+let trySetEntityModelTransformToPhysics entityModel world =
+    match entityModel with
+    | Button _
+    | Label _
+    | TextBox _
+    | Toggle _
+    | Feeler _ -> world
+    | Block block -> setBlockTransformToPhysics block world
+    | Avatar avatar -> setAvatarTransformToPhysics avatar world
+    | TileMap tileMap -> world // TODO
+
 /// Mark a message as handled.
 let handle message =
     { Handled = true; Data = message.Data }
@@ -796,11 +815,11 @@ let render world =
 
 let handleIntegrationMessage world integrationMessage =
     match integrationMessage with
-    | BodyTransformMessage bodyTransformMessage ->
-        let actor = get world (worldActor bodyTransformMessage.EntityAddress)
-        let actor2 = {{ actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f }
-                              with Rotation = bodyTransformMessage.Rotation }
-        set actor2 world (worldActor bodyTransformMessage.EntityAddress)
+    | BodyTransformOutMessage bodyTransformOutMessage ->
+        let actor = get world (worldActor bodyTransformOutMessage.EntityAddress)
+        let actor2 = {{ actor with Position = bodyTransformOutMessage.Position - actor.Size * 0.5f }
+                              with Rotation = bodyTransformOutMessage.Rotation }
+        set actor2 world (worldActor bodyTransformOutMessage.EntityAddress)
     | BodyCollisionMessage bodyCollisionMessage ->
         let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
         let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
