@@ -23,116 +23,116 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Game =
         
 type [<StructuralEquality; NoComparison>] GameModel =
     | Game of Game
+
+let gameModelGame =
+    { Get = fun this ->
+        match this with
+        | Game game -> game
+      Set = fun game this ->
+        match this with
+        | Game _ -> Game game }
        
-    static member private optChildModelFinder addressHead this =
-        let game = get this GameModel.game
-        Map.tryFind addressHead game.ScreenModels
-    
-    static member private childModelAdder addressHead this (child : ScreenModel) =
-        let game = get this GameModel.game
-        let game2 = { game with ScreenModels = Map.add addressHead child game.ScreenModels }
-        set game2 this GameModel.game
-    
-    static member private childModelRemover addressHead this =
-        let game = get this GameModel.game
-        let game2 = { game with ScreenModels = Map.remove addressHead game.ScreenModels }
-        set game2 this GameModel.game
+let private gameModelOptChildModelFinder addressHead this =
+    let game = get this gameModelGame
+    Map.tryFind addressHead game.ScreenModels
 
-    static member private getChildWithLens this address lens =
-        get (getChild GameModel.optChildModelFinder this address) lens
+let private gameModelChildModelAdder addressHead this (child : ScreenModel) =
+    let game = get this gameModelGame
+    let game2 = { game with ScreenModels = Map.add addressHead child game.ScreenModels }
+    set game2 this gameModelGame
 
-    static member private setChildWithLens child this address lens =
-        let screen = getChild GameModel.optChildModelFinder this address
-        let screen2 = set child screen lens
-        setChild GameModel.childModelAdder GameModel.childModelRemover this address screen2
+let private gameModelChildModelRemover addressHead this =
+    let game = get this gameModelGame
+    let game2 = { game with ScreenModels = Map.remove addressHead game.ScreenModels }
+    set game2 this gameModelGame
 
-    static member private getOptChildWithLens this address lens =
-        let optChild = getOptChild GameModel.optChildModelFinder this address
-        match optChild with
-        | None -> None
-        | Some child -> Some (get child lens)
+let private gameModelGetChildWithLens this address lens =
+    get (getChild gameModelOptChildModelFinder this address) lens
 
-    static member private setOptChildWithLens optChild this address lens =
-        match optChild with
-        | None -> setOptChild GameModel.childModelAdder GameModel.childModelRemover this address None
-        | Some child ->
-            let optChildModel = getOptChild GameModel.optChildModelFinder this address
-            match optChildModel with
-            | None -> failwith "Cannot change a non-existent screen."
-            | Some childModel ->
-                let childModel2 = set child childModel lens
-                setChild GameModel.childModelAdder GameModel.childModelRemover this address childModel2
+let private gameModelSetChildWithLens child this address lens =
+    let screen = getChild gameModelOptChildModelFinder this address
+    let screen2 = set child screen lens
+    setChild gameModelChildModelAdder gameModelChildModelRemover this address screen2
 
-    static member game =
-        { Get = fun this ->
-            match this with
-            | Game game -> game
-          Set = fun game this ->
-            match this with
-            | Game _ -> Game game }
+let private gameModelGetOptChildWithLens this address lens =
+    let optChild = getOptChild gameModelOptChildModelFinder this address
+    match optChild with
+    | None -> None
+    | Some child -> Some (get child lens)
 
-    static member screenModels =
-        { Get = fun this -> (get this GameModel.game).ScreenModels
-          Set = fun screenModels this -> set { (get this GameModel.game) with ScreenModels = screenModels } this GameModel.game }
-    
-    static member optSelectedScreenModelAddress =
-        { Get = fun this -> (get this GameModel.game).OptSelectedScreenModelAddress
-          Set = fun optSelectedScreenModelAddress this -> set { (get this GameModel.game) with OptSelectedScreenModelAddress = optSelectedScreenModelAddress } this GameModel.game}
+let private gameModelSetOptChildWithLens optChild this address lens =
+    match optChild with
+    | None -> setOptChild gameModelChildModelAdder gameModelChildModelRemover this address None
+    | Some child ->
+        let optChildModel = getOptChild gameModelOptChildModelFinder this address
+        match optChildModel with
+        | None -> failwith "Cannot change a non-existent screen."
+        | Some childModel ->
+            let childModel2 = set child childModel lens
+            setChild gameModelChildModelAdder gameModelChildModelRemover this address childModel2
 
-    static member screenModel address =
-        { Get = fun this -> Option.get <| GameModel.optChildModelFinder (List.head address) this
-          Set = fun screen this -> GameModel.childModelAdder (List.head address) this screen }
-    
-    static member optScreenModel address =
-        { Get = fun this -> GameModel.optChildModelFinder (List.head address) this
-          Set = fun optScreen this -> match optScreen with None -> GameModel.childModelRemover (List.head address) this | Some entity -> GameModel.childModelAdder (List.head address) this entity }
+let gameModelScreenModels =
+    { Get = fun this -> (get this gameModelGame).ScreenModels
+      Set = fun screenModels this -> set { (get this gameModelGame) with ScreenModels = screenModels } this gameModelGame }
 
-    static member screen address =
-        { Get = fun this -> GameModel.getChildWithLens this address ScreenModel.screen
-          Set = fun screen this -> GameModel.setChildWithLens screen this address ScreenModel.screen }
+let gameModelOptSelectedScreenModelAddress =
+    { Get = fun this -> (get this gameModelGame).OptSelectedScreenModelAddress
+      Set = fun optSelectedScreenModelAddress this -> set { (get this gameModelGame) with OptSelectedScreenModelAddress = optSelectedScreenModelAddress } this gameModelGame}
 
-    static member optScreen address =
-        { Get = fun this -> GameModel.getOptChildWithLens this address ScreenModel.screen
-          Set = fun optScreen this -> GameModel.setOptChildWithLens optScreen this address ScreenModel.screen }
-    
-    static member groupModel address = GameModel.screenModel [List.head address] >>| ScreenModel.groupModel (List.tail address)
-    static member optGroupModel address = GameModel.screenModel [List.head address] >>| ScreenModel.optGroupModel (List.tail address)
-    
-    static member group address = GameModel.screenModel [List.head address] >>| ScreenModel.group (List.tail address)
-    static member optGroup address = GameModel.screenModel [List.head address] >>| ScreenModel.optGroup (List.tail address)
-    
-    static member entityModel address = GameModel.screenModel [List.head address] >>| ScreenModel.entityModel (List.tail address)
-    static member optEntityModel address = GameModel.screenModel [List.head address] >>| ScreenModel.optEntityModel (List.tail address)
-    
-    static member entity address = GameModel.screenModel [List.head address] >>| ScreenModel.entity (List.tail address)
-    static member optEntity address = GameModel.screenModel [List.head address] >>| ScreenModel.optEntity (List.tail address)
+let gameModelScreenModel address =
+    { Get = fun this -> Option.get <| gameModelOptChildModelFinder (List.head address) this
+      Set = fun screen this -> gameModelChildModelAdder (List.head address) this screen }
 
-    static member gui address = GameModel.screenModel [List.head address] >>| ScreenModel.gui (List.tail address)
-    static member optGui address = GameModel.screenModel [List.head address] >>| ScreenModel.optGui (List.tail address)
+let gameModelOptScreenModel address =
+    { Get = fun this -> gameModelOptChildModelFinder (List.head address) this
+      Set = fun optScreen this -> match optScreen with None -> gameModelChildModelRemover (List.head address) this | Some entity -> gameModelChildModelAdder (List.head address) this entity }
 
-    static member button address = GameModel.screenModel [List.head address] >>| ScreenModel.button (List.tail address)
-    static member optButton address = GameModel.screenModel [List.head address] >>| ScreenModel.optButton (List.tail address)
+let gameModelScreen address =
+    { Get = fun this -> gameModelGetChildWithLens this address screenModelscreen
+      Set = fun screen this -> gameModelSetChildWithLens screen this address screenModelscreen }
 
-    static member label address = GameModel.screenModel [List.head address] >>| ScreenModel.label (List.tail address)
-    static member optLabel address = GameModel.screenModel [List.head address] >>| ScreenModel.optLabel (List.tail address)
+let gameModelOptScreen address =
+    { Get = fun this -> gameModelGetOptChildWithLens this address screenModelscreen
+      Set = fun optScreen this -> gameModelSetOptChildWithLens optScreen this address screenModelscreen }
 
-    static member textBox address = GameModel.screenModel [List.head address] >>| ScreenModel.textBox (List.tail address)
-    static member optTextBox address = GameModel.screenModel [List.head address] >>| ScreenModel.optTextBox (List.tail address)
+let gameModelGroupModel address = gameModelScreenModel [List.head address] >>| screenModelGroupModel (List.tail address)
+let gameModelOptGroupModel address = gameModelScreenModel [List.head address] >>| screenModelOptGroupModel (List.tail address)
 
-    static member toggle address = GameModel.screenModel [List.head address] >>| ScreenModel.toggle (List.tail address)
-    static member optToggle address = GameModel.screenModel [List.head address] >>| ScreenModel.optToggle (List.tail address)
+let gameModelGroup address = gameModelScreenModel [List.head address] >>| screenModelGroup (List.tail address)
+let gameModelOptGroup address = gameModelScreenModel [List.head address] >>| screenModelOptGroup (List.tail address)
 
-    static member feeler address = GameModel.screenModel [List.head address] >>| ScreenModel.feeler (List.tail address)
-    static member optFeeler address = GameModel.screenModel [List.head address] >>| ScreenModel.optFeeler (List.tail address)
+let gameModelEntityModel address = gameModelScreenModel [List.head address] >>| screenModelEntityModel (List.tail address)
+let gameModelOptEntityModel address = gameModelScreenModel [List.head address] >>| screenModelOptEntityModel (List.tail address)
 
-    static member actor address = GameModel.screenModel [List.head address] >>| ScreenModel.actor (List.tail address)
-    static member optActor address = GameModel.screenModel [List.head address] >>| ScreenModel.optActor (List.tail address)
+let gameModelEntity address = gameModelScreenModel [List.head address] >>| screenModelEntity (List.tail address)
+let gameModelOptEntity address = gameModelScreenModel [List.head address] >>| screenModelOptEntity (List.tail address)
 
-    static member block address = GameModel.screenModel [List.head address] >>| ScreenModel.block (List.tail address)
-    static member optBlock address = GameModel.screenModel [List.head address] >>| ScreenModel.optBlock (List.tail address)
+let gameModelGui address = gameModelScreenModel [List.head address] >>| screenModelGui (List.tail address)
+let gameModelOptGui address = gameModelScreenModel [List.head address] >>| screenModelOptGui (List.tail address)
 
-    static member avatar address = GameModel.screenModel [List.head address] >>| ScreenModel.avatar (List.tail address)
-    static member optAvatar address = GameModel.screenModel [List.head address] >>| ScreenModel.optAvatar (List.tail address)
+let gameModelButton address = gameModelScreenModel [List.head address] >>| screenModelButton (List.tail address)
+let gameModelOptButton address = gameModelScreenModel [List.head address] >>| screenModelOptButton (List.tail address)
 
-    static member tileMap address = GameModel.screenModel [List.head address] >>| ScreenModel.tileMap (List.tail address)
-    static member optTileMap address = GameModel.screenModel [List.head address] >>| ScreenModel.optTileMap (List.tail address)
+let gameModelLabel address = gameModelScreenModel [List.head address] >>| screenModelLabel (List.tail address)
+let gameModelOptLabel address = gameModelScreenModel [List.head address] >>| screenModelOptLabel (List.tail address)
+
+let gameModelTextBox address = gameModelScreenModel [List.head address] >>| screenModeltextBox (List.tail address)
+let gameModelOptTextBox address = gameModelScreenModel [List.head address] >>| screenModelOptTextBox (List.tail address)
+
+let gameModelToggle address = gameModelScreenModel [List.head address] >>| screenModelToggle (List.tail address)
+let gameModelOptToggle address = gameModelScreenModel [List.head address] >>| screenModelOptToggle (List.tail address)
+
+let gameModelFeeler address = gameModelScreenModel [List.head address] >>| screenModelFeeler (List.tail address)
+let gameModelOptFeeler address = gameModelScreenModel [List.head address] >>| screenModelOptFeeler (List.tail address)
+
+let gameModelActor address = gameModelScreenModel [List.head address] >>| screenModelActor (List.tail address)
+let gameModelOptActor address = gameModelScreenModel [List.head address] >>| screenModelOptActor (List.tail address)
+
+let gameModelBlock address = gameModelScreenModel [List.head address] >>| screenModelBlock (List.tail address)
+let gameModelOptBlock address = gameModelScreenModel [List.head address] >>| screenModelOptBlock (List.tail address)
+
+let gameModelAvatar address = gameModelScreenModel [List.head address] >>| screenModelAvatar (List.tail address)
+let gameModelOptAvatar address = gameModelScreenModel [List.head address] >>| screenModelOptAvatar (List.tail address)
+
+let gameModelTileMap address = gameModelScreenModel [List.head address] >>| screenModelTileMap (List.tail address)
+let gameModelOptTileMap address = gameModelScreenModel [List.head address] >>| screenModelOptTileMap (List.tail address)

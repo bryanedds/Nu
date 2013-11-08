@@ -10,7 +10,7 @@
       <Density>10</Density>
       <Sprite>Image7;Default;AssetGraph.xml</Sprite>
       <Entity>Nu.Entity+Entity</Entity>
-      <Position>729.0912;420.9425</Position>
+      <Position>487.8917;402.0807</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
       <Rotation>0</Rotation>
@@ -92,7 +92,7 @@
       <ModelType>Nu.Entity+EntityModel+TextBox</ModelType>
       <Gui>Nu.Entity+Gui</Gui>
       <BoxSprite>Image3;Default;AssetGraph.xml</BoxSprite>
-      <Text>Hi!</Text>
+      <Text>:P</Text>
       <TextFont>Font;Default;AssetGraph.xml</TextFont>
       <TextOffset>4;4</TextOffset>
       <TextColor>1;1;1;1</TextColor>

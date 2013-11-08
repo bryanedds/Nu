@@ -42,8 +42,8 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
 
     override this.GetValue source =
         let entityModelTds = source :?> EntityModelTypeDescriptorSource
-        let entityModelLens = World.entityModel entityModelTds.Address
-        let entityModel = get entityModelTds.RefWorld.Value entityModelLens
+        let entityModelLens = worldEntityModel entityModelTds.Address
+        let entityModel = get !entityModelTds.RefWorld entityModelLens
         getEntityModelPropertyValue property entityModel
 
     override this.SetValue (source, value) =
@@ -51,7 +51,7 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
         let changer = (fun world -> setEntityModelPropertyValue entityModelTds.Address property value world)
         // NOTE: even though this ref world will eventually get blown away, it must still be
         // updated here so that the change is reflected immediately by the property grid.
-        entityModelTds.RefWorld := changer entityModelTds.RefWorld.Value
+        entityModelTds.RefWorld := changer !entityModelTds.RefWorld
         gWorldChangers.Add changer
 
     // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
@@ -66,8 +66,8 @@ and EntityModelTypeDescriptor (optSource : obj) =
         let propertyDescriptors =
             match optSource with
             | :? EntityModelTypeDescriptorSource as source ->
-                let entityModelLens = World.entityModel source.Address
-                let entityModel = get source.RefWorld.Value entityModelLens
+                let entityModelLens = worldEntityModel source.Address
+                let entityModel = get !source.RefWorld entityModelLens
                 let entityModelTypes = getEntityModelTypes entityModel
                 // NOTE: this line could be simplified by a List.concatBy function.
                 List.fold (fun propertyDescriptors aType -> EntityModelPropertyDescriptor.GetPropertyDescriptors aType @ propertyDescriptors) [] entityModelTypes
@@ -90,11 +90,11 @@ let [<EntryPoint; STAThread>] main _ =
     run4
 
         (fun sdlDeps ->
-            refWorld := createEmptyWorld sdlDeps
+            refWorld := createEmptyWorld sdlDeps ()
             let screen = { Id = getNuId (); GroupModels = Map.empty }
-            refWorld := addScreen Test.ScreenModelAddress screen refWorld.Value
+            refWorld := addScreen Test.ScreenModelAddress screen !refWorld
             let group = { Id = getNuId (); EntityModels = Map.empty }
-            refWorld := addGroup Test.GroupModelAddress group refWorld.Value
+            refWorld := addGroup Test.GroupModelAddress group !refWorld
 
             refWorld := subscribe
                 DownMouseLeftAddress
@@ -105,18 +105,18 @@ let [<EntryPoint; STAThread>] main _ =
                         if form.InteractButton.Checked then (message, world)
                         else
                             let groupModelAddress = Test.GroupModelAddress
-                            let groupModel = get world (World.groupModel groupModelAddress)
-                            let entityModels = Map.toValueList <| (get groupModel GroupModel.group).EntityModels
+                            let groupModel = get world (worldGroupModel groupModelAddress)
+                            let entityModels = Map.toValueList <| (get groupModel groupModelGroup).EntityModels
                             let optPicked = tryPick position entityModels world
                             match optPicked with
                             | None -> (handle message, world)
                             | Some picked ->
-                                let entity = get picked EntityModel.entity
+                                let entity = get picked entityModelEntity
                                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                                 form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
                                 (handle message, world)
                     | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
-                refWorld.Value
+                !refWorld
 
             let testTypeSource = { Address = Test.ButtonAddress; RefWorld = refWorld }
             form.propertyGrid.SelectedObject <- testTypeSource
@@ -126,7 +126,7 @@ let [<EntryPoint; STAThread>] main _ =
             form.saveToolStripMenuItem.Click.Add (fun _ ->
                 let saveFileResult = form.saveFileDialog.ShowDialog form
                 match saveFileResult with
-                | DialogResult.OK -> writeFile form.saveFileDialog.FileName refWorld.Value
+                | DialogResult.OK -> writeFile form.saveFileDialog.FileName !refWorld
                 | _ -> ())
 
             form.openToolStripMenuItem.Click.Add (fun _ ->
@@ -134,17 +134,17 @@ let [<EntryPoint; STAThread>] main _ =
                 match openFileResult with
                 | DialogResult.OK ->
                     let changer = readFile form.openFileDialog.FileName
-                    refWorld := changer refWorld.Value
+                    refWorld := changer !refWorld
                     gWorldChangers.Add changer
                 | _ -> ())
 
             form.Show ()
-            Right refWorld.Value)
+            Right !refWorld)
 
         (fun world ->
             refWorld := Seq.fold (fun world changer -> changer world) world gWorldChangers
             gWorldChangers.Clear ()
-            (not form.IsDisposed, refWorld.Value))
+            (not form.IsDisposed, !refWorld))
 
         (fun world ->
             form.displayPanel.Invalidate ()
