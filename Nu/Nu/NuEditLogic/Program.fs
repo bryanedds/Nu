@@ -11,6 +11,7 @@ open System.ComponentModel
 open System.Xml
 open System.Xml.Serialization
 open Nu.Core
+open Nu.Math
 open Nu.AssetMetadata
 open Nu.Sdl
 open Nu.Entity
@@ -19,6 +20,9 @@ open Nu.Screen
 open Nu.Game
 open Nu.Simulation
 open NuEditLogic.Entity
+
+let DefaultPositionSnap = 8
+let DefaultRotationSnap = 5
 
 // NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
 // style variable (but perhaps I've merely overlooked how to parameterize this?)
@@ -84,6 +88,13 @@ and EntityModelTypeDescriptorProvider () =
     override this.GetTypeDescriptor (_, optSource) =
         EntityModelTypeDescriptor optSource :> ICustomTypeDescriptor
 
+let getSnaps (form : NuEditForm)=
+    let positionSnap = ref 0
+    let positionSnap_ = if Int32.TryParse (form.positionSnapTextBox.Text, positionSnap) then !positionSnap else 0
+    let rotationSnap = ref 0
+    let rotationSnap_ = if Int32.TryParse (form.rotationSnapTextBox.Text, rotationSnap) then !rotationSnap else 0
+    (positionSnap_, rotationSnap_)
+
 let beginDrag (form : NuEditForm) refWorld _ _ message world =
     refWorld := world
     match message.Data with
@@ -117,7 +128,7 @@ let endDrag (form : NuEditForm) _ _ message world =
             | DragRotation _ -> (handle message, { world with ExtData = DragNone })
     | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-let updateDrag world =
+let updateDrag (form : NuEditForm) world =
     let dragState = world.ExtData :?> DragState
     match dragState with
     | DragNone -> world
@@ -125,7 +136,8 @@ let updateDrag world =
         let entityModel = get world <| worldEntityModel address
         let transform = getEntityModelTransform true world.Camera entityModel
         let transform_ = { transform with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
-        let entityModel_ = setEntityModelTransform true world.Camera transform_ entityModel
+        let (positionSnap, rotationSnap) = getSnaps form
+        let entityModel_ = setEntityModelTransform true world.Camera positionSnap rotationSnap transform_ entityModel
         let world_ = set entityModel_ world <| worldEntityModel address
         let world_ = trySetEntityModelTransformToPhysics entityModel_ world_
         { world_ with ExtData = DragPosition (pickOffset, origMousePosition, address) }
@@ -136,6 +148,8 @@ let [<EntryPoint; STAThread>] main _ =
     initTypeConverters ()
     use form = new NuEditForm ()
     form.displayPanel.MaximumSize <- Drawing.Size (900, 600)
+    form.positionSnapTextBox.Text <- str DefaultPositionSnap
+    form.rotationSnapTextBox.Text <- str DefaultRotationSnap
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024
@@ -174,7 +188,7 @@ let [<EntryPoint; STAThread>] main _ =
             Right !refWorld)
 
         (fun world ->
-            refWorld := updateDrag world
+            refWorld := updateDrag form world
             refWorld := Seq.fold (fun world changer -> changer world) !refWorld gWorldChangers
             gWorldChangers.Clear ()
             (not form.IsDisposed, !refWorld))

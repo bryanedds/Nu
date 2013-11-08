@@ -10,17 +10,13 @@ open OpenTK
 open TiledSharp
 open Nu.Core
 open Nu.Constants
+open Nu.Math
 open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
 open Nu.AssetMetadata
 open Nu.DomainModel
 open Nu.Camera
-
-type [<StructuralEquality; NoComparison>] EntityModelTransform =
-    { Position : Vector2
-      Size : Vector2
-      Rotation : single }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
     { Id : Id
@@ -338,17 +334,17 @@ let makeDefaultEntityModel typeName =
               TileMapMetadata = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
 
 let getGuiTransform (gui : Gui) =
-    { EntityModelTransform.Position = gui.Position
+    { Transform.Position = gui.Position
       Size = gui.Size
       Rotation = 0.0f }
 
 let getActorTransform (actor : Actor) =
-    { EntityModelTransform.Position = actor.Position
+    { Transform.Position = actor.Position
       Size = actor.Size
       Rotation = actor.Rotation }
 
 let getActorTransformRelative (view : Vector2) (actor : Actor) =
-    { EntityModelTransform.Position = actor.Position - view
+    { Transform.Position = actor.Position - view
       Size = actor.Size
       Rotation = actor.Rotation }
 
@@ -375,37 +371,36 @@ let getEntityModelTransform relativeToView camera entityModel =
     | Avatar avatar -> getActorTransformRelative view avatar.Actor
     | TileMap tileMap -> getActorTransformRelative view tileMap.Actor
 
-let setGuiTransform (transform : EntityModelTransform) entityModel lens =
+let setGuiTransform positionSnap rotationSnap (transform : Transform) entityModel lens =
+    let transform_ = snapTransform positionSnap rotationSnap transform
     let gui = get entityModel lens
-    let gui_ = {{ gui with Gui.Position = transform.Position }
-                      with Size = transform.Size }
+    let gui_ = {{ gui with Gui.Position = transform_.Position }
+                      with Size = transform_.Size }
     set gui_ entityModel lens
 
-let setActorTransform (transform : EntityModelTransform) entityModel lens =
+let setActorTransform positionSnap rotationSnap (transform : Transform) entityModel lens =
+    let transform_ = snapTransform positionSnap rotationSnap transform
     let actor = get entityModel lens
-    let actor_ = {{{ actor with Actor.Position = transform.Position }
-                           with Size = transform.Size }
-                           with Rotation = transform.Rotation }
+    let actor_ = {{{ actor with Actor.Position = transform_.Position }
+                           with Size = transform_.Size }
+                           with Rotation = transform_.Rotation }
     set actor_ entityModel lens
 
-let setActorTransformRelative (view : Vector2) (transform : EntityModelTransform) entityModel lens =
-    let actor = get entityModel lens
-    let actor_ = {{{ actor with Actor.Position = transform.Position + view }
-                           with Size = transform.Size }
-                           with Rotation = transform.Rotation }
-    set actor_ entityModel lens
+let setActorTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entityModel lens =
+    let transform_ = { transform with Position = transform.Position + view }
+    setActorTransform positionSnap rotationSnap transform_ entityModel lens
 
-let setEntityModelTransform relativeToView camera transform entityModel =
+let setEntityModelTransform relativeToView camera positionSnap rotationSnap transform entityModel =
     let view = if relativeToView then inverseViewF camera else Vector2.Zero
     match entityModel with
     | Button _
     | Label _
     | TextBox _
     | Toggle _
-    | Feeler _ -> setGuiTransform transform entityModel entityModelGui
+    | Feeler _ -> setGuiTransform positionSnap rotationSnap transform entityModel entityModelGui
     | Block _
     | Avatar _
-    | TileMap _ -> setActorTransformRelative view transform entityModel entityModelActor
+    | TileMap _ -> setActorTransformRelative view positionSnap rotationSnap transform entityModel entityModelActor
 
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name
