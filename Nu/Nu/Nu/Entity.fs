@@ -364,7 +364,7 @@ let getPickingPriority entityModel =
     | TileMap tileMap -> tileMap.Actor.Depth
 
 let getEntityModelTransform relativeToView camera entityModel =
-    let view = if relativeToView then inverseView camera else Vector2.Zero
+    let view = if relativeToView then inverseViewF camera else Vector2.Zero
     match entityModel with
     | Button button -> getGuiTransform button.Gui
     | Label label -> getGuiTransform label.Gui
@@ -396,7 +396,7 @@ let setActorTransformRelative (view : Vector2) (transform : EntityModelTransform
     set actor_ entityModel lens
 
 let setEntityModelTransform relativeToView camera transform entityModel =
-    let view = if relativeToView then inverseView camera else Vector2.Zero
+    let view = if relativeToView then inverseViewF camera else Vector2.Zero
     match entityModel with
     | Button _
     | Label _
