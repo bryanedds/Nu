@@ -218,11 +218,11 @@ let subscriptionSort subscriptions world =
     List.map snd prioritiesAndSubscriptionsSorted
 
 let setBlockTransformToPhysics (block : Block) world =
-    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position + block.Actor.Size * 0.5f; Rotation = block.Actor.Rotation }
+    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position + block.Actor.Size * 0.5f; Rotation = block.Actor.Rotation } // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
     { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
 
 let setAvatarTransformToPhysics (avatar : Avatar) world =
-    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f; Rotation = avatar.Actor.Rotation }
+    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f; Rotation = avatar.Actor.Rotation }// TODO: see if this center-offsetting can be encapsulated withing the Physics module!
     { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
 
 let trySetEntityModelTransformToPhysics entityModel world =
@@ -817,7 +817,7 @@ let handleIntegrationMessage world integrationMessage =
     match integrationMessage with
     | BodyTransformOutMessage bodyTransformOutMessage ->
         let actor = get world (worldActor bodyTransformOutMessage.EntityAddress)
-        let actor2 = {{ actor with Position = bodyTransformOutMessage.Position - actor.Size * 0.5f }
+        let actor2 = {{ actor with Position = bodyTransformOutMessage.Position - actor.Size * 0.5f } // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
                               with Rotation = bodyTransformOutMessage.Rotation }
         set actor2 world (worldActor bodyTransformOutMessage.EntityAddress)
     | BodyCollisionMessage bodyCollisionMessage ->
