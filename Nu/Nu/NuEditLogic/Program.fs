@@ -144,19 +144,23 @@ let [<EntryPoint; STAThread>] main _ =
 
         (fun sdlDeps ->
 
-            refWorld := createEmptyWorld sdlDeps DragNone
             let screen = { Id = getNuId (); GroupModels = Map.empty }
-            refWorld := addScreen Test.ScreenModelAddress screen !refWorld
             let group = { Id = getNuId (); EntityModels = Map.empty }
+            refWorld := createEmptyWorld sdlDeps DragNone
+            refWorld := addScreen Test.ScreenModelAddress screen !refWorld
             refWorld := addGroup Test.GroupModelAddress group !refWorld
             refWorld := subscribe DownMouseLeftAddress [] (beginDrag form refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
-            form.exitToolStripMenuItem.Click.Add (fun _ -> form.Close ())
+
+            form.exitToolStripMenuItem.Click.Add (fun _ ->
+                form.Close ())
+
             form.saveToolStripMenuItem.Click.Add (fun _ ->
                 let saveFileResult = form.saveFileDialog.ShowDialog form
                 match saveFileResult with
                 | DialogResult.OK -> writeFile form.saveFileDialog.FileName !refWorld
                 | _ -> ())
+
             form.openToolStripMenuItem.Click.Add (fun _ ->
                 let openFileResult = form.openFileDialog.ShowDialog form
                 match openFileResult with
@@ -165,6 +169,7 @@ let [<EntryPoint; STAThread>] main _ =
                     refWorld := changer !refWorld
                     gWorldChangers.Add changer
                 | _ -> ())
+
             form.Show ()
             Right !refWorld)
 
