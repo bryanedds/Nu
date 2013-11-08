@@ -39,6 +39,7 @@ type DragState =
 
 type [<TypeDescriptionProvider (typeof<EntityModelTypeDescriptorProvider>)>] EntityModelTypeDescriptorSource =
     { Address : Address
+      Form : NuEditForm
       WorldChangers : WorldChangers
       RefWorld : World ref }
 
@@ -63,9 +64,28 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
     override this.SetValue (source, value) =
         let entityModelTds = source :?> EntityModelTypeDescriptorSource
         let changer = (fun world_ ->
-            let world_ = setEntityModelPropertyValue entityModelTds.Address property value world_
-            let entityModel = get world_ <| worldEntityModel entityModelTds.Address
-            propagateEntityModelProperties entityModel world_)
+            if property.Name = "Name" then
+                let valueStr = str value
+                if Int64.TryParse (valueStr, ref 0L) then
+                    trace <| "Invalid entity model name '" + valueStr + "' (must not be a number)."
+                    world_
+                else
+                    let entityModelAddress_ = entityModelTds.Address
+                    let entityModel_ = get world_ <| worldEntityModel entityModelAddress_
+                    let world_ = removeEntityModel entityModelTds.Address world_
+                    let entity_ = get entityModel_ entityModelEntity
+                    let entity_ = { entity_ with Name = valueStr }
+                    let entityModel_ = set entity_ entityModel_ entityModelEntity
+                    let entityModelAddress_ = Test.GroupModelAddress @ [Lun.make <| valueStr]
+                    let world_ = addEntityModel entityModelAddress_ entityModel_ world_
+                    entityModelTds.RefWorld := world_ // must be set for property grid
+                    entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityModelAddress_ }
+                    world_
+            else
+                let entityModelAddress = entityModelTds.Address
+                let world_ = setEntityModelPropertyValue entityModelAddress property value world_
+                let entityModel = get world_ <| worldEntityModel entityModelAddress
+                propagateEntityModelProperties entityModel world_)
         // NOTE: even though this ref world will eventually get blown away, it must still be
         // updated here so that the change is reflected immediately by the property grid.
         entityModelTds.RefWorld := changer !entityModelTds.RefWorld
@@ -108,27 +128,26 @@ let getCreationDepth (form : NuEditForm) =
     ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
     !creationDepth
 
-let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world =
-    refWorld := world
+let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
     match message.Data with
     | MouseButtonData (position, _) ->
-        if form.InteractButton.Checked then (message, !refWorld)
+        if form.InteractButton.Checked then (message, world_)
         else
             let groupModelAddress = Test.GroupModelAddress
-            let groupModel = get !refWorld (worldGroupModel groupModelAddress)
+            let groupModel = get world_ (worldGroupModel groupModelAddress)
             let entityModels = Map.toValueList <| (get groupModel groupModelGroup).EntityModels
-            let optPicked = tryPick position entityModels !refWorld
+            let optPicked = tryPick position entityModels world_
             match optPicked with
-            | None -> (handle message, !refWorld)
+            | None -> (handle message, world_)
             | Some entityModel ->
                 let entity = get entityModel entityModelEntity
                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
-                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; WorldChangers = worldChangers; RefWorld = refWorld }
-                let entityModelTransform = getEntityModelTransform true (!refWorld).Camera entityModel
-                let mouseState = (!refWorld).MouseState
-                let dragState = DragPosition (entityModelTransform.Position + mouseState.MousePosition, mouseState.MousePosition, entityModelAddress)
-                refWorld := { !refWorld with ExtData = dragState }
-                (handle message, !refWorld)
+                refWorld := world_ // must be set for property grid
+                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                let entityModelTransform = getEntityModelTransform true world_.Camera entityModel
+                let dragState = DragPosition (entityModelTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityModelAddress)
+                let world_ = { world_ with ExtData = dragState }
+                (handle message, world_)
     | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
 let endDrag (form : NuEditForm) _ _ message world =
@@ -184,8 +203,8 @@ let createNuEditForm worldChangers refWorld =
             let entityModel_ = setEntityModelTransform true world.Camera 0 0 entityModelTransform entityModel_
             let entity = get entityModel_ entityModelEntity
             let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
-            refWorld := addEntityModel entityModelAddress entityModel_ world
-            form.propertyGrid.SelectedObject <- { Address = entityModelAddress; WorldChangers = worldChangers; RefWorld = refWorld }
+            refWorld := addEntityModel entityModelAddress entityModel_ world // must be set for property grid
+            form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
             !refWorld)
         refWorld := changer !refWorld
         worldChangers.Add changer)
