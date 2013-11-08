@@ -88,9 +88,10 @@ let [<EntryPoint; STAThread>] main _ =
 
     initTypeConverters ()
     use form = new NuEditForm ()
+    form.displayPanel.MaximumSize <- Drawing.Size (900, 600)
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-    let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
+    let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024
     let refWorld = ref Unchecked.defaultof<World>
     run4
 
@@ -135,11 +136,9 @@ let [<EntryPoint; STAThread>] main _ =
                                 let entity = get picked entityModelEntity
                                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                                 form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
-
                                 let newDrag = DragPosition (world.MouseState.MousePosition, position, entityModelAddress)
                                 let world_ = { world with ExtData = newDrag }
                                 (handle message, world_)
-
                     | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
                 !refWorld
 
