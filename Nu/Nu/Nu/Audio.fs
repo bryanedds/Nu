@@ -99,7 +99,7 @@ let haltSound () =
     ignore (SDL_mixer.Mix_HaltMusic ())
     let channelCount = ref 0
     ignore (SDL_mixer.Mix_QuerySpec (ref 0, ref 0us, channelCount))
-    for i in [0 .. channelCount.Value - 1] do
+    for i in [0 .. !channelCount - 1] do
         ignore (SDL_mixer.Mix_HaltChannel i)
 
 let tryLoadAudioAsset2 audioContext (asset : Asset) =
