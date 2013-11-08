@@ -29,9 +29,8 @@ let DefaultSize = 64.0f
 let DefaultRotation = 0.0f
 let (ScreenWidth, ScreenHeight) = (900, 600)
 
-// NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
-// style variable (but perhaps I've merely overlooked how to parameterize this?)
-let private gWorldChangers = List<World -> World> ()
+type WorldChanger = World -> World
+type WorldChangers = WorldChanger List
 
 type DragState =
     | DragNone
@@ -40,6 +39,7 @@ type DragState =
 
 type [<TypeDescriptionProvider (typeof<EntityModelTypeDescriptorProvider>)>] EntityModelTypeDescriptorSource =
     { Address : Address
+      WorldChangers : WorldChangers
       RefWorld : World ref }
 
 and EntityModelPropertyDescriptor (property : PropertyInfo) =
@@ -69,7 +69,7 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
         // NOTE: even though this ref world will eventually get blown away, it must still be
         // updated here so that the change is reflected immediately by the property grid.
         entityModelTds.RefWorld := changer !entityModelTds.RefWorld
-        gWorldChangers.Add changer
+        entityModelTds.WorldChangers.Add changer
 
     // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
     static member GetPropertyDescriptors (aType : Type) =
@@ -108,7 +108,7 @@ let getCreationDepth (form : NuEditForm) =
     ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
     !creationDepth
 
-let beginDrag (form : NuEditForm) refWorld _ _ message world =
+let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world =
     refWorld := world
     match message.Data with
     | MouseButtonData (position, _) ->
@@ -123,7 +123,7 @@ let beginDrag (form : NuEditForm) refWorld _ _ message world =
             | Some entityModel ->
                 let entity = get entityModel entityModelEntity
                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
-                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
+                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; WorldChangers = worldChangers; RefWorld = refWorld }
                 let entityModelTransform = getEntityModelTransform true (!refWorld).Camera entityModel
                 let mouseState = (!refWorld).MouseState
                 let dragState = DragPosition (entityModelTransform.Position + mouseState.MousePosition, mouseState.MousePosition, entityModelAddress)
@@ -161,7 +161,7 @@ let updateDrag (form : NuEditForm) world_ =
         world_
     | DragRotation (pickOffset, origPosition, address) -> world_
 
-let createNuEditForm refWorld =
+let createNuEditForm worldChangers refWorld =
     
     let form = new NuEditForm ()
     form.displayPanel.MaximumSize <- Drawing.Size (ScreenWidth, ScreenHeight)
@@ -176,6 +176,30 @@ let createNuEditForm refWorld =
     form.exitToolStripMenuItem.Click.Add (fun _ ->
         form.Close ())
 
+    form.createEntityButton.Click.Add (fun _ ->
+        let changer = (fun world ->
+            let entityModelTransform = { Transform.Position = world.Camera.EyeSize * 0.5f; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
+            let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
+            let entityModel_ = makeDefaultEntityModel entityModelTypeName
+            let entityModel_ = setEntityModelTransform true world.Camera 0 0 entityModelTransform entityModel_
+            let entity = get entityModel_ entityModelEntity
+            let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
+            refWorld := addEntityModel entityModelAddress entityModel_ world
+            form.propertyGrid.SelectedObject <- { Address = entityModelAddress; WorldChangers = worldChangers; RefWorld = refWorld }
+            !refWorld)
+        refWorld := changer !refWorld
+        worldChangers.Add changer)
+
+    form.deleteEntityButton.Click.Add (fun _ ->
+        let selectedObject = form.propertyGrid.SelectedObject
+        form.propertyGrid.SelectedObject <- null
+        let changer = (fun world ->
+            match selectedObject with
+            | :? EntityModelTypeDescriptorSource as entityModelTds -> removeEntityModel entityModelTds.Address world
+            | _ -> world)
+        refWorld := changer !refWorld
+        worldChangers.Add changer)
+
     form.saveToolStripMenuItem.Click.Add (fun _ ->
         let saveFileResult = form.saveFileDialog.ShowDialog form
         match saveFileResult with
@@ -188,62 +212,39 @@ let createNuEditForm refWorld =
         | DialogResult.OK ->
             let changer = readFile form.openFileDialog.FileName
             refWorld := changer !refWorld
-            gWorldChangers.Add changer
+            worldChangers.Add changer
         | _ -> ())
-
-    form.createEntityButton.Click.Add (fun _ ->
-        let changer = (fun world ->
-            let entityModelTransform = { Transform.Position = world.Camera.EyeSize * 0.5f; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
-            let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
-            let entityModel_ = makeDefaultEntityModel entityModelTypeName
-            let entityModel_ = setEntityModelTransform true world.Camera 0 0 entityModelTransform entityModel_
-            let entity = get entityModel_ entityModelEntity
-            let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
-            refWorld := addEntityModel entityModelAddress entityModel_ world
-            form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
-            !refWorld)
-        refWorld := changer !refWorld
-        gWorldChangers.Add changer)
-
-    form.deleteEntityButton.Click.Add (fun _ ->
-        let selectedObject = form.propertyGrid.SelectedObject
-        form.propertyGrid.SelectedObject <- null
-        let changer = (fun world ->
-            match selectedObject with
-            | :? EntityModelTypeDescriptorSource as entityModelTds -> removeEntityModel entityModelTds.Address world
-            | _ -> world)
-        refWorld := changer !refWorld
-        gWorldChangers.Add changer)
 
     form
 
-let tryCreateEditorWorld form refWorld sdlDeps =
+let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
     let screen = { Id = getNuId (); GroupModels = Map.empty }
     let group = { Id = getNuId (); EntityModels = Map.empty }
     refWorld := createEmptyWorld sdlDeps DragNone
     refWorld := addScreen Test.ScreenModelAddress screen !refWorld
     refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddress
     refWorld := addGroup Test.GroupModelAddress group !refWorld
-    refWorld := subscribe DownMouseLeftAddress [] (beginDrag form refWorld) !refWorld
+    refWorld := subscribe DownMouseLeftAddress [] (beginDrag form worldChangers refWorld) !refWorld
     refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
     Right !refWorld
 
-let updateEditorWorld form refWorld world =
+let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
     refWorld := updateDrag form world
-    refWorld := Seq.fold (fun world changer -> changer world) !refWorld gWorldChangers
-    gWorldChangers.Clear ()
+    refWorld := Seq.fold (fun world changer -> changer world) !refWorld worldChangers
+    worldChangers.Clear ()
     (not form.IsDisposed, !refWorld)
 
 let [<EntryPoint; STAThread>] main _ =
     initTypeConverters ()
+    let worldChangers = WorldChangers ()
     let refWorld = ref Unchecked.defaultof<World> // uglaaayyyyyy!
-    use form = createNuEditForm refWorld
+    use form = createNuEditForm worldChangers refWorld
     form.Show ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
     let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024
     run4
-        (tryCreateEditorWorld form refWorld)
-        (updateEditorWorld form refWorld)
+        (tryCreateEditorWorld form worldChangers refWorld)
+        (updateEditorWorld form worldChangers refWorld)
         (fun world -> form.displayPanel.Invalidate (); world)
         sdlConfig
