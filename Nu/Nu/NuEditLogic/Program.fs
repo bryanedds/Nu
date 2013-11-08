@@ -10,6 +10,7 @@ open System.Windows.Forms
 open System.ComponentModel
 open System.Xml
 open System.Xml.Serialization
+open Microsoft.FSharp.Reflection
 open Nu.Core
 open Nu.Math
 open Nu.AssetMetadata
@@ -23,6 +24,10 @@ open NuEditLogic.Entity
 
 let DefaultPositionSnap = 8
 let DefaultRotationSnap = 5
+let DefaultCreationDepth = 0.0f
+let DefaultSize = 64.0f
+let DefaultRotation = 0.0f
+let (ScreenWidth, ScreenHeight) = (900, 600)
 
 // NOTE: I believe .NET's lack of parameterization in one aspect is forcing me to use this global-
 // style variable (but perhaps I've merely overlooked how to parameterize this?)
@@ -88,12 +93,17 @@ and EntityModelTypeDescriptorProvider () =
     override this.GetTypeDescriptor (_, optSource) =
         EntityModelTypeDescriptor optSource :> ICustomTypeDescriptor
 
-let getSnaps (form : NuEditForm)=
+let getSnaps (form : NuEditForm) =
     let positionSnap = ref 0
-    let positionSnap_ = if Int32.TryParse (form.positionSnapTextBox.Text, positionSnap) then !positionSnap else 0
+    ignore <| Int32.TryParse (form.positionSnapTextBox.Text, positionSnap)
     let rotationSnap = ref 0
-    let rotationSnap_ = if Int32.TryParse (form.rotationSnapTextBox.Text, rotationSnap) then !rotationSnap else 0
-    (positionSnap_, rotationSnap_)
+    ignore <| Int32.TryParse (form.rotationSnapTextBox.Text, rotationSnap)
+    (!positionSnap, !rotationSnap)
+    
+let getCreationDepth (form : NuEditForm) =
+    let creationDepth = ref 0.0f
+    ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
+    !creationDepth
 
 let beginDrag (form : NuEditForm) refWorld _ _ message world =
     refWorld := world
@@ -146,22 +156,29 @@ let updateDrag (form : NuEditForm) world =
 let [<EntryPoint; STAThread>] main _ =
 
     initTypeConverters ()
+
     use form = new NuEditForm ()
     form.displayPanel.MaximumSize <- Drawing.Size (900, 600)
     form.positionSnapTextBox.Text <- str DefaultPositionSnap
     form.rotationSnapTextBox.Text <- str DefaultRotationSnap
+    form.creationDepthTextBox.Text <- str DefaultCreationDepth
+    for unionCase in FSharpType.GetUnionCases (typeof<EntityModel>) do
+        ignore <| form.createEntityComboBox.Items.Add unionCase.Name
+    form.createEntityComboBox.SelectedIndex <- 0
+
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
-    let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+    let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
     let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024
     let refWorld = ref Unchecked.defaultof<World>
-    run4
 
+    run4
         (fun sdlDeps ->
 
             let screen = { Id = getNuId (); GroupModels = Map.empty }
             let group = { Id = getNuId (); EntityModels = Map.empty }
             refWorld := createEmptyWorld sdlDeps DragNone
             refWorld := addScreen Test.ScreenModelAddress screen !refWorld
+            refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddress
             refWorld := addGroup Test.GroupModelAddress group !refWorld
             refWorld := subscribe DownMouseLeftAddress [] (beginDrag form refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
@@ -183,6 +200,30 @@ let [<EntryPoint; STAThread>] main _ =
                     refWorld := changer !refWorld
                     gWorldChangers.Add changer
                 | _ -> ())
+
+            form.createEntityButton.Click.Add (fun _ ->
+                let changer = (fun world ->
+                    let entityModelTransform = { Transform.Position = world.Camera.EyeSize * 0.5f; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
+                    let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
+                    let entityModel = makeDefaultEntityModel entityModelTypeName
+                    let entityModel_ = setEntityModelTransform true world.Camera 0 0 entityModelTransform entityModel
+                    let entity = get entityModel_ entityModelEntity
+                    let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
+                    refWorld := addEntityModel entityModelAddress entityModel_ world
+                    form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
+                    !refWorld)
+                refWorld := changer !refWorld
+                gWorldChangers.Add changer)
+
+            form.deleteEntityButton.Click.Add (fun _ ->
+                let selectedObject = form.propertyGrid.SelectedObject
+                form.propertyGrid.SelectedObject <- null
+                let changer = (fun world ->
+                    match selectedObject with
+                    | :? EntityModelTypeDescriptorSource as entityModelTds -> removeEntityModel entityModelTds.Address world
+                    | _ -> world)
+                refWorld := changer !refWorld
+                gWorldChangers.Add changer)
 
             form.Show ()
             Right !refWorld)
