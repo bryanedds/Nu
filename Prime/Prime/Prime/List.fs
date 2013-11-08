@@ -289,10 +289,10 @@ let foldWhile f initial (input : 'a list) =
     Seq.foldWhile f initial input
 
 /// TODO: see if List.rev can be removed.
-let rec remove pred list =
+let rec remove pred list_ =
     let list_ =
         List.fold
             (fun list_ elem -> if pred elem then list_ else elem :: remove pred list_)
             []
-            list
+            list_
     List.rev list_

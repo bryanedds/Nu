@@ -44,12 +44,12 @@ let getEntityModelPropertyValue (property : PropertyInfo) (entityModel : EntityM
 
 let setEntityModelPropertyValue address (property : PropertyInfo) value world =
     let entityModelLens = worldEntityModel address
-    let entityModel = get world entityModelLens
+    let entityModel_ = get world entityModelLens
     let entityModel_ =
         // TODO: so much code duplication, make me wanna slap your momma!
-        match entityModel with
-        | Button button ->
-            let button_ = { button with Gui = button.Gui } // NOTE: this is just a hacky way to copy a record in lieu of reflection
+        match entityModel_ with
+        | Button button_ ->
+            let button_ = { button_ with Gui = button_.Gui } // NOTE: this is just a hacky way to copy a record in lieu of reflection
             if typeof<Button>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (button_, value) in Button button_
             else
@@ -60,8 +60,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     Button { button_ with Gui = { gui_ with Entity = entity_ }}
-        | Label label ->
-            let label_ = { label with Gui = label.Gui } // NOTE: hacky copy
+        | Label label_ ->
+            let label_ = { label_ with Gui = label_.Gui } // NOTE: hacky copy
             if typeof<Button>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (label_, value) in Label label_
             else
@@ -72,8 +72,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     Label { label_ with Gui = { gui_ with Entity = entity_ }}
-        | TextBox textBox ->
-            let textBox_ = { textBox with Gui = textBox.Gui } // NOTE: hacky copy
+        | TextBox textBox_ ->
+            let textBox_ = { textBox_ with Gui = textBox_.Gui } // NOTE: hacky copy
             if typeof<TextBox>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (textBox_, value) in TextBox textBox_
             else
@@ -84,8 +84,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     TextBox { textBox_ with Gui = { gui_ with Entity = entity_ }}
-        | Toggle toggle ->
-            let toggle_ = { toggle with Gui = toggle.Gui } // NOTE: hacky copy
+        | Toggle toggle_ ->
+            let toggle_ = { toggle_ with Gui = toggle_.Gui } // NOTE: hacky copy
             if typeof<Toggle>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (toggle_, value) in Toggle toggle_
             else
@@ -96,8 +96,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     Toggle { toggle_ with Gui = { gui_ with Entity = entity_ }}
-        | Feeler feeler ->
-            let feeler_ = { feeler with Gui = feeler.Gui } // NOTE: hacky copy
+        | Feeler feeler_ ->
+            let feeler_ = { feeler_ with Gui = feeler_.Gui } // NOTE: hacky copy
             if typeof<Feeler>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (feeler_, value) in Feeler feeler_
             else
@@ -108,8 +108,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     Feeler { feeler_ with Gui = { gui_ with Entity = entity_ }}
-        | Block block ->
-            let block_ = { block with Actor = block.Actor } // NOTE: hacky copy
+        | Block block_ ->
+            let block_ = { block_ with Actor = block_.Actor } // NOTE: hacky copy
             if typeof<Block>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (block_, value) in Block block_
             else
@@ -120,8 +120,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { actor_.Entity with Id = actor_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     Block { block_ with Actor = { actor_ with Entity = entity_ }}
-        | Avatar avatar ->
-            let avatar_ = { avatar with Actor = avatar.Actor } // NOTE: hacky copy
+        | Avatar avatar_ ->
+            let avatar_ = { avatar_ with Actor = avatar_.Actor } // NOTE: hacky copy
             if typeof<Avatar>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (avatar_, value) in Avatar avatar_
             else
@@ -132,8 +132,8 @@ let setEntityModelPropertyValue address (property : PropertyInfo) value world =
                     let entity_ = { actor_.Entity with Id = actor_.Entity.Id } // NOTE: hacky copy
                     property.SetValue (entity_, value)
                     Avatar { avatar_ with Actor = { actor_ with Entity = entity_ }}
-        | TileMap tileMap ->
-            let tileMap_ = { tileMap with Actor = tileMap.Actor } // NOTE: hacky copy
+        | TileMap tileMap_ ->
+            let tileMap_ = { tileMap_ with Actor = tileMap_.Actor } // NOTE: hacky copy
             if typeof<TileMap>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
             then let _ = property.SetValue (tileMap_, value) in TileMap tileMap_
             else
