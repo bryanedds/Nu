@@ -63,6 +63,7 @@ let initMathConverters () =
 
 type [<StructuralEquality; NoComparison>] Transform =
     { Position : Vector2
+      Depth : single
       Size : Vector2
       Rotation : single }
 

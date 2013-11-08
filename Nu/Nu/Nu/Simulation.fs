@@ -672,25 +672,23 @@ module Test =
         let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
         let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
 
-        let w_ = world
-        let w_ = subscribe TickAddress [] moveAvatar w_
-        let w_ = subscribe TickAddress [] adjustCamera w_
-        let w_ = subscribe ClickButtonAddress [] addBoxes w_
-        let w_ = set (Some ScreenModelAddress) w_ worldOptSelectedScreenModelAddress
-        let w_ = { w_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: w_.PhysicsMessages }
-        let w_ = { w_ with RenderMessages = hintRenderingPackageUse :: w_.RenderMessages }
-        let w_ = { w_ with AudioMessages = FadeOutSong :: playSong :: w_.AudioMessages }
+        let world_ = set (Some ScreenModelAddress) world worldOptSelectedScreenModelAddress
+        let world_ = subscribe TickAddress [] moveAvatar world_
+        let world_ = subscribe TickAddress [] adjustCamera world_
+        let world_ = subscribe ClickButtonAddress [] addBoxes world_
+        let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
+        let world_ = { world_ with RenderMessages = hintRenderingPackageUse :: world_.RenderMessages }
+        let world_ = { world_ with AudioMessages = FadeOutSong :: playSong :: world_.AudioMessages }
         traceIf (not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
-        set (TestGroup testGroup) w_ (worldGroupModel address)
+        set (TestGroup testGroup) world_ (worldGroupModel address)
 
     let removeTestGroup address world =
-        let w_ = world
-        let w_ = unsubscribe TickAddress [] w_
-        let w_ = unsubscribe TickAddress [] w_
-        let w_ = unsubscribe ClickButtonAddress [] w_
-        let w_ = set None w_ worldOptSelectedScreenModelAddress
-        let w_ = removeEntityModelsFromGroup address w_
-        set None w_ (worldOptGroupModel address)
+        let world_ = unsubscribe TickAddress [] world
+        let world_ = unsubscribe TickAddress [] world_
+        let world_ = unsubscribe ClickButtonAddress [] world_
+        let world_ = set None world_ worldOptSelectedScreenModelAddress
+        let world_ = removeEntityModelsFromGroup address world_
+        set None world_ (worldOptGroupModel address)
 
 let addGroupModel address groupModel world =
     match groupModel with
