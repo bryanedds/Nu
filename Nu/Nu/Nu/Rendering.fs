@@ -177,15 +177,15 @@ let tryLoadRenderPackage packageName fileName renderer =
             let renderAssetMap2 = Map.addMany renderAssets renderAssetMap
             { renderer with RenderAssetMap = Map.add packageName renderAssetMap2 renderer.RenderAssetMap }
 
-let tryLoadRenderAsset packageName packageFileName assetName renderer =
-    let optAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+let tryLoadRenderAsset packageName packageFileName assetName renderer_ =
+    let optAssetMap = Map.tryFind packageName renderer_.RenderAssetMap
     let (renderer_, optAssetMap_) =
         match optAssetMap with
         | None ->
             log ("Loading render package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly.")
-            let renderer_ = tryLoadRenderPackage packageName packageFileName renderer
+            let renderer_ = tryLoadRenderPackage packageName packageFileName renderer_
             (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
-        | Some assetMap -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
+        | Some assetMap -> (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
     (renderer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
 let handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =

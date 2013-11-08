@@ -374,25 +374,25 @@ let getEntityModelTransform relativeToView camera entityModel =
     | Avatar avatar -> getActorTransformRelative view avatar.Actor
     | TileMap tileMap -> getActorTransformRelative view tileMap.Actor
 
-let setGuiTransform positionSnap rotationSnap (transform : Transform) entityModel lens =
-    let transform_ = snapTransform positionSnap rotationSnap transform
-    let gui = get entityModel lens
-    let gui_ = {{{ gui with Gui.Position = transform_.Position }
-                       with Depth = transform_.Depth }
-                       with Size = transform_.Size }
+let setGuiTransform positionSnap rotationSnap (transform_ : Transform) entityModel lens =
+    let transform_ = snapTransform positionSnap rotationSnap transform_
+    let gui_ = get entityModel lens
+    let gui_ = {{{ gui_ with Gui.Position = transform_.Position }
+                        with Depth = transform_.Depth }
+                        with Size = transform_.Size }
     set gui_ entityModel lens
 
-let setActorTransform positionSnap rotationSnap (transform : Transform) entityModel lens =
-    let transform_ = snapTransform positionSnap rotationSnap transform
-    let actor = get entityModel lens
-    let actor_ = {{{{ actor with Actor.Position = transform_.Position }
-                            with Depth = transform_.Depth }
-                            with Size = transform_.Size }
-                            with Rotation = transform_.Rotation }
+let setActorTransform positionSnap rotationSnap (transform_ : Transform) entityModel lens =
+    let transform_ = snapTransform positionSnap rotationSnap transform_
+    let actor_ = get entityModel lens
+    let actor_ = {{{{ actor_ with Actor.Position = transform_.Position }
+                             with Depth = transform_.Depth }
+                             with Size = transform_.Size }
+                             with Rotation = transform_.Rotation }
     set actor_ entityModel lens
 
-let setActorTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entityModel lens =
-    let transform_ = { transform with Position = transform.Position + view }
+let setActorTransformRelative (view : Vector2) positionSnap rotationSnap (transform_ : Transform) entityModel lens =
+    let transform_ = { transform_ with Position = transform_.Position + view }
     setActorTransform positionSnap rotationSnap transform_ entityModel lens
 
 let setEntityModelTransform relativeToView camera positionSnap rotationSnap transform entityModel =

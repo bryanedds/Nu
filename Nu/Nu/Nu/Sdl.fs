@@ -97,14 +97,14 @@ let renderSdl handleRender sdlDeps world =
 let playSdl handlePlay world =
     handlePlay world
 
-let rec runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world keepRunning =
+let rec runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning =
     if keepRunning then
-        let (keepRunning_, world_) = advanceSdl handleEvent handleUpdate sdlDeps world
+        let (keepRunning_, world_) = advanceSdl handleEvent handleUpdate sdlDeps world_
         if keepRunning_ then
             let world_ = renderSdl handleRender sdlDeps world_
             let world_ = playSdl handlePlay world_
             runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning_
-        else ignore (handleExit world)
+        else ignore (handleExit world_)
 
 let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
     withSdlInit

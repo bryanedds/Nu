@@ -217,28 +217,31 @@ let subscriptionSort subscriptions world =
     let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
     List.map snd prioritiesAndSubscriptionsSorted
 
-let setBlockTransformToPhysics (block : Block) world =
+/// Mark a message as handled.
+let handle message =
+    { Handled = true; Data = message.Data }
+
+let propagateBlockTransform (block : Block) world =
     let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position + block.Actor.Size * 0.5f; Rotation = block.Actor.Rotation } // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
     { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
 
-let setAvatarTransformToPhysics (avatar : Avatar) world =
+let propagateAvatarTransform (avatar : Avatar) world =
     let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f; Rotation = avatar.Actor.Rotation }// TODO: see if this center-offsetting can be encapsulated withing the Physics module!
     { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
 
-let trySetEntityModelTransformToPhysics entityModel world =
+let propagateEntityModelTransform entityModel world =
     match entityModel with
     | Button _
     | Label _
     | TextBox _
     | Toggle _
     | Feeler _ -> world
-    | Block block -> setBlockTransformToPhysics block world
-    | Avatar avatar -> setAvatarTransformToPhysics avatar world
+    | Block block -> propagateBlockTransform block world
+    | Avatar avatar -> propagateAvatarTransform avatar world
     | TileMap tileMap -> world // TODO
 
-/// Mark a message as handled.
-let handle message =
-    { Handled = true; Data = message.Data }
+let propagateEntityModelProperties entityModel world =
+    propagateEntityModelTransform entityModel world
 
 let isAddressSelected address world =
     let optScreenAddress = (get world worldGame).OptSelectedScreenModelAddress
@@ -312,28 +315,28 @@ let unregisterButton address world =
         unsubscribe DownMouseLeftAddress address |>
         unsubscribe UpMouseLeftAddress address
 
-let handleButtonEventDownMouseLeft address subscriber message world =
+let handleButtonEventDownMouseLeft address subscriber message world_ =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let button = get world (worldButton subscriber)
+        let button = get world_ (worldButton subscriber)
         if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
             if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
                 let button_ = { button with IsDown = true }
-                let world_ = set button_ world (worldButton subscriber)
+                let world_ = set button_ world_ (worldButton subscriber)
                 let world_ = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
                 (handle message, world_)
-            else (message, world)
-        else (message, world)
+            else (message, world_)
+        else (message, world_)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
-let handleButtonEventUpMouseLeft address subscriber message world =
+let handleButtonEventUpMouseLeft address subscriber message world_ =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let button = get world (worldButton subscriber)
+        let button = get world_ (worldButton subscriber)
         if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
             let world_ =
                 let button_ = { button with IsDown = false }
-                let world_ = set button_ world (worldButton subscriber)
+                let world_ = set button_ world_ (worldButton subscriber)
                 publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
             if isInBox3 mousePosition button.Gui.Position button.Gui.Size && button.IsDown then
                 let world_ = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
@@ -341,12 +344,12 @@ let handleButtonEventUpMouseLeft address subscriber message world =
                 let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                 (handle message, world_)
             else (message, world_)
-        else (message, world)
+        else (message, world_)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
-let registerButton address world =
-    let optOldButton = get world (worldOptButton address)
-    let world_ = if optOldButton.IsSome then unregisterButton address world else world
+let registerButton address world_ =
+    let optOldButton = get world_ (worldOptButton address)
+    let world_ = if optOldButton.IsSome then unregisterButton address world_ else world_
     let world_ = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world_
     subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world_
 
@@ -375,37 +378,37 @@ let unregisterToggle address world =
         unsubscribe DownMouseLeftAddress address |>
         unsubscribe UpMouseLeftAddress address
 
-let handleToggleEventDownMouseLeft address subscriber message world =
+let handleToggleEventDownMouseLeft address subscriber message world_ =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let toggle = get world (worldToggle subscriber)
-        if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible then
-            if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
-                let toggle_ = { toggle with IsPressed = true }
-                let world_ = set toggle_ world (worldToggle subscriber)
+        let toggle_ = get world_ (worldToggle subscriber)
+        if toggle_.Gui.Entity.Enabled && toggle_.Gui.Entity.Visible then
+            if isInBox3 mousePosition toggle_.Gui.Position toggle_.Gui.Size then
+                let toggle_ = { toggle_ with IsPressed = true }
+                let world_ = set toggle_ world_ (worldToggle subscriber)
                 (handle message, world_)
-            else (message, world)
-        else (message, world)
+            else (message, world_)
+        else (message, world_)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
-let handleToggleEventUpMouseLeft address subscriber message world =
+let handleToggleEventUpMouseLeft address subscriber message world_ =
     match message.Data with
     | MouseButtonData (mousePosition, _) ->
-        let toggle = get world (worldToggle subscriber)
+        let toggle = get world_ (worldToggle subscriber)
         if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible && toggle.IsPressed then
             let toggle_ = { toggle with IsPressed = false }
             if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
                 let toggle_ = { toggle_ with IsOn = not toggle_.IsOn }
-                let world_ = set toggle_ world (worldToggle subscriber)
+                let world_ = set toggle_ world_ (worldToggle subscriber)
                 let messageType = if toggle.IsOn then "on" else "off"
                 let world_ = publish (Lun.make messageType :: subscriber) { Handled = false; Data = NoData } world_
                 let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                 let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                 (handle message, world_)
             else
-                let world_ = set toggle_ world (worldToggle subscriber)
+                let world_ = set toggle_ world_ (worldToggle subscriber)
                 (message, world_)
-        else (message, world)
+        else (message, world_)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
 let registerToggle address world =
@@ -425,30 +428,30 @@ let unregisterFeeler address world =
         unsubscribe UpMouseLeftAddress address |>
         unsubscribe DownMouseLeftAddress address
 
-let handleFeelerEventDownMouseLeft address subscriber message world =
+let handleFeelerEventDownMouseLeft address subscriber message world_ =
     match message.Data with
     | MouseButtonData (mousePosition, _) as mouseButtonData ->
-        let feeler = get world (worldFeeler subscriber)
+        let feeler = get world_ (worldFeeler subscriber)
         if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
             if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
                 let feeler_ = { feeler with IsTouched = true }
-                let world_ = set feeler_ world (worldFeeler subscriber)
+                let world_ = set feeler_ world_ (worldFeeler subscriber)
                 let world_ = publish (Lun.make "touch" :: subscriber) { Handled = false; Data = mouseButtonData } world_
                 (handle message, world_)
-            else (message, world)
-        else (message, world)
+            else (message, world_)
+        else (message, world_)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
-let handleFeelerEventUpMouseLeft address subscriber message world =
+let handleFeelerEventUpMouseLeft address subscriber message world_ =
     match message.Data with
     | MouseButtonData _ ->
-        let feeler = get world (worldFeeler subscriber)
-        if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
-            let feeler_ = { feeler with IsTouched = false }
-            let world_ = set feeler_ world (worldFeeler subscriber)
+        let feeler_ = get world_ (worldFeeler subscriber)
+        if feeler_.Gui.Entity.Enabled && feeler_.Gui.Entity.Visible then
+            let feeler_ = { feeler_ with IsTouched = false }
+            let world_ = set feeler_ world_ (worldFeeler subscriber)
             let world_ = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
             (handle message, world_)
-        else (message, world)
+        else (message, world_)
     | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
 let registerFeeler address world =
@@ -614,7 +617,7 @@ module Test =
     let AvatarAddress = GroupModelAddress @ [Lun.make "testAvatar"]
     let ClickButtonAddress = Lun.make "click" :: ButtonAddress
 
-    let addTestGroup address testGroup world =
+    let addTestGroup address testGroup world_ =
 
         let assetMetadataMap =
             match tryGenerateAssetMetadataMap "AssetGraph.xml" with
@@ -645,34 +648,33 @@ module Test =
             let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
             (message, { world with Camera = camera })
 
-        let moveAvatar address _ message world =
-            let feeler = get world (worldFeeler FeelerAddress)
+        let moveAvatar address _ message world_ =
+            let feeler = get world_ (worldFeeler FeelerAddress)
             if feeler.IsTouched then
-                let avatar = get world (worldAvatar AvatarAddress)
-                let camera = world.Camera
+                let avatar = get world_ (worldAvatar AvatarAddress)
+                let camera = world_.Camera
                 let view = inverseViewF camera
-                let mousePositionWorld = world.MouseState.MousePosition + view
+                let mousePositionWorld = world_.MouseState.MousePosition + view
                 let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
                 let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
-                let world_ = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
+                let world_ = { world_ with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world_.PhysicsMessages }
                 (message, world_)
-            else (message, world)
+            else (message, world_)
 
-        let addBoxes _ _ message world =
+        let addBoxes _ _ message world_ =
             let world_ =
                 List.fold
                     (fun world_ _ ->
                         let block = createTestBlock assetMetadataMap
                         addBlock (GroupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_)
-                    world
+                    world_
                     [0..7]
             (handle message, world_)
 
         let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
         let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
-
-        let world_ = set (Some ScreenModelAddress) world worldOptSelectedScreenModelAddress
+        let world_ = set (Some ScreenModelAddress) world_ worldOptSelectedScreenModelAddress
         let world_ = subscribe TickAddress [] moveAvatar world_
         let world_ = subscribe TickAddress [] adjustCamera world_
         let world_ = subscribe ClickButtonAddress [] addBoxes world_
@@ -682,8 +684,8 @@ module Test =
         traceIf (not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
         set (TestGroup testGroup) world_ (worldGroupModel address)
 
-    let removeTestGroup address world =
-        let world_ = unsubscribe TickAddress [] world
+    let removeTestGroup address world_ =
+        let world_ = unsubscribe TickAddress [] world_
         let world_ = unsubscribe TickAddress [] world_
         let world_ = unsubscribe ClickButtonAddress [] world_
         let world_ = set None world_ worldOptSelectedScreenModelAddress
@@ -717,11 +719,11 @@ let getAudioDescriptors world : AudioDescriptor rQueue =
     worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
 
 /// Play the world's audio.
-let play world =
-    let audioMessages = world.AudioMessages
-    let audioDescriptors = getAudioDescriptors world
-    let audioPlayer = world.AudioPlayer
-    let world_ = { world with AudioMessages = [] }
+let play world_ =
+    let audioMessages = world_.AudioMessages
+    let audioDescriptors = getAudioDescriptors world_
+    let audioPlayer = world_.AudioPlayer
+    let world_ = { world_ with AudioMessages = [] }
     let world_ = { world_ with AudioPlayer = Nu.Audio.play audioMessages audioDescriptors audioPlayer }
     world_
 
