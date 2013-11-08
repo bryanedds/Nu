@@ -6,6 +6,10 @@ type [<StructuralEquality; NoComparison>] Camera =
     { EyePosition : Vector2
       EyeSize : Vector2 }
 
+/// The position of the center of the camera's eye.
+let getEyeCenter camera =
+    camera.EyePosition + camera.EyeSize * 0.5f
+
 /// The inverse view of the camera, with floating-point accuracy (not good for rendering).
 let inverseViewF camera =
     camera.EyePosition - camera.EyeSize * 0.5f
