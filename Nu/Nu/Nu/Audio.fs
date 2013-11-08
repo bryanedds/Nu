@@ -133,15 +133,15 @@ let tryLoadAudioPackage packageName fileName audioPlayer =
             let audioAssetMap2 = Map.addMany audioAssets audioAssetMap
             { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap2 audioPlayer.AudioAssetMap }
 
-let tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
-    let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
+let tryLoadAudioAsset packageName packageFileName assetName audioPlayer_ =
+    let optAssetMap = Map.tryFind packageName audioPlayer_.AudioAssetMap
     let (audioPlayer_, optAssetMap_) =
         match optAssetMap with
         | None ->
             log ("Loading audio package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly.")
-            let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer
+            let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer_
             (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
-        | Some assetMap -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
+        | Some assetMap -> (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
     (audioPlayer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
 let playSong (song : Song) audioPlayer =
