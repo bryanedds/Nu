@@ -3,6 +3,7 @@ open System
 open System.ComponentModel
 open OpenTK
 open Nu.Core
+open Nu.Constants
 
 type Vector2TypeConverter () =
     inherit TypeConverter ()
@@ -59,6 +60,32 @@ let initMathConverters () =
     AssignTypeConverter<Vector2, Vector2TypeConverter> ()
     AssignTypeConverter<Vector3, Vector3TypeConverter> ()
     AssignTypeConverter<Vector4, Vector4TypeConverter> ()
+
+type [<StructuralEquality; NoComparison>] Transform =
+    { Position : Vector2
+      Size : Vector2
+      Rotation : single }
+
+let snap value offset =
+    if offset = 0 then value
+    else
+        let rem = ref 0
+        let div = Math.DivRem (value, offset, rem)
+        let rem_ = if !rem < offset / 2 then 0 else offset
+        div * offset + rem_
+
+let snapR (value : single) offset =
+    DegreesToRadiansF * single (snap (int <| value * RadiansToDegreesF) offset)
+
+let snapF (value : single) offset =
+    single <| snap (int value) offset
+
+let snap2F (v2 : Vector2) offset =
+    Vector2 (snapF v2.X offset, snapF v2.Y offset)
+
+let snapTransform positionSnap rotationSnap (transform : Transform) =
+    let transform_ = { transform with Position = snap2F transform.Position positionSnap }
+    { transform_ with Rotation = snapR transform_.Rotation rotationSnap }
 
 let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
     point.X >= boxPos.X &&

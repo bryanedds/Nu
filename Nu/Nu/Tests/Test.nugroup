@@ -10,7 +10,7 @@
       <Density>10</Density>
       <Sprite>Image7;Default;AssetGraph.xml</Sprite>
       <Entity>Nu.Entity+Entity</Entity>
-      <Position>487.8917;402.0807</Position>
+      <Position>512;424</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
       <Rotation>0</Rotation>
@@ -37,10 +37,10 @@
       <BodyType>Static</BodyType>
       <Sprite>Image4;Default;AssetGraph.xml</Sprite>
       <Entity>Nu.Entity+Entity</Entity>
-      <Position>118.4167;528.1516</Position>
+      <Position>200;600</Position>
       <Depth>0</Depth>
       <Size>640;64</Size>
-      <Rotation>-0.00151308149</Rotation>
+      <Rotation>0</Rotation>
       <Name>testFloor</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
@@ -53,7 +53,7 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity+Entity</Entity>
-      <Position>310;20</Position>
+      <Position>296;64</Position>
       <Depth>0.1</Depth>
       <Size>256;64</Size>
       <Name>testButton</Name>
@@ -81,7 +81,7 @@
       <OnSprite>Image6;Default;AssetGraph.xml</OnSprite>
       <ToggleSound>Sound;Default;AssetGraph.xml</ToggleSound>
       <Entity>Nu.Entity+Entity</Entity>
-      <Position>720;50</Position>
+      <Position>680;64</Position>
       <Depth>0.1</Depth>
       <Size>64;64</Size>
       <Name>testToggle</Name>
@@ -97,7 +97,7 @@
       <TextOffset>4;4</TextOffset>
       <TextColor>1;1;1;1</TextColor>
       <Entity>Nu.Entity+Entity</Entity>
-      <Position>120;50</Position>
+      <Position>104;64</Position>
       <Depth>0.1</Depth>
       <Size>64;64</Size>
       <Name>testTextBox</Name>
