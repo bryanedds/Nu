@@ -203,11 +203,11 @@ let tryPick (position : Vector2) entityModels world =
     let entityModelsSorted = pickingSort entityModels world
     List.tryFind
         (fun entityModel ->
-            let rectangle = getEntityRectangle true world.Camera entityModel
-            position.X >= rectangle.X &&
-                position.X < rectangle.X + rectangle.Z &&
-                position.Y >= rectangle.Y &&
-                position.Y < rectangle.Y + rectangle.W)
+            let transform = getEntityModelTransform true world.Camera entityModel
+            position.X >= transform.Position.X &&
+                position.X < transform.Position.X + transform.Size.X &&
+                position.Y >= transform.Position.Y &&
+                position.Y < transform.Position.Y + transform.Size.Y)
         entityModelsSorted
 
 let subscriptionSort subscriptions world =
