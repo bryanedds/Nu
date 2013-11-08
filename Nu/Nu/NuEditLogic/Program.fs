@@ -24,6 +24,11 @@ open NuEditLogic.Entity
 // style variable (but perhaps I've merely overlooked how to parameterize this?)
 let private gWorldChangers = List<World -> World> ()
 
+type DragState =
+    | DragNone
+    | DragPosition of Vector2 * Vector2 * Address
+    | DragRotation of Vector2 * Vector2 * Address
+
 type [<TypeDescriptionProvider (typeof<EntityModelTypeDescriptorProvider>)>] EntityModelTypeDescriptorSource =
     { Address : Address
       RefWorld : World ref }
@@ -90,11 +95,27 @@ let [<EntryPoint; STAThread>] main _ =
     run4
 
         (fun sdlDeps ->
-            refWorld := createEmptyWorld sdlDeps ()
+
+            refWorld := createEmptyWorld sdlDeps DragNone
             let screen = { Id = getNuId (); GroupModels = Map.empty }
             refWorld := addScreen Test.ScreenModelAddress screen !refWorld
             let group = { Id = getNuId (); EntityModels = Map.empty }
             refWorld := addGroup Test.GroupModelAddress group !refWorld
+
+            refWorld := subscribe
+                UpMouseLeftAddress
+                []
+                (fun _ _ message world ->
+                    match message.Data with
+                    | MouseButtonData (position, _) ->
+                        if form.InteractButton.Checked then (message, world)
+                        else
+                            match world.ExtData :?> DragState with
+                            | DragNone -> (handle message, world)
+                            | DragPosition _ -> (handle message, { world with ExtData = DragNone })
+                            | DragRotation _ -> (handle message, { world with ExtData = DragNone })
+                    | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
+                !refWorld
 
             refWorld := subscribe
                 DownMouseLeftAddress
@@ -114,7 +135,11 @@ let [<EntryPoint; STAThread>] main _ =
                                 let entity = get picked entityModelEntity
                                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                                 form.propertyGrid.SelectedObject <- { Address = entityModelAddress; RefWorld = refWorld }
-                                (handle message, world)
+
+                                let newDrag = DragPosition (world.MouseState.MousePosition, position, entityModelAddress)
+                                let world_ = { world with ExtData = newDrag }
+                                (handle message, world_)
+
                     | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'.")
                 !refWorld
 
@@ -142,7 +167,21 @@ let [<EntryPoint; STAThread>] main _ =
             Right !refWorld)
 
         (fun world ->
-            refWorld := Seq.fold (fun world changer -> changer world) world gWorldChangers
+
+            let dragState = world.ExtData :?> DragState
+            refWorld :=
+                match dragState with
+                | DragNone -> world
+                | DragPosition (prevMousePosition, origPosition, address) ->
+                    let entityModel = get world <| worldEntityModel address
+                    let transform = getEntityModelTransform true world.Camera entityModel
+                    let transform_ = { transform with Position = transform.Position + (world.MouseState.MousePosition - prevMousePosition) }
+                    let entityModel_ = setEntityModelTransform true world.Camera transform_ entityModel
+                    let world_ = set entityModel_ world <| worldEntityModel address
+                    { world_ with ExtData = DragPosition (world.MouseState.MousePosition, origPosition, address) }
+                | DragRotation (prevMousePosition, origPosition, address) -> world
+
+            refWorld := Seq.fold (fun world changer -> changer world) !refWorld gWorldChangers
             gWorldChangers.Clear ()
             (not form.IsDisposed, !refWorld))
 

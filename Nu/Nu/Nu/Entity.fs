@@ -17,6 +17,11 @@ open Nu.AssetMetadata
 open Nu.DomainModel
 open Nu.Camera
 
+type [<StructuralEquality; NoComparison>] EntityModelTransform =
+    { Position : Vector2
+      Size : Vector2
+      Rotation : single }
+
 type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
     { Id : Id
       Name : string
@@ -332,14 +337,20 @@ let makeDefaultEntityModel typeName =
               TmxMap = tmxMap
               TileMapMetadata = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
 
-let guiRectangle (gui : Gui) =
-    Vector4 (gui.Position.X, gui.Position.Y, gui.Size.X, gui.Size.Y)
+let getGuiTransform (gui : Gui) =
+    { EntityModelTransform.Position = gui.Position
+      Size = gui.Size
+      Rotation = 0.0f }
 
-let actorRectangle (actor : Actor) =
-    Vector4 (actor.Position.X, actor.Position.Y, actor.Size.X, actor.Size.Y)
+let getActorTransform (actor : Actor) =
+    { EntityModelTransform.Position = actor.Position
+      Size = actor.Size
+      Rotation = actor.Rotation }
 
-let actorRectangleRelative (view : Vector2) (actor : Actor) =
-    Vector4 (actor.Position.X - view.X, actor.Position.Y - view.Y, actor.Size.X, actor.Size.Y)
+let getActorTransformRelative (view : Vector2) (actor : Actor) =
+    { EntityModelTransform.Position = actor.Position - view
+      Size = actor.Size
+      Rotation = actor.Rotation }
 
 let getPickingPriority entityModel =
     match entityModel with
@@ -352,17 +363,42 @@ let getPickingPriority entityModel =
     | Avatar avatar -> avatar.Actor.Depth
     | TileMap tileMap -> tileMap.Actor.Depth
 
-let getEntityRectangle relativeToView camera entityModel =
+let getEntityModelTransform relativeToView camera entityModel =
     let view = if relativeToView then inverseView camera else Vector2.Zero
     match entityModel with
-    | Button button -> guiRectangle button.Gui
-    | Label label -> guiRectangle label.Gui
-    | TextBox textBox -> guiRectangle textBox.Gui
-    | Toggle toggle -> guiRectangle toggle.Gui
-    | Feeler feeler -> guiRectangle feeler.Gui
-    | Block block -> actorRectangleRelative view block.Actor
-    | Avatar avatar -> actorRectangleRelative view avatar.Actor
-    | TileMap tileMap -> actorRectangleRelative view tileMap.Actor
+    | Button button -> getGuiTransform button.Gui
+    | Label label -> getGuiTransform label.Gui
+    | TextBox textBox -> getGuiTransform textBox.Gui
+    | Toggle toggle -> getGuiTransform toggle.Gui
+    | Feeler feeler -> getGuiTransform feeler.Gui
+    | Block block -> getActorTransformRelative view block.Actor
+    | Avatar avatar -> getActorTransformRelative view avatar.Actor
+    | TileMap tileMap -> getActorTransformRelative view tileMap.Actor
+
+let setGuiTransform (transform : EntityModelTransform) entityModel lens =
+    let gui = get entityModel lens
+    let gui_ = {{ gui with Gui.Position = transform.Position }
+                      with Size = transform.Size }
+    set gui_ entityModel lens
+
+let setActorTransform (transform : EntityModelTransform) entityModel lens =
+    let actor = get entityModel lens
+    let actor_ = {{{ actor with Actor.Position = transform.Position }
+                           with Size = transform.Size }
+                           with Rotation = transform.Rotation }
+    set actor_ entityModel lens
+
+let setEntityModelTransform relativeToView camera transform entityModel =
+    let view = if relativeToView then inverseView camera else Vector2.Zero
+    match entityModel with
+    | Button _
+    | Label _
+    | TextBox _
+    | Toggle _
+    | Feeler _ -> setGuiTransform transform entityModel entityModelGui
+    | Block _
+    | Avatar _
+    | TileMap _ ->  setActorTransform transform entityModel entityModelActor
 
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name
