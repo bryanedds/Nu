@@ -209,9 +209,9 @@ let updateDrag (form : NuEditForm) world_ =
     | DragRotation (pickOffset, origPosition, address) -> world_
 
 /// Needed for physics system side-effects...
-let physicsHack world =
-    resetPhysicsHack world.Integrator
-    reregisterPhysicsHack Test.GroupModelAddress world
+let physicsHack world_ =
+    let world_ = { world_ with PhysicsMessages = ResetHackMessage :: world_.PhysicsMessages }
+    reregisterPhysicsHack Test.GroupModelAddress world_
 
 let createNuEditForm worldChangers refWorld =
     
