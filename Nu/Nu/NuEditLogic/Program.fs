@@ -73,7 +73,7 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
 
     override this.GetValue source =
         let entityModelTds = source :?> EntityModelTypeDescriptorSource
-        let entityModelLens = worldEntityModel entityModelTds.Address
+        let entityModelLens = worldEntityModelLens entityModelTds.Address
         let entityModel = get !entityModelTds.RefWorld entityModelLens
         getEntityModelPropertyValue property entityModel
 
@@ -89,11 +89,11 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
                         world_
                     else
                         // TODO: factor out a renameEntityModel function
-                        let entityModel_ = get world_ <| worldEntityModel entityModelTds.Address
+                        let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
                         let world_ = removeEntityModel entityModelTds.Address world_
-                        let entity_ = get entityModel_ entityModelEntity
+                        let entity_ = get entityModel_ entityLens
                         let entity_ = { entity_ with Name = valueStr }
-                        let entityModel_ = set entity_ entityModel_ entityModelEntity
+                        let entityModel_ = set entity_ entityModel_ entityLens
                         let entityModelAddress = Test.GroupModelAddress @ [Lun.make <| valueStr]
                         let world_ = addEntityModel entityModelAddress entityModel_ world_
                         entityModelTds.RefWorld := world_ // must be set for property grid
@@ -101,7 +101,7 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
                         world_
                 else
                     let world_ = setEntityModelPropertyValue entityModelTds.Address property value world_
-                    let entityModel_ = get world_ <| worldEntityModel entityModelTds.Address
+                    let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
                     propagateEntityModelPhysics entityModelTds.Address entityModel_ world_
             pushPastWorld pastWorld world_)
         entityModelTds.RefWorld := changer !entityModelTds.RefWorld
@@ -119,7 +119,7 @@ and EntityModelTypeDescriptor (optSource : obj) =
         let propertyDescriptors =
             match optSource with
             | :? EntityModelTypeDescriptorSource as source ->
-                let entityModelLens = worldEntityModel source.Address
+                let entityModelLens = worldEntityModelLens source.Address
                 let entityModel = get !source.RefWorld entityModelLens
                 let entityModelTypes = getEntityModelTypes entityModel
                 // NOTE: this line could be simplified by a List.concatBy function.
@@ -151,13 +151,13 @@ let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
         if form.interactButton.Checked then (message, world_)
         else
             let groupModelAddress = Test.GroupModelAddress
-            let groupModel = get world_ (worldGroupModel groupModelAddress)
-            let entityModels = Map.toValueList <| (get groupModel groupModelGroup).EntityModels
+            let groupModel = get world_ (worldGroupModelLens groupModelAddress)
+            let entityModels = Map.toValueList <| (get groupModel groupLens).EntityModels
             let optPicked = tryPick position entityModels world_
             match optPicked with
             | None -> (handle message, world_)
             | Some entityModel ->
-                let entity = get entityModel entityModelEntity
+                let entity = get entityModel entityLens
                 let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -190,12 +190,12 @@ let updateDrag (form : NuEditForm) world_ =
     match editorState_.DragState with
     | DragNone -> world_
     | DragPosition (pickOffset, origMousePosition, address) ->
-        let entityModel_ = get world_ <| worldEntityModel address
+        let entityModel_ = get world_ <| worldEntityModelLens address
         let transform_ = getEntityModelTransform true world_.Camera entityModel_
         let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world_.MouseState.MousePosition - origMousePosition) }
         let (positionSnap, rotationSnap) = getSnaps form
         let entityModel_ = setEntityModelTransform true world_.Camera positionSnap rotationSnap transform_ entityModel_
-        let world_ = set entityModel_ world_ <| worldEntityModel address
+        let world_ = set entityModel_ world_ <| worldEntityModelLens address
         let editorState_ = { editorState_ with DragState = DragPosition (pickOffset, origMousePosition, address) }
         let world_ = { world_ with ExtData = editorState_ }
         let world_ = propagateEntityModelPhysics address entityModel_ world_
@@ -230,7 +230,7 @@ let createNuEditForm worldChangers refWorld =
             let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
             let entityModel_ = makeDefaultEntityModel entityModelTypeName
             let entityModel_ = setEntityModelTransform true world_.Camera 0 0 entityModelTransform entityModel_
-            let entity = get entityModel_ entityModelEntity
+            let entity = get entityModel_ entityLens
             let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
             let world_ = addEntityModel entityModelAddress entityModel_ world_
             let world_ = pushPastWorld pastWorld world_
@@ -321,7 +321,7 @@ let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
     let editorState = { DragState = DragNone; PastWorlds = []; FutureWorlds = [] }
     refWorld := createEmptyWorld sdlDeps editorState
     refWorld := addScreen Test.ScreenModelAddress screen !refWorld
-    refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddress
+    refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
     refWorld := addGroup Test.GroupModelAddress group !refWorld
     refWorld := subscribe DownMouseLeftAddress [] (beginDrag form worldChangers refWorld) !refWorld
     refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
