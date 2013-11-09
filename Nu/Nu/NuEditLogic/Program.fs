@@ -153,7 +153,7 @@ let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
     match message.Data with
     | MouseButtonData (position, _) ->
         let pastWorld = world_
-        if form.InteractButton.Checked then (message, world_)
+        if form.interactButton.Checked then (message, world_)
         else
             let groupModelAddress = Test.GroupModelAddress
             let groupModel = get world_ (worldGroupModel groupModelAddress)
@@ -178,7 +178,7 @@ let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
 let endDrag (form : NuEditForm) _ _ message world =
     match message.Data with
     | MouseButtonData (position, _) ->
-        if form.InteractButton.Checked then (message, world)
+        if form.interactButton.Checked then (message, world)
         else
             let editorState_ = world.ExtData :?> EditorState
             match editorState_.DragState with
@@ -211,10 +211,12 @@ let updateDrag (form : NuEditForm) world_ =
 /// Needed for physics system side-effects...
 let physicsHack world_ =
     resetPhysicsHack world_.Integrator
-    let groupModel = get world_ <| worldGroupModel Test.GroupModelAddress
-    let group = get groupModel groupModelGroup
+    let groupModel_ = get world_ <| worldGroupModel Test.GroupModelAddress
+    let group = get groupModel_ groupModelGroup
     let entityModels = Map.toValueList group.EntityModels
     let world_ = removeEntityModels Test.GroupModelAddress world_
+    let groupModel_ = get world_ <| worldGroupModel Test.GroupModelAddress
+    let world_ = addGroupModel Test.GroupModelAddress groupModel_ world_
     addEntityModels entityModels Test.GroupModelAddress world_
 
 let createNuEditForm worldChangers refWorld =
@@ -292,6 +294,7 @@ let createNuEditForm worldChangers refWorld =
                     {{ editorState_ with PastWorlds = pastWorlds }
                                     with FutureWorlds = futureWorld :: editorState_.FutureWorlds }
                 let world_ = { world_ with ExtData = editorState_ }
+                if form.interactButton.Checked then form.interactButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
                 world_)
         refWorld := changer !refWorld
@@ -310,10 +313,17 @@ let createNuEditForm worldChangers refWorld =
                     {{ editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds }
                                     with FutureWorlds = futureWorlds }
                 let world_ = { world_ with ExtData = editorState_ }
+                if form.interactButton.Checked then form.interactButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
                 world_)
         refWorld := changer !refWorld
         worldChangers.Add changer)
+
+    form.interactButton.CheckedChanged.Add (fun args ->
+        if form.interactButton.Checked then
+            let changer = (fun world_ -> pushPastWorld world_ world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer)
 
     form
 
