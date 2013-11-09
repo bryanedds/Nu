@@ -1,4 +1,4 @@
-﻿module Nu.Core
+﻿namespace Nu
 open System.ComponentModel
 
 /// A generic identification code type.
@@ -11,10 +11,12 @@ type Id = int64
 /// A value type.
 type Address = Lun list
 
-/// Create a Nu Id.
-/// NOTE: Ironically, not purely functional (TODO: maybe address this?)
-let getNuId = createGetNextId ()
+module Core =
 
-/// Add a custom TypeConverter to an existing type.
-let AssignTypeConverter<'t, 'c> () =
-    ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
+    /// Create a Nu Id.
+    /// NOTE: Ironically, not purely functional (TODO: maybe address this?)
+    let getNuId = createGetNextId ()
+
+    /// Add a custom TypeConverter to an existing type.
+    let AssignTypeConverter<'t, 'c> () =
+        ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
