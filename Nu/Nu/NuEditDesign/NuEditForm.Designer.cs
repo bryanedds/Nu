@@ -75,7 +75,7 @@
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.InteractButton = new System.Windows.Forms.ToolStripButton();
+            this.interactButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -325,10 +325,10 @@
             this.toolStripSeparator4,
             this.resetCameraButton,
             this.toolStripSeparator5,
-            this.InteractButton});
+            this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(93, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(862, 26);
+            this.toolStrip.Size = new System.Drawing.Size(893, 26);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -423,15 +423,15 @@
             this.toolStripSeparator5.Name = "toolStripSeparator5";
             this.toolStripSeparator5.Size = new System.Drawing.Size(6, 26);
             // 
-            // InteractButton
+            // interactButton
             // 
-            this.InteractButton.CheckOnClick = true;
-            this.InteractButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.InteractButton.Image = ((System.Drawing.Image)(resources.GetObject("InteractButton.Image")));
-            this.InteractButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.InteractButton.Name = "InteractButton";
-            this.InteractButton.Size = new System.Drawing.Size(64, 23);
-            this.InteractButton.Text = "Interact";
+            this.interactButton.CheckOnClick = true;
+            this.interactButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.interactButton.Image = ((System.Drawing.Image)(resources.GetObject("interactButton.Image")));
+            this.interactButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.interactButton.Name = "interactButton";
+            this.interactButton.Size = new System.Drawing.Size(64, 23);
+            this.interactButton.Text = "Interact";
             // 
             // NuEditForm
             // 
@@ -494,7 +494,7 @@
         public System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
         public System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem1;
-        public System.Windows.Forms.ToolStripButton InteractButton;
+        public System.Windows.Forms.ToolStripButton interactButton;
         public System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         public System.Windows.Forms.ToolStripButton resetCameraButton;
