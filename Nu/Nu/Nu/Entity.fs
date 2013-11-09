@@ -86,7 +86,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
     { Actor : Actor
-      //PhysicsIds : Id list
+      PhysicsIds : Id list
       Density : single
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
@@ -208,14 +208,22 @@ let entityModelFeeler =
 let entityModelOptActor =
     { Get = fun this ->
         match this with
-        | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> None
+        | Button _
+        | Label _
+        | TextBox _
+        | Toggle _
+        | Feeler _ -> None
         | Block block -> Some block.Actor
         | Avatar avatar -> Some avatar.Actor
         | TileMap tileMap -> Some tileMap.Actor
       Set = fun optActor this ->
         let actor = Option.get optActor
         match this with
-        | Button _ | Label _ | TextBox _ | Toggle _ | Feeler _ -> failwith "EntityModel is not an actor."
+        | Button _
+        | Label _
+        | TextBox _
+        | Toggle _
+        | Feeler _ -> failwith "EntityModel is not an actor."
         | Block block -> Block { block with Actor = actor }
         | Avatar avatar -> Avatar { avatar with Actor = actor }
         | TileMap tileMap -> TileMap { tileMap with Actor = actor }}
@@ -328,6 +336,7 @@ let makeDefaultEntityModel typeName =
         let tmxMap = TmxMap "TileMap.tmx"
         TileMap
             { Actor = makeDefaultActor ()
+              PhysicsIds = []
               Density = NormalDensity
               TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
               TmxMap = tmxMap
