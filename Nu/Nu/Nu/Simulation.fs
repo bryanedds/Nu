@@ -819,15 +819,15 @@ let render world =
     let renderDescriptors = getRenderDescriptors world
     let renderer = world.Renderer
     let renderer2 = Nu.Rendering.render renderMessages renderDescriptors renderer
-    let world2 = {{ world with RenderMessages = [] } with Renderer = renderer2 }
+    let world2 = { world with RenderMessages = []; Renderer = renderer2 }
     world2
 
 let handleIntegrationMessage world integrationMessage =
     match integrationMessage with
     | BodyTransformOutMessage bodyTransformOutMessage ->
         let actor = get world (worldActor bodyTransformOutMessage.EntityAddress)
-        let actor2 = {{ actor with Position = bodyTransformOutMessage.Position - actor.Size * 0.5f } // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
-                              with Rotation = bodyTransformOutMessage.Rotation }
+        let actor2 = { actor with Position = bodyTransformOutMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
+                                  Rotation = bodyTransformOutMessage.Rotation }
         set actor2 world (worldActor bodyTransformOutMessage.EntityAddress)
     | BodyCollisionMessage bodyCollisionMessage ->
         let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
