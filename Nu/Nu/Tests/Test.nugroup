@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <GroupModel>
-    <ModelType>Nu.Group+GroupModel+TestGroup</ModelType>
-    <Group>Nu.Group+Group</Group>
-    <EntityModels>map [(testAvatar, Nu.Entity+EntityModel+Avatar); (testFeeler, Nu.Entity+EntityModel+Feeler); (testFloor, Nu.Entity+EntityModel+Block); ... ]</EntityModels>
+    <ModelType>Nu.Groups+GroupModel+TestGroup</ModelType>
+    <Group>Nu.Groups+Group</Group>
+    <EntityModels>map [(testAvatar, Nu.Entities+EntityModel+Avatar); (testFeeler, Nu.Entities+EntityModel+Feeler); (testFloor, Nu.Entities+EntityModel+Block); ... ]</EntityModels>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+Avatar</ModelType>
-      <Actor>Nu.Entity+Actor</Actor>
+      <ModelType>Nu.Entities+EntityModel+Avatar</ModelType>
+      <Actor>Nu.Entities+Actor</Actor>
       <Density>10</Density>
       <Sprite>Image7;Default;AssetGraph.xml</Sprite>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>512;424</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
@@ -19,10 +19,10 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+Feeler</ModelType>
-      <Gui>Nu.Entity+Gui</Gui>
+      <ModelType>Nu.Entities+EntityModel+Feeler</ModelType>
+      <Gui>Nu.Entities+Gui</Gui>
       <IsTouched>False</IsTouched>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>0;0</Position>
       <Depth>-0.2</Depth>
       <Size>900;600</Size>
@@ -31,12 +31,12 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+Block</ModelType>
-      <Actor>Nu.Entity+Actor</Actor>
+      <ModelType>Nu.Entities+EntityModel+Block</ModelType>
+      <Actor>Nu.Entities+Actor</Actor>
       <Density>10</Density>
       <BodyType>Static</BodyType>
       <Sprite>Image4;Default;AssetGraph.xml</Sprite>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>200;600</Position>
       <Depth>0</Depth>
       <Size>640;64</Size>
@@ -46,13 +46,13 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+Button</ModelType>
-      <Gui>Nu.Entity+Gui</Gui>
+      <ModelType>Nu.Entities+EntityModel+Button</ModelType>
+      <Gui>Nu.Entities+Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>296;64</Position>
       <Depth>0.1</Depth>
       <Size>256;64</Size>
@@ -61,10 +61,10 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+Label</ModelType>
-      <Gui>Nu.Entity+Gui</Gui>
+      <ModelType>Nu.Entities+EntityModel+Label</ModelType>
+      <Gui>Nu.Entities+Gui</Gui>
       <LabelSprite>Image5;Default;AssetGraph.xml</LabelSprite>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>0;0</Position>
       <Depth>-0.3</Depth>
       <Size>900;600</Size>
@@ -73,14 +73,14 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+Toggle</ModelType>
-      <Gui>Nu.Entity+Gui</Gui>
+      <ModelType>Nu.Entities+EntityModel+Toggle</ModelType>
+      <Gui>Nu.Entities+Gui</Gui>
       <IsOn>False</IsOn>
       <IsPressed>False</IsPressed>
       <OffSprite>Image3;Default;AssetGraph.xml</OffSprite>
       <OnSprite>Image6;Default;AssetGraph.xml</OnSprite>
       <ToggleSound>Sound;Default;AssetGraph.xml</ToggleSound>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>680;64</Position>
       <Depth>0.1</Depth>
       <Size>64;64</Size>
@@ -89,14 +89,14 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+TextBox</ModelType>
-      <Gui>Nu.Entity+Gui</Gui>
+      <ModelType>Nu.Entities+EntityModel+TextBox</ModelType>
+      <Gui>Nu.Entities+Gui</Gui>
       <BoxSprite>Image3;Default;AssetGraph.xml</BoxSprite>
       <Text>:P</Text>
       <TextFont>Font;Default;AssetGraph.xml</TextFont>
       <TextOffset>4;4</TextOffset>
       <TextColor>1;1;1;1</TextColor>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>104;64</Position>
       <Depth>0.1</Depth>
       <Size>64;64</Size>
@@ -105,13 +105,13 @@
       <Visible>True</Visible>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.Entity+EntityModel+TileMap</ModelType>
-      <Actor>Nu.Entity+Actor</Actor>
+      <ModelType>Nu.Entities+EntityModel+TileMap</ModelType>
+      <Actor>Nu.Entities+Actor</Actor>
       <Density>10</Density>
       <TileMapAsset>Nu.Rendering+TileMapAsset</TileMapAsset>
       <TmxMap>TiledSharp.TmxMap</TmxMap>
       <TileMapMetadata>[Nu.Rendering+Sprite]</TileMapMetadata>
-      <Entity>Nu.Entity+Entity</Entity>
+      <Entity>Nu.Entities+Entity</Entity>
       <Position>0;0</Position>
       <Depth>-0.1</Depth>
       <Size>1200;1200</Size>

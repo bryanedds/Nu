@@ -1,4 +1,4 @@
-﻿module Nu.Math
+﻿namespace Nu
 open System
 open System.ComponentModel
 open OpenTK
@@ -56,46 +56,48 @@ type Vector4TypeConverter () =
             let argFs = Array.map (fun arg -> Single.Parse arg) args
             Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
-let initMathConverters () =
-    AssignTypeConverter<Vector2, Vector2TypeConverter> ()
-    AssignTypeConverter<Vector3, Vector3TypeConverter> ()
-    AssignTypeConverter<Vector4, Vector4TypeConverter> ()
+module Math =
 
-type [<StructuralEquality; NoComparison>] Transform =
-    { Position : Vector2
-      Depth : single
-      Size : Vector2
-      Rotation : single }
+    let initMathConverters () =
+        AssignTypeConverter<Vector2, Vector2TypeConverter> ()
+        AssignTypeConverter<Vector3, Vector3TypeConverter> ()
+        AssignTypeConverter<Vector4, Vector4TypeConverter> ()
 
-let snap value offset =
-    if offset = 0 then value
-    else
-        let rem_ = ref 0
-        let div = Math.DivRem (value, offset, rem_)
-        let rem_ = if !rem_ < offset / 2 then 0 else offset
-        div * offset + rem_
+    type [<StructuralEquality; NoComparison>] Transform =
+        { Position : Vector2
+          Depth : single
+          Size : Vector2
+          Rotation : single }
 
-let snapR (value : single) offset =
-    DegreesToRadiansF * single (snap (int <| value * RadiansToDegreesF) offset)
+    let snap value offset =
+        if offset = 0 then value
+        else
+            let rem_ = ref 0
+            let div = Math.DivRem (value, offset, rem_)
+            let rem_ = if !rem_ < offset / 2 then 0 else offset
+            div * offset + rem_
 
-let snapF (value : single) offset =
-    single <| snap (int value) offset
+    let snapR (value : single) offset =
+        DegreesToRadiansF * single (snap (int <| value * RadiansToDegreesF) offset)
 
-let snap2F (v2 : Vector2) offset =
-    Vector2 (snapF v2.X offset, snapF v2.Y offset)
+    let snapF (value : single) offset =
+        single <| snap (int value) offset
 
-let snapTransform positionSnap rotationSnap (transform_ : Transform) =
-    let transform_ = { transform_ with Position = snap2F transform_.Position positionSnap }
-    { transform_ with Rotation = snapR transform_.Rotation rotationSnap }
+    let snap2F (v2 : Vector2) offset =
+        Vector2 (snapF v2.X offset, snapF v2.Y offset)
 
-let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
-    point.X >= boxPos.X &&
-    point.X < boxPos.X + boxSize.X &&
-    point.Y >= boxPos.Y &&
-    point.Y < boxPos.Y + boxSize.Y
+    let snapTransform positionSnap rotationSnap (transform_ : Transform) =
+        let transform_ = { transform_ with Position = snap2F transform_.Position positionSnap }
+        { transform_ with Rotation = snapR transform_.Rotation rotationSnap }
 
-let isInBox (point : Vector2) (box : Box2) =
-    isInBox3
-        point
-        (Vector2 (box.Left, box.Top))
-        (Vector2 (box.Right, box.Bottom))
+    let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
+        point.X >= boxPos.X &&
+        point.X < boxPos.X + boxSize.X &&
+        point.Y >= boxPos.Y &&
+        point.Y < boxPos.Y + boxSize.Y
+
+    let isInBox (point : Vector2) (box : Box2) =
+        isInBox3
+            point
+            (Vector2 (box.Left, box.Top))
+            (Vector2 (box.Right, box.Bottom))
