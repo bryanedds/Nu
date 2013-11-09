@@ -88,22 +88,21 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
                         trace <| "Invalid entity model name '" + valueStr + "' (must not be a number)."
                         world_
                     else
-                        let entityModelAddress_ = entityModelTds.Address
-                        let entityModel_ = get world_ <| worldEntityModel entityModelAddress_
+                        // TODO: factor out a renameEntityModel function
+                        let entityModel_ = get world_ <| worldEntityModel entityModelTds.Address
                         let world_ = removeEntityModel entityModelTds.Address world_
                         let entity_ = get entityModel_ entityModelEntity
                         let entity_ = { entity_ with Name = valueStr }
                         let entityModel_ = set entity_ entityModel_ entityModelEntity
-                        let entityModelAddress_ = Test.GroupModelAddress @ [Lun.make <| valueStr]
-                        let world_ = addEntityModel entityModelAddress_ entityModel_ world_
+                        let entityModelAddress = Test.GroupModelAddress @ [Lun.make <| valueStr]
+                        let world_ = addEntityModel entityModelAddress entityModel_ world_
                         entityModelTds.RefWorld := world_ // must be set for property grid
-                        entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityModelAddress_ }
+                        entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityModelAddress }
                         world_
                 else
-                    let entityModelAddress = entityModelTds.Address
-                    let world_ = setEntityModelPropertyValue entityModelAddress property value world_
-                    let entityModel = get world_ <| worldEntityModel entityModelAddress
-                    propagateEntityModelProperties entityModel world_
+                    let world_ = setEntityModelPropertyValue entityModelTds.Address property value world_
+                    let entityModel_ = get world_ <| worldEntityModel entityModelTds.Address
+                    propagateEntityModelPhysics entityModelTds.Address entityModel_ world_
             pushPastWorld pastWorld world_)
         entityModelTds.RefWorld := changer !entityModelTds.RefWorld
         entityModelTds.WorldChangers.Add changer
@@ -199,7 +198,7 @@ let updateDrag (form : NuEditForm) world_ =
         let world_ = set entityModel_ world_ <| worldEntityModel address
         let editorState_ = { editorState_ with DragState = DragPosition (pickOffset, origMousePosition, address) }
         let world_ = { world_ with ExtData = editorState_ }
-        let world_ = propagateEntityModelTransform entityModel_ world_
+        let world_ = propagateEntityModelPhysics address entityModel_ world_
         form.propertyGrid.Refresh ()
         world_
     | DragRotation (pickOffset, origPosition, address) -> world_
@@ -266,7 +265,9 @@ let createNuEditForm worldChangers refWorld =
         | DialogResult.OK ->
             let changer = (fun world_ ->
                 let world_ = readFile form.openFileDialog.FileName world_
-                clearPastWorlds world_)
+                let world_ = clearPastWorlds world_
+                form.interactButton.Checked <- false
+                world_)
             refWorld := changer !refWorld
             worldChangers.Add changer
         | _ -> ())
@@ -358,7 +359,7 @@ let [<EntryPoint; STAThread>] main _ =
     let refWorld = ref Unchecked.defaultof<World>
     use form = createNuEditForm worldChangers refWorld
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
-    let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
+    let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
     let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024
     run4
         (tryCreateEditorWorld form worldChangers refWorld)

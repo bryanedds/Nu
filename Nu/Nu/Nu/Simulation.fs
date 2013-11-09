@@ -221,28 +221,6 @@ let subscriptionSort subscriptions world =
 let handle message =
     { Handled = true; Data = message.Data }
 
-let propagateBlockTransform (block : Block) world =
-    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = block.PhysicsId; Position = block.Actor.Position + block.Actor.Size * 0.5f; Rotation = block.Actor.Rotation } // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
-    { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
-
-let propagateAvatarTransform (avatar : Avatar) world =
-    let bodyTransformInMessage = { BodyTransformInMessage.PhysicsId = avatar.PhysicsId; Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f; Rotation = avatar.Actor.Rotation }// TODO: see if this center-offsetting can be encapsulated withing the Physics module!
-    { world with PhysicsMessages = BodyTransformInMessage bodyTransformInMessage :: world.PhysicsMessages }
-
-let propagateEntityModelTransform entityModel world =
-    match entityModel with
-    | Button _
-    | Label _
-    | TextBox _
-    | Toggle _
-    | Feeler _ -> world
-    | Block block -> propagateBlockTransform block world
-    | Avatar avatar -> propagateAvatarTransform avatar world
-    | TileMap tileMap -> world // TODO
-
-let propagateEntityModelProperties entityModel world =
-    propagateEntityModelTransform entityModel world
-
 let isAddressSelected address world =
     let optScreenAddress = (get world worldGame).OptSelectedScreenModelAddress
     match (address, optScreenAddress) with
@@ -466,7 +444,7 @@ let removeFeeler address world =
     let world2 = set None world (worldOptEntityModel address)
     unregisterFeeler address world2
 
-let unregisterBlock address (block : Block) world =
+let unregisterBlockPhysics address (block : Block) world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
@@ -490,18 +468,15 @@ let registerBlockPhysics address (block : Block) world =
               BodyType = block.BodyType }
     { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
-let registerBlock address block world =
-    registerBlockPhysics address block world
-
 let addBlock address block world =
-    let world2 = registerBlock address block world
+    let world2 = registerBlockPhysics address block world
     set (Block block) world2 (worldEntityModel address)
 
 let removeBlock address block world =
     let world2 = set None world (worldOptEntityModel address)
-    unregisterBlock address block world2
+    unregisterBlockPhysics address block world2
 
-let unregisterAvatar address avatar world =
+let unregisterAvatarPhysics address avatar world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
@@ -525,18 +500,15 @@ let registerAvatarPhysics address avatar world =
               BodyType = BodyType.Dynamic }
     { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
-let registerAvatar address avatar world =
-    registerAvatarPhysics address avatar world
-
 let addAvatar address avatar world =
-    let world2 = registerAvatar address avatar world
+    let world2 = registerAvatarPhysics address avatar world
     set (Avatar avatar) world2 (worldEntityModel address)
 
 let removeAvatar address avatar world =
     let world2 = set None world (worldOptEntityModel address)
-    unregisterAvatar address avatar world2
+    unregisterAvatarPhysics address avatar world2
 
-let unregisterTileMap address tileMap world =
+let unregisterTileMapPhysics address tileMap world =
     world
 
 let registerTileMapPhysics address tileMap world =
@@ -551,16 +523,13 @@ let registerTileMapPhysics address tileMap world =
     { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }*)
     world
 
-let registerTileMap address tileMap world =
-    registerTileMapPhysics address tileMap world
-
 let addTileMap address tileMap world =
-    let world2 = registerTileMap address tileMap world
+    let world2 = registerTileMapPhysics address tileMap world
     set (TileMap tileMap) world2 (worldEntityModel address)
 
 let removeTileMap address tileMap world =
     let world2 = set None world (worldOptEntityModel address)
-    unregisterTileMap tileMap address world2
+    unregisterTileMapPhysics tileMap address world2
 
 let addEntityModel address entityModel world =
     match entityModel with
@@ -608,6 +577,25 @@ let addGroup address group world =
 let removeGroup address world =
     let world2 = removeEntityModels address world
     set None world2 (worldOptGroupModel address)
+
+let propagateBlockPhysics address block world_ =
+    let world_ = unregisterBlockPhysics address block world_
+    registerBlockPhysics address block world_
+
+let propagateAvatarPhysics address avatar world_ =
+    let world_ = unregisterAvatarPhysics address avatar world_
+    registerAvatarPhysics address avatar world_
+
+let propagateEntityModelPhysics address entityModel world =
+    match entityModel with
+    | Button _
+    | Label _
+    | TextBox _
+    | Toggle _
+    | Feeler _ -> world
+    | Block block -> propagateBlockPhysics address block world
+    | Avatar avatar -> propagateAvatarPhysics address avatar world
+    | TileMap tileMap -> world // TODO
 
 // TODO: see if there's a nice way to put this module in another file
 [<RequireQualifiedAccess>]
@@ -824,11 +812,11 @@ let render world =
 
 let handleIntegrationMessage world integrationMessage =
     match integrationMessage with
-    | BodyTransformOutMessage bodyTransformOutMessage ->
-        let actor = get world (worldActor bodyTransformOutMessage.EntityAddress)
-        let actor2 = { actor with Position = bodyTransformOutMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
-                                  Rotation = bodyTransformOutMessage.Rotation }
-        set actor2 world (worldActor bodyTransformOutMessage.EntityAddress)
+    | BodyTransformMessage bodyTransformMessage ->
+        let actor = get world (worldActor bodyTransformMessage.EntityAddress)
+        let actor2 = { actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
+                                  Rotation = bodyTransformMessage.Rotation }
+        set actor2 world (worldActor bodyTransformMessage.EntityAddress)
     | BodyCollisionMessage bodyCollisionMessage ->
         let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
         let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
