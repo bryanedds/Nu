@@ -163,7 +163,7 @@ let tryLoadRenderPackage packageName fileName renderer =
     let optAssets = tryLoadAssets "Rendering" packageName.LunStr fileName
     match optAssets with
     | Left error ->
-        trace ("HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
+        log ("HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
         renderer
     | Right assets ->
         let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -223,7 +223,7 @@ let renderLayerableDescriptor renderer layerableDescriptor =
         let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
         match optRenderAsset with
         | None ->
-            debug ("LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+            log ("LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
             renderer2
         | Some renderAsset ->
             match renderAsset with

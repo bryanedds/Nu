@@ -166,4 +166,4 @@ let readFile (fileName : string) world =
     let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
     let world_ = removeGroupModel Test.GroupModelAddress world
     let world_ = addGroupModel Test.GroupModelAddress testGroupModel world_
-    addEntityModelsToGroup testEntityModels Test.GroupModelAddress world_
+    addEntityModels testEntityModels Test.GroupModelAddress world_

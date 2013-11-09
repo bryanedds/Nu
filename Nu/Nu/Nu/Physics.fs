@@ -191,7 +191,7 @@ let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
     if  integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
         ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
         integrator.PhysicsContext.RemoveBody !body
-    else debug ("Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'.")
+    else log ("Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'.")
 
 let applyImpulse integrator applyImpulseMessage =
     let body = ref Unchecked.defaultof<Dynamics.Body>
@@ -240,3 +240,7 @@ let makeIntegrator gravity =
      { PhysicsContext = FarseerPhysics.Dynamics.World Gravity
        Bodies = BodyDictionary ()
        IntegrationMessages = List<IntegrationMessage> () }
+
+let resetPhysicsHack integrator =
+    integrator.PhysicsContext.Clear ()
+    integrator.Bodies.Clear ()
