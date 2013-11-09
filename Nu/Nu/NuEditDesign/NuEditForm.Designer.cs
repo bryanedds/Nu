@@ -76,6 +76,9 @@
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.interactButton = new System.Windows.Forms.ToolStripButton();
+            this.undoButton = new System.Windows.Forms.ToolStripButton();
+            this.redoButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -92,7 +95,7 @@
             this.editToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(1016, 26);
+            this.menuStrip.Size = new System.Drawing.Size(1072, 26);
             this.menuStrip.TabIndex = 0;
             this.menuStrip.Text = "menuStrip1";
             // 
@@ -221,7 +224,7 @@
             this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(741, 710);
+            this.displayPanel.Size = new System.Drawing.Size(781, 662);
             this.displayPanel.TabIndex = 1;
             // 
             // contextMenuStrip
@@ -276,7 +279,7 @@
             this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(271, 710);
+            this.propertyGrid.Size = new System.Drawing.Size(287, 662);
             this.propertyGrid.TabIndex = 2;
             // 
             // splitContainer1
@@ -292,8 +295,8 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer1.Size = new System.Drawing.Size(1016, 710);
-            this.splitContainer1.SplitterDistance = 741;
+            this.splitContainer1.Size = new System.Drawing.Size(1072, 662);
+            this.splitContainer1.SplitterDistance = 781;
             this.splitContainer1.TabIndex = 3;
             // 
             // openFileDialog
@@ -310,6 +313,9 @@
             // 
             this.toolStrip.Dock = System.Windows.Forms.DockStyle.None;
             this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.undoButton,
+            this.redoButton,
+            this.toolStripSeparator6,
             this.positionSnapLabel,
             this.positionSnapTextBox,
             this.toolStripSeparator1,
@@ -328,7 +334,7 @@
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(93, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(893, 26);
+            this.toolStrip.Size = new System.Drawing.Size(959, 26);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -433,11 +439,34 @@
             this.interactButton.Size = new System.Drawing.Size(64, 23);
             this.interactButton.Text = "Interact";
             // 
+            // undoButton
+            // 
+            this.undoButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.undoButton.Image = ((System.Drawing.Image)(resources.GetObject("undoButton.Image")));
+            this.undoButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.undoButton.Name = "undoButton";
+            this.undoButton.Size = new System.Drawing.Size(46, 23);
+            this.undoButton.Text = "&Undo";
+            // 
+            // redoButton
+            // 
+            this.redoButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.redoButton.Image = ((System.Drawing.Image)(resources.GetObject("redoButton.Image")));
+            this.redoButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.redoButton.Name = "redoButton";
+            this.redoButton.Size = new System.Drawing.Size(45, 23);
+            this.redoButton.Text = "&Redo";
+            // 
+            // toolStripSeparator6
+            // 
+            this.toolStripSeparator6.Name = "toolStripSeparator6";
+            this.toolStripSeparator6.Size = new System.Drawing.Size(6, 26);
+            // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1016, 736);
+            this.ClientSize = new System.Drawing.Size(1072, 688);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip);
@@ -506,6 +535,9 @@
         public System.Windows.Forms.ToolStripMenuItem redoToolStripMenuItem;
         public System.Windows.Forms.ToolStripButton deleteEntityButton;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
+        private System.Windows.Forms.ToolStripButton undoButton;
+        private System.Windows.Forms.ToolStripButton redoButton;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
 
     }
 }
