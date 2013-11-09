@@ -470,7 +470,7 @@ let unregisterBlock address (block : Block) world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerBlock address (block : Block) world =
+let registerBlockPhysics address (block : Block) world =
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -490,6 +490,9 @@ let registerBlock address (block : Block) world =
               BodyType = block.BodyType }
     { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
+let registerBlock address block world =
+    registerBlockPhysics address block world
+
 let addBlock address block world =
     let world2 = registerBlock address block world
     set (Block block) world2 (worldEntityModel address)
@@ -502,7 +505,7 @@ let unregisterAvatar address avatar world =
     let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
     { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-let registerAvatar address avatar world =
+let registerAvatarPhysics address avatar world =
     let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -522,6 +525,9 @@ let registerAvatar address avatar world =
               BodyType = BodyType.Dynamic }
     { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
+let registerAvatar address avatar world =
+    registerAvatarPhysics address avatar world
+
 let addAvatar address avatar world =
     let world2 = registerAvatar address avatar world
     set (Avatar avatar) world2 (worldEntityModel address)
@@ -533,7 +539,7 @@ let removeAvatar address avatar world =
 let unregisterTileMap address tileMap world =
     world
 
-let registerTileMap address tileMap world =
+let registerTileMapPhysics address tileMap world =
     (*let bodyCreateMessage =
         BodyCreateMessage
             { EntityAddress = address
@@ -544,6 +550,9 @@ let registerTileMap address tileMap world =
               BodyType = BodyType.Static }
     { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }*)
     world
+
+let registerTileMap address tileMap world =
+    registerTileMapPhysics address tileMap world
 
 let addTileMap address tileMap world =
     let world2 = registerTileMap address tileMap world
@@ -892,3 +901,19 @@ let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
 
 let run tryCreateWorld handleUpdate sdlConfig =
     run4 tryCreateWorld handleUpdate id sdlConfig
+
+let reregisterPhysicsHack4 groupModelAddress world_ _ entityModel =
+    match entityModel with
+    | Button _
+    | Label _
+    | TextBox _
+    | Toggle _
+    | Feeler _ -> world_
+    | Block block -> registerBlockPhysics (groupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_
+    | Avatar avatar -> registerAvatarPhysics (groupModelAddress @ [Lun.make avatar.Actor.Entity.Name]) avatar world_
+    | TileMap tileMap -> registerTileMapPhysics (groupModelAddress @ [Lun.make tileMap.Actor.Entity.Name]) tileMap world_
+
+let reregisterPhysicsHack groupModelAddress world_ =
+    let groupModel = get world_ <| worldGroupModel groupModelAddress
+    let entityModels = get groupModel groupModelEntityModels
+    Map.fold (reregisterPhysicsHack4 groupModelAddress) world_ entityModels
