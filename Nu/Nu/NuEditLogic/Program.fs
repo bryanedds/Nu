@@ -45,9 +45,7 @@ type EditorState =
 
 let pushPastWorld pastWorld world =
     let editorState_ = world.ExtData :?> EditorState
-    let editorState_ =
-        {{ editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds }
-                        with FutureWorlds = [] }
+    let editorState_ = { editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds; FutureWorlds = [] }
     { world with ExtData = editorState_ }
 
 let clearPastWorlds world =
@@ -107,8 +105,6 @@ and EntityModelPropertyDescriptor (property : PropertyInfo) =
                     let entityModel = get world_ <| worldEntityModel entityModelAddress
                     propagateEntityModelProperties entityModel world_
             pushPastWorld pastWorld world_)
-        // NOTE: even though this ref world will eventually get blown away, it must still be
-        // updated here so that the change is reflected immediately by the property grid.
         entityModelTds.RefWorld := changer !entityModelTds.RefWorld
         entityModelTds.WorldChangers.Add changer
 
@@ -284,9 +280,7 @@ let createNuEditForm worldChangers refWorld =
             | pastWorld :: pastWorlds ->
                 let world_ = pastWorld
                 let world_ = physicsHack world_
-                let editorState_ =
-                    {{ editorState_ with PastWorlds = pastWorlds }
-                                    with FutureWorlds = futureWorld :: editorState_.FutureWorlds }
+                let editorState_ = { editorState_ with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState_.FutureWorlds }
                 let world_ = { world_ with ExtData = editorState_ }
                 if form.interactButton.Checked then form.interactButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
@@ -303,9 +297,7 @@ let createNuEditForm worldChangers refWorld =
             | futureWorld :: futureWorlds ->
                 let world_ = futureWorld
                 let world_ = physicsHack world_
-                let editorState_ =
-                    {{ editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds }
-                                    with FutureWorlds = futureWorlds }
+                let editorState_ = { editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds; FutureWorlds = futureWorlds }
                 let world_ = { world_ with ExtData = editorState_ }
                 if form.interactButton.Checked then form.interactButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
@@ -318,7 +310,8 @@ let createNuEditForm worldChangers refWorld =
             let changer = (fun world_ -> pushPastWorld world_ world_)
             refWorld := changer !refWorld
             worldChangers.Add changer)
-
+            
+    form.Show ()
     form
 
 let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
@@ -350,9 +343,9 @@ let updateRedo (form : NuEditForm) world =
     elif not <| List.isEmpty editorState.FutureWorlds then
         form.redoToolStripMenuItem.Enabled <- true
 
-let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
-    refWorld := updateDrag form world
-    refWorld := Seq.fold (fun world changer -> changer world) !refWorld worldChangers
+let updateEditorWorld form (worldChangers : WorldChangers) refWorld world_ =
+    refWorld := updateDrag form world_
+    refWorld := Seq.fold (fun world_ changer -> changer world_) !refWorld worldChangers
     worldChangers.Clear ()
     let editorState = (!refWorld).ExtData :?> EditorState
     updateUndo form !refWorld
@@ -362,9 +355,8 @@ let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
 let [<EntryPoint; STAThread>] main _ =
     initTypeConverters ()
     let worldChangers = WorldChangers ()
-    let refWorld = ref Unchecked.defaultof<World> // uglaaayyyyyy!
+    let refWorld = ref Unchecked.defaultof<World>
     use form = createNuEditForm worldChangers refWorld
-    form.Show ()
     let sdlViewConfig = ExistingWindow form.displayPanel.Handle
     let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED)
     let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024

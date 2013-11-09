@@ -1329,7 +1329,7 @@ and evalUsingFile env usingFile =
     let directoryPath = getDirectoryRelativeToFile env usingFile.UFPath
     let absolutePath = Path.Combine (directoryPath, fileName)
     let usingFiles = if usingFile.UFReload then Set.empty else env.EnvUsingFiles
-    let newEnv = {{ env with EnvPath = directoryPath } with EnvUsingFiles = usingFiles }
+    let newEnv = { env with EnvPath = directoryPath; EnvUsingFiles = usingFiles }
     if newEnv.EnvUsingFiles.Contains absolutePath then makeEvalUnit env
     else
         try let exprs = runParserOnFile readExprsTillEnd () absolutePath System.Text.Encoding.Default
@@ -1347,7 +1347,7 @@ and evalUsingFile env usingFile =
                 // such a file, the file is still consider 'used'
                 let newUsingFiles2 = Set.add absolutePath newUsingFiles
                 let newEnv2 = if anyViolationsInValues then env else lastResult.Env
-                let newEnv3 = {{ newEnv2 with EnvPath = env.EnvPath } with EnvUsingFiles = newUsingFiles2 }
+                let newEnv3 = { newEnv2 with EnvPath = env.EnvPath; EnvUsingFiles = newUsingFiles2 }
                 if anyViolationsInValues then
                     let violation = firstViolation values
                     forwardEvalViolation newEnv3 violation
