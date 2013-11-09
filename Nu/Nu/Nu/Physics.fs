@@ -96,6 +96,7 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | BodyTransformInMessage of BodyTransformInMessage
     | ApplyImpulseMessage of ApplyImpulseMessage
     | SetGravityMessage of Vector2
+    | ResetHackMessage
 
 type  [<StructuralEquality; NoComparison>] IntegrationMessage =
     | BodyCollisionMessage of BodyCollisionMessage
@@ -212,7 +213,12 @@ let handlePhysicsMessage integrator physicsMessage =
     | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
     | BodyTransformInMessage bodyTransformInMessage -> transformBody integrator bodyTransformInMessage
     | ApplyImpulseMessage applyImpulseMessage -> applyImpulse integrator applyImpulseMessage
-    | SetGravityMessage gravity -> integrator.PhysicsContext.Gravity <- Framework.Vector2 (gravity.X, gravity.Y)
+    | SetGravityMessage gravity ->
+        integrator.PhysicsContext.Gravity <- Framework.Vector2 (gravity.X, gravity.Y)
+    | ResetHackMessage ->
+        integrator.PhysicsContext.Clear ()
+        integrator.Bodies.Clear ()
+        integrator.IntegrationMessages.Clear ()
     
 let handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
     for physicsMessage in List.rev physicsMessages do
@@ -240,7 +246,3 @@ let makeIntegrator gravity =
      { PhysicsContext = FarseerPhysics.Dynamics.World Gravity
        Bodies = BodyDictionary ()
        IntegrationMessages = List<IntegrationMessage> () }
-
-let resetPhysicsHack integrator =
-    integrator.PhysicsContext.Clear ()
-    integrator.Bodies.Clear ()
