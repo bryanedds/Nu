@@ -564,7 +564,7 @@ let addEntityModel address entityModel world =
     | Avatar avatar -> addAvatar address avatar world
     | TileMap tileMap -> addTileMap address tileMap world
 
-let addEntityModelsToGroup entityModels address world =
+let addEntityModels entityModels address world =
     let group = get world (worldGroup address)
     List.fold
         (fun world_ entityModel ->
@@ -585,7 +585,7 @@ let removeEntityModel address world =
     | Avatar avatar -> removeAvatar address avatar world
     | TileMap tileMap -> removeTileMap address tileMap world
 
-let removeEntityModelsFromGroup address world =
+let removeEntityModels address world =
     let group = get world (worldGroup address)
     Seq.fold
         (fun world_ entityModelAddress -> removeEntityModel (address @ [entityModelAddress]) world_)
@@ -597,7 +597,7 @@ let addGroup address group world =
     set (Group group) world (worldGroupModel address)
 
 let removeGroup address world =
-    let world2 = removeEntityModelsFromGroup address world
+    let world2 = removeEntityModels address world
     set None world2 (worldOptGroupModel address)
 
 // TODO: see if there's a nice way to put this module in another file
@@ -689,7 +689,7 @@ module Test =
         let world_ = unsubscribe TickAddress [] world_
         let world_ = unsubscribe ClickButtonAddress [] world_
         let world_ = set None world_ worldOptSelectedScreenModelAddress
-        let world_ = removeEntityModelsFromGroup address world_
+        let world_ = removeEntityModels address world_
         set None world_ (worldOptGroupModel address)
 
 let addGroupModel address groupModel world =
