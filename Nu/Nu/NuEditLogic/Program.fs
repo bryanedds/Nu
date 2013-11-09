@@ -14,6 +14,7 @@ open Microsoft.FSharp.Reflection
 open Nu.Core
 open Nu.Math
 open Nu.AssetMetadata
+open Nu.Physics
 open Nu.Sdl
 open Nu.Entity
 open Nu.Group
@@ -207,6 +208,15 @@ let updateDrag (form : NuEditForm) world_ =
         world_
     | DragRotation (pickOffset, origPosition, address) -> world_
 
+/// Needed for physics system side-effects...
+let physicsHack world_ =
+    resetPhysicsHack world_.Integrator
+    let groupModel = get world_ <| worldGroupModel Test.GroupModelAddress
+    let group = get groupModel groupModelGroup
+    let entityModels = Map.toValueList group.EntityModels
+    let world_ = removeEntityModels Test.GroupModelAddress world_
+    addEntityModels entityModels Test.GroupModelAddress world_
+
 let createNuEditForm worldChangers refWorld =
     
     let form = new NuEditForm ()
@@ -277,6 +287,7 @@ let createNuEditForm worldChangers refWorld =
             | [] -> world_
             | pastWorld :: pastWorlds ->
                 let world_ = pastWorld
+                let world_ = physicsHack world_
                 let editorState_ =
                     {{ editorState_ with PastWorlds = pastWorlds }
                                     with FutureWorlds = futureWorld :: editorState_.FutureWorlds }
@@ -294,6 +305,7 @@ let createNuEditForm worldChangers refWorld =
             | [] -> world_
             | futureWorld :: futureWorlds ->
                 let world_ = futureWorld
+                let world_ = physicsHack world_
                 let editorState_ =
                     {{ editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds }
                                     with FutureWorlds = futureWorlds }
@@ -317,6 +329,7 @@ let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
     refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
     Right !refWorld
 
+// TODO: remove code duplication with below
 let updateUndo (form : NuEditForm) world =
     let editorState = world.ExtData :?> EditorState
     if form.undoToolStripMenuItem.Enabled then
