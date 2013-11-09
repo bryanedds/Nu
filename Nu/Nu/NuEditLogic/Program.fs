@@ -209,15 +209,9 @@ let updateDrag (form : NuEditForm) world_ =
     | DragRotation (pickOffset, origPosition, address) -> world_
 
 /// Needed for physics system side-effects...
-let physicsHack world_ =
-    resetPhysicsHack world_.Integrator
-    let groupModel_ = get world_ <| worldGroupModel Test.GroupModelAddress
-    let group = get groupModel_ groupModelGroup
-    let entityModels = Map.toValueList group.EntityModels
-    let world_ = removeEntityModels Test.GroupModelAddress world_
-    let groupModel_ = get world_ <| worldGroupModel Test.GroupModelAddress
-    let world_ = addGroupModel Test.GroupModelAddress groupModel_ world_
-    addEntityModels entityModels Test.GroupModelAddress world_
+let physicsHack world =
+    resetPhysicsHack world.Integrator
+    reregisterPhysicsHack Test.GroupModelAddress world
 
 let createNuEditForm worldChangers refWorld =
     
