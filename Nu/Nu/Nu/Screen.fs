@@ -14,7 +14,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
 type [<StructuralEquality; NoComparison>] ScreenModel =
     | Screen of Screen
 
-let screenModelscreen =
+let screenLens =
     { Get = fun this ->
         match this with
         | Screen screen -> screen
@@ -23,18 +23,18 @@ let screenModelscreen =
         | Screen _ -> Screen screen }
        
 let private screenModelOptChildModelFinder addressHead this =
-    let screen = get this screenModelscreen
+    let screen = get this screenLens
     Map.tryFind addressHead screen.GroupModels
 
 let private screenModelChildModelAdder addressHead this (child : GroupModel) =
-    let screen = get this screenModelscreen
+    let screen = get this screenLens
     let screen2 = { screen with GroupModels = Map.add addressHead child screen.GroupModels }
-    set screen2 this screenModelscreen
+    set screen2 this screenLens
 
 let private screenModelChildModelRemover addressHead this =
-    let screen = get this screenModelscreen
+    let screen = get this screenLens
     let screen2 = { screen with GroupModels = Map.remove addressHead screen.GroupModels }
-    set screen2 this screenModelscreen
+    set screen2 this screenLens
 
 let private screenModelGetChildWithLens this address lens =
     get (getChild screenModelOptChildModelFinder this address) lens
@@ -61,58 +61,58 @@ let private screenModelSetOptChildWithLens optChild this address lens =
             let childModel2 = set child childModel lens
             setChild screenModelChildModelAdder screenModelChildModelRemover this address childModel2
 
-let screenModelGroupModels =
-    { Get = fun this -> (get this screenModelscreen).GroupModels
-      Set = fun groupModels this -> set { (get this screenModelscreen) with GroupModels = groupModels } this screenModelscreen }
+let groupModelsLens =
+    { Get = fun this -> (get this screenLens).GroupModels
+      Set = fun groupModels this -> set { (get this screenLens) with GroupModels = groupModels } this screenLens }
 
-let screenModelGroupModel address =
+let groupModelLens address =
     { Get = fun this -> Option.get <| screenModelOptChildModelFinder (List.head address) this
       Set = fun group this -> screenModelChildModelAdder (List.head address) this group }
 
-let screenModelOptGroupModel address =
+let optGroupModelLens address =
     { Get = fun this -> screenModelOptChildModelFinder (List.head address) this
       Set = fun optGroup this -> match optGroup with None -> screenModelChildModelRemover (List.head address) this | Some entity -> screenModelChildModelAdder (List.head address) this entity }
 
-let screenModelGroup address =
-    { Get = fun this -> screenModelGetChildWithLens this address groupModelGroup
-      Set = fun group this -> screenModelSetChildWithLens group this address groupModelGroup }
+let screenModelGroupLens address =
+    { Get = fun this -> screenModelGetChildWithLens this address groupLens
+      Set = fun group this -> screenModelSetChildWithLens group this address groupLens }
 
-let screenModelOptGroup address =
-    { Get = fun this -> screenModelGetOptChildWithLens this address groupModelGroup
-      Set = fun optGroup this -> screenModelSetOptChildWithLens optGroup this address groupModelGroup }
+let screenModelOptGroupLens address =
+    { Get = fun this -> screenModelGetOptChildWithLens this address groupLens
+      Set = fun optGroup this -> screenModelSetOptChildWithLens optGroup this address groupLens }
 
-let screenModelEntityModel address = screenModelGroupModel [List.head address] >>| groupModelEntityModel (List.tail address)
-let screenModelOptEntityModel address = screenModelGroupModel [List.head address] >>| groupModelOptEntityModel (List.tail address)
+let screenModelEntityModelLens address = groupModelLens [List.head address] >>| entityModelLens (List.tail address)
+let screenModelOptEntityModelLens address = groupModelLens [List.head address] >>| optEntityModelLens (List.tail address)
 
-let screenModelEntity address = screenModelGroupModel [List.head address] >>| groupModelEntity (List.tail address)
-let screenModelOptEntity address = screenModelGroupModel [List.head address] >>| groupModelOptEntity (List.tail address)
+let screenModelEntityLens address = groupModelLens [List.head address] >>| groupModelEntityLens (List.tail address)
+let screenModelOptEntityLens address = groupModelLens [List.head address] >>| groupModelOptEntityLens (List.tail address)
 
-let screenModelGui address = screenModelGroupModel [List.head address] >>| groupModelGui (List.tail address)
-let screenModelOptGui address = screenModelGroupModel [List.head address] >>| groupModelOptGui (List.tail address)
+let screenModelGuiLens address = groupModelLens [List.head address] >>| groupModelGuiLens (List.tail address)
+let screenModelOptGuiLens address = groupModelLens [List.head address] >>| groupModelOptGuiLens (List.tail address)
 
-let screenModelButton address = screenModelGroupModel [List.head address] >>| groupModelButton (List.tail address)
-let screenModelOptButton address = screenModelGroupModel [List.head address] >>| groupModelOptButton (List.tail address)
+let screenModelButtonLens address = groupModelLens [List.head address] >>| groupModelButtonLens (List.tail address)
+let screenModelOptButtonLens address = groupModelLens [List.head address] >>| groupModelOptButtonLens (List.tail address)
 
-let screenModelLabel address = screenModelGroupModel [List.head address] >>| groupModelLabel (List.tail address)
-let screenModelOptLabel address = screenModelGroupModel [List.head address] >>| groupModelOptLabel (List.tail address)
+let screenModelLabelLens address = groupModelLens [List.head address] >>| groupModelLabelLens (List.tail address)
+let screenModelOptLabelLens address = groupModelLens [List.head address] >>| groupModelOptLabelLens (List.tail address)
 
-let screenModeltextBox address = screenModelGroupModel [List.head address] >>| groupModelTextBox (List.tail address)
-let screenModelOptTextBox address = screenModelGroupModel [List.head address] >>| groupModelOptTextBox (List.tail address)
+let screenModeltextBoxLens address = groupModelLens [List.head address] >>| groupModelTextBoxLens (List.tail address)
+let screenModelOptTextBoxLens address = groupModelLens [List.head address] >>| groupModelOptTextBoxLens (List.tail address)
 
-let screenModelToggle address = screenModelGroupModel [List.head address] >>| groupModelToggle (List.tail address)
-let screenModelOptToggle address = screenModelGroupModel [List.head address] >>| groupModelOptToggle (List.tail address)
+let screenModelToggleLens address = groupModelLens [List.head address] >>| groupModelToggleLens (List.tail address)
+let screenModelOptToggleLens address = groupModelLens [List.head address] >>| groupModelOptToggleLens (List.tail address)
 
-let screenModelFeeler address = screenModelGroupModel [List.head address] >>| groupModelFeeler (List.tail address)
-let screenModelOptFeeler address = screenModelGroupModel [List.head address] >>| groupModelOptFeeler (List.tail address)
+let screenModelFeelerLens address = groupModelLens [List.head address] >>| groupModelFeelerLens (List.tail address)
+let screenModelOptFeelerLens address = groupModelLens [List.head address] >>| groupModelOptFeelerLens (List.tail address)
 
-let screenModelActor address = screenModelGroupModel [List.head address] >>| groupModelActor (List.tail address)
-let screenModelOptActor address = screenModelGroupModel [List.head address] >>| groupModelOptActor (List.tail address)
+let screenModelActorLens address = groupModelLens [List.head address] >>| groupModelActorLens (List.tail address)
+let screenModelOptActorLens address = groupModelLens [List.head address] >>| groupModelOptActorLens (List.tail address)
 
-let screenModelBlock address = screenModelGroupModel [List.head address] >>| groupModelBlock (List.tail address)
-let screenModelOptBlock address = screenModelGroupModel [List.head address] >>| groupModelOptBlock (List.tail address)
+let screenModelBlockLens address = groupModelLens [List.head address] >>| groupModelBlockLens (List.tail address)
+let screenModelOptBlockLens address = groupModelLens [List.head address] >>| groupModelOptBlockLens (List.tail address)
 
-let screenModelAvatar address = screenModelGroupModel [List.head address] >>| groupModelAvatar (List.tail address)
-let screenModelOptAvatar address = screenModelGroupModel [List.head address] >>| groupModelOptAvatar (List.tail address)
+let screenModelAvatarLens address = groupModelLens [List.head address] >>| groupModelAvatarLens (List.tail address)
+let screenModelOptAvatarLens address = groupModelLens [List.head address] >>| groupModelOptAvatarLens (List.tail address)
 
-let screenModelTileMap address = screenModelGroupModel [List.head address] >>| groupModelTileMap (List.tail address)
-let screenModelOptTileMap address = screenModelGroupModel [List.head address] >>| groupModelOptTileMap (List.tail address)
+let screenModelTileMapLens address = groupModelLens [List.head address] >>| groupModelTileMapLens (List.tail address)
+let screenModelOptTileMapLens address = groupModelLens [List.head address] >>| groupModelOptTileMapLens (List.tail address)

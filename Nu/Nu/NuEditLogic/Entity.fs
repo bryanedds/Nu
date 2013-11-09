@@ -27,23 +27,23 @@ let containsProperty<'m> (property : PropertyInfo) =
 
 let getValue (property : PropertyInfo) (entityModel : EntityModel) (lens : FSharpx.Lens<EntityModel, 'm>) =
     if containsProperty<'m> property then property.GetValue ( get entityModel lens )
-    elif containsProperty<Gui> property then property.GetValue (get entityModel entityModelGui)
-    elif containsProperty<Actor> property then property.GetValue (get entityModel entityModelActor)
-    else property.GetValue (get entityModel entityModelEntity)
+    elif containsProperty<Gui> property then property.GetValue (get entityModel guiLens)
+    elif containsProperty<Actor> property then property.GetValue (get entityModel actorLens)
+    else property.GetValue (get entityModel entityLens)
 
 let getEntityModelPropertyValue (property : PropertyInfo) (entityModel : EntityModel) =
     match entityModel with
-    | Button _ -> getValue property entityModel entityModelButton
-    | Label _ -> getValue property entityModel entityModelLabel
-    | TextBox _ -> getValue property entityModel entityModelTextBox
-    | Toggle _ -> getValue property entityModel entityModelToggle
-    | Feeler _ -> getValue property entityModel entityModelFeeler
-    | Block _ -> getValue property entityModel entityModelBlock
-    | Avatar _ -> getValue property entityModel entityModelAvatar
-    | TileMap _ -> getValue property entityModel entityModelTileMap
+    | Button _ -> getValue property entityModel buttonLens
+    | Label _ -> getValue property entityModel labelLens
+    | TextBox _ -> getValue property entityModel textBoxLens
+    | Toggle _ -> getValue property entityModel toggleLens
+    | Feeler _ -> getValue property entityModel feelerLens
+    | Block _ -> getValue property entityModel blockLens
+    | Avatar _ -> getValue property entityModel avatarLens
+    | TileMap _ -> getValue property entityModel tileMapLens
 
 let setEntityModelPropertyValue address (property : PropertyInfo) value world =
-    let entityModelLens = worldEntityModel address
+    let entityModelLens = worldEntityModelLens address
     let entityModel_ = get world entityModelLens
     let entityModel_ =
         // TODO: so much code duplication, make me wanna slap your momma!
@@ -153,7 +153,7 @@ let writeFile fileName world =
     use writer = XmlWriter.Create (file, writerSettings)
     writer.WriteStartDocument ()
     writer.WriteStartElement "Root"
-    let testGroupModel = get world <| worldGroupModel Test.GroupModelAddress
+    let testGroupModel = get world <| worldGroupModelLens Test.GroupModelAddress
     writeGroupModelToXml writer testGroupModel
     writer.WriteEndElement ()
     writer.WriteEndDocument ()

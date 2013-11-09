@@ -24,7 +24,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Game =
 type [<StructuralEquality; NoComparison>] GameModel =
     | Game of Game
 
-let gameModelGame =
+let gameLens =
     { Get = fun this ->
         match this with
         | Game game -> game
@@ -33,18 +33,18 @@ let gameModelGame =
         | Game _ -> Game game }
        
 let private gameModelOptChildModelFinder addressHead this =
-    let game = get this gameModelGame
+    let game = get this gameLens
     Map.tryFind addressHead game.ScreenModels
 
 let private gameModelChildModelAdder addressHead this (child : ScreenModel) =
-    let game = get this gameModelGame
+    let game = get this gameLens
     let game2 = { game with ScreenModels = Map.add addressHead child game.ScreenModels }
-    set game2 this gameModelGame
+    set game2 this gameLens
 
 let private gameModelChildModelRemover addressHead this =
-    let game = get this gameModelGame
+    let game = get this gameLens
     let game2 = { game with ScreenModels = Map.remove addressHead game.ScreenModels }
-    set game2 this gameModelGame
+    set game2 this gameLens
 
 let private gameModelGetChildWithLens this address lens =
     get (getChild gameModelOptChildModelFinder this address) lens
@@ -71,68 +71,68 @@ let private gameModelSetOptChildWithLens optChild this address lens =
             let childModel2 = set child childModel lens
             setChild gameModelChildModelAdder gameModelChildModelRemover this address childModel2
 
-let gameModelScreenModels =
-    { Get = fun this -> (get this gameModelGame).ScreenModels
-      Set = fun screenModels this -> set { (get this gameModelGame) with ScreenModels = screenModels } this gameModelGame }
+let screenModelsLens =
+    { Get = fun this -> (get this gameLens).ScreenModels
+      Set = fun screenModels this -> set { (get this gameLens) with ScreenModels = screenModels } this gameLens }
 
-let gameModelOptSelectedScreenModelAddress =
-    { Get = fun this -> (get this gameModelGame).OptSelectedScreenModelAddress
-      Set = fun optSelectedScreenModelAddress this -> set { (get this gameModelGame) with OptSelectedScreenModelAddress = optSelectedScreenModelAddress } this gameModelGame}
+let optSelectedScreenModelAddressLens =
+    { Get = fun this -> (get this gameLens).OptSelectedScreenModelAddress
+      Set = fun optSelectedScreenModelAddress this -> set { (get this gameLens) with OptSelectedScreenModelAddress = optSelectedScreenModelAddress } this gameLens}
 
-let gameModelScreenModel address =
+let screenModelLens address =
     { Get = fun this -> Option.get <| gameModelOptChildModelFinder (List.head address) this
       Set = fun screen this -> gameModelChildModelAdder (List.head address) this screen }
 
-let gameModelOptScreenModel address =
+let optScreenModelLens address =
     { Get = fun this -> gameModelOptChildModelFinder (List.head address) this
       Set = fun optScreen this -> match optScreen with None -> gameModelChildModelRemover (List.head address) this | Some entity -> gameModelChildModelAdder (List.head address) this entity }
 
-let gameModelScreen address =
-    { Get = fun this -> gameModelGetChildWithLens this address screenModelscreen
-      Set = fun screen this -> gameModelSetChildWithLens screen this address screenModelscreen }
+let gameModelScreenLens address =
+    { Get = fun this -> gameModelGetChildWithLens this address screenLens
+      Set = fun screen this -> gameModelSetChildWithLens screen this address screenLens }
 
-let gameModelOptScreen address =
-    { Get = fun this -> gameModelGetOptChildWithLens this address screenModelscreen
-      Set = fun optScreen this -> gameModelSetOptChildWithLens optScreen this address screenModelscreen }
+let gameModelOptScreenLens address =
+    { Get = fun this -> gameModelGetOptChildWithLens this address screenLens
+      Set = fun optScreen this -> gameModelSetOptChildWithLens optScreen this address screenLens }
 
-let gameModelGroupModel address = gameModelScreenModel [List.head address] >>| screenModelGroupModel (List.tail address)
-let gameModelOptGroupModel address = gameModelScreenModel [List.head address] >>| screenModelOptGroupModel (List.tail address)
+let gameModelGroupModelLens address = screenModelLens [List.head address] >>| groupModelLens (List.tail address)
+let gameModelOptGroupModelLens address = screenModelLens [List.head address] >>| optGroupModelLens (List.tail address)
 
-let gameModelGroup address = gameModelScreenModel [List.head address] >>| screenModelGroup (List.tail address)
-let gameModelOptGroup address = gameModelScreenModel [List.head address] >>| screenModelOptGroup (List.tail address)
+let gameModelGroupLens address = screenModelLens [List.head address] >>| screenModelGroupLens (List.tail address)
+let gameModelOptGroupLens address = screenModelLens [List.head address] >>| screenModelOptGroupLens (List.tail address)
 
-let gameModelEntityModel address = gameModelScreenModel [List.head address] >>| screenModelEntityModel (List.tail address)
-let gameModelOptEntityModel address = gameModelScreenModel [List.head address] >>| screenModelOptEntityModel (List.tail address)
+let gameModelEntityModelLens address = screenModelLens [List.head address] >>| screenModelEntityModelLens (List.tail address)
+let gameModelOptEntityModelLens address = screenModelLens [List.head address] >>| screenModelOptEntityModelLens (List.tail address)
 
-let gameModelEntity address = gameModelScreenModel [List.head address] >>| screenModelEntity (List.tail address)
-let gameModelOptEntity address = gameModelScreenModel [List.head address] >>| screenModelOptEntity (List.tail address)
+let gameModelEntityLens address = screenModelLens [List.head address] >>| screenModelEntityLens (List.tail address)
+let gameModelOptEntityLens address = screenModelLens [List.head address] >>| screenModelOptEntityLens (List.tail address)
 
-let gameModelGui address = gameModelScreenModel [List.head address] >>| screenModelGui (List.tail address)
-let gameModelOptGui address = gameModelScreenModel [List.head address] >>| screenModelOptGui (List.tail address)
+let gameModelGuiLens address = screenModelLens [List.head address] >>| screenModelGuiLens (List.tail address)
+let gameModelOptGuiLens address = screenModelLens [List.head address] >>| screenModelOptGuiLens (List.tail address)
 
-let gameModelButton address = gameModelScreenModel [List.head address] >>| screenModelButton (List.tail address)
-let gameModelOptButton address = gameModelScreenModel [List.head address] >>| screenModelOptButton (List.tail address)
+let gameModelButtonLens address = screenModelLens [List.head address] >>| screenModelButtonLens (List.tail address)
+let gameModelOptButtonLens address = screenModelLens [List.head address] >>| screenModelOptButtonLens (List.tail address)
 
-let gameModelLabel address = gameModelScreenModel [List.head address] >>| screenModelLabel (List.tail address)
-let gameModelOptLabel address = gameModelScreenModel [List.head address] >>| screenModelOptLabel (List.tail address)
+let gameModelLabelLens address = screenModelLens [List.head address] >>| screenModelLabelLens (List.tail address)
+let gameModelOptLabelLens address = screenModelLens [List.head address] >>| screenModelOptLabelLens (List.tail address)
 
-let gameModelTextBox address = gameModelScreenModel [List.head address] >>| screenModeltextBox (List.tail address)
-let gameModelOptTextBox address = gameModelScreenModel [List.head address] >>| screenModelOptTextBox (List.tail address)
+let gameModelTextBoxLens address = screenModelLens [List.head address] >>| screenModeltextBoxLens (List.tail address)
+let gameModelOptTextBoxLens address = screenModelLens [List.head address] >>| screenModelOptTextBoxLens (List.tail address)
 
-let gameModelToggle address = gameModelScreenModel [List.head address] >>| screenModelToggle (List.tail address)
-let gameModelOptToggle address = gameModelScreenModel [List.head address] >>| screenModelOptToggle (List.tail address)
+let gameModelToggleLens address = screenModelLens [List.head address] >>| screenModelToggleLens (List.tail address)
+let gameModelOptToggleLens address = screenModelLens [List.head address] >>| screenModelOptToggleLens (List.tail address)
 
-let gameModelFeeler address = gameModelScreenModel [List.head address] >>| screenModelFeeler (List.tail address)
-let gameModelOptFeeler address = gameModelScreenModel [List.head address] >>| screenModelOptFeeler (List.tail address)
+let gameModelFeelerLens address = screenModelLens [List.head address] >>| screenModelFeelerLens (List.tail address)
+let gameModelOptFeelerLens address = screenModelLens [List.head address] >>| screenModelOptFeelerLens (List.tail address)
 
-let gameModelActor address = gameModelScreenModel [List.head address] >>| screenModelActor (List.tail address)
-let gameModelOptActor address = gameModelScreenModel [List.head address] >>| screenModelOptActor (List.tail address)
+let gameModelActorLens address = screenModelLens [List.head address] >>| screenModelActorLens (List.tail address)
+let gameModelOptActorLens address = screenModelLens [List.head address] >>| screenModelOptActorLens (List.tail address)
 
-let gameModelBlock address = gameModelScreenModel [List.head address] >>| screenModelBlock (List.tail address)
-let gameModelOptBlock address = gameModelScreenModel [List.head address] >>| screenModelOptBlock (List.tail address)
+let gameModelBlockLens address = screenModelLens [List.head address] >>| screenModelBlockLens (List.tail address)
+let gameModelOptBlockLens address = screenModelLens [List.head address] >>| screenModelOptBlockLens (List.tail address)
 
-let gameModelAvatar address = gameModelScreenModel [List.head address] >>| screenModelAvatar (List.tail address)
-let gameModelOptAvatar address = gameModelScreenModel [List.head address] >>| screenModelOptAvatar (List.tail address)
+let gameModelAvatarLens address = screenModelLens [List.head address] >>| screenModelAvatarLens (List.tail address)
+let gameModelOptAvatarLens address = screenModelLens [List.head address] >>| screenModelOptAvatarLens (List.tail address)
 
-let gameModelTileMap address = gameModelScreenModel [List.head address] >>| screenModelTileMap (List.tail address)
-let gameModelOptTileMap address = gameModelScreenModel [List.head address] >>| screenModelOptTileMap (List.tail address)
+let gameModelTileMapLens address = screenModelLens [List.head address] >>| screenModelTileMapLens (List.tail address)
+let gameModelOptTileMapLens address = screenModelLens [List.head address] >>| screenModelOptTileMapLens (List.tail address)
