@@ -16,5 +16,5 @@ type Address = Lun list
 let getNuId = createGetNextId ()
 
 /// Add a custom TypeConverter to an existing type.
-let AssignTypeConverter<'t, 'ct> () =
-    ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'ct>)
+let AssignTypeConverter<'t, 'c> () =
+    ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)

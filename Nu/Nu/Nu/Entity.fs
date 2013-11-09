@@ -66,10 +66,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
       Position : Vector2
       Depth : single
       Size : Vector2
-      Rotation : single }    
-        
-let actorSep (actor : Actor) = actor.Entity
-let actorCmb (actor : Actor, entity) = { actor with Entity = entity }
+      Rotation : single }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { Actor : Actor
@@ -204,6 +201,9 @@ let entityModelOptFeeler =
 let entityModelFeeler =
     { Get = fun this -> Option.get (get this entityModelOptFeeler)
       Set = fun feeler this -> set (Some feeler) this entityModelOptFeeler }
+        
+let actorSep (actor : Actor) = actor.Entity
+let actorCmb (actor : Actor, entity) = { actor with Entity = entity }
 
 let entityModelOptActor =
     { Get = fun this ->
