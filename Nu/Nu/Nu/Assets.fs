@@ -1,4 +1,4 @@
-﻿module Nu.Assets
+﻿namespace Nu
 open System
 open System.Linq
 open System.Xml
@@ -39,40 +39,42 @@ type [<StructuralEquality; NoComparison>] AssetKey =
 
 type 'a AssetMap = Map<Lun, Map<Lun, 'a>>
 
-let tryLoadAsset packageName (xmlNode : XmlNode) =
-    let xmlAttributes = xmlNode.Attributes
-    let optName = xmlAttributes.GetNamedItem "name"
-    match optName with
-    | null -> None
-    | name ->
-        let optFileName = xmlAttributes.GetNamedItem "fileName"
-        match optFileName with
-        | null -> None
-        | fileName ->
-            let optAssociations = xmlAttributes.GetNamedItem "associations"
-            match optAssociations with
-            | null -> None
-            | associations ->
-                let associationList = List.ofArray (associations.InnerText.Split ',')
-                Some { Name = name.InnerText; FileName = fileName.InnerText; Associations = associationList; PackageName = packageName }
+module Assets =
 
-let tryLoadAssets association packageName (assetGraphFileName : string) =
-    try let document = XmlDocument ()
-        document.Load assetGraphFileName
-        let optRootNode = document.["root"]
-        match optRootNode with
-        | null -> Left ("Root node is missing from asset graph file '" + assetGraphFileName + "'.")
-        | rootNode ->
-            let possiblePackageNodes = rootNode.OfType<XmlNode> ()
-            let packageNodes = Seq.filter (fun (node : XmlNode) -> node.Name = "package" && (node.Attributes.GetNamedItem "name").InnerText = packageName) possiblePackageNodes
-            let optPackageNode = Seq.tryHead packageNodes
-            match optPackageNode with
-            | None -> Left ("Package node '" + packageName + "' is missing from asset graph file '" + assetGraphFileName + "'.")
-            | Some packageNode ->
-                let optAssets = Seq.map (fun assetNode -> tryLoadAsset packageName assetNode) (packageNode.OfType<XmlNode> ())
-                let assets = Seq.definitize optAssets
-                debugIf (fun () -> assets.Count () <> optAssets.Count ()) ("Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'.")
-                let associatedAssets = Seq.filter (fun asset -> asset.Associations.Contains association) assets
-                let associatedAssetList = List.ofSeq associatedAssets
-                Right associatedAssetList
-    with exn -> Left (str exn)
+    let tryLoadAsset packageName (xmlNode : XmlNode) =
+        let xmlAttributes = xmlNode.Attributes
+        let optName = xmlAttributes.GetNamedItem "name"
+        match optName with
+        | null -> None
+        | name ->
+            let optFileName = xmlAttributes.GetNamedItem "fileName"
+            match optFileName with
+            | null -> None
+            | fileName ->
+                let optAssociations = xmlAttributes.GetNamedItem "associations"
+                match optAssociations with
+                | null -> None
+                | associations ->
+                    let associationList = List.ofArray (associations.InnerText.Split ',')
+                    Some { Name = name.InnerText; FileName = fileName.InnerText; Associations = associationList; PackageName = packageName }
+
+    let tryLoadAssets association packageName (assetGraphFileName : string) =
+        try let document = XmlDocument ()
+            document.Load assetGraphFileName
+            let optRootNode = document.["root"]
+            match optRootNode with
+            | null -> Left ("Root node is missing from asset graph file '" + assetGraphFileName + "'.")
+            | rootNode ->
+                let possiblePackageNodes = rootNode.OfType<XmlNode> ()
+                let packageNodes = Seq.filter (fun (node : XmlNode) -> node.Name = "package" && (node.Attributes.GetNamedItem "name").InnerText = packageName) possiblePackageNodes
+                let optPackageNode = Seq.tryHead packageNodes
+                match optPackageNode with
+                | None -> Left ("Package node '" + packageName + "' is missing from asset graph file '" + assetGraphFileName + "'.")
+                | Some packageNode ->
+                    let optAssets = Seq.map (fun assetNode -> tryLoadAsset packageName assetNode) (packageNode.OfType<XmlNode> ())
+                    let assets = Seq.definitize optAssets
+                    debugIf (fun () -> assets.Count () <> optAssets.Count ()) ("Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'.")
+                    let associatedAssets = Seq.filter (fun asset -> asset.Associations.Contains association) assets
+                    let associatedAssetList = List.ofSeq associatedAssets
+                    Right associatedAssetList
+        with exn -> Left (str exn)

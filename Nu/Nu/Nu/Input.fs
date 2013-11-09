@@ -1,4 +1,4 @@
-﻿module Nu.Input
+﻿namespace Nu
 open OpenTK
 open Nu.Core
 
