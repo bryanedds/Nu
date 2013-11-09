@@ -99,7 +99,7 @@ type [<StructuralEquality; NoComparison>] EntityModel =
     | Avatar of Avatar
     | TileMap of TileMap
 
-let entityModelEntity =
+let entityLens =
     { Get = fun this ->
         match this with
         | Button button -> button.Gui.Entity
@@ -121,10 +121,7 @@ let entityModelEntity =
         | Avatar avatar -> Avatar { avatar with Actor = { avatar.Actor with Entity = entity }}
         | TileMap tileMap -> TileMap { tileMap with Actor = { tileMap.Actor with Entity = entity }}}
 
-let guiSep (gui : Gui) = (gui, gui.Entity)
-let guiCmb (gui : Gui, entity) = { gui with Entity = entity }
-
-let entityModelOptGui =
+let optGuiLens =
     { Get = fun this ->
         match this with
         | Button button -> Some button.Gui
@@ -143,69 +140,69 @@ let entityModelOptGui =
         | Feeler feeler -> Feeler { feeler with Gui = gui }
         | Block _ | Avatar _ | TileMap _ -> failwith "Entity is not a gui." }
 
-let entityModelGui =
-    { Get = fun this -> Option.get (get this entityModelOptGui)
-      Set = fun gui this -> set (Some gui) this entityModelOptGui }
+let guiLens =
+    { Get = fun this -> Option.get (get this optGuiLens)
+      Set = fun gui this -> set (Some gui) this optGuiLens }
+
+let guiSep (gui : Gui) = (gui, gui.Entity)
+let guiCmb (gui : Gui, entity) = { gui with Entity = entity }
+
+let optButtonLens =
+    { Get = fun this -> match this with Button button -> Some button | _ -> None
+      Set = fun optButton this -> Button <| Option.get optButton }
+
+let buttonLens =
+    { Get = fun this -> Option.get (get this optButtonLens)
+      Set = fun button this -> set (Some button) this optButtonLens }
 
 let buttonSep (button : Button) = (button, button.Gui, button.Gui.Entity)
 let buttonCmb (button : Button, gui, entity) = { button with Gui = { gui with Entity = entity }}
 
-let entityModelOptButton =
-    { Get = fun this -> match this with Button button -> Some button | _ -> None
-      Set = fun optButton this -> Button <| Option.get optButton }
+let optLabelLens =
+    { Get = fun this -> match this with Label label -> Some label | _ -> None
+      Set = fun optLabel this -> Label <| Option.get optLabel }
 
-let entityModelButton =
-    { Get = fun this -> Option.get (get this entityModelOptButton)
-      Set = fun button this -> set (Some button) this entityModelOptButton }
+let labelLens =
+    { Get = fun this -> Option.get (get this optLabelLens)
+      Set = fun label this -> set (Some label) this optLabelLens }
 
 let labelSep (label : Label) = (label, label.Gui, label.Gui.Entity)
 let labelCmb (label : Label, gui, entity) = { label with Gui = { gui with Entity = entity }}
 
-let entityModelOptLabel =
-    { Get = fun this -> match this with Label label -> Some label | _ -> None
-      Set = fun optLabel this -> Label <| Option.get optLabel }
+let optTextBoxLens =
+    { Get = fun this -> match this with TextBox textBox -> Some textBox | _ -> None
+      Set = fun optTextBox this -> TextBox <| Option.get optTextBox }
 
-let entityModelLabel =
-    { Get = fun this -> Option.get (get this entityModelOptLabel)
-      Set = fun label this -> set (Some label) this entityModelOptLabel }
+let textBoxLens =
+    { Get = fun this -> Option.get (get this optTextBoxLens)
+      Set = fun textBox this -> set (Some textBox) this optTextBoxLens }
 
 let textBoxSep (textBox : TextBox) = (textBox, textBox.Gui, textBox.Gui.Entity)
 let textBoxCmb (textBox : TextBox, gui, entity) = { textBox with Gui = { gui with Entity = entity }}
 
-let entityModelOptTextBox =
-    { Get = fun this -> match this with TextBox textBox -> Some textBox | _ -> None
-      Set = fun optTextBox this -> TextBox <| Option.get optTextBox }
+let optToggleLens =
+    { Get = fun this -> match this with Toggle toggle -> Some toggle | _ -> None
+      Set = fun optToggle this -> Toggle <| Option.get optToggle }
 
-let entityModelTextBox =
-    { Get = fun this -> Option.get (get this entityModelOptTextBox)
-      Set = fun textBox this -> set (Some textBox) this entityModelOptTextBox }
+let toggleLens =
+    { Get = fun this -> Option.get (get this optToggleLens)
+      Set = fun toggle this -> set (Some toggle) this optToggleLens }
 
 let toggleSep (toggle : Toggle) = (toggle, toggle.Gui, toggle.Gui.Entity)
 let toggleCmb (toggle : Toggle, gui, entity) = { toggle with Gui = { gui with Entity = entity }}
 
-let entityModelOptToggle =
-    { Get = fun this -> match this with Toggle toggle -> Some toggle | _ -> None
-      Set = fun optToggle this -> Toggle <| Option.get optToggle }
+let optFeelerLens =
+    { Get = fun this -> match this with Feeler feeler -> Some feeler | _ -> None
+      Set = fun optFeeler this -> Feeler <| Option.get optFeeler }
 
-let entityModelToggle =
-    { Get = fun this -> Option.get (get this entityModelOptToggle)
-      Set = fun toggle this -> set (Some toggle) this entityModelOptToggle }
+let feelerLens =
+    { Get = fun this -> Option.get (get this optFeelerLens)
+      Set = fun feeler this -> set (Some feeler) this optFeelerLens }
 
 let feelerSep (feeler : Feeler) = (feeler, feeler.Gui, feeler.Gui.Entity)
 let feelerCmb (feeler : Feeler, gui, entity) = { feeler with Gui = { gui with Entity = entity }}
 
-let entityModelOptFeeler =
-    { Get = fun this -> match this with Feeler feeler -> Some feeler | _ -> None
-      Set = fun optFeeler this -> Feeler <| Option.get optFeeler }
-
-let entityModelFeeler =
-    { Get = fun this -> Option.get (get this entityModelOptFeeler)
-      Set = fun feeler this -> set (Some feeler) this entityModelOptFeeler }
-        
-let actorSep (actor : Actor) = actor.Entity
-let actorCmb (actor : Actor, entity) = { actor with Entity = entity }
-
-let entityModelOptActor =
+let optActorLens =
     { Get = fun this ->
         match this with
         | Button _
@@ -228,42 +225,45 @@ let entityModelOptActor =
         | Avatar avatar -> Avatar { avatar with Actor = actor }
         | TileMap tileMap -> TileMap { tileMap with Actor = actor }}
 
-let entityModelActor =
-    { Get = fun this -> Option.get (get this entityModelOptActor)
-      Set = fun actor this -> set (Some actor) this entityModelOptActor }
+let actorLens =
+    { Get = fun this -> Option.get (get this optActorLens)
+      Set = fun actor this -> set (Some actor) this optActorLens }
+        
+let actorSep (actor : Actor) = actor.Entity
+let actorCmb (actor : Actor, entity) = { actor with Entity = entity }
+
+let optBlockLens =
+    { Get = fun this -> match this with Block block -> Some block | _ -> None
+      Set = fun optBlock this -> Block <| Option.get optBlock }
+
+let blockLens =
+    { Get = fun this -> Option.get (get this optBlockLens)
+      Set = fun block this -> set (Some block) this optBlockLens }
 
 let blockSep (block : Block) = (block, block.Actor, block.Actor.Entity)
 let blockCmb (block : Block, actor, entity) = { block with Actor = { actor with Entity = entity }}
 
-let entityModelOptBlock =
-    { Get = fun this -> match this with Block block -> Some block | _ -> None
-      Set = fun optBlock this -> Block <| Option.get optBlock }
+let optAvatarLens =
+    { Get = fun this -> match this with Avatar avatar -> Some avatar | _ -> None
+      Set = fun optAvatar this -> Avatar <| Option.get optAvatar }
 
-let entityModelBlock =
-    { Get = fun this -> Option.get (get this entityModelOptBlock)
-      Set = fun block this -> set (Some block) this entityModelOptBlock }
+let avatarLens =
+    { Get = fun this -> Option.get (get this optAvatarLens)
+      Set = fun avatar this -> set (Some avatar) this optAvatarLens }
 
 let avatarSep (avatar : Avatar) = (avatar, avatar.Actor, avatar.Actor.Entity)
 let avatarCmb (avatar : Avatar, actor, entity) = { avatar with Actor = { actor with Entity = entity }}
 
-let entityModelOptAvatar =
-    { Get = fun this -> match this with Avatar avatar -> Some avatar | _ -> None
-      Set = fun optAvatar this -> Avatar <| Option.get optAvatar }
-
-let entityModelAvatar =
-    { Get = fun this -> Option.get (get this entityModelOptAvatar)
-      Set = fun avatar this -> set (Some avatar) this entityModelOptAvatar }
-
-let tileMapSep (tileMap : TileMap) = (tileMap, tileMap.Actor, tileMap.Actor.Entity)
-let tileMapCmb (tileMap : TileMap, actor, entity) = { tileMap with Actor = { actor with Entity = entity }}
-
-let entityModelOptTileMap =
+let optTileMapLens =
     { Get = fun this -> match this with TileMap tileMap -> Some tileMap | _ -> None
       Set = fun optTileMap this -> TileMap <| Option.get optTileMap }
 
-let entityModelTileMap =
-    { Get = fun this -> Option.get (get this entityModelOptTileMap)
-      Set = fun tileMap this -> set (Some tileMap) this entityModelOptTileMap }
+let tileMapLens =
+    { Get = fun this -> Option.get (get this optTileMapLens)
+      Set = fun tileMap this -> set (Some tileMap) this optTileMapLens }
+
+let tileMapSep (tileMap : TileMap) = (tileMap, tileMap.Actor, tileMap.Actor.Entity)
+let tileMapCmb (tileMap : TileMap, actor, entity) = { tileMap with Actor = { actor with Entity = entity }}
 
 let makeDefaultEntity () =
     let id = getNuId ()
@@ -409,10 +409,10 @@ let setEntityModelTransform relativeToView camera positionSnap rotationSnap tran
     | Label _
     | TextBox _
     | Toggle _
-    | Feeler _ -> setGuiTransform positionSnap rotationSnap transform entityModel entityModelGui
+    | Feeler _ -> setGuiTransform positionSnap rotationSnap transform entityModel guiLens
     | Block _
     | Avatar _
-    | TileMap _ -> setActorTransformRelative view positionSnap rotationSnap transform entityModel entityModelActor
+    | TileMap _ -> setActorTransformRelative view positionSnap rotationSnap transform entityModel actorLens
 
 let writeEntityModelToXml (writer : XmlWriter) entityModel =
     writer.WriteStartElement typeof<EntityModel>.Name
