@@ -164,13 +164,20 @@ module Sim =
     let worldTileMapLens (address : Address) = gameModelLens >>| gameModelTileMapLens address
     let worldOptTileMapLens (address : Address) = gameModelLens >>| gameModelOptTileMapLens address
 
-    let getSimulant address world =
-        match address with
-        | [] -> GameModel <| get world gameModelLens
-        | [_] as screenAddress -> ScreenModel <| get world (worldScreenModelLens screenAddress)
-        | [_; _] as groupAddress -> GroupModel <| get world (worldGroupModelLens groupAddress)
-        | [_; _; _] as entityAddress -> EntityModel <| get world (worldEntityModelLens entityAddress)
-        | _ -> failwith <| "Invalid simulant address '" + str address + "'."
+    let createEmptyWorld sdlDeps extData =
+        { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenModelAddress = None }
+          Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
+          Subscriptions = Map.empty
+          MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+          AudioPlayer = makeAudioPlayer ()
+          Renderer = makeRenderer sdlDeps.RenderContext
+          Integrator = makeIntegrator Gravity
+          AssetMetadataMap = Map.empty
+          AudioMessages = []
+          RenderMessages = []
+          PhysicsMessages = []
+          Components = []
+          ExtData = extData }
 
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
@@ -216,6 +223,14 @@ module Sim =
         | ScreenModel _ -> ScreenModelPublishingPriority
         | GroupModel _ -> GroupModelPublishingPriority
         | EntityModel entityModel -> getPickingPriority entityModel
+
+    let getSimulant address world =
+        match address with
+        | [] -> GameModel <| get world gameModelLens
+        | [_] as screenAddress -> ScreenModel <| get world (worldScreenModelLens screenAddress)
+        | [_; _] as groupAddress -> GroupModel <| get world (worldGroupModelLens groupAddress)
+        | [_; _; _] as entityAddress -> EntityModel <| get world (worldEntityModelLens entityAddress)
+        | _ -> failwith <| "Invalid simulant address '" + str address + "'."
 
     let getSimulants subscriptions world =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
@@ -707,6 +722,22 @@ module Sim =
     let removeScreen address world =
         set None world (worldOptScreenModelLens address)
 
+    let reregisterPhysicsHack4 groupModelAddress world_ _ entityModel =
+        match entityModel with
+        | Button _
+        | Label _
+        | TextBox _
+        | Toggle _
+        | Feeler _ -> world_
+        | Block block -> registerBlockPhysics (groupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_
+        | Avatar avatar -> registerAvatarPhysics (groupModelAddress @ [Lun.make avatar.Actor.Entity.Name]) avatar world_
+        | TileMap tileMap -> registerTileMapPhysics (groupModelAddress @ [Lun.make tileMap.Actor.Entity.Name]) tileMap world_
+
+    let reregisterPhysicsHack groupModelAddress world_ =
+        let groupModel = get world_ <| worldGroupModelLens groupModelAddress
+        let entityModels = get groupModel entityModelsLens
+        Map.fold (reregisterPhysicsHack4 groupModelAddress) world_ entityModels
+
     let getComponentAudioDescriptors world : AudioDescriptor rQueue =
         let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
         List.collect (fun descs -> descs) descriptorLists
@@ -834,21 +865,6 @@ module Sim =
         let world2 = { world with PhysicsMessages = [] }
         handleIntegrationMessages integrationMessages world2
 
-    let createEmptyWorld sdlDeps extData =
-        { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenModelAddress = None }
-          Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
-          Subscriptions = Map.empty
-          MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-          AudioPlayer = makeAudioPlayer ()
-          Renderer = makeRenderer sdlDeps.RenderContext
-          Integrator = makeIntegrator Gravity
-          AssetMetadataMap = Map.empty
-          AudioMessages = []
-          RenderMessages = []
-          PhysicsMessages = []
-          Components = []
-          ExtData = extData }
-
     let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
         runSdl
             (fun sdlDeps -> tryCreateWorld sdlDeps)
@@ -890,19 +906,3 @@ module Sim =
 
     let run tryCreateWorld handleUpdate sdlConfig =
         run4 tryCreateWorld handleUpdate id sdlConfig
-
-    let reregisterPhysicsHack4 groupModelAddress world_ _ entityModel =
-        match entityModel with
-        | Button _
-        | Label _
-        | TextBox _
-        | Toggle _
-        | Feeler _ -> world_
-        | Block block -> registerBlockPhysics (groupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_
-        | Avatar avatar -> registerAvatarPhysics (groupModelAddress @ [Lun.make avatar.Actor.Entity.Name]) avatar world_
-        | TileMap tileMap -> registerTileMapPhysics (groupModelAddress @ [Lun.make tileMap.Actor.Entity.Name]) tileMap world_
-
-    let reregisterPhysicsHack groupModelAddress world_ =
-        let groupModel = get world_ <| worldGroupModelLens groupModelAddress
-        let entityModels = get groupModel entityModelsLens
-        Map.fold (reregisterPhysicsHack4 groupModelAddress) world_ entityModels
