@@ -49,8 +49,9 @@ type [<StructuralEquality; NoComparison>] AudioMessage =
     | StopSong
 
 type [<ReferenceEquality>] AudioAsset =
-    | WavAsset of nativeint
-    | OggAsset of nativeint
+    private 
+        | WavAsset of nativeint
+        | OggAsset of nativeint
 
 type [<ReferenceEquality>] AudioPlayer =
     private
