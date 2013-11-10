@@ -288,7 +288,8 @@ module Entities =
           Rotation = 0.0f }
 
     let makeDefaultEntityModel typeName =
-        let entityModel = (Activator.CreateInstance ("Nu", typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
+        let assemblyName = (Assembly.GetExecutingAssembly ()).FullName
+        let entityModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
         match entityModel with
         | Button _ ->
             Button
@@ -412,14 +413,14 @@ module Entities =
     let writeEntityModelToXml (writer : XmlWriter) entityModel =
         writer.WriteStartElement typeof<EntityModel>.Name
         match entityModel with
-        | Button button -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+Button" [button :> obj; button.Gui :> obj; button.Gui.Entity :> obj]
-        | Label label -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+Label" [label :> obj; label.Gui :> obj; label.Gui.Entity :> obj]
-        | TextBox textBox -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+TextBox" [textBox :> obj; textBox.Gui :> obj; textBox.Gui.Entity :> obj]
-        | Toggle toggle -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+Toggle" [toggle :> obj; toggle.Gui :> obj; toggle.Gui.Entity :> obj]
-        | Feeler feeler -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+Feeler" [feeler :> obj; feeler.Gui :> obj; feeler.Gui.Entity :> obj]
-        | Block block -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+Block" [block :> obj; block.Actor :> obj; block.Actor.Entity :> obj]
-        | Avatar avatar -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+Avatar" [avatar :> obj; avatar.Actor :> obj; avatar.Actor.Entity :> obj]
-        | TileMap tileMap -> writeModelPropertiesMany writer "Nu.Entities+EntityModel+TileMap" [tileMap :> obj; tileMap.Actor :> obj; tileMap.Actor.Entity :> obj]
+        | Button button -> writeModelPropertiesMany writer "Nu.EntityModel+Button" [button :> obj; button.Gui :> obj; button.Gui.Entity :> obj]
+        | Label label -> writeModelPropertiesMany writer "Nu.EntityModel+Label" [label :> obj; label.Gui :> obj; label.Gui.Entity :> obj]
+        | TextBox textBox -> writeModelPropertiesMany writer "Nu.EntityModel+TextBox" [textBox :> obj; textBox.Gui :> obj; textBox.Gui.Entity :> obj]
+        | Toggle toggle -> writeModelPropertiesMany writer "Nu.EntityModel+Toggle" [toggle :> obj; toggle.Gui :> obj; toggle.Gui.Entity :> obj]
+        | Feeler feeler -> writeModelPropertiesMany writer "Nu.EntityModel+Feeler" [feeler :> obj; feeler.Gui :> obj; feeler.Gui.Entity :> obj]
+        | Block block -> writeModelPropertiesMany writer "Nu.EntityModel+Block" [block :> obj; block.Actor :> obj; block.Actor.Entity :> obj]
+        | Avatar avatar -> writeModelPropertiesMany writer "Nu.EntityModel+Avatar" [avatar :> obj; avatar.Actor :> obj; avatar.Actor.Entity :> obj]
+        | TileMap tileMap -> writeModelPropertiesMany writer "Nu.EntityModel+TileMap" [tileMap :> obj; tileMap.Actor :> obj; tileMap.Actor.Entity :> obj]
         writer.WriteEndElement ()
 
     let loadEntityModelFromXml (entityModelNode : XmlNode) =
