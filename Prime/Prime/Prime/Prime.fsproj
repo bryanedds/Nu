@@ -60,6 +60,7 @@
     <Compile Include="Lensx.fs" />
     <Compile Include="RduTreeModule.fs" />
     <Compile Include="RduTree.fs" />
+    <Compile Include="Propagate.fs" />
     <Compile Include="Log.fs" />
     <None Include="Interactive.fsx" />
   </ItemGroup>
