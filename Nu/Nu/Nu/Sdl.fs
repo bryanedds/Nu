@@ -12,7 +12,7 @@ type SdlWindowConfig =
 
 type SdlViewConfig =
     | NewWindow of SdlWindowConfig
-    | ExistingWindow of nativeint
+    | ExistingWindow of nativeint // NOTE: exposed pointer
     //| FullScreen
 
 type SdlConfig =
@@ -23,8 +23,8 @@ type SdlConfig =
       AudioChunkSize : int }
 
 type SdlDeps =
-    { RenderContext : nativeint
-      Window : nativeint
+    { RenderContext : nativeint // NOTE: exposed pointer
+      Window : nativeint // NOTE: exposed pointer
       Config : SdlConfig }
 
 module Sdl =
