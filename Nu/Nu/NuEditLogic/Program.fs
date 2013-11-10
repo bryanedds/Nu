@@ -212,110 +212,122 @@ module Program =
         let world_ = { world_ with PhysicsMessages = ResetHackMessage :: world_.PhysicsMessages }
         reregisterPhysicsHack Test.GroupModelAddress world_
 
+    let handleExit (form : NuEditForm) _ =
+        form.Close ()
+
+    let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
+        let changer = (fun world_ ->
+            let pastWorld = world_
+            let entityModelPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
+            let entityModelTransform = { Transform.Position = entityModelPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
+            let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
+            let entityModel_ = makeDefaultEntityModel entityModelTypeName
+            let entityModel_ = setEntityModelTransform (Some world_.Camera) 0 0 entityModelTransform entityModel_
+            let entity = get entityModel_ entityLens
+            let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
+            let world_ = addEntityModel entityModelAddress entityModel_ world_
+            let world_ = pushPastWorld pastWorld world_
+            refWorld := world_ // must be set for property grid
+            form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+            world_)
+        refWorld := changer !refWorld
+        worldChangers.Add changer
+
+    let handleDelete (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let selectedObject = form.propertyGrid.SelectedObject
+        form.propertyGrid.SelectedObject <- null
+        let changer = (fun world_ ->
+            match selectedObject with
+            | :? EntityModelTypeDescriptorSource as entityModelTds ->
+                let pastWorld = world_
+                let world_ = removeEntityModel entityModelTds.Address world_
+                pushPastWorld pastWorld world_
+            | _ -> world_)
+        refWorld := changer !refWorld
+        worldChangers.Add changer
+
+    let handleSave (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let saveFileResult = form.saveFileDialog.ShowDialog form
+        match saveFileResult with
+        | DialogResult.OK -> writeFile form.saveFileDialog.FileName !refWorld
+        | _ -> ()
+
+    let handleOpen (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let openFileResult = form.openFileDialog.ShowDialog form
+        match openFileResult with
+        | DialogResult.OK ->
+            let changer = (fun world_ ->
+                let world_ = readFile form.openFileDialog.FileName world_
+                let world_ = clearPastWorlds world_
+                form.interactButton.Checked <- false
+                world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+        | _ -> ()
+
+    let handleUndo (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let changer = (fun world_ ->
+            let futureWorld = world_
+            let editorState_ = world_.ExtData :?> EditorState
+            match editorState_.PastWorlds with
+            | [] -> world_
+            | pastWorld :: pastWorlds ->
+                let world_ = pastWorld
+                let world_ = physicsHack world_
+                let editorState_ = { editorState_ with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState_.FutureWorlds }
+                let world_ = { world_ with ExtData = editorState_ }
+                if form.interactButton.Checked then form.interactButton.Checked <- false
+                form.propertyGrid.SelectedObject <- null
+                world_)
+        refWorld := changer !refWorld
+        worldChangers.Add changer
+
+    let handleRedo (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let changer = (fun world_ ->
+            let pastWorld = world_
+            let editorState_ = world_.ExtData :?> EditorState
+            match editorState_.FutureWorlds with
+            | [] -> world_
+            | futureWorld :: futureWorlds ->
+                let world_ = futureWorld
+                let world_ = physicsHack world_
+                let editorState_ = { editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds; FutureWorlds = futureWorlds }
+                let world_ = { world_ with ExtData = editorState_ }
+                if form.interactButton.Checked then form.interactButton.Checked <- false
+                form.propertyGrid.SelectedObject <- null
+                world_)
+        refWorld := changer !refWorld
+        worldChangers.Add changer
+
+    let handleInteractChanged (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        if form.interactButton.Checked then
+            let changer = (fun world_ -> pushPastWorld world_ world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+
     let createNuEditForm worldChangers refWorld =
-    
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (ScreenWidth, ScreenHeight)
         form.positionSnapTextBox.Text <- str DefaultPositionSnap
         form.rotationSnapTextBox.Text <- str DefaultRotationSnap
         form.creationDepthTextBox.Text <- str DefaultCreationDepth
-
         for unionCase in FSharpType.GetUnionCases (typeof<EntityModel>) do
             ignore <| form.createEntityComboBox.Items.Add unionCase.Name
         form.createEntityComboBox.SelectedIndex <- 0
-
-        form.exitToolStripMenuItem.Click.Add (fun _ ->
-            form.Close ())
-
-        form.createEntityButton.Click.Add (fun _ ->
-            let changer = (fun world_ ->
-                let pastWorld = world_
-                let entityModelTransform = { Transform.Position = world_.Camera.EyeSize * 0.5f; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
-                let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
-                let entityModel_ = makeDefaultEntityModel entityModelTypeName
-                let entityModel_ = setEntityModelTransform (Some world_.Camera) 0 0 entityModelTransform entityModel_
-                let entity = get entityModel_ entityLens
-                let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
-                let world_ = addEntityModel entityModelAddress entityModel_ world_
-                let world_ = pushPastWorld pastWorld world_
-                refWorld := world_ // must be set for property grid
-                form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                world_)
-            refWorld := changer !refWorld
-            worldChangers.Add changer)
-
-        form.deleteEntityButton.Click.Add (fun _ ->
-            let selectedObject = form.propertyGrid.SelectedObject
-            form.propertyGrid.SelectedObject <- null
-            let changer = (fun world_ ->
-                match selectedObject with
-                | :? EntityModelTypeDescriptorSource as entityModelTds ->
-                    let pastWorld = world_
-                    let world_ = removeEntityModel entityModelTds.Address world_
-                    pushPastWorld pastWorld world_
-                | _ -> world_)
-            refWorld := changer !refWorld
-            worldChangers.Add changer)
-
-        form.saveToolStripMenuItem.Click.Add (fun _ ->
-            let saveFileResult = form.saveFileDialog.ShowDialog form
-            match saveFileResult with
-            | DialogResult.OK -> writeFile form.saveFileDialog.FileName !refWorld
-            | _ -> ())
-
-        form.openToolStripMenuItem.Click.Add (fun _ ->
-            let openFileResult = form.openFileDialog.ShowDialog form
-            match openFileResult with
-            | DialogResult.OK ->
-                let changer = (fun world_ ->
-                    let world_ = readFile form.openFileDialog.FileName world_
-                    let world_ = clearPastWorlds world_
-                    form.interactButton.Checked <- false
-                    world_)
-                refWorld := changer !refWorld
-                worldChangers.Add changer
-            | _ -> ())
-
-        form.undoToolStripMenuItem.Click.Add (fun _ ->
-            let changer = (fun world_ ->
-                let futureWorld = world_
-                let editorState_ = world_.ExtData :?> EditorState
-                match editorState_.PastWorlds with
-                | [] -> world_
-                | pastWorld :: pastWorlds ->
-                    let world_ = pastWorld
-                    let world_ = physicsHack world_
-                    let editorState_ = { editorState_ with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState_.FutureWorlds }
-                    let world_ = { world_ with ExtData = editorState_ }
-                    if form.interactButton.Checked then form.interactButton.Checked <- false
-                    form.propertyGrid.SelectedObject <- null
-                    world_)
-            refWorld := changer !refWorld
-            worldChangers.Add changer)
-
-        form.redoToolStripMenuItem.Click.Add (fun _ ->
-            let changer = (fun world_ ->
-                let pastWorld = world_
-                let editorState_ = world_.ExtData :?> EditorState
-                match editorState_.FutureWorlds with
-                | [] -> world_
-                | futureWorld :: futureWorlds ->
-                    let world_ = futureWorld
-                    let world_ = physicsHack world_
-                    let editorState_ = { editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds; FutureWorlds = futureWorlds }
-                    let world_ = { world_ with ExtData = editorState_ }
-                    if form.interactButton.Checked then form.interactButton.Checked <- false
-                    form.propertyGrid.SelectedObject <- null
-                    world_)
-            refWorld := changer !refWorld
-            worldChangers.Add changer)
-
-        form.interactButton.CheckedChanged.Add (fun args ->
-            if form.interactButton.Checked then
-                let changer = (fun world_ -> pushPastWorld world_ world_)
-                refWorld := changer !refWorld
-                worldChangers.Add changer)
-            
+        form.exitToolStripMenuItem.Click.Add (handleExit form)
+        form.createEntityButton.Click.Add (handleCreate form worldChangers refWorld false)
+        form.createToolStripMenuItem.Click.Add (handleCreate form worldChangers refWorld false)
+        form.createContextMenuItem.Click.Add (handleCreate form worldChangers refWorld true)
+        form.deleteEntityButton.Click.Add (handleDelete form worldChangers refWorld)
+        form.deleteToolStripMenuItem.Click.Add (handleDelete form worldChangers refWorld)
+        form.deleteContextMenuItem.Click.Add (handleDelete form worldChangers refWorld)
+        form.saveToolStripMenuItem.Click.Add (handleSave form worldChangers refWorld)
+        form.openToolStripMenuItem.Click.Add (handleOpen form worldChangers refWorld)
+        form.undoButton.Click.Add (handleUndo form worldChangers refWorld)
+        form.undoToolStripMenuItem.Click.Add (handleUndo form worldChangers refWorld)
+        form.redoButton.Click.Add (handleRedo form worldChangers refWorld)
+        form.redoToolStripMenuItem.Click.Add (handleRedo form worldChangers refWorld)
+        form.interactButton.CheckedChanged.Add (handleInteractChanged form worldChangers refWorld)
         form.Show ()
         form
 
@@ -336,16 +348,20 @@ module Program =
         let editorState = world.ExtData :?> EditorState
         if form.undoToolStripMenuItem.Enabled then
             if List.isEmpty editorState.PastWorlds then
+                form.undoButton.Enabled <- false
                 form.undoToolStripMenuItem.Enabled <- false
         elif not <| List.isEmpty editorState.PastWorlds then
+            form.undoButton.Enabled <- true
             form.undoToolStripMenuItem.Enabled <- true
 
     let updateRedo (form : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
         if form.redoToolStripMenuItem.Enabled then
             if List.isEmpty editorState.FutureWorlds then
+                form.redoButton.Enabled <- false
                 form.redoToolStripMenuItem.Enabled <- false
         elif not <| List.isEmpty editorState.FutureWorlds then
+            form.redoButton.Enabled <- true
             form.redoToolStripMenuItem.Enabled <- true
 
     let updateEditorWorld form (worldChangers : WorldChangers) refWorld world_ =

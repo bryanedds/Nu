@@ -175,7 +175,8 @@ module Groups =
           EntityModels = Map.empty }
 
     let makeDefaultGroupModel typeName =
-        let groupModel = (Activator.CreateInstance ("Nu", typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> GroupModel
+        let assemblyName = (Assembly.GetExecutingAssembly ()).FullName
+        let groupModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> GroupModel
         match groupModel with
         | Group _ ->
             Group <|
@@ -192,10 +193,10 @@ module Groups =
         writer.WriteStartElement typeof<GroupModel>.Name
         match groupModel with
         | Group group ->
-            writeModelPropertiesMany writer "Nu.Groups+GroupModel+Group" [group :> obj]
+            writeModelPropertiesMany writer "Nu.GroupModel+Group" [group :> obj]
             writeGroupEntitiesToXml writer group
         | TestGroup testGroup ->
-            writeModelPropertiesMany writer "Nu.Groups+GroupModel+TestGroup" [testGroup :> obj; testGroup.Group :> obj]
+            writeModelPropertiesMany writer "Nu.GroupModel+TestGroup" [testGroup :> obj; testGroup.Group :> obj]
             writeGroupEntitiesToXml writer testGroup.Group
 
     let loadEntityModelsFromXml (groupModelNode : XmlNode) =
