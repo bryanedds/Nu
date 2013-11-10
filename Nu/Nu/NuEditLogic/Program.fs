@@ -163,14 +163,14 @@ module Program =
                 | Some entityModel ->
                     let entity = get entityModel entityLens
                     let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
-                    refWorld := world_ // must be set for property grid
-                    form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                     let entityModelTransform = getEntityModelTransform (Some world_.Camera) entityModel
                     let dragState = DragPosition (entityModelTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityModelAddress)
                     let editorState_ = world_.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragState = dragState }
                     let world_ = { world_ with ExtData = editorState_ }
                     let world_ = pushPastWorld pastWorld world_
+                    refWorld := world_ // must be set for property grid
+                    form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                     (handle message, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
@@ -184,8 +184,8 @@ module Program =
                 | DragNone -> (handle message, world)
                 | DragPosition _
                 | DragRotation _ ->
-                    form.propertyGrid.Refresh ()
                     let editorState_ = { editorState_ with DragState = DragNone }
+                    form.propertyGrid.Refresh ()
                     (handle message, { world with ExtData = editorState_ })
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 

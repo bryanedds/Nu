@@ -78,8 +78,9 @@ type [<StructuralEquality; NoComparison>] RenderMessage =
     | ScreenFlash // of ...
 
 type [<ReferenceEquality>] RenderAsset =
-    | TextureAsset of nativeint
-    | FontAsset of nativeint * int
+    private
+        | TextureAsset of nativeint
+        | FontAsset of nativeint * int
 
 type [<ReferenceEquality>] Renderer =
     private
