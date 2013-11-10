@@ -151,7 +151,6 @@ module Program =
     let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
         match message.Data with
         | MouseButtonData (position, _) ->
-            let pastWorld = world_
             if form.interactButton.Checked then (message, world_)
             else
                 let groupModelAddress = Test.GroupModelAddress
@@ -161,6 +160,7 @@ module Program =
                 match optPicked with
                 | None -> (handle message, world_)
                 | Some entityModel ->
+                    let pastWorld = world_
                     let entity = get entityModel entityLens
                     let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                     let entityModelTransform = getEntityModelTransform (Some world_.Camera) entityModel
@@ -222,7 +222,8 @@ module Program =
             let entityModelTransform = { Transform.Position = entityModelPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
             let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
             let entityModel_ = makeDefaultEntityModel entityModelTypeName
-            let entityModel_ = setEntityModelTransform (Some world_.Camera) 0 0 entityModelTransform entityModel_
+            let (positionSnap, rotationSnap) = getSnaps form
+            let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform entityModel_
             let entity = get entityModel_ entityLens
             let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
             let world_ = addEntityModel entityModelAddress entityModel_ world_
@@ -235,13 +236,14 @@ module Program =
 
     let handleDelete (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let selectedObject = form.propertyGrid.SelectedObject
-        form.propertyGrid.SelectedObject <- null
         let changer = (fun world_ ->
             match selectedObject with
             | :? EntityModelTypeDescriptorSource as entityModelTds ->
                 let pastWorld = world_
                 let world_ = removeEntityModel entityModelTds.Address world_
-                pushPastWorld pastWorld world_
+                let world_ = pushPastWorld pastWorld world_
+                form.propertyGrid.SelectedObject <- null
+                world_
             | _ -> world_)
         refWorld := changer !refWorld
         worldChangers.Add changer
