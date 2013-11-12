@@ -30,6 +30,7 @@ module Program =
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - optimize locality of address usage
     1.1x gain - send entire tile layers over to the renderer instead of one tile at a time
+    1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call.
     ? gain - avoid rendering clear tiles! *)
 
     let [<EntryPoint>] main _ =
