@@ -36,7 +36,8 @@ type DragState =
 type EditorState =
     { DragState : DragState
       PastWorlds : World list
-      FutureWorlds : World list }
+      FutureWorlds : World list
+      Clipboard : (EntityModel option) ref }
 
 module Program =
 
@@ -307,6 +308,55 @@ module Program =
             refWorld := changer !refWorld
             worldChangers.Add changer
 
+    let handleCut (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let optEntityModelTds = form.propertyGrid.SelectedObject
+        match optEntityModelTds with
+        | null -> ()
+        | :? EntityModelTypeDescriptorSource as entityModelTds ->
+            let changer = (fun world_ ->
+                let pastWorld = world_
+                let editorState = world_.ExtData :?> EditorState
+                let entityModel = get world_ <| worldEntityModelLens entityModelTds.Address
+                let world_ = removeEntityModel entityModelTds.Address world_
+                editorState.Clipboard := Some entityModel
+                form.propertyGrid.SelectedObject <- null
+                world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEditLogic)."
+        
+    let handleCopy (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let optEntityModelTds = form.propertyGrid.SelectedObject
+        match optEntityModelTds with
+        | null -> ()
+        | :? EntityModelTypeDescriptorSource as entityModelTds ->
+            let editorState = (!refWorld).ExtData :?> EditorState
+            let entityModel = get !refWorld <| worldEntityModelLens entityModelTds.Address
+            editorState.Clipboard := Some entityModel
+        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEditLogic)."
+
+    let handlePaste (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
+        let editorState = (!refWorld).ExtData :?> EditorState
+        match !editorState.Clipboard with
+        | None -> ()
+        | Some entityModel_ ->
+            let changer = (fun world_ ->
+                let entity_ = get entityModel_ entityLens
+                let id = getNuId ()
+                let entity_ = { entity_ with Id = id; Name = str id }
+                let entityModel_ = set entity_ entityModel_ entityLens
+                let entityModelPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
+                let entityModelTransform_ = getEntityModelTransform (Some world_.Camera) entityModel_
+                let entityModelTransform_ = { entityModelTransform_ with Position = entityModelPosition; Depth = getCreationDepth form }
+                let (positionSnap, rotationSnap) = getSnaps form
+                let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform_ entityModel_
+                let address = Test.GroupModelAddress @ [Lun.make entity_.Name]
+                let pastWorld = world_
+                let world_ = pushPastWorld pastWorld world_
+                addEntityModel address entityModel_ world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (ScreenWidth, ScreenHeight)
@@ -330,13 +380,19 @@ module Program =
         form.redoButton.Click.Add (handleRedo form worldChangers refWorld)
         form.redoToolStripMenuItem.Click.Add (handleRedo form worldChangers refWorld)
         form.interactButton.CheckedChanged.Add (handleInteractChanged form worldChangers refWorld)
+        form.cutToolStripMenuItem.Click.Add (handleCut form worldChangers refWorld)
+        form.cutContextMenuItem.Click.Add (handleCut form worldChangers refWorld)
+        form.copyToolStripMenuItem.Click.Add (handleCopy form worldChangers refWorld)
+        form.copyContextMenuItem.Click.Add (handleCopy form worldChangers refWorld)
+        form.pasteToolStripMenuItem.Click.Add (handlePaste form worldChangers refWorld false)
+        form.pasteContextMenuItem.Click.Add (handlePaste form worldChangers refWorld true)
         form.Show ()
         form
 
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
         let screen = { Id = getNuId (); GroupModels = Map.empty }
         let group = { Id = getNuId (); EntityModels = Map.empty }
-        let editorState = { DragState = DragNone; PastWorlds = []; FutureWorlds = [] }
+        let editorState = { DragState = DragNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         refWorld := createEmptyWorld sdlDeps editorState
         refWorld := addScreen Test.ScreenModelAddress screen !refWorld
         refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
