@@ -32,6 +32,17 @@ module Sdl =
     let [<Literal>] SuccessReturnCode = 0
     let [<Literal>] FailureReturnCode = 1
 
+    let makeMouseButton sdlMouseButton =
+        if sdlMouseButton = byte SDL.SDL_BUTTON_LEFT then MouseLeft
+        elif sdlMouseButton = byte SDL.SDL_BUTTON_MIDDLE then MouseCenter
+        else MouseRight
+
+    let makeSdlMouseButton mouseButton =
+        match mouseButton with
+        | MouseLeft -> byte SDL.SDL_BUTTON_LEFT
+        | MouseCenter -> byte SDL.SDL_BUTTON_MIDDLE
+        | MouseRight -> byte SDL.SDL_BUTTON_RIGHT
+
     let makeSdlConfig viewConfig viewW viewH rendererFlags audioChunkSize =
         { ViewConfig = viewConfig
           ViewW = viewW
