@@ -2,6 +2,7 @@
 open NuEditDesign
 open SDL2
 open OpenTK
+open TiledSharp
 open System
 open System.IO
 open System.Collections.Generic
@@ -87,6 +88,7 @@ module Program =
             let changer = (fun world_ ->
                 let pastWorld = world_
                 let world_ =
+                    // handle special case for an entity's Name field change
                     if property.Name = "Name" then
                         let valueStr = str value
                         if Int64.TryParse (valueStr, ref 0L) then
@@ -107,6 +109,22 @@ module Program =
                     else
                         let world_ = setEntityModelPropertyValue entityModelTds.Address property value world_
                         let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
+                        let entityModel_ =
+                            // handle special case for TileMap's TileMapAsset field change
+                            if property.Name = "TileMapAsset" then
+                                match entityModel_ with
+                                | TileMap tileMap_ ->
+                                    let tileMapAsset = tileMap_.TileMapAsset
+                                    let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world_.AssetMetadataMap
+                                    match optTileMapMetadata with
+                                    | None -> entityModel_
+                                    | Some (tileMapFileName, tileMapSprites) -> 
+                                        let tileMap_ = { tileMap_ with TmxMap = new TmxMap (tileMapFileName) }
+                                        let tileMap_ = { tileMap_ with TileMapSprites = tileMapSprites }
+                                        TileMap tileMap_
+                                | _ -> entityModel_
+                            else entityModel_
+                        let world_ = set entityModel_ world_ <| worldEntityModelLens entityModelTds.Address
                         propagateEntityModelPhysics entityModelTds.Address entityModel_ world_
                 pushPastWorld pastWorld world_)
             entityModelTds.RefWorld := changer !entityModelTds.RefWorld
