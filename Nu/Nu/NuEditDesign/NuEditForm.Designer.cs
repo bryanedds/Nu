@@ -41,7 +41,7 @@
             this.undoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.redoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
-            this.citToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
@@ -149,7 +149,7 @@
             this.undoToolStripMenuItem,
             this.redoToolStripMenuItem,
             this.toolStripMenuItem2,
-            this.citToolStripMenuItem,
+            this.cutToolStripMenuItem,
             this.copyToolStripMenuItem,
             this.pasteToolStripMenuItem,
             this.toolStripMenuItem4,
@@ -178,12 +178,12 @@
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
             this.toolStripMenuItem2.Size = new System.Drawing.Size(164, 6);
             // 
-            // citToolStripMenuItem
+            // cutToolStripMenuItem
             // 
-            this.citToolStripMenuItem.Name = "citToolStripMenuItem";
-            this.citToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
-            this.citToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
-            this.citToolStripMenuItem.Text = "C&ut";
+            this.cutToolStripMenuItem.Name = "cutToolStripMenuItem";
+            this.cutToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
+            this.cutToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
+            this.cutToolStripMenuItem.Text = "C&ut";
             // 
             // copyToolStripMenuItem
             // 
@@ -237,19 +237,19 @@
             this.copyContextMenuItem,
             this.pasteContextMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(120, 120);
+            this.contextMenuStrip.Size = new System.Drawing.Size(132, 120);
             // 
             // createContextMenuItem
             // 
             this.createContextMenuItem.Name = "createContextMenuItem";
-            this.createContextMenuItem.Size = new System.Drawing.Size(119, 22);
-            this.createContextMenuItem.Text = "C&reate";
+            this.createContextMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.createContextMenuItem.Text = "C[&r]eate";
             // 
             // deleteContextMenuItem
             // 
             this.deleteContextMenuItem.Name = "deleteContextMenuItem";
-            this.deleteContextMenuItem.Size = new System.Drawing.Size(119, 22);
-            this.deleteContextMenuItem.Text = "&Delete";
+            this.deleteContextMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.deleteContextMenuItem.Text = "[&D]elete";
             // 
             // toolStripMenuItem3
             // 
@@ -259,20 +259,20 @@
             // cutContextMenuItem
             // 
             this.cutContextMenuItem.Name = "cutContextMenuItem";
-            this.cutContextMenuItem.Size = new System.Drawing.Size(119, 22);
-            this.cutContextMenuItem.Text = "C&ut";
+            this.cutContextMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.cutContextMenuItem.Text = "C[&u]t";
             // 
             // copyContextMenuItem
             // 
             this.copyContextMenuItem.Name = "copyContextMenuItem";
-            this.copyContextMenuItem.Size = new System.Drawing.Size(119, 22);
-            this.copyContextMenuItem.Text = "&Copy";
+            this.copyContextMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.copyContextMenuItem.Text = "[&C]opy";
             // 
             // pasteContextMenuItem
             // 
             this.pasteContextMenuItem.Name = "pasteContextMenuItem";
-            this.pasteContextMenuItem.Size = new System.Drawing.Size(119, 22);
-            this.pasteContextMenuItem.Text = "&Paste";
+            this.pasteContextMenuItem.Size = new System.Drawing.Size(131, 22);
+            this.pasteContextMenuItem.Text = "[&P]aste";
             // 
             // propertyGrid
             // 
@@ -516,7 +516,7 @@
         public System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         public System.Windows.Forms.ToolStripMenuItem copyContextMenuItem;
         public System.Windows.Forms.ToolStripMenuItem pasteContextMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem citToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem cutToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem cutContextMenuItem;
         public System.Windows.Forms.ToolStripMenuItem deleteContextMenuItem;
