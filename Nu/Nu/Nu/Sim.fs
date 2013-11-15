@@ -164,20 +164,25 @@ module Sim =
     let worldTileMapLens (address : Address) = gameModelLens >>| gameModelTileMapLens address
     let worldOptTileMapLens (address : Address) = gameModelLens >>| gameModelOptTileMapLens address
 
-    let createEmptyWorld sdlDeps extData =
-        { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenModelAddress = None }
-          Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
-          Subscriptions = Map.empty
-          MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
-          AudioPlayer = makeAudioPlayer ()
-          Renderer = makeRenderer sdlDeps.RenderContext
-          Integrator = makeIntegrator Gravity
-          AssetMetadataMap = Map.empty
-          AudioMessages = []
-          RenderMessages = []
-          PhysicsMessages = []
-          Components = []
-          ExtData = extData }
+    let tryCreateEmptyWorld sdlDeps extData =
+        match tryGenerateAssetMetadataMap "AssetGraph.xml" with
+        | Left errorMsg -> Left errorMsg
+        | Right assetMetadataMap ->
+            let world =
+                { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenModelAddress = None }
+                  Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
+                  Subscriptions = Map.empty
+                  MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+                  AudioPlayer = makeAudioPlayer ()
+                  Renderer = makeRenderer sdlDeps.RenderContext
+                  Integrator = makeIntegrator Gravity
+                  AssetMetadataMap = assetMetadataMap
+                  AudioMessages = []
+                  RenderMessages = []
+                  PhysicsMessages = []
+                  Components = []
+                  ExtData = extData }
+            Right world
 
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
