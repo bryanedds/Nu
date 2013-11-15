@@ -79,6 +79,8 @@
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.interactButton = new System.Windows.Forms.ToolStripButton();
+            this.quickSizeToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -95,7 +97,7 @@
             this.editToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
-            this.menuStrip.Size = new System.Drawing.Size(1072, 26);
+            this.menuStrip.Size = new System.Drawing.Size(1272, 26);
             this.menuStrip.TabIndex = 0;
             this.menuStrip.Text = "menuStrip1";
             // 
@@ -224,7 +226,7 @@
             this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(781, 662);
+            this.displayPanel.Size = new System.Drawing.Size(1001, 662);
             this.displayPanel.TabIndex = 1;
             // 
             // contextMenuStrip
@@ -254,7 +256,7 @@
             // toolStripMenuItem3
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(116, 6);
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(128, 6);
             // 
             // cutContextMenuItem
             // 
@@ -279,7 +281,7 @@
             this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(287, 662);
+            this.propertyGrid.Size = new System.Drawing.Size(267, 662);
             this.propertyGrid.TabIndex = 2;
             // 
             // splitContainer1
@@ -295,8 +297,8 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer1.Size = new System.Drawing.Size(1072, 662);
-            this.splitContainer1.SplitterDistance = 781;
+            this.splitContainer1.Size = new System.Drawing.Size(1272, 662);
+            this.splitContainer1.SplitterDistance = 1001;
             this.splitContainer1.TabIndex = 3;
             // 
             // openFileDialog
@@ -329,12 +331,14 @@
             this.toolStripSeparator3,
             this.deleteEntityButton,
             this.toolStripSeparator4,
-            this.resetCameraButton,
+            this.quickSizeToolStripButton,
             this.toolStripSeparator5,
+            this.resetCameraButton,
+            this.toolStripSeparator7,
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(93, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(959, 26);
+            this.toolStrip.Size = new System.Drawing.Size(1073, 26);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -400,7 +404,7 @@
             this.createEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.createEntityButton.Name = "createEntityButton";
             this.createEntityButton.Size = new System.Drawing.Size(96, 23);
-            this.createEntityButton.Text = "Create Entity";
+            this.createEntityButton.Text = "&Create Entity";
             // 
             // createEntityComboBox
             // 
@@ -431,7 +435,7 @@
             this.deleteEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.deleteEntityButton.Name = "deleteEntityButton";
             this.deleteEntityButton.Size = new System.Drawing.Size(94, 23);
-            this.deleteEntityButton.Text = "Delete Entity";
+            this.deleteEntityButton.Text = "&Delete Entity";
             // 
             // toolStripSeparator4
             // 
@@ -445,7 +449,7 @@
             this.resetCameraButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.resetCameraButton.Name = "resetCameraButton";
             this.resetCameraButton.Size = new System.Drawing.Size(105, 23);
-            this.resetCameraButton.Text = "Reset Camera";
+            this.resetCameraButton.Text = "&Reset Camera";
             // 
             // toolStripSeparator5
             // 
@@ -460,13 +464,27 @@
             this.interactButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.interactButton.Name = "interactButton";
             this.interactButton.Size = new System.Drawing.Size(64, 23);
-            this.interactButton.Text = "Interact";
+            this.interactButton.Text = "&Interact";
+            // 
+            // quickSizeToolStripButton
+            // 
+            this.quickSizeToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.quickSizeToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("quickSizeToolStripButton.Image")));
+            this.quickSizeToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.quickSizeToolStripButton.Name = "quickSizeToolStripButton";
+            this.quickSizeToolStripButton.Size = new System.Drawing.Size(77, 23);
+            this.quickSizeToolStripButton.Text = "&Quick Size";
+            // 
+            // toolStripSeparator7
+            // 
+            this.toolStripSeparator7.Name = "toolStripSeparator7";
+            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 26);
             // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1072, 688);
+            this.ClientSize = new System.Drawing.Size(1272, 688);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip);
@@ -538,6 +556,8 @@
         public System.Windows.Forms.ToolStripButton undoButton;
         public System.Windows.Forms.ToolStripButton redoButton;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
+        public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
 
     }
 }

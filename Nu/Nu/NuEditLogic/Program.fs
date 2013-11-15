@@ -323,15 +323,15 @@ module Program =
                 world_)
             refWorld := changer !refWorld
             worldChangers.Add changer
-        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEditLogic)."
+        | _ -> trace <| "Invalid cut operation (likely a code issue in NuEditLogic)."
         
     let handleCopy (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let optEntityModelTds = form.propertyGrid.SelectedObject
         match optEntityModelTds with
         | null -> ()
         | :? EntityModelTypeDescriptorSource as entityModelTds ->
-            let editorState = (!refWorld).ExtData :?> EditorState
             let entityModel = get !refWorld <| worldEntityModelLens entityModelTds.Address
+            let editorState = (!refWorld).ExtData :?> EditorState
             editorState.Clipboard := Some entityModel
         | _ -> trace <| "Invalid copy operation (likely a code issue in NuEditLogic)."
 
@@ -356,6 +356,24 @@ module Program =
                 addEntityModel address entityModel_ world_)
             refWorld := changer !refWorld
             worldChangers.Add changer
+
+    let handleQuickSize (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let optEntityModelTds = form.propertyGrid.SelectedObject
+        match optEntityModelTds with
+        | null -> ()
+        | :? EntityModelTypeDescriptorSource as entityModelTds ->
+            let changer = (fun world_ ->
+                let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
+                let entityModelQuickSize = getEntityModelQuickSize world_.AssetMetadataMap entityModel_
+                let entityModelTransform = { getEntityModelTransform None entityModel_ with Size = entityModelQuickSize }
+                let entityModel_ = setEntityModelTransform None 0 0 entityModelTransform entityModel_
+                let world_ = set entityModel_ world_ <| worldEntityModelLens entityModelTds.Address
+                refWorld := world_ // must be set for property grid
+                form.propertyGrid.Refresh ()
+                world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+        | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEditLogic)."
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
@@ -386,6 +404,7 @@ module Program =
         form.copyContextMenuItem.Click.Add (handleCopy form worldChangers refWorld)
         form.pasteToolStripMenuItem.Click.Add (handlePaste form worldChangers refWorld false)
         form.pasteContextMenuItem.Click.Add (handlePaste form worldChangers refWorld true)
+        form.quickSizeToolStripButton.Click.Add (handleQuickSize form worldChangers refWorld)
         form.Show ()
         form
 
@@ -393,13 +412,17 @@ module Program =
         let screen = { Id = getNuId (); GroupModels = Map.empty }
         let group = { Id = getNuId (); EntityModels = Map.empty }
         let editorState = { DragState = DragNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
-        refWorld := createEmptyWorld sdlDeps editorState
-        refWorld := addScreen Test.ScreenModelAddress screen !refWorld
-        refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
-        refWorld := addGroup Test.GroupModelAddress group !refWorld
-        refWorld := subscribe DownMouseLeftAddress [] (beginDrag form worldChangers refWorld) !refWorld
-        refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
-        Right !refWorld
+        let optWorld = tryCreateEmptyWorld sdlDeps editorState
+        match optWorld with
+        | Left errorMsg -> Left errorMsg
+        | Right world ->
+            refWorld := world
+            refWorld := addScreen Test.ScreenModelAddress screen !refWorld
+            refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
+            refWorld := addGroup Test.GroupModelAddress group !refWorld
+            refWorld := subscribe DownMouseLeftAddress [] (beginDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
+            Right !refWorld
 
     // TODO: remove code duplication with below
     let updateUndo (form : NuEditForm) world =
