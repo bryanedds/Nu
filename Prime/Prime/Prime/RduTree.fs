@@ -9,7 +9,7 @@ let empty = Leaf
 let isEmpty tree =
     match tree with
     | Leaf -> true
-    | _ -> false
+    | Branch _ -> false
 
 let rec map mapper tree =
     match tree with
