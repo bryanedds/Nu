@@ -76,11 +76,11 @@
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.deleteEntityButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.interactButton = new System.Windows.Forms.ToolStripButton();
             this.quickSizeToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            this.interactButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -329,9 +329,9 @@
             this.creationDepthLabel,
             this.creationDepthTextBox,
             this.toolStripSeparator3,
-            this.deleteEntityButton,
-            this.toolStripSeparator4,
             this.quickSizeToolStripButton,
+            this.toolStripSeparator4,
+            this.deleteEntityButton,
             this.toolStripSeparator5,
             this.resetCameraButton,
             this.toolStripSeparator7,
@@ -442,6 +442,20 @@
             this.toolStripSeparator4.Name = "toolStripSeparator4";
             this.toolStripSeparator4.Size = new System.Drawing.Size(6, 26);
             // 
+            // quickSizeToolStripButton
+            // 
+            this.quickSizeToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.quickSizeToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("quickSizeToolStripButton.Image")));
+            this.quickSizeToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.quickSizeToolStripButton.Name = "quickSizeToolStripButton";
+            this.quickSizeToolStripButton.Size = new System.Drawing.Size(77, 23);
+            this.quickSizeToolStripButton.Text = "&Quick Size";
+            // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(6, 26);
+            // 
             // resetCameraButton
             // 
             this.resetCameraButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
@@ -451,10 +465,10 @@
             this.resetCameraButton.Size = new System.Drawing.Size(105, 23);
             this.resetCameraButton.Text = "&Reset Camera";
             // 
-            // toolStripSeparator5
+            // toolStripSeparator7
             // 
-            this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(6, 26);
+            this.toolStripSeparator7.Name = "toolStripSeparator7";
+            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 26);
             // 
             // interactButton
             // 
@@ -465,20 +479,6 @@
             this.interactButton.Name = "interactButton";
             this.interactButton.Size = new System.Drawing.Size(64, 23);
             this.interactButton.Text = "&Interact";
-            // 
-            // quickSizeToolStripButton
-            // 
-            this.quickSizeToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.quickSizeToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("quickSizeToolStripButton.Image")));
-            this.quickSizeToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.quickSizeToolStripButton.Name = "quickSizeToolStripButton";
-            this.quickSizeToolStripButton.Size = new System.Drawing.Size(77, 23);
-            this.quickSizeToolStripButton.Text = "&Quick Size";
-            // 
-            // toolStripSeparator7
-            // 
-            this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 26);
             // 
             // NuEditForm
             // 

@@ -87,7 +87,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
       Density : single
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
-      TileMapMetadata : Sprite list }
+      TileMapSprites : Sprite list }
 
 type [<StructuralEquality; NoComparison>] EntityModel =
     | Button of Button
@@ -343,7 +343,7 @@ module Entities =
                   Density = NormalDensity
                   TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
                   TmxMap = tmxMap
-                  TileMapMetadata = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
+                  TileMapSprites = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
 
     let getGuiTransform (gui : Gui) =
         { Transform.Position = gui.Position
@@ -374,6 +374,7 @@ module Entities =
         | Avatar avatar -> getTextureSizeAsVector2 avatar.Sprite.SpriteAssetName avatar.Sprite.PackageName assetMetadataMap
         | TileMap tileMap -> Vector2 (single <| tileMap.TmxMap.Width * tileMap.TmxMap.TileWidth, single <| tileMap.TmxMap.Height * tileMap.TmxMap.TileHeight)
 
+    // TODO: turn into a lens
     let getEntityModelTransform optCamera entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
