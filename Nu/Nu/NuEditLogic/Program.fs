@@ -435,6 +435,13 @@ module Program =
             worldChangers.Add changer
         | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEditLogic)."
 
+    let handleResetCamera (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let changer = (fun world_ ->
+            let camera = { world_.Camera with EyePosition = Vector2.Zero }
+            { world_ with Camera = camera })
+        refWorld := changer !refWorld
+        worldChangers.Add changer
+
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (ScreenWidth, ScreenHeight)
@@ -465,6 +472,7 @@ module Program =
         form.pasteToolStripMenuItem.Click.Add (handlePaste form worldChangers refWorld false)
         form.pasteContextMenuItem.Click.Add (handlePaste form worldChangers refWorld true)
         form.quickSizeToolStripButton.Click.Add (handleQuickSize form worldChangers refWorld)
+        form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
         form.Show ()
         form
 
