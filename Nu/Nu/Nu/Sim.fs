@@ -92,8 +92,14 @@ module Sim =
     let MouseDragAddress = [Lun.make "mouse"; Lun.make "drag"]
     let MouseMoveAddress = [Lun.make "mouse"; Lun.make "move"]
     let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
+    let MouseCenterAddress = [Lun.make "mouse"; Lun.make "center"]
+    let MouseRightAddress = [Lun.make "mouse"; Lun.make "right"]
     let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
+    let DownMouseCenterAddress = Lun.make "down" :: MouseCenterAddress
+    let DownMousRightAddress = Lun.make "down" :: MouseRightAddress
     let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
+    let UpMouseCenterAddress = Lun.make "up" :: MouseCenterAddress
+    let UpMouseRightAddress = Lun.make "up" :: MouseRightAddress
     let GameModelPublishingPriority = Single.MaxValue
     let ScreenModelPublishingPriority = GameModelPublishingPriority * 0.5f
     let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
@@ -172,7 +178,7 @@ module Sim =
                 { GameModel = Game { Id = getNuId (); ScreenModels = Map.empty; OptSelectedScreenModelAddress = None }
                   Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
                   Subscriptions = Map.empty
-                  MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+                  MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = makeAudioPlayer ()
                   Renderer = makeRenderer sdlDeps.RenderContext
                   Integrator = makeIntegrator Gravity
@@ -881,22 +887,24 @@ module Sim =
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world2 = set { world.MouseState with MousePosition = mousePosition } world mouseStateLens
                     let world3 =
-                        if world2.MouseState.MouseLeftDown then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world2
+                        if Set.contains MouseLeft world2.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world2
                         else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world2
                     (true, world3)
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    if event.button.button = byte SDL.SDL_BUTTON_LEFT then
-                        let messageData = MouseButtonData (world.MouseState.MousePosition, MouseLeft)
-                        let world2 = set { world.MouseState with MouseLeftDown = true } world mouseStateLens
-                        let world3 = publish DownMouseLeftAddress { Handled = false; Data = messageData } world2
-                        (true, world3)
-                    else (true, world)
+                    let mouseButton = makeMouseButton event.button.button
+                    let world2 = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
+                    let messageAddress = [Lun.make "down"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
+                    let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                    let world3 = publish messageAddress { Handled = false; Data = messageData } world2
+                    (true, world3)
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
-                    if mouseState.MouseLeftDown && event.button.button = byte SDL.SDL_BUTTON_LEFT then
-                        let messageData = MouseButtonData (world.MouseState.MousePosition, MouseLeft)
-                        let world2 = set { world.MouseState with MouseLeftDown = false } world mouseStateLens
-                        let world3 = publish UpMouseLeftAddress { Handled = false; Data = messageData } world2
+                    let mouseButton = makeMouseButton event.button.button
+                    if Set.contains mouseButton mouseState.MouseDowns then
+                        let world2 = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
+                        let messageAddress = [Lun.make "up"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
+                        let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                        let world3 = publish messageAddress { Handled = false; Data = messageData } world2
                         (true, world3)
                     else (true, world)
                 | _ -> (true, world))

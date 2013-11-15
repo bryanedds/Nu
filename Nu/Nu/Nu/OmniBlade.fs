@@ -29,7 +29,7 @@ module OmniBlade =
                 { GameModel = Game game
                   Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
                   Subscriptions = Map.empty
-                  MouseState = { MousePosition = Vector2.Zero; MouseLeftDown = false; MouseRightDown = false; MouseCenterDown = false }
+                  MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = makeAudioPlayer ()
                   Renderer = makeRenderer sdlDeps.RenderContext
                   Integrator = makeIntegrator Gravity
