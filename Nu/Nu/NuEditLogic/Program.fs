@@ -29,13 +29,18 @@ type WorldChanger = World -> World
 
 type WorldChangers = WorldChanger List
 
-type DragState =
-    | DragNone
-    | DragPosition of Vector2 * Vector2 * Address
-    | DragRotation of Vector2 * Vector2 * Address
+type DragEntityState =
+    | DragEntityNone
+    | DragEntityPosition of Vector2 * Vector2 * Address
+    | DragEntityRotation of Vector2 * Vector2 * Address
+
+type DragCameraState =
+    | DragCameraNone
+    | DragCameraPosition of Vector2 * Vector2
 
 type EditorState =
-    { DragState : DragState
+    { DragEntityState : DragEntityState
+      DragCameraState : DragCameraState
       PastWorlds : World list
       FutureWorlds : World list
       Clipboard : (EntityModel option) ref }
@@ -48,6 +53,7 @@ module Program =
     let DefaultSize = 64.0f
     let DefaultRotation = 0.0f
     let (ScreenWidth, ScreenHeight) = (900, 600)
+    let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
     let pushPastWorld pastWorld world =
         let editorState_ = world.ExtData :?> EditorState
@@ -167,7 +173,7 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let beginDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
+    let beginEntityDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
         match message.Data with
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, world_)
@@ -183,9 +189,9 @@ module Program =
                     let entity = get entityModel entityLens
                     let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
                     let entityModelTransform = getEntityModelTransform (Some world_.Camera) entityModel
-                    let dragState = DragPosition (entityModelTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityModelAddress)
+                    let dragState = DragEntityPosition (entityModelTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityModelAddress)
                     let editorState_ = world_.ExtData :?> EditorState
-                    let editorState_ = { editorState_ with DragState = dragState }
+                    let editorState_ = { editorState_ with DragEntityState = dragState }
                     let world_ = { world_ with ExtData = editorState_ }
                     let world_ = pushPastWorld pastWorld world_
                     refWorld := world_ // must be set for property grid
@@ -193,38 +199,74 @@ module Program =
                     (handle message, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-    let endDrag (form : NuEditForm) _ _ message world =
+    let endEntityDrag (form : NuEditForm) _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, world)
             else
                 let editorState_ = world.ExtData :?> EditorState
-                match editorState_.DragState with
-                | DragNone -> (handle message, world)
-                | DragPosition _
-                | DragRotation _ ->
-                    let editorState_ = { editorState_ with DragState = DragNone }
+                match editorState_.DragEntityState with
+                | DragEntityNone -> (handle message, world)
+                | DragEntityPosition _
+                | DragEntityRotation _ ->
+                    let editorState_ = { editorState_ with DragEntityState = DragEntityNone }
                     form.propertyGrid.Refresh ()
                     (handle message, { world with ExtData = editorState_ })
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-    let updateDrag (form : NuEditForm) world_ =
+    let updateEntityDrag (form : NuEditForm) world_ =
         let editorState_ = world_.ExtData :?> EditorState
-        match editorState_.DragState with
-        | DragNone -> world_
-        | DragPosition (pickOffset, origMousePosition, address) ->
+        match editorState_.DragEntityState with
+        | DragEntityNone -> world_
+        | DragEntityPosition (pickOffset, origMousePosition, address) ->
             let entityModel_ = get world_ <| worldEntityModelLens address
             let transform_ = getEntityModelTransform (Some world_.Camera) entityModel_
             let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world_.MouseState.MousePosition - origMousePosition) }
             let (positionSnap, rotationSnap) = getSnaps form
             let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap transform_ entityModel_
             let world_ = set entityModel_ world_ <| worldEntityModelLens address
-            let editorState_ = { editorState_ with DragState = DragPosition (pickOffset, origMousePosition, address) }
+            let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, origMousePosition, address) }
             let world_ = { world_ with ExtData = editorState_ }
             let world_ = propagateEntityModelPhysics address entityModel_ world_
             form.propertyGrid.Refresh ()
             world_
-        | DragRotation (pickOffset, origPosition, address) -> world_
+        | DragEntityRotation (pickOffset, origPosition, address) -> world_
+
+    let beginCameraDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
+        match message.Data with
+        | MouseButtonData (position, _) ->
+            if form.interactButton.Checked then (message, world_)
+            else
+                let dragState = DragCameraPosition (world_.Camera.EyePosition + world_.MouseState.MousePosition, world_.MouseState.MousePosition)
+                let editorState_ = world_.ExtData :?> EditorState
+                let editorState_ = { editorState_ with DragCameraState = dragState }
+                let world_ = { world_ with ExtData = editorState_ }
+                (handle message, world_)
+        | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+
+    let endCameraDrag (form : NuEditForm) _ _ message world =
+        match message.Data with
+        | MouseButtonData (position, _) ->
+            if form.interactButton.Checked then (message, world)
+            else
+                let editorState_ = world.ExtData :?> EditorState
+                match editorState_.DragCameraState with
+                | DragCameraNone -> (handle message, world)
+                | DragCameraPosition _ ->
+                    let editorState_ = { editorState_ with DragCameraState = DragCameraNone }
+                    (handle message, { world with ExtData = editorState_ })
+        | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+
+    let updateCameraDrag (form : NuEditForm) world_ =
+        let editorState_ = world_.ExtData :?> EditorState
+        match editorState_.DragCameraState with
+        | DragCameraNone -> world_
+        | DragCameraPosition (pickOffset, origMousePosition) ->
+            let eyePosition = (pickOffset - origMousePosition) + -1.0f * CameraSpeed * (world_.MouseState.MousePosition - origMousePosition)
+            let camera = { world_.Camera with EyePosition = eyePosition }
+            let world_ = { world_ with Camera = camera }
+            let editorState_ = { editorState_ with DragCameraState = DragCameraPosition (pickOffset, origMousePosition) }
+            { world_ with ExtData = editorState_ }
 
     /// Needed for physics system side-effects...
     let physicsHack world_ =
@@ -429,7 +471,7 @@ module Program =
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
         let screen = { Id = getNuId (); GroupModels = Map.empty }
         let group = { Id = getNuId (); EntityModels = Map.empty }
-        let editorState = { DragState = DragNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
+        let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         let optWorld = tryCreateEmptyWorld sdlDeps editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
@@ -438,8 +480,10 @@ module Program =
             refWorld := addScreen Test.ScreenModelAddress screen !refWorld
             refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
             refWorld := addGroup Test.GroupModelAddress group !refWorld
-            refWorld := subscribe DownMouseLeftAddress [] (beginDrag form worldChangers refWorld) !refWorld
-            refWorld := subscribe UpMouseLeftAddress [] (endDrag form) !refWorld
+            refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
+            refWorld := subscribe DownMouseCenterAddress [] (beginCameraDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseCenterAddress [] (endCameraDrag form) !refWorld
             Right !refWorld
 
     // TODO: remove code duplication with below
@@ -463,8 +507,9 @@ module Program =
             form.redoButton.Enabled <- true
             form.redoToolStripMenuItem.Enabled <- true
 
-    let updateEditorWorld form (worldChangers : WorldChangers) refWorld world_ =
-        refWorld := updateDrag form world_
+    let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
+        refWorld := updateEntityDrag form world
+        refWorld := updateCameraDrag form !refWorld
         refWorld := Seq.fold (fun world_ changer -> changer world_) !refWorld worldChangers
         worldChangers.Clear ()
         let editorState = (!refWorld).ExtData :?> EditorState
