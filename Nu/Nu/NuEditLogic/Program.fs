@@ -118,7 +118,7 @@ module Program =
                                     let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world_.AssetMetadataMap
                                     match optTileMapMetadata with
                                     | None -> entityModel_
-                                    | Some (tileMapFileName, tileMapSprites) -> 
+                                    | Some (tileMapFileName, tileMapSprites) ->
                                         let tileMap_ = { tileMap_ with TmxMap = new TmxMap (tileMapFileName) }
                                         let tileMap_ = { tileMap_ with TileMapSprites = tileMapSprites }
                                         TileMap tileMap_
@@ -399,7 +399,7 @@ module Program =
         form.positionSnapTextBox.Text <- str DefaultPositionSnap
         form.rotationSnapTextBox.Text <- str DefaultRotationSnap
         form.creationDepthTextBox.Text <- str DefaultCreationDepth
-        for unionCase in FSharpType.GetUnionCases (typeof<EntityModel>) do
+        for unionCase in FSharpType.GetUnionCases typeof<EntityModel> do
             ignore <| form.createEntityComboBox.Items.Add unionCase.Name
         form.createEntityComboBox.SelectedIndex <- 0
         form.exitToolStripMenuItem.Click.Add (handleExit form)

@@ -108,7 +108,7 @@
       <ModelType>Nu.EntityModel+TileMap</ModelType>
       <Actor>Nu.Actor</Actor>
       <Density>10</Density>
-      <TileMapAsset>Nu.TileMapAsset</TileMapAsset>
+      <TileMapAsset>TileMap;Default;AssetGraph.xml</TileMapAsset>
       <TmxMap>TiledSharp.TmxMap</TmxMap>
       <TileMapMetadata>[Nu.Sprite]</TileMapMetadata>
       <Entity>Nu.Entity</Entity>
