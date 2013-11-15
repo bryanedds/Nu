@@ -119,11 +119,28 @@ type FontTypeConverter () =
             let args = (obj :?> string).Split ';'
             { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
+type TileMapAssetTypeConverter () =
+    inherit TypeConverter ()
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<string>
+    override this.ConvertTo (_, culture, obj : obj, _) =
+        let s = obj :?> TileMapAsset
+        String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Sprite> || sourceType = typeof<string>
+    override this.ConvertFrom (_, culture, obj : obj) =
+        let sourceType = obj.GetType ()
+        if sourceType = typeof<TileMapAsset> then obj
+        else
+            let args = (obj :?> string).Split ';'
+            { TileMapAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+
 module Rendering =
 
     let initRenderConverters () =
         AssignTypeConverter<Sprite, SpriteTypeConverter> ()
         AssignTypeConverter<Font, FontTypeConverter> ()
+        AssignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
 
     let getLayerableDepth layerable =
         match layerable with

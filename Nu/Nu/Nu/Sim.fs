@@ -812,7 +812,7 @@ module Sim =
                                       Tiles = layer.Tiles
                                       TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                                       TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                      TileSetSprite = tileMap.TileMapMetadata.[0] } // MAGIC_VALUE: for same reason as above
+                                      TileSetSprite = tileMap.TileMapSprites.[0] } // MAGIC_VALUE: for same reason as above
                                   Depth = actor.Depth }
                         LayerableDescriptor layeredTileLayerDescriptor)
                     layers

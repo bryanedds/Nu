@@ -13,7 +13,7 @@ open Nu.Rendering
 
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of int * int
-    | TileMapMetadata of Sprite list
+    | TileMapMetadata of string * Sprite list
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -59,7 +59,7 @@ module Metadata =
                                                               PackageName = Lun.make tileSetProperties.["PackageName"]
                                                               PackageFileName = tileSetProperties.["PackageFileName"] })
                                                         tileSets
-                                                TileMapMetadata tileSetSprites
+                                                TileMapMetadata (asset.FileName, tileSetSprites)
                                             | ".wav" -> SoundMetadata
                                             | ".ogg" -> SongMetadata
                                             | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
@@ -101,7 +101,7 @@ module Metadata =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
         | None -> None
-        | Some (TileMapMetadata metadata) -> Some metadata
+        | Some (TileMapMetadata (fileName, sprites)) -> Some (fileName, sprites)
         | _ -> None
 
     let getTileMapMetadata assetName packageName assetMetadataMap =
