@@ -103,9 +103,9 @@ let rec roll roller state (list : 'a list) =
         let curr = list.[0]
         let next = list.[1]
         let rest = list.Tail
-        let state2 = roller state curr next
-        if rest.Tail.IsEmpty then state2
-        else roll roller state2 rest
+        let state' = roller state curr next
+        if rest.Tail.IsEmpty then state'
+        else roll roller state' rest
 
 /// Windowed for lists.
 let windowed count (list : 'a list) =

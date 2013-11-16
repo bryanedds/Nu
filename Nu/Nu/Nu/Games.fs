@@ -40,21 +40,21 @@ module Games =
 
     let private gameModelChildModelAdder addressHead this (child : ScreenModel) =
         let game = get this gameLens
-        let game2 = { game with ScreenModels = Map.add addressHead child game.ScreenModels }
-        set game2 this gameLens
+        let game' = { game with ScreenModels = Map.add addressHead child game.ScreenModels }
+        set game' this gameLens
 
     let private gameModelChildModelRemover addressHead this =
         let game = get this gameLens
-        let game2 = { game with ScreenModels = Map.remove addressHead game.ScreenModels }
-        set game2 this gameLens
+        let game' = { game with ScreenModels = Map.remove addressHead game.ScreenModels }
+        set game' this gameLens
 
     let private gameModelGetChildWithLens this address lens =
         get (getChild gameModelOptChildModelFinder this address) lens
 
     let private gameModelSetChildWithLens child this address lens =
         let screen = getChild gameModelOptChildModelFinder this address
-        let screen2 = set child screen lens
-        setChild gameModelChildModelAdder gameModelChildModelRemover this address screen2
+        let screen' = set child screen lens
+        setChild gameModelChildModelAdder gameModelChildModelRemover this address screen'
 
     let private gameModelGetOptChildWithLens this address lens =
         let optChild = getOptChild gameModelOptChildModelFinder this address
@@ -70,8 +70,8 @@ module Games =
             match optChildModel with
             | None -> failwith "Cannot change a non-existent screen."
             | Some childModel ->
-                let childModel2 = set child childModel lens
-                setChild gameModelChildModelAdder gameModelChildModelRemover this address childModel2
+                let childModel' = set child childModel lens
+                setChild gameModelChildModelAdder gameModelChildModelRemover this address childModel'
 
     let screenModelsLens =
         { Get = fun this -> (get this gameLens).ScreenModels

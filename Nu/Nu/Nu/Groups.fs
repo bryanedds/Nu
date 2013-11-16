@@ -37,21 +37,21 @@ module Groups =
 
     let private groupModelChildModelAdder addressHead this (child : EntityModel) =
         let group = get this groupLens
-        let group2 = { group with EntityModels = Map.add addressHead child group.EntityModels }
-        set group2 this groupLens
+        let group' = { group with EntityModels = Map.add addressHead child group.EntityModels }
+        set group' this groupLens
 
     let private groupModelChildModelRemover addressHead this =
         let group = get this groupLens
-        let group2 = { group with EntityModels = Map.remove addressHead group.EntityModels }
-        set group2 this groupLens
+        let group' = { group with EntityModels = Map.remove addressHead group.EntityModels }
+        set group' this groupLens
 
     let private groupModelGetChildWithLens this address lens =
         get (getChild groupModelOptChildModelFinder this address) lens
 
     let private groupModelSetChildWithLens child this address lens =
         let entity = getChild groupModelOptChildModelFinder this address
-        let entity2 = set child entity lens
-        setChild groupModelChildModelAdder groupModelChildModelRemover this address entity2
+        let entity' = set child entity lens
+        setChild groupModelChildModelAdder groupModelChildModelRemover this address entity'
 
     let private groupModelGetOptChildWithLens this address lens =
         let optChild = getOptChild groupModelOptChildModelFinder this address
@@ -67,8 +67,8 @@ module Groups =
             match optChildModel with
             | None -> failwith "Cannot change a non-existent entity."
             | Some childModel ->
-                let childModel2 = set child childModel lens
-                setChild groupModelChildModelAdder groupModelChildModelRemover this address childModel2
+                let childModel' = set child childModel lens
+                setChild groupModelChildModelAdder groupModelChildModelRemover this address childModel'
 
     let entityModelsLens =
         { Get = fun this -> (get this groupLens).EntityModels
