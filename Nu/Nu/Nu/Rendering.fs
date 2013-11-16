@@ -195,8 +195,8 @@ module Rendering =
                 let renderAssetMap = Map.ofSeq renderAssets
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
             | Some renderAssetMap ->
-                let renderAssetMap2 = Map.addMany renderAssets renderAssetMap
-                { renderer with RenderAssetMap = Map.add packageName renderAssetMap2 renderer.RenderAssetMap }
+                let renderAssetMap' = Map.addMany renderAssets renderAssetMap
+                { renderer with RenderAssetMap = Map.add packageName renderAssetMap' renderer.RenderAssetMap }
 
     let tryLoadRenderAsset packageName packageFileName assetName renderer_ =
         let optAssetMap = Map.tryFind packageName renderer_.RenderAssetMap
@@ -242,11 +242,11 @@ module Rendering =
             let spriteDescriptor = lsd.Descriptor
             let sprite = spriteDescriptor.Sprite
             let color = spriteDescriptor.Color
-            let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+            let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
                 log ("LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
-                renderer2
+                renderer'
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
@@ -267,7 +267,7 @@ module Rendering =
                     ignore <| SDL.SDL_SetTextureAlphaMod (texture, byte <| 255.0f * color.W)
                     let renderResult =
                         SDL.SDL_RenderCopyEx
-                            (renderer2.RenderContext,
+                            (renderer'.RenderContext,
                              texture,
                              ref sourceRect,
                              ref destRect,
@@ -275,10 +275,10 @@ module Rendering =
                              ref rotationCenter,
                              SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                     if renderResult <> 0 then debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
-                    renderer2
+                    renderer'
                 | _ ->
                     trace "Cannot render sprite with a non-texture asset."
-                    renderer2
+                    renderer'
         | LayeredTileLayerDescriptor ltd ->
             let descriptor = ltd.Descriptor
             let tiles = descriptor.Tiles
@@ -289,11 +289,11 @@ module Rendering =
             let sprite = descriptor.TileSetSprite
             let optTileSetWidth = tileSet.Image.Width
             let tileSetWidthInt = optTileSetWidth.Value
-            let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+            let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
                 debug ("LayeredTileLayerDescriptor failed due to unloadable assets for '" + str sprite + "'.")
-                renderer2
+                renderer'
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
@@ -319,7 +319,7 @@ module Rendering =
                             rotationCenter.y <- int (tileSize.Y * 0.5f)
                             let renderResult =
                                 SDL.SDL_RenderCopyEx
-                                    (renderer2.RenderContext,
+                                    (renderer'.RenderContext,
                                         texture,
                                         ref sourceRect,
                                         ref destRect,
@@ -328,18 +328,18 @@ module Rendering =
                                         SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
                             if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
-                    renderer2
+                    renderer'
                 | _ ->
                     trace "Cannot render tile with a non-texture asset."
-                    renderer2
+                    renderer'
         | LayeredTextDescriptor ltd ->
             let textDescriptor = ltd.Descriptor
             let font = textDescriptor.Font
-            let (renderer2, optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
+            let (renderer', optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
             match optRenderAsset with
             | None ->
                 debug ("LayeredTextDescriptor failed due to unloadable assets for '" + str font + "'.")
-                renderer2
+                renderer'
             | Some renderAsset ->
                 match renderAsset with
                 | FontAsset (font, _) ->
@@ -367,10 +367,10 @@ module Rendering =
                         if textTexture <> IntPtr.Zero then ignore (SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect))
                         SDL.SDL_DestroyTexture textTexture
                         SDL.SDL_FreeSurface textSurface
-                    renderer2
+                    renderer'
                 | _ ->
                     trace "Cannot render text with a non-font asset."
-                    renderer2
+                    renderer'
 
     let renderDescriptors renderDescriptorsValue renderer =
         let renderContext = renderer.RenderContext
@@ -387,8 +387,8 @@ module Rendering =
             renderer
 
     let render (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
-        let renderer2 = handleRenderMessages renderMessages renderer
-        renderDescriptors renderDescriptorsValue renderer2
+        let renderer' = handleRenderMessages renderMessages renderer
+        renderDescriptors renderDescriptorsValue renderer'
 
     let makeRenderer renderContext =
         { RenderContext = renderContext

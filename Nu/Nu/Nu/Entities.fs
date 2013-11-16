@@ -391,24 +391,24 @@ module Entities =
         let transform = getEntityModelTransform None entityModel
         transform.Depth
 
-    let setGuiTransform positionSnap rotationSnap (transform_ : Transform) entityModel lens =
-        let transform_ = snapTransform positionSnap rotationSnap transform_
+    let setGuiTransform positionSnap rotationSnap (transform : Transform) entityModel lens =
+        let transform' = snapTransform positionSnap rotationSnap transform
         let gui_ = get entityModel lens
-        let gui_ = { gui_ with Gui.Position = transform_.Position; Depth = transform_.Depth; Size = transform_.Size }
+        let gui_ = { gui_ with Gui.Position = transform'.Position; Depth = transform'.Depth; Size = transform'.Size }
         set gui_ entityModel lens
 
-    let setActorTransform positionSnap rotationSnap (transform_ : Transform) entityModel lens =
-        let transform_ = snapTransform positionSnap rotationSnap transform_
+    let setActorTransform positionSnap rotationSnap (transform : Transform) entityModel lens =
+        let transform' = snapTransform positionSnap rotationSnap transform
         let actor_ = get entityModel lens
-        let actor_ = { actor_ with Actor.Position = transform_.Position
-                                   Depth = transform_.Depth
-                                   Size = transform_.Size
-                                   Rotation = transform_.Rotation }
+        let actor_ = { actor_ with Actor.Position = transform'.Position
+                                   Depth = transform'.Depth
+                                   Size = transform'.Size
+                                   Rotation = transform'.Rotation }
         set actor_ entityModel lens
 
-    let setActorTransformRelative (view : Vector2) positionSnap rotationSnap (transform_ : Transform) entityModel lens =
-        let transform_ = { transform_ with Position = transform_.Position + view }
-        setActorTransform positionSnap rotationSnap transform_ entityModel lens
+    let setActorTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entityModel lens =
+        let transform' = { transform with Position = transform.Position + view }
+        setActorTransform positionSnap rotationSnap transform' entityModel lens
 
     let setEntityModelTransform optCamera positionSnap rotationSnap transform entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera

@@ -211,16 +211,16 @@ module Sim =
         | (addressHead :: addressTail, Some [screenAddressHead]) ->
             match addressTail with
             | [] -> screenAddressHead = addressHead
-            | addressHead2 :: addressTail2 ->
+            | addressHead' :: addressTail' ->
                 let screenModel = get world <| worldScreenModelLens [addressHead]
                 let screen = get screenModel screenLens
-                match addressTail2 with
-                | [] -> screen.GroupModels.ContainsKey addressHead2
-                | addressHead3 :: addressTail3 ->
-                    let groupModel = Map.find addressHead2 screen.GroupModels
+                match addressTail' with
+                | [] -> screen.GroupModels.ContainsKey addressHead'
+                | addressHead'' :: addressTail'' ->
+                    let groupModel = Map.find addressHead' screen.GroupModels
                     let group = get groupModel groupLens
-                    match addressTail3 with
-                    | [] -> group.EntityModels.ContainsKey addressHead3
+                    match addressTail'' with
+                    | [] -> group.EntityModels.ContainsKey addressHead''
                     | _ -> false
         | (_, Some (_ :: _)) -> false
 
@@ -272,21 +272,21 @@ module Sim =
         List.map snd prioritiesAndSubscriptionsSorted
 
     /// Publish a message to the given address.
-    let publish address message world : bool * World =
-        let optSubList = Map.tryFind address world.Subscriptions
+    let publish address message world_ : bool * World =
+        let optSubList = Map.tryFind address world_.Subscriptions
         match optSubList with
-        | None -> (true, world)
+        | None -> (true, world_)
         | Some subList ->
-            let subListSorted = subscriptionSort subList world
-            let (_, keepRunning_, world_) =
+            let subListSorted = subscriptionSort subList world_
+            let (_, keepRunning, world_) =
                 List.foldWhile
-                    (fun (message_, keepRunning_, world_) (subscriber, (Subscription subscription)) ->
-                        if message_.Handled || not keepRunning_ then None
-                        elif isAddressSelected subscriber world_ then Some (subscription address subscriber message_ world_)
-                        else Some (message_, keepRunning_, world_))
-                    (message, true, world)
+                    (fun (message', keepRunning', world_) (subscriber, (Subscription subscription)) ->
+                        if message'.Handled || not keepRunning' then None
+                        elif isAddressSelected subscriber world_ then Some (subscription address subscriber message' world_)
+                        else Some (message', keepRunning', world_))
+                    (message, true, world_)
                     subListSorted
-            (keepRunning_, world_)
+            (keepRunning, world_)
 
     /// Subscribe to messages at the given address.
     let subscribe address subscriber subscription world =
@@ -306,15 +306,15 @@ module Sim =
         match optSubList with
         | None -> world
         | Some subList ->
-            let subList2 = List.remove (fun (address, _) -> address = subscriber) subList
-            let subscriptions2 = Map.add address subList2 subs
-            { world with Subscriptions = subscriptions2 }
+            let subList' = List.remove (fun (address, _) -> address = subscriber) subList
+            let subscriptions' = Map.add address subList' subs
+            { world with Subscriptions = subscriptions' }
 
     /// Execute a procedure within the context of a given subscription at the given address.
     let withSubscription address subscription subscriber procedure world =
-        let world2 = subscribe address subscriber subscription world
-        let world3 = procedure world2
-        unsubscribe address subscriber world3
+        let world' = subscribe address subscriber subscription world
+        let world'' = procedure world'
+        unsubscribe address subscriber world''
 
     let swallow _ _ message world =
         (handle message, true, world)
@@ -336,8 +336,8 @@ module Sim =
             let button = get world_ (worldButtonLens subscriber)
             if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
                 if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
-                    let button_ = { button with IsDown = true }
-                    let world_ = set button_ world_ (worldButtonLens subscriber)
+                    let button' = { button with IsDown = true }
+                    let world_ = set button' world_ (worldButtonLens subscriber)
                     let (keepRunning, world_) = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
                     (handle message, keepRunning, world_)
                 else (message, true, world_)
@@ -350,8 +350,8 @@ module Sim =
             let button = get world_ (worldButtonLens subscriber)
             if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
                 let (keepRunning_, world_) =
-                    let button_ = { button with IsDown = false }
-                    let world_ = set button_ world_ (worldButtonLens subscriber)
+                    let button' = { button with IsDown = false }
+                    let world_ = set button' world_ (worldButtonLens subscriber)
                     publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
                 if keepRunning_ && isInBox3 mousePosition button.Gui.Position button.Gui.Size && button.IsDown then
                     let (keepRunning_, world_) = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
@@ -369,12 +369,12 @@ module Sim =
         subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world_
 
     let addButton address button world =
-        let world2 = registerButton address world
-        set (Button button) world2 (worldEntityModelLens address)
+        let world' = registerButton address world
+        set (Button button) world' (worldEntityModelLens address)
 
     let removeButton address world =
-        let world2 = set None world (worldOptEntityModelLens address)
-        unregisterButton address world2
+        let world' = set None world (worldOptEntityModelLens address)
+        unregisterButton address world'
 
     let addLabel address label world =
         set (Label label) world (worldEntityModelLens address)
@@ -396,11 +396,11 @@ module Sim =
     let handleToggleEventDownMouseLeft address subscriber message world_ =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
-            let toggle_ = get world_ (worldToggleLens subscriber)
-            if toggle_.Gui.Entity.Enabled && toggle_.Gui.Entity.Visible then
-                if isInBox3 mousePosition toggle_.Gui.Position toggle_.Gui.Size then
-                    let toggle_ = { toggle_ with IsPressed = true }
-                    let world_ = set toggle_ world_ (worldToggleLens subscriber)
+            let toggle = get world_ (worldToggleLens subscriber)
+            if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible then
+                if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
+                    let toggle' = { toggle with IsPressed = true }
+                    let world_ = set toggle' world_ (worldToggleLens subscriber)
                     (handle message, true, world_)
                 else (message, true, world_)
             else (message, true, world_)
@@ -411,32 +411,32 @@ module Sim =
         | MouseButtonData (mousePosition, _) ->
             let toggle = get world_ (worldToggleLens subscriber)
             if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible && toggle.IsPressed then
-                let toggle_ = { toggle with IsPressed = false }
-                if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
-                    let toggle_ = { toggle_ with IsOn = not toggle_.IsOn }
-                    let world_ = set toggle_ world_ (worldToggleLens subscriber)
-                    let messageType = if toggle.IsOn then "on" else "off"
+                let toggle' = { toggle with IsPressed = false }
+                if isInBox3 mousePosition toggle'.Gui.Position toggle'.Gui.Size then
+                    let toggle'' = { toggle' with IsOn = not toggle'.IsOn }
+                    let world_ = set toggle'' world_ (worldToggleLens subscriber)
+                    let messageType = if toggle''.IsOn then "on" else "off"
                     let (keepRunning, world_) = publish (Lun.make messageType :: subscriber) { Handled = false; Data = NoData } world_
-                    let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
+                    let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
                     let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                     (handle message, keepRunning, world_)
                 else
-                    let world_ = set toggle_ world_ (worldToggleLens subscriber)
+                    let world_ = set toggle' world_ (worldToggleLens subscriber)
                     (message, true, world_)
             else (message, true, world_)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
     let registerToggle address world =
-        let world2 = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world
-        subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world2
+        let world' = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world
+        subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world'
 
     let addToggle address toggle world =
-        let world2 = registerToggle address world
-        set (Toggle toggle) world2 (worldEntityModelLens address)
+        let world' = registerToggle address world
+        set (Toggle toggle) world' (worldEntityModelLens address)
 
     let removeToggle address world =
-        let world2 = set None world (worldOptEntityModelLens address)
-        unregisterToggle address world2
+        let world' = set None world (worldOptEntityModelLens address)
+        unregisterToggle address world'
 
     let unregisterFeeler address world =
         world |>
@@ -449,8 +449,8 @@ module Sim =
             let feeler = get world_ (worldFeelerLens subscriber)
             if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
                 if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
-                    let feeler_ = { feeler with IsTouched = true }
-                    let world_ = set feeler_ world_ (worldFeelerLens subscriber)
+                    let feeler' = { feeler with IsTouched = true }
+                    let world_ = set feeler' world_ (worldFeelerLens subscriber)
                     let (keepRunning, world_) = publish (Lun.make "touch" :: subscriber) { Handled = false; Data = mouseButtonData } world_
                     (handle message, keepRunning, world_)
                 else (message, true, world_)
@@ -460,26 +460,26 @@ module Sim =
     let handleFeelerEventUpMouseLeft address subscriber message world_ =
         match message.Data with
         | MouseButtonData _ ->
-            let feeler_ = get world_ (worldFeelerLens subscriber)
-            if feeler_.Gui.Entity.Enabled && feeler_.Gui.Entity.Visible then
-                let feeler_ = { feeler_ with IsTouched = false }
-                let world_ = set feeler_ world_ (worldFeelerLens subscriber)
+            let feeler = get world_ (worldFeelerLens subscriber)
+            if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
+                let feeler' = { feeler with IsTouched = false }
+                let world_ = set feeler' world_ (worldFeelerLens subscriber)
                 let (keepRunning, world_) = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
                 (handle message, keepRunning, world_)
             else (message, true, world_)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
     let registerFeeler address world =
-        let world2 = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world
-        subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world2
+        let world' = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world
+        subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world'
 
     let addFeeler address feeler world =
-        let world2 = registerFeeler address world
-        set (Feeler feeler) world2 (worldEntityModelLens address)
+        let world' = registerFeeler address world
+        set (Feeler feeler) world' (worldEntityModelLens address)
 
     let removeFeeler address world =
-        let world2 = set None world (worldOptEntityModelLens address)
-        unregisterFeeler address world2
+        let world' = set None world (worldOptEntityModelLens address)
+        unregisterFeeler address world'
 
     let unregisterBlockPhysics address (block : Block) world =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
@@ -506,12 +506,12 @@ module Sim =
         { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
     let addBlock address block world =
-        let world2 = registerBlockPhysics address block world
-        set (Block block) world2 (worldEntityModelLens address)
+        let world' = registerBlockPhysics address block world
+        set (Block block) world' (worldEntityModelLens address)
 
     let removeBlock address block world =
-        let world2 = set None world (worldOptEntityModelLens address)
-        unregisterBlockPhysics address block world2
+        let world' = set None world (worldOptEntityModelLens address)
+        unregisterBlockPhysics address block world'
 
     let unregisterAvatarPhysics address avatar world =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
@@ -538,12 +538,12 @@ module Sim =
         { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
     let addAvatar address avatar world =
-        let world2 = registerAvatarPhysics address avatar world
-        set (Avatar avatar) world2 (worldEntityModelLens address)
+        let world' = registerAvatarPhysics address avatar world
+        set (Avatar avatar) world' (worldEntityModelLens address)
 
     let removeAvatar address avatar world =
-        let world2 = set None world (worldOptEntityModelLens address)
-        unregisterAvatarPhysics address avatar world2
+        let world' = set None world (worldOptEntityModelLens address)
+        unregisterAvatarPhysics address avatar world'
 
     let unregisterTileMapPhysics address tileMap world =
         world
@@ -561,12 +561,12 @@ module Sim =
         world
 
     let addTileMap address tileMap world =
-        let world2 = registerTileMapPhysics address tileMap world
-        set (TileMap tileMap) world2 (worldEntityModelLens address)
+        let world' = registerTileMapPhysics address tileMap world
+        set (TileMap tileMap) world' (worldEntityModelLens address)
 
     let removeTileMap address tileMap world =
-        let world2 = set None world (worldOptEntityModelLens address)
-        unregisterTileMapPhysics tileMap address world2
+        let world' = set None world (worldOptEntityModelLens address)
+        unregisterTileMapPhysics tileMap address world'
 
     let addEntityModel address entityModel world =
         match entityModel with
@@ -582,9 +582,9 @@ module Sim =
     let addEntityModels entityModels address world =
         let group = get world (worldGroupLens address)
         List.fold
-            (fun world_ entityModel ->
+            (fun world' entityModel ->
                 let entity = get entityModel entityLens
-                addEntityModel (address @ [Lun.make entity.Name]) entityModel world_)
+                addEntityModel (address @ [Lun.make entity.Name]) entityModel world')
             world
             entityModels
 
@@ -603,7 +603,7 @@ module Sim =
     let removeEntityModels address world =
         let group = get world (worldGroupLens address)
         Seq.fold
-            (fun world_ entityModelAddress -> removeEntityModel (address @ [entityModelAddress]) world_)
+            (fun world' entityModelAddress -> removeEntityModel (address @ [entityModelAddress]) world')
             world
             (Map.toKeySeq group.EntityModels)
 
@@ -612,16 +612,16 @@ module Sim =
         set (Group group) world (worldGroupModelLens address)
 
     let removeGroup address world =
-        let world2 = removeEntityModels address world
-        set None world2 (worldOptGroupModelLens address)
+        let world' = removeEntityModels address world
+        set None world' (worldOptGroupModelLens address)
 
-    let propagateBlockPhysics address block world_ =
-        let world_ = unregisterBlockPhysics address block world_
-        registerBlockPhysics address block world_
+    let propagateBlockPhysics address block world =
+        let world' = unregisterBlockPhysics address block world
+        registerBlockPhysics address block world'
 
-    let propagateAvatarPhysics address avatar world_ =
-        let world_ = unregisterAvatarPhysics address avatar world_
-        registerAvatarPhysics address avatar world_
+    let propagateAvatarPhysics address avatar world =
+        let world' = unregisterAvatarPhysics address avatar world
+        registerAvatarPhysics address avatar world'
 
     let propagateEntityModelPhysics address entityModel world =
         match entityModel with
@@ -677,10 +677,10 @@ module Sim =
                           Visible = true }}}
                 testBlock
                   
-            let adjustCamera _ _ message world =
-                let actor = get world (worldActorLens AvatarAddress)
-                let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
-                (message, true, { world with Camera = camera })
+            let adjustCamera _ _ message world_ =
+                let actor = get world_ (worldActorLens AvatarAddress)
+                let camera = { world_.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
+                (message, true, { world_ with Camera = camera })
 
             let moveAvatar address _ message world_ =
                 let feeler = get world_ (worldFeelerLens FeelerAddress)
@@ -743,21 +743,21 @@ module Sim =
     let removeScreen address world =
         set None world (worldOptScreenModelLens address)
 
-    let reregisterPhysicsHack4 groupModelAddress world_ _ entityModel =
+    let reregisterPhysicsHack4 groupModelAddress world _ entityModel =
         match entityModel with
         | Button _
         | Label _
         | TextBox _
         | Toggle _
-        | Feeler _ -> world_
-        | Block block -> registerBlockPhysics (groupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_
-        | Avatar avatar -> registerAvatarPhysics (groupModelAddress @ [Lun.make avatar.Actor.Entity.Name]) avatar world_
-        | TileMap tileMap -> registerTileMapPhysics (groupModelAddress @ [Lun.make tileMap.Actor.Entity.Name]) tileMap world_
+        | Feeler _ -> world
+        | Block block -> registerBlockPhysics (groupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world
+        | Avatar avatar -> registerAvatarPhysics (groupModelAddress @ [Lun.make avatar.Actor.Entity.Name]) avatar world
+        | TileMap tileMap -> registerTileMapPhysics (groupModelAddress @ [Lun.make tileMap.Actor.Entity.Name]) tileMap world
 
-    let reregisterPhysicsHack groupModelAddress world_ =
-        let groupModel = get world_ <| worldGroupModelLens groupModelAddress
+    let reregisterPhysicsHack groupModelAddress world =
+        let groupModel = get world <| worldGroupModelLens groupModelAddress
         let entityModels = get groupModel entityModelsLens
-        Map.fold (reregisterPhysicsHack4 groupModelAddress) world_ entityModels
+        Map.fold (reregisterPhysicsHack4 groupModelAddress) world entityModels
 
     let getComponentAudioDescriptors world : AudioDescriptor rQueue =
         let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
@@ -873,9 +873,8 @@ module Sim =
         let renderMessages = world.RenderMessages
         let renderDescriptors = getRenderDescriptors world
         let renderer = world.Renderer
-        let renderer2 = Nu.Rendering.render renderMessages renderDescriptors renderer
-        let world2 = { world with RenderMessages = []; Renderer = renderer2 }
-        world2
+        let renderer' = Nu.Rendering.render renderMessages renderDescriptors renderer
+        { world with RenderMessages = []; Renderer = renderer' }
 
     let handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
         if not keepRunning then (keepRunning, world)
@@ -883,9 +882,9 @@ module Sim =
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
                 let actor = get world (worldActorLens bodyTransformMessage.EntityAddress)
-                let actor2 = { actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
+                let actor' = { actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
                                           Rotation = bodyTransformMessage.Rotation }
-                (keepRunning, set actor2 world <| worldActorLens bodyTransformMessage.EntityAddress)
+                (keepRunning, set actor' world <| worldActorLens bodyTransformMessage.EntityAddress)
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
@@ -899,44 +898,44 @@ module Sim =
     /// Integrate the world.
     let integrate world =
         let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
-        let world2 = { world with PhysicsMessages = [] }
-        handleIntegrationMessages integrationMessages world2
+        let world' = { world with PhysicsMessages = [] }
+        handleIntegrationMessages integrationMessages world'
 
-    let updateTransition1 transitionModel_ =
-        let transition_ = get transitionModel_ transitionLens
-        let started = transition_.Ticks = 0
-        let (transition_, finished) =
-            if transition_.Ticks >= transition_.Lifetime then ({ transition_ with Ticks = 0 }, true)
-            else ({ transition_ with Ticks = transition_.Ticks + 1 }, false)
-        let transitionModel_ = set transition_ transitionModel_ transitionLens
-        (transitionModel_, started, finished)
+    let updateTransition1 transitionModel =
+        let transition = get transitionModel transitionLens
+        let started = transition.Ticks = 0
+        let (transition', finished) =
+            if transition.Ticks >= transition.Lifetime then ({ transition with Ticks = 0 }, true)
+            else ({ transition with Ticks = transition.Ticks + 1 }, false)
+        let transitionModel' = set transition' transitionModel transitionLens
+        (transitionModel', started, finished)
 
     let updateTransition update world_ : bool * World =
         let (keepRunning, world_) =
             let optSelectedScreenModel = get world_ worldOptSelectedScreenModelLens
             match optSelectedScreenModel with
             | None -> (true, world_)
-            | Some selectedScreenModel_ ->
+            | Some selectedScreenModel ->
                 let selectedScreenModelAddress = Option.get <| get world_ worldOptSelectedScreenModelAddressLens
-                let selectedScreen_ = get selectedScreenModel_ screenLens
-                match selectedScreen_.State with
+                let selectedScreen = get selectedScreenModel screenLens
+                match selectedScreen.State with
                 | IncomingState ->
                     // TODO: consider removing duplication with below
-                    let incomingModel_ = get selectedScreenModel_ incomingModelLens
-                    let (incomingModel_, started, finished) = updateTransition1 incomingModel_
-                    let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else IncomingState
-                                                                 IncomingModel = incomingModel_ }
-                    let selectedScreenModel_ = set selectedScreen_ selectedScreenModel_ screenLens
-                    let world_ = set (Some selectedScreenModel_) world_ <| worldOptSelectedScreenModelLens
+                    let incomingModel = get selectedScreenModel incomingModelLens
+                    let (incomingModel', started, finished) = updateTransition1 incomingModel
+                    let selectedScreen' = { selectedScreen with State = if finished then IdlingState else IncomingState
+                                                                IncomingModel = incomingModel' }
+                    let selectedScreenModel' = set selectedScreen' selectedScreenModel screenLens
+                    let world_ = set (Some selectedScreenModel') world_ <| worldOptSelectedScreenModelLens
                     let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
                     publish [Lun.make "finished"; Lun.make "incoming"] { Handled = false; Data = NoData } world_
                 | OutgoingState ->
-                    let outgoingModel_ = get selectedScreenModel_ outgoingModelLens
-                    let (outgoingModel_, started, finished) = updateTransition1 outgoingModel_
-                    let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else OutgoingState
-                                                                 OutgoingModel = outgoingModel_ }
-                    let screenModel_ = set outgoingModel_ selectedScreenModel_ outgoingModelLens
-                    let world_ = set (Some screenModel_) world_ <| worldOptSelectedScreenModelLens
+                    let outgoingModel = get selectedScreenModel outgoingModelLens
+                    let (outgoingModel', started, finished) = updateTransition1 outgoingModel
+                    let selectedScreen' = { selectedScreen with State = if finished then IdlingState else OutgoingState
+                                                                OutgoingModel = outgoingModel' }
+                    let selectedScreenModel' = set selectedScreen' selectedScreenModel screenLens
+                    let world_ = set (Some selectedScreenModel') world_ <| worldOptSelectedScreenModelLens
                     let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
                     publish [Lun.make "finished"; Lun.make "outgoing"] { Handled = false; Data = NoData } world_
                 | IdlingState -> (true, world_)
@@ -946,43 +945,43 @@ module Sim =
     let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
         runSdl
             (fun sdlDeps -> tryCreateWorld sdlDeps)
-            (fun refEvent world ->
+            (fun refEvent world_ ->
                 let event = !refEvent
                 match event.``type`` with
-                | SDL.SDL_EventType.SDL_QUIT -> (false, world)
+                | SDL.SDL_EventType.SDL_QUIT -> (false, world_)
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                    let world2 = set { world.MouseState with MousePosition = mousePosition } world mouseStateLens
-                    let (keepRunning, world3) =
-                        if Set.contains MouseLeft world2.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world2
-                        else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world2
-                    (keepRunning, world3)
+                    let world_ = set { world_.MouseState with MousePosition = mousePosition } world_ mouseStateLens
+                    let (keepRunning, world_) =
+                        if Set.contains MouseLeft world_.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world_
+                        else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world_
+                    (keepRunning, world_)
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
-                    let world2 = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
+                    let world_ = set { world_.MouseState with MouseDowns = Set.add mouseButton world_.MouseState.MouseDowns } world_ mouseStateLens
                     let messageAddress = [Lun.make "down"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
-                    let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                    let (keepRunning, world3) = publish messageAddress { Handled = false; Data = messageData } world2
+                    let messageData = MouseButtonData (world_.MouseState.MousePosition, mouseButton)
+                    let (keepRunning, world3) = publish messageAddress { Handled = false; Data = messageData } world_
                     (keepRunning, world3)
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mouseState = world.MouseState
+                    let mouseState = world_.MouseState
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
-                        let world2 = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
+                        let world_ = set { world_.MouseState with MouseDowns = Set.remove mouseButton world_.MouseState.MouseDowns } world_ mouseStateLens
                         let messageAddress = [Lun.make "up"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
-                        let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                        let (keepRunning, world3) = publish messageAddress { Handled = false; Data = messageData } world2
-                        (keepRunning, world3)
-                    else (true, world)
-                | _ -> (true, world))
-            (fun world ->
-                let (keepRunning_, world2) = integrate world
-                if not keepRunning_ then (keepRunning_, world2)
+                        let messageData = MouseButtonData (world_.MouseState.MousePosition, mouseButton)
+                        let (keepRunning, world_) = publish messageAddress { Handled = false; Data = messageData } world_
+                        (keepRunning, world_)
+                    else (true, world_)
+                | _ -> (true, world_))
+            (fun world_ ->
+                let (keepRunning_, world_) = integrate world_
+                if not keepRunning_ then (keepRunning_, world_)
                 else
-                    let (keepRunning_, world3) = publish TickAddress { Handled = false; Data = NoData } world2
-                    if not keepRunning_ then (keepRunning_, world3)
-                    else handleUpdate world3)
-            (fun world -> let world2 = render world in handleRender world2)
+                    let (keepRunning_, world_) = publish TickAddress { Handled = false; Data = NoData } world_
+                    if not keepRunning_ then (keepRunning_, world_)
+                    else handleUpdate world_)
+            (fun world -> let world' = render world in handleRender world')
             (fun world -> play world)
             (fun world -> { world with Renderer = handleRenderExit world.Renderer })
             sdlConfig

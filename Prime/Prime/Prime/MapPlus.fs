@@ -9,47 +9,47 @@ type Key<'p, 'm> = 'p * 'm
 
 let empty : MapPlus<'p, 'm, 'v> = Map.empty
 
-let isEmpty (triePlus : MapPlus<'p, 'm, 'v>) = Map.isEmpty
+let isEmpty (mapPlus : MapPlus<'p, 'm, 'v>) = Map.isEmpty
 
-let tryFind (plusKey, trieKey) triePlus =
-    let optTrie = Map.tryFind plusKey triePlus
-    match optTrie with
+let tryFind (plusKey, mapKey) mapPlus =
+    let optMap = Map.tryFind plusKey mapPlus
+    match optMap with
     | None -> None
-    | Some trie -> Map.tryFind trieKey trie
+    | Some map -> Map.tryFind mapKey map
 
-let containsKey (plusKey, trieKey) plus triePlus =
-    let optTrie = Map.tryFind plusKey triePlus
-    match optTrie with
+let containsKey (plusKey, mapKey) plus mapPlus =
+    let optMap = Map.tryFind plusKey mapPlus
+    match optMap with
     | None -> false
-    | Some trie -> (Map.tryFind trieKey trie).IsSome
+    | Some map -> (Map.tryFind mapKey map).IsSome
 
-let add (plusKey, trieKey) value triePlus =
-    let optTrie = Map.tryFind plusKey triePlus
-    match optTrie with
-    | None -> Map.singleton plusKey (Map.singleton trieKey value)
-    | Some trie -> Map.add plusKey (Map.add trieKey value trie) triePlus
+let add (plusKey, mapKey) value mapPlus =
+    let optMap = Map.tryFind plusKey mapPlus
+    match optMap with
+    | None -> Map.singleton plusKey (Map.singleton mapKey value)
+    | Some map -> Map.add plusKey (Map.add mapKey value map) mapPlus
 
-let rec addMany kvps triePlus =
-    if Seq.isEmpty kvps then triePlus
+let rec addMany kvps mapPlus =
+    if Seq.isEmpty kvps then mapPlus
     else
         let kvpHead = Seq.head kvps
         let kvpTail = Seq.skip 1 kvps
-        let trie2 = add (fst kvpHead) (snd kvpHead) triePlus
-        addMany kvpTail trie2
+        let map' = add (fst kvpHead) (snd kvpHead) mapPlus
+        addMany kvpTail map'
 
-let remove (versionKey, trieKey) triePlus =
-    let optTrie = Map.tryFind versionKey triePlus
-    match optTrie with
+let remove (versionKey, mapKey) mapPlus =
+    let optMap = Map.tryFind versionKey mapPlus
+    match optMap with
     | None -> Map.empty
-    | Some trie -> Map.add versionKey (Map.remove trieKey trie) triePlus
+    | Some map -> Map.add versionKey (Map.remove mapKey map) mapPlus
 
-let rec removeMany keys trie =
-    if Seq.isEmpty keys then trie
+let rec removeMany keys map =
+    if Seq.isEmpty keys then map
     else
         let keyHead = Seq.head keys
         let keyTail = Seq.skip 1 keys
-        let trie2 = remove keyHead trie
-        removeMany keyTail trie2
+        let map' = remove keyHead map
+        removeMany keyTail map'
 
 let ofList kvps =
     addMany kvps empty
@@ -58,19 +58,19 @@ let ofListBy by kvps =
     let pairs = List.map by kvps
     ofList pairs
 
-let fold (folder : 'a -> Key<'p, 'm> -> 'b -> 'a) state triePlus =
-    let foldFolder = fun state (plusKey, trieKey) value -> folder state (plusKey, trieKey) value
-    Map.fold foldFolder state triePlus
+let fold (folder : 'a -> Key<'p, 'm> -> 'b -> 'a) state mapPlus =
+    let foldFolder = fun state (plusKey, mapKey) value -> folder state (plusKey, mapKey) value
+    Map.fold foldFolder state mapPlus
 
-let map (mapper : Key<'p, 'm> -> 'v -> 'a) (triePlus : MapPlus<'p, 'm, 'v>) : MapPlus<'p, 'm, 'a> =
-    let mapMapper = fun plusKey trie -> Map.map (fun trieKey value -> mapper (plusKey, trieKey) value) trie
-    Map.map mapMapper triePlus
+let map (mapper : Key<'p, 'm> -> 'v -> 'a) (mapPlus : MapPlus<'p, 'm, 'v>) : MapPlus<'p, 'm, 'a> =
+    let mapMapper = fun plusKey map -> Map.map (fun mapKey value -> mapper (plusKey, mapKey) value) map
+    Map.map mapMapper mapPlus
 
-let toValueListBy by trie =
-    fold (fun state _ value -> by value :: state) [] trie
+let toValueListBy by map =
+    fold (fun state _ value -> by value :: state) [] map
 
-let toValueList trie =
-    toValueListBy (fun value -> value) trie
+let toValueList map =
+    toValueListBy (fun value -> value) map
 
 let singleton (key, value) =
     add key value empty

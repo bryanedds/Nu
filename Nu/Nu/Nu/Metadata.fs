@@ -35,7 +35,7 @@ module Metadata =
                 let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = "package") possiblePackageNodes
                 let assetMetadataMap =
                     List.fold
-                        (fun assetMetadataMap_ (packageNode : XmlNode) ->
+                        (fun assetMetadataMap' (packageNode : XmlNode) ->
                             let packageName = (packageNode.Attributes.GetNamedItem "name").InnerText
                             let optAssets = List.map (fun assetNode -> tryLoadAsset packageName assetNode) (List.ofSeq <| packageNode.OfType<XmlNode> ())
                             let assets = List.definitize optAssets
@@ -65,7 +65,7 @@ module Metadata =
                                             | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
                                         (Lun.make asset.Name, metadata))
                                     assets
-                            Map.add (Lun.make packageName) subMap assetMetadataMap_)
+                            Map.add (Lun.make packageName) subMap assetMetadataMap')
                         Map.empty
                         packageNodes
                 Right assetMetadataMap

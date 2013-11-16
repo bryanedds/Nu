@@ -103,21 +103,21 @@ module Sdl =
     let renderSdl handleRender sdlDeps world =
         ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, 0uy, 0uy, 179uy, 255uy))
         ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
-        let world2 = handleRender world
+        let world' = handleRender world
         SDL.SDL_RenderPresent sdlDeps.RenderContext
-        world2
+        world'
 
     let playSdl handlePlay world =
         handlePlay world
 
-    let rec runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning_ world_ =
-        if keepRunning_ then
-            let (keepRunning_, world_) = advanceSdl handleEvent handleUpdate sdlDeps world_
-            if keepRunning_ then
-                let world_ = renderSdl handleRender sdlDeps world_
-                let world_ = playSdl handlePlay world_
-                runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning_ world_
-            else ignore (handleExit world_)
+    let rec runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
+        if keepRunning then
+            let (keepRunning', world') = advanceSdl handleEvent handleUpdate sdlDeps world
+            if not keepRunning' then ignore (handleExit world')
+            else
+                let world'' = renderSdl handleRender sdlDeps world'
+                let world''' = playSdl handlePlay world''
+                runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'''
 
     let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
         withSdlInit
