@@ -89,6 +89,18 @@ module Games =
         { Get = fun this -> gameModelOptChildModelFinder (List.head address) this
           Set = fun optScreen this -> match optScreen with None -> gameModelChildModelRemover (List.head address) this | Some entity -> gameModelChildModelAdder (List.head address) this entity }
 
+    let optSelectedScreenModelLens =
+        { Get = fun this ->
+            let optSelectedScreenModelAddress = get this optSelectedScreenModelAddressLens
+            match optSelectedScreenModelAddress with
+            | None -> None
+            | Some selectedScreenModelAddress -> get this <| optScreenModelLens selectedScreenModelAddress
+          Set = fun screen this ->
+            let optSelectedScreenModelAddress = get this optSelectedScreenModelAddressLens
+            match optSelectedScreenModelAddress with
+            | None -> failwith "Cannot set a non-existent screen."
+            | Some selectedScreenModelAddress -> set screen.Value this <| screenModelLens selectedScreenModelAddress }
+
     let gameModelScreenLens address =
         { Get = fun this -> gameModelGetChildWithLens this address screenLens
           Set = fun screen this -> gameModelSetChildWithLens screen this address screenLens }
@@ -96,6 +108,9 @@ module Games =
     let gameModelOptScreenLens address =
         { Get = fun this -> gameModelGetOptChildWithLens this address screenLens
           Set = fun optScreen this -> gameModelSetOptChildWithLens optScreen this address screenLens }
+
+    let gameModelIncomingModelLens address = screenModelLens [List.head address] >>| incomingModelLens
+    let gameModelOutgoingModelLens address = screenModelLens [List.head address] >>| outgoingModelLens
 
     let gameModelGroupModelLens address = screenModelLens [List.head address] >>| groupModelLens (List.tail address)
     let gameModelOptGroupModelLens address = screenModelLens [List.head address] >>| optGroupModelLens (List.tail address)
