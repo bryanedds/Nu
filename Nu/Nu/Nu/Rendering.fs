@@ -19,7 +19,8 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
     { Position : Vector2
       Size : Vector2
       Rotation : single
-      Sprite : Sprite }
+      Sprite : Sprite
+      Color : Vector4 }
 
 type [<StructuralEquality; NoComparison>] TileMapAsset =
     { TileMapAssetName : Lun
@@ -240,6 +241,7 @@ module Rendering =
         | LayeredSpriteDescriptor lsd ->
             let spriteDescriptor = lsd.Descriptor
             let sprite = spriteDescriptor.Sprite
+            let color = spriteDescriptor.Color
             let (renderer2, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
@@ -261,6 +263,8 @@ module Rendering =
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
                     rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
+                    ignore <| SDL.SDL_SetTextureColorMod (texture, byte <| 255.0f * color.X, byte <| 255.0f * color.Y, byte <| 255.0f * color.Z)
+                    ignore <| SDL.SDL_SetTextureAlphaMod (texture, byte <| 255.0f * color.W)
                     let renderResult =
                         SDL.SDL_RenderCopyEx
                             (renderer2.RenderContext,
