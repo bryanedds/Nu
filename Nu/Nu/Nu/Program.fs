@@ -40,7 +40,7 @@ module Program =
         let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
         run
             (fun sdlDeps -> tryCreateEmptyWorld sdlDeps ())
-            (fun world_ -> updateTransition (fun world_ -> (true, world_)) world_)
+            (fun world -> updateTransition (fun world2 -> (true, world2)) world)
             sdlConfig
 
     (*moduleProgram

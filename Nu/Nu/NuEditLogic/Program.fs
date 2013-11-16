@@ -477,9 +477,10 @@ module Program =
         form
 
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
-        let incoming = { Id = getNuId (); Lifetime = 0; Ticks = 0; Type = Incoming }
-        let outgoing = { Id = getNuId (); Lifetime = 0; Ticks = 0; Type = Outgoing }
-        let screen = { Id = getNuId (); State = IdlingState; Incoming = Transition incoming; Outgoing = Transition outgoing; GroupModels = Map.empty }
+        let dissolveSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+        let incomingModel = Dissolve { Transition = { Id = getNuId (); Lifetime = 100; Ticks = 0; Type = Incoming }; Sprite = dissolveSprite }
+        let outgoingModel = Dissolve { Transition = { Id = getNuId (); Lifetime = 100; Ticks = 0; Type = Outgoing }; Sprite = dissolveSprite }
+        let screen = { Id = getNuId (); State = IncomingState; IncomingModel = incomingModel; OutgoingModel = outgoingModel; GroupModels = Map.empty }
         let group = { Id = getNuId (); EntityModels = Map.empty }
         let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         let optWorld = tryCreateEmptyWorld sdlDeps editorState
@@ -518,7 +519,8 @@ module Program =
             form.redoToolStripMenuItem.Enabled <- true
 
     let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
-        refWorld := updateEntityDrag form world
+        refWorld := snd <| updateTransition (fun world2 -> true, world2) world 
+        refWorld := updateEntityDrag form !refWorld
         refWorld := updateCameraDrag form !refWorld
         refWorld := Seq.fold (fun world_ changer -> changer world_) !refWorld worldChangers
         worldChangers.Clear ()

@@ -777,30 +777,30 @@ module Sim =
         | Button button ->
             let (_, gui, entity) = buttonSep button
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if button.IsDown then button.DownSprite else button.UpSprite }; Depth = gui.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = (if button.IsDown then button.DownSprite else button.UpSprite); Color = Vector4.One }; Depth = gui.Depth })]
         | Label label ->
             let (_, gui, entity) = labelSep label
             if not label.Gui.Entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite }; Depth = gui.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite; Color = Vector4.One }; Depth = gui.Depth })]
         | TextBox textBox ->
             let (_, gui, entity) = textBoxSep textBox
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite }; Depth = gui.Depth })
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite; Color = Vector4.One }; Depth = gui.Depth })
                   LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
         | Toggle toggle ->
             let (_, gui, entity) = toggleSep toggle
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite }; Depth = gui.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = (if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite); Color = Vector4.One }; Depth = gui.Depth })]
         | Feeler _ ->
             []
         | Block block ->
             let (_, actor, entity) = blockSep block
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite }; Depth = actor.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite; Color = Vector4.One }; Depth = actor.Depth })]
         | Avatar avatar ->
             let (_, actor, entity) = avatarSep avatar
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite }; Depth = actor.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite; Color = Vector4.One }; Depth = actor.Depth })]
         | TileMap tileMap ->
             let (_, actor, entity) = tileMapSep tileMap
             if not entity.Visible then []
@@ -830,6 +830,16 @@ module Sim =
         let entities = Map.toValueSeq group.EntityModels
         Seq.map (getEntityRenderDescriptors view) entities
 
+    let getTransitionModelRenderDescriptors camera transitionModel =
+        match transitionModel with
+        | Transition _ -> []
+        | Dissolve dissolve ->
+            let transition = dissolve.Transition
+            let alpha = single transition.Ticks / single transition.Lifetime
+            let alphaMul = alpha * match transition.Type with Incoming -> -1.0f | Outgoing -> 1.0f
+            let color = Vector4 (1.0f, 1.0f, 1.0f, alphaMul)
+            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolve.Sprite; Color = color }; Depth = Single.MaxValue })]
+
     let getWorldRenderDescriptors world =
         match get world worldOptSelectedScreenModelAddressLens with
         | None -> []
@@ -838,7 +848,11 @@ module Sim =
             let groups = Map.toValueSeq activeScreen.GroupModels
             let descriptorSeqLists = Seq.map (getGroupModelRenderDescriptors world.Camera) groups
             let descriptorSeq = Seq.concat descriptorSeqLists
-            List.concat descriptorSeq
+            let descriptors = List.concat descriptorSeq
+            match activeScreen.State with
+            | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera activeScreen.IncomingModel
+            | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera activeScreen.OutgoingModel
+            | IdlingState -> descriptors
 
     let getRenderDescriptors world : RenderDescriptor rQueue =
         let componentDescriptors = getComponentRenderDescriptors world
@@ -879,34 +893,38 @@ module Sim =
         let world2 = { world with PhysicsMessages = [] }
         handleIntegrationMessages integrationMessages world2
 
+    let updateTransition1 transitionModel_ =
+        let transition_ = get transitionModel_ transitionLens
+        let (transition_, finished) =
+            if transition_.Ticks >= transition_.Lifetime then ({ transition_ with Ticks = 0 }, true)
+            else ({ transition_ with Ticks = transition_.Ticks + 1 }, false)
+        let transitionModel_ = set transition_ transitionModel_ transitionLens
+        (transitionModel_, finished)
+
     let updateTransition update world_ : bool * World =
         let (keepRunning, world_) =
             let optSelectedScreenModel = get world_ worldOptSelectedScreenModelLens
             match optSelectedScreenModel with
             | None -> (true, world_)
-            | Some selectedScreenModel ->
-                let selectedScreen = get selectedScreenModel screenLens
-                match selectedScreen.State with
+            | Some selectedScreenModel_ ->
+                let selectedScreen_ = get selectedScreenModel_ screenLens
+                match selectedScreen_.State with
                 | IncomingState ->
-                    let incomingModel_ = get selectedScreenModel incomingModelLens
-                    let (incomingModel_, finished) =
-                        match incomingModel_ with
-                        | Transition transition_ ->
-                            if transition_.Lifetime >= transition_.Ticks then (Transition { transition_ with Ticks = 0 }, true)
-                            else (Transition { transition_ with Ticks = transition_.Ticks + 1 }, false)
-                    let screenModel_ = set incomingModel_ selectedScreenModel incomingModelLens
-                    let world_ = set (Some screenModel_) world_ <| worldOptSelectedScreenModelLens
+                    let incomingModel_ = get selectedScreenModel_ incomingModelLens
+                    let (incomingModel_, finished) = updateTransition1 incomingModel_
+                    let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else IncomingState
+                                                                 IncomingModel = incomingModel_ }
+                    let selectedScreenModel_ = set selectedScreen_ selectedScreenModel_ screenLens
+                    let world_ = set (Some selectedScreenModel_) world_ <| worldOptSelectedScreenModelLens
                     publish [Lun.make "finished"; Lun.make "incoming"] { Handled = false; Data = NoData } world_
                 | OutgoingState ->
-                    let outgoingModel_ = get selectedScreenModel outgoingModelLens
-                    let (outgoingModel_, finished) =
-                        match outgoingModel_ with
-                        | Transition transition_ ->
-                            if transition_.Lifetime >= transition_.Ticks then (Transition { transition_ with Ticks = 0 }, true)
-                            else (Transition { transition_ with Ticks = transition_.Ticks + 1 }, false)
-                    let screenModel_ = set outgoingModel_ selectedScreenModel outgoingModelLens
+                    let outgoingModel_ = get selectedScreenModel_ outgoingModelLens
+                    let (outgoingModel_, finished) = updateTransition1 outgoingModel_
+                    let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else OutgoingState
+                                                                 OutgoingModel = outgoingModel_ }
+                    let screenModel_ = set outgoingModel_ selectedScreenModel_ outgoingModelLens
                     let world_ = set (Some screenModel_) world_ <| worldOptSelectedScreenModelLens
-                    publish [Lun.make "finished"; Lun.make "outgoing"] { Handled = false; Data = NoData } world_                
+                    publish [Lun.make "finished"; Lun.make "outgoing"] { Handled = false; Data = NoData } world_
                 | IdlingState -> (true, world_)
         if keepRunning then update world_
         else (keepRunning, world_)

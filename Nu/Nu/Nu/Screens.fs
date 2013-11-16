@@ -17,8 +17,13 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
       Ticks : int
       Type : TransitionType }
 
+type [<StructuralEquality; NoComparison; CLIMutable>] Dissolve =
+    { Transition : Transition
+      Sprite : Sprite }
+
 type [<StructuralEquality; NoComparison>] TransitionModel =
     | Transition of Transition
+    | Dissolve of Dissolve
 
 type [<StructuralEquality; NoComparison>] ScreenState =
     | IncomingState
@@ -28,8 +33,8 @@ type [<StructuralEquality; NoComparison>] ScreenState =
 type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
     { Id : Id
       State : ScreenState
-      Incoming : TransitionModel
-      Outgoing : TransitionModel
+      IncomingModel : TransitionModel
+      OutgoingModel : TransitionModel
       GroupModels : Map<Lun, GroupModel> }
 
 type [<StructuralEquality; NoComparison>] ScreenModel =
@@ -41,9 +46,11 @@ module Screens =
         { Get = fun this ->
             match this with
             | Transition transition -> transition
+            | Dissolve dissolve -> dissolve.Transition
           Set = fun transition this ->
             match this with
-            | Transition _ -> Transition transition }
+            | Transition _ -> Transition transition
+            | Dissolve dissolve -> Dissolve { dissolve with Transition = transition }}
 
     let screenLens =
         { Get = fun this ->
@@ -93,12 +100,12 @@ module Screens =
                 setChild screenModelChildModelAdder screenModelChildModelRemover this address childModel2
 
     let incomingModelLens =
-        { Get = fun this -> (get this screenLens).Incoming
-          Set = fun incoming this -> set { (get this screenLens) with Incoming = incoming } this screenLens }
+        { Get = fun this -> (get this screenLens).IncomingModel
+          Set = fun incoming this -> set { (get this screenLens) with IncomingModel = incoming } this screenLens }
 
     let outgoingModelLens =
-        { Get = fun this -> (get this screenLens).Outgoing
-          Set = fun outgoing this -> set { (get this screenLens) with Outgoing = outgoing } this screenLens }
+        { Get = fun this -> (get this screenLens).OutgoingModel
+          Set = fun outgoing this -> set { (get this screenLens) with OutgoingModel = outgoing } this screenLens }
 
     let groupModelsLens =
         { Get = fun this -> (get this screenLens).GroupModels
