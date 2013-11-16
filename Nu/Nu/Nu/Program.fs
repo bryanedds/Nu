@@ -38,7 +38,10 @@ module Program =
         let sdlViewConfig = NewWindow { WindowTitle = "Nu Game Engine"; WindowX = 100; WindowY = 100; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
-        run (fun sdlDeps -> tryCreateEmptyWorld sdlDeps ()) (fun world -> (true, world)) sdlConfig
+        run
+            (fun sdlDeps -> tryCreateEmptyWorld sdlDeps ())
+            (fun world_ -> updateTransition (fun world_ -> (true, world_)) world_)
+            sdlConfig
 
     (*moduleProgram
     open System

@@ -110,13 +110,13 @@ module Sdl =
     let playSdl handlePlay world =
         handlePlay world
 
-    let rec runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning =
-        if keepRunning then
+    let rec runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning_ world_ =
+        if keepRunning_ then
             let (keepRunning_, world_) = advanceSdl handleEvent handleUpdate sdlDeps world_
             if keepRunning_ then
                 let world_ = renderSdl handleRender sdlDeps world_
                 let world_ = playSdl handlePlay world_
-                runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world_ keepRunning_
+                runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning_ world_
             else ignore (handleExit world_)
 
     let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
@@ -154,5 +154,5 @@ module Sdl =
                                         trace errorMsg
                                         FailureReturnCode
                                     | Right world ->
-                                        runSdl7 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps world true
+                                        runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps true world
                                         SuccessReturnCode))))))

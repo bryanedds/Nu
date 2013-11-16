@@ -7,14 +7,43 @@ open Nu.DomainModel
 open Nu.Entities
 open Nu.Groups
 
+type [<StructuralEquality; NoComparison>] TransitionType =
+    | Incoming
+    | Outgoing
+
+type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
+    { Id : Id
+      Lifetime : int
+      Ticks : int
+      Type : TransitionType }
+
+type [<StructuralEquality; NoComparison>] TransitionModel =
+    | Transition of Transition
+
+type [<StructuralEquality; NoComparison>] ScreenState =
+    | IncomingState
+    | OutgoingState
+    | IdlingState
+
 type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
     { Id : Id
+      State : ScreenState
+      Incoming : TransitionModel
+      Outgoing : TransitionModel
       GroupModels : Map<Lun, GroupModel> }
 
 type [<StructuralEquality; NoComparison>] ScreenModel =
     | Screen of Screen
 
 module Screens =
+
+    let transitionLens =
+        { Get = fun this ->
+            match this with
+            | Transition transition -> transition
+          Set = fun transition this ->
+            match this with
+            | Transition _ -> Transition transition }
 
     let screenLens =
         { Get = fun this ->
@@ -62,6 +91,14 @@ module Screens =
             | Some childModel ->
                 let childModel2 = set child childModel lens
                 setChild screenModelChildModelAdder screenModelChildModelRemover this address childModel2
+
+    let incomingModelLens =
+        { Get = fun this -> (get this screenLens).Incoming
+          Set = fun incoming this -> set { (get this screenLens) with Incoming = incoming } this screenLens }
+
+    let outgoingModelLens =
+        { Get = fun this -> (get this screenLens).Outgoing
+          Set = fun outgoing this -> set { (get this screenLens) with Outgoing = outgoing } this screenLens }
 
     let groupModelsLens =
         { Get = fun this -> (get this screenLens).GroupModels
