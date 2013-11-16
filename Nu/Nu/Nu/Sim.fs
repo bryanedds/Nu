@@ -319,11 +319,11 @@ module Sim =
     let swallow _ _ message world =
         (handle message, true, world)
 
-    let swallowLeftMouseDuringTransition started finished world =
+    let swallowLeftMouseDuringTransition started finished screenAddress world =
         if not started then
             if not finished then world
-            else world |> unsubscribe DownMouseLeftAddress [] |> unsubscribe UpMouseLeftAddress [] 
-        else world |> subscribe DownMouseLeftAddress [] swallow |> subscribe UpMouseLeftAddress [] swallow
+            else world |> unsubscribe DownMouseLeftAddress screenAddress |> unsubscribe UpMouseLeftAddress screenAddress
+        else world |> subscribe DownMouseLeftAddress screenAddress swallow |> subscribe UpMouseLeftAddress screenAddress swallow
 
     let unregisterButton address world =
         world |>
@@ -917,16 +917,18 @@ module Sim =
             match optSelectedScreenModel with
             | None -> (true, world_)
             | Some selectedScreenModel_ ->
+                let selectedScreenModelAddress = Option.get <| get world_ worldOptSelectedScreenModelAddressLens
                 let selectedScreen_ = get selectedScreenModel_ screenLens
                 match selectedScreen_.State with
                 | IncomingState ->
+                    // TODO: consider removing duplication with below
                     let incomingModel_ = get selectedScreenModel_ incomingModelLens
                     let (incomingModel_, started, finished) = updateTransition1 incomingModel_
                     let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else IncomingState
                                                                  IncomingModel = incomingModel_ }
                     let selectedScreenModel_ = set selectedScreen_ selectedScreenModel_ screenLens
                     let world_ = set (Some selectedScreenModel_) world_ <| worldOptSelectedScreenModelLens
-                    let world_ = swallowLeftMouseDuringTransition started finished world_
+                    let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
                     publish [Lun.make "finished"; Lun.make "incoming"] { Handled = false; Data = NoData } world_
                 | OutgoingState ->
                     let outgoingModel_ = get selectedScreenModel_ outgoingModelLens
@@ -935,7 +937,7 @@ module Sim =
                                                                  OutgoingModel = outgoingModel_ }
                     let screenModel_ = set outgoingModel_ selectedScreenModel_ outgoingModelLens
                     let world_ = set (Some screenModel_) world_ <| worldOptSelectedScreenModelLens
-                    let world_ = swallowLeftMouseDuringTransition started finished world_
+                    let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
                     publish [Lun.make "finished"; Lun.make "outgoing"] { Handled = false; Data = NoData } world_
                 | IdlingState -> (true, world_)
         if keepRunning then update world_
