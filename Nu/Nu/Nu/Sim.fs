@@ -316,6 +316,15 @@ module Sim =
         let world3 = procedure world2
         unsubscribe address subscriber world3
 
+    let swallow _ _ message world =
+        (handle message, true, world)
+
+    let swallowLeftMouseDuringTransition started finished world =
+        if not started then
+            if not finished then world
+            else world |> unsubscribe DownMouseLeftAddress [] |> unsubscribe UpMouseLeftAddress [] 
+        else world |> subscribe DownMouseLeftAddress [] swallow |> subscribe UpMouseLeftAddress [] swallow
+
     let unregisterButton address world =
         world |>
             unsubscribe DownMouseLeftAddress address |>
@@ -757,7 +766,7 @@ module Sim =
     let getAudioDescriptors world : AudioDescriptor rQueue =
         let componentDescriptors = getComponentAudioDescriptors world
         let worldDescriptors = [] // TODO: get audio descriptors when there are some
-        worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
+        componentDescriptors @ worldDescriptors // NOTE: pretty inefficient
 
     /// Play the world's audio.
     let play world_ =
@@ -857,7 +866,7 @@ module Sim =
     let getRenderDescriptors world : RenderDescriptor rQueue =
         let componentDescriptors = getComponentRenderDescriptors world
         let worldDescriptors = getWorldRenderDescriptors world
-        worldDescriptors @ componentDescriptors // NOTE: pretty inefficient
+        componentDescriptors @ worldDescriptors // NOTE: pretty inefficient
 
     /// Render the world.
     let render world =
@@ -895,11 +904,12 @@ module Sim =
 
     let updateTransition1 transitionModel_ =
         let transition_ = get transitionModel_ transitionLens
+        let started = transition_.Ticks = 0
         let (transition_, finished) =
             if transition_.Ticks >= transition_.Lifetime then ({ transition_ with Ticks = 0 }, true)
             else ({ transition_ with Ticks = transition_.Ticks + 1 }, false)
         let transitionModel_ = set transition_ transitionModel_ transitionLens
-        (transitionModel_, finished)
+        (transitionModel_, started, finished)
 
     let updateTransition update world_ : bool * World =
         let (keepRunning, world_) =
@@ -911,19 +921,21 @@ module Sim =
                 match selectedScreen_.State with
                 | IncomingState ->
                     let incomingModel_ = get selectedScreenModel_ incomingModelLens
-                    let (incomingModel_, finished) = updateTransition1 incomingModel_
+                    let (incomingModel_, started, finished) = updateTransition1 incomingModel_
                     let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else IncomingState
                                                                  IncomingModel = incomingModel_ }
                     let selectedScreenModel_ = set selectedScreen_ selectedScreenModel_ screenLens
                     let world_ = set (Some selectedScreenModel_) world_ <| worldOptSelectedScreenModelLens
+                    let world_ = swallowLeftMouseDuringTransition started finished world_
                     publish [Lun.make "finished"; Lun.make "incoming"] { Handled = false; Data = NoData } world_
                 | OutgoingState ->
                     let outgoingModel_ = get selectedScreenModel_ outgoingModelLens
-                    let (outgoingModel_, finished) = updateTransition1 outgoingModel_
+                    let (outgoingModel_, started, finished) = updateTransition1 outgoingModel_
                     let selectedScreen_ = { selectedScreen_ with State = if finished then IdlingState else OutgoingState
                                                                  OutgoingModel = outgoingModel_ }
                     let screenModel_ = set outgoingModel_ selectedScreenModel_ outgoingModelLens
                     let world_ = set (Some screenModel_) world_ <| worldOptSelectedScreenModelLens
+                    let world_ = swallowLeftMouseDuringTransition started finished world_
                     publish [Lun.make "finished"; Lun.make "outgoing"] { Handled = false; Data = NoData } world_
                 | IdlingState -> (true, world_)
         if keepRunning then update world_
