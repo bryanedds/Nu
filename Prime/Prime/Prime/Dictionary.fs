@@ -10,9 +10,9 @@ let singleton elem = List.toDictionary [elem] // TODO: change implementation to 
 
 /// Map over a dictionary. A new dictionary is produced.
 let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) =
-    let dictionary2 = Dictionary<'k, 'v> ()
-    for kvp in dictionary do dictionary2.Add (kvp.Key, mapper kvp)
-    dictionary2
+    let dictionary' = Dictionary<'k, 'v> ()
+    for kvp in dictionary do dictionary'.Add (kvp.Key, mapper kvp)
+    dictionary'
 
 let inline tryFind key (dictionary : Dictionary<'k, 'v>) =
     let valueRef = ref Unchecked.defaultof<'v>

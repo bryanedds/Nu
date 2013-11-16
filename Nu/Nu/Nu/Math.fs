@@ -72,10 +72,10 @@ module Math =
     let snap value offset =
         if offset = 0 then value
         else
-            let rem_ = ref 0
-            let div = Math.DivRem (value, offset, rem_)
-            let rem_ = if !rem_ < offset / 2 then 0 else offset
-            div * offset + rem_
+            let rem = ref 0
+            let div = Math.DivRem (value, offset, rem)
+            let rem' = if !rem < offset / 2 then 0 else offset
+            div * offset + rem'
 
     let snapR (value : single) offset =
         DegreesToRadiansF * single (snap (int <| value * RadiansToDegreesF) offset)
@@ -86,9 +86,9 @@ module Math =
     let snap2F (v2 : Vector2) offset =
         Vector2 (snapF v2.X offset, snapF v2.Y offset)
 
-    let snapTransform positionSnap rotationSnap (transform_ : Transform) =
-        let transform_ = { transform_ with Position = snap2F transform_.Position positionSnap }
-        { transform_ with Rotation = snapR transform_.Rotation rotationSnap }
+    let snapTransform positionSnap rotationSnap (transform : Transform) =
+        let transform' = { transform with Position = snap2F transform.Position positionSnap }
+        { transform' with Rotation = snapR transform'.Rotation rotationSnap }
 
     let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
         point.X >= boxPos.X &&

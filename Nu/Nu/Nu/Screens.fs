@@ -66,21 +66,21 @@ module Screens =
 
     let private screenModelChildModelAdder addressHead this (child : GroupModel) =
         let screen = get this screenLens
-        let screen2 = { screen with GroupModels = Map.add addressHead child screen.GroupModels }
-        set screen2 this screenLens
+        let screen' = { screen with GroupModels = Map.add addressHead child screen.GroupModels }
+        set screen' this screenLens
 
     let private screenModelChildModelRemover addressHead this =
         let screen = get this screenLens
-        let screen2 = { screen with GroupModels = Map.remove addressHead screen.GroupModels }
-        set screen2 this screenLens
+        let screen' = { screen with GroupModels = Map.remove addressHead screen.GroupModels }
+        set screen' this screenLens
 
     let private screenModelGetChildWithLens this address lens =
         get (getChild screenModelOptChildModelFinder this address) lens
 
     let private screenModelSetChildWithLens child this address lens =
         let group = getChild screenModelOptChildModelFinder this address
-        let group2 = set child group lens
-        setChild screenModelChildModelAdder screenModelChildModelRemover this address group2
+        let group' = set child group lens
+        setChild screenModelChildModelAdder screenModelChildModelRemover this address group'
 
     let private screenModelGetOptChildWithLens this address lens =
         let optChild = getOptChild screenModelOptChildModelFinder this address
@@ -96,8 +96,8 @@ module Screens =
             match optChildModel with
             | None -> failwith "Cannot change a non-existent group."
             | Some childModel ->
-                let childModel2 = set child childModel lens
-                setChild screenModelChildModelAdder screenModelChildModelRemover this address childModel2
+                let childModel' = set child childModel lens
+                setChild screenModelChildModelAdder screenModelChildModelRemover this address childModel'
 
     let incomingModelLens =
         { Get = fun this -> (get this screenLens).IncomingModel
