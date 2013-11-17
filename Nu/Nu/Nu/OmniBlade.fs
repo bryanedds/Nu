@@ -17,26 +17,5 @@ open Nu.Games
 open Nu.Sim
 module OmniBlade =
 
-    let tryCreateOmniBladeWorld (sdlDeps : SdlDeps) =
-        let game =
-            { Id = getNuId ()
-              ScreenModels = Map.empty
-              OptSelectedScreenModelAddress = None }
-        match tryGenerateAssetMetadataMap "AssetGraph.xml" with
-        | Left errorMsg -> Left errorMsg
-        | Right assetMetadataMap ->
-            let world =
-                { GameModel = Game game
-                  Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
-                  Subscriptions = Map.empty
-                  MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
-                  AudioPlayer = makeAudioPlayer ()
-                  Renderer = makeRenderer sdlDeps.RenderContext
-                  Integrator = makeIntegrator Gravity
-                  AssetMetadataMap = assetMetadataMap
-                  AudioMessages = []
-                  RenderMessages = []
-                  PhysicsMessages = []
-                  Components = []
-                  ExtData = () }
-            Right world
+    let tryCreateOmniBladeWorld sdlDeps extData =
+        tryCreateEmptyWorld sdlDeps extData

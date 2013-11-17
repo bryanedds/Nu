@@ -15,6 +15,7 @@ open Nu.Groups
 open Nu.Screens
 open Nu.Games
 open Nu.Sim
+open Nu.OmniBlade
 module Program =
 
     (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
@@ -29,8 +30,7 @@ module Program =
     1.3x gain - store loaded assets in a Dictionary<Dictionary, ...>> rather than a Map<Map, ...>>, or...
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - optimize locality of address usage
-    1.1x gain - send entire tile layers over to the renderer instead of one tile at a time
-    1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call.
+    1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
     ? gain - avoid rendering clear tiles! *)
 
     let [<EntryPoint>] main _ =
@@ -39,7 +39,7 @@ module Program =
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
         run
-            (fun sdlDeps -> tryCreateEmptyWorld sdlDeps ())
+            (fun sdlDeps -> tryCreateOmniBladeWorld sdlDeps ())
             (fun world -> updateTransition (fun world' -> (true, world')) world)
             sdlConfig
 
