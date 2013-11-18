@@ -743,6 +743,25 @@ module Sim =
     let removeScreen address world =
         set None world (worldOptScreenModelLens address)
 
+    let addSplashScreen address incomingTime idlingTime outgoingTime sprite world =
+
+        // add splash screen
+        let dissolveSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+        let splashIncomingModel = Dissolve { Transition = { makeDefaultIncomingTransition () with Lifetime = incomingTime }; Sprite = dissolveSprite }
+        let splashOutgoingModel = Dissolve { Transition = { makeDefaultOutgoingTransition () with Lifetime = incomingTime }; Sprite = dissolveSprite }
+        let splashScreen = { makeDefaultScreen () with IncomingModel = splashIncomingModel; OutgoingModel = splashOutgoingModel }
+        let world' = addScreen address splashScreen world
+        
+        // add splash group
+        let splashGroupAddress = address @ [Lun.make "splashGroup"]
+        let splashGroup = makeDefaultGroup ()
+        let world'' = addGroup splashGroupAddress splashGroup world'
+
+        // add splash label
+        let splashLabelAddress = splashGroupAddress @ [Lun.make "splashLabel"]
+        let splashLabel = { Gui = { makeDefaultGui () with Size = world.Camera.EyeSize }; LabelSprite = sprite }
+        addLabel splashLabelAddress splashLabel world''
+
     let reregisterPhysicsHack4 groupModelAddress world _ entityModel =
         match entityModel with
         | Button _
@@ -945,42 +964,38 @@ module Sim =
     let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
         runSdl
             (fun sdlDeps -> tryCreateWorld sdlDeps)
-            (fun refEvent world_ ->
+            (fun refEvent world ->
                 let event = !refEvent
                 match event.``type`` with
-                | SDL.SDL_EventType.SDL_QUIT -> (false, world_)
+                | SDL.SDL_EventType.SDL_QUIT -> (false, world)
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                    let world_ = set { world_.MouseState with MousePosition = mousePosition } world_ mouseStateLens
-                    let (keepRunning, world_) =
-                        if Set.contains MouseLeft world_.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world_
-                        else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world_
-                    (keepRunning, world_)
+                    let world' = set { world.MouseState with MousePosition = mousePosition } world mouseStateLens
+                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world'
+                    else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
-                    let world_ = set { world_.MouseState with MouseDowns = Set.add mouseButton world_.MouseState.MouseDowns } world_ mouseStateLens
+                    let world' = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
                     let messageAddress = [Lun.make "down"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
-                    let messageData = MouseButtonData (world_.MouseState.MousePosition, mouseButton)
-                    let (keepRunning, world3) = publish messageAddress { Handled = false; Data = messageData } world_
-                    (keepRunning, world3)
+                    let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
+                    publish messageAddress { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mouseState = world_.MouseState
+                    let mouseState = world.MouseState
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
-                        let world_ = set { world_.MouseState with MouseDowns = Set.remove mouseButton world_.MouseState.MouseDowns } world_ mouseStateLens
+                        let world' = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
                         let messageAddress = [Lun.make "up"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
-                        let messageData = MouseButtonData (world_.MouseState.MousePosition, mouseButton)
-                        let (keepRunning, world_) = publish messageAddress { Handled = false; Data = messageData } world_
-                        (keepRunning, world_)
-                    else (true, world_)
-                | _ -> (true, world_))
-            (fun world_ ->
-                let (keepRunning_, world_) = integrate world_
-                if not keepRunning_ then (keepRunning_, world_)
+                        let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
+                        publish messageAddress { Handled = false; Data = messageData } world'
+                    else (true, world)
+                | _ -> (true, world))
+            (fun world ->
+                let (keepRunning, world') = integrate world
+                if not keepRunning then (keepRunning, world')
                 else
-                    let (keepRunning_, world_) = publish TickAddress { Handled = false; Data = NoData } world_
-                    if not keepRunning_ then (keepRunning_, world_)
-                    else handleUpdate world_)
+                    let (keepRunning', world'') = publish TickAddress { Handled = false; Data = NoData } world'
+                    if not keepRunning' then (keepRunning', world'')
+                    else handleUpdate world'')
             (fun world -> let world' = render world in handleRender world')
             (fun world -> play world)
             (fun world -> { world with Renderer = handleRenderExit world.Renderer })
