@@ -162,3 +162,19 @@ module Screens =
 
     let screenModelTileMapLens address = groupModelLens [List.head address] >>| groupModelTileMapLens (List.tail address)
     let screenModelOptTileMapLens address = groupModelLens [List.head address] >>| groupModelOptTileMapLens (List.tail address)
+    
+    let makeDefaultIncomingTransition () =
+        { Id = getNuId ()
+          Lifetime = 0
+          Ticks = 0
+          Type = Incoming }
+
+    let makeDefaultOutgoingTransition () =
+        { makeDefaultIncomingTransition () with Type = Outgoing }
+
+    let makeDefaultScreen () =
+        { Id = getNuId ()
+          State = IncomingState
+          IncomingModel = Transition <| makeDefaultIncomingTransition ()
+          OutgoingModel = Transition <| makeDefaultOutgoingTransition ()
+          GroupModels = Map.empty }
