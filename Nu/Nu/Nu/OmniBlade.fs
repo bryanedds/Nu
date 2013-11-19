@@ -17,18 +17,18 @@ open Nu.Games
 open Nu.Sim
 module OmniBlade =
 
-    let SplashAddress = [Lun.make "splash"]
-    let TitleAddress = [Lun.make "title"]
-    let TitleGroupAddress = TitleAddress @ [Lun.make "group"]
-    let ClickTitleExitAddress = Lun.make "click" :: TitleGroupAddress @ [Lun.make "exit"]
-    let LoadAddress = [Lun.make "load"]
-    let OmniAddress = [Lun.make "omni"]
-    let CreditsAddress = [Lun.make "credits"]
+    let SplashAddress = addr "splash"
+    let TitleAddress = addr "title"
+    let TitleGroupAddress = addrstr TitleAddress "group"
+    let ClickTitleExitAddress = straddrstr "click" TitleGroupAddress "exit"
+    let LoadAddress = addr "load"
+    let OmniAddress = addr "omni"
+    let CreditsAddress = addr "credits"
 
     let createTitleScreen world =
         let titleScreenModel = Screen <| makeDissolveScreen 90 45
         let (titleGroupModel, titleEntityModels) = loadGroupModelFile "Title.nugroup" world
-        let world' = addScreenModel TitleAddress titleScreenModel [(Lun.make "group", titleGroupModel, titleEntityModels)] world
+        let world' = addScreenModel TitleAddress titleScreenModel [(List.last TitleGroupAddress, titleGroupModel, titleEntityModels)] world
         subscribe ClickTitleExitAddress [] (fun _ _ message world_ -> (handle message, false, world_)) world'
 
     let tryCreateOmniBladeWorld sdlDeps extData =

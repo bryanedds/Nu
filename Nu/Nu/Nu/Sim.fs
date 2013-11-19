@@ -88,23 +88,23 @@ and IWorldComponent =
     
 module Sim =
 
-    let TickAddress = [Lun.make "tick"]
-    let MouseDragAddress = [Lun.make "mouse"; Lun.make "drag"]
-    let MouseMoveAddress = [Lun.make "mouse"; Lun.make "move"]
-    let MouseLeftAddress = [Lun.make "mouse"; Lun.make "left"]
-    let MouseCenterAddress = [Lun.make "mouse"; Lun.make "center"]
-    let MouseRightAddress = [Lun.make "mouse"; Lun.make "right"]
-    let DownMouseLeftAddress = Lun.make "down" :: MouseLeftAddress
-    let DownMouseCenterAddress = Lun.make "down" :: MouseCenterAddress
-    let DownMousRightAddress = Lun.make "down" :: MouseRightAddress
-    let UpMouseLeftAddress = Lun.make "up" :: MouseLeftAddress
-    let UpMouseCenterAddress = Lun.make "up" :: MouseCenterAddress
-    let UpMouseRightAddress = Lun.make "up" :: MouseRightAddress
+    let TickAddress = addr "tick"
+    let MouseDragAddress = addr "mouse/drag"
+    let MouseMoveAddress = addr "mouse/move"
+    let MouseLeftAddress = addr "mouse/left"
+    let MouseCenterAddress = addr "mouse/center"
+    let MouseRightAddress = addr "mouse/right"
+    let DownMouseLeftAddress = straddr "down" MouseLeftAddress
+    let DownMouseCenterAddress = straddr "down" MouseCenterAddress
+    let DownMousRightAddress = straddr "down" MouseRightAddress
+    let UpMouseLeftAddress = straddr "up" MouseLeftAddress
+    let UpMouseCenterAddress = straddr "up" MouseCenterAddress
+    let UpMouseRightAddress = straddr "up" MouseRightAddress
     let GameModelPublishingPriority = Single.MaxValue
     let ScreenModelPublishingPriority = GameModelPublishingPriority * 0.5f
     let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
-    let FinishedIncomingAddress = [Lun.make "finished"; Lun.make "incoming"]
-    let FinishedOutgoingAddress = [Lun.make "finished"; Lun.make "outgoing"]
+    let FinishedIncomingAddress = addr "finished/incoming"
+    let FinishedOutgoingAddress = addr "finished/outgoing"
 
     let gameModelLens =
         { Get = fun this -> this.GameModel
@@ -346,7 +346,7 @@ module Sim =
                 if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
                     let button' = { button with IsDown = true }
                     let world_ = set button' world_ (worldButtonLens subscriber)
-                    let (keepRunning, world_) = publish (Lun.make "down" :: subscriber) { Handled = false; Data = NoData } world_
+                    let (keepRunning, world_) = publish (straddr "down" subscriber) { Handled = false; Data = NoData } world_
                     (handle message, keepRunning, world_)
                 else (message, true, world_)
             else (message, true, world_)
@@ -360,9 +360,9 @@ module Sim =
                 let (keepRunning_, world_) =
                     let button' = { button with IsDown = false }
                     let world_ = set button' world_ (worldButtonLens subscriber)
-                    publish (Lun.make "up" :: subscriber) { Handled = false; Data = NoData } world_
+                    publish (straddr "up" subscriber) { Handled = false; Data = NoData } world_
                 if keepRunning_ && isInBox3 mousePosition button.Gui.Position button.Gui.Size && button.IsDown then
-                    let (keepRunning_, world_) = publish (Lun.make "click" :: subscriber) { Handled = false; Data = NoData } world_
+                    let (keepRunning_, world_) = publish (straddr "click" subscriber) { Handled = false; Data = NoData } world_
                     let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                     let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                     (handle message, keepRunning_, world_)
@@ -424,7 +424,7 @@ module Sim =
                     let toggle'' = { toggle' with IsOn = not toggle'.IsOn }
                     let world_ = set toggle'' world_ (worldToggleLens subscriber)
                     let messageType = if toggle''.IsOn then "on" else "off"
-                    let (keepRunning, world_) = publish (Lun.make messageType :: subscriber) { Handled = false; Data = NoData } world_
+                    let (keepRunning, world_) = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world_
                     let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
                     let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
                     (handle message, keepRunning, world_)
@@ -459,7 +459,7 @@ module Sim =
                 if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
                     let feeler' = { feeler with IsTouched = true }
                     let world_ = set feeler' world_ (worldFeelerLens subscriber)
-                    let (keepRunning, world_) = publish (Lun.make "touch" :: subscriber) { Handled = false; Data = mouseButtonData } world_
+                    let (keepRunning, world_) = publish (straddr "touch" subscriber) { Handled = false; Data = mouseButtonData } world_
                     (handle message, keepRunning, world_)
                 else (message, true, world_)
             else (message, true, world_)
@@ -472,7 +472,7 @@ module Sim =
             if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
                 let feeler' = { feeler with IsTouched = false }
                 let world_ = set feeler' world_ (worldFeelerLens subscriber)
-                let (keepRunning, world_) = publish (Lun.make "release" :: subscriber) { Handled = false; Data = NoData } world_
+                let (keepRunning, world_) = publish (straddr "release" subscriber) { Handled = false; Data = NoData } world_
                 (handle message, keepRunning, world_)
             else (message, true, world_)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -592,7 +592,7 @@ module Sim =
         List.fold
             (fun world' entityModel ->
                 let entity = get entityModel entityLens
-                addEntityModel (address @ [Lun.make entity.Name]) entityModel world')
+                addEntityModel (addrstr address entity.Name) entityModel world')
             world
             entityModels
 
@@ -647,18 +647,18 @@ module Sim =
     [<RequireQualifiedAccess>]
     module Test =
 
-        let ScreenModelAddress = [Lun.make "testScreenModel"]
-        let GroupModelAddress = ScreenModelAddress @ [Lun.make "testGroupModel"]
-        let FeelerAddress = GroupModelAddress @ [Lun.make "testFeeler"]
-        let TextBoxAddress = GroupModelAddress @ [Lun.make "testTextBox"]
-        let ToggleAddress = GroupModelAddress @ [Lun.make "testToggle"]
-        let LabelAddress = GroupModelAddress @ [Lun.make "testLabel"]
-        let ButtonAddress = GroupModelAddress @ [Lun.make "testButton"]
-        let BlockAddress = GroupModelAddress @ [Lun.make "testBlock"]
-        let TileMapAddress = GroupModelAddress @ [Lun.make "testTileMap"]
-        let FloorAddress = GroupModelAddress @ [Lun.make "testFloor"]
-        let AvatarAddress = GroupModelAddress @ [Lun.make "testAvatar"]
-        let ClickButtonAddress = Lun.make "click" :: ButtonAddress
+        let ScreenModelAddress = addr "testScreenModel"
+        let GroupModelAddress = addrstr ScreenModelAddress "testGroupModel"
+        let FeelerAddress = addrstr GroupModelAddress "testFeeler"
+        let TextBoxAddress = addrstr GroupModelAddress "testTextBox"
+        let ToggleAddress = addrstr GroupModelAddress "testToggle"
+        let LabelAddress = addrstr GroupModelAddress "testLabel"
+        let ButtonAddress = addrstr GroupModelAddress "testButton"
+        let BlockAddress = addrstr GroupModelAddress "testBlock"
+        let TileMapAddress = addrstr GroupModelAddress "testTileMap"
+        let FloorAddress = addrstr GroupModelAddress "testFloor"
+        let AvatarAddress = addrstr GroupModelAddress "testAvatar"
+        let ClickButtonAddress = straddr "click" ButtonAddress
 
         let addTestGroup address testGroup entityModels world_ =
         
@@ -715,7 +715,7 @@ module Sim =
                     List.fold
                         (fun world_ _ ->
                             let block = createTestBlock assetMetadataMap
-                            addBlock (GroupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world_)
+                            addBlock (addrstr GroupModelAddress block.Actor.Entity.Name) block world_)
                         world_
                         [0..7]
                 (handle message, true, world_)
@@ -807,9 +807,9 @@ module Sim =
         | TextBox _
         | Toggle _
         | Feeler _ -> world
-        | Block block -> registerBlockPhysics (groupModelAddress @ [Lun.make block.Actor.Entity.Name]) block world
-        | Avatar avatar -> registerAvatarPhysics (groupModelAddress @ [Lun.make avatar.Actor.Entity.Name]) avatar world
-        | TileMap tileMap -> registerTileMapPhysics (groupModelAddress @ [Lun.make tileMap.Actor.Entity.Name]) tileMap world
+        | Block block -> registerBlockPhysics (addrstr groupModelAddress block.Actor.Entity.Name) block world
+        | Avatar avatar -> registerAvatarPhysics (addrstr groupModelAddress avatar.Actor.Entity.Name) avatar world
+        | TileMap tileMap -> registerTileMapPhysics (addrstr groupModelAddress tileMap.Actor.Entity.Name) tileMap world
 
     let reregisterPhysicsHack groupModelAddress world =
         let groupModel = get world <| worldGroupModelLens groupModelAddress
@@ -943,7 +943,7 @@ module Sim =
                                           Rotation = bodyTransformMessage.Rotation }
                 (keepRunning, set actor' world <| worldActorLens bodyTransformMessage.EntityAddress)
             | BodyCollisionMessage bodyCollisionMessage ->
-                let collisionAddress = Lun.make "collision" :: bodyCollisionMessage.EntityAddress
+                let collisionAddress = straddr "collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
                 let collisionMessage = { Handled = false; Data = collisionData }
                 publish collisionAddress collisionMessage world
@@ -1022,7 +1022,7 @@ module Sim =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
                     let world' = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
-                    let messageAddress = [Lun.make "down"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
+                    let messageAddress = addr <| "down/mouse" + str mouseButton
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                     publish messageAddress { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
@@ -1030,7 +1030,7 @@ module Sim =
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
-                        let messageAddress = [Lun.make "up"; Lun.make "mouse"; Lun.make <| mouseButton.Address ()]
+                        let messageAddress = addr <| "up/mouse" + str mouseButton
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                         publish messageAddress { Handled = false; Data = messageData } world'
                     else (true, world)

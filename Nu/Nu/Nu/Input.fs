@@ -30,17 +30,17 @@ type [<CustomEquality; CustomComparison>] MouseButton =
     override this.GetHashCode () =
         this.Int ()
 
+    override this.ToString () =
+        match this with
+        | MouseLeft -> "left"
+        | MouseCenter -> "center"
+        | MouseRight -> "right"
+
     member this.Int () =
         match this with
         | MouseLeft -> 0
         | MouseCenter -> 1
         | MouseRight -> 2
-
-    member this.Address () =
-        match this with
-        | MouseLeft -> "left"
-        | MouseCenter -> "center"
-        | MouseRight -> "right"
 
 /// Describes a mouse event.
 /// A serializable value type.
