@@ -30,6 +30,14 @@ module Groups =
             match this with
             | Group _ -> Group group
             | TestGroup testGroup -> TestGroup { testGroup with Group = group }}
+
+    let groupIdLens =
+        { Get = fun this -> (get this groupLens).Id
+          Set = fun value this -> set { get this groupLens with Id = value } this groupLens}
+
+    let groupEntityModelsLens =
+        { Get = fun this -> (get this groupLens).EntityModels
+          Set = fun value this -> set { get this groupLens with EntityModels = value } this groupLens}
         
     let private groupModelOptChildModelFinder addressHead this =
         let group = get this groupLens

@@ -123,6 +123,22 @@ module Entities =
             | Avatar avatar -> Avatar { avatar with Actor = { avatar.Actor with Entity = entity }}
             | TileMap tileMap -> TileMap { tileMap with Actor = { tileMap.Actor with Entity = entity }}}
 
+    let entityIdLens =
+        { Get = fun this -> (get this entityLens).Id
+          Set = fun value this -> set { get this entityLens with Id = value } this entityLens}
+
+    let entityNameLens =
+        { Get = fun this -> (get this entityLens).Name
+          Set = fun value this -> set { get this entityLens with Name = value } this entityLens}
+
+    let entityEnabledLens =
+        { Get = fun this -> (get this entityLens).Enabled
+          Set = fun value this -> set { get this entityLens with Enabled = value } this entityLens}
+
+    let entityVisibleLens =
+        { Get = fun this -> (get this entityLens).Visible
+          Set = fun value this -> set { get this entityLens with Visible = value } this entityLens}
+
     let optGuiLens =
         { Get = fun this ->
             match this with

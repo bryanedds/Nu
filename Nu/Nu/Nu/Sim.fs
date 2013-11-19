@@ -103,6 +103,8 @@ module Sim =
     let GameModelPublishingPriority = Single.MaxValue
     let ScreenModelPublishingPriority = GameModelPublishingPriority * 0.5f
     let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
+    let FinishedIncomingAddress = [Lun.make "finished"; Lun.make "incoming"]
+    let FinishedOutgoingAddress = [Lun.make "finished"; Lun.make "outgoing"]
 
     let gameModelLens =
         { Get = fun this -> this.GameModel
@@ -324,6 +326,12 @@ module Sim =
             if not finished then world
             else world |> unsubscribe DownMouseLeftAddress screenAddress |> unsubscribe UpMouseLeftAddress screenAddress
         else world |> subscribe DownMouseLeftAddress screenAddress swallow |> subscribe UpMouseLeftAddress screenAddress swallow
+
+    let changeSelectedScreen address _ _ message world =
+        let screenModel = set IncomingState (get world <| worldScreenModelLens address) screenStateLens
+        let world' = set screenModel world <| worldScreenModelLens address
+        let world'' = set (Some address) world' worldOptSelectedScreenModelAddressLens
+        (handle message, true, world'')
 
     let unregisterButton address world =
         world |>
@@ -743,12 +751,31 @@ module Sim =
     let removeScreen address world =
         set None world (worldOptScreenModelLens address)
 
-    let addSplashScreen address incomingTime idlingTime outgoingTime sprite world =
+    let rec handleSplashScreenTick idlingTime ticks address subscriber message world =
+        let world' = unsubscribe address subscriber world
+        if ticks < idlingTime then
+            (message, true, subscribe address subscriber (handleSplashScreenTick idlingTime <| ticks + 1) world')
+        else
+            let optSelectedScreenModel = get world' worldOptSelectedScreenModelLens
+            match optSelectedScreenModel with
+            | None ->
+                trace "Program error: Could not handle splash screen tick due to no selected screen model."
+                (message, false, world')
+            | Some selectedScreenModel ->
+                let selectedScreenModel' = Some <| set OutgoingState selectedScreenModel screenStateLens
+                let world'' = set selectedScreenModel' world' worldOptSelectedScreenModelLens
+                (message, true, world'')
+
+    let handleSplashScreenIdle idlingTime address subscriber message world =
+        let world' = subscribe TickAddress subscriber (handleSplashScreenTick idlingTime 0) world
+        (handle message, true, world')
+
+    let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
 
         // add splash screen
         let dissolveSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
         let splashIncomingModel = Dissolve { Transition = { makeDefaultIncomingTransition () with Lifetime = incomingTime }; Sprite = dissolveSprite }
-        let splashOutgoingModel = Dissolve { Transition = { makeDefaultOutgoingTransition () with Lifetime = incomingTime }; Sprite = dissolveSprite }
+        let splashOutgoingModel = Dissolve { Transition = { makeDefaultOutgoingTransition () with Lifetime = outgoingTime }; Sprite = dissolveSprite }
         let splashScreen = { makeDefaultScreen () with IncomingModel = splashIncomingModel; OutgoingModel = splashOutgoingModel }
         let world' = addScreen address splashScreen world
         
@@ -760,7 +787,11 @@ module Sim =
         // add splash label
         let splashLabelAddress = splashGroupAddress @ [Lun.make "splashLabel"]
         let splashLabel = { Gui = { makeDefaultGui () with Size = world.Camera.EyeSize }; LabelSprite = sprite }
-        addLabel splashLabelAddress splashLabel world''
+        let world'3 = addLabel splashLabelAddress splashLabel world''
+
+        // add idling and finished outgoing behavior
+        let world'4 = subscribe (FinishedIncomingAddress @ address) address (handleSplashScreenIdle idlingTime) world'3
+        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world'4
 
     let reregisterPhysicsHack4 groupModelAddress world _ entityModel =
         match entityModel with
@@ -942,21 +973,29 @@ module Sim =
                     // TODO: consider removing duplication with below
                     let incomingModel = get selectedScreenModel incomingModelLens
                     let (incomingModel', started, finished) = updateTransition1 incomingModel
-                    let selectedScreen' = { selectedScreen with State = if finished then IdlingState else IncomingState
-                                                                IncomingModel = incomingModel' }
+                    let selectedScreen' = { selectedScreen with State = (if finished then IdlingState else IncomingState); IncomingModel = incomingModel' }
                     let selectedScreenModel' = set selectedScreen' selectedScreenModel screenLens
                     let world_ = set (Some selectedScreenModel') world_ <| worldOptSelectedScreenModelLens
                     let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
-                    publish [Lun.make "finished"; Lun.make "incoming"] { Handled = false; Data = NoData } world_
+                    if finished then
+                        publish
+                            (FinishedIncomingAddress @ selectedScreenModelAddress)
+                            { Handled = false; Data = NoData }
+                            world_
+                    else (true, world_)
                 | OutgoingState ->
                     let outgoingModel = get selectedScreenModel outgoingModelLens
                     let (outgoingModel', started, finished) = updateTransition1 outgoingModel
-                    let selectedScreen' = { selectedScreen with State = if finished then IdlingState else OutgoingState
-                                                                OutgoingModel = outgoingModel' }
+                    let selectedScreen' = { selectedScreen with State = (if finished then IdlingState else OutgoingState); OutgoingModel = outgoingModel' }
                     let selectedScreenModel' = set selectedScreen' selectedScreenModel screenLens
                     let world_ = set (Some selectedScreenModel') world_ <| worldOptSelectedScreenModelLens
                     let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
-                    publish [Lun.make "finished"; Lun.make "outgoing"] { Handled = false; Data = NoData } world_
+                    if finished then
+                        publish
+                            (FinishedOutgoingAddress @ selectedScreenModelAddress)
+                            { Handled = false; Data = NoData }
+                            world_
+                    else (true, world_)
                 | IdlingState -> (true, world_)
         if keepRunning then update world_
         else (keepRunning, world_)

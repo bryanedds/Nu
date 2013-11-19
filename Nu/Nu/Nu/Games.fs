@@ -33,6 +33,18 @@ module Games =
           Set = fun game this ->
             match this with
             | Game _ -> Game game }
+
+    let gameIdLens =
+        { Get = fun this -> (get this gameLens).Id
+          Set = fun value this -> set { get this gameLens with Id = value } this gameLens }
+
+    let screenModelsLens =
+        { Get = fun this -> (get this gameLens).ScreenModels
+          Set = fun value this -> set { (get this gameLens) with ScreenModels = value } this gameLens }
+
+    let optSelectedScreenModelAddressLens =
+        { Get = fun this -> (get this gameLens).OptSelectedScreenModelAddress
+          Set = fun value this -> set { (get this gameLens) with OptSelectedScreenModelAddress = value } this gameLens}
        
     let private gameModelOptChildModelFinder addressHead this =
         let game = get this gameLens
@@ -72,14 +84,6 @@ module Games =
             | Some childModel ->
                 let childModel' = set child childModel lens
                 setChild gameModelChildModelAdder gameModelChildModelRemover this address childModel'
-
-    let screenModelsLens =
-        { Get = fun this -> (get this gameLens).ScreenModels
-          Set = fun screenModels this -> set { (get this gameLens) with ScreenModels = screenModels } this gameLens }
-
-    let optSelectedScreenModelAddressLens =
-        { Get = fun this -> (get this gameLens).OptSelectedScreenModelAddress
-          Set = fun optSelectedScreenModelAddress this -> set { (get this gameLens) with OptSelectedScreenModelAddress = optSelectedScreenModelAddress } this gameLens}
 
     let screenModelLens address =
         { Get = fun this -> Option.get <| gameModelOptChildModelFinder (List.head address) this
