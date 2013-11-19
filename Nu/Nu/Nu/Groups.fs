@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open System.IO
 open System.Xml
 open System.Reflection
 open FSharpx
@@ -220,3 +221,21 @@ module Groups =
         | Group group -> setModelProperties3 (fun _ -> ()) groupModelNode group
         | TestGroup testGroup -> setModelProperties3 (fun _ -> testGroup.Group) groupModelNode testGroup
         (groupModel, entityModels)
+
+    let writeGroupModelFile groupModel fileName world =
+        use file = File.Open (fileName, FileMode.Create)
+        let writerSettings = XmlWriterSettings ()
+        writerSettings.Indent <- true
+        use writer = XmlWriter.Create (file, writerSettings)
+        writer.WriteStartDocument ()
+        writer.WriteStartElement "Root"
+        writeGroupModelToXml writer groupModel
+        writer.WriteEndElement ()
+        writer.WriteEndDocument ()
+
+    let loadGroupModelFile (fileName : string) world =
+        let document = XmlDocument ()
+        document.Load fileName
+        let rootNode = document.Item "Root"
+        let groupModelNode = rootNode.FirstChild
+        loadGroupModelFromXml groupModelNode

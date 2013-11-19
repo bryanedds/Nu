@@ -18,5 +18,8 @@ let debug issue =
     log issue
 
 let debugIf predicate issue =
-    Debug.Assert (not <| predicate (), issue)
-    log issue
+#if DEBUG
+    if predicate () then
+        Debug.Fail issue
+        log issue
+#endif
