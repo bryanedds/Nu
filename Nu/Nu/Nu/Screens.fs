@@ -199,18 +199,26 @@ module Screens =
     let screenModelTileMapLens address = groupModelLens [List.head address] >>| groupModelTileMapLens (List.tail address)
     let screenModelOptTileMapLens address = groupModelLens [List.head address] >>| groupModelOptTileMapLens (List.tail address)
     
-    let makeDefaultIncomingTransition () =
+    let makeDissolveSprite () =
+        { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+    let makeDefaultTransition transitionType =
         { Id = getNuId ()
           Lifetime = 0
           Ticks = 0
-          Type = Incoming }
+          Type = transitionType }
 
-    let makeDefaultOutgoingTransition () =
-        { makeDefaultIncomingTransition () with Type = Outgoing }
+    let makeDissolveTransition lifetime transitionType =
+        { Transition = { makeDefaultTransition transitionType with Lifetime = lifetime }; Sprite = makeDissolveSprite () }
 
     let makeDefaultScreen () =
         { Id = getNuId ()
           State = IncomingState
-          IncomingModel = Transition <| makeDefaultIncomingTransition ()
-          OutgoingModel = Transition <| makeDefaultOutgoingTransition ()
+          IncomingModel = Transition <| makeDefaultTransition Incoming
+          OutgoingModel = Transition <| makeDefaultTransition Outgoing
           GroupModels = Map.empty }
+
+    let makeDissolveScreen incomingTime outgoingTime =
+        let incomingDissolve = Dissolve <| makeDissolveTransition incomingTime Incoming
+        let outgoingDissolve = Dissolve <| makeDissolveTransition outgoingTime Outgoing
+        { makeDefaultScreen () with IncomingModel = incomingDissolve; OutgoingModel = outgoingDissolve }
