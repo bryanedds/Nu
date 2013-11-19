@@ -773,7 +773,7 @@ module Sim =
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
 
         // add splash screen
-        let dissolveSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+        let dissolveSprite = { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
         let splashIncomingModel = Dissolve { Transition = { makeDefaultIncomingTransition () with Lifetime = incomingTime }; Sprite = dissolveSprite }
         let splashOutgoingModel = Dissolve { Transition = { makeDefaultOutgoingTransition () with Lifetime = outgoingTime }; Sprite = dissolveSprite }
         let splashScreen = { makeDefaultScreen () with IncomingModel = splashIncomingModel; OutgoingModel = splashOutgoingModel }

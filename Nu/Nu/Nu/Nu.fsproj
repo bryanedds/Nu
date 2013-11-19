@@ -118,6 +118,9 @@
     <None Include="Image7.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Image8.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="FreeMonoBold.032.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
