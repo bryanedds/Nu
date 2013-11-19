@@ -165,5 +165,4 @@ module Entity = // TODO: rename module / file
         let testGroupModelNode = rootNode.FirstChild
         let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
         let world' = removeGroupModel Test.GroupModelAddress world
-        let world'' = addGroupModel Test.GroupModelAddress testGroupModel world'
-        addEntityModels testEntityModels Test.GroupModelAddress world''
+        addGroupModel Test.GroupModelAddress testGroupModel testEntityModels world'

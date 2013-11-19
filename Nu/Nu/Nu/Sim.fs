@@ -587,7 +587,7 @@ module Sim =
         | Avatar avatar -> addAvatar address avatar world
         | TileMap tileMap -> addTileMap address tileMap world
 
-    let addEntityModels entityModels address world =
+    let addEntityModels address entityModels world =
         let group = get world (worldGroupLens address)
         List.fold
             (fun world' entityModel ->
@@ -615,9 +615,10 @@ module Sim =
             world
             (Map.toKeySeq group.EntityModels)
 
-    let addGroup address group world =
+    let addGroup address group entityModels world =
         traceIf (not <| Map.isEmpty group.EntityModels) "Adding populated groups to the world is not supported."
-        set (Group group) world (worldGroupModelLens address)
+        let world' = set (Group group) world (worldGroupModelLens address)
+        addEntityModels address entityModels world'
 
     let removeGroup address world =
         let world' = removeEntityModels address world
@@ -659,7 +660,9 @@ module Sim =
         let AvatarAddress = GroupModelAddress @ [Lun.make "testAvatar"]
         let ClickButtonAddress = Lun.make "click" :: ButtonAddress
 
-        let addTestGroup address testGroup world_ =
+        let addTestGroup address testGroup entityModels world_ =
+        
+            debugIf (fun () -> not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
 
             let assetMetadataMap =
                 match tryGenerateAssetMetadataMap "AssetGraph.xml" with
@@ -684,11 +687,14 @@ module Sim =
                           Enabled = true
                           Visible = true }}}
                 testBlock
-                  
-            let adjustCamera _ _ message world_ =
+
+            let adjustCamera1 world_ =
                 let actor = get world_ (worldActorLens AvatarAddress)
                 let camera = { world_.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
-                (message, true, { world_ with Camera = camera })
+                { world_ with Camera = camera }
+                  
+            let adjustCamera _ _ message world_ =
+                (message, true, adjustCamera1 world_)
 
             let moveAvatar address _ message world_ =
                 let feeler = get world_ (worldFeelerLens FeelerAddress)
@@ -723,8 +729,9 @@ module Sim =
             let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
             let world_ = { world_ with RenderMessages = hintRenderingPackageUse :: world_.RenderMessages }
             let world_ = { world_ with AudioMessages = FadeOutSong :: playSong :: world_.AudioMessages }
-            traceIf (not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
-            set (TestGroup testGroup) world_ (worldGroupModelLens address)
+            let world_ = set (TestGroup testGroup) world_ (worldGroupModelLens address)
+            let world_ = addEntityModels address entityModels world_
+            adjustCamera1 world_
 
         let removeTestGroup address world_ =
             let world_ = unsubscribe TickAddress [] world_
@@ -734,10 +741,10 @@ module Sim =
             let world_ = removeEntityModels address world_
             set None world_ (worldOptGroupModelLens address)
 
-    let addGroupModel address groupModel world =
+    let addGroupModel address groupModel entityModels world =
         match groupModel with
-        | Group group -> addGroup address group world
-        | TestGroup testGroup -> Test.addTestGroup address testGroup world
+        | Group group -> addGroup address group entityModels world
+        | TestGroup testGroup -> Test.addTestGroup address testGroup entityModels world
 
     let removeGroupModel address world =
         let groupModel = get world <| worldGroupModelLens address
@@ -745,6 +752,8 @@ module Sim =
         | Group group -> removeGroup address world
         | TestGroup testGroup -> Test.removeTestGroup address world
 
+    // TODO: debugIf for populated screen
+    // TODO: pass in and use [(groupModel, [entityModel])].
     let addScreen address screen world =
         set (Screen screen) world (worldScreenModelLens address)
 
@@ -782,7 +791,7 @@ module Sim =
         // add splash group
         let splashGroupAddress = address @ [Lun.make "splashGroup"]
         let splashGroup = makeDefaultGroup ()
-        let world'' = addGroup splashGroupAddress splashGroup world'
+        let world'' = addGroup splashGroupAddress splashGroup [] world'
 
         // add splash label
         let splashLabelAddress = splashGroupAddress @ [Lun.make "splashLabel"]
