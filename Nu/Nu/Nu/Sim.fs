@@ -752,13 +752,26 @@ module Sim =
         | Group group -> removeGroup address world
         | TestGroup testGroup -> Test.removeTestGroup address world
 
-    // TODO: debugIf for populated screen
-    // TODO: pass in and use [(groupModel, [entityModel])].
-    let addScreen address screen world =
-        set (Screen screen) world (worldScreenModelLens address)
+    let addScreen address screen groupDescriptor world =
+        debugIf (fun () -> not <| Map.isEmpty screen.GroupModels) "Adding populated screens to the world is not supported."
+        let world' = set (Screen screen) world (worldScreenModelLens address)
+        List.fold
+            (fun world'' (groupName, groupModel, entityModels) ->
+                addGroupModel (address @ [groupName]) groupModel entityModels world'')
+            world'
+            groupDescriptor
 
     let removeScreen address world =
         set None world (worldOptScreenModelLens address)
+
+    let addScreenModel address screenModel groupDescriptor world =
+        match screenModel with
+        | Screen screen -> addScreen address screen groupDescriptor world
+
+    let removeScreenModel address world =
+        let screenModel = get world <| worldScreenModelLens address
+        match screenModel with
+        | Screen screen -> removeScreen address world
 
     let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
         let world' = unsubscribe address subscriber world
@@ -780,27 +793,12 @@ module Sim =
         (handle message, true, world')
 
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
-
-        // add splash screen
-        let dissolveSprite = { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-        let splashIncomingModel = Dissolve { Transition = { makeDefaultIncomingTransition () with Lifetime = incomingTime }; Sprite = dissolveSprite }
-        let splashOutgoingModel = Dissolve { Transition = { makeDefaultOutgoingTransition () with Lifetime = outgoingTime }; Sprite = dissolveSprite }
-        let splashScreen = { makeDefaultScreen () with IncomingModel = splashIncomingModel; OutgoingModel = splashOutgoingModel }
-        let world' = addScreen address splashScreen world
-        
-        // add splash group
-        let splashGroupAddress = address @ [Lun.make "splashGroup"]
-        let splashGroup = makeDefaultGroup ()
-        let world'' = addGroup splashGroupAddress splashGroup [] world'
-
-        // add splash label
-        let splashLabelAddress = splashGroupAddress @ [Lun.make "splashLabel"]
-        let splashLabel = { Gui = { makeDefaultGui () with Size = world.Camera.EyeSize }; LabelSprite = sprite }
-        let world'3 = addLabel splashLabelAddress splashLabel world''
-
-        // add idling and finished outgoing behavior
-        let world'4 = subscribe (FinishedIncomingAddress @ address) address (handleSplashScreenIdle idlingTime) world'3
-        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world'4
+        let splashScreenModel = makeDissolveScreen incomingTime outgoingTime
+        let splashGroupModel = Group <| makeDefaultGroup ()
+        let splashLabel = Label { Gui = { makeDefaultGui (Some "splashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
+        let world' = addScreen address splashScreenModel [(Lun.make "splashGroup", splashGroupModel, [splashLabel])] world
+        let world'' = subscribe (FinishedIncomingAddress @ address) address (handleSplashScreenIdle idlingTime) world'
+        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world''
 
     let reregisterPhysicsHack4 groupModelAddress world _ entityModel =
         match entityModel with

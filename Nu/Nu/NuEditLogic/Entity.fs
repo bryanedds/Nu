@@ -1,9 +1,6 @@
 ﻿namespace NuEditLogic
 open System
-open System.IO
 open System.Reflection
-open System.Xml
-open System.Xml.Serialization
 open Nu
 open Nu.Core
 open Nu.Entities
@@ -147,22 +144,10 @@ module Entity = // TODO: rename module / file
         set entityModel_ world entityModelLens
 
     let writeFile fileName world =
-        use file = File.Open (fileName, FileMode.Create)
-        let writerSettings = XmlWriterSettings ()
-        writerSettings.Indent <- true
-        use writer = XmlWriter.Create (file, writerSettings)
-        writer.WriteStartDocument ()
-        writer.WriteStartElement "Root"
         let testGroupModel = get world <| worldGroupModelLens Test.GroupModelAddress
-        writeGroupModelToXml writer testGroupModel
-        writer.WriteEndElement ()
-        writer.WriteEndDocument ()
+        writeGroupModelFile testGroupModel fileName world
 
-    let readFile (fileName : string) world =
-        let document = XmlDocument ()
-        document.Load fileName
-        let rootNode = document.Item "Root"
-        let testGroupModelNode = rootNode.FirstChild
-        let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
+    let loadFile (fileName : string) world =
+        let (testGroupModel, testEntityModels) = loadGroupModelFile fileName world
         let world' = removeGroupModel Test.GroupModelAddress world
         addGroupModel Test.GroupModelAddress testGroupModel testEntityModels world'

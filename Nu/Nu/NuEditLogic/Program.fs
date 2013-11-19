@@ -282,7 +282,7 @@ module Program =
             let entityModelPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
             let entityModelTransform = { Transform.Position = entityModelPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
             let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
-            let entityModel_ = makeDefaultEntityModel entityModelTypeName
+            let entityModel_ = makeDefaultEntityModel entityModelTypeName None
             let (positionSnap, rotationSnap) = getSnaps form
             let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform entityModel_
             let entity = get entityModel_ entityLens
@@ -320,7 +320,7 @@ module Program =
         match openFileResult with
         | DialogResult.OK ->
             let changer = (fun world_ ->
-                let world_ = readFile form.openFileDialog.FileName world_
+                let world_ = loadFile form.openFileDialog.FileName world_
                 let world_ = clearPastWorlds world_
                 form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false
@@ -478,20 +478,16 @@ module Program =
         form
 
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
-        let dissolveSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-        let incomingModel = Dissolve { Transition = { Id = getNuId (); Lifetime = 100; Ticks = 0; Type = Incoming }; Sprite = dissolveSprite }
-        let outgoingModel = Dissolve { Transition = { Id = getNuId (); Lifetime = 100; Ticks = 0; Type = Outgoing }; Sprite = dissolveSprite }
-        let screen = { Id = getNuId (); State = IncomingState; IncomingModel = incomingModel; OutgoingModel = outgoingModel; GroupModels = Map.empty }
-        let group = { Id = getNuId (); EntityModels = Map.empty }
+        let screenModel = Screen <| makeDissolveScreen 100 100
+        let groupModel = Group { Id = getNuId (); EntityModels = Map.empty }
         let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         let optWorld = tryCreateEmptyWorld sdlDeps editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := addScreen Test.ScreenModelAddress screen !refWorld
+            refWorld := addScreenModel Test.ScreenModelAddress screenModel [(List.last Test.GroupModelAddress, groupModel, [])] !refWorld
             refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
-            refWorld := addGroup Test.GroupModelAddress group [] !refWorld
             refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
             refWorld := subscribe DownMouseCenterAddress [] (beginCameraDrag form worldChangers refWorld) !refWorld

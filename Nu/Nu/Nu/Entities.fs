@@ -283,44 +283,44 @@ module Entities =
     let tileMapSep (tileMap : TileMap) = (tileMap, tileMap.Actor, tileMap.Actor.Entity)
     let tileMapCmb (tileMap : TileMap, actor, entity) = { tileMap with Actor = { actor with Entity = entity }}
 
-    let makeDefaultEntity () =
+    let makeDefaultEntity optName =
         let id = getNuId ()
         { Id = id
-          Name = str id
+          Name = match optName with None -> str id | Some name -> name
           Enabled = true
           Visible = true }
 
-    let makeDefaultGui () =
-        { Gui.Entity = makeDefaultEntity ()
+    let makeDefaultGui optName =
+        { Gui.Entity = makeDefaultEntity optName
           Position = Vector2.Zero
           Depth = 0.0f
           Size = Vector2.One }
 
-    let makeDefaultActor () =
-        { Actor.Entity = makeDefaultEntity ()
+    let makeDefaultActor optName =
+        { Actor.Entity = makeDefaultEntity optName
           Position = Vector2.Zero
           Depth = 0.0f
           Size = Vector2.One
           Rotation = 0.0f }
 
-    let makeDefaultEntityModel typeName =
+    let makeDefaultEntityModel typeName optName =
         let assemblyName = (Assembly.GetExecutingAssembly ()).FullName
         let entityModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
         match entityModel with
         | Button _ ->
             Button
-                { Gui = makeDefaultGui ()
+                { Gui = makeDefaultGui optName
                   IsDown = false
                   UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
                   DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
                   ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | Label _ ->
             Label
-                { Gui = makeDefaultGui ()
+                { Gui = makeDefaultGui optName
                   LabelSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | TextBox _ ->
             TextBox
-                { Gui = makeDefaultGui ()
+                { Gui = makeDefaultGui optName
                   BoxSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
                   Text = String.Empty
                   TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -328,7 +328,7 @@ module Entities =
                   TextColor = Vector4.One }
         | Toggle _ ->
             Toggle
-                { Gui = makeDefaultGui ()
+                { Gui = makeDefaultGui optName
                   IsOn = false
                   IsPressed = false
                   OffSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -336,25 +336,25 @@ module Entities =
                   ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | Feeler _ ->
             Feeler
-                { Gui = makeDefaultGui ()
+                { Gui = makeDefaultGui optName
                   IsTouched = false }
         | Block _ ->
             Block
-                { Actor = makeDefaultActor ()
+                { Actor = makeDefaultActor optName
                   PhysicsId = getPhysicsId ()
                   Density = NormalDensity
                   BodyType = BodyType.Dynamic
                   Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | Avatar _ ->
             Avatar
-                { Actor = makeDefaultActor ()
+                { Actor = makeDefaultActor optName
                   PhysicsId = getPhysicsId ()
                   Density = NormalDensity
                   Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | TileMap _ ->
             let tmxMap = TmxMap "TileMap.tmx"
             TileMap
-                { Actor = makeDefaultActor ()
+                { Actor = makeDefaultActor optName
                   PhysicsIds = []
                   Density = NormalDensity
                   TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -454,7 +454,7 @@ module Entities =
     let loadEntityModelFromXml (entityModelNode : XmlNode) =
         let entityModelTypeNode = entityModelNode.Item "ModelType"
         let entityModelTypeName = entityModelTypeNode.InnerText
-        let entityModel = makeDefaultEntityModel entityModelTypeName
+        let entityModel = makeDefaultEntityModel entityModelTypeName None // TODO: consider setting the name here
         match entityModel with
         | Button button -> setModelProperties4<Button, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode button
         | Label label -> setModelProperties4<Label, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode label
