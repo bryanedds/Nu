@@ -20,3 +20,16 @@ module Core =
     /// Add a custom TypeConverter to an existing type.
     let AssignTypeConverter<'t, 'c> () =
         ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
+
+    let addr (str : string) : Address =
+        let strs = List.ofArray <| str.Split '/'
+        List.map Lun.make strs
+
+    let straddr str (address : Address) : Address =
+        addr str @ address
+
+    let addrstr (address : Address) str : Address =
+        address @ [Lun.make str]
+
+    let straddr str (address : Address) str2 : Address =
+        addr str @ address @ addr str2

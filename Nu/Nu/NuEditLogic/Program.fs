@@ -107,7 +107,7 @@ module Program =
                             let entity_ = get entityModel_ entityLens
                             let entity_ = { entity_ with Name = valueStr }
                             let entityModel_ = set entity_ entityModel_ entityLens
-                            let entityModelAddress = Test.GroupModelAddress @ [Lun.make <| valueStr]
+                            let entityModelAddress = addrstr Test.GroupModelAddress valueStr
                             let world_ = addEntityModel entityModelAddress entityModel_ world_
                             entityModelTds.RefWorld := world_ // must be set for property grid
                             entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityModelAddress }
@@ -187,7 +187,7 @@ module Program =
                 | Some entityModel ->
                     let pastWorld = world_
                     let entity = get entityModel entityLens
-                    let entityModelAddress = groupModelAddress @ [Lun.make entity.Name]
+                    let entityModelAddress = addrstr groupModelAddress entity.Name
                     let entityModelTransform = getEntityModelTransform (Some world_.Camera) entityModel
                     let dragState = DragEntityPosition (entityModelTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityModelAddress)
                     let editorState_ = world_.ExtData :?> EditorState
@@ -286,7 +286,7 @@ module Program =
             let (positionSnap, rotationSnap) = getSnaps form
             let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform entityModel_
             let entity = get entityModel_ entityLens
-            let entityModelAddress = Test.GroupModelAddress @ [Lun.make entity.Name]
+            let entityModelAddress = addrstr Test.GroupModelAddress entity.Name
             let world_ = addEntityModel entityModelAddress entityModel_ world_
             let world_ = pushPastWorld pastWorld world_
             refWorld := world_ // must be set for property grid
@@ -411,7 +411,7 @@ module Program =
                 let entityModelTransform_ = { entityModelTransform_ with Position = entityModelPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
                 let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform_ entityModel_
-                let address = Test.GroupModelAddress @ [Lun.make entity_.Name]
+                let address = addrstr Test.GroupModelAddress entity_.Name
                 let pastWorld = world_
                 let world_ = pushPastWorld pastWorld world_
                 addEntityModel address entityModel_ world_)
