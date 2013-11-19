@@ -33,3 +33,6 @@ module Core =
 
     let straddrstr str (address : Address) str2 : Address =
         addr str @ address @ addr str2
+
+    let (</>) str str2 =
+        str + "/" + str2
