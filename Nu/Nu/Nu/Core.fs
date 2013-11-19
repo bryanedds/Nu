@@ -31,5 +31,5 @@ module Core =
     let addrstr (address : Address) str : Address =
         address @ [Lun.make str]
 
-    let straddr str (address : Address) str2 : Address =
+    let straddrstr str (address : Address) str2 : Address =
         addr str @ address @ addr str2
