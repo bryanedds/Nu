@@ -164,6 +164,6 @@ module Entity = // TODO: rename module / file
         let rootNode = document.Item "Root"
         let testGroupModelNode = rootNode.FirstChild
         let (testGroupModel, testEntityModels) = loadGroupModelFromXml testGroupModelNode
-        let world_ = removeGroupModel Test.GroupModelAddress world
-        let world_ = addGroupModel Test.GroupModelAddress testGroupModel world_
-        addEntityModels testEntityModels Test.GroupModelAddress world_
+        let world' = removeGroupModel Test.GroupModelAddress world
+        let world'' = addGroupModel Test.GroupModelAddress testGroupModel world'
+        addEntityModels testEntityModels Test.GroupModelAddress world''

@@ -751,10 +751,10 @@ module Sim =
     let removeScreen address world =
         set None world (worldOptScreenModelLens address)
 
-    let rec handleSplashScreenTick idlingTime ticks address subscriber message world =
+    let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
         let world' = unsubscribe address subscriber world
         if ticks < idlingTime then
-            (message, true, subscribe address subscriber (handleSplashScreenTick idlingTime <| ticks + 1) world')
+            (message, true, subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world')
         else
             let optSelectedScreenModel = get world' worldOptSelectedScreenModelLens
             match optSelectedScreenModel with
@@ -767,7 +767,7 @@ module Sim =
                 (message, true, world'')
 
     let handleSplashScreenIdle idlingTime address subscriber message world =
-        let world' = subscribe TickAddress subscriber (handleSplashScreenTick idlingTime 0) world
+        let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
         (handle message, true, world')
 
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
@@ -894,9 +894,9 @@ module Sim =
         | Transition _ -> []
         | Dissolve dissolve ->
             let transition = dissolve.Transition
-            let alpha = single transition.Ticks / single transition.Lifetime
-            let alphaMul = alpha * match transition.Type with Incoming -> -1.0f | Outgoing -> 1.0f
-            let color = Vector4 (1.0f, 1.0f, 1.0f, alphaMul)
+            let progress = single transition.Ticks / single transition.Lifetime
+            let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
+            let color = Vector4 (1.0f, 1.0f, 1.0f, alpha)
             [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolve.Sprite; Color = color }; Depth = Single.MaxValue })]
 
     let getWorldRenderDescriptors world =
@@ -955,7 +955,7 @@ module Sim =
         let transition = get transitionModel transitionLens
         let started = transition.Ticks = 0
         let (transition', finished) =
-            if transition.Ticks >= transition.Lifetime then ({ transition with Ticks = 0 }, true)
+            if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
             else ({ transition with Ticks = transition.Ticks + 1 }, false)
         let transitionModel' = set transition' transitionModel transitionLens
         (transitionModel', started, finished)
