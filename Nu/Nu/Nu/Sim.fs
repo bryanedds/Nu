@@ -1022,7 +1022,7 @@ module Sim =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
                     let world' = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
-                    let messageAddress = addr <| "down/mouse" + str mouseButton
+                    let messageAddress = addr ("down/mouse" </> str mouseButton)
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                     publish messageAddress { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
@@ -1030,7 +1030,7 @@ module Sim =
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
-                        let messageAddress = addr <| "up/mouse" + str mouseButton
+                        let messageAddress = addr ("up/mouse" </> str mouseButton)
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                         publish messageAddress { Handled = false; Data = messageData } world'
                     else (true, world)
