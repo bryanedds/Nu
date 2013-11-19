@@ -52,6 +52,22 @@ module Screens =
             | Transition _ -> Transition transition
             | Dissolve dissolve -> Dissolve { dissolve with Transition = transition }}
 
+    let transitionIdLens =
+        { Get = fun this -> (get this transitionLens).Id
+          Set = fun value this -> set { get this transitionLens with Id = value } this transitionLens }
+
+    let transitionLifetimeLens =
+        { Get = fun this -> (get this transitionLens).Lifetime
+          Set = fun value this -> set { get this transitionLens with Lifetime = value } this transitionLens }
+
+    let transitionTicksLens =
+        { Get = fun this -> (get this transitionLens).Ticks
+          Set = fun value this -> set { get this transitionLens with Ticks = value } this transitionLens }
+
+    let transitionTypeLens =
+        { Get = fun this -> (get this transitionLens).Type
+          Set = fun value this -> set { get this transitionLens with Type = value } this transitionLens }
+
     let screenLens =
         { Get = fun this ->
             match this with
@@ -59,6 +75,26 @@ module Screens =
           Set = fun screen this ->
             match this with
             | Screen _ -> Screen screen }
+
+    let screenIdLens =
+        { Get = fun this -> (get this screenLens).Id
+          Set = fun value this -> set { get this screenLens with Id = value } this screenLens }
+
+    let screenStateLens =
+        { Get = fun this -> (get this screenLens).State
+          Set = fun value this -> set { get this screenLens with State = value } this screenLens }
+
+    let screenIncomingModelLens =
+        { Get = fun this -> (get this screenLens).IncomingModel
+          Set = fun value this -> set { get this screenLens with IncomingModel = value } this screenLens }
+
+    let screenOutgoingModelLens =
+        { Get = fun this -> (get this screenLens).OutgoingModel
+          Set = fun value this -> set { get this screenLens with OutgoingModel = value } this screenLens }
+
+    let screenGroupModelsLens =
+        { Get = fun this -> (get this screenLens).GroupModels
+          Set = fun value this -> set { get this screenLens with GroupModels = value } this screenLens }
        
     let private screenModelOptChildModelFinder addressHead this =
         let screen = get this screenLens
