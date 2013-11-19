@@ -322,6 +322,7 @@ module Program =
             let changer = (fun world_ ->
                 let world_ = readFile form.openFileDialog.FileName world_
                 let world_ = clearPastWorlds world_
+                form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false
                 world_)
             refWorld := changer !refWorld

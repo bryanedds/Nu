@@ -17,13 +17,16 @@ open Nu.Games
 open Nu.Sim
 module OmniBlade =
 
-    let TitleScreenAddress = [Lun.make "title"]
     let SplashScreenAddress = [Lun.make "splash"]
+    let TitleScreenAddress = [Lun.make "title"]
+    let LoadScreenAddress = [Lun.make "load"]
+    let OmniScreenAddress = [Lun.make "omni"]
+    let CreditsScreenAddress = [Lun.make "credits"]
 
     let tryCreateOmniBladeWorld sdlDeps extData =
         let optWorld = tryCreateEmptyWorld sdlDeps extData
         match optWorld with
-        | Left errorMsg -> Left errorMsg
+        | Left _ as left -> left
         | Right world ->
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
             let world' = addSplashScreen (changeSelectedScreen SplashScreenAddress(*TitleScreenAddress*)) SplashScreenAddress 90 45 90 splashScreenSprite world
