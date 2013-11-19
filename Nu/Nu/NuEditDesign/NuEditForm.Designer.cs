@@ -74,9 +74,9 @@
             this.creationDepthLabel = new System.Windows.Forms.ToolStripLabel();
             this.creationDepthTextBox = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.deleteEntityButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.quickSizeToolStripButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.deleteEntityButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
@@ -115,6 +115,7 @@
             // 
             // newToolStripMenuItem
             // 
+            this.newToolStripMenuItem.Enabled = false;
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
             this.newToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
             this.newToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
@@ -305,11 +306,13 @@
             // 
             this.openFileDialog.DefaultExt = "nugroup";
             this.openFileDialog.FileName = "*.nugroup";
+            this.openFileDialog.Filter = "Nu Groups|*.nugroup|All files|*.*";
             // 
             // saveFileDialog
             // 
             this.saveFileDialog.DefaultExt = "nugroup";
             this.saveFileDialog.FileName = "Document.nugroup";
+            this.saveFileDialog.Filter = "Nu Groups|*.nugroup|All files|*.*";
             // 
             // toolStrip
             // 
@@ -338,7 +341,7 @@
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(93, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1073, 26);
+            this.toolStrip.Size = new System.Drawing.Size(1042, 26);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -428,20 +431,6 @@
             this.toolStripSeparator3.Name = "toolStripSeparator3";
             this.toolStripSeparator3.Size = new System.Drawing.Size(6, 26);
             // 
-            // deleteEntityButton
-            // 
-            this.deleteEntityButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.deleteEntityButton.Image = ((System.Drawing.Image)(resources.GetObject("deleteEntityButton.Image")));
-            this.deleteEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.deleteEntityButton.Name = "deleteEntityButton";
-            this.deleteEntityButton.Size = new System.Drawing.Size(94, 23);
-            this.deleteEntityButton.Text = "&Delete Entity";
-            // 
-            // toolStripSeparator4
-            // 
-            this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 26);
-            // 
             // quickSizeToolStripButton
             // 
             this.quickSizeToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
@@ -450,6 +439,20 @@
             this.quickSizeToolStripButton.Name = "quickSizeToolStripButton";
             this.quickSizeToolStripButton.Size = new System.Drawing.Size(77, 23);
             this.quickSizeToolStripButton.Text = "&Quick Size";
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(6, 26);
+            // 
+            // deleteEntityButton
+            // 
+            this.deleteEntityButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.deleteEntityButton.Image = ((System.Drawing.Image)(resources.GetObject("deleteEntityButton.Image")));
+            this.deleteEntityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.deleteEntityButton.Name = "deleteEntityButton";
+            this.deleteEntityButton.Size = new System.Drawing.Size(94, 23);
+            this.deleteEntityButton.Text = "&Delete Entity";
             // 
             // toolStripSeparator5
             // 

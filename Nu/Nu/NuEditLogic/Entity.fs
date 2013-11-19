@@ -62,7 +62,7 @@ module Entity = // TODO: rename module / file
                         Button { button_ with Gui = { gui_ with Entity = entity_ }}
             | Label label_ ->
                 let label_ = { label_ with Gui = label_.Gui } // NOTE: hacky copy
-                if typeof<Button>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                if typeof<Label>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
                 then let _ = property.SetValue (label_, value) in Label label_
                 else
                     let gui_ = { label_.Gui with Position = label_.Gui.Position } // NOTE: hacky copy

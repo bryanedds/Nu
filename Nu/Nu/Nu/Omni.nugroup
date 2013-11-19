@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+  <GroupModel>
+    <ModelType>Nu.GroupModel+Group</ModelType>
+    <EntityModels>map [(save, Nu.EntityModel+Button); (21, Nu.EntityModel+Label); (23, Nu.EntityModel+TextBox)]</EntityModels>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
+      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>336;488</Position>
+      <Depth>0</Depth>
+      <Size>256;64</Size>
+      <Name>save</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Label</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
+      <Entity>Nu.Entity</Entity>
+      <Position>0;0</Position>
+      <Depth>-1</Depth>
+      <Size>900;600</Size>
+      <Name>21</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+TextBox</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <BoxSprite>Image4;Default;AssetGraph.xml</BoxSprite>
+      <Text>You have died. The OmniBlade beckons you back in time.</Text>
+      <TextFont>Font;Default;AssetGraph.xml</TextFont>
+      <TextOffset>0;0</TextOffset>
+      <TextColor>1;1;1;1</TextColor>
+      <Entity>Nu.Entity</Entity>
+      <Position>144;96</Position>
+      <Depth>0</Depth>
+      <Size>640;128</Size>
+      <Name>23</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+    </EntityModel>
+  </GroupModel>
+</Root>
