@@ -144,10 +144,10 @@ module Entity = // TODO: rename module / file
         set entityModel_ world entityModelLens
 
     let writeFile fileName world =
-        let testGroupModel = get world <| worldGroupModelLens Test.GroupModelAddress
+        let testGroupModel = get world <| worldGroupModelLens Test.GroupAddress
         writeGroupModelFile testGroupModel fileName world
 
     let loadFile (fileName : string) world =
         let (testGroupModel, testEntityModels) = loadGroupModelFile fileName world
-        let world' = removeGroupModel Test.GroupModelAddress world
-        addGroupModel Test.GroupModelAddress testGroupModel testEntityModels world'
+        let world' = removeGroupModel Test.GroupAddress world
+        addGroupModel Test.GroupAddress testGroupModel testEntityModels world'

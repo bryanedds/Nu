@@ -213,7 +213,7 @@ module Screens =
 
     let makeDefaultScreen () =
         { Id = getNuId ()
-          State = IncomingState
+          State = IdlingState
           IncomingModel = Transition <| makeDefaultTransition Incoming
           OutgoingModel = Transition <| makeDefaultTransition Outgoing
           GroupModels = Map.empty }
