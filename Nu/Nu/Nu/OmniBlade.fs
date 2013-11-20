@@ -17,19 +17,52 @@ open Nu.Games
 open Nu.Sim
 module OmniBlade =
 
+    let IncomingTime = 45
+    let IdlingTime = 60
+    let OutgoingTime = 30
+
+    // splash literals
     let SplashAddress = addr "splash"
+
+    // title literals
     let TitleAddress = addr "title"
-    let TitleGroupAddress = addrstr TitleAddress "group"
-    let ClickTitleExitAddress = straddrstr "click" TitleGroupAddress "exit"
+    let TitleGroupName = Lun.make "group"
+    let TitleGroupAddress = TitleAddress @ [TitleGroupName]
+    let TitleGroupFileName = "Title.nugroup"
+    let ClickTitleGroupLoadAddress = straddrstr "click" TitleGroupAddress "load"
+    let ClickTitleGroupCreditsAddress = straddrstr "click" TitleGroupAddress "credits"
+    let ClickTitleGroupExitAddress = straddrstr "click" TitleGroupAddress "exit"
+
+    // load literals
     let LoadAddress = addr "load"
-    let OmniAddress = addr "omni"
+    let LoadGroupName = Lun.make "group"
+    let LoadGroupAddress = LoadAddress @ [LoadGroupName]
+    let LoadGroupFileName = "Load.nugroup"
+    let ClickLoadGroupBackAddress = straddrstr "click" LoadGroupAddress "back"
+
+    // credits literals
     let CreditsAddress = addr "credits"
+    let CreditsGroupName = Lun.make "group"
+    let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
+    let CreditsGroupFileName = "Credits.nugroup"
+    let ClickCreditsGroupBackAddress = straddrstr "click" CreditsGroupAddress "back"
+
+    // omni literals
+    let OmniAddress = addr "omni"
 
     let createTitleScreen world =
-        let titleScreenModel = Screen <| makeDissolveScreen 90 45
-        let (titleGroupModel, titleEntityModels) = loadGroupModelFile "Title.nugroup" world
-        let world' = addScreenModel TitleAddress titleScreenModel [(List.last TitleGroupAddress, titleGroupModel, titleEntityModels)] world
-        subscribe ClickTitleExitAddress [] (fun _ _ message world_ -> (handle message, false, world_)) world'
+        let world' = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
+        let world'' = subscribe ClickTitleGroupLoadAddress [] (handleEventAsScreenTransition TitleAddress LoadAddress) world'
+        let world''' = subscribe ClickTitleGroupCreditsAddress [] (handleEventAsScreenTransition TitleAddress CreditsAddress) world''
+        subscribe ClickTitleGroupExitAddress [] handleEventAsExit world'''
+
+    let createLoadScreen world =
+        let world' = createDissolveScreenFromFile LoadGroupFileName LoadGroupName IncomingTime OutgoingTime LoadAddress world
+        subscribe ClickLoadGroupBackAddress [] (handleEventAsScreenTransition LoadAddress TitleAddress) world'
+
+    let createCreditsScreen world =
+        let world' = createDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress world
+        subscribe ClickCreditsGroupBackAddress [] (handleEventAsScreenTransition CreditsAddress TitleAddress) world'
 
     let tryCreateOmniBladeWorld sdlDeps extData =
         let optWorld = tryCreateEmptyWorld sdlDeps extData
@@ -37,7 +70,9 @@ module OmniBlade =
         | Left _ as left -> left
         | Right world_ ->
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-            let world_ = addSplashScreen (changeSelectedScreen TitleAddress) SplashAddress 90 45 90 splashScreenSprite world_
+            let world_ = addSplashScreen (transitionScreenHandler TitleAddress) SplashAddress IncomingTime IdlingTime OutgoingTime splashScreenSprite world_
             let world_ = createTitleScreen world_
-            let world_ = set (Some SplashAddress) world_ worldOptSelectedScreenModelAddressLens
+            let world_ = createLoadScreen world_
+            let world_ = createCreditsScreen world_
+            let world_ = transitionScreen SplashAddress world_
             Right world_

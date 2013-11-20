@@ -2,7 +2,7 @@
 <Root>
   <GroupModel>
     <ModelType>Nu.GroupModel+Group</ModelType>
-    <EntityModels>map [(11, Nu.EntityModel+TextBox); (exit, Nu.EntityModel+Button); (17, Nu.EntityModel+Label); ... ]</EntityModels>
+    <EntityModels>map [(11, Nu.EntityModel+TextBox); (new, Nu.EntityModel+Button); (exit, Nu.EntityModel+Button); ... ]</EntityModels>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -12,7 +12,7 @@
       <TextOffset>0;0</TextOffset>
       <TextColor>1;1;1;1</TextColor>
       <Entity>Nu.Entity</Entity>
-      <Position>144;104</Position>
+      <Position>144;88</Position>
       <Depth>0</Depth>
       <Size>640;128</Size>
       <Name>11</Name>
@@ -27,7 +27,22 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;472</Position>
+      <Position>344;272</Position>
+      <Depth>0</Depth>
+      <Size>256;64</Size>
+      <Name>new</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
+      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>344;488</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
       <Name>exit</Name>
@@ -54,10 +69,10 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;312</Position>
+      <Position>344;344</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>newGame</Name>
+      <Name>load</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
     </EntityModel>
@@ -69,10 +84,10 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;392</Position>
+      <Position>344;416</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>loadGame</Name>
+      <Name>credits</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
     </EntityModel>
