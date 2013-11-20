@@ -107,10 +107,10 @@ module Program =
                             let entity_ = get entityModel_ entityLens
                             let entity_ = { entity_ with Name = valueStr }
                             let entityModel_ = set entity_ entityModel_ entityLens
-                            let entityModelAddress = addrstr Test.GroupModelAddress valueStr
-                            let world_ = addEntityModel entityModelAddress entityModel_ world_
+                            let entityAddress = addrstr Test.GroupAddress valueStr
+                            let world_ = addEntityModel entityAddress entityModel_ world_
                             entityModelTds.RefWorld := world_ // must be set for property grid
-                            entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityModelAddress }
+                            entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityAddress }
                             world_
                     else
                         let world_ = setEntityModelPropertyValue entityModelTds.Address property value world_
@@ -178,8 +178,8 @@ module Program =
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world_)
             else
-                let groupModelAddress = Test.GroupModelAddress
-                let groupModel = get world_ (worldGroupModelLens groupModelAddress)
+                let GroupAddress = Test.GroupAddress
+                let groupModel = get world_ (worldGroupModelLens GroupAddress)
                 let entityModels = Map.toValueList <| (get groupModel groupLens).EntityModels
                 let optPicked = tryPick position entityModels world_
                 match optPicked with
@@ -187,15 +187,15 @@ module Program =
                 | Some entityModel ->
                     let pastWorld = world_
                     let entity = get entityModel entityLens
-                    let entityModelAddress = addrstr groupModelAddress entity.Name
-                    let entityModelTransform = getEntityModelTransform (Some world_.Camera) entityModel
-                    let dragState = DragEntityPosition (entityModelTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityModelAddress)
+                    let entityAddress = addrstr GroupAddress entity.Name
+                    let entityTransform = getEntityModelTransform (Some world_.Camera) entityModel
+                    let dragState = DragEntityPosition (entityTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityAddress)
                     let editorState_ = world_.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
                     let world_ = { world_ with ExtData = editorState_ }
                     let world_ = pushPastWorld pastWorld world_
                     refWorld := world_ // must be set for property grid
-                    form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                    form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                     (handle message, true, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
@@ -271,7 +271,7 @@ module Program =
     /// Needed for physics system side-effects...
     let physicsHack world_ =
         let world_ = { world_ with PhysicsMessages = ResetHackMessage :: world_.PhysicsMessages }
-        reregisterPhysicsHack Test.GroupModelAddress world_
+        reregisterPhysicsHack Test.GroupAddress world_
 
     let handleExit (form : NuEditForm) _ =
         form.Close ()
@@ -279,18 +279,18 @@ module Program =
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let changer = (fun world_ ->
             let pastWorld = world_
-            let entityModelPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
-            let entityModelTransform = { Transform.Position = entityModelPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
-            let entityModelTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
-            let entityModel_ = makeDefaultEntityModel entityModelTypeName None
+            let entityPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
+            let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
+            let entityTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
+            let entityModel_ = makeDefaultEntityModel entityTypeName None
             let (positionSnap, rotationSnap) = getSnaps form
-            let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform entityModel_
+            let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityTransform entityModel_
             let entity = get entityModel_ entityLens
-            let entityModelAddress = addrstr Test.GroupModelAddress entity.Name
-            let world_ = addEntityModel entityModelAddress entityModel_ world_
+            let entityAddress = addrstr Test.GroupAddress entity.Name
+            let world_ = addEntityModel entityAddress entityModel_ world_
             let world_ = pushPastWorld pastWorld world_
             refWorld := world_ // must be set for property grid
-            form.propertyGrid.SelectedObject <- { Address = entityModelAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+            form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
             world_)
         refWorld := changer !refWorld
         worldChangers.Add changer
@@ -406,12 +406,12 @@ module Program =
                 let id = getNuId ()
                 let entity_ = { entity_ with Id = id; Name = str id }
                 let entityModel_ = set entity_ entityModel_ entityLens
-                let entityModelPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
-                let entityModelTransform_ = getEntityModelTransform (Some world_.Camera) entityModel_
-                let entityModelTransform_ = { entityModelTransform_ with Position = entityModelPosition; Depth = getCreationDepth form }
+                let entityPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
+                let entityTransform_ = getEntityModelTransform (Some world_.Camera) entityModel_
+                let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
-                let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityModelTransform_ entityModel_
-                let address = addrstr Test.GroupModelAddress entity_.Name
+                let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityTransform_ entityModel_
+                let address = addrstr Test.GroupAddress entity_.Name
                 let pastWorld = world_
                 let world_ = pushPastWorld pastWorld world_
                 addEntityModel address entityModel_ world_)
@@ -425,9 +425,9 @@ module Program =
         | :? EntityModelTypeDescriptorSource as entityModelTds ->
             let changer = (fun world_ ->
                 let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
-                let entityModelQuickSize = getEntityModelQuickSize world_.AssetMetadataMap entityModel_
-                let entityModelTransform = { getEntityModelTransform None entityModel_ with Size = entityModelQuickSize }
-                let entityModel_ = setEntityModelTransform None 0 0 entityModelTransform entityModel_
+                let entityQuickSize = getEntityModelQuickSize world_.AssetMetadataMap entityModel_
+                let entityTransform = { getEntityModelTransform None entityModel_ with Size = entityQuickSize }
+                let entityModel_ = setEntityModelTransform None 0 0 entityTransform entityModel_
                 let world_ = set entityModel_ world_ <| worldEntityModelLens entityModelTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()
@@ -486,8 +486,8 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := addScreenModel Test.ScreenModelAddress screenModel [(List.last Test.GroupModelAddress, groupModel, [])] !refWorld
-            refWorld := set (Some Test.ScreenModelAddress) !refWorld worldOptSelectedScreenModelAddressLens
+            refWorld := addScreenModel Test.ScreenAddress screenModel [(List.last Test.GroupAddress, groupModel, [])] !refWorld
+            refWorld := set (Some Test.ScreenAddress) !refWorld worldOptSelectedScreenModelAddressLens
             refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
             refWorld := subscribe DownMouseCenterAddress [] (beginCameraDrag form worldChangers refWorld) !refWorld

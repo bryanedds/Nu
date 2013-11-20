@@ -103,8 +103,8 @@ module Sim =
     let GameModelPublishingPriority = Single.MaxValue
     let ScreenModelPublishingPriority = GameModelPublishingPriority * 0.5f
     let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
-    let FinishedIncomingAddress = addr "finished/incoming"
-    let FinishedOutgoingAddress = addr "finished/outgoing"
+    let FinishedIncomingAddressPart = addr "finished/incoming"
+    let FinishedOutgoingAddressPart = addr "finished/outgoing"
 
     let gameModelLens =
         { Get = fun this -> this.GameModel
@@ -211,19 +211,21 @@ module Sim =
         | (_, None) -> false
         | (_, Some []) -> false
         | (addressHead :: addressTail, Some [screenAddressHead]) ->
-            match addressTail with
-            | [] -> screenAddressHead = addressHead
-            | addressHead' :: addressTail' ->
-                let screenModel = get world <| worldScreenModelLens [addressHead]
-                let screen = get screenModel screenLens
-                match addressTail' with
-                | [] -> screen.GroupModels.ContainsKey addressHead'
-                | addressHead'' :: addressTail'' ->
-                    let groupModel = Map.find addressHead' screen.GroupModels
-                    let group = get groupModel groupLens
-                    match addressTail'' with
-                    | [] -> group.EntityModels.ContainsKey addressHead''
-                    | _ -> false
+            if addressHead <> screenAddressHead then false
+            else
+                match addressTail with
+                | [] -> true
+                | addressHead' :: addressTail' ->
+                    let screenModel = get world <| worldScreenModelLens [addressHead]
+                    let screen = get screenModel screenLens
+                    match addressTail' with
+                    | [] -> screen.GroupModels.ContainsKey addressHead'
+                    | addressHead'' :: addressTail'' ->
+                        let groupModel = Map.find addressHead' screen.GroupModels
+                        let group = get groupModel groupLens
+                        match addressTail'' with
+                        | [] -> group.EntityModels.ContainsKey addressHead''
+                        | _ -> false
         | (_, Some (_ :: _)) -> false
 
     let sortFstAsc (priority, _) (priority2, _) =
@@ -318,20 +320,100 @@ module Sim =
         let world'' = procedure world'
         unsubscribe address subscriber world''
 
-    let swallow _ _ message world =
+    let handleEventAsSwallow _ _ message world =
         (handle message, true, world)
 
-    let swallowLeftMouseDuringTransition started finished screenAddress world =
-        if not started then
-            if not finished then world
-            else world |> unsubscribe DownMouseLeftAddress screenAddress |> unsubscribe UpMouseLeftAddress screenAddress
-        else world |> subscribe DownMouseLeftAddress screenAddress swallow |> subscribe UpMouseLeftAddress screenAddress swallow
+    let handleEventAsExit _ _ message world =
+        (handle message, false, world)
 
-    let changeSelectedScreen address _ _ message world =
-        let screenModel = set IncomingState (get world <| worldScreenModelLens address) screenStateLens
+    // TODO: consider turning this into a lens, and removing the screenStateLens
+    let getScreenModelState address world =
+        let screenModel = get world <| worldScreenModelLens address
+        get screenModel screenStateLens
+
+    let setScreenModelState state address world =
+        let screenModel = set state (get world <| worldScreenModelLens address) screenStateLens
         let world' = set screenModel world <| worldScreenModelLens address
-        let world'' = set (Some address) world' worldOptSelectedScreenModelAddressLens
+        match state with
+        | IdlingState ->
+            world' |>
+                unsubscribe DownMouseLeftAddress address |>
+                unsubscribe UpMouseLeftAddress address
+        | IncomingState | OutgoingState ->
+            world' |>
+                subscribe DownMouseLeftAddress address handleEventAsSwallow |>
+                subscribe UpMouseLeftAddress address handleEventAsSwallow
+
+    let transitionScreen address world =
+        let world' = setScreenModelState IncomingState address world
+        set (Some address) world' worldOptSelectedScreenModelAddressLens
+
+    let transitionScreenHandler address _ _ message world =
+        let world' = transitionScreen address world
+        (handle message, true, world')
+
+    let handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
+        let world' = unsubscribe address subscriber world
+        let world'' = transitionScreen destScreenAddress world'
         (handle message, true, world'')
+
+    let handleEventAsScreenTransition screenAddress destScreenAddress address subscriber message world =
+        let world' = subscribe (FinishedOutgoingAddressPart @ screenAddress) [] (handleFinishedScreenOutgoing screenAddress destScreenAddress) world
+        let optSelectedScreenAddress = get world' worldOptSelectedScreenModelAddressLens
+        match optSelectedScreenAddress with
+        | None ->
+            trace <| "Program Error: Could not handle click as screen transition due to no selected screen model."
+            (handle message, true, world)
+        | Some selectedScreenAddress ->
+            let world'' = setScreenModelState OutgoingState selectedScreenAddress world'
+            (handle message, true, world'')
+
+    let updateTransition1 transitionModel =
+        let transition = get transitionModel transitionLens
+        let (transition', finished) =
+            if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
+            else ({ transition with Ticks = transition.Ticks + 1 }, false)
+        let transitionModel' = set transition' transitionModel transitionLens
+        (transitionModel', finished)
+
+    let updateTransition update world_ : bool * World =
+        let (keepRunning, world_) =
+            let optSelectedScreenAddress = get world_ worldOptSelectedScreenModelAddressLens
+            match optSelectedScreenAddress with
+            | None -> (true, world_)
+            | Some selectedScreenAddress ->
+                let screenModelState = getScreenModelState selectedScreenAddress world_
+                match screenModelState with
+                | IncomingState ->
+                    // TODO: remove duplication with below
+                    let selectedScreenModel = get world_ <| worldScreenModelLens selectedScreenAddress
+                    let incomingModel = get selectedScreenModel incomingModelLens
+                    let (incomingModel', finished) = updateTransition1 incomingModel
+                    let selectedScreenModel' = set incomingModel' selectedScreenModel incomingModelLens
+                    let world_ = set selectedScreenModel' world_ <| worldScreenModelLens selectedScreenAddress
+                    let world_ = setScreenModelState (if finished then IdlingState else IncomingState) selectedScreenAddress world_
+                    if finished then
+                        publish
+                            (FinishedIncomingAddressPart @ selectedScreenAddress)
+                            { Handled = false; Data = NoData }
+                            world_
+                    else (true, world_)
+                | OutgoingState ->
+                    let selectedScreenModel = get world_ <| worldScreenModelLens selectedScreenAddress
+                    let outgoingModel = get selectedScreenModel outgoingModelLens
+                    let (outgoingModel', finished) = updateTransition1 outgoingModel
+                    let selectedScreenModel' = set outgoingModel' selectedScreenModel outgoingModelLens
+                    let world_ = set selectedScreenModel' world_ <| worldScreenModelLens selectedScreenAddress
+                    let world_ = setScreenModelState (if finished then IdlingState else OutgoingState) selectedScreenAddress world_
+                    if finished then
+                        publish
+                            (FinishedOutgoingAddressPart @ selectedScreenAddress)
+                            { Handled = false; Data = NoData }
+                            world_
+                    else (true, world_)
+                | IdlingState -> (true, world_)
+        if keepRunning then update world_
+        else (keepRunning, world_)
 
     let unregisterButton address world =
         world |>
@@ -611,7 +693,7 @@ module Sim =
     let removeEntityModels address world =
         let group = get world (worldGroupLens address)
         Seq.fold
-            (fun world' entityModelAddress -> removeEntityModel (address @ [entityModelAddress]) world')
+            (fun world' entityAddress -> removeEntityModel (address @ [entityAddress]) world')
             world
             (Map.toKeySeq group.EntityModels)
 
@@ -647,17 +729,17 @@ module Sim =
     [<RequireQualifiedAccess>]
     module Test =
 
-        let ScreenModelAddress = addr "testScreenModel"
-        let GroupModelAddress = addrstr ScreenModelAddress "testGroupModel"
-        let FeelerAddress = addrstr GroupModelAddress "testFeeler"
-        let TextBoxAddress = addrstr GroupModelAddress "testTextBox"
-        let ToggleAddress = addrstr GroupModelAddress "testToggle"
-        let LabelAddress = addrstr GroupModelAddress "testLabel"
-        let ButtonAddress = addrstr GroupModelAddress "testButton"
-        let BlockAddress = addrstr GroupModelAddress "testBlock"
-        let TileMapAddress = addrstr GroupModelAddress "testTileMap"
-        let FloorAddress = addrstr GroupModelAddress "testFloor"
-        let AvatarAddress = addrstr GroupModelAddress "testAvatar"
+        let ScreenAddress = addr "testScreenModel"
+        let GroupAddress = addrstr ScreenAddress "testGroupModel"
+        let FeelerAddress = addrstr GroupAddress "testFeeler"
+        let TextBoxAddress = addrstr GroupAddress "testTextBox"
+        let ToggleAddress = addrstr GroupAddress "testToggle"
+        let LabelAddress = addrstr GroupAddress "testLabel"
+        let ButtonAddress = addrstr GroupAddress "testButton"
+        let BlockAddress = addrstr GroupAddress "testBlock"
+        let TileMapAddress = addrstr GroupAddress "testTileMap"
+        let FloorAddress = addrstr GroupAddress "testFloor"
+        let AvatarAddress = addrstr GroupAddress "testAvatar"
         let ClickButtonAddress = straddr "click" ButtonAddress
 
         let addTestGroup address testGroup entityModels world_ =
@@ -715,14 +797,14 @@ module Sim =
                     List.fold
                         (fun world_ _ ->
                             let block = createTestBlock assetMetadataMap
-                            addBlock (addrstr GroupModelAddress block.Actor.Entity.Name) block world_)
+                            addBlock (addrstr GroupAddress block.Actor.Entity.Name) block world_)
                         world_
                         [0..7]
                 (handle message, true, world_)
 
             let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
             let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
-            let world_ = set (Some ScreenModelAddress) world_ worldOptSelectedScreenModelAddressLens
+            let world_ = set (Some ScreenAddress) world_ worldOptSelectedScreenModelAddressLens
             let world_ = subscribe TickAddress [] moveAvatar world_
             let world_ = subscribe TickAddress [] adjustCamera world_
             let world_ = subscribe ClickButtonAddress [] addBoxes world_
@@ -752,17 +834,30 @@ module Sim =
         | Group group -> removeGroup address world
         | TestGroup testGroup -> Test.removeTestGroup address world
 
-    let addScreen address screen groupDescriptor world =
+    let addGroupModels address groupDescriptors world =
+        List.fold
+            (fun world' (groupName, groupModel, entityModels) ->
+                addGroupModel (address @ [groupName]) groupModel entityModels world')
+            world
+            groupDescriptors
+
+    let removeGroupModels address world =
+        let screenModel = get world <| worldScreenModelLens address
+        let groupModels = get screenModel screenGroupModelsLens
+        Map.fold
+            (fun world' groupModelName _ ->
+                removeGroupModel (address @ [groupModelName]) world')
+            world
+            groupModels
+
+    let addScreen address screen groupDescriptors world =
         debugIf (fun () -> not <| Map.isEmpty screen.GroupModels) "Adding populated screens to the world is not supported."
         let world' = set (Screen screen) world (worldScreenModelLens address)
-        List.fold
-            (fun world'' (groupName, groupModel, entityModels) ->
-                addGroupModel (address @ [groupName]) groupModel entityModels world'')
-            world'
-            groupDescriptor
+        addGroupModels address groupDescriptors world'
 
     let removeScreen address world =
-        set None world (worldOptScreenModelLens address)
+        let world' = removeGroupModels address world
+        set None world' (worldOptScreenModelLens address)
 
     let addScreenModel address screenModel groupDescriptor world =
         match screenModel with
@@ -776,16 +871,16 @@ module Sim =
     let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
         let world' = unsubscribe address subscriber world
         if ticks < idlingTime then
-            (message, true, subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world')
+            let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
+            (message, true, world'')
         else
-            let optSelectedScreenModel = get world' worldOptSelectedScreenModelLens
-            match optSelectedScreenModel with
+            let optSelectedScreenAddress = get world' worldOptSelectedScreenModelAddressLens
+            match optSelectedScreenAddress with
             | None ->
-                trace "Program error: Could not handle splash screen tick due to no selected screen model."
-                (message, false, world')
-            | Some selectedScreenModel ->
-                let selectedScreenModel' = Some <| set OutgoingState selectedScreenModel screenStateLens
-                let world'' = set selectedScreenModel' world' worldOptSelectedScreenModelLens
+                trace "Program Error: Could not handle splash screen tick due to no selected screen model."
+                (message, false, world)
+            | Some selectedScreenAddress ->
+                let world'' = setScreenModelState OutgoingState selectedScreenAddress world'
                 (message, true, world'')
 
     let handleSplashScreenIdle idlingTime address subscriber message world =
@@ -797,24 +892,29 @@ module Sim =
         let splashGroupModel = Group <| makeDefaultGroup ()
         let splashLabel = Label { Gui = { makeDefaultGui (Some "splashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
         let world' = addScreen address splashScreenModel [(Lun.make "splashGroup", splashGroupModel, [splashLabel])] world
-        let world'' = subscribe (FinishedIncomingAddress @ address) address (handleSplashScreenIdle idlingTime) world'
-        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world''
+        let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
+        subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
 
-    let reregisterPhysicsHack4 groupModelAddress world _ entityModel =
+    let createDissolveScreenFromFile groupModelFileName groupModelName incomingTime outgoingTime screenAddress world =
+        let screenModel = Screen <| makeDissolveScreen incomingTime outgoingTime
+        let (groupModel, entityModels) = loadGroupModelFile groupModelFileName world
+        addScreenModel screenAddress screenModel [(groupModelName, groupModel, entityModels)] world
+
+    let reregisterPhysicsHack4 groupAddress world _ entityModel =
         match entityModel with
         | Button _
         | Label _
         | TextBox _
         | Toggle _
         | Feeler _ -> world
-        | Block block -> registerBlockPhysics (addrstr groupModelAddress block.Actor.Entity.Name) block world
-        | Avatar avatar -> registerAvatarPhysics (addrstr groupModelAddress avatar.Actor.Entity.Name) avatar world
-        | TileMap tileMap -> registerTileMapPhysics (addrstr groupModelAddress tileMap.Actor.Entity.Name) tileMap world
+        | Block block -> registerBlockPhysics (addrstr groupAddress block.Actor.Entity.Name) block world
+        | Avatar avatar -> registerAvatarPhysics (addrstr groupAddress avatar.Actor.Entity.Name) avatar world
+        | TileMap tileMap -> registerTileMapPhysics (addrstr groupAddress tileMap.Actor.Entity.Name) tileMap world
 
-    let reregisterPhysicsHack groupModelAddress world =
-        let groupModel = get world <| worldGroupModelLens groupModelAddress
+    let reregisterPhysicsHack groupAddress world =
+        let groupModel = get world <| worldGroupModelLens groupAddress
         let entityModels = get groupModel entityModelsLens
-        Map.fold (reregisterPhysicsHack4 groupModelAddress) world entityModels
+        Map.fold (reregisterPhysicsHack4 groupAddress) world entityModels
 
     let getComponentAudioDescriptors world : AudioDescriptor rQueue =
         let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
@@ -957,55 +1057,6 @@ module Sim =
         let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
         let world' = { world with PhysicsMessages = [] }
         handleIntegrationMessages integrationMessages world'
-
-    let updateTransition1 transitionModel =
-        let transition = get transitionModel transitionLens
-        let started = transition.Ticks = 0
-        let (transition', finished) =
-            if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
-            else ({ transition with Ticks = transition.Ticks + 1 }, false)
-        let transitionModel' = set transition' transitionModel transitionLens
-        (transitionModel', started, finished)
-
-    let updateTransition update world_ : bool * World =
-        let (keepRunning, world_) =
-            let optSelectedScreenModel = get world_ worldOptSelectedScreenModelLens
-            match optSelectedScreenModel with
-            | None -> (true, world_)
-            | Some selectedScreenModel ->
-                let selectedScreenModelAddress = Option.get <| get world_ worldOptSelectedScreenModelAddressLens
-                let selectedScreen = get selectedScreenModel screenLens
-                match selectedScreen.State with
-                | IncomingState ->
-                    // TODO: consider removing duplication with below
-                    let incomingModel = get selectedScreenModel incomingModelLens
-                    let (incomingModel', started, finished) = updateTransition1 incomingModel
-                    let selectedScreen' = { selectedScreen with State = (if finished then IdlingState else IncomingState); IncomingModel = incomingModel' }
-                    let selectedScreenModel' = set selectedScreen' selectedScreenModel screenLens
-                    let world_ = set (Some selectedScreenModel') world_ <| worldOptSelectedScreenModelLens
-                    let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
-                    if finished then
-                        publish
-                            (FinishedIncomingAddress @ selectedScreenModelAddress)
-                            { Handled = false; Data = NoData }
-                            world_
-                    else (true, world_)
-                | OutgoingState ->
-                    let outgoingModel = get selectedScreenModel outgoingModelLens
-                    let (outgoingModel', started, finished) = updateTransition1 outgoingModel
-                    let selectedScreen' = { selectedScreen with State = (if finished then IdlingState else OutgoingState); OutgoingModel = outgoingModel' }
-                    let selectedScreenModel' = set selectedScreen' selectedScreenModel screenLens
-                    let world_ = set (Some selectedScreenModel') world_ <| worldOptSelectedScreenModelLens
-                    let world_ = swallowLeftMouseDuringTransition started finished selectedScreenModelAddress world_
-                    if finished then
-                        publish
-                            (FinishedOutgoingAddress @ selectedScreenModelAddress)
-                            { Handled = false; Data = NoData }
-                            world_
-                    else (true, world_)
-                | IdlingState -> (true, world_)
-        if keepRunning then update world_
-        else (keepRunning, world_)
 
     let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
         runSdl
