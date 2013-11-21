@@ -8,6 +8,10 @@ open Nu.Groups
 open Nu.Sim
 module Entity = // TODO: rename module / file
 
+    let EditorScreenAddress = addr "editorScreen"
+    let EditorGroupName = Lun.make "editorGroup"
+    let EditorGroupAddress = EditorScreenAddress @ [EditorGroupName]
+
     let getEntityModelTypes (entityModel : EntityModel) =
         match entityModel with
         | Button _ -> [typeof<Button>; typeof<Gui>; typeof<Entity>]
@@ -144,10 +148,10 @@ module Entity = // TODO: rename module / file
         set entityModel_ world entityModelLens
 
     let writeFile fileName world =
-        let testGroupModel = get world <| worldGroupModelLens Test.GroupAddress
+        let testGroupModel = get world <| worldGroupModelLens EditorGroupAddress
         writeGroupModelFile testGroupModel fileName world
 
     let loadFile (fileName : string) world =
         let (testGroupModel, testEntityModels) = loadGroupModelFile fileName world
-        let world' = removeGroupModel Test.GroupAddress world
-        addGroupModel Test.GroupAddress testGroupModel testEntityModels world'
+        let world' = removeGroupModel EditorGroupAddress world
+        addGroupModel EditorGroupAddress testGroupModel testEntityModels world'
