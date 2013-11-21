@@ -30,6 +30,7 @@ module OmniBlade =
     let TitleGroupName = Lun.make "group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
     let TitleGroupFileName = "Title.nugroup"
+    let ClickTitleGroupNewAddress = straddrstr "click" TitleGroupAddress "new"
     let ClickTitleGroupLoadAddress = straddrstr "click" TitleGroupAddress "load"
     let ClickTitleGroupCreditsAddress = straddrstr "click" TitleGroupAddress "credits"
     let ClickTitleGroupExitAddress = straddrstr "click" TitleGroupAddress "exit"
@@ -48,14 +49,22 @@ module OmniBlade =
     let CreditsGroupFileName = "Credits.nugroup"
     let ClickCreditsGroupBackAddress = straddrstr "click" CreditsGroupAddress "back"
 
+    // map literals
+    let MapAddress = addr "map"
+    let MapGroupName = Lun.make "group"
+    let MapGroupAddress = MapAddress @ [MapGroupName]
+    let MapGroupFileName = "Map.nugroup"
+    let ClickMapGroupBackAddress = straddrstr "click" MapGroupAddress "back"
+
     // omni literals
     let OmniAddress = addr "omni"
 
     let createTitleScreen world =
         let world' = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
-        let world'' = subscribe ClickTitleGroupLoadAddress [] (handleEventAsScreenTransition TitleAddress LoadAddress) world'
-        let world''' = subscribe ClickTitleGroupCreditsAddress [] (handleEventAsScreenTransition TitleAddress CreditsAddress) world''
-        subscribe ClickTitleGroupExitAddress [] handleEventAsExit world'''
+        let world'' = subscribe ClickTitleGroupNewAddress [] (handleEventAsScreenTransition TitleAddress MapAddress) world'
+        let world'3 = subscribe ClickTitleGroupLoadAddress [] (handleEventAsScreenTransition TitleAddress LoadAddress) world''
+        let world'4 = subscribe ClickTitleGroupCreditsAddress [] (handleEventAsScreenTransition TitleAddress CreditsAddress) world'3
+        subscribe ClickTitleGroupExitAddress [] handleEventAsExit world'4
 
     let createLoadScreen world =
         let world' = createDissolveScreenFromFile LoadGroupFileName LoadGroupName IncomingTime OutgoingTime LoadAddress world
@@ -65,15 +74,22 @@ module OmniBlade =
         let world' = createDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress world
         subscribe ClickCreditsGroupBackAddress [] (handleEventAsScreenTransition CreditsAddress TitleAddress) world'
 
+    let createMapScreen world =
+        let world' = createDissolveScreenFromFile MapGroupFileName MapGroupName IncomingTime OutgoingTime MapAddress world
+        subscribe ClickMapGroupBackAddress [] (handleEventAsScreenTransition MapAddress TitleAddress) world'
+
     let tryCreateOmniBladeWorld sdlDeps extData =
         let optWorld = tryCreateEmptyWorld sdlDeps extData
         match optWorld with
         | Left _ as left -> left
         | Right world_ ->
+            let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            let world_ = { world_ with AudioMessages = playSong :: world_.AudioMessages }
             let world_ = addSplashScreen (transitionScreenHandler TitleAddress) SplashAddress IncomingTime IdlingTime OutgoingTime splashScreenSprite world_
             let world_ = createTitleScreen world_
             let world_ = createLoadScreen world_
             let world_ = createCreditsScreen world_
+            let world_ = createMapScreen world_
             let world_ = transitionScreen SplashAddress world_
             Right world_
