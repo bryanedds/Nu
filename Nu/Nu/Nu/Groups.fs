@@ -13,12 +13,12 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Group =
     { Id : Id
       EntityModels : Map<Lun, EntityModel> }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] TestGroup =
+type [<StructuralEquality; NoComparison; CLIMutable>] MapGroup =
     { Group : Group }
 
 type [<StructuralEquality; NoComparison>] GroupModel =
     | Group of Group
-    | TestGroup of TestGroup
+    | MapGroup of MapGroup
 
 module Groups =
 
@@ -26,11 +26,11 @@ module Groups =
         { Get = fun this ->
             match this with
             | Group group -> group
-            | TestGroup testGroup -> testGroup.Group
+            | MapGroup mapGroup -> mapGroup.Group
           Set = fun group this ->
             match this with
             | Group _ -> Group group
-            | TestGroup testGroup -> TestGroup { testGroup with Group = group }}
+            | MapGroup mapGroup -> MapGroup { mapGroup with Group = group }}
 
     let groupIdLens =
         { Get = fun this -> (get this groupLens).Id
@@ -190,8 +190,8 @@ module Groups =
         | Group _ ->
             Group <|
                 makeDefaultGroup ()
-        | TestGroup _ ->
-            TestGroup
+        | MapGroup _ ->
+            MapGroup
                 { Group = makeDefaultGroup () }
 
     let writeGroupEntitiesToXml (writer : XmlWriter) group =
@@ -204,9 +204,9 @@ module Groups =
         | Group group ->
             writeModelPropertiesMany writer "Nu.GroupModel+Group" [group :> obj]
             writeGroupEntitiesToXml writer group
-        | TestGroup testGroup ->
-            writeModelPropertiesMany writer "Nu.GroupModel+TestGroup" [testGroup :> obj; testGroup.Group :> obj]
-            writeGroupEntitiesToXml writer testGroup.Group
+        | MapGroup mapGroup ->
+            writeModelPropertiesMany writer "Nu.GroupModel+MapGroup" [mapGroup :> obj; mapGroup.Group :> obj]
+            writeGroupEntitiesToXml writer mapGroup.Group
 
     let loadEntityModelsFromXml (groupModelNode : XmlNode) =
         let entityModelNodes = groupModelNode.SelectNodes "EntityModel"
@@ -219,7 +219,7 @@ module Groups =
         let entityModels = loadEntityModelsFromXml (groupModelNode : XmlNode)
         match groupModel with
         | Group group -> setModelProperties3 (fun _ -> ()) groupModelNode group
-        | TestGroup testGroup -> setModelProperties3 (fun _ -> testGroup.Group) groupModelNode testGroup
+        | MapGroup mapGroup -> setModelProperties3 (fun _ -> mapGroup.Group) groupModelNode mapGroup
         (groupModel, entityModels)
 
     let writeGroupModelFile groupModel fileName world =

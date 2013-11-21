@@ -107,7 +107,7 @@ module Program =
                             let entity_ = get entityModel_ entityLens
                             let entity_ = { entity_ with Name = valueStr }
                             let entityModel_ = set entity_ entityModel_ entityLens
-                            let entityAddress = addrstr Test.GroupAddress valueStr
+                            let entityAddress = addrstr EditorGroupAddress valueStr
                             let world_ = addEntityModel entityAddress entityModel_ world_
                             entityModelTds.RefWorld := world_ // must be set for property grid
                             entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityAddress }
@@ -178,8 +178,7 @@ module Program =
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world_)
             else
-                let GroupAddress = Test.GroupAddress
-                let groupModel = get world_ (worldGroupModelLens GroupAddress)
+                let groupModel = get world_ (worldGroupModelLens EditorGroupAddress)
                 let entityModels = Map.toValueList <| (get groupModel groupLens).EntityModels
                 let optPicked = tryPick position entityModels world_
                 match optPicked with
@@ -187,7 +186,7 @@ module Program =
                 | Some entityModel ->
                     let pastWorld = world_
                     let entity = get entityModel entityLens
-                    let entityAddress = addrstr GroupAddress entity.Name
+                    let entityAddress = addrstr EditorGroupAddress entity.Name
                     let entityTransform = getEntityModelTransform (Some world_.Camera) entityModel
                     let dragState = DragEntityPosition (entityTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityAddress)
                     let editorState_ = world_.ExtData :?> EditorState
@@ -271,7 +270,7 @@ module Program =
     /// Needed for physics system side-effects...
     let physicsHack world_ =
         let world_ = { world_ with PhysicsMessages = ResetHackMessage :: world_.PhysicsMessages }
-        reregisterPhysicsHack Test.GroupAddress world_
+        reregisterPhysicsHack EditorGroupAddress world_
 
     let handleExit (form : NuEditForm) _ =
         form.Close ()
@@ -286,7 +285,7 @@ module Program =
             let (positionSnap, rotationSnap) = getSnaps form
             let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityTransform entityModel_
             let entity = get entityModel_ entityLens
-            let entityAddress = addrstr Test.GroupAddress entity.Name
+            let entityAddress = addrstr EditorGroupAddress entity.Name
             let world_ = addEntityModel entityAddress entityModel_ world_
             let world_ = pushPastWorld pastWorld world_
             refWorld := world_ // must be set for property grid
@@ -411,7 +410,7 @@ module Program =
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
                 let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityTransform_ entityModel_
-                let address = addrstr Test.GroupAddress entity_.Name
+                let address = addrstr EditorGroupAddress entity_.Name
                 let pastWorld = world_
                 let world_ = pushPastWorld pastWorld world_
                 addEntityModel address entityModel_ world_)
@@ -486,8 +485,8 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := addScreenModel Test.ScreenAddress screenModel [(List.last Test.GroupAddress, groupModel, [])] !refWorld
-            refWorld := set (Some Test.ScreenAddress) !refWorld worldOptSelectedScreenModelAddressLens
+            refWorld := addScreenModel EditorScreenAddress screenModel [(List.last EditorGroupAddress, groupModel, [])] !refWorld
+            refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenModelAddressLens
             refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
             refWorld := subscribe DownMouseCenterAddress [] (beginCameraDrag form worldChangers refWorld) !refWorld

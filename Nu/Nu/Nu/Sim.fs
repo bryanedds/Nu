@@ -105,6 +105,8 @@ module Sim =
     let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
     let FinishedIncomingAddressPart = addr "finished/incoming"
     let FinishedOutgoingAddressPart = addr "finished/outgoing"
+    let MapFeelerName = Lun.make "feeler"
+    let MapAvatarName = Lun.make "avatar"
 
     let gameModelLens =
         { Get = fun this -> this.GameModel
@@ -186,8 +188,8 @@ module Sim =
                   Renderer = makeRenderer sdlDeps.RenderContext
                   Integrator = makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
-                  AudioMessages = []
-                  RenderMessages = []
+                  AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]
+                  RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
                   Components = []
                   ExtData = extData }
@@ -642,7 +644,7 @@ module Sim =
     let unregisterTileMapPhysics address tileMap world =
         List.fold unregisterTilePhysics world tileMap.PhysicsIds
 
-    let registerTilePhysics tileMap tmd tld collisionTilePosition address n (world, physicsIds) tile =
+    let registerTilePhysics tileMap tmd tld address n (world, physicsIds) tile =
         let td = makeTileData tileMap tmd tld n
         match td.OptTileSetTile with
         | None -> (world, physicsIds)
@@ -669,10 +671,9 @@ module Sim =
 
     let registerTileMapPhysics address tileMap world =
         let collisionLayer = 0 // MAGIC_VALUE: assumption
-        let collisionTilePosition = (4, 1) // MAGIC_VALUE: testing
         let tmd = makeTileMapData tileMap
         let tld = makeTileLayerData tileMap tmd collisionLayer
-        let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld collisionTilePosition address) (world, []) tld.Tiles
+        let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld address) (world, []) tld.Tiles
         let tileMap' = { tileMap with PhysicsIds = physicsIds }
         (tileMap', world')
 
@@ -723,6 +724,17 @@ module Sim =
             world
             (Map.toKeySeq group.EntityModels)
 
+    let propagateEntityModelPhysics address entityModel world =
+        match entityModel with
+        | Button _
+        | Label _
+        | TextBox _
+        | Toggle _
+        | Feeler _ -> world
+        | Block block -> world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
+        | Avatar avatar -> world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
+        | TileMap tileMap -> snd <| (world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap)
+
     let addGroup address group entityModels world =
         traceIf (not <| Map.isEmpty group.EntityModels) "Adding populated groups to the world is not supported."
         let world' = set (Group group) world (worldGroupModelLens address)
@@ -732,137 +744,56 @@ module Sim =
         let world' = removeEntityModels address world
         set None world' (worldOptGroupModelLens address)
 
-    let propagateBlockPhysics address block world =
-        let world' = unregisterBlockPhysics address block world
-        registerBlockPhysics address block world'
+    let adjustMapCamera groupAddress world =
+        let avatarAddress = groupAddress @ [MapAvatarName]
+        let actor = get world <| worldActorLens avatarAddress
+        let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
+        { world with Camera = camera }
 
-    let propagateAvatarPhysics address avatar world =
-        let world' = unregisterAvatarPhysics address avatar world
-        registerAvatarPhysics address avatar world'
+    let adjustMapCameraHandler groupAddress _ _ message world =
+        (message, true, adjustMapCamera groupAddress world)
 
-    let propagateTileMapPhysics address tileMap world =
-        let world' = unregisterTileMapPhysics address tileMap world
-        snd <| registerTileMapPhysics address tileMap world'
+    let moveMapAvatarHandler groupAddress _ _ message world =
+        let feelerAddress = groupAddress @ [MapFeelerName]
+        let feeler = get world (worldFeelerLens feelerAddress)
+        if feeler.IsTouched then
+            let avatarAddress = groupAddress @ [MapAvatarName]
+            let avatar = get world <| worldAvatarLens avatarAddress
+            let camera = world.Camera
+            let view = getInverseViewF camera
+            let mousePositionWorld = world.MouseState.MousePosition + view
+            let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
+            let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
+            let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
+            let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
+            (message, true, world')
+        else (message, true, world)
 
-    let propagateEntityModelPhysics address entityModel world =
-        match entityModel with
-        | Button _
-        | Label _
-        | TextBox _
-        | Toggle _
-        | Feeler _ -> world
-        | Block block -> propagateBlockPhysics address block world
-        | Avatar avatar -> propagateAvatarPhysics address avatar world
-        | TileMap tileMap -> propagateTileMapPhysics address tileMap world
+    let addMapGroup address mapGroup entityModels world_ =
+        debugIf (fun () -> not <| Map.isEmpty mapGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
+        let world_ = subscribe TickAddress [] (moveMapAvatarHandler address) world_
+        let world_ = subscribe TickAddress [] (adjustMapCameraHandler address) world_
+        let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
+        let world_ = set (MapGroup mapGroup) world_ (worldGroupModelLens address)
+        let world_ = addEntityModels address entityModels world_
+        adjustMapCamera address world_
 
-    // TODO: see if there's a nice way to put this module in another file
-    [<RequireQualifiedAccess>]
-    module Test =
-
-        let ScreenAddress = addr "testScreenModel"
-        let GroupAddress = addrstr ScreenAddress "testGroupModel"
-        let FeelerAddress = addrstr GroupAddress "testFeeler"
-        let TextBoxAddress = addrstr GroupAddress "testTextBox"
-        let ToggleAddress = addrstr GroupAddress "testToggle"
-        let LabelAddress = addrstr GroupAddress "testLabel"
-        let ButtonAddress = addrstr GroupAddress "testButton"
-        let BlockAddress = addrstr GroupAddress "testBlock"
-        let TileMapAddress = addrstr GroupAddress "testTileMap"
-        let FloorAddress = addrstr GroupAddress "testFloor"
-        let AvatarAddress = addrstr GroupAddress "testAvatar"
-        let ClickButtonAddress = straddr "click" ButtonAddress
-
-        let addTestGroup address testGroup entityModels world_ =
-        
-            debugIf (fun () -> not <| Map.isEmpty testGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
-
-            let assetMetadataMap =
-                match tryGenerateAssetMetadataMap "AssetGraph.xml" with
-                | Left errorMsg -> failwith errorMsg
-                | Right assetMetadataMap -> assetMetadataMap
-
-            let createTestBlock assetMetadataMap =
-                let id = getNuId ()
-                let testBlock =
-                    { PhysicsId = getPhysicsId ()
-                      Density = NormalDensity
-                      BodyType = Dynamic
-                      Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                      Actor =
-                      { Position = Vector2 (400.0f, 200.0f)
-                        Depth = 1.0f
-                        Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Default") assetMetadataMap
-                        Rotation = 2.0f
-                        Entity =
-                        { Id = id
-                          Name = str id
-                          Enabled = true
-                          Visible = true }}}
-                testBlock
-
-            let adjustCamera1 world_ =
-                let actor = get world_ (worldActorLens AvatarAddress)
-                let camera = { world_.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
-                { world_ with Camera = camera }
-
-            let adjustCamera _ _ message world_ =
-                (message, true, adjustCamera1 world_)
-
-            let moveAvatar address _ message world_ =
-                let feeler = get world_ (worldFeelerLens FeelerAddress)
-                if feeler.IsTouched then
-                    let avatar = get world_ (worldAvatarLens AvatarAddress)
-                    let camera = world_.Camera
-                    let view = getInverseViewF camera
-                    let mousePositionWorld = world_.MouseState.MousePosition + view
-                    let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
-                    let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
-                    let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
-                    let world_ = { world_ with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world_.PhysicsMessages }
-                    (message, true, world_)
-                else (message, true, world_)
-
-            let addBoxes _ _ message world_ =
-                let world_ =
-                    List.fold
-                        (fun world_ _ ->
-                            let block = createTestBlock assetMetadataMap
-                            addBlock (addrstr GroupAddress block.Actor.Entity.Name) block world_)
-                        world_
-                        [0..7]
-                (handle message, true, world_)
-
-            let hintRenderingPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }
-            let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
-            let world_ = set (Some ScreenAddress) world_ worldOptSelectedScreenModelAddressLens
-            let world_ = subscribe TickAddress [] moveAvatar world_
-            let world_ = subscribe TickAddress [] adjustCamera world_
-            let world_ = subscribe ClickButtonAddress [] addBoxes world_
-            let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-            let world_ = { world_ with RenderMessages = hintRenderingPackageUse :: world_.RenderMessages }
-            let world_ = { world_ with AudioMessages = FadeOutSong :: playSong :: world_.AudioMessages }
-            let world_ = set (TestGroup testGroup) world_ (worldGroupModelLens address)
-            let world_ = addEntityModels address entityModels world_
-            adjustCamera1 world_
-
-        let removeTestGroup address world_ =
-            let world_ = unsubscribe TickAddress [] world_
-            let world_ = unsubscribe TickAddress [] world_
-            let world_ = unsubscribe ClickButtonAddress [] world_
-            let world_ = set None world_ worldOptSelectedScreenModelAddressLens
-            let world_ = removeEntityModels address world_
-            set None world_ (worldOptGroupModelLens address)
+    let removeMapGroup address world_ =
+        let world_ = unsubscribe TickAddress [] world_
+        let world_ = unsubscribe TickAddress [] world_
+        let world_ = removeEntityModels address world_
+        set None world_ (worldOptGroupModelLens address)
 
     let addGroupModel address groupModel entityModels world =
         match groupModel with
         | Group group -> addGroup address group entityModels world
-        | TestGroup testGroup -> Test.addTestGroup address testGroup entityModels world
+        | MapGroup mapGroup -> addMapGroup address mapGroup entityModels world
 
     let removeGroupModel address world =
         let groupModel = get world <| worldGroupModelLens address
         match groupModel with
-        | Group group -> removeGroup address world
-        | TestGroup testGroup -> Test.removeTestGroup address world
+        | Group _ -> removeGroup address world
+        | MapGroup _ -> removeMapGroup address world
 
     let addGroupModels address groupDescriptors world =
         List.fold
