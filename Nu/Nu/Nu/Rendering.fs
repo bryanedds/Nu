@@ -288,7 +288,7 @@ module Rendering =
             let tileRotation = descriptor.Rotation
             let sprite = descriptor.TileSetSprite
             let optTileSetWidth = tileSet.Image.Width
-            let tileSetWidthInt = optTileSetWidth.Value
+            let tileSetWidth = optTileSetWidth.Value
             let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
@@ -303,7 +303,7 @@ module Rendering =
                             let tilePosition = Vector2 (descriptor.Position.X + (tileSize.Y * single i), descriptor.Position.Y + (tileSize.Y * single j))
                             let gid = tiles.[n].Gid - tileSet.FirstGid
                             let gidPosition = gid * int tileSize.X
-                            let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidthInt, (single <| gidPosition / tileSetWidthInt) * tileSize.Y)
+                            let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, (single <| gidPosition / tileSetWidth) * tileSize.Y)
                             let mutable sourceRect = SDL.SDL_Rect ()
                             sourceRect.x <- int tileSetPosition.X
                             sourceRect.y <- int tileSetPosition.Y

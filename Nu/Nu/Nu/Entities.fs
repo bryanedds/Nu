@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
 open System.Xml
@@ -99,7 +100,58 @@ type [<StructuralEquality; NoComparison>] EntityModel =
     | Avatar of Avatar
     | TileMap of TileMap
 
+type [<StructuralEquality; NoComparison>] TileMapData =
+    { Map : TmxMap
+      MapSize : int * int
+      TileSize : int * int
+      TileSizeF : Vector2
+      TileSet : TmxTileset
+      TileSetSize : int * int }
+      
+type [<StructuralEquality; NoComparison>] TileLayerData =
+    { Layer : TmxLayer
+      Tiles : TmxLayerTile List }
+      
+type [<StructuralEquality; NoComparison>] TileData =
+    { Tile : TmxLayerTile
+      I : int
+      J : int
+      Gid : int
+      GidPosition : int
+      Gid2 : int * int
+      OptTileSetTile : TmxTilesetTile option
+      TilePosition : int * int
+      TileSetPosition : int * int }
+
 module Entities =
+
+    let makeTileMapData tileMap =
+        let actor = tileMap.Actor
+        let map = tileMap.TmxMap
+        let mapSize = (map.Width, map.Height)
+        let tileSize = (map.TileWidth, map.TileHeight)
+        let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
+        let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+        let optTileSetWidth = tileSet.Image.Width
+        let optTileSetHeight = tileSet.Image.Height
+        let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
+        { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+
+    let makeTileLayerData tileMap tmd (layerIndex : int) =
+        let layer = tmd.Map.Layers.[layerIndex]
+        let tiles = layer.Tiles
+        { Layer = layer; Tiles = tiles }
+
+    let makeTileData tileMap tmd tld n =
+        let (i, j) = (n % fst tmd.MapSize, n / snd tmd.MapSize)
+        let tile = tld.Tiles.[n]
+        let gid = tile.Gid - tmd.TileSet.FirstGid
+        let gidPosition = gid * fst tmd.TileSize
+        let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
+        let tilePosition = (int tileMap.Actor.Position.X + (fst tmd.TileSize * i), int tileMap.Actor.Position.Y + (snd tmd.TileSize * j))
+        let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
+        let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
+        { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
 
     let entityLens =
         { Get = fun this ->
