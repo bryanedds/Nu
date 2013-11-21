@@ -452,11 +452,11 @@ module Sim =
             else (message, true, world_)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
-    let registerButton address world_ =
-        let optOldButton = get world_ (worldOptButtonLens address)
-        let world_ = if optOldButton.IsSome then unregisterButton address world_ else world_
-        let world_ = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world_
-        subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world_
+    let registerButton address world =
+        let optOldButton = get world (worldOptButtonLens address)
+        let world' = if optOldButton.IsSome then unregisterButton address world else world
+        let world'' = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world'
+        subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world''
 
     let addButton address button world =
         let world' = registerButton address world
@@ -483,37 +483,37 @@ module Sim =
             unsubscribe DownMouseLeftAddress address |>
             unsubscribe UpMouseLeftAddress address
 
-    let handleToggleEventDownMouseLeft address subscriber message world_ =
+    let handleToggleEventDownMouseLeft address subscriber message world =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
-            let toggle = get world_ (worldToggleLens subscriber)
+            let toggle = get world (worldToggleLens subscriber)
             if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible then
                 if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
                     let toggle' = { toggle with IsPressed = true }
-                    let world_ = set toggle' world_ (worldToggleLens subscriber)
-                    (handle message, true, world_)
-                else (message, true, world_)
-            else (message, true, world_)
+                    let world' = set toggle' world (worldToggleLens subscriber)
+                    (handle message, true, world')
+                else (message, true, world)
+            else (message, true, world)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
-    let handleToggleEventUpMouseLeft address subscriber message world_ =
+    let handleToggleEventUpMouseLeft address subscriber message world =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
-            let toggle = get world_ (worldToggleLens subscriber)
+            let toggle = get world (worldToggleLens subscriber)
             if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible && toggle.IsPressed then
                 let toggle' = { toggle with IsPressed = false }
                 if isInBox3 mousePosition toggle'.Gui.Position toggle'.Gui.Size then
                     let toggle'' = { toggle' with IsOn = not toggle'.IsOn }
-                    let world_ = set toggle'' world_ (worldToggleLens subscriber)
+                    let world' = set toggle'' world (worldToggleLens subscriber)
                     let messageType = if toggle''.IsOn then "on" else "off"
-                    let (keepRunning, world_) = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world_
+                    let (keepRunning, world'') = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world'
                     let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
-                    let world_ = { world_ with AudioMessages = sound :: world_.AudioMessages }
-                    (handle message, keepRunning, world_)
+                    let world''' = { world'' with AudioMessages = sound :: world''.AudioMessages }
+                    (handle message, keepRunning, world''')
                 else
-                    let world_ = set toggle' world_ (worldToggleLens subscriber)
-                    (message, true, world_)
-            else (message, true, world_)
+                    let world' = set toggle' world (worldToggleLens subscriber)
+                    (message, true, world')
+            else (message, true, world)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
     let registerToggle address world =
@@ -533,18 +533,18 @@ module Sim =
             unsubscribe UpMouseLeftAddress address |>
             unsubscribe DownMouseLeftAddress address
 
-    let handleFeelerEventDownMouseLeft address subscriber message world_ =
+    let handleFeelerEventDownMouseLeft address subscriber message world =
         match message.Data with
         | MouseButtonData (mousePosition, _) as mouseButtonData ->
-            let feeler = get world_ (worldFeelerLens subscriber)
+            let feeler = get world (worldFeelerLens subscriber)
             if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
                 if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
                     let feeler' = { feeler with IsTouched = true }
-                    let world_ = set feeler' world_ (worldFeelerLens subscriber)
-                    let (keepRunning, world_) = publish (straddr "touch" subscriber) { Handled = false; Data = mouseButtonData } world_
-                    (handle message, keepRunning, world_)
-                else (message, true, world_)
-            else (message, true, world_)
+                    let world' = set feeler' world (worldFeelerLens subscriber)
+                    let (keepRunning, world'') = publish (straddr "touch" subscriber) { Handled = false; Data = mouseButtonData } world'
+                    (handle message, keepRunning, world'')
+                else (message, true, world)
+            else (message, true, world)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
     let handleFeelerEventUpMouseLeft address subscriber message world_ =
@@ -585,7 +585,7 @@ module Sim =
                         { Extent = block.Actor.Size * 0.5f
                           Properties =
                             { Center = Vector2.Zero
-                              Restitution = 0.5f
+                              Restitution = 0.0f
                               FixedRotation = false
                               LinearDamping = 5.0f
                               AngularDamping = 5.0f }}
@@ -635,28 +635,54 @@ module Sim =
         let world' = set None world (worldOptEntityModelLens address)
         unregisterAvatarPhysics address avatar world'
 
+    let unregisterTilePhysics world physicsId =
+        let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = physicsId }
+        { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+
     let unregisterTileMapPhysics address tileMap world =
-        world
+        List.fold unregisterTilePhysics world tileMap.PhysicsIds
+
+    let registerTilePhysics tileMap tmd tld collisionTilePosition address n (world, physicsIds) tile =
+        let td = makeTileData tileMap tmd tld n
+        match td.OptTileSetTile with
+        | None -> (world, physicsIds)
+        | Some tileSetTile when not <| tileSetTile.Properties.ContainsKey "c" -> (world, physicsIds)
+        | Some tileSetTile ->
+            let physicsId = getPhysicsId ()
+            let boxShapeProperties =
+                { Center = Vector2.Zero
+                  Restitution = 0.0f
+                  FixedRotation = true
+                  LinearDamping = 0.0f
+                  AngularDamping = 0.0f }
+            let bodyCreateMessage =
+                BodyCreateMessage
+                    { EntityAddress = address
+                      PhysicsId = physicsId
+                      Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
+                      Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2)
+                      Rotation = tileMap.Actor.Rotation
+                      Density = tileMap.Density
+                      BodyType = BodyType.Static }
+            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            (world', physicsId :: physicsIds)
 
     let registerTileMapPhysics address tileMap world =
-        (*let bodyCreateMessage =
-            BodyCreateMessage
-                { EntityAddress = address
-                  Shape = BoxShape { Center = Vector2.Zero; Extent = actor.Size * 0.5f }
-                  Position = actor.Position + actor.Size * 0.5f
-                  Rotation = actor.Rotation
-                  Density = tileMap.Density
-                  BodyType = BodyType.Static }
-        { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }*)
-        world
+        let collisionLayer = 0 // MAGIC_VALUE: assumption
+        let collisionTilePosition = (4, 1) // MAGIC_VALUE: testing
+        let tmd = makeTileMapData tileMap
+        let tld = makeTileLayerData tileMap tmd collisionLayer
+        let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld collisionTilePosition address) (world, []) tld.Tiles
+        let tileMap' = { tileMap with PhysicsIds = physicsIds }
+        (tileMap', world')
 
     let addTileMap address tileMap world =
-        let world' = registerTileMapPhysics address tileMap world
-        set (TileMap tileMap) world' (worldEntityModelLens address)
+        let (tileMap', world') = registerTileMapPhysics address tileMap world
+        set (TileMap tileMap') world' (worldEntityModelLens address)
 
     let removeTileMap address tileMap world =
         let world' = set None world (worldOptEntityModelLens address)
-        unregisterTileMapPhysics tileMap address world'
+        unregisterTileMapPhysics address tileMap world'
 
     let addEntityModel address entityModel world =
         match entityModel with
@@ -714,6 +740,10 @@ module Sim =
         let world' = unregisterAvatarPhysics address avatar world
         registerAvatarPhysics address avatar world'
 
+    let propagateTileMapPhysics address tileMap world =
+        let world' = unregisterTileMapPhysics address tileMap world
+        snd <| registerTileMapPhysics address tileMap world'
+
     let propagateEntityModelPhysics address entityModel world =
         match entityModel with
         | Button _
@@ -723,7 +753,7 @@ module Sim =
         | Feeler _ -> world
         | Block block -> propagateBlockPhysics address block world
         | Avatar avatar -> propagateAvatarPhysics address avatar world
-        | TileMap tileMap -> world // TODO
+        | TileMap tileMap -> propagateTileMapPhysics address tileMap world
 
     // TODO: see if there's a nice way to put this module in another file
     [<RequireQualifiedAccess>]
@@ -760,7 +790,7 @@ module Sim =
                       Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
                       Actor =
                       { Position = Vector2 (400.0f, 200.0f)
-                        Depth = 0.0f
+                        Depth = 1.0f
                         Size = getTextureSizeAsVector2 (Lun.make "Image3") (Lun.make "Default") assetMetadataMap
                         Rotation = 2.0f
                         Entity =
@@ -774,7 +804,7 @@ module Sim =
                 let actor = get world_ (worldActorLens AvatarAddress)
                 let camera = { world_.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
                 { world_ with Camera = camera }
-                  
+
             let adjustCamera _ _ message world_ =
                 (message, true, adjustCamera1 world_)
 
@@ -909,7 +939,7 @@ module Sim =
         | Feeler _ -> world
         | Block block -> registerBlockPhysics (addrstr groupAddress block.Actor.Entity.Name) block world
         | Avatar avatar -> registerAvatarPhysics (addrstr groupAddress avatar.Actor.Entity.Name) avatar world
-        | TileMap tileMap -> registerTileMapPhysics (addrstr groupAddress tileMap.Actor.Entity.Name) tileMap world
+        | TileMap tileMap -> snd <| registerTileMapPhysics (addrstr groupAddress tileMap.Actor.Entity.Name) tileMap world
 
     let reregisterPhysicsHack groupAddress world =
         let groupModel = get world <| worldGroupModelLens groupAddress
@@ -926,13 +956,12 @@ module Sim =
         componentDescriptors @ worldDescriptors // NOTE: pretty inefficient
 
     /// Play the world's audio.
-    let play world_ =
-        let audioMessages = world_.AudioMessages
-        let audioDescriptors = getAudioDescriptors world_
-        let audioPlayer = world_.AudioPlayer
-        let world_ = { world_ with AudioMessages = [] }
-        let world_ = { world_ with AudioPlayer = Nu.Audio.play audioMessages audioDescriptors audioPlayer }
-        world_
+    let play world =
+        let audioMessages = world.AudioMessages
+        let audioDescriptors = getAudioDescriptors world
+        let audioPlayer = world.AudioPlayer
+        let world' = { world with AudioMessages = [] }
+        { world' with AudioPlayer = Nu.Audio.play audioMessages audioDescriptors audioPlayer }
 
     let getComponentRenderDescriptors world : RenderDescriptor rQueue =
         let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
@@ -973,8 +1002,8 @@ module Sim =
             else
                 let map = tileMap.TmxMap
                 let layers = List.ofSeq map.Layers
-                List.map
-                    (fun (layer : TmxLayer) ->
+                List.mapi
+                    (fun i (layer : TmxLayer) ->
                         let layeredTileLayerDescriptor =
                             LayeredTileLayerDescriptor
                                 { Descriptor =
@@ -986,7 +1015,7 @@ module Sim =
                                       TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                                       TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                       TileSetSprite = tileMap.TileMapSprites.[0] } // MAGIC_VALUE: for same reason as above
-                                  Depth = actor.Depth }
+                                  Depth = actor.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
                         LayerableDescriptor layeredTileLayerDescriptor)
                     layers
 
@@ -1003,7 +1032,7 @@ module Sim =
             let transition = dissolve.Transition
             let progress = single transition.Ticks / single transition.Lifetime
             let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
-            let color = Vector4 (1.0f, 1.0f, 1.0f, alpha)
+            let color = Vector4 (Vector3.One, alpha)
             [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolve.Sprite; Color = color }; Depth = Single.MaxValue })]
 
     let getWorldRenderDescriptors world =
@@ -1038,10 +1067,25 @@ module Sim =
         else
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
-                let actor = get world (worldActorLens bodyTransformMessage.EntityAddress)
-                let actor' = { actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated withing the Physics module!
-                                          Rotation = bodyTransformMessage.Rotation }
-                (keepRunning, set actor' world <| worldActorLens bodyTransformMessage.EntityAddress)
+                let entityModel = get world (worldEntityModelLens bodyTransformMessage.EntityAddress)
+                match entityModel with
+                | Button _
+                | Label _
+                | TextBox _
+                | Toggle _
+                | Feeler _ ->
+                    debug "Unexpected gui match in Nu.Sim.handleIntegrationMessage."
+                    (keepRunning, world)
+                | Block _
+                | Avatar _ ->
+                    let actor = get entityModel actorLens
+                    let actor' = { actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                                              Rotation = bodyTransformMessage.Rotation }
+                    let world' = set actor' world <| worldActorLens bodyTransformMessage.EntityAddress
+                    (keepRunning, world')
+                | TileMap _ ->
+                    // nothing to do here for tile map
+                    (keepRunning, world)
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)

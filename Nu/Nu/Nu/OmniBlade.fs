@@ -17,7 +17,8 @@ open Nu.Games
 open Nu.Sim
 module OmniBlade =
 
-    let IncomingTime = 45
+    // transition literals
+    let IncomingTime = 60
     let IdlingTime = 60
     let OutgoingTime = 30
 

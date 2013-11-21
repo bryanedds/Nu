@@ -6,7 +6,97 @@
    <property name="PackageName" value="Default"/>
    <property name="SpriteAssetName" value="TileSet"/>
   </properties>
-  <image source="sewer_tileset.png" trans="ff00ff" width="192" height="217"/>
+  <image source="TileSet.png" trans="ff00ff" width="192" height="217"/>
+  <tile id="0">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="11">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="13">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="16">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="17">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="19">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="38">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="39">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
+  <tile id="44">
+   <properties>
+    <property name="c" value=""/>
+   </properties>
+  </tile>
  </tileset>
  <layer name="Bottom" width="50" height="50">
   <data encoding="base64" compression="zlib">

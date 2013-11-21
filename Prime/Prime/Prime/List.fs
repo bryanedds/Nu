@@ -141,6 +141,11 @@ let rec fornone pred list =
     match list with
     | [] -> true
     | head :: tail -> not (pred head) && fornone pred tail
+    
+/// Foldi for lists.
+let foldi folder state list =
+    let seq' = Seq.foldi folder state list
+    List.ofSeq seq'
 
 /// Take for lists.
 /// TODO: make this tail-recursive.
