@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <GroupModel>
-    <ModelType>Nu.GroupModel+MapGroup</ModelType>
+    <ModelType>Nu.GroupModel+FieldGroup</ModelType>
     <Group>Nu.Group</Group>
     <EntityModels>map [(back, Nu.EntityModel+Button); (21, Nu.EntityModel+Label); (avatar, Nu.EntityModel+Avatar); ... ]</EntityModels>
     <EntityModel>
