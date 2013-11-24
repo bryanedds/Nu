@@ -55,6 +55,7 @@
     <Compile Include="Input.fs" />
     <Compile Include="Camera.fs" />
     <Compile Include="DomainModel.fs" />
+    <Compile Include="OmniData.fs" />
     <Compile Include="Entities.fs" />
     <Compile Include="Groups.fs" />
     <Compile Include="Screens.fs" />
@@ -106,7 +107,7 @@
     <None Include="Omni.nugroup">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Map.nugroup">
+    <None Include="Field.nugroup">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="AssetGraph.xml">

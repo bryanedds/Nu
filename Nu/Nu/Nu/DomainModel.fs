@@ -24,7 +24,7 @@ module DomainModel =
             | None -> removeChild head parent
             | Some child -> addChild head parent child
         | _ -> failwith ("Invalid address '" + str address + "'.")
-                        
+
     let getChild optChildFinder parent address =
         Option.get <| getOptChild optChildFinder parent address
 

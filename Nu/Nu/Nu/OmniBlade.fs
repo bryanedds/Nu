@@ -49,19 +49,19 @@ module OmniBlade =
     let CreditsGroupFileName = "Credits.nugroup"
     let ClickCreditsGroupBackAddress = straddrstr "click" CreditsGroupAddress "back"
 
-    // map literals
-    let MapAddress = addr "map"
-    let MapGroupName = Lun.make "group"
-    let MapGroupAddress = MapAddress @ [MapGroupName]
-    let MapGroupFileName = "Map.nugroup"
-    let ClickMapGroupBackAddress = straddrstr "click" MapGroupAddress "back"
+    // field literals
+    let FieldAddress = addr "field"
+    let FieldGroupName = Lun.make "group"
+    let FieldGroupAddress = FieldAddress @ [FieldGroupName]
+    let FieldGroupFileName = "Field.nugroup"
+    let ClickFieldGroupBackAddress = straddrstr "click" FieldGroupAddress "back"
 
     // omni literals
     let OmniAddress = addr "omni"
 
     let createTitleScreen world =
         let world' = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
-        let world'' = subscribe ClickTitleGroupNewAddress [] (handleEventAsScreenTransition TitleAddress MapAddress) world'
+        let world'' = subscribe ClickTitleGroupNewAddress [] (handleEventAsScreenTransition TitleAddress FieldAddress) world'
         let world'3 = subscribe ClickTitleGroupLoadAddress [] (handleEventAsScreenTransition TitleAddress LoadAddress) world''
         let world'4 = subscribe ClickTitleGroupCreditsAddress [] (handleEventAsScreenTransition TitleAddress CreditsAddress) world'3
         subscribe ClickTitleGroupExitAddress [] handleEventAsExit world'4
@@ -74,9 +74,9 @@ module OmniBlade =
         let world' = createDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress world
         subscribe ClickCreditsGroupBackAddress [] (handleEventAsScreenTransition CreditsAddress TitleAddress) world'
 
-    let createMapScreen world =
-        let world' = createDissolveScreenFromFile MapGroupFileName MapGroupName IncomingTime OutgoingTime MapAddress world
-        subscribe ClickMapGroupBackAddress [] (handleEventAsScreenTransition MapAddress TitleAddress) world'
+    let createFieldScreen world =
+        let world' = createDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress world
+        subscribe ClickFieldGroupBackAddress [] (handleEventAsScreenTransition FieldAddress TitleAddress) world'
 
     let tryCreateOmniBladeWorld sdlDeps extData =
         let optWorld = tryCreateEmptyWorld sdlDeps extData
@@ -90,6 +90,6 @@ module OmniBlade =
             let world_ = createTitleScreen world_
             let world_ = createLoadScreen world_
             let world_ = createCreditsScreen world_
-            let world_ = createMapScreen world_
+            let world_ = createFieldScreen world_
             let world_ = transitionScreen SplashAddress world_
             Right world_

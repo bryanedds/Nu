@@ -105,8 +105,8 @@ module Sim =
     let GroupModelPublishingPriority = ScreenModelPublishingPriority * 0.5f
     let FinishedIncomingAddressPart = addr "finished/incoming"
     let FinishedOutgoingAddressPart = addr "finished/outgoing"
-    let MapFeelerName = Lun.make "feeler"
-    let MapAvatarName = Lun.make "avatar"
+    let FieldFeelerName = Lun.make "feeler"
+    let FieldAvatarName = Lun.make "avatar"
 
     let gameModelLens =
         { Get = fun this -> this.GameModel
@@ -744,20 +744,20 @@ module Sim =
         let world' = removeEntityModels address world
         set None world' (worldOptGroupModelLens address)
 
-    let adjustMapCamera groupAddress world =
-        let avatarAddress = groupAddress @ [MapAvatarName]
+    let adjustFieldCamera groupAddress world =
+        let avatarAddress = groupAddress @ [FieldAvatarName]
         let actor = get world <| worldActorLens avatarAddress
         let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
         { world with Camera = camera }
 
-    let adjustMapCameraHandler groupAddress _ _ message world =
-        (message, true, adjustMapCamera groupAddress world)
+    let adjustFieldCameraHandler groupAddress _ _ message world =
+        (message, true, adjustFieldCamera groupAddress world)
 
-    let moveMapAvatarHandler groupAddress _ _ message world =
-        let feelerAddress = groupAddress @ [MapFeelerName]
+    let moveFieldAvatarHandler groupAddress _ _ message world =
+        let feelerAddress = groupAddress @ [FieldFeelerName]
         let feeler = get world (worldFeelerLens feelerAddress)
         if feeler.IsTouched then
-            let avatarAddress = groupAddress @ [MapAvatarName]
+            let avatarAddress = groupAddress @ [FieldAvatarName]
             let avatar = get world <| worldAvatarLens avatarAddress
             let camera = world.Camera
             let view = getInverseViewF camera
@@ -769,16 +769,16 @@ module Sim =
             (message, true, world')
         else (message, true, world)
 
-    let addMapGroup address mapGroup entityModels world_ =
-        debugIf (fun () -> not <| Map.isEmpty mapGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
-        let world_ = subscribe TickAddress [] (moveMapAvatarHandler address) world_
-        let world_ = subscribe TickAddress [] (adjustMapCameraHandler address) world_
+    let addFieldGroup address fieldGroup entityModels world_ =
+        debugIf (fun () -> not <| Map.isEmpty fieldGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
+        let world_ = subscribe TickAddress [] (moveFieldAvatarHandler address) world_
+        let world_ = subscribe TickAddress [] (adjustFieldCameraHandler address) world_
         let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-        let world_ = set (MapGroup mapGroup) world_ (worldGroupModelLens address)
+        let world_ = set (FieldGroup fieldGroup) world_ (worldGroupModelLens address)
         let world_ = addEntityModels address entityModels world_
-        adjustMapCamera address world_
+        adjustFieldCamera address world_
 
-    let removeMapGroup address world_ =
+    let removeFieldGroup address world_ =
         let world_ = unsubscribe TickAddress [] world_
         let world_ = unsubscribe TickAddress [] world_
         let world_ = removeEntityModels address world_
@@ -787,13 +787,13 @@ module Sim =
     let addGroupModel address groupModel entityModels world =
         match groupModel with
         | Group group -> addGroup address group entityModels world
-        | MapGroup mapGroup -> addMapGroup address mapGroup entityModels world
+        | FieldGroup fieldGroup -> addFieldGroup address fieldGroup entityModels world
 
     let removeGroupModel address world =
         let groupModel = get world <| worldGroupModelLens address
         match groupModel with
         | Group _ -> removeGroup address world
-        | MapGroup _ -> removeMapGroup address world
+        | FieldGroup _ -> removeFieldGroup address world
 
     let addGroupModels address groupDescriptors world =
         List.fold
