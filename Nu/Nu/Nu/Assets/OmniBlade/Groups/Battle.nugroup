@@ -11,7 +11,7 @@
       <DownSprite>DualSpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>384;448</Position>
+      <Position>384;400</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
       <Name>dualSpecial</Name>
@@ -86,7 +86,7 @@
       <DownSprite>TargetDown;OmniBattle;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>384;520</Position>
+      <Position>384;472</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
       <Name>target</Name>
@@ -101,7 +101,7 @@
       <DownSprite>TripleSpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>456;448</Position>
+      <Position>456;400</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
       <Name>tripleSpecial</Name>
@@ -116,7 +116,7 @@
       <DownSprite>GoDown;OmniBattle;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>312;448</Position>
+      <Position>312;400</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
       <Name>23</Name>

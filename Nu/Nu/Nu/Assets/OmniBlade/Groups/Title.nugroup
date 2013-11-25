@@ -12,7 +12,7 @@
       <TextOffset>0;0</TextOffset>
       <TextColor>1;1;1;1</TextColor>
       <Entity>Nu.Entity</Entity>
-      <Position>144;88</Position>
+      <Position>144;32</Position>
       <Depth>0</Depth>
       <Size>640;128</Size>
       <Name>11</Name>
@@ -27,7 +27,7 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;272</Position>
+      <Position>344;216</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
       <Name>new</Name>
@@ -42,7 +42,7 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;488</Position>
+      <Position>344;456</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
       <Name>exit</Name>
@@ -56,7 +56,7 @@
       <Entity>Nu.Entity</Entity>
       <Position>0;0</Position>
       <Depth>-1</Depth>
-      <Size>900;600</Size>
+      <Size>960;544</Size>
       <Name>17</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
@@ -69,7 +69,7 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;344</Position>
+      <Position>344;296</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
       <Name>load</Name>
@@ -84,7 +84,7 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>344;416</Position>
+      <Position>344;376</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
       <Name>credits</Name>

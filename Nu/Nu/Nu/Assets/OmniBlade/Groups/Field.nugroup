@@ -12,7 +12,7 @@
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
       <Entity>Nu.Entity</Entity>
-      <Position>336;488</Position>
+      <Position>336;456</Position>
       <Depth>10</Depth>
       <Size>256;64</Size>
       <Name>back</Name>
@@ -26,7 +26,7 @@
       <Entity>Nu.Entity</Entity>
       <Position>0;0</Position>
       <Depth>-10</Depth>
-      <Size>900;600</Size>
+      <Size>960;544</Size>
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
@@ -68,7 +68,7 @@
       <Entity>Nu.Entity</Entity>
       <Position>0;0</Position>
       <Depth>-5</Depth>
-      <Size>900;600</Size>
+      <Size>960;544</Size>
       <Name>feeler</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
