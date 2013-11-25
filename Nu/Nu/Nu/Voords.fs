@@ -8,6 +8,7 @@ module Voords =
     modern mobile resolutions. Devices with other ratios will have to have their displays padded
     with extra background imagery. *)
 
+    // TODO: implement virtual scaling in renderer / editor view / et al.
     let ActualResolutionX = Int32.Parse ConfigurationManager.AppSettings.["ActualResolutionX"]
     let ActualResolutionY = Int32.Parse ConfigurationManager.AppSettings.["ActualResolutionY"]
     let VirtualResolutionX = 960
