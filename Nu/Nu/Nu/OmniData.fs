@@ -111,7 +111,7 @@ module OmniData =
         | DualSpecial of DualSpecialType
         | TripleSpecial of TripleSpecialType
 
-    type [<StructuralEquality; NoComparison>] TargetType =
+    type [<StructuralEquality; NoComparison>] Targetype =
         | Single
         | DirectedLine
         | HorizontalLine
@@ -127,6 +127,23 @@ module OmniData =
         | Defend
         | Consumable of ConsumableType
         | Special of SpecialType
+
+    type [<StructuralEquality; NoComparison>] TargetingInputType =
+        | AttackInput of Id
+        | ItemInput of Id // for now, just uses GreenHerb
+        | SpecialInput of Id // for now, just uses DefendCounter?
+
+     type [<StructuralEquality; NoComparison>] BattleInputState =
+        | GoInput of Id Set
+        | CrossInput of Id * Id Set
+        | TargetableInput of TargetingInputType
+        | TargetInput of TargetingInputType
+
+    type [<StructuralEquality; NoComparison>] BattleState =
+        | BattleBegin
+        | BattleAdvance of BattleInputState
+        | BattleInput of BattleInputState
+        | BattleEnding of bool
 
     type [<StructuralEquality; NoComparison>] Weapon =
         { Type : WeaponType
@@ -155,7 +172,7 @@ module OmniData =
           Element : Element
           AddStatus : Status Set
           RemoveStatus : Status Set
-          TargetType : TargetType
+          Targetype : Targetype
           Revive : bool }
 
     type [<StructuralEquality; NoComparison>] CharacterType =
@@ -204,14 +221,21 @@ module OmniData =
         { Id : Id
           Name : string
           BossEnemy : CharacterData
+          BossEnemyDefeatEndsBattle : bool
           MinorEnemies : CharacterData list
+          MinorEnemySpawnsMax : int
           AwardType : ItemType }
 
-    type [<StructuralEquality; NoComparison>] PlayerState =
+    type [<StructuralEquality; NoComparison>] Battle =
+        { Data : BattleData
+          Enemies : Character option list
+          MinorEnemySpawns : int }
+
+    type [<StructuralEquality; NoComparison>] Player =
         { FieldId : Id
           FieldPosition : Vector2
           OptBattleDataId : Id option
-          Characters : Character option list
+          Allies : Character option list
           Gold : int }
 
     type [<StructuralEquality; NoComparison>] MoveUsage =

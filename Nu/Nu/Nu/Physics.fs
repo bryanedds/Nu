@@ -101,7 +101,7 @@ type [<ReferenceEquality>] Integrator =
 
 module Physics =
 
-    /// NOTE: Ironically, not purely functional (TODO: maybe address this?)
+    /// NOTE: Ironically, not purely functional.
     let getPhysicsId = createGetNextId ()
 
     let toPixel value =
