@@ -420,6 +420,7 @@ module Program =
             refWorld := changer !refWorld
             worldChangers.Add changer
 
+    // TODO: add undo to quick size
     let handleQuickSize (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let optEntityModelTds = form.propertyGrid.SelectedObject
         match optEntityModelTds with
