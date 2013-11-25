@@ -16,9 +16,13 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Group =
 type [<StructuralEquality; NoComparison; CLIMutable>] FieldGroup =
     { Group : Group }
 
+type [<StructuralEquality; NoComparison; CLIMutable>] BattleGroup =
+    { Group : Group }
+
 type [<StructuralEquality; NoComparison>] GroupModel =
     | Group of Group
     | FieldGroup of FieldGroup
+    | BattleGroup of BattleGroup
 
 module Groups =
 
