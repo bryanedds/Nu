@@ -152,6 +152,6 @@ module Entity = // TODO: rename module / file
         writeGroupModelFile testGroupModel fileName world
 
     let loadFile (fileName : string) world =
-        let (testGroupModel, testEntityModels) = loadGroupModelFile fileName world
         let world' = removeGroupModel EditorGroupAddress world
+        let (testGroupModel, testEntityModels) = loadGroupModelFile fileName world'
         addGroupModel EditorGroupAddress testGroupModel testEntityModels world'

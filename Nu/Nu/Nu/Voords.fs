@@ -1,10 +1,16 @@
 ﻿namespace Nu
+open System
+open System.Configuration
 module Voords =
 
-    (* WISDOM: Virtual coordinates are necessary, but they should be 1-to-1, 1-to-2, or 2-to-1 on the
-    device most likely to be used. Devices with other ratios will just have to suffer aliasing. *)
+    (* WISDOM: Virtual coordinates can be necessary, but they should be avoided if possible.
+    Virtual resolution is based on PSVita as it's pretty much the lowest common denominator for
+    modern mobile resolutions. Devices with other ratios will have to have their displays padded
+    with extra background imagery. *)
 
-    // Virtual resolution based on iPhone 4 in horizontal mode (since I'm guessing this is our most
-    // likely preferred device).
-    let VesolutionX = 960.0f
-    let VesolutionY = 640.0f
+    let ActualResolutionX = Int32.Parse ConfigurationManager.AppSettings.["ActualResolutionX"]
+    let ActualResolutionY = Int32.Parse ConfigurationManager.AppSettings.["ActualResolutionY"]
+    let VirtualResolutionX = 960
+    let VirtualResolutionY = 544
+    let VirtualMultiplierX = single VirtualResolutionX / single ActualResolutionX
+    let VirtualMultiplierY = single VirtualResolutionY / single ActualResolutionY

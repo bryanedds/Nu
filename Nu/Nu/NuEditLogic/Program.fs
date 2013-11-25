@@ -14,6 +14,7 @@ open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
 open Nu
 open Nu.Core
+open Nu.Voords
 open Nu.Math
 open Nu.Metadata
 open Nu.Physics
@@ -52,7 +53,6 @@ module Program =
     let DefaultCreationDepth = 0.0f
     let DefaultSize = 64.0f
     let DefaultRotation = 0.0f
-    let (ScreenWidth, ScreenHeight) = (900, 600)
     let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
     let pushPastWorld pastWorld world =
@@ -84,10 +84,13 @@ module Program =
             with get () = property.Name.Contains "Id"
 
         override this.GetValue source =
-            let entityModelTds = source :?> EntityModelTypeDescriptorSource
-            let entityModelLens = worldEntityModelLens entityModelTds.Address
-            let entityModel = get !entityModelTds.RefWorld entityModelLens
-            getEntityModelPropertyValue property entityModel
+            // BUG: sometimes source is null, and I have no idea WHY!
+            if source = null then null
+            else
+                let entityModelTds = source :?> EntityModelTypeDescriptorSource
+                let entityModelLens = worldEntityModelLens entityModelTds.Address
+                let entityModel = get !entityModelTds.RefWorld entityModelLens
+                getEntityModelPropertyValue property entityModel
 
         override this.SetValue (source, value) =
             let entityModelTds = source :?> EntityModelTypeDescriptorSource
@@ -444,7 +447,7 @@ module Program =
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
-        form.displayPanel.MaximumSize <- Drawing.Size (ScreenWidth, ScreenHeight)
+        form.displayPanel.MaximumSize <- Drawing.Size (VirtualResolutionX, VirtualResolutionY)
         form.positionSnapTextBox.Text <- str DefaultPositionSnap
         form.rotationSnapTextBox.Text <- str DefaultRotationSnap
         form.creationDepthTextBox.Text <- str DefaultCreationDepth
