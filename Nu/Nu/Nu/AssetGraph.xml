@@ -1,18 +1,38 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <root>
   <package name="Default">
-    <asset name="Image" fileName="Image.png" associations="Rendering"/>
-    <asset name="Image2" fileName="Image2.png" associations="Rendering"/>
-    <asset name="Image3" fileName="Image3.png" associations="Rendering"/>
-    <asset name="Image4" fileName="Image4.png" associations="Rendering"/>
-    <asset name="Image5" fileName="Image5.png" associations="Rendering"/>
-    <asset name="Image6" fileName="Image6.png" associations="Rendering"/>
-    <asset name="Image7" fileName="Image7.png" associations="Rendering"/>
-    <asset name="Image8" fileName="Image8.png" associations="Rendering"/>
-    <asset name="Font" fileName="FreeMonoBold.032.ttf" associations="Rendering"/>
-    <asset name="TileSet" fileName="TileSet.png" associations="Rendering"/>
-    <asset name="Sound" fileName="Sound.wav" associations="Audio"/>
-    <asset name="Song" fileName="Song.ogg" associations="Audio"/>
-    <asset name="TileMap" fileName="TileMap.tmx" associations=""/>
+    <asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
+    <asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
+    <asset name="Image3" fileName="Assets/Default/Image3.png" associations="Rendering"/>
+    <asset name="Image4" fileName="Assets/Default/Image4.png" associations="Rendering"/>
+    <asset name="Image5" fileName="Assets/Default/Image5.png" associations="Rendering"/>
+    <asset name="Image6" fileName="Assets/Default/Image6.png" associations="Rendering"/>
+    <asset name="Image7" fileName="Assets/Default/Image7.png" associations="Rendering"/>
+    <asset name="Image8" fileName="Assets/Default/Image8.png" associations="Rendering"/>
+    <asset name="Font" fileName="Assets/Default/FreeMonoBold.032.ttf" associations="Rendering"/>
+    <asset name="TileSet" fileName="Assets/Default/TileSet.png" associations="Rendering"/>
+    <asset name="Sound" fileName="Assets/Default/Sound.wav" associations="Audio"/>
+    <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
+    <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
+  </package>
+  <package name="OmniBattle">
+    <asset name="Back" fileName="Assets/OmniBlade/Battle/Back.png" associations="Rendering"/>
+    <asset name="BackDown" fileName="Assets/OmniBlade/Battle/BackDown.png" associations="Rendering"/>
+    <asset name="Defend" fileName="Assets/OmniBlade/Battle/Defend.png" associations="Rendering"/>
+    <asset name="DefendDown" fileName="Assets/OmniBlade/Battle/DefendDown.png" associations="Rendering"/>
+    <asset name="DualSpecial" fileName="Assets/OmniBlade/Battle/DualSpecial.png" associations="Rendering"/>
+    <asset name="DualSpecialDown" fileName="Assets/OmniBlade/Battle/DualSpecialDown.png" associations="Rendering"/>
+    <asset name="Fight" fileName="Assets/OmniBlade/Battle/Fight.png" associations="Rendering"/>
+    <asset name="FightDown" fileName="Assets/OmniBlade/Battle/FightDown.png" associations="Rendering"/>
+    <asset name="Go" fileName="Assets/OmniBlade/Battle/Go.png" associations="Rendering"/>
+    <asset name="GoDown" fileName="Assets/OmniBlade/Battle/GoDown.png" associations="Rendering"/>
+    <asset name="Item" fileName="Assets/OmniBlade/Battle/Item.png" associations="Rendering"/>
+    <asset name="ItemDown" fileName="Assets/OmniBlade/Battle/ItemDown.png" associations="Rendering"/>
+    <asset name="Special" fileName="Assets/OmniBlade/Battle/Special.png" associations="Rendering"/>
+    <asset name="SpecialDown" fileName="Assets/OmniBlade/Battle/SpecialDown.png" associations="Rendering"/>
+    <asset name="Target" fileName="Assets/OmniBlade/Battle/Target.png" associations="Rendering"/>
+    <asset name="TargetDown" fileName="Assets/OmniBlade/Battle/TargetDown.png" associations="Rendering"/>
+    <asset name="TripleSpecial" fileName="Assets/OmniBlade/Battle/TripleSpecial.png" associations="Rendering"/>
+    <asset name="TripleSpecialDown" fileName="Assets/OmniBlade/Battle/TripleSpecialDown.png" associations="Rendering"/>
   </package>
 </root>

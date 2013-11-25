@@ -29,7 +29,7 @@ module OmniBlade =
     let TitleAddress = addr "title"
     let TitleGroupName = Lun.make "group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
-    let TitleGroupFileName = "Title.nugroup"
+    let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
     let ClickTitleGroupNewAddress = straddrstr "click" TitleGroupAddress "new"
     let ClickTitleGroupLoadAddress = straddrstr "click" TitleGroupAddress "load"
     let ClickTitleGroupCreditsAddress = straddrstr "click" TitleGroupAddress "credits"
@@ -39,21 +39,21 @@ module OmniBlade =
     let LoadAddress = addr "load"
     let LoadGroupName = Lun.make "group"
     let LoadGroupAddress = LoadAddress @ [LoadGroupName]
-    let LoadGroupFileName = "Load.nugroup"
+    let LoadGroupFileName = "Assets/OmniBlade/Groups/Load.nugroup"
     let ClickLoadGroupBackAddress = straddrstr "click" LoadGroupAddress "back"
 
     // credits literals
     let CreditsAddress = addr "credits"
     let CreditsGroupName = Lun.make "group"
     let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
-    let CreditsGroupFileName = "Credits.nugroup"
+    let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
     let ClickCreditsGroupBackAddress = straddrstr "click" CreditsGroupAddress "back"
 
     // field literals
     let FieldAddress = addr "field"
     let FieldGroupName = Lun.make "group"
     let FieldGroupAddress = FieldAddress @ [FieldGroupName]
-    let FieldGroupFileName = "Field.nugroup"
+    let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
     let ClickFieldGroupBackAddress = straddrstr "click" FieldGroupAddress "back"
 
     // omni literals
