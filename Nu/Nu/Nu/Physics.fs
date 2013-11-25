@@ -231,6 +231,6 @@ module Physics =
         messages
 
     let makeIntegrator gravity =
-         { PhysicsContext = FarseerPhysics.Dynamics.World Gravity
+         { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 Gravity)
            Bodies = BodyDictionary ()
            IntegrationMessages = List<IntegrationMessage> () }
