@@ -273,11 +273,6 @@
     <Reference Include="xunit">
       <HintPath>..\..\xUnit\xunit.dll</HintPath>
     </Reference>
-    <ProjectReference Include="..\..\..\Aml\Aml\Aml\Aml.fsproj">
-      <Name>Aml</Name>
-      <Project>{6703b97a-6b6d-4e68-ba67-4a29ee72ec42}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
       <Name>Prime</Name>
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>

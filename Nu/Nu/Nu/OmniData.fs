@@ -11,8 +11,8 @@ module OmniData =
 
     type [<StructuralEquality; StructuralComparisonAttribute>] Status =
         | Strong
+        | Gifted
         | Shell
-        | Orb
         | Haste
         | Slow
         | Poison
@@ -77,9 +77,9 @@ module OmniData =
         | DualCounter // if enemy attacks either ally, both allies counter
         | FireCounter
         | DeathCounter
-        | GreenWine // Double Green Herb All
-        | RedWine // Double Red Herb All
-        | BlueWine // Double Blue Herb All
+        | GreenTonic // Double Green Herb All
+        | RedTonic // Double Red Herb All
+        | BlueTonic // Double Blue Herb All
         | SuperSalts // super salts restores life and fill HP to max
         | TriCounter
         | HolyWind // shell all
