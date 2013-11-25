@@ -4,6 +4,7 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu.Core
+open Nu.Voords
 open Nu.Constants
 open Nu.Sdl
 open Nu.Audio
@@ -36,9 +37,9 @@ module Program =
 
     let [<EntryPoint>] main _ =
         initTypeConverters ()
-        let sdlViewConfig = NewWindow { WindowTitle = "Nu Game Engine"; WindowX = 100; WindowY = 100; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+        let sdlViewConfig = NewWindow { WindowTitle = "OmniBlade"; WindowX = 32; WindowY = 32; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-        let sdlConfig = makeSdlConfig sdlViewConfig 900 600 sdlRenderFlags 1024
+        let sdlConfig = makeSdlConfig sdlViewConfig VirtualResolutionX VirtualResolutionY sdlRenderFlags 1024
         run
             (fun sdlDeps -> tryCreateOmniBladeWorld sdlDeps ())
             (fun world -> updateTransition (fun world' -> (true, world')) world)

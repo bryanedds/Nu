@@ -870,7 +870,10 @@ module Sim =
         | Feeler _ -> world
         | Block block -> registerBlockPhysics (addrstr groupAddress block.Actor.Entity.Name) block world
         | Avatar avatar -> registerAvatarPhysics (addrstr groupAddress avatar.Actor.Entity.Name) avatar world
-        | TileMap tileMap -> snd <| registerTileMapPhysics (addrstr groupAddress tileMap.Actor.Entity.Name) tileMap world
+        | TileMap tileMap -> 
+            let tileMapAddress = addrstr groupAddress tileMap.Actor.Entity.Name
+            let (tileMap', world') = registerTileMapPhysics tileMapAddress tileMap world
+            set tileMap' world' <| worldTileMapLens tileMapAddress
 
     let reregisterPhysicsHack groupAddress world =
         let groupModel = get world <| worldGroupModelLens groupAddress
