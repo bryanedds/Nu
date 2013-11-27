@@ -13,16 +13,16 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Group =
     { Id : Id
       EntityModels : Map<Lun, EntityModel> }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] FieldGroup =
+type [<StructuralEquality; NoComparison; CLIMutable>] OmniFieldGroup =
     { Group : Group }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] BattleGroup =
+type [<StructuralEquality; NoComparison; CLIMutable>] OmniBattleGroup =
     { Group : Group }
 
 type [<StructuralEquality; NoComparison>] GroupModel =
     | Group of Group
-    | FieldGroup of FieldGroup
-    | BattleGroup of BattleGroup
+    | OmniFieldGroup of OmniFieldGroup
+    | OmniBattleGroup of OmniBattleGroup
 
 module Groups =
 
@@ -30,11 +30,13 @@ module Groups =
         { Get = fun this ->
             match this with
             | Group group -> group
-            | FieldGroup fieldGroup -> fieldGroup.Group
+            | OmniFieldGroup omniFieldGroup -> omniFieldGroup.Group
+            | OmniBattleGroup omniBattleGroup -> omniBattleGroup.Group
           Set = fun group this ->
             match this with
             | Group _ -> Group group
-            | FieldGroup fieldGroup -> FieldGroup { fieldGroup with Group = group }}
+            | OmniFieldGroup omniFieldGroup -> OmniFieldGroup { omniFieldGroup with Group = group }
+            | OmniBattleGroup omniBattleGroup -> OmniBattleGroup { omniBattleGroup with Group = group }}
 
     let groupIdLens =
         { Get = fun this -> (get this groupLens).Id
@@ -191,12 +193,9 @@ module Groups =
         let assemblyName = (Assembly.GetExecutingAssembly ()).FullName
         let groupModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> GroupModel
         match groupModel with
-        | Group _ ->
-            Group <|
-                makeDefaultGroup ()
-        | FieldGroup _ ->
-            FieldGroup
-                { Group = makeDefaultGroup () }
+        | Group _ -> Group <| makeDefaultGroup ()
+        | OmniFieldGroup _ -> OmniFieldGroup { Group = makeDefaultGroup () }
+        | OmniBattleGroup _ -> OmniBattleGroup { Group = makeDefaultGroup () }
 
     let writeGroupEntitiesToXml (writer : XmlWriter) group =
         for entityModelKvp in group.EntityModels do
@@ -208,9 +207,12 @@ module Groups =
         | Group group ->
             writeModelPropertiesMany writer "Nu.GroupModel+Group" [group :> obj]
             writeGroupEntitiesToXml writer group
-        | FieldGroup fieldGroup ->
-            writeModelPropertiesMany writer "Nu.GroupModel+FieldGroup" [fieldGroup :> obj; fieldGroup.Group :> obj]
-            writeGroupEntitiesToXml writer fieldGroup.Group
+        | OmniFieldGroup omniFieldGroup ->
+            writeModelPropertiesMany writer "Nu.GroupModel+OmniFieldGroup" [omniFieldGroup :> obj; omniFieldGroup.Group :> obj]
+            writeGroupEntitiesToXml writer omniFieldGroup.Group
+        | OmniBattleGroup omniBattleGroup ->
+            writeModelPropertiesMany writer "Nu.GroupModel+OmniBattleGroup" [omniBattleGroup :> obj; omniBattleGroup.Group :> obj]
+            writeGroupEntitiesToXml writer omniBattleGroup.Group
 
     let loadEntityModelsFromXml (groupModelNode : XmlNode) =
         let entityModelNodes = groupModelNode.SelectNodes "EntityModel"
@@ -223,7 +225,8 @@ module Groups =
         let entityModels = loadEntityModelsFromXml (groupModelNode : XmlNode)
         match groupModel with
         | Group group -> setModelProperties3 (fun _ -> ()) groupModelNode group
-        | FieldGroup fieldGroup -> setModelProperties3 (fun _ -> fieldGroup.Group) groupModelNode fieldGroup
+        | OmniFieldGroup omniFieldGroup -> setModelProperties3 (fun _ -> omniFieldGroup.Group) groupModelNode omniFieldGroup
+        | OmniBattleGroup omniBattleGroup -> setModelProperties3 (fun _ -> omniBattleGroup.Group) groupModelNode omniBattleGroup
         (groupModel, entityModels)
 
     let writeGroupModelFile groupModel fileName world =

@@ -37,8 +37,13 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
       OutgoingModel : TransitionModel
       GroupModels : Map<Lun, GroupModel> }
 
+type [<StructuralEquality; NoComparison; CLIMutable>] OmniBattleScreen =
+    { Screen : Screen
+      Battle : OmniBattle }
+
 type [<StructuralEquality; NoComparison>] ScreenModel =
     | Screen of Screen
+    | OmniBattleScreen of OmniBattleScreen
 
 module Screens =
 
@@ -72,9 +77,11 @@ module Screens =
         { Get = fun this ->
             match this with
             | Screen screen -> screen
+            | OmniBattleScreen omniBattleScreen -> omniBattleScreen.Screen
           Set = fun screen this ->
             match this with
-            | Screen _ -> Screen screen }
+            | Screen _ -> Screen screen
+            | OmniBattleScreen omniBattleScreen -> OmniBattleScreen { omniBattleScreen with Screen = screen }}
 
     let screenIdLens =
         { Get = fun this -> (get this screenLens).Id

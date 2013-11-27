@@ -769,12 +769,12 @@ module Sim =
             (message, true, world')
         else (message, true, world)
 
-    let addFieldGroup address fieldGroup entityModels world_ =
-        debugIf (fun () -> not <| Map.isEmpty fieldGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
+    let addFieldGroup address (omniFieldGroup : OmniFieldGroup) entityModels world_ =
+        debugIf (fun () -> not <| Map.isEmpty omniFieldGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
         let world_ = subscribe TickAddress [] (moveFieldAvatarHandler address) world_
         let world_ = subscribe TickAddress [] (adjustFieldCameraHandler address) world_
         let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-        let world_ = set (FieldGroup fieldGroup) world_ (worldGroupModelLens address)
+        let world_ = set (OmniFieldGroup omniFieldGroup) world_ (worldGroupModelLens address)
         let world_ = addEntityModels address entityModels world_
         adjustFieldCamera address world_
 
@@ -787,13 +787,15 @@ module Sim =
     let addGroupModel address groupModel entityModels world =
         match groupModel with
         | Group group -> addGroup address group entityModels world
-        | FieldGroup fieldGroup -> addFieldGroup address fieldGroup entityModels world
+        | OmniFieldGroup omniFieldGroup -> addFieldGroup address omniFieldGroup entityModels world
+        | OmniBattleGroup omniBattleGroup -> addBattleGroup address omniBattleGroup entityModels world
 
     let removeGroupModel address world =
         let groupModel = get world <| worldGroupModelLens address
         match groupModel with
         | Group _ -> removeGroup address world
-        | FieldGroup _ -> removeFieldGroup address world
+        | OmniFieldGroup _ -> removeFieldGroup address world
+        | OmniBattleGroup _ -> removeBattleGroup address world
 
     let addGroupModels address groupDescriptors world =
         List.fold
@@ -823,11 +825,13 @@ module Sim =
     let addScreenModel address screenModel groupDescriptor world =
         match screenModel with
         | Screen screen -> addScreen address screen groupDescriptor world
+        | OmniBattleScreen omniBattleScreen -> addOmniBattleScreen address omniBattleScreen groupDescriptor world
 
     let removeScreenModel address world =
         let screenModel = get world <| worldScreenModelLens address
         match screenModel with
         | Screen screen -> removeScreen address world
+        | OmniBattleScreen omniBattleScreen -> removeOmniBattleScreen address world
 
     let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
         let world' = unsubscribe address subscriber world
