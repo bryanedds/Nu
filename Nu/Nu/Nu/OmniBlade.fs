@@ -56,8 +56,8 @@ module OmniBlade =
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
     let ClickFieldGroupBackAddress = straddrstr "click" FieldGroupAddress "back"
 
-    // omni literals
-    let OmniAddress = addr "omni"
+    // time literals
+    let TimeAddress = addr "time"
 
     let createTitleScreen world =
         let world' = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
