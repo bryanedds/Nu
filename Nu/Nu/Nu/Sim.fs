@@ -784,6 +784,16 @@ module Sim =
         let world_ = removeEntityModels address world_
         set None world_ (worldOptGroupModelLens address)
 
+    let addBattleGroup address (omniBattleGroup : OmniBattleGroup) entityModels world_ =
+        debugIf (fun () -> not <| Map.isEmpty omniBattleGroup.Group.EntityModels) "Adding populated groups to the world is not supported."
+        let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
+        let world_ = set (OmniBattleGroup omniBattleGroup) world_ (worldGroupModelLens address)
+        addEntityModels address entityModels world_
+
+    let removeBattleGroup address world_ =
+        let world_ = removeEntityModels address world_
+        set None world_ (worldOptGroupModelLens address)
+
     let addGroupModel address groupModel entityModels world =
         match groupModel with
         | Group group -> addGroup address group entityModels world
@@ -819,6 +829,15 @@ module Sim =
         addGroupModels address groupDescriptors world'
 
     let removeScreen address world =
+        let world' = removeGroupModels address world
+        set None world' (worldOptScreenModelLens address)
+
+    let addOmniBattleScreen address omniBattleScreen groupDescriptors world =
+        debugIf (fun () -> not <| Map.isEmpty omniBattleScreen.Screen.GroupModels) "Adding populated screens to the world is not supported."
+        let world' = set (OmniBattleScreen omniBattleScreen) world (worldScreenModelLens address)
+        addGroupModels address groupDescriptors world'
+
+    let removeOmniBattleScreen address world =
         let world' = removeGroupModels address world
         set None world' (worldOptScreenModelLens address)
 
