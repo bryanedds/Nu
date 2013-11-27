@@ -192,7 +192,7 @@
     <None Include="Assets\OmniBlade\Battle\Placeholder\Ally.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\OmniBlade\Groups\Credits.nugroup">
+    <None Include="Assets\OmniBlade\Groups\Battle.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\OmniBlade\Groups\Field.nugroup">
@@ -201,13 +201,13 @@
     <None Include="Assets\OmniBlade\Groups\Load.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\OmniBlade\Groups\Omni.nugroup">
+    <None Include="Assets\OmniBlade\Groups\Time.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\OmniBlade\Groups\Title.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\OmniBlade\Groups\Battle.nugroup">
+    <None Include="Assets\OmniBlade\Groups\Credits.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Interactive.fsx" />
