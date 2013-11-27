@@ -20,9 +20,14 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Game =
     { Id : Id
       ScreenModels : Map<Lun, ScreenModel>
       OptSelectedScreenModelAddress : Address option }
+
+type [<StructuralEquality; NoComparison; CLIMutable>] OmniGame =
+    { Game : Game
+      OptPlayer : OmniPlayer option }
         
 type [<StructuralEquality; NoComparison>] GameModel =
     | Game of Game
+    | OmniGame of OmniGame
 
 module Games =
 
@@ -30,9 +35,11 @@ module Games =
         { Get = fun this ->
             match this with
             | Game game -> game
+            | OmniGame omniGame -> omniGame.Game
           Set = fun game this ->
             match this with
-            | Game _ -> Game game }
+            | Game _ -> Game game
+            | OmniGame omniGame -> OmniGame { omniGame with Game = game }}
 
     let gameIdLens =
         { Get = fun this -> (get this gameLens).Id
