@@ -6,11 +6,8 @@ open Nu.Core
 open Nu.Entities
 open Nu.Groups
 open Nu.WorldModule
-module Entity = // TODO: rename module / file
-
-    let EditorScreenAddress = addr "editorScreen"
-    let EditorGroupName = Lun.make "editorGroup"
-    let EditorGroupAddress = EditorScreenAddress @ [EditorGroupName]
+open NuEditLogic.Constants
+module Reflection =
 
     let getEntityModelTypes (entityModel : EntityModel) =
         match entityModel with
