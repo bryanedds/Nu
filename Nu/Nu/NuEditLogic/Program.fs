@@ -182,7 +182,7 @@ module Program =
             if form.interactButton.Checked then (message, true, world_)
             else
                 let groupModel = get world_ (worldGroupModelLens EditorGroupAddress)
-                let entityModels = Map.toValueList <| (get groupModel groupLens).EntityModels
+                let entityModels = Map.toValueList (get world_ <| worldEntityModelsLens EditorGroupAddress)
                 let optPicked = tryPick position entityModels world_
                 match optPicked with
                 | None -> (handle message, true, world_)
@@ -482,7 +482,7 @@ module Program =
 
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
         let screenModel = Screen <| makeDissolveScreen 100 100
-        let groupModel = Group { Id = getNuId (); EntityModels = Map.empty }
+        let groupModel = Group { Id = getNuId () }
         let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         let optWorld = tryCreateEmptyWorld sdlDeps editorState
         match optWorld with

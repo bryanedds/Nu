@@ -43,11 +43,11 @@ type [<StructuralEquality; NoComparison>] OmniCharacterData =
       MoveData : OmniMoveData list // usable moves are queried
       EquipWeaponType : OmniWeaponType
       EquipArmorType : OmniArmorType
-      PhysicalRating : int // physical power is queried
-      MagicRating : int // magic power is queried
-      StaminaRating : int // hp max is queried
-      AgilityRating : int // tt gain is queried
-      WillRating : int // sp max is queried
+      PhysicalRating : int // physical power is calculated
+      MagicRating : int // magic power is calculated
+      StaminaRating : int // hp max is calculated
+      AgilityRating : int // tt gain is calculated
+      WillRating : int // sp max is calculated
       StartingExperience : int // this is the only experience for enemies
       ExperienceEarned : int // only used with enemies
       GoldEarned : int } // only used with enemies
