@@ -211,9 +211,9 @@ and Subscriptions = Map<Address, (Address * Subscription) list>
 /// A reference type with some value semantics.
 and [<ReferenceEquality>] World =
     { GameModel : GameModel
-      ScreenModels : Map<Lun, ScreenModel> // TODO: remove 'W'
-      GroupModels : Map<Lun, Map<Lun, GroupModel>> // TODO: remove 'W'
-      EntityModels : Map<Lun, Map<Lun, Map<Lun, EntityModel>>> // TODO: remove 'W'
+      ScreenModels : Map<Lun, ScreenModel>
+      GroupModels : Map<Lun, Map<Lun, GroupModel>>
+      EntityModels : Map<Lun, Map<Lun, Map<Lun, EntityModel>>>
       Camera : Camera
       Subscriptions : Subscriptions
       MouseState : MouseState

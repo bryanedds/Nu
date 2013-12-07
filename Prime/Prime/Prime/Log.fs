@@ -22,4 +22,6 @@ let debugIf predicate issue =
     if predicate () then
         Debug.Fail issue
         log issue
+#else
+    ()
 #endif

@@ -1,6 +1,7 @@
 ﻿// Aml - A Modular Language.
 // Copyright (C) Bryan Edds, 2012-2013.
 //
+// TODO: make Aml a namespace and place types directly in it.
 // TODO: increase this project's warning level to 5 and fix the corresponding issues.
 
 module Aml.Ast

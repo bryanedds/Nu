@@ -6,7 +6,7 @@
 #r "C:/OmniBlade/Aml/FParsec/Bin/FParsecCS.dll"
 #r "C:/OmniBlade/Aml/FParsec/Bin/FParsec.dll"
 #r "C:/OmniBlade/Aml/xUnit/xunit.dll"
-#r "C:/OmniBlade/Prime/Prime/Prime/bin/Release/Prime.exe"
+#r "C:/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
 
 #load "Ast.fs"
 #load "Constants.fs"
