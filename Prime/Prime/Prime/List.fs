@@ -11,6 +11,12 @@ open System.Collections.Generic
 /// Create a singleton list.
 let singleton elem = [elem]
 
+let cons head tail =
+    head :: tail
+
+let flipCons tail head =
+    head :: tail
+
 let rec private subpartitionPlus fnOptU list left right =
     match list with
     | [] -> (left, right)

@@ -4,15 +4,15 @@ open OpenTK
 type [<StructuralEquality; NoComparison>] OmniCharacter =
     { Id : Id
       Data : OmniCharacterData
-      Hp : int // hp max is queried
-      Sp : int // sp max is queried
+      Hp : int // hp max is calculated
+      Sp : int // sp max is calculated
       Tt : int // turn ticks
       Defending : bool
       Statuses : OmniStatusType Set
       EquippedWeapon : OmniWeaponType option
       EquippedArmor : OmniArmorType option
       EquippedRelics : OmniRelicType list
-      Experience : int } // level is queried
+      Experience : int } // level is calculated
 
 // NOTE: movement states probably ought to be keyed off the animation engine, but since it's
 // not implemented, movement states are defined manually
