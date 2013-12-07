@@ -5,7 +5,7 @@ open Nu
 open Nu.Core
 open Nu.Entities
 open Nu.Groups
-open Nu.Sim
+open Nu.WorldModule
 module Entity = // TODO: rename module / file
 
     let EditorScreenAddress = addr "editorScreen"

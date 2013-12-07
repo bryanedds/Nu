@@ -59,11 +59,12 @@
     <Compile Include="OmniData.fs" />
     <Compile Include="OmniState.fs" />
     <Compile Include="Sdl.fs" />
+    <Compile Include="Simulation.fs" />
     <Compile Include="Entities.fs" />
     <Compile Include="Groups.fs" />
     <Compile Include="Screens.fs" />
     <Compile Include="Games.fs" />
-    <Compile Include="Sim.fs" />
+    <Compile Include="World.fs" />
     <Compile Include="OmniBlade.fs" />
     <Compile Include="Program.fs" />
     <None Include="Assets\Default\FreeMonoBold.032.ttf">
