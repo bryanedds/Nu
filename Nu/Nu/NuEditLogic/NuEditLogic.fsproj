@@ -58,7 +58,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Entity.fs" />
+    <Compile Include="Constants.fs" />
+    <Compile Include="Reflection.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
