@@ -58,5 +58,5 @@ open Nu.Groups
 open Nu.Screens
 open Nu.Games
 open Nu.Sdl
-open Nu.Sim
+open Nu.WorldModule
 open Nu.OmniBlade
