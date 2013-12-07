@@ -24,7 +24,8 @@ open Nu.Groups
 open Nu.Screens
 open Nu.Games
 open Nu.WorldModule
-open NuEditLogic.Entity
+open NuEditLogic.Constants
+open NuEditLogic.Reflection
 
 type WorldChanger = World -> World
 
