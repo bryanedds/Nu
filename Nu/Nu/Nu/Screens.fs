@@ -5,29 +5,6 @@ open FSharpx.Lens.Operators
 open Nu.Core
 open Nu.DomainModel
 module Screens =
-    
-    let makeDissolveSprite () =
-        { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-
-    let makeDefaultTransition transitionType =
-        { Id = getNuId ()
-          Lifetime = 0
-          Ticks = 0
-          Type = transitionType }
-
-    let makeDissolveTransition lifetime transitionType =
-        { Transition = { makeDefaultTransition transitionType with Lifetime = lifetime }; Sprite = makeDissolveSprite () }
-
-    let makeDefaultScreen () =
-        { Id = getNuId ()
-          State = IdlingState
-          IncomingModel = Transition <| makeDefaultTransition Incoming
-          OutgoingModel = Transition <| makeDefaultTransition Outgoing }
-
-    let makeDissolveScreen incomingTime outgoingTime =
-        let incomingDissolve = Dissolve <| makeDissolveTransition incomingTime Incoming
-        let outgoingDissolve = Dissolve <| makeDissolveTransition outgoingTime Outgoing
-        { makeDefaultScreen () with IncomingModel = incomingDissolve; OutgoingModel = outgoingDissolve }
 
     let transitionLens =
         { Get = fun transitionModel ->
@@ -149,3 +126,26 @@ module Screens =
 
     let worldIncomingModelLens address = worldScreenModelLens address >>| incomingModelLens
     let worldOutgoingModelLens address = worldScreenModelLens address >>| outgoingModelLens
+    
+    let makeDissolveSprite () =
+        { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+    let makeDefaultTransition transitionType =
+        { Id = getNuId ()
+          Lifetime = 0
+          Ticks = 0
+          Type = transitionType }
+
+    let makeDissolveTransition lifetime transitionType =
+        { Transition = { makeDefaultTransition transitionType with Lifetime = lifetime }; Sprite = makeDissolveSprite () }
+
+    let makeDefaultScreen () =
+        { Id = getNuId ()
+          State = IdlingState
+          IncomingModel = Transition <| makeDefaultTransition Incoming
+          OutgoingModel = Transition <| makeDefaultTransition Outgoing }
+
+    let makeDissolveScreen incomingTime outgoingTime =
+        let incomingDissolve = Dissolve <| makeDissolveTransition incomingTime Incoming
+        let outgoingDissolve = Dissolve <| makeDissolveTransition outgoingTime Outgoing
+        { makeDefaultScreen () with IncomingModel = incomingDissolve; OutgoingModel = outgoingDissolve }

@@ -62,7 +62,8 @@ type [<StructuralEquality; NoComparison>] OmniBattleState =
 
 type [<StructuralEquality; NoComparison>] OmniMove =
     { Data : OmniMoveData
-      CharacterIds : Id list } // characters involved in the move
+      ParticipantIds : Id list // characters participating in the move
+      TargetIds : Id list } // characters targetted by the move
 
 type [<StructuralEquality; NoComparison>] OmniBattle =
     { Data : OmniBattleData
