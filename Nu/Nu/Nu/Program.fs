@@ -15,7 +15,7 @@ open Nu.Entities
 open Nu.Groups
 open Nu.Screens
 open Nu.Games
-open Nu.Sim
+open Nu.WorldModule
 open Nu.OmniBlade
 module Program =
 
