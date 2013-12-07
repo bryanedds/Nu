@@ -5,31 +5,25 @@ open System.Reflection
 open System.Xml
 open System.Xml.Serialization
 open Nu.Core
+
 module DomainModel =
 
-    let getOptChild optChildFinder parent address =
-        match address with
-        | [] -> None
-        | [head] ->
-            let optChild = optChildFinder head parent
-            match optChild with
-            | None -> None
-            | Some child -> Some child
-        | _ :: _ -> None
+    let getOptChild optChildFinder address parent =
+        let optChild = optChildFinder address parent
+        match optChild with
+        | None -> None
+        | Some child -> Some child
 
-    let setOptChild addChild removeChild parent address optChild =
-        match address with
-        | [head] ->
-            match optChild with
-            | None -> removeChild head parent
-            | Some child -> addChild head parent child
-        | _ -> failwith ("Invalid address '" + str address + "'.")
+    let setOptChild addChild removeChild address parent optChild =
+        match optChild with
+        | None -> removeChild address parent
+        | Some child -> addChild address parent child
 
-    let getChild optChildFinder parent address =
-        Option.get <| getOptChild optChildFinder parent address
+    let getChild optChildFinder address parent =
+        Option.get <| optChildFinder address parent
 
-    let setChild childAdder childRemover parent address child =
-        setOptChild childAdder childRemover parent address (Some child)
+    let setChild childAdder childRemover address parent child =
+        setOptChild childAdder childRemover address parent (Some child)
 
     let trySetProperty (property : PropertyInfo) valueStr obj =
         let converter = TypeDescriptor.GetConverter property.PropertyType

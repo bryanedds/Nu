@@ -58,11 +58,11 @@
     <Compile Include="OmniTypes.fs" />
     <Compile Include="OmniData.fs" />
     <Compile Include="OmniState.fs" />
+    <Compile Include="Sdl.fs" />
     <Compile Include="Entities.fs" />
     <Compile Include="Groups.fs" />
     <Compile Include="Screens.fs" />
     <Compile Include="Games.fs" />
-    <Compile Include="Sdl.fs" />
     <Compile Include="Sim.fs" />
     <Compile Include="OmniBlade.fs" />
     <Compile Include="Program.fs" />
