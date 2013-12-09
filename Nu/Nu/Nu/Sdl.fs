@@ -72,7 +72,7 @@ module Sdl =
         let resource = create ()
         if resource = IntPtr.Zero then
             let error = SDL.SDL_GetError ()
-            Console.WriteLine ("SDL2# resource creation failed due to '" + error + "'.")
+            trace <| "SDL2# resource creation failed due to '" + error + "'."
             FailureReturnCode
         else
             let result = action resource
@@ -83,7 +83,7 @@ module Sdl =
         let resource = create ()
         if resource <> 0 then
             let error = SDL.SDL_GetError ()
-            Console.WriteLine ("SDL2# global resource creation failed due to '" + error + "'.")
+            trace <| "SDL2# global resource creation failed due to '" + error + "'."
             FailureReturnCode
         else
             let result = action ()
@@ -140,7 +140,11 @@ module Sdl =
                         (fun () -> SDL_ttf.TTF_Quit ())
                         (fun () ->
                         withSdlGlobalResource
-                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG)
+                          #if INIT_OGG
+                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line crashes on 32-bit builds.. WHY???
+                          #else
+                            (fun () -> SDL_mixer.Mix_Init <| enum<SDL_mixer.MIX_InitFlags> 0)
+                          #endif
                             (fun () -> SDL_mixer.Mix_Quit ())
                             (fun () ->
                             withSdlGlobalResource
