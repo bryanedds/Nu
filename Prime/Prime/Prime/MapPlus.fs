@@ -21,7 +21,7 @@ let containsKey (plusKey, mapKey) plus mapPlus =
     let optMap = Map.tryFind plusKey mapPlus
     match optMap with
     | None -> false
-    | Some map -> (Map.tryFind mapKey map).IsSome
+    | Some map -> Option.isSome <| Map.tryFind mapKey map
 
 let add (plusKey, mapKey) value mapPlus =
     let optMap = Map.tryFind plusKey mapPlus
@@ -70,7 +70,7 @@ let toValueListBy by map =
     fold (fun state _ value -> by value :: state) [] map
 
 let toValueList map =
-    toValueListBy (fun value -> value) map
+    toValueListBy id map
 
 let singleton (key, value) =
     add key value empty
