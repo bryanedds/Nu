@@ -12,5 +12,5 @@ type HashSet<'a> with
     /// Force the addition of an element, removing the existing one if necessary.
     member this.ForceAdd elem =
         let forced = this.Remove elem
-        ignore (this.Add elem)
+        ignore <| this.Add elem
         forced

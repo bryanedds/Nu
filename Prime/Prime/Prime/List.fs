@@ -5,14 +5,16 @@
 module List
 open System
 open System.Collections.Generic
+open Sectioning
 
 // TODO: for speed, implement List functions _without_ using Seq functions.
 
 /// Create a singleton list.
-let singleton elem = [elem]
+let singleton elem =
+    [elem]
 
-let cons head tail =
-    head :: tail
+let cons =
+    cons
 
 let flipCons tail head =
     head :: tail
@@ -293,7 +295,7 @@ let toDictionaryBy by list =
 /// Convert a list to a HashSet.
 let toHashSet list =
     let hashSet = HashSet ()
-    List.iter (fun elem -> ignore (hashSet.Add elem)) list
+    List.iter (fun elem -> ignore <| hashSet.Add elem) list
     hashSet
 
 let foldWhile f initial (input : 'a list) =

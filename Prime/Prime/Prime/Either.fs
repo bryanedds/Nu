@@ -20,7 +20,7 @@ let returnFrom a =
 let (>>=) c f =
     match c with
     | Left _ -> c
-    | Right a -> Right (f a)
+    | Right a -> Right <| f a
 
 /// Bind that allows indication of failure.
 let (>>=?) c f =
