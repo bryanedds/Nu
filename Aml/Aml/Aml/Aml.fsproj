@@ -86,10 +86,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
-      <HintPath>..\..\FParsec\Bin\FParsec.dll</HintPath>
+      <HintPath>..\..\FParsec\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\FParsec\Bin\FParsecCS.dll</HintPath>
+      <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.PowerPack">
       <HintPath>..\..\Fspp4.0\FSharp.PowerPack.dll</HintPath>
