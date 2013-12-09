@@ -26,7 +26,7 @@
     <NoWarn />
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <PlatformTarget>Any CPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -40,7 +40,7 @@
     <NoWarn />
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <PlatformTarget>Any CPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <OtherFlags>
     </OtherFlags>
   </PropertyGroup>
@@ -55,7 +55,7 @@
     <NoWarn />
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <PlatformTarget>Any CPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <OtherFlags>--checked- --debug- --nointerfacedata</OtherFlags>
     <OutputPath>bin\Optimized\</OutputPath>
     <Prefer32Bit>false</Prefer32Bit>
