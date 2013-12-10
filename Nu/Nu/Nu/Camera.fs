@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open OpenTK
+open Nu
 
 /// The camera used to dictate what is rendered on the screen.
 type [<StructuralEquality; NoComparison>] Camera =

@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open OpenTK
+open Nu
 
 type [<StructuralEquality; NoComparison>] OmniWeaponData =
     { Type : OmniWeaponType

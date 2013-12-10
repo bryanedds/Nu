@@ -3,6 +3,7 @@ open System
 open SDL2
 open OpenTK
 open TiledSharp
+open Nu
 open Nu.Core
 open Nu.Constants
 open Nu.Sdl

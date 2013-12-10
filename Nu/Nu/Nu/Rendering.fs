@@ -6,6 +6,7 @@ open System.ComponentModel
 open OpenTK
 open SDL2
 open TiledSharp
+open Nu
 open Nu.Core
 open Nu.Constants
 open Nu.Assets

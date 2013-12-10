@@ -4,6 +4,7 @@ open System.Collections.Generic
 open FarseerPhysics
 open OpenTK
 open Microsoft.Xna
+open Nu
 open Nu.Core
 open Nu.Constants
 

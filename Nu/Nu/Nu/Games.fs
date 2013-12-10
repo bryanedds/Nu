@@ -2,6 +2,7 @@
 open System
 open FSharpx
 open FSharpx.Lens.Operators
+open Nu
 open Nu.Core
 open Nu.DomainModel
 module Games =

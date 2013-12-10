@@ -3,6 +3,7 @@ open System
 open System.Diagnostics
 open System.Threading
 open SDL2
+open Nu
 
 type SdlWindowConfig =
     { WindowTitle : string
@@ -140,11 +141,11 @@ module Sdl =
                         (fun () -> SDL_ttf.TTF_Quit ())
                         (fun () ->
                         withSdlGlobalResource
-                          #if INIT_OGG
-                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line crashes on 32-bit builds.. WHY???
-                          #else
+#if MIX_INIT_OGG
+                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
+#else
                             (fun () -> SDL_mixer.Mix_Init <| enum<SDL_mixer.MIX_InitFlags> 0)
-                          #endif
+#endif
                             (fun () -> SDL_mixer.Mix_Quit ())
                             (fun () ->
                             withSdlGlobalResource

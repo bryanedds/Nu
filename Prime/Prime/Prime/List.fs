@@ -5,19 +5,17 @@
 module List
 open System
 open System.Collections.Generic
-open Sectioning
 
 // TODO: for speed, implement List functions _without_ using Seq functions.
 
 /// Create a singleton list.
-let singleton elem =
-    [elem]
+let singleton elem = [elem]
 
-let cons =
-    cons
+/// The missing cons function.
+let cons head tail = head :: tail
 
-let flipCons tail head =
-    head :: tail
+/// Cons with flipped arguments.
+let flipCons tail head = head :: tail
 
 let rec private subpartitionPlus fnOptU list left right =
     match list with
@@ -226,20 +224,20 @@ let padWithLastToProportion (list : 'b list) (list2 : 'a list) =
 
 /// Join a list into a string separated by sep.
 let join sep (list : string list) =
-    if list.IsEmpty then ""
+    if list.IsEmpty then String.Empty
     else List.reduce (fun acc elem -> acc + sep + elem) list
 
 /// Join a list into a string separated by sep.
 /// TODO: consider optimizing with a StringBuilder.
 let joinBy by sep (list : 'a list) =
-    if list.IsEmpty then ""
+    if list.IsEmpty then String.Empty
     else
         List.fold 
             (fun (acc : string) elem ->
                 let elemStr = by elem
                 if acc.Length = 0 then elemStr
                 else acc + sep + elemStr)
-            ""
+            String.Empty
             list
 
 /// Join a list of lists into a list separated by sep.
@@ -302,10 +300,10 @@ let foldWhile f initial (input : 'a list) =
     Seq.foldWhile f initial input
 
 /// TODO: see if List.rev can be removed.
-let rec remove pred list_ =
-    let list_ =
+let rec remove pred list =
+    let list' =
         List.fold
-            (fun list_ elem -> if pred elem then list_ else elem :: remove pred list_)
+            (fun list'' elem -> if pred elem then list'' else elem :: remove pred list'')
             []
-            list_
-    List.rev list_
+            list
+    List.rev list'

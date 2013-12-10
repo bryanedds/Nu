@@ -1,7 +1,7 @@
 ﻿namespace Nu
 open OpenTK
+open Nu
 open Nu.Core
-open System
 
 /// Describes a mouse button.
 /// A serializable value type.
