@@ -3,8 +3,8 @@
 
 // NOTE: change these paths to make this script run with your Aml installation.
 #r "C:/OmniBlade/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
-#r "C:/OmniBlade/Aml/FParsec/Bin/FParsecCS.dll"
-#r "C:/OmniBlade/Aml/FParsec/Bin/FParsec.dll"
+#r "C:/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsecCS.dll"
+#r "C:/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsec.dll"
 #r "C:/OmniBlade/Aml/xUnit/xunit.dll"
 #r "C:/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
 
