@@ -4,6 +4,7 @@ open System.Collections.Generic
 open SDL2
 open OpenTK
 open TiledSharp
+open Nu
 open Nu.Core
 
 // WISDOM: On avoiding threads where possible...

@@ -4,6 +4,7 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open System.Xml.Serialization
+open Nu
 open Nu.Core
 
 module DomainModel =
