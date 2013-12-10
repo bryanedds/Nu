@@ -5,6 +5,7 @@ open System.Xml
 open System.Reflection
 open FSharpx
 open FSharpx.Lens.Operators
+open Nu
 open Nu.Core
 open Nu.DomainModel
 module Groups =

@@ -3,6 +3,7 @@ open System
 open System.IO
 open System.ComponentModel
 open SDL2
+open Nu
 open Nu.Core
 open Nu.Constants
 open Nu.Assets

@@ -23,7 +23,7 @@ let rec doTimes f x n =
 
 /// Perform an operation until a predicate passes.
 let rec doUntil op pred =
-    if not (pred ()) then
+    if not <| pred () then
         op ()
         doUntil op pred
 

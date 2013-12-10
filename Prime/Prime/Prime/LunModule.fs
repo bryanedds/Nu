@@ -48,10 +48,8 @@ type [<CustomEquality; CustomComparison>] Lun =
         match that with
         | :? Lun as thatLun ->
             match (this.LunOptNums, thatLun.LunOptNums) with
-            | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
-                thisNum = thatNum && thisNum2 = thatNum2
-            | _ ->
-                this.LunStr = thatLun.LunStr
+            | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) -> thisNum = thatNum && thisNum2 = thatNum2
+            | _ -> this.LunStr = thatLun.LunStr
         | _ -> false
 
     override this.ToString () =

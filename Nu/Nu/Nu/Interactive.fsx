@@ -1,10 +1,4 @@
-﻿// TODO: fix this script
-
-// IMPORTANT!
-// NOTE: this MUST be run in the 64-bit FSI (In VS, Tools -> Options... -> F# Tools -> 64-bit F# Interactive [set to true]).
-// IMPORTANT!
-#r "System.Configuration"
-
+﻿#r "System.Configuration"
 // IMPORTANT!
 // NOTE: change these paths to make this script run with your Nu installation.
 // IMPORTANT!
@@ -16,7 +10,7 @@
 #r "C:/OmniBlade/Nu/Farseer/FarseerPhysics.dll"
 #r "C:/OmniBlade/Nu/SDL2#/Debug/SDL2#.dll"
 #r "C:/OmniBlade/Nu/TiledSharp/Debug/TiledSharp.dll"
-System.IO.Directory.SetCurrentDirectory "C:/OmniBlade/Nu/Nu/Nu/bin/Release"
+System.IO.Directory.SetCurrentDirectory "C:/OmniBlade/Nu/Nu/Nu/bin/Debug"
 
 #load "Core.fs"
 #load "RQueue.fs"
