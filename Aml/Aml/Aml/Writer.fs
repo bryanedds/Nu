@@ -283,7 +283,7 @@ and writeExpr exprToWrite =
     | SpecialValue specialValue -> parenthesize (SpecialValueStr <+> writeName specialValue.SVLanguageName <+> writeExpr specialValue.SVExpr)
     | SpecialObject specialObject -> writeExpr (SpecialValue (makeSpecialValueRecord true (Lun.make (specialObject.SOLanguageGuid.ToString ())) (specialObject.SOContent.ToValue ()) specialObject.SOOptPositions))
     | Series series -> parenthesizeExprs series.SerExprs
-    | Lambda lambda -> parenthesize (LambdaStr <+> writeArgs lambda.LamArgs parenthesize + writeContractWithSpace PreconditionStr lambda.LamPre + writeContractWithSpace PostconditionStr lambda.LamPost <+> writeExpr lambda.LamBody)
+    | Lambda lambda -> parenthesize (FunStr <+> writeArgs lambda.LamArgs parenthesize + writeContractWithSpace PreconditionStr lambda.LamPre + writeContractWithSpace PostconditionStr lambda.LamPost <+> writeExpr lambda.LamBody)
     | Attempt attemptRecord -> parenthesize (AttemptStr <+> writeExpr attemptRecord.AttemptBody <+> writeAttemptBranches attemptRecord.AttemptBranches)
     | Let letRecord -> parenthesize (LetStr <+> writeLetBindings letRecord.LetBindings <+> writeExpr letRecord.LetBody)
     | Extend extend -> parenthesize (ExtendStr <+> writeExpr extend.ExtTarget + writeMembersWithSpace extend.ExtMembers)

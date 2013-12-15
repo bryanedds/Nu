@@ -32,9 +32,9 @@
     [def peek head]
     [def next [lst] (next (listEnumerator lst))]]
     
-[def mapIntoList [mapper seq] where: [[lambda mapper] [sequence seq]]
+[def mapIntoList [mapper seq] where: [[fun mapper] [sequence seq]]
     doc: "Perform a functional map over a sequence into a list. Not structure-preserving."
-    (foldRight (lambda (x y) (cons (mapper x) y)) (list) seq)]
+    (foldRight (fun (x y) (cons (mapper x) y)) (list) seq)]
 
 [def sequenceToList [seq] where: [[sequence seq]]
     doc: "Convert a sequence to a list."
