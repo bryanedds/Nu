@@ -10,7 +10,7 @@
 [struct pair [first second]
     doc: "Make a pair value."]
 
-[def sliceWhen [pred seq] where: [[lambda pred] [sequence seq]]
+[def sliceWhen [pred seq] where: [[fun pred] [sequence seq]]
     doc: "Slice elements of a sequence in two parts, slicing at the first element that satisfies the predicate."
     (if (isDone seq)
         (pair (list) (list))
@@ -34,7 +34,7 @@
              (pair (cons value nextResult.first)
                    nextResult.second)))]
     
-[def zipWith [zipper seq seq2] where: [[lambda zipper] [sequence seq] [sequence seq2]]
+[def zipWith [zipper seq seq2] where: [[fun zipper] [sequence seq] [sequence seq2]]
     doc: "Zip two sequences with a given function."
     (if (or (isDone seq) (isDone seq2))
         (list)
@@ -48,7 +48,7 @@
 [def zip [seq seq2] where: [[sequence seq] [sequence seq2]]
     doc: "Zip two sequences into a sequence of pairs."
     (zipWith
-        (lambda (first second) (pair first second))
+        (fun (first second) (pair first second))
         seq
         seq2)]
     
@@ -57,14 +57,14 @@
     (let
         (prRev
             (fold
-                (lambda (state current)
+                (fun (state current)
                     (pair (cons current.first state.first)
                           (cons current.second state.second)))
                 (pair (list) (list))
                 seq))
         (pair (reverse prRev.first) (reverse prRev.second)))]
     
-[def partition [pred seq] where: [[lambda pred] [sequence seq]]
+[def partition [pred seq] where: [[fun pred] [sequence seq]]
     doc: "Parition a sequence into a pair of sequences."
     (if (isDone seq)
         (pair (list) (list))
@@ -91,7 +91,7 @@
 [def prPr (pair 0 5)]
     
 [affirmation sliceWhenWorks
-    (= (sliceWhen (lambda (x) (> x 10)) prLst)
+    (= (sliceWhen (fun (x) (> x 10)) prLst)
        (pair prSmallLst prLargeLst))]
     
 [affirmation sliceWorks

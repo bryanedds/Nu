@@ -14,7 +14,8 @@
 [def -r- doc: "Short-hand for the 'ref' type indicator." -ref-]
 [def -t- doc: "Short-hand for the 'list' type indicator." -list-]
 [def -a- doc: "Short-hand for the 'array' type indicator." -array-]
-[def -l- doc: "Short-hand for the 'lambda' type indicator." -lambda-]
+[def -n- doc: "Short-hand for the 'fun' type indicator." -fun-]
+[def -u- doc: "Short-hand for the 'unit' type indicator." -unit-]
 
 #| Core Combinators |#
 
@@ -22,33 +23,25 @@
     doc: "Take the identity of a value."
     x]
 
-[def flip [f] where: [[lambda f]]
+[def flip [f] where: [[fun f]]
     doc: "Flip a function's two arguments."
-    (lambda (x y) (f y x))]
+    (fun (x y) (f y x))]
 
-[def curry [f argsHead] where: [[lambda f]]
+[def curry [f argsHead] where: [[fun f]]
     doc: "Curry a function call."
-    (lambda (argsTail...)
+    (fun (argsTail...)
         (let (args (cons argsHead argsTail))
              (apply f args)))]
 
-[def compose [f g] where: [[lambda f] [lambda g]]
+[def compose [f g] where: [[fun f] [fun g]]
     doc: "Compose two functions."
-    (lambda (args...) (f (apply g args)))]
-
-[def kappa [x]
-    doc: "Make a parameterless lambda that just returns the given value."
-    (lambda () x)]
-    
-[def iota [x]
-    doc: "Make a variadic lambda that just returns the given value."
-    (lambda (args...) x)]
+    (fun (args...) (f (apply g args)))]
 
 [def selector [key]
     doc: "Build a function to select a value from a keyed target, such as a list, string, array, or other."
-    (lambda (target) (select key target))]
+    (fun (target) (select key target))]
 
-[def update! [f r] where: [[lambda f] [ref r]]
+[def update! [f r] where: [[fun f] [ref r]]
     doc: "Apply a function to a reference value, then update the reference with the new value."
     (set! r (f (get r)))]
 
@@ -146,7 +139,7 @@
     doc: "Perform a monadic join in terms of bind."
     (>>= c identity)]
     
-[def >>=InTermsOf<join> [c f] where: [[monad c] [lambda f]]
+[def >>=InTermsOf<join> [c f] where: [[monad c] [fun f]]
     doc: "Perform a monadic bind in terms of join."
     (<join> (<map> f c))]
 
@@ -160,9 +153,9 @@
         (head x)
         x)]
 
-[def composeFlarg [f g] where: [[lambda f] [lambda g]]
+[def composeFlarg [f g] where: [[fun f] [fun g]]
     doc: "Compose two functions, allowing the resulting function to be called with variadic flarging."
-    (lambda (args...) (f (apply g (flarg args))))]
+    (fun (args...) (f (apply g (flarg args))))]
 
 #| Option |#
     
@@ -189,7 +182,7 @@
 
 [instance functor [c] where: [[option c]]
     doc: "An instance of the functor protocol over the option context."
-    [def <map> [f c] #|where: [[lambda f]]|# (if c.exists (something (f c.value)) nothing)]]
+    [def <map> [f c] #|where: [[fun f]]|# (if c.exists (something (f c.value)) nothing)]]
 
 [instance pointed [c] where: [[option c]]
     doc: "An instance of the pointed protocol over the option context."
@@ -201,7 +194,7 @@
 
 [instance monad [c] where: [[option c]]
     doc: "An instance of the monad protocol over the option context."
-    [def >>= [c f] #|where: [[lambda f]]|# (if c.exists (f c.value) nothing)]
+    [def >>= [c f] #|where: [[fun f]]|# (if c.exists (f c.value) nothing)]
     [def <join> <join>InTermsOf>>=]]
 
 [instance monadPlus [c c2] where: [[option c] [option c2]]
@@ -321,7 +314,7 @@
     doc: "Query that two sequences have dissimilar contents."
     (not (similar seq seq2))]
   
-[def fold [folder state seq] where: [[lambda folder] [sequence seq]]
+[def fold [folder state seq] where: [[fun folder] [sequence seq]]
     doc: "Perform a left-associative fold over a sequence."
     (if (isDone seq)
         state
@@ -329,7 +322,7 @@
              (nextSeq (next seq))
              (fold folder newState nextSeq)))]
 
-[def foldRight [folder state seq] where: [[lambda folder] [sequence seq]]
+[def foldRight [folder state seq] where: [[fun folder] [sequence seq]]
     doc: "Perform a right-associative fold over a sequence."
     (if (isDone seq)
         state
@@ -338,12 +331,12 @@
              (nextState (foldRight folder state nextSeq))
              (folder elem nextState)))]
 
-[def reduce [reducer seq] where: [[lambda reducer] [sequence seq]]
+[def reduce [reducer seq] where: [[fun reducer] [sequence seq]]
     doc: "Perform a left-associative reduce over a sequence."
     pre: (not (isDone seq))
     (fold reducer (peek seq) (next seq))]
 
-[def reduceRight [reducer seq] where: [[lambda reducer] [sequence seq]]
+[def reduceRight [reducer seq] where: [[fun reducer] [sequence seq]]
     doc: "Perform a right-associative reduce over a sequence."
     pre: (not (isDone seq))
     (foldRight reducer (peek seq) (next seq))]
@@ -383,7 +376,7 @@
             #f
             (areSameLength (next seq) (next seq2))))]
 
-[def containsWhen [pred seq] where: [[lambda pred] [sequence seq]]
+[def containsWhen [pred seq] where: [[fun pred] [sequence seq]]
     doc: "Query that a predicate passes on an element of a sequence."
     (if (isDone seq)
         #f
@@ -393,17 +386,17 @@
     
 [def contains [element seq] where: [[sequence seq]]
     doc: "Query that a sequence contains an equal element."
-    (containsWhen (lambda (elem) (= elem element)) seq)]
+    (containsWhen (fun (elem) (= elem element)) seq)]
     
-[def tallyWhen [pred seq] where: [[lambda pred] [sequence seq]]
+[def tallyWhen [pred seq] where: [[fun pred] [sequence seq]]
     doc: "Query the number the values in a sequence that satisfy a predicate."
-    (fold (lambda (elem count) (if (pred elem) (i+ count 1) count)) 0 seq)]
+    (fold (fun (elem count) (if (pred elem) (i+ count 1) count)) 0 seq)]
     
 [def tally [seq] where: [[sequence seq]]
     doc: "Count the number of values in a sequence."
-    (fold (lambda (count value) (i+ count 1)) 0 seq)]
+    (fold (fun (count value) (i+ count 1)) 0 seq)]
     
-[def findWhen [pred seq] where: [[lambda pred] [sequence seq]]
+[def findWhen [pred seq] where: [[fun pred] [sequence seq]]
     doc: "Try to find a value in a sequence that satisfies a predicate. Returns an optional value."
     (if (isDone seq)
         none
@@ -439,10 +432,10 @@
   doc: "Query that all values are true."
   (reduce and (flarg args))]
 
-[def allWith [pred args...] where: [[lambda pred]]
+[def allWith [pred args...] where: [[fun pred]]
     doc: "Query that all values satisfy a predicate."
     (fold
-        (lambda (state current) (and state (pred current)))
+        (fun (state current) (and state (pred current)))
         #t
         (flarg args))]
     
@@ -450,10 +443,10 @@
     doc: "Query that any of the values are true."
     (reduce or (flarg args))]
     
-[def anyWith [pred args...] where: [[lambda pred]]
+[def anyWith [pred args...] where: [[fun pred]]
     doc: "Query that any of values satisfy a predicate."
     (fold
-        (lambda (state current) (or state (pred current)))
+        (fun (state current) (or state (pred current)))
         #f
         (flarg args))]
     
@@ -461,7 +454,7 @@
     doc: "Query that none of the values are true."
     (not (any args))]
     
-[def noneWith [pred args...] where: [[lambda pred]]
+[def noneWith [pred args...] where: [[fun pred]]
     doc: "Query that none of values satisfy a predicate."
     (not (allWith pred (flarg args)))]
     

@@ -42,14 +42,12 @@ def
 doc
 flarg
 flip
+fun
 get
 identity
 if
 instance
 intervene
-iota
-kappa
-lambda
 let
 mutual
 post
@@ -225,6 +223,7 @@ isFloat
 isInRange
 isInt
 isKeyword
+isLambda
 isList
 isLong
 isPackage
@@ -305,6 +304,7 @@ something
 specialValue
 string
 type
+unit
 v2
 violation
 

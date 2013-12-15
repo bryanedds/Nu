@@ -52,7 +52,7 @@ a::b\tab Left-associative selector (binds 'tighter' than dot selector).\par
 (composite (a 1) (b "str") (c \\"c"))\tab Composite. Indexed as s.a or (select :m/a s).\par
 (extend c (a 5) (b 6))\tab Extend a composite with additional members.\par
 \par
-(lambda (x) pre: expr post: expr body)\tab Lambda with optional contract predicates.\par
+(fun (x) pre: expr post: expr body)\tab Lambda with optional contract predicates.\par
 \par
 \cf1 ~x\tab Shadowed symbol. NOTE: two args created with the same name and by the same frame are considered 'pseudo-shadowing', and cannot be de-shadowed in this way (or any way).\par
 \cf0 (doc :e/=)\tab Query an entry\rquote s documentation comment.\par
@@ -99,7 +99,7 @@ Like in F#, primitive types do not automatically promote and must be converted m
 \par
 There are 'abstracting' args that automatically wrap an argument's expression in a lambda (thus avoiding dynamic capture) via <|arg|> syntax. Function declarations with labeled args like in Lisp are available via smalltalk-like syntax via 'arg: value'. Also available are variadic args via arg... syntax. Note that currently none of arg specializations can be combined (no labeled abstracting args, no abstracting variadic args, and so on). Also, functions must have their args defined in order of 1) optionally mixed normal args and / or abstracting args, 2) labeled args, then by 3) a single variadic arg. When calling a function, args must be specified in the order they are declared in the function, even if they're labeled.\par
 \par
-A structure name is :t/nameOfStructure, a variable name is :e/nameOfVariable, a function name is :e/nameOfFunction, a composite name is :composite, a lambda name is :lambda, a primitive name is :nameOfPrimitive, and so on.\par
+A structure name is :t/nameOfStructure, a variable name is :e/nameOfVariable, a function name is :e/nameOfFunction, a composite name is :composite, a lambda name is :fun, a primitive name is :nameOfPrimitive, and so on.\par
 \par
 For convenience and simplicity, let is always sequential like let* in CL.\par
 \par
@@ -203,7 +203,7 @@ AML uses Visual Studio as an editor and debugger.\cf0\par
 \pard\nowidctlpar\par
 \ul Sample AML Code\ulnone\par
 \par
-[def double [x] (* x 2)]; better than using def and lambda\par
+[def double [x] (* x 2)]; better than using def and fun\par
 \par
 [def sumOfSquares [x y]\par
     (let (square (n) (* n n))\par
@@ -423,7 +423,7 @@ def: sum (nums) where? (sequence nums)\par
   doc? "Sum a sequences of values."\par
   reduce #+ nums\par
 \par
-defRec: foldRight (folder state seq) where? ((lambda folder) (sequence seq))\par
+defRec: foldRight (folder state seq) where? ((fun folder) (sequence seq))\par
   doc? "Perform a right-associative fold over a sequence. NOTE: this function is not currently tail-recursive."\par
   if\par
     isDone seq\par
@@ -450,7 +450,7 @@ object: currentScore\par
 Here\rquote s a more java-like syntax which might be better if the type system stays dynamic. The meaning of a bracket, paren, or curly depends on whether it is post-fixed to a symbol. If it is, it\rquote s a call, otherwise, it\rquote s a grouping. Precedence tightening is not done with parens, but with banana clips, such as (|1 + 2|) * 3.\par
 \par
 defRec[\par
-  foldRight [folder state seq] where: [[lambda folder] [sequence seq]]\par
+  foldRight [folder state seq] where: [[fun folder] [sequence seq]]\par
   doc: "Perform a right-associative fold over a sequence. NOTE: this function is not currently tail-recursive."\par
   if(isDone(seq)\par
      state\par
