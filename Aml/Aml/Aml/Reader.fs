@@ -163,7 +163,7 @@ let strForm str closeChar =
 let violationForm closeChar = strForm ViolationStr closeChar
 
 /// Skip a lambda form.
-let lambdaForm closeChar = strForm LambdaStr closeChar
+let lambdaForm closeChar = strForm FunStr closeChar
 
 /// Skip a let form.
 let letForm closeChar = strForm LetStr closeChar
@@ -1144,7 +1144,7 @@ let readBirecursiveProceduralExpr =
                 ignore (skipWhitespaces stream)
                 ignore (stream.ReadCharOrNewline ())
                 if skip ViolationStr WhitespaceCharsAndParens stream start then readViolation stream
-                elif skip LambdaStr WhitespaceCharsAndParens stream start then readLambda stream
+                elif skip FunStr WhitespaceCharsAndParens stream start then readLambda stream
                 elif skip AttemptStr WhitespaceCharsAndParens stream start then readAttempt stream
                 elif skip LetStr WhitespaceCharsAndParens stream start then readLet stream
                 elif skip ExtendStr WhitespaceCharsAndParens stream start then readExtend stream

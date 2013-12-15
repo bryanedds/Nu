@@ -102,6 +102,11 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
       TileMapSprites : Sprite list }
+      
+(* This is just an idea...
+type [<StructuralEquality; NoComparison; CLIMutable>] DynamicActor =
+    { Actor : Actor
+      Properties : Map<Lun, obj> }*)
 
 type [<StructuralEquality; NoComparison>] EntityModel =
     | Button of Button
