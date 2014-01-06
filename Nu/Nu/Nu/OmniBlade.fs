@@ -83,10 +83,10 @@ module OmniBlade =
         let optWorld = tryCreateEmptyWorld sdlDeps extData
         match optWorld with
         | Left _ as left -> left
-        | Right world_ ->
+        | Right world ->
             let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-            let world_ = { world_ with AudioMessages = playSong :: world_.AudioMessages }
+            let world_ = { world with AudioMessages = playSong :: world.AudioMessages }
             let world_ = addSplashScreen (transitionScreenHandler TitleAddress) SplashAddress IncomingTime IdlingTime OutgoingTime splashScreenSprite world_
             let world_ = createTitleScreen world_
             let world_ = createLoadScreen world_
