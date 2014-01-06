@@ -117,8 +117,8 @@ module Sdl =
             if not keepRunning' then ignore (handleExit world')
             else
                 let world'' = renderSdl handleRender sdlDeps world'
-                let world''' = playSdl handlePlay world''
-                runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'''
+                let world'3 = playSdl handlePlay world''
+                runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'3
 
     let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
         withSdlInit

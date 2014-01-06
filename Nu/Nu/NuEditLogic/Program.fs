@@ -95,19 +95,19 @@ module Program =
 
         override this.SetValue (source, value) =
             let entityModelTds = source :?> EntityModelTypeDescriptorSource
-            let changer = (fun world_ ->
-                let pastWorld = world_
+            let changer = (fun world ->
+                let pastWorld = world
                 let world_ =
                     // handle special case for an entity's Name field change
                     if property.Name = "Name" then
                         let valueStr = str value
                         if Int64.TryParse (valueStr, ref 0L) then
                             trace <| "Invalid entity model name '" + valueStr + "' (must not be a number)."
-                            world_
+                            world
                         else
                             // TODO: factor out a renameEntityModel function
-                            let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
-                            let world_ = removeEntityModel entityModelTds.Address world_
+                            let entityModel_ = get world <| worldEntityModelLens entityModelTds.Address
+                            let world_ = removeEntityModel entityModelTds.Address world
                             let entity_ = get entityModel_ entityLens
                             let entity_ = { entity_ with Name = valueStr }
                             let entityModel_ = set entity_ entityModel_ entityLens
@@ -117,7 +117,7 @@ module Program =
                             entityModelTds.Form.propertyGrid.SelectedObject <- { entityModelTds with Address = entityAddress }
                             world_
                     else
-                        let world_ = setEntityModelPropertyValue entityModelTds.Address property value world_
+                        let world_ = setEntityModelPropertyValue entityModelTds.Address property value world
                         let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
                         let entityModel_ =
                             // handle special case for TileMap's TileMapAsset field change
@@ -177,25 +177,25 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let beginEntityDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
+    let beginEntityDrag (form : NuEditForm) worldChangers refWorld _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
-            if form.interactButton.Checked then (message, true, world_)
+            if form.interactButton.Checked then (message, true, world)
             else
-                let groupModel = get world_ (worldGroupModelLens EditorGroupAddress)
-                let entityModels = Map.toValueList (get world_ <| worldEntityModelsLens EditorGroupAddress)
-                let optPicked = tryPick position entityModels world_
+                let groupModel = get world (worldGroupModelLens EditorGroupAddress)
+                let entityModels = Map.toValueList (get world <| worldEntityModelsLens EditorGroupAddress)
+                let optPicked = tryPick position entityModels world
                 match optPicked with
-                | None -> (handle message, true, world_)
+                | None -> (handle message, true, world)
                 | Some entityModel ->
-                    let pastWorld = world_
+                    let pastWorld = world
                     let entity = get entityModel entityLens
                     let entityAddress = addrstr EditorGroupAddress entity.Name
-                    let entityTransform = getEntityModelTransform (Some world_.Camera) entityModel
-                    let dragState = DragEntityPosition (entityTransform.Position + world_.MouseState.MousePosition, world_.MouseState.MousePosition, entityAddress)
-                    let editorState_ = world_.ExtData :?> EditorState
+                    let entityTransform = getEntityModelTransform (Some world.Camera) entityModel
+                    let dragState = DragEntityPosition (entityTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityAddress)
+                    let editorState_ = world.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
-                    let world_ = { world_ with ExtData = editorState_ }
+                    let world_ = { world with ExtData = editorState_ }
                     let world_ = pushPastWorld pastWorld world_
                     refWorld := world_ // must be set for property grid
                     form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -217,34 +217,34 @@ module Program =
                     (handle message, true, { world with ExtData = editorState_ })
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-    let updateEntityDrag (form : NuEditForm) world_ =
-        let editorState_ = world_.ExtData :?> EditorState
+    let updateEntityDrag (form : NuEditForm) world =
+        let editorState_ = world.ExtData :?> EditorState
         match editorState_.DragEntityState with
-        | DragEntityNone -> world_
+        | DragEntityNone -> world
         | DragEntityPosition (pickOffset, origMousePosition, address) ->
-            let entityModel_ = get world_ <| worldEntityModelLens address
-            let transform_ = getEntityModelTransform (Some world_.Camera) entityModel_
-            let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world_.MouseState.MousePosition - origMousePosition) }
+            let entityModel_ = get world <| worldEntityModelLens address
+            let transform_ = getEntityModelTransform (Some world.Camera) entityModel_
+            let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
             let (positionSnap, rotationSnap) = getSnaps form
-            let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap transform_ entityModel_
-            let world_ = set entityModel_ world_ <| worldEntityModelLens address
+            let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap transform_ entityModel_
+            let world_ = set entityModel_ world <| worldEntityModelLens address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, origMousePosition, address) }
             let world_ = { world_ with ExtData = editorState_ }
             let world_ = propagateEntityModelPhysics address entityModel_ world_
             form.propertyGrid.Refresh ()
             world_
-        | DragEntityRotation (pickOffset, origPosition, address) -> world_
+        | DragEntityRotation (pickOffset, origPosition, address) -> world
 
-    let beginCameraDrag (form : NuEditForm) worldChangers refWorld _ _ message world_ =
+    let beginCameraDrag (form : NuEditForm) worldChangers refWorld _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
-            if form.interactButton.Checked then (message, true, world_)
+            if form.interactButton.Checked then (message, true, world)
             else
-                let dragState = DragCameraPosition (world_.Camera.EyePosition + world_.MouseState.MousePosition, world_.MouseState.MousePosition)
-                let editorState_ = world_.ExtData :?> EditorState
+                let dragState = DragCameraPosition (world.Camera.EyePosition + world.MouseState.MousePosition, world.MouseState.MousePosition)
+                let editorState_ = world.ExtData :?> EditorState
                 let editorState_ = { editorState_ with DragCameraState = dragState }
-                let world_ = { world_ with ExtData = editorState_ }
-                (handle message, true, world_)
+                let world' = { world with ExtData = editorState_ }
+                (handle message, true, world')
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
     let endCameraDrag (form : NuEditForm) _ _ message world =
@@ -260,37 +260,37 @@ module Program =
                     (handle message, true, { world with ExtData = editorState_ })
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-    let updateCameraDrag (form : NuEditForm) world_ =
-        let editorState_ = world_.ExtData :?> EditorState
+    let updateCameraDrag (form : NuEditForm) world =
+        let editorState_ = world.ExtData :?> EditorState
         match editorState_.DragCameraState with
-        | DragCameraNone -> world_
+        | DragCameraNone -> world
         | DragCameraPosition (pickOffset, origMousePosition) ->
-            let eyePosition = (pickOffset - origMousePosition) + -1.0f * CameraSpeed * (world_.MouseState.MousePosition - origMousePosition)
-            let camera = { world_.Camera with EyePosition = eyePosition }
-            let world_ = { world_ with Camera = camera }
+            let eyePosition = (pickOffset - origMousePosition) + -1.0f * CameraSpeed * (world.MouseState.MousePosition - origMousePosition)
+            let camera = { world.Camera with EyePosition = eyePosition }
+            let world' = { world with Camera = camera }
             let editorState_ = { editorState_ with DragCameraState = DragCameraPosition (pickOffset, origMousePosition) }
-            { world_ with ExtData = editorState_ }
+            { world' with ExtData = editorState_ }
 
     /// Needed for physics system side-effects...
-    let physicsHack world_ =
-        let world_ = { world_ with PhysicsMessages = ResetHackMessage :: world_.PhysicsMessages }
-        reregisterPhysicsHack EditorGroupAddress world_
+    let physicsHack world =
+        let world' = { world with PhysicsMessages = ResetHackMessage :: world.PhysicsMessages }
+        reregisterPhysicsHack EditorGroupAddress world'
 
     let handleExit (form : NuEditForm) _ =
         form.Close ()
 
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
-        let changer = (fun world_ ->
-            let pastWorld = world_
-            let entityPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
+        let changer = (fun world ->
+            let pastWorld = world
+            let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
             let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
             let entityTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
             let entityModel_ = makeDefaultEntityModel entityTypeName None
             let (positionSnap, rotationSnap) = getSnaps form
-            let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityTransform entityModel_
+            let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap entityTransform entityModel_
             let entity = get entityModel_ entityLens
             let entityAddress = addrstr EditorGroupAddress entity.Name
-            let world_ = addEntityModel entityAddress entityModel_ world_
+            let world_ = addEntityModel entityAddress entityModel_ world
             let world_ = pushPastWorld pastWorld world_
             refWorld := world_ // must be set for property grid
             form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -300,15 +300,15 @@ module Program =
 
     let handleDelete (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let selectedObject = form.propertyGrid.SelectedObject
-        let changer = (fun world_ ->
+        let changer = (fun world ->
             match selectedObject with
             | :? EntityModelTypeDescriptorSource as entityModelTds ->
-                let pastWorld = world_
-                let world_ = removeEntityModel entityModelTds.Address world_
+                let pastWorld = world
+                let world_ = removeEntityModel entityModelTds.Address world
                 let world_ = pushPastWorld pastWorld world_
                 form.propertyGrid.SelectedObject <- null
                 world_
-            | _ -> world_)
+            | _ -> world)
         refWorld := changer !refWorld
         worldChangers.Add changer
 
@@ -322,8 +322,8 @@ module Program =
         let openFileResult = form.openFileDialog.ShowDialog form
         match openFileResult with
         | DialogResult.OK ->
-            let changer = (fun world_ ->
-                let world_ = loadFile form.openFileDialog.FileName world_
+            let changer = (fun world ->
+                let world_ = loadFile form.openFileDialog.FileName world
                 let world_ = clearPastWorlds world_
                 form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false
@@ -333,11 +333,11 @@ module Program =
         | _ -> ()
 
     let handleUndo (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
-        let changer = (fun world_ ->
-            let futureWorld = world_
-            let editorState_ = world_.ExtData :?> EditorState
+        let changer = (fun world ->
+            let futureWorld = world
+            let editorState_ = world.ExtData :?> EditorState
             match editorState_.PastWorlds with
-            | [] -> world_
+            | [] -> world
             | pastWorld :: pastWorlds ->
                 let world_ = pastWorld
                 let world_ = physicsHack world_
@@ -350,11 +350,11 @@ module Program =
         worldChangers.Add changer
 
     let handleRedo (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
-        let changer = (fun world_ ->
-            let pastWorld = world_
-            let editorState_ = world_.ExtData :?> EditorState
+        let changer = (fun world ->
+            let pastWorld = world
+            let editorState_ = world.ExtData :?> EditorState
             match editorState_.FutureWorlds with
-            | [] -> world_
+            | [] -> world
             | futureWorld :: futureWorlds ->
                 let world_ = futureWorld
                 let world_ = physicsHack world_
@@ -368,7 +368,7 @@ module Program =
 
     let handleInteractChanged (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         if form.interactButton.Checked then
-            let changer = (fun world_ -> pushPastWorld world_ world_)
+            let changer = (fun world -> pushPastWorld world world)
             refWorld := changer !refWorld
             worldChangers.Add changer
 
@@ -377,14 +377,14 @@ module Program =
         match optEntityModelTds with
         | null -> ()
         | :? EntityModelTypeDescriptorSource as entityModelTds ->
-            let changer = (fun world_ ->
-                let pastWorld = world_
-                let editorState = world_.ExtData :?> EditorState
-                let entityModel = get world_ <| worldEntityModelLens entityModelTds.Address
-                let world_ = removeEntityModel entityModelTds.Address world_
+            let changer = (fun world ->
+                let pastWorld = world
+                let editorState = world.ExtData :?> EditorState
+                let entityModel = get world <| worldEntityModelLens entityModelTds.Address
+                let world' = removeEntityModel entityModelTds.Address world
                 editorState.Clipboard := Some entityModel
                 form.propertyGrid.SelectedObject <- null
-                world_)
+                world')
             refWorld := changer !refWorld
             worldChangers.Add changer
         | _ -> trace <| "Invalid cut operation (likely a code issue in NuEditLogic)."
@@ -404,19 +404,19 @@ module Program =
         match !editorState.Clipboard with
         | None -> ()
         | Some entityModel_ ->
-            let changer = (fun world_ ->
+            let changer = (fun world ->
                 let entity_ = get entityModel_ entityLens
                 let id = getNuId ()
                 let entity_ = { entity_ with Id = id; Name = str id }
                 let entityModel_ = set entity_ entityModel_ entityLens
-                let entityPosition = if atMouse then world_.MouseState.MousePosition else world_.Camera.EyeSize * 0.5f
-                let entityTransform_ = getEntityModelTransform (Some world_.Camera) entityModel_
+                let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
+                let entityTransform_ = getEntityModelTransform (Some world.Camera) entityModel_
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
-                let entityModel_ = setEntityModelTransform (Some world_.Camera) positionSnap rotationSnap entityTransform_ entityModel_
+                let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap entityTransform_ entityModel_
                 let address = addrstr EditorGroupAddress entity_.Name
-                let pastWorld = world_
-                let world_ = pushPastWorld pastWorld world_
+                let pastWorld = world
+                let world_ = pushPastWorld pastWorld world
                 addEntityModel address entityModel_ world_)
             refWorld := changer !refWorld
             worldChangers.Add changer
@@ -427,12 +427,12 @@ module Program =
         match optEntityModelTds with
         | null -> ()
         | :? EntityModelTypeDescriptorSource as entityModelTds ->
-            let changer = (fun world_ ->
-                let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
-                let entityQuickSize = getEntityModelQuickSize world_.AssetMetadataMap entityModel_
+            let changer = (fun world ->
+                let entityModel_ = get world <| worldEntityModelLens entityModelTds.Address
+                let entityQuickSize = getEntityModelQuickSize world.AssetMetadataMap entityModel_
                 let entityTransform = { getEntityModelTransform None entityModel_ with Size = entityQuickSize }
                 let entityModel_ = setEntityModelTransform None 0 0 entityTransform entityModel_
-                let world_ = set entityModel_ world_ <| worldEntityModelLens entityModelTds.Address
+                let world_ = set entityModel_ world <| worldEntityModelLens entityModelTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world_)
@@ -441,9 +441,9 @@ module Program =
         | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEditLogic)."
 
     let handleResetCamera (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
-        let changer = (fun world_ ->
-            let camera = { world_.Camera with EyePosition = Vector2.Zero }
-            { world_ with Camera = camera })
+        let changer = (fun world ->
+            let camera = { world.Camera with EyePosition = Vector2.Zero }
+            { world with Camera = camera })
         refWorld := changer !refWorld
         worldChangers.Add changer
 
@@ -523,7 +523,7 @@ module Program =
         refWorld := snd <| updateTransition (fun world2 -> true, world2) world 
         refWorld := updateEntityDrag form !refWorld
         refWorld := updateCameraDrag form !refWorld
-        refWorld := Seq.fold (fun world_ changer -> changer world_) !refWorld worldChangers
+        refWorld := Seq.fold (fun world' changer -> changer world') !refWorld worldChangers
         worldChangers.Clear ()
         let editorState = (!refWorld).ExtData :?> EditorState
         updateUndo form !refWorld
