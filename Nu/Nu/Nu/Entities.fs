@@ -590,7 +590,7 @@ module Entities =
                 { Actor = makeDefaultActor optName
                   PhysicsId = getPhysicsId ()
                   Density = NormalDensity
-                  Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+                  Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | TileMap _ ->
             let tmxMap = TmxMap "Assets/Default/TileMap.tmx"
             TileMap
