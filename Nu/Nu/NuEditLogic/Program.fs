@@ -490,7 +490,7 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := addScreenModel EditorScreenAddress screenModel [(EditorGroupAddress, groupModel, [])] !refWorld
+            refWorld := addScreenModel EditorScreenAddress screenModel [(EditorGroupName, groupModel, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenModelAddressLens
             refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
