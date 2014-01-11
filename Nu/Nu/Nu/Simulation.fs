@@ -1,11 +1,13 @@
 ﻿namespace Nu
 open System
 open System.Collections.Generic
+open System.Reflection
 open SDL2
 open OpenTK
 open TiledSharp
 open Nu
 open Nu.Core
+open Nu.Math
 
 // WISDOM: On avoiding threads where possible...
 //
@@ -36,13 +38,20 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
     { Id : Id
       Name : string
       Enabled : bool
-      Visible : bool }
+      Visible : bool
+      Xtension : Xtension }
+
+type [<StructuralEquality; NoComparison; CLIMutable>] CustomEntity =
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
     { Entity : Entity
       Position : Vector2
       Depth : single
       Size : Vector2 }
+
+type [<StructuralEquality; NoComparison; CLIMutable>] CustomGui =
+    { Gui : Gui }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
     { Gui : Gui
@@ -81,6 +90,9 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
       Depth : single
       Size : Vector2
       Rotation : single }
+
+type [<StructuralEquality; NoComparison; CLIMutable>] CustomActor =
+    { Actor : Actor }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { Actor : Actor
@@ -109,11 +121,14 @@ type [<StructuralEquality; NoComparison; CLIMutable>] DynamicActor =
       Properties : Map<Lun, obj> }*)
 
 type [<StructuralEquality; NoComparison>] EntityModel =
+    | CustomEntity of CustomEntity
+    | CustomGui of CustomGui
     | Button of Button
     | Label of Label
     | TextBox of TextBox
     | Toggle of Toggle
     | Feeler of Feeler
+    | CustomActor of CustomActor
     | Block of Block
     | Avatar of Avatar
     | TileMap of TileMap
@@ -231,6 +246,7 @@ and [<ReferenceEquality>] World =
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list
+      XDispatchers : XDispatchers
       ExtData : obj }
 
 /// Enables components that open the world for extension.
@@ -241,6 +257,35 @@ and IWorldComponent =
         // TODO: abstract member GetRenderMessages : World -> RenderMessage rQueue
         // TODO: abstract member GetPhysicsMessages : World -> PhysicsMessage rQueue
         // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
+        end
+
+type EntityModelDispatcher () =
+    class
+
+        let dispatchBindings =
+            BindingFlags.Instance |||
+            BindingFlags.Public |||
+            BindingFlags.FlattenHierarchy
+
+        interface XDispatcher with
+            override this.GetDispatches () = Seq.ofArray <| (this.GetType ()).GetMethods dispatchBindings
+            end
+
+        abstract member Register : Address * World -> World
+        default this.Register (address, world) = world
+
+        abstract member Unregister : Address * World -> World
+        default this.Unregister (address, world) = world
+
+        abstract member GetQuickSize : unit -> Vector2
+        default this.GetQuickSize () = Vector2.One
+
+        abstract member GetTransform : unit -> Transform
+        default this.GetTransform () = identity
+
+        abstract member SetTransform : int * int * Transform * EntityModel -> EntityModel
+        default this.SetTransform (positionSnap, rotationSnap, transform, entityModel) = entityModel
+    
         end
 
 type [<StructuralEquality; NoComparison>] Simulant =

@@ -72,12 +72,12 @@ module WorldModule =
         elif priority > priority2 then -1
         else 1
 
-    let getPublishingPriority simulant =
+    let getPublishingPriority simulant world =
         match simulant with
         | GameModel _ -> GameModelPublishingPriority
         | ScreenModel _ -> ScreenModelPublishingPriority
         | GroupModel _ -> GroupModelPublishingPriority
-        | EntityModel entityModel -> getPickingPriority entityModel
+        | EntityModel entityModel -> getPickingPriority world.XDispatchers entityModel
 
     let getSimulant address world =
         match address with
@@ -91,7 +91,7 @@ module WorldModule =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let pickingSort entityModels world =
-        let priorities = List.map getPickingPriority entityModels
+        let priorities = List.map (getPickingPriority world.XDispatchers) entityModels
         let prioritiesAndEntityModels = List.zip priorities entityModels
         let prioritiesAndEntityModelsSorted = List.sortWith sortFstAsc prioritiesAndEntityModels
         List.map snd prioritiesAndEntityModelsSorted
@@ -100,7 +100,7 @@ module WorldModule =
         let entityModelsSorted = pickingSort entityModels world
         List.tryFind
             (fun entityModel ->
-                let transform = getEntityModelTransform (Some world.Camera) entityModel
+                let transform = getEntityModelTransform (Some world.Camera) world.XDispatchers entityModel
                 position.X >= transform.Position.X &&
                     position.X < transform.Position.X + transform.Size.X &&
                     position.Y >= transform.Position.Y &&
@@ -109,7 +109,7 @@ module WorldModule =
 
     let subscriptionSort subscriptions world =
         let simulants = getSimulants subscriptions world
-        let priorities = List.map getPublishingPriority simulants
+        let priorities = List.map (fun simulant -> getPublishingPriority simulant world) simulants
         let prioritiesAndSubscriptions = List.zip priorities subscriptions
         let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
         List.map snd prioritiesAndSubscriptionsSorted
@@ -254,8 +254,25 @@ module WorldModule =
         if keepRunning then update world'
         else (keepRunning, world')
 
+    let unregisterEntityXtension address world =
+        match get world <| worldOptEntityModelLens address with
+        | None -> world
+        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Unregister (address, world)) (fun () -> world) world.XDispatchers entityModel
+
+    let registerEntityXtension address world =
+        match get world <| worldOptEntityModelLens address with
+        | None -> world
+        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Register (address, world)) (fun () -> world) world.XDispatchers entityModel
+
+    let unregisterCustomEntity address world =
+        unregisterEntityXtension address world
+
+    let registerCustomEntity address world =
+        registerEntityXtension address world
+
     let unregisterButton address world =
         world |>
+            unregisterEntityXtension address |>
             unsubscribe DownMouseLeftAddress address |>
             unsubscribe UpMouseLeftAddress address
 
@@ -292,33 +309,14 @@ module WorldModule =
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
     let registerButton address world =
-        let optOldButton = get world (worldOptButtonLens address)
-        let world' = if optOldButton.IsSome then unregisterButton address world else world
-        let world'' = subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft world'
-        subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft world''
-
-    let addButton address button world =
-        let world' = registerButton address world
-        set (Button button) world' (worldEntityModelLens address)
-
-    let removeButton address world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterButton address world'
-
-    let addLabel address label world =
-        set (Label label) world (worldEntityModelLens address)
-
-    let removeLabel address world =
-        set None world (worldOptEntityModelLens address)
-
-    let addTextBox address textBox world =
-        set (TextBox textBox) world (worldEntityModelLens address)
-
-    let removeTextBox address world =
-        set None world (worldOptEntityModelLens address)
+        world |>
+            registerEntityXtension address |>
+            subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft |>
+            subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft
 
     let unregisterToggle address world =
         world |>
+            unregisterEntityXtension address |>
             unsubscribe DownMouseLeftAddress address |>
             unsubscribe UpMouseLeftAddress address
 
@@ -356,19 +354,14 @@ module WorldModule =
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
 
     let registerToggle address world =
-        let world' = subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft world
-        subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft world'
-
-    let addToggle address toggle world =
-        let world' = registerToggle address world
-        set (Toggle toggle) world' (worldEntityModelLens address)
-
-    let removeToggle address world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterToggle address world'
+        world |>
+            registerEntityXtension address |>
+            subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft |>
+            subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft
 
     let unregisterFeeler address world =
         world |>
+            unregisterEntityXtension address |>
             unsubscribe UpMouseLeftAddress address |>
             unsubscribe DownMouseLeftAddress address
 
@@ -399,16 +392,10 @@ module WorldModule =
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
     
     let registerFeeler address world =
-        let world' = subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft world
-        subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft world'
-
-    let addFeeler address feeler world =
-        let world' = registerFeeler address world
-        set (Feeler feeler) world' (worldEntityModelLens address)
-
-    let removeFeeler address world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterFeeler address world'
+        world |>
+            registerEntityXtension address |>
+            subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft |>
+            subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft
 
     let unregisterBlockPhysics address (block : Block) world =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
@@ -434,14 +421,6 @@ module WorldModule =
                   BodyType = block.BodyType }
         { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
 
-    let addBlock address block world =
-        let world' = registerBlockPhysics address block world
-        set (Block block) world' (worldEntityModelLens address)
-
-    let removeBlock address block world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterBlockPhysics address block world'
-
     let unregisterAvatarPhysics address avatar world =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
         { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
@@ -465,14 +444,6 @@ module WorldModule =
                   Density = avatar.Density
                   BodyType = BodyType.Dynamic }
         { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
-
-    let addAvatar address avatar world =
-        let world' = registerAvatarPhysics address avatar world
-        set (Avatar avatar) world' (worldEntityModelLens address)
-
-    let removeAvatar address avatar world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterAvatarPhysics address avatar world'
 
     let unregisterTilePhysics world physicsId =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = physicsId }
@@ -512,26 +483,52 @@ module WorldModule =
         let tld = makeTileLayerData tileMap tmd collisionLayer
         let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld address) (world, []) tld.Tiles
         let tileMap' = { tileMap with PhysicsIds = physicsIds }
-        (tileMap', world')
+        (TileMap tileMap', world')
 
-    let addTileMap address tileMap world =
-        let (tileMap', world') = registerTileMapPhysics address tileMap world
-        set (TileMap tileMap') world' (worldEntityModelLens address)
+    let unregisterEntityModel address world =
+        let entityModel = get world <| worldEntityModelLens address
+        match entityModel with
+        | CustomEntity _ -> unregisterEntityXtension address world
+        | CustomGui _ -> unregisterEntityXtension address world
+        | Button _ -> unregisterButton address world
+        | Label _ -> unregisterEntityXtension address world
+        | TextBox _ -> unregisterEntityXtension address world
+        | Toggle _ -> unregisterToggle address world
+        | Feeler _ -> unregisterFeeler address world
+        | CustomActor _ -> unregisterEntityXtension address world
+        | Block block -> unregisterBlockPhysics address block world
+        | Avatar avatar -> unregisterAvatarPhysics address avatar world
+        | TileMap tileMap -> unregisterTileMapPhysics address tileMap world
 
-    let removeTileMap address tileMap world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterTileMapPhysics address tileMap world'
+    let removeEntityModel address world =
+        let world' = unregisterEntityModel address world
+        set None world' (worldOptEntityModelLens address)
+
+    let removeEntityModels address world =
+        let entityModels = get world <| worldEntityModelsLens address
+        Map.fold
+            (fun world' entityModelName _ -> removeEntityModel (address @ [entityModelName]) world')
+            world
+            entityModels
+
+    let registerEntityModel address entityModel world =
+        if registered then unregister
+        match entityModel with
+        | CustomEntity _ -> (entityModel, registerEntityXtension address world)
+        | CustomGui _ -> (entityModel, registerEntityXtension address world)
+        | Button _ -> (entityModel, registerButton address world)
+        | Label _ -> (entityModel, registerEntityXtension address world)
+        | TextBox _ -> (entityModel, registerEntityXtension address world)
+        | Toggle _ -> (entityModel, registerToggle address world)
+        | Feeler _ -> (entityModel, registerFeeler address world)
+        | CustomActor _ -> (entityModel, registerEntityXtension address world)
+        | Block block -> (entityModel, world |> registerEntityXtension address |> registerBlockPhysics address block)
+        | Avatar avatar -> (entityModel, world |> registerEntityXtension address |> registerAvatarPhysics address avatar)
+        | TileMap tileMap -> world |> registerEntityXtension address |> registerTileMapPhysics address tileMap
 
     let addEntityModel address entityModel world =
-        match entityModel with
-        | Button button -> addButton address button world
-        | Label label -> addLabel address label world
-        | TextBox textBox -> addTextBox address textBox world
-        | Toggle toggle -> addToggle address toggle world
-        | Feeler feeler -> addFeeler address feeler world
-        | Block block -> addBlock address block world
-        | Avatar avatar -> addAvatar address avatar world
-        | TileMap tileMap -> addTileMap address tileMap world
+        let (entityModel', world') = registerEntityModel address entityModel world
+        set entityModel' world' (worldEntityModelLens address)
 
     let addEntityModels address entityModels world =
         List.fold
@@ -541,32 +538,16 @@ module WorldModule =
             world
             entityModels
 
-    let removeEntityModel address world =
-        let entityModel = get world <| worldEntityModelLens address
-        match entityModel with
-        | Button button -> removeButton address world
-        | Label label -> removeLabel address world
-        | TextBox textBox -> removeTextBox address world
-        | Toggle toggle -> removeToggle address world
-        | Feeler feeler -> removeFeeler address world
-        | Block block -> removeBlock address block world
-        | Avatar avatar -> removeAvatar address avatar world
-        | TileMap tileMap -> removeTileMap address tileMap world
-
-    let removeEntityModels address world =
-        let entityModels = get world <| worldEntityModelsLens address
-        Map.fold
-            (fun world' entityModelName _ -> removeEntityModel (address @ [entityModelName]) world')
-            world
-            entityModels
-
     let propagateEntityModelPhysics address entityModel world =
         match entityModel with
+        | CustomEntity _
+        | CustomGui _
         | Button _
         | Label _
         | TextBox _
         | Toggle _
         | Feeler _ -> world
+        | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
         | Block block -> world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
         | Avatar avatar -> world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
         | TileMap tileMap -> snd <| (world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap)
@@ -619,13 +600,13 @@ module WorldModule =
         set None world_ (worldOptGroupModelLens address)
 
     let addBattleGroup address (omniBattleGroup : OmniBattleGroup) entityModels world =
-        let world_ = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-        let world_ = set (OmniBattleGroup omniBattleGroup) world_ (worldGroupModelLens address)
-        addEntityModels address entityModels world_
+        let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+        let world'' = set (OmniBattleGroup omniBattleGroup) world' (worldGroupModelLens address)
+        addEntityModels address entityModels world''
 
     let removeBattleGroup address world =
-        let world_ = removeEntityModels address world
-        set None world_ (worldOptGroupModelLens address)
+        let world' = removeEntityModels address world
+        set None world' (worldOptGroupModelLens address)
 
     let addGroupModel address groupModel entityModels world =
         match groupModel with
@@ -738,16 +719,20 @@ module WorldModule =
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
                   Components = []
+                  XDispatchers = Map.empty
                   ExtData = extData }
             Right world
 
     let reregisterPhysicsHack4 groupAddress world _ entityModel =
         match entityModel with
+        | CustomEntity _
+        | CustomGui _
         | Button _
         | Label _
         | TextBox _
         | Toggle _
         | Feeler _ -> world
+        | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
         | Block block -> registerBlockPhysics (addrstr groupAddress block.Actor.Entity.Name) block world
         | Avatar avatar -> registerAvatarPhysics (addrstr groupAddress avatar.Actor.Entity.Name) avatar world
         | TileMap tileMap -> 

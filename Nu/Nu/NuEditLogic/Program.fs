@@ -243,8 +243,8 @@ module Program =
                 let dragState = DragCameraPosition (world.Camera.EyePosition + world.MouseState.MousePosition, world.MouseState.MousePosition)
                 let editorState_ = world.ExtData :?> EditorState
                 let editorState_ = { editorState_ with DragCameraState = dragState }
-                let world' = { world with ExtData = editorState_ }
-                (handle message, true, world')
+                let world_ = { world with ExtData = editorState_ }
+                (handle message, true, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
     let endCameraDrag (form : NuEditForm) _ _ message world =
