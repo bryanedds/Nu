@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>FSharp.Dynamic</name></assembly>
+<members>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.op_BangQmark``1(System.Object)">
+<summary>
+Prefix operator that allows direct dynamic invocation of the object
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.op_DynamicAssignment``1(System.Object,System.String,``0)">
+<summary>
+Dynamic set property
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.op_Dynamic``1(System.Object,System.String)">
+<summary>
+Dynamic get property or method invocation
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.dynExplicit``1(System.Object)">
+<summary>
+Use type inteference to dynamically convert explicitly
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.dynImplicit``1(System.Object)">
+<summary>
+Use type inteference to dynamically convert implicitly
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.op_GreaterGreaterQmarkGreaterGreater``1(System.Object,System.Type)">
+<summary>
+dynamic explicit convert to type dynamically
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.op_GreaterQmarkGreater``1(System.Object,System.Type)">
+<summary>
+dynamic implict convert to type
+</summary>
+</member>
+<member name="M:EkonBenefits.FSharp.Dynamic.dynStaticContext(System.Type)">
+<summary>
+Wrap type to dynamically call static methods
+</summary>
+</member>
+<member name="T:EkonBenefits.FSharp.Dynamic">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:EkonBenefits.FSharp.Util.PropertyGetCallsNamedArgument">
+<summary>
+Wrap object to use get operator to attach argument name for dynamic invocation
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:EkonBenefits.FSharp.Util.PropertySetCallsSubtractAssign">
+<summary>
+Wrap object to call the c# equivalent -= dynamically when using f# dynamic set operator
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:EkonBenefits.FSharp.Util.PropertySetCallsAddAssign">
+<summary>
+Wrap object to call the c# equivalent += dynamically when using f# dynamic set operator
+</summary>
+</member>
+<member name="T:EkonBenefits.FSharp.Util">
+
+</member>
+</members>
+</doc>

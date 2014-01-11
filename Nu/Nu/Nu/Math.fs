@@ -69,6 +69,12 @@ module Math =
           Size : Vector2
           Rotation : single }
 
+    let identity =
+        { Position = Vector2.Zero
+          Depth = 0.0f
+          Size = Vector2.One
+          Rotation = 0.0f }
+
     let snap value offset =
         if offset = 0 then value
         else
