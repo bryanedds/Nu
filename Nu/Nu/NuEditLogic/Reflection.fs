@@ -11,11 +11,14 @@ module Reflection =
 
     let getEntityModelTypes (entityModel : EntityModel) =
         match entityModel with
+        | CustomEntity _ -> [typeof<CustomEntity>; typeof<Entity>]
+        | CustomGui _ -> [typeof<CustomGui>; typeof<Gui>; typeof<Entity>]
         | Button _ -> [typeof<Button>; typeof<Gui>; typeof<Entity>]
         | Label _ -> [typeof<Label>; typeof<Gui>; typeof<Entity>]
         | TextBox _ -> [typeof<TextBox>; typeof<Gui>; typeof<Entity>]
         | Toggle _ -> [typeof<Toggle>; typeof<Gui>; typeof<Entity>]
         | Feeler _ -> [typeof<Feeler>; typeof<Gui>; typeof<Entity>]
+        | CustomActor _ -> [typeof<CustomActor>; typeof<Actor>; typeof<Entity>]
         | Block _ -> [typeof<Block>; typeof<Actor>; typeof<Entity>]
         | Avatar _ -> [typeof<Avatar>; typeof<Actor>; typeof<Entity>]
         | TileMap _ -> [typeof<TileMap>; typeof<Actor>; typeof<Entity>]
@@ -31,11 +34,14 @@ module Reflection =
 
     let getEntityModelPropertyValue (property : PropertyInfo) (entityModel : EntityModel) =
         match entityModel with
+        | CustomEntity _ -> getValue property entityModel customEntityLens
+        | CustomGui _ -> getValue property entityModel customGuiLens
         | Button _ -> getValue property entityModel buttonLens
         | Label _ -> getValue property entityModel labelLens
         | TextBox _ -> getValue property entityModel textBoxLens
         | Toggle _ -> getValue property entityModel toggleLens
         | Feeler _ -> getValue property entityModel feelerLens
+        | CustomActor _ -> getValue property entityModel customActorLens
         | Block _ -> getValue property entityModel blockLens
         | Avatar _ -> getValue property entityModel avatarLens
         | TileMap _ -> getValue property entityModel tileMapLens
@@ -46,6 +52,26 @@ module Reflection =
         let entityModel_ =
             // TODO: so much code duplication, make me wanna slap your momma!
             match entityModel_ with
+            | CustomEntity customEntity_ ->
+                let customEntity_ = { customEntity_ with Entity = customEntity_.Entity } // NOTE: this is just a hacky way to copy a record in lieu of reflection
+                if typeof<CustomEntity>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                then let _ = property.SetValue (customEntity_, value) in CustomEntity customEntity_
+                else
+                    let entity_ = { customEntity_.Entity with Id = customEntity_.Entity.Id } // NOTE: hacky copy
+                    property.SetValue (entity_, value)
+                    CustomEntity { customEntity_ with Entity = entity_ }
+            | CustomGui customGui_ ->
+                let customGui_ = { customGui_ with Gui = customGui_.Gui } // NOTE: this is just a hacky way to copy a record in lieu of reflection
+                if typeof<CustomGui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                then let _ = property.SetValue (customGui_, value) in CustomGui customGui_
+                else
+                    let gui_ = { customGui_.Gui with Position = customGui_.Gui.Position } // NOTE: hacky copy
+                    if typeof<Gui>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                    then let _ = property.SetValue (gui_, value) in CustomGui { customGui_ with Gui = gui_ }
+                    else
+                        let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
+                        property.SetValue (entity_, value)
+                        CustomGui { customGui_ with Gui = { gui_ with Entity = entity_ }}
             | Button button_ ->
                 let button_ = { button_ with Gui = button_.Gui } // NOTE: this is just a hacky way to copy a record in lieu of reflection
                 if typeof<Button>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
@@ -106,6 +132,18 @@ module Reflection =
                         let entity_ = { gui_.Entity with Id = gui_.Entity.Id } // NOTE: hacky copy
                         property.SetValue (entity_, value)
                         Feeler { feeler_ with Gui = { gui_ with Entity = entity_ }}
+            | CustomActor customActor_ ->
+                let customActor_ = { customActor_ with Actor = customActor_.Actor } // NOTE: this is just a hacky way to copy a record in lieu of reflection
+                if typeof<CustomActor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                then let _ = property.SetValue (customActor_, value) in CustomActor customActor_
+                else
+                    let actor_ = { customActor_.Actor with Position = customActor_.Actor.Position } // NOTE: hacky copy
+                    if typeof<Actor>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+                    then let _ = property.SetValue (actor_, value) in CustomActor { customActor_ with Actor = actor_ }
+                    else
+                        let entity_ = { actor_.Entity with Id = actor_.Entity.Id } // NOTE: hacky copy
+                        property.SetValue (entity_, value)
+                        CustomActor { customActor_ with Actor = { actor_ with Entity = entity_ }}
             | Block block_ ->
                 let block_ = { block_ with Actor = block_.Actor } // NOTE: hacky copy
                 if typeof<Block>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
@@ -151,5 +189,5 @@ module Reflection =
 
     let loadFile (fileName : string) world =
         let world' = removeGroupModel EditorGroupAddress world
-        let (testGroupModel, testEntityModels) = loadGroupModelFile fileName world'
-        addGroupModel EditorGroupAddress testGroupModel testEntityModels world'
+        let testGroupDescriptor = loadGroupModelFile fileName world'
+        addGroupModel EditorGroupAddress testGroupDescriptor world'
