@@ -740,12 +740,19 @@ module WorldModule =
         | Toggle _
         | Feeler _ -> world
         | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
-        | Block block -> registerBlockPhysics (addrstr groupAddress block.Actor.Entity.Name) block world
-        | Avatar avatar -> registerAvatarPhysics (addrstr groupAddress avatar.Actor.Entity.Name) avatar world
+        | Block block ->
+            let address = addrstr groupAddress block.Actor.Entity.Name
+            let world' = unregisterBlockPhysics address block world
+            registerBlockPhysics address block world'
+        | Avatar avatar ->
+            let address = addrstr groupAddress avatar.Actor.Entity.Name
+            let world' = unregisterAvatarPhysics address avatar world
+            registerAvatarPhysics address avatar world'
         | TileMap tileMap -> 
             let tileMapAddress = addrstr groupAddress tileMap.Actor.Entity.Name
-            let (tileMap', world') = registerTileMapPhysics tileMapAddress tileMap world
-            set tileMap' world' <| worldTileMapLens tileMapAddress
+            let world' = unregisterTileMapPhysics tileMapAddress tileMap world
+            let (tileMap', world'') = registerTileMapPhysics tileMapAddress tileMap world'
+            set tileMap' world'' <| worldTileMapLens tileMapAddress
 
     let reregisterPhysicsHack groupAddress world =
         let entityModels = get world <| worldEntityModelsLens groupAddress
