@@ -271,20 +271,26 @@ type EntityModelDispatcher () =
             override this.GetDispatches () = Seq.ofArray <| (this.GetType ()).GetMethods dispatchBindings
             end
 
-        abstract member Register : Address * World -> World
-        default this.Register (address, world) = world
+        abstract member Register : Address * EntityModel * World -> World
+        default this.Register (_, _, world) = world
 
-        abstract member Unregister : Address * World -> World
-        default this.Unregister (address, world) = world
+        abstract member Unregister : Address * EntityModel * World -> World
+        default this.Unregister (_, _, world) = world
 
-        abstract member GetQuickSize : unit -> Vector2
-        default this.GetQuickSize () = Vector2.One
+        abstract member HandleIntegrationMessage : IntegrationMessage * Address * EntityModel * World -> World
+        default this.HandleIntegrationMessage (_, _, _, world) = world
 
-        abstract member GetTransform : unit -> Transform
-        default this.GetTransform () = identity
+        abstract member GetRenderDescriptors : EntityModel -> RenderDescriptor list
+        default this.GetRenderDescriptors _ = []
+
+        abstract member GetQuickSize : EntityModel -> Vector2
+        default this.GetQuickSize _ = Vector2.One
+
+        abstract member GetTransform : EntityModel -> Transform
+        default this.GetTransform _ = identity
 
         abstract member SetTransform : int * int * Transform * EntityModel -> EntityModel
-        default this.SetTransform (positionSnap, rotationSnap, transform, entityModel) = entityModel
+        default this.SetTransform (_, _, _, entityModel) = entityModel
     
         end
 

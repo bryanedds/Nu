@@ -103,7 +103,7 @@ module Entities =
         match entityModel with
         | CustomEntity _
         | CustomGui _
-        | CustomActor _ -> invokeEntityModelXtension (fun dispatcher -> dispatcher.GetQuickSize ()) (fun () -> Vector2.One) dispatchers entityModel
+        | CustomActor _ -> invokeEntityModelXtension (fun dispatcher -> dispatcher.GetQuickSize entityModel) (fun () -> Vector2.One) dispatchers entityModel
         | Button button -> getTextureSizeAsVector2 button.UpSprite.SpriteAssetName button.UpSprite.PackageName assetMetadataMap
         | Label label -> getTextureSizeAsVector2 label.LabelSprite.SpriteAssetName label.LabelSprite.PackageName assetMetadataMap
         | TextBox textBox -> getTextureSizeAsVector2 textBox.BoxSprite.SpriteAssetName textBox.BoxSprite.PackageName assetMetadataMap
@@ -550,7 +550,7 @@ module Entities =
     let getEntityModelTransform optCamera dispatchers entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity _ -> invokeEntityModelXtension (fun dispatcher -> dispatcher.GetTransform ()) (fun () -> identity) dispatchers entityModel
+        | CustomEntity _ -> invokeEntityModelXtension (fun dispatcher -> dispatcher.GetTransform entityModel) (fun () -> identity) dispatchers entityModel
         | CustomGui customGui -> getGuiTransform customGui.Gui
         | Button button -> getGuiTransform button.Gui
         | Label label -> getGuiTransform label.Gui
