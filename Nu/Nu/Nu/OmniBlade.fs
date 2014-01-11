@@ -61,11 +61,11 @@ module OmniBlade =
     let TimeAddress = addr "time"
 
     let createTitleScreen world =
-        let world' = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
-        let world'' = subscribe ClickTitleGroupNewAddress [] (handleEventAsScreenTransition TitleAddress FieldAddress) world'
-        let world'3 = subscribe ClickTitleGroupLoadAddress [] (handleEventAsScreenTransition TitleAddress LoadAddress) world''
-        let world'4 = subscribe ClickTitleGroupCreditsAddress [] (handleEventAsScreenTransition TitleAddress CreditsAddress) world'3
-        subscribe ClickTitleGroupExitAddress [] handleEventAsExit world'4
+        let world_ = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
+        let world_ = subscribe ClickTitleGroupNewAddress [] (handleEventAsScreenTransition TitleAddress FieldAddress) world_
+        let world_ = subscribe ClickTitleGroupLoadAddress [] (handleEventAsScreenTransition TitleAddress LoadAddress) world_
+        let world_ = subscribe ClickTitleGroupCreditsAddress [] (handleEventAsScreenTransition TitleAddress CreditsAddress) world_
+        subscribe ClickTitleGroupExitAddress [] handleEventAsExit world_
 
     let createLoadScreen world =
         let world' = createDissolveScreenFromFile LoadGroupFileName LoadGroupName IncomingTime OutgoingTime LoadAddress world

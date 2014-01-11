@@ -62,11 +62,19 @@
     <Compile Include="Lensx.fs" />
     <Compile Include="RduTreeModule.fs" />
     <Compile Include="RduTree.fs" />
+    <Compile Include="XtensionModule.fs" />
+    <Compile Include="Xtension.fs" />
     <Compile Include="Propagate.fs" />
     <Compile Include="Log.fs" />
     <None Include="Interactive.fsx" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Dynamitey">
+      <HintPath>..\..\..\Nu\Dynamitey\Dynamitey.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharp.Dynamic">
+      <HintPath>..\..\..\Nu\FSharp.Dynamic\FSharp.Dynamic.dll</HintPath>
+    </Reference>
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
