@@ -635,7 +635,7 @@ module WorldModule =
 
     let addGroupModels address groupDescriptors world =
         List.fold
-            (fun world' (groupModelName, groupModel, entityModels) -> addGroupModel (address @ groupModelName) (groupModel, entityModels) world')
+            (fun world' (groupModelName, groupModel, entityModels) -> addGroupModel (address @ [groupModelName]) (groupModel, entityModels) world')
             world
             groupDescriptors
 
@@ -697,14 +697,14 @@ module WorldModule =
         let splashScreenModel = Screen <| makeDissolveScreen incomingTime outgoingTime
         let splashGroupModel = Group <| makeDefaultGroup ()
         let splashLabel = Label { Gui = { makeDefaultGui (Some "splashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
-        let world' = addScreenModel address splashScreenModel [(addrstr address "splashGroup", splashGroupModel, [splashLabel])] world
+        let world' = addScreenModel address splashScreenModel [(Lun.make "splashGroup", splashGroupModel, [splashLabel])] world
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
 
     let createDissolveScreenFromFile groupModelFileName groupModelName incomingTime outgoingTime screenAddress world =
         let screenModel = Screen <| makeDissolveScreen incomingTime outgoingTime
         let (groupModel, entityModels) = loadGroupModelFile groupModelFileName world
-        addScreenModel screenAddress screenModel [(screenAddress @ [groupModelName], groupModel, entityModels)] world
+        addScreenModel screenAddress screenModel [(groupModelName, groupModel, entityModels)] world
 
     let tryCreateEmptyWorld sdlDeps extData =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
