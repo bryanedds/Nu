@@ -292,8 +292,8 @@ module Entities =
     let customActorSep (customActor : CustomActor) =
         (customActor, customActor.Actor, customActor.Actor.Entity)
     
-    let customActorCmb (customActor : CustomActor, gui, entity) =
-        { customActor with Actor = { gui with Entity = entity }}
+    let customActorCmb (customActor : CustomActor, actor, entity) =
+        { customActor with Actor = { actor with Entity = entity }}
 
     let optBlockLens =
         { Get = fun entityModel -> match entityModel with Block block -> Some block | _ -> None
