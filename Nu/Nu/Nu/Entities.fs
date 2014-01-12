@@ -705,14 +705,14 @@ module Entities =
         | Block _ ->
             Block
                 { Actor = makeDefaultActor optName
-                  PhysicsId = getPhysicsId ()
+                  PhysicsId = InvalidPhysicsId
                   Density = NormalDensity
                   BodyType = BodyType.Dynamic
                   Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | Avatar _ ->
             Avatar
                 { Actor = makeDefaultActor optName
-                  PhysicsId = getPhysicsId ()
+                  PhysicsId = InvalidPhysicsId
                   Density = NormalDensity
                   Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | TileMap _ ->
