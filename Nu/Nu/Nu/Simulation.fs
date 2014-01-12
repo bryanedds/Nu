@@ -96,20 +96,20 @@ type [<StructuralEquality; NoComparison; CLIMutable>] CustomActor =
       
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { Actor : Actor
-      PhysicsId : Id
+      PhysicsId : PhysicsId
       Density : single
       BodyType : BodyType
       Sprite : Sprite }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
     { Actor : Actor
-      PhysicsId : Id
+      PhysicsId : PhysicsId
       Density : single
       Sprite : Sprite }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
     { Actor : Actor
-      PhysicsIds : Id list
+      PhysicsIds : PhysicsId list
       Density : single
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap

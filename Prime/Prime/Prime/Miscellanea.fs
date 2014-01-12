@@ -3,6 +3,12 @@ module Miscellanea
 open System
 open System.Diagnostics
 
+/// A generic identification code type.
+type Id = int64
+
+/// The invalid Id.
+let [<Literal>] InvalidId = 0L
+
 /// Perform a ToString operation on an object.
 let str obj =
     obj.ToString ()
@@ -30,7 +36,7 @@ let rec doUntil op pred =
 // TODO: place a mutex lock in this
 // TODO: see if returned function can be optimized by minimizing dereferences
 let createGetNextId () =
-    let nextId = ref 0L
+    let nextId = ref InvalidId
     let getNextId =
         (fun () ->
             nextId := !nextId + 1L
