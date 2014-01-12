@@ -392,48 +392,52 @@ module WorldModule =
             unsubscribe DownMouseLeftAddress address
 
     let registerBlockPhysics address (block : Block) world =
+        let block' = { block with PhysicsId = getPhysicsId block.Actor.Entity.Id }
         let bodyCreateMessage =
             BodyCreateMessage
                 { EntityAddress = address
-                  PhysicsId = block.PhysicsId
+                  PhysicsId = block'.PhysicsId
                   Shape =
                     BoxShape
-                        { Extent = block.Actor.Size * 0.5f
+                        { Extent = block'.Actor.Size * 0.5f
                           Properties =
                             { Center = Vector2.Zero
                               Restitution = 0.0f
                               FixedRotation = false
                               LinearDamping = 5.0f
                               AngularDamping = 5.0f }}
-                  Position = block.Actor.Position + block.Actor.Size * 0.5f
-                  Rotation = block.Actor.Rotation
-                  Density = block.Density
-                  BodyType = block.BodyType }
-        { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+                  Position = block'.Actor.Position + block'.Actor.Size * 0.5f
+                  Rotation = block'.Actor.Rotation
+                  Density = block'.Density
+                  BodyType = block'.BodyType }
+        let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+        (block', world')
 
     let unregisterBlockPhysics address (block : Block) world =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
         { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-    let registerAvatarPhysics address avatar world =
+    let registerAvatarPhysics address (avatar : Avatar) world =
+        let avatar' = { avatar with PhysicsId = getPhysicsId avatar.Actor.Entity.Id }
         let bodyCreateMessage =
             BodyCreateMessage
                 { EntityAddress = address
-                  PhysicsId = avatar.PhysicsId
+                  PhysicsId = avatar'.PhysicsId
                   Shape =
                     CircleShape
-                        { Radius = avatar.Actor.Size.X * 0.5f
+                        { Radius = avatar'.Actor.Size.X * 0.5f
                           Properties =
                             { Center = Vector2.Zero
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = 10.0f
                               AngularDamping = 0.0f }}
-                  Position = avatar.Actor.Position + avatar.Actor.Size * 0.5f
-                  Rotation = avatar.Actor.Rotation
-                  Density = avatar.Density
+                  Position = avatar'.Actor.Position + avatar'.Actor.Size * 0.5f
+                  Rotation = avatar'.Actor.Rotation
+                  Density = avatar'.Density
                   BodyType = BodyType.Dynamic }
-        { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+        let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+        (avatar', world')
 
     let unregisterAvatarPhysics address avatar world =
         let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
@@ -445,7 +449,7 @@ module WorldModule =
         | None -> (world, physicsIds)
         | Some tileSetTile when not <| tileSetTile.Properties.ContainsKey "c" -> (world, physicsIds)
         | Some tileSetTile ->
-            let physicsId = getPhysicsId ()
+            let physicsId = getPhysicsId tileMap.Actor.Entity.Id
             let boxShapeProperties =
                 { Center = Vector2.Zero
                   Restitution = 0.0f
@@ -489,8 +493,12 @@ module WorldModule =
         | Toggle _ -> (entityModel, registerToggle address world)
         | Feeler _ -> (entityModel, registerFeeler address world)
         | CustomActor _ -> (entityModel, registerEntityXtension address world)
-        | Block block -> (entityModel, world |> registerEntityXtension address |> registerBlockPhysics address block)
-        | Avatar avatar -> (entityModel, world |> registerEntityXtension address |> registerAvatarPhysics address avatar)
+        | Block block ->
+            let (block', world') = world |> registerEntityXtension address |> registerBlockPhysics address block
+            (Block block', world')
+        | Avatar avatar ->
+            let (avatar', world') = world |> registerEntityXtension address |> registerAvatarPhysics address avatar
+            (Avatar avatar', world')
         | TileMap tileMap ->
             let (tileMap', world') = world |> registerEntityXtension address |> registerTileMapPhysics address tileMap
             (TileMap tileMap', world')
@@ -547,8 +555,8 @@ module WorldModule =
         | Toggle _
         | Feeler _ -> world
         | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
-        | Block block -> world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
-        | Avatar avatar -> world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
+        | Block block -> snd <| (world |> unregisterBlockPhysics address block |> registerBlockPhysics address block)
+        | Avatar avatar -> snd <| (world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar)
         | TileMap tileMap -> snd <| (world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap)
 
     let registerGroup address group entityModels world =
@@ -743,16 +751,18 @@ module WorldModule =
         | Block block ->
             let address = addrstr groupAddress block.Actor.Entity.Name
             let world' = unregisterBlockPhysics address block world
-            registerBlockPhysics address block world'
+            let (block', world'') = registerBlockPhysics address block world'
+            set block' world'' <| worldBlockLens address
         | Avatar avatar ->
             let address = addrstr groupAddress avatar.Actor.Entity.Name
             let world' = unregisterAvatarPhysics address avatar world
-            registerAvatarPhysics address avatar world'
+            let (avatar', world'') = registerAvatarPhysics address avatar world'
+            set avatar' world'' <| worldAvatarLens address
         | TileMap tileMap -> 
-            let tileMapAddress = addrstr groupAddress tileMap.Actor.Entity.Name
-            let world' = unregisterTileMapPhysics tileMapAddress tileMap world
-            let (tileMap', world'') = registerTileMapPhysics tileMapAddress tileMap world'
-            set tileMap' world'' <| worldTileMapLens tileMapAddress
+            let address = addrstr groupAddress tileMap.Actor.Entity.Name
+            let world' = unregisterTileMapPhysics address tileMap world
+            let (tileMap', world'') = registerTileMapPhysics address tileMap world'
+            set tileMap' world'' <| worldTileMapLens address
 
     let reregisterPhysicsHack groupAddress world =
         let entityModels = get world <| worldEntityModelsLens groupAddress

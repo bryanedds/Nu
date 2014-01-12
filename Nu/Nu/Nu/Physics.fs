@@ -8,6 +8,8 @@ open Nu
 open Nu.Core
 open Nu.Constants
 
+type PhysicsId = Id * Id
+
 type [<StructuralEquality; NoComparison>] CommonShapeProperties =
     { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
       Restitution : single
@@ -56,7 +58,7 @@ and BodyTypeTypeConverter () =
 
 type [<StructuralEquality; NoComparison>] BodyCreateMessage =
     { EntityAddress : Address
-      PhysicsId : Id
+      PhysicsId : PhysicsId
       Shape : BodyShape
       Position : Vector2
       Rotation : single
@@ -64,10 +66,10 @@ type [<StructuralEquality; NoComparison>] BodyCreateMessage =
       BodyType : BodyType }
 
 type [<StructuralEquality; NoComparison>] BodyDestroyMessage =
-    { PhysicsId : Id }
+    { PhysicsId : PhysicsId }
 
 type [<StructuralEquality; NoComparison>] ApplyImpulseMessage =
-    { PhysicsId : Id
+    { PhysicsId : PhysicsId
       Impulse : Vector2 }
 
 type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
@@ -81,7 +83,8 @@ type [<StructuralEquality; NoComparison>] BodyTransformMessage =
       Position : Vector2
       Rotation : single }
 
-type BodyDictionary = Dictionary<Id, Dynamics.Body>
+type BodyDictionary =
+    Dictionary<PhysicsId, Dynamics.Body>
 
 type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | BodyCreateMessage of BodyCreateMessage
@@ -102,8 +105,12 @@ type [<ReferenceEquality>] Integrator =
 
 module Physics =
 
+    let InvalidPhysicsId = (InvalidId, InvalidId)
+
     /// NOTE: Ironically, not purely functional.
-    let getPhysicsId = createGetNextId ()
+    let getPhysicsId =
+        let getNextId = createGetNextId ()
+        fun (entityId : Id) -> (entityId, getNextId ())
 
     let toPixel value =
         value * Nu.Constants.PhysicsToPixelRatio
