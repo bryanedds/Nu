@@ -511,8 +511,8 @@ module WorldModule =
         | TileMap tileMap -> unregisterTileMapPhysics address tileMap world
 
     let removeEntityModel address world =
-        let world' = set None world (worldOptEntityModelLens address)
-        unregisterEntityModel address world'
+        let world' = unregisterEntityModel address world
+        set None world' <| worldOptEntityModelLens address
 
     let removeEntityModels address world =
         let entityModels = get world <| worldEntityModelsLens address
@@ -615,8 +615,8 @@ module WorldModule =
         | OmniBattleGroup _ -> unregisterBattleGroup address world
 
     let removeGroupModel address world =
-        let world' = set None world (worldOptGroupModelLens address)
-        unregisterGroupModel address world'
+        let world' = unregisterGroupModel address world
+        set None world' (worldOptGroupModelLens address)
 
     let removeGroupModels address world =
         let groupModels = get world <| worldGroupModelsLens address
@@ -663,8 +663,8 @@ module WorldModule =
         | OmniBattleScreen omniBattleScreen -> unregisterOmniBattleScreen address world
 
     let removeScreenModel address world =
-        let world' = set None world (worldOptScreenModelLens address)
-        unregisterScreenModel address world'
+        let world' = unregisterScreenModel address world
+        set None world' (worldOptScreenModelLens address)
 
     let addScreenModel address screenModel groupDescriptors world =
         let world' =
