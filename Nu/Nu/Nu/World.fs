@@ -555,9 +555,15 @@ module WorldModule =
         | Toggle _
         | Feeler _ -> world
         | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
-        | Block block -> snd <| (world |> unregisterBlockPhysics address block |> registerBlockPhysics address block)
-        | Avatar avatar -> snd <| (world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar)
-        | TileMap tileMap -> snd <| (world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap)
+        | Block block ->
+            let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
+            set (Block block') world' <| worldEntityModelLens address
+        | Avatar avatar ->
+            let (avatar', world') = world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
+            set (Avatar avatar') world' <| worldEntityModelLens address
+        | TileMap tileMap -> 
+            let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
+            set (TileMap tileMap') world' <| worldEntityModelLens address
 
     let registerGroup address group entityModels world =
         addEntityModels address entityModels world
