@@ -6,9 +6,9 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Aml", "..\..\Aml\Aml\Aml\Am
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Prime", "..\..\Prime\Prime\Prime\Prime.fsproj", "{FE09AE81-B66B-42E0-8192-EADECEFC9893}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuEdit", "NuEditLogic\NuEdit.fsproj", "{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuEditDesign", "NuEditDesign\NuEditDesign.csproj", "{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuEdit", "NuEdit\NuEdit.fsproj", "{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,18 +35,18 @@ Global
 		{FE09AE81-B66B-42E0-8192-EADECEFC9893}.Optimized|Any CPU.Build.0 = Release|Any CPU
 		{FE09AE81-B66B-42E0-8192-EADECEFC9893}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE09AE81-B66B-42E0-8192-EADECEFC9893}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
-		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Optimized|Any CPU.Build.0 = Release|Any CPU
-		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
 		{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}.Optimized|Any CPU.Build.0 = Release|Any CPU
 		{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
+		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Optimized|Any CPU.Build.0 = Release|Any CPU
+		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
