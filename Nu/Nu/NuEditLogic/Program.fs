@@ -1,4 +1,4 @@
-﻿namespace NuEditLogic
+﻿namespace NuEdit
 open NuEditDesign
 open SDL2
 open OpenTK
@@ -24,8 +24,8 @@ open Nu.Groups
 open Nu.Screens
 open Nu.Games
 open Nu.WorldModule
-open NuEditLogic.Constants
-open NuEditLogic.Reflection
+open NuEdit.Constants
+open NuEdit.Reflection
 
 type WorldChanger = World -> World
 
@@ -387,7 +387,7 @@ module Program =
                 world')
             refWorld := changer !refWorld
             worldChangers.Add changer
-        | _ -> trace <| "Invalid cut operation (likely a code issue in NuEditLogic)."
+        | _ -> trace <| "Invalid cut operation (likely a code issue in NuEdit)."
         
     let handleCopy (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let optEntityModelTds = form.propertyGrid.SelectedObject
@@ -397,7 +397,7 @@ module Program =
             let entityModel = get !refWorld <| worldEntityModelLens entityModelTds.Address
             let editorState = (!refWorld).ExtData :?> EditorState
             editorState.Clipboard := Some entityModel
-        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEditLogic)."
+        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."
 
     let handlePaste (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let editorState = (!refWorld).ExtData :?> EditorState
@@ -438,7 +438,7 @@ module Program =
                 world_)
             refWorld := changer !refWorld
             worldChangers.Add changer
-        | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEditLogic)."
+        | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEdit)."
 
     let handleResetCamera (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let changer = (fun world ->

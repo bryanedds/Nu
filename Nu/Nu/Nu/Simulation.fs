@@ -114,11 +114,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
       TileMapAsset : TileMapAsset
       TmxMap : TmxMap
       TileMapSprites : Sprite list }
-      
-(* This is just an idea...
-type [<StructuralEquality; NoComparison; CLIMutable>] DynamicActor =
-    { Actor : Actor
-      Properties : Map<Lun, obj> }*)
 
 type [<StructuralEquality; NoComparison>] EntityModel =
     | CustomEntity of CustomEntity
@@ -252,7 +247,6 @@ and [<ReferenceEquality>] World =
 /// Enables components that open the world for extension.
 and IWorldComponent =
     interface
-        abstract member GetAudioDescriptors : World -> AudioDescriptor list
         abstract member GetRenderDescriptors : World -> RenderDescriptor list
         // TODO: abstract member GetRenderMessages : World -> RenderMessage rQueue
         // TODO: abstract member GetPhysicsMessages : World -> PhysicsMessage rQueue

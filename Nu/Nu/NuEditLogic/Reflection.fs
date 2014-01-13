@@ -1,4 +1,4 @@
-﻿namespace NuEditLogic
+﻿namespace NuEdit
 open System
 open System.Reflection
 open Nu
@@ -6,7 +6,7 @@ open Nu.Core
 open Nu.Entities
 open Nu.Groups
 open Nu.WorldModule
-open NuEditLogic.Constants
+open NuEdit.Constants
 module Reflection =
 
     let getEntityModelTypes (entityModel : EntityModel) =
