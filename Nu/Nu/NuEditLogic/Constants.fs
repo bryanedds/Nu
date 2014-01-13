@@ -1,4 +1,4 @@
-﻿namespace NuEditLogic
+﻿namespace NuEdit
 open Nu.Core
 module Constants =
 

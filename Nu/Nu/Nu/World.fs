@@ -768,22 +768,11 @@ module WorldModule =
         let entityModels = get world <| worldEntityModelsLens groupAddress
         Map.fold (reregisterPhysicsHack4 groupAddress) world entityModels
 
-    let getComponentAudioDescriptors world : AudioDescriptor rQueue =
-        let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetAudioDescriptors world :: descs) [] world.Components // TODO: get audio descriptors
-        List.collect (fun descs -> descs) descriptorLists
-
-    let getAudioDescriptors world : AudioDescriptor rQueue =
-        let componentDescriptors = getComponentAudioDescriptors world
-        let worldDescriptors = [] // TODO: get audio descriptors when there are some
-        componentDescriptors @ worldDescriptors // NOTE: pretty inefficient
-
     /// Play the world's audio.
     let play world =
         let audioMessages = world.AudioMessages
-        let audioDescriptors = getAudioDescriptors world
-        let audioPlayer = world.AudioPlayer
         let world' = { world with AudioMessages = [] }
-        { world' with AudioPlayer = Nu.Audio.play audioMessages audioDescriptors audioPlayer }
+        { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
     let getComponentRenderDescriptors world : RenderDescriptor rQueue =
         let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors

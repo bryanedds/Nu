@@ -22,11 +22,6 @@ type [<StructuralEquality; NoComparison>] PlaySong =
     { Song : Song
       FadeOutCurrentSong : bool }
 
-/// Describes an audio asset.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] AudioDescriptor =
-    | TODO
-
 type [<StructuralEquality; NoComparison>] PlaySound =
     { Volume : single
       Sound : Sound }
@@ -231,9 +226,8 @@ module Audio =
     let handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)
 
-    let play audioMessages audioDescriptors audioPlayer =
+    let play audioMessages audioPlayer =
         let audioPlayer' = handleAudioMessages audioMessages audioPlayer
-        () // TODO: do stuff with descriptors when we have some
         updateAudioPlayer audioPlayer'
 
     let makeAudioPlayer () =

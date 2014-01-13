@@ -8,9 +8,9 @@
     <ProjectGuid>f1768f36-9ed3-4c36-9dce-9535aefb0732</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>NuEditLogic</RootNamespace>
-    <AssemblyName>NuEditLogic</AssemblyName>
+    <AssemblyName>NuEdit</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>NuEditLogic</Name>
+    <Name>NuEdit</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Debug\NuEditLogic.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\NuEdit.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -32,7 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Release\NuEditLogic.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\NuEdit.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
