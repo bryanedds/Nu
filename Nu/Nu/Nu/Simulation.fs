@@ -40,6 +40,11 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Enabled : bool
       Visible : bool
       Xtension : Xtension }
+    static member (?) (this : Entity) memberName args =
+        (?) this.Xtension memberName args
+    static member (?<-) (this : Entity, memberName, value) =
+        let xtension = (?<-) this.Xtension memberName value
+        { this with Xtension = xtension }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] CustomEntity =
     { Entity : Entity }
@@ -241,8 +246,11 @@ and [<ReferenceEquality>] World =
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list
-      XDispatchers : XDispatchers
+      Dispatchers : IXDispatchers
       ExtData : obj }
+    interface IXDispatcherContainer with
+        member this.GetDispatchers () = this.Dispatchers
+        end
 
 /// Enables components that open the world for extension.
 and IWorldComponent =
@@ -261,7 +269,7 @@ type EntityModelDispatcher () =
             BindingFlags.Public |||
             BindingFlags.FlattenHierarchy
 
-        interface XDispatcher with
+        interface IXDispatcher with
             override this.GetDispatches () = Seq.ofArray <| (this.GetType ()).GetMethods dispatchBindings
             end
 

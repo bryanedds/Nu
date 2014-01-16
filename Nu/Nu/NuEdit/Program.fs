@@ -191,7 +191,7 @@ module Program =
                     let pastWorld = world
                     let entity = get entityModel entityLens
                     let entityAddress = addrstr EditorGroupAddress entity.Name
-                    let entityTransform = getEntityModelTransform (Some world.Camera) world.XDispatchers entityModel
+                    let entityTransform = getEntityModelTransform (Some world.Camera) world.Dispatchers entityModel
                     let dragState = DragEntityPosition (entityTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityAddress)
                     let editorState_ = world.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
@@ -223,10 +223,10 @@ module Program =
         | DragEntityNone -> world
         | DragEntityPosition (pickOffset, origMousePosition, address) ->
             let entityModel_ = get world <| worldEntityModelLens address
-            let transform_ = getEntityModelTransform (Some world.Camera) world.XDispatchers entityModel_
+            let transform_ = getEntityModelTransform (Some world.Camera) world.Dispatchers entityModel_
             let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
             let (positionSnap, rotationSnap) = getSnaps form
-            let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap transform_ world.XDispatchers entityModel_
+            let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap transform_ world.Dispatchers entityModel_
             let world_ = set entityModel_ world <| worldEntityModelLens address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, origMousePosition, address) }
             let world_ = { world_ with ExtData = editorState_ }
@@ -287,7 +287,7 @@ module Program =
             let entityTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
             let entityModel_ = makeDefaultEntityModel entityTypeName None
             let (positionSnap, rotationSnap) = getSnaps form
-            let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap entityTransform world.XDispatchers entityModel_
+            let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap entityTransform world.Dispatchers entityModel_
             let entity = get entityModel_ entityLens
             let entityAddress = addrstr EditorGroupAddress entity.Name
             let world_ = addEntityModel entityAddress entityModel_ world
@@ -410,10 +410,10 @@ module Program =
                 let entity_ = { entity_ with Id = id; Name = str id }
                 let entityModel_ = set entity_ entityModel_ entityLens
                 let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-                let entityTransform_ = getEntityModelTransform (Some world.Camera) world.XDispatchers entityModel_
+                let entityTransform_ = getEntityModelTransform (Some world.Camera) world.Dispatchers entityModel_
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
-                let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap entityTransform_ world.XDispatchers entityModel_
+                let entityModel_ = setEntityModelTransform (Some world.Camera) positionSnap rotationSnap entityTransform_ world.Dispatchers entityModel_
                 let address = addrstr EditorGroupAddress entity_.Name
                 let pastWorld = world
                 let world_ = pushPastWorld pastWorld world
@@ -429,9 +429,9 @@ module Program =
         | :? EntityModelTypeDescriptorSource as entityModelTds ->
             let changer = (fun world ->
                 let entityModel_ = get world <| worldEntityModelLens entityModelTds.Address
-                let entityQuickSize = getEntityModelQuickSize world.AssetMetadataMap world.XDispatchers entityModel_
-                let entityTransform = { getEntityModelTransform None world.XDispatchers entityModel_ with Size = entityQuickSize }
-                let entityModel_ = setEntityModelTransform None 0 0 entityTransform world.XDispatchers entityModel_
+                let entityQuickSize = getEntityModelQuickSize world.AssetMetadataMap world.Dispatchers entityModel_
+                let entityTransform = { getEntityModelTransform None world.Dispatchers entityModel_ with Size = entityQuickSize }
+                let entityModel_ = setEntityModelTransform None 0 0 entityTransform world.Dispatchers entityModel_
                 let world_ = set entityModel_ world <| worldEntityModelLens entityModelTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()

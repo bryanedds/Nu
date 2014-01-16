@@ -54,6 +54,10 @@ module WorldModule =
         initMathConverters ()
         initAudioConverters ()
         initRenderConverters ()
+    
+    /// Derive an XDispatcherContainer from a world.
+    let xdc world =
+        xdc world.Dispatchers
 
     /// Mark a message as handled.
     let handle message =
@@ -77,7 +81,7 @@ module WorldModule =
         | GameModel _ -> GameModelPublishingPriority
         | ScreenModel _ -> ScreenModelPublishingPriority
         | GroupModel _ -> GroupModelPublishingPriority
-        | EntityModel entityModel -> getPickingPriority world.XDispatchers entityModel
+        | EntityModel entityModel -> getPickingPriority world.Dispatchers entityModel
 
     let getSimulant address world =
         match address with
@@ -91,7 +95,7 @@ module WorldModule =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let pickingSort entityModels world =
-        let priorities = List.map (getPickingPriority world.XDispatchers) entityModels
+        let priorities = List.map (getPickingPriority world.Dispatchers) entityModels
         let prioritiesAndEntityModels = List.zip priorities entityModels
         let prioritiesAndEntityModelsSorted = List.sortWith sortFstAsc prioritiesAndEntityModels
         List.map snd prioritiesAndEntityModelsSorted
@@ -100,7 +104,7 @@ module WorldModule =
         let entityModelsSorted = pickingSort entityModels world
         List.tryFind
             (fun entityModel ->
-                let transform = getEntityModelTransform (Some world.Camera) world.XDispatchers entityModel
+                let transform = getEntityModelTransform (Some world.Camera) world.Dispatchers entityModel
                 position.X >= transform.Position.X &&
                     position.X < transform.Position.X + transform.Size.X &&
                     position.Y >= transform.Position.Y &&
@@ -257,12 +261,12 @@ module WorldModule =
     let registerEntityXtension address world =
         match get world <| worldOptEntityModelLens address with
         | None -> world
-        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Register (address, entityModel, world)) (fun () -> world) world.XDispatchers entityModel
+        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Register (address, entityModel, world)) (fun () -> world) world.Dispatchers entityModel
 
     let unregisterEntityXtension address world =
         match get world <| worldOptEntityModelLens address with
         | None -> world
-        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Unregister (address, entityModel, world)) (fun () -> world) world.XDispatchers entityModel
+        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Unregister (address, entityModel, world)) (fun () -> world) world.Dispatchers entityModel
 
     let handleButtonEventDownMouseLeft address subscriber message world =
         match message.Data with
@@ -740,7 +744,7 @@ module WorldModule =
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
                   Components = []
-                  XDispatchers = Map.empty
+                  Dispatchers = Map.empty
                   ExtData = extData }
             Right world
 
@@ -868,13 +872,13 @@ module WorldModule =
             | None -> []
             | Some groupMap ->
                 let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupModelRenderDescriptors world.Camera world.XDispatchers) entityMaps
+                let descriptorSeqs = List.map (getGroupModelRenderDescriptors world.Camera world.Dispatchers) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world (worldScreenLens activeScreenAddress)
                 match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.XDispatchers activeScreen.IncomingModel
-                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.XDispatchers activeScreen.OutgoingModel
+                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.IncomingModel
+                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.OutgoingModel
                 | IdlingState -> descriptors
 
     let getRenderDescriptors world : RenderDescriptor rQueue =
@@ -905,7 +909,7 @@ module WorldModule =
                         invokeEntityModelXtension
                             (fun dispatcher -> dispatcher.HandleIntegrationMessage (integrationMessage, entityModelAddress, entityModel, world))
                             (fun () -> world)
-                            world.XDispatchers
+                            world.Dispatchers
                             entityModel
                     (true, world')
                 | Button _
