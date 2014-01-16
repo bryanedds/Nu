@@ -87,7 +87,7 @@ module Entities =
           Size = actor.Size
           Rotation = actor.Rotation }
 
-    let invokeEntityModelXtension invocation failure (dispatchers : XDispatchers) entityModel =
+    let invokeEntityModelXtension invocation failure (dispatchers : IXDispatchers) entityModel =
         let xtension = get entityModel entityXtensionLens
         match xtension.OptName with
         | None -> failure ()
