@@ -41,6 +41,9 @@ type [<CustomEquality; CustomComparison>] Lun =
     static member make str =
         Lun.makeInternal str (str.GetHashCode ()) (Lun.makeOptNums str)
 
+    static member makeFast str =
+        Lun.makeInternal str (str.GetHashCode ()) None
+
     static member (++) (left, right) =
         Lun.make (left.LunStr + right.LunStr)
 
