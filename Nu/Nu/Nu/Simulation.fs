@@ -40,11 +40,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Enabled : bool
       Visible : bool
       Xtension : Xtension }
-    static member (?) (this : Entity) memberName args =
-        (?) this.Xtension memberName args
-    static member (?<-) (this : Entity, memberName, value) =
-        let xtension = (?<-) this.Xtension memberName value
-        { this with Xtension = xtension }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] CustomEntity =
     { Entity : Entity }
@@ -301,3 +296,13 @@ type [<StructuralEquality; NoComparison>] Simulant =
     | GroupModel of GroupModel
     | ScreenModel of ScreenModel
     | GameModel of GameModel
+
+[<AutoOpen>]
+module Simulation =
+
+    let (?) (entity : Entity) memberName args =
+        (?) entity.Xtension memberName args
+
+    let (?<-) (entity : Entity) memberName value =
+        let xtension = (?<-) entity.Xtension memberName value
+        { entity with Xtension = xtension }

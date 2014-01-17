@@ -37,18 +37,18 @@ let (?) (this : Xtension) memberName args : 'r =
             if box args = null then null
             elif FSharpType.IsTuple (args.GetType ()) then FSharpValue.GetTupleFields args
             else [|args|]
-        if argArray = null then failwith "Xtension method call must have at least 1 argument."
-        let context = Array.last argArray :?> IXDispatcherContainer
-        let dispatchers = context.GetDispatchers ()
-        let dispatcher = Map.find this.OptName.Value dispatchers
-        match (dispatcher.GetType ()).GetMethod memberName with
-        | null -> failwith <| "Could not find method '" + memberName + "'."
-        | aMethod -> aMethod.Invoke (dispatcher, argArray) :?> 'r
+        if argArray = null then
+            failwith "Xtension method call must have at least 1 argument."
+        match Array.last argArray with
+        | :? IXDispatcherContainer as context ->
+            let dispatchers = context.GetDispatchers ()
+            let dispatcher = Map.find this.OptName.Value dispatchers
+            match (dispatcher.GetType ()).GetMethod memberName with
+            | null -> failwith <| "Could not find method '" + memberName + "'."
+            | aMethod -> aMethod.Invoke (dispatcher, argArray) :?> 'r
+        | _ -> failwith "Last argument of Xtension meethod call must be an IDispatchContainer."
     | Some field -> field :?> 'r
 
 let (?<-) (this : Xtension) fieldName value =
     let fields = Map.add (Lun.makeFast fieldName) (value :> obj) this.Fields
     { this with Fields = fields }
-
-let xdc dispatchers =
-    { Dispatchers = dispatchers }

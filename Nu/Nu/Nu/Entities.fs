@@ -69,6 +69,10 @@ module Entities =
         { Get = fun entityModel -> (get entityModel entityLens).Xtension
           Set = fun value entityModel -> set { get entityModel entityLens with Xtension = value } entityModel entityLens}
 
+    let entityDynamicLens memberName =
+        { Get = fun entityModel -> (?) (get entityModel entityLens) memberName
+          Set = fun value entityModel -> set ((?<-) (get entityModel entityLens) memberName value) entityModel entityLens}
+
     let getGuiTransform (gui : Gui) =
         { Transform.Position = gui.Position
           Depth = gui.Depth
