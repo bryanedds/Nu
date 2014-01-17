@@ -57,7 +57,7 @@ module WorldModule =
     
     /// Derive an XDispatcherContainer from a world.
     let xdc world =
-        xdc world.Dispatchers
+        { XDispatcherContainer.Dispatchers = world.Dispatchers }
 
     /// Mark a message as handled.
     let handle message =
