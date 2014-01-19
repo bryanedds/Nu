@@ -5,7 +5,7 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
-module Screens =
+module ScreenModule =
 
     let transitionIdLens =
         { Get = fun (transition : Transition) -> transition.Id

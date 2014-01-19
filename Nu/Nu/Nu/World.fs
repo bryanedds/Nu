@@ -24,7 +24,7 @@ open Nu.DomainModel
 open Nu.CameraModule
 open Nu.Entities
 open Nu.Groups
-open Nu.Screens
+open Nu.ScreenModule
 open Nu.GameModule
 module WorldModule =
 
