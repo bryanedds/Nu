@@ -64,7 +64,7 @@ module WorldModule =
         { Handled = true; Data = message.Data }
 
     let isAddressSelected address world =
-        let optScreenAddress = (get world worldGameLens).OptSelectedScreenModelAddress
+        let optScreenAddress = get world worldOptSelectedScreenModelAddressLens
         match (address, optScreenAddress) with
         | ([], _) -> true
         | (_, None) -> false
@@ -78,14 +78,14 @@ module WorldModule =
 
     let getPublishingPriority simulant world =
         match simulant with
-        | GameModel _ -> GameModelPublishingPriority
+        | Game _ -> GameModelPublishingPriority
         | ScreenModel _ -> ScreenModelPublishingPriority
         | GroupModel _ -> GroupModelPublishingPriority
         | EntityModel entityModel -> getPickingPriority world.Dispatchers entityModel
 
     let getSimulant address world =
         match address with
-        | [] -> GameModel <| get world gameModelLens
+        | [] -> Game <| get world gameLens
         | [_] as screenAddress -> ScreenModel <| get world (worldScreenModelLens screenAddress)
         | [_; _] as groupAddress -> GroupModel <| get world (worldGroupModelLens groupAddress)
         | [_; _; _] as entityAddress -> EntityModel <| get world (worldEntityModelLens entityAddress)
@@ -729,7 +729,7 @@ module WorldModule =
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
             let world =
-                { GameModel = Game { Id = getNuId (); OptSelectedScreenModelAddress = None }
+                { Game = { Id = getNuId (); OptSelectedScreenModelAddress = None }
                   ScreenModels = Map.empty
                   GroupModels = Map.empty
                   EntityModels = Map.empty
