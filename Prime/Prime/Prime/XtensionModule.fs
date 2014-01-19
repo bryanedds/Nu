@@ -10,6 +10,10 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
     { OptName : Lun option
       Fields : XFields }
 
+type XFieldDescriptor =
+    { Name : Lun
+      Type : Lun }
+
 /// Any implementing type must contain no data as it would use XFields instead.
 type IXDispatcher =
     interface
@@ -29,6 +33,13 @@ type [<StructuralEquality; NoComparison>] XDispatcherContainer =
     interface IXDispatcherContainer with
         member this.GetDispatchers () = this.Dispatchers
         end
+
+type XImplication =
+    | NameToNames of Lun * Lun list
+    | NameToFields of Lun * XFieldDescriptor list
+
+type XImplications =
+    Map<Lun, XImplication>
 
 let (?) (this : Xtension) memberName args : 'r =
     match Map.tryFind (Lun.makeFast memberName) this.Fields with
