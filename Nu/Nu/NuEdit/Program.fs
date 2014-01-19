@@ -22,7 +22,7 @@ open Nu.Sdl
 open Nu.Entities
 open Nu.Groups
 open Nu.Screens
-open Nu.Games
+open Nu.GameModule
 open Nu.WorldModule
 open NuEdit.Constants
 open NuEdit.Reflection

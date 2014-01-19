@@ -25,7 +25,7 @@ open Nu.CameraModule
 open Nu.Entities
 open Nu.Groups
 open Nu.Screens
-open Nu.Games
+open Nu.GameModule
 module WorldModule =
 
     let TickAddress = addr "tick"
