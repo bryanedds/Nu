@@ -5,6 +5,7 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
+open Nu.ScreenModule
 module GameModule =
 
     // WISDOM:
@@ -40,9 +41,9 @@ module GameModule =
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
             match optSelectedScreenAddress with
             | None -> None
-            | Some selectedScreenAddress -> get world <| Screens.worldOptScreenLens selectedScreenAddress
+            | Some selectedScreenAddress -> get world <| worldOptScreenLens selectedScreenAddress
           Set = fun screen world ->
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
             match optSelectedScreenAddress with
             | None -> failwith "Cannot set a non-existent screen."
-            | Some selectedScreenAddress -> set screen.Value world <| Screens.worldScreenLens selectedScreenAddress }
+            | Some selectedScreenAddress -> set screen.Value world <| worldScreenLens selectedScreenAddress }

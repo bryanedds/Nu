@@ -21,7 +21,7 @@ open Nu.Physics
 open Nu.Sdl
 open Nu.Entities
 open Nu.Groups
-open Nu.Screens
+open Nu.ScreenModule
 open Nu.GameModule
 open Nu.WorldModule
 open NuEdit.Constants
