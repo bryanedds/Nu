@@ -65,7 +65,7 @@
     <Compile Include="Entities.fs" />
     <Compile Include="Groups.fs" />
     <Compile Include="Screens.fs" />
-    <Compile Include="Games.fs" />
+    <Compile Include="Game.fs" />
     <Compile Include="World.fs" />
     <Compile Include="OmniBlade.fs" />
     <Compile Include="Program.fs" />

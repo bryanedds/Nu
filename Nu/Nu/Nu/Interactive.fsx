@@ -33,7 +33,7 @@ System.IO.Directory.SetCurrentDirectory "C:/OmniBlade/Nu/Nu/Nu/bin/Debug"
 #load "Entities.fs"
 #load "Groups.fs"
 #load "Screens.fs"
-#load "Games.fs"
+#load "GameModule.fs"
 #load "World.fs"
 #load "OmniBlade.fs"
 
