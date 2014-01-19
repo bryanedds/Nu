@@ -31,18 +31,18 @@ module GameModule =
         { Get = fun world -> world.MouseState
           Set = fun mouseState world -> { world with MouseState = mouseState }}
 
-    let worldOptSelectedScreenModelAddressLens =
-        { Get = fun world -> (get world gameLens).OptSelectedScreenModelAddress
-          Set = fun value world -> set { (get world gameLens) with OptSelectedScreenModelAddress = value } world gameLens}
+    let worldOptSelectedScreenAddressLens =
+        { Get = fun world -> (get world gameLens).OptSelectedScreenAddress
+          Set = fun value world -> set { (get world gameLens) with OptSelectedScreenAddress = value } world gameLens}
 
-    let worldOptSelectedScreenModelLens =
+    let worldOptSelectedScreenLens =
         { Get = fun world ->
-            let optSelectedScreenModelAddress = get world worldOptSelectedScreenModelAddressLens
-            match optSelectedScreenModelAddress with
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
+            match optSelectedScreenAddress with
             | None -> None
-            | Some selectedScreenModelAddress -> get world <| Screens.worldOptScreenModelLens selectedScreenModelAddress
+            | Some selectedScreenAddress -> get world <| Screens.worldOptScreenLens selectedScreenAddress
           Set = fun screen world ->
-            let optSelectedScreenModelAddress = get world worldOptSelectedScreenModelAddressLens
-            match optSelectedScreenModelAddress with
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
+            match optSelectedScreenAddress with
             | None -> failwith "Cannot set a non-existent screen."
-            | Some selectedScreenModelAddress -> set screen.Value world <| Screens.worldScreenModelLens selectedScreenModelAddress }
+            | Some selectedScreenAddress -> set screen.Value world <| Screens.worldScreenLens selectedScreenAddress }

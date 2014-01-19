@@ -482,7 +482,7 @@ module Program =
         form
 
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
-        let screenModel = Screen <| makeDissolveScreen 100 100
+        let screen = makeDissolveScreen 100 100
         let groupModel = Group { Id = getNuId () }
         let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         let optWorld = tryCreateEmptyWorld sdlDeps editorState
@@ -490,8 +490,8 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := addScreenModel EditorScreenAddress screenModel [(EditorGroupName, groupModel, [])] !refWorld
-            refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenModelAddressLens
+            refWorld := addScreen EditorScreenAddress screen [(EditorGroupName, groupModel, [])] !refWorld
+            refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenAddressLens
             refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
             refWorld := subscribe DownMouseCenterAddress [] (beginCameraDrag form worldChangers refWorld) !refWorld
