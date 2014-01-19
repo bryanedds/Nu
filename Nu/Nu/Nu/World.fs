@@ -211,13 +211,9 @@ module WorldModule =
             let world'' = setScreenModelState OutgoingState selectedScreenAddress world'
             (handle message, true, world'')
 
-    let updateTransition1 transitionModel =
-        let transition = get transitionModel transitionLens
-        let (transition', finished) =
-            if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
-            else ({ transition with Ticks = transition.Ticks + 1 }, false)
-        let transitionModel' = set transition' transitionModel transitionLens
-        (transitionModel', finished)
+    let updateTransition1 transition =
+        if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
+        else ({ transition with Ticks = transition.Ticks + 1 }, false)
 
     let updateTransition update world : bool * World =
         let (keepRunning, world') =
@@ -230,9 +226,9 @@ module WorldModule =
                 | IncomingState ->
                     // TODO: remove duplication with below
                     let selectedScreenModel = get world <| worldScreenModelLens selectedScreenAddress
-                    let incomingModel = get selectedScreenModel incomingModelLens
-                    let (incomingModel', finished) = updateTransition1 incomingModel
-                    let selectedScreenModel' = set incomingModel' selectedScreenModel incomingModelLens
+                    let incoming = get selectedScreenModel incomingLens
+                    let (incoming', finished) = updateTransition1 incoming
+                    let selectedScreenModel' = set incoming' selectedScreenModel incomingLens
                     let world'' = set selectedScreenModel' world <| worldScreenModelLens selectedScreenAddress
                     let world'3 = setScreenModelState (if finished then IdlingState else IncomingState) selectedScreenAddress world''
                     if finished then
@@ -243,9 +239,9 @@ module WorldModule =
                     else (true, world'3)
                 | OutgoingState ->
                     let selectedScreenModel = get world <| worldScreenModelLens selectedScreenAddress
-                    let outgoingModel = get selectedScreenModel outgoingModelLens
-                    let (outgoingModel', finished) = updateTransition1 outgoingModel
-                    let selectedScreenModel' = set outgoingModel' selectedScreenModel outgoingModelLens
+                    let outgoing = get selectedScreenModel outgoingLens
+                    let (outgoing', finished) = updateTransition1 outgoing
+                    let selectedScreenModel' = set outgoing' selectedScreenModel outgoingLens
                     let world'' = set selectedScreenModel' world <| worldScreenModelLens selectedScreenAddress
                     let world'3 = setScreenModelState (if finished then IdlingState else OutgoingState) selectedScreenAddress world''
                     if finished then
@@ -853,15 +849,11 @@ module WorldModule =
         let entitModelValues = Map.toValueSeq entityModels
         Seq.map (getEntityRenderDescriptors view dispatchers) entitModelValues
 
-    let getTransitionModelRenderDescriptors camera dispatchers transitionModel =
-        match transitionModel with
-        | Transition _ -> []
-        | Dissolve dissolve ->
-            let transition = dissolve.Transition
-            let progress = single transition.Ticks / single transition.Lifetime
-            let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
-            let color = Vector4 (Vector3.One, alpha)
-            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolve.Sprite; Color = color }; Depth = Single.MaxValue })]
+    let getTransitionModelRenderDescriptors camera dispatchers transition =
+        let progress = single transition.Ticks / single transition.Lifetime
+        let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
+        let color = Vector4 (Vector3.One, alpha)
+        [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = transition.Sprite; Color = color }; Depth = Single.MaxValue })]
 
     let getWorldRenderDescriptors world =
         match get world worldOptSelectedScreenModelAddressLens with
@@ -877,8 +869,8 @@ module WorldModule =
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world (worldScreenLens activeScreenAddress)
                 match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.IncomingModel
-                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.OutgoingModel
+                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.Outgoing
                 | IdlingState -> descriptors
 
     let getRenderDescriptors world : RenderDescriptor rQueue =

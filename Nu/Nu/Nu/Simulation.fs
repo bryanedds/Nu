@@ -173,15 +173,8 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     { Id : Id
       Lifetime : int
       Ticks : int
-      Type : TransitionType }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] Dissolve =
-    { Transition : Transition
-      Sprite : Sprite }
-
-type [<StructuralEquality; NoComparison>] TransitionModel =
-    | Transition of Transition
-    | Dissolve of Dissolve
+      Type : TransitionType
+      Sprite : Sprite } // TODO: make Sprite an XField
 
 type [<StructuralEquality; NoComparison>] ScreenState =
     | IncomingState
@@ -191,8 +184,8 @@ type [<StructuralEquality; NoComparison>] ScreenState =
 type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
     { Id : Id
       State : ScreenState
-      IncomingModel : TransitionModel
-      OutgoingModel : TransitionModel }
+      Incoming : Transition
+      Outgoing : Transition }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] OmniBattleScreen =
     { Screen : Screen

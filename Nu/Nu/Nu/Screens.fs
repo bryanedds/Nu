@@ -7,31 +7,21 @@ open Nu.Core
 open Nu.DomainModel
 module Screens =
 
-    let transitionLens =
-        { Get = fun transitionModel ->
-            match transitionModel with
-            | Transition transition -> transition
-            | Dissolve dissolve -> dissolve.Transition
-          Set = fun transition transitionModel ->
-            match transitionModel with
-            | Transition _ -> Transition transition
-            | Dissolve dissolve -> Dissolve { dissolve with Transition = transition }}
-
     let transitionIdLens =
-        { Get = fun transitionModel -> (get transitionModel transitionLens).Id
-          Set = fun value transitionModel -> set { get transitionModel transitionLens with Id = value } transitionModel transitionLens }
+        { Get = fun (transition : Transition) -> transition.Id
+          Set = fun value transition -> { transition with Id = value }}
 
     let transitionLifetimeLens =
-        { Get = fun transitionModel -> (get transitionModel transitionLens).Lifetime
-          Set = fun value transitionModel -> set { get transitionModel transitionLens with Lifetime = value } transitionModel transitionLens }
+        { Get = fun transition -> transition.Lifetime
+          Set = fun value transition -> { transition with Lifetime = value }}
 
     let transitionTicksLens =
-        { Get = fun transitionModel -> (get transitionModel transitionLens).Ticks
-          Set = fun value transitionModel -> set { get transitionModel transitionLens with Ticks = value } transitionModel transitionLens }
+        { Get = fun transition -> transition.Ticks
+          Set = fun value transition -> { transition with Ticks = value }}
 
     let transitionTypeLens =
-        { Get = fun transitionModel -> (get transitionModel transitionLens).Type
-          Set = fun value transitionModel -> set { get transitionModel transitionLens with Type = value } transitionModel transitionLens }
+        { Get = fun transition -> transition.Type
+          Set = fun value transition -> { transition with Type = value }}
 
     let screenLens =
         { Get = fun screenModel ->
@@ -51,21 +41,21 @@ module Screens =
         { Get = fun screenModel -> (get screenModel screenLens).State
           Set = fun value screenModel -> set { get screenModel screenLens with State = value } screenModel screenLens }
 
-    let screenIncomingModelLens =
-        { Get = fun screenModel -> (get screenModel screenLens).IncomingModel
-          Set = fun value screenModel -> set { get screenModel screenLens with IncomingModel = value } screenModel screenLens }
+    let screenIncomingLens =
+        { Get = fun screenModel -> (get screenModel screenLens).Incoming
+          Set = fun value screenModel -> set { get screenModel screenLens with Incoming = value } screenModel screenLens }
 
-    let screenOutgoingModelLens =
-        { Get = fun screenModel -> (get screenModel screenLens).OutgoingModel
-          Set = fun value screenModel -> set { get screenModel screenLens with OutgoingModel = value } screenModel screenLens }
+    let screenOutgoingLens =
+        { Get = fun screenModel -> (get screenModel screenLens).Outgoing
+          Set = fun value screenModel -> set { get screenModel screenLens with Outgoing = value } screenModel screenLens }
 
-    let incomingModelLens =
-        { Get = fun screenModel -> (get screenModel screenLens).IncomingModel
-          Set = fun incoming screenModel -> set { (get screenModel screenLens) with IncomingModel = incoming } screenModel screenLens }
+    let incomingLens =
+        { Get = fun screenModel -> (get screenModel screenLens).Incoming
+          Set = fun incoming screenModel -> set { (get screenModel screenLens) with Incoming = incoming } screenModel screenLens }
 
-    let outgoingModelLens =
-        { Get = fun screenModel -> (get screenModel screenLens).OutgoingModel
-          Set = fun outgoing screenModel -> set { (get screenModel screenLens) with OutgoingModel = outgoing } screenModel screenLens }
+    let outgoingLens =
+        { Get = fun screenModel -> (get screenModel screenLens).Outgoing
+          Set = fun outgoing screenModel -> set { (get screenModel screenLens) with Outgoing = outgoing } screenModel screenLens }
        
     let worldOptScreenModelFinder (address : Address)  world =
         Map.tryFind address.[0] world.ScreenModels
@@ -125,8 +115,8 @@ module Screens =
         { Get = fun world -> getWorldOptScreenModelWithLens address world screenLens
           Set = fun optScreen world -> setWorldOptScreenModelWithLens optScreen address world screenLens }
 
-    let worldIncomingModelLens address = worldScreenModelLens address >>| incomingModelLens
-    let worldOutgoingModelLens address = worldScreenModelLens address >>| outgoingModelLens
+    let worldIncomingLens address = worldScreenModelLens address >>| incomingLens
+    let worldOutgoingLens address = worldScreenModelLens address >>| outgoingLens
     
     let makeDissolveSprite () =
         { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -135,18 +125,16 @@ module Screens =
         { Id = getNuId ()
           Lifetime = 0
           Ticks = 0
-          Type = transitionType }
-
-    let makeDissolveTransition lifetime transitionType =
-        { Transition = { makeDefaultTransition transitionType with Lifetime = lifetime }; Sprite = makeDissolveSprite () }
+          Type = transitionType
+          Sprite = makeDissolveSprite () }
 
     let makeDefaultScreen () =
         { Id = getNuId ()
           State = IdlingState
-          IncomingModel = Transition <| makeDefaultTransition Incoming
-          OutgoingModel = Transition <| makeDefaultTransition Outgoing }
+          Incoming = makeDefaultTransition Incoming
+          Outgoing = makeDefaultTransition Outgoing }
 
     let makeDissolveScreen incomingTime outgoingTime =
-        let incomingDissolve = Dissolve <| makeDissolveTransition incomingTime Incoming
-        let outgoingDissolve = Dissolve <| makeDissolveTransition outgoingTime Outgoing
-        { makeDefaultScreen () with IncomingModel = incomingDissolve; OutgoingModel = outgoingDissolve }
+        let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime }
+        let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime }
+        { makeDefaultScreen () with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
