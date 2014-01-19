@@ -23,100 +23,59 @@ module Screens =
         { Get = fun transition -> transition.Type
           Set = fun value transition -> { transition with Type = value }}
 
-    let screenLens =
-        { Get = fun screenModel ->
-            match screenModel with
-            | Screen screen -> screen
-            | OmniBattleScreen omniBattleScreen -> omniBattleScreen.Screen
-          Set = fun screen screenModel ->
-            match screenModel with
-            | Screen _ -> Screen screen
-            | OmniBattleScreen omniBattleScreen -> OmniBattleScreen { omniBattleScreen with Screen = screen }}
-
     let screenIdLens =
-        { Get = fun screenModel -> (get screenModel screenLens).Id
-          Set = fun value screenModel -> set { get screenModel screenLens with Id = value } screenModel screenLens }
+        { Get = fun (screen : Screen) -> screen.Id
+          Set = fun value screen -> { screen with Id = value }}
 
     let screenStateLens =
-        { Get = fun screenModel -> (get screenModel screenLens).State
-          Set = fun value screenModel -> set { get screenModel screenLens with State = value } screenModel screenLens }
+        { Get = fun screen -> screen.State
+          Set = fun value screen -> { screen with State = value }}
 
     let screenIncomingLens =
-        { Get = fun screenModel -> (get screenModel screenLens).Incoming
-          Set = fun value screenModel -> set { get screenModel screenLens with Incoming = value } screenModel screenLens }
+        { Get = fun screen -> screen.Incoming
+          Set = fun value screen -> { screen with Incoming = value }}
 
     let screenOutgoingLens =
-        { Get = fun screenModel -> (get screenModel screenLens).Outgoing
-          Set = fun value screenModel -> set { get screenModel screenLens with Outgoing = value } screenModel screenLens }
+        { Get = fun screen -> screen.Outgoing
+          Set = fun value screen -> { screen with Outgoing = value }}
 
     let incomingLens =
-        { Get = fun screenModel -> (get screenModel screenLens).Incoming
-          Set = fun incoming screenModel -> set { (get screenModel screenLens) with Incoming = incoming } screenModel screenLens }
+        { Get = fun screen -> screen.Incoming
+          Set = fun incoming screen -> { screen with Incoming = incoming }}
 
     let outgoingLens =
-        { Get = fun screenModel -> (get screenModel screenLens).Outgoing
-          Set = fun outgoing screenModel -> set { (get screenModel screenLens) with Outgoing = outgoing } screenModel screenLens }
+        { Get = fun screen -> screen.Outgoing
+          Set = fun outgoing screen -> { screen with Outgoing = outgoing }}
        
-    let worldOptScreenModelFinder (address : Address)  world =
-        Map.tryFind address.[0] world.ScreenModels
+    let worldOptScreenFinder (address : Address)  world =
+        Map.tryFind address.[0] world.Screens
 
-    let worldScreenModelAdder (address : Address) world (child : ScreenModel) =
-        { world with ScreenModels = Map.add address.[0] child world.ScreenModels }
+    let worldScreenAdder (address : Address) world (child : Screen) =
+        { world with Screens = Map.add address.[0] child world.Screens }
 
-    let worldScreenModelRemover (address : Address)  world =
-        { world with ScreenModels = Map.remove address.[0] world.ScreenModels }
-
-    let getWorldScreenModelWithLens address world lens =
-        get (getChild worldOptScreenModelFinder address world) lens
-
-    let setWorldScreenModelWithLens child address world lens =
-        let screen = getChild worldOptScreenModelFinder address world
-        let screen' = set child screen lens
-        setChild worldScreenModelAdder worldScreenModelRemover address world screen'
-
-    let getWorldOptScreenModelWithLens address world lens =
-        let optChild = getOptChild worldOptScreenModelFinder address world
-        match optChild with None -> None | Some child -> Some (get child lens)
-
-    let setWorldOptScreenModelWithLens optChild address world lens =
-        match optChild with
-        | None -> setOptChild worldScreenModelAdder worldScreenModelRemover address world None
-        | Some child ->
-            let optChildModel = getOptChild worldOptScreenModelFinder address world
-            match optChildModel with
-            | None -> failwith "Cannot change a non-existent screen."
-            | Some childModel ->
-                let childModel' = set child childModel lens
-                setChild worldScreenModelAdder worldScreenModelRemover address world childModel'
-
-    let worldScreenModelLens address =
-        { Get = fun world -> Option.get <| worldOptScreenModelFinder address world
-          Set = fun screen world -> worldScreenModelAdder address world screen }
-
-    let worldOptScreenModelLens address =
-        { Get = fun world -> worldOptScreenModelFinder address world
-          Set = fun optScreen world -> match optScreen with None -> worldScreenModelRemover address world | Some screen -> worldScreenModelAdder address world screen }
-
-    let worldScreenModelsLens address =
-        { Get = fun world ->
-            match address with
-            | [] -> world.ScreenModels
-            | _ -> failwith <| "Invalid screen model address '" + str address + "'."
-          Set = fun screenModels world ->
-            match address with
-            | [] -> { world with ScreenModels = Map.addMany (Map.toSeq screenModels) world.ScreenModels }
-            | _ -> failwith <| "Invalid screen model address '" + str address + "'." }
+    let worldScreenRemover (address : Address)  world =
+        { world with Screens = Map.remove address.[0] world.Screens }
 
     let worldScreenLens address =
-        { Get = fun world -> getWorldScreenModelWithLens address world screenLens
-          Set = fun screen world -> setWorldScreenModelWithLens screen address world screenLens }
+        { Get = fun world -> Option.get <| worldOptScreenFinder address world
+          Set = fun screen world -> worldScreenAdder address world screen }
 
     let worldOptScreenLens address =
-        { Get = fun world -> getWorldOptScreenModelWithLens address world screenLens
-          Set = fun optScreen world -> setWorldOptScreenModelWithLens optScreen address world screenLens }
+        { Get = fun world -> worldOptScreenFinder address world
+          Set = fun optScreen world -> match optScreen with None -> worldScreenRemover address world | Some screen -> worldScreenAdder address world screen }
 
-    let worldIncomingLens address = worldScreenModelLens address >>| incomingLens
-    let worldOutgoingLens address = worldScreenModelLens address >>| outgoingLens
+    let worldScreensLens address =
+        { Get = fun world ->
+            match address with
+            | [] -> world.Screens
+            | _ -> failwith <| "Invalid screen model address '" + str address + "'."
+          Set = fun screens world ->
+            match address with
+            | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
+            | _ -> failwith <| "Invalid screen model address '" + str address + "'." }
+
+    let worldIncomingLens address = worldScreenLens address >>| incomingLens
+    let worldOutgoingLens address = worldScreenLens address >>| outgoingLens
     
     let makeDissolveSprite () =
         { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
