@@ -206,14 +206,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Game =
     { Id : Id
       OptSelectedScreenModelAddress : Address option }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] OmniGame =
-    { Game : Game
-      OptPlayer : OmniPlayer option }
-        
-type [<StructuralEquality; NoComparison>] GameModel =
-    | Game of Game
-    | OmniGame of OmniGame
-
 /// Describes a game message subscription.
 /// A reference type.
 type [<ReferenceEquality>] Subscription =
@@ -226,7 +218,7 @@ and Subscriptions = Map<Address, (Address * Subscription) list>
 /// The world, in a functional programming sense.
 /// A reference type with some value semantics.
 and [<ReferenceEquality>] World =
-    { GameModel : GameModel
+    { Game : Game
       ScreenModels : Map<Lun, ScreenModel>
       GroupModels : Map<Lun, Map<Lun, GroupModel>>
       EntityModels : Map<Lun, Map<Lun, Map<Lun, EntityModel>>>
@@ -292,10 +284,10 @@ type EntityModelDispatcher () =
         end
 
 type [<StructuralEquality; NoComparison>] Simulant =
+    | Game of Game
     | EntityModel of EntityModel
     | GroupModel of GroupModel
     | ScreenModel of ScreenModel
-    | GameModel of GameModel
 
 [<AutoOpen>]
 module Simulation =
