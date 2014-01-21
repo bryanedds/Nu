@@ -91,7 +91,8 @@ module ScreenModule =
         { Id = getNuId ()
           State = IdlingState
           Incoming = makeDefaultTransition Incoming
-          Outgoing = makeDefaultTransition Outgoing }
+          Outgoing = makeDefaultTransition Outgoing
+          Xtension = Xtension.empty }
 
     let makeDissolveScreen incomingTime outgoingTime =
         let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime }

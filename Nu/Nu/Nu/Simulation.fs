@@ -191,11 +191,29 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
     { Id : Id
       State : ScreenState
       Incoming : Transition
-      Outgoing : Transition }
+      Outgoing : Transition
+      Xtension : Xtension }
+
+    static member (?) (this : Screen, memberName) =
+        fun args ->
+            (?) this.Xtension memberName args
+
+    static member (?<-) (this : Screen, memberName, value) =
+        let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+        { this with Xtension = xtension }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Game =
     { Id : Id
-      OptSelectedScreenAddress : Address option }
+      OptSelectedScreenAddress : Address option
+      Xtension : Xtension }
+
+    static member (?) (this : Game, memberName) =
+        fun args ->
+            (?) this.Xtension memberName args
+
+    static member (?<-) (this : Game, memberName, value) =
+        let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+        { this with Xtension = xtension }
 
 /// Describes a game message subscription.
 /// A reference type.
