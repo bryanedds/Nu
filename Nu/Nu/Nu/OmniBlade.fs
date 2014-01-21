@@ -12,7 +12,7 @@ open Nu.Rendering
 open Nu.Physics
 open Nu.Metadata
 open Nu.Entities
-open Nu.Groups
+open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
 open Nu.WorldModule

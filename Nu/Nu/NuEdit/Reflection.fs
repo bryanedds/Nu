@@ -4,7 +4,7 @@ open System.Reflection
 open Nu
 open Nu.Core
 open Nu.Entities
-open Nu.Groups
+open Nu.GroupModule
 open Nu.WorldModule
 open NuEdit.Constants
 module Reflection =
@@ -183,11 +183,11 @@ module Reflection =
         set entityModel_ world entityModelLens
 
     let writeFile fileName world =
-        let editorGroupModel = get world <| worldGroupModelLens EditorGroupAddress
+        let editorGroup = get world <| worldGroupLens EditorGroupAddress
         let editorEntityModels = get world <| worldEntityModelsLens EditorGroupAddress
-        writeGroupModelFile editorGroupModel editorEntityModels fileName world
+        writeGroupFile editorGroup editorEntityModels fileName world
 
     let loadFile (fileName : string) world =
-        let world' = removeGroupModel EditorGroupAddress world
-        let testGroupDescriptor = loadGroupModelFile fileName world'
-        addGroupModel EditorGroupAddress testGroupDescriptor world'
+        let world' = removeGroup EditorGroupAddress world
+        let testGroupDescriptor = loadGroupFile fileName world'
+        addGroup EditorGroupAddress testGroupDescriptor world'

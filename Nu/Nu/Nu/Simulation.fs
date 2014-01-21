@@ -41,6 +41,14 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Visible : bool
       Xtension : Xtension }
 
+    static member (?) (this : Entity, memberName) =
+        fun args ->
+            (?) this.Xtension memberName args
+
+    static member (?<-) (this : Entity, memberName, value) =
+        let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+        { this with Xtension = xtension }
+
 type [<StructuralEquality; NoComparison; CLIMutable>] CustomEntity =
     { Entity : Entity }
 
@@ -152,18 +160,16 @@ type [<StructuralEquality; NoComparison>] TileData =
       TileSetPosition : int * int }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Group =
-    { Id : Id }
+    { Id : Id
+      Xtension : Xtension }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] OmniFieldGroup =
-    { Group : Group }
+    static member (?) (this : Group, memberName) =
+        fun args ->
+            (?) this.Xtension memberName args
 
-type [<StructuralEquality; NoComparison; CLIMutable>] OmniBattleGroup =
-    { Group : Group }
-
-type [<StructuralEquality; NoComparison>] GroupModel =
-    | Group of Group
-    | OmniFieldGroup of OmniFieldGroup
-    | OmniBattleGroup of OmniBattleGroup
+    static member (?<-) (this : Group, memberName, value) =
+        let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+        { this with Xtension = xtension }
 
 type [<StructuralEquality; NoComparison>] TransitionType =
     | Incoming
@@ -205,7 +211,7 @@ and Subscriptions = Map<Address, (Address * Subscription) list>
 and [<ReferenceEquality>] World =
     { Game : Game
       Screens : Map<Lun, Screen>
-      GroupModels : Map<Lun, Map<Lun, GroupModel>>
+      Groups : Map<Lun, Map<Lun, Group>>
       EntityModels : Map<Lun, Map<Lun, Map<Lun, EntityModel>>>
       Camera : Camera
       Subscriptions : Subscriptions
@@ -235,16 +241,6 @@ and IWorldComponent =
 
 type EntityModelDispatcher () =
     class
-
-        let dispatchBindings =
-            BindingFlags.Instance |||
-            BindingFlags.Public |||
-            BindingFlags.FlattenHierarchy
-
-        interface IXDispatcher with
-            override this.GetDispatches () = Seq.ofArray <| (this.GetType ()).GetMethods dispatchBindings
-            end
-
         abstract member Register : Address * EntityModel * World -> World
         default this.Register (_, _, world) = world
 
@@ -270,16 +266,6 @@ type EntityModelDispatcher () =
 
 type [<StructuralEquality; NoComparison>] Simulant =
     | Game of Game
-    | EntityModel of EntityModel
-    | GroupModel of GroupModel
     | Screen of Screen
-
-[<AutoOpen>]
-module Simulation =
-
-    let (?) (entity : Entity) memberName args =
-        (?) entity.Xtension memberName args
-
-    let (?<-) (entity : Entity) memberName value =
-        let xtension = (?<-) entity.Xtension memberName value
-        { entity with Xtension = xtension }
+    | Group of Group
+    | EntityModel of EntityModel
