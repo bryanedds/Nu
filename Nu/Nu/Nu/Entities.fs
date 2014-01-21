@@ -51,27 +51,27 @@ module Entities =
 
     let entityIdLens =
         { Get = fun entityModel -> (get entityModel entityLens).Id
-          Set = fun value entityModel -> set { get entityModel entityLens with Id = value } entityModel entityLens}
+          Set = fun value entityModel -> set { get entityModel entityLens with Id = value } entityModel entityLens }
 
     let entityNameLens =
         { Get = fun entityModel -> (get entityModel entityLens).Name
-          Set = fun value entityModel -> set { get entityModel entityLens with Name = value } entityModel entityLens}
+          Set = fun value entityModel -> set { get entityModel entityLens with Name = value } entityModel entityLens }
 
     let entityEnabledLens =
         { Get = fun entityModel -> (get entityModel entityLens).Enabled
-          Set = fun value entityModel -> set { get entityModel entityLens with Enabled = value } entityModel entityLens}
+          Set = fun value entityModel -> set { get entityModel entityLens with Enabled = value } entityModel entityLens }
 
     let entityVisibleLens =
         { Get = fun entityModel -> (get entityModel entityLens).Visible
-          Set = fun value entityModel -> set { get entityModel entityLens with Visible = value } entityModel entityLens}
+          Set = fun value entityModel -> set { get entityModel entityLens with Visible = value } entityModel entityLens }
 
     let entityXtensionLens =
         { Get = fun entityModel -> (get entityModel entityLens).Xtension
-          Set = fun value entityModel -> set { get entityModel entityLens with Xtension = value } entityModel entityLens}
+          Set = fun value entityModel -> set { get entityModel entityLens with Xtension = value } entityModel entityLens }
 
     let entityDynamicLens memberName =
         { Get = fun entityModel -> (?) (get entityModel entityLens) memberName
-          Set = fun value entityModel -> set ((?<-) (get entityModel entityLens) memberName value) entityModel entityLens}
+          Set = fun value entityModel -> set ((?<-) (get entityModel entityLens) memberName value) entityModel entityLens }
 
     let getGuiTransform (gui : Gui) =
         { Transform.Position = gui.Position
@@ -91,23 +91,11 @@ module Entities =
           Size = actor.Size
           Rotation = actor.Rotation }
 
-    let invokeEntityModelXtension invocation failure (dispatchers : IXDispatchers) entityModel =
-        let xtension = get entityModel entityXtensionLens
-        match xtension.OptName with
-        | None -> failure ()
-        | Some name ->
-            match Map.tryFind name dispatchers with
-            | None -> failure ()
-            | Some dispatcher ->
-                match dispatcher with
-                | :? EntityModelDispatcher as entityModelDispatcher -> invocation entityModelDispatcher
-                | _ -> failure ()
-
     let getEntityModelQuickSize assetMetadataMap dispatchers entityModel =
         match entityModel with
         | CustomEntity _
         | CustomGui _
-        | CustomActor _ -> invokeEntityModelXtension (fun dispatcher -> dispatcher.GetQuickSize entityModel) (fun () -> Vector2.One) dispatchers entityModel
+        | CustomActor _ -> let entity = get entityModel entityLens in entity?GetQuickSize entityModel : Vector2
         | Button button -> getTextureSizeAsVector2 button.UpSprite.SpriteAssetName button.UpSprite.PackageName assetMetadataMap
         | Label label -> getTextureSizeAsVector2 label.LabelSprite.SpriteAssetName label.LabelSprite.PackageName assetMetadataMap
         | TextBox textBox -> getTextureSizeAsVector2 textBox.BoxSprite.SpriteAssetName textBox.BoxSprite.PackageName assetMetadataMap
@@ -158,7 +146,7 @@ module Entities =
 
     let guiSep (gui : Gui) =
         (gui, gui.Entity)
-    
+
     let guiCmb (gui : Gui, entity) =
         { gui with Entity = entity }
 
@@ -554,7 +542,7 @@ module Entities =
     let getEntityModelTransform optCamera dispatchers entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity _ -> invokeEntityModelXtension (fun dispatcher -> dispatcher.GetTransform entityModel) (fun () -> identity) dispatchers entityModel
+        | CustomEntity customEntity -> customEntity.Entity?GetTransform entityModel : Transform
         | CustomGui customGui -> getGuiTransform customGui.Gui
         | Button button -> getGuiTransform button.Gui
         | Label label -> getGuiTransform label.Gui
@@ -592,12 +580,7 @@ module Entities =
     let setEntityModelTransform optCamera positionSnap rotationSnap transform dispatchers entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity _ ->
-            invokeEntityModelXtension
-                (fun dispatcher -> dispatcher.SetTransform (positionSnap, rotationSnap, transform, entityModel))
-                (fun () -> entityModel)
-                dispatchers
-                entityModel
+        | CustomEntity customEntity -> customEntity.Entity?SetTransform (positionSnap, rotationSnap, transform, entityModel) : EntityModel
         | CustomGui _
         | Button _
         | Label _
