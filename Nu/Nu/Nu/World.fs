@@ -725,7 +725,7 @@ module WorldModule =
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None }
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = Xtension.empty }
                   Screens = Map.empty
                   Groups = Map.empty
                   EntityModels = Map.empty
