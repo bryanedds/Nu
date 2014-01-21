@@ -20,7 +20,7 @@ open Nu.Metadata
 open Nu.Physics
 open Nu.Sdl
 open Nu.Entities
-open Nu.Groups
+open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
 open Nu.WorldModule
@@ -182,7 +182,7 @@ module Program =
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world)
             else
-                let groupModel = get world (worldGroupModelLens EditorGroupAddress)
+                let group = get world (worldGroupLens EditorGroupAddress)
                 let entityModels = Map.toValueList (get world <| worldEntityModelsLens EditorGroupAddress)
                 let optPicked = tryPick position entityModels world
                 match optPicked with
@@ -483,14 +483,14 @@ module Program =
 
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
         let screen = makeDissolveScreen 100 100
-        let groupModel = Group { Id = getNuId () }
+        let group = makeDefaultGroup ()
         let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
         let optWorld = tryCreateEmptyWorld sdlDeps editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := addScreen EditorScreenAddress screen [(EditorGroupName, groupModel, [])] !refWorld
+            refWorld := addScreen EditorScreenAddress screen [(EditorGroupName, group, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenAddressLens
             refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld

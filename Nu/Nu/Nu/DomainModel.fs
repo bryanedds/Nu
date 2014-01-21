@@ -48,8 +48,8 @@ module DomainModel =
                 | property -> trySetProperty property valueStr <| getterB obj
             | property -> trySetProperty property valueStr <| obj
 
-    let setModelProperties3<'a, 'b> getterB (groupModelNode : XmlNode) (obj : 'a) =
-        for node in groupModelNode.ChildNodes do
+    let setModelProperties3<'a, 'b> getterB (groupNode : XmlNode) (obj : 'a) =
+        for node in groupNode.ChildNodes do
             setModelProperty3<'a, 'b> getterB node obj
 
     let setModelProperty4<'a, 'b, 'c>

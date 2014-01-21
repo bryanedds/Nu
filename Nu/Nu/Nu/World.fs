@@ -11,6 +11,7 @@ open FSharpx.Lens.Operators
 open SDL2
 open OpenTK
 open TiledSharp
+open Xtension
 open Nu
 open Nu.Core
 open Nu.Constants
@@ -23,7 +24,7 @@ open Nu.Sdl
 open Nu.DomainModel
 open Nu.CameraModule
 open Nu.Entities
-open Nu.Groups
+open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
 module WorldModule =
@@ -42,7 +43,7 @@ module WorldModule =
     let UpMouseRightAddress = straddr "up" MouseRightAddress
     let GamePublishingPriority = Single.MaxValue
     let ScreenPublishingPriority = GamePublishingPriority * 0.5f
-    let GroupModelPublishingPriority = ScreenPublishingPriority * 0.5f
+    let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
     let FinishedIncomingAddressPart = addr "finished/incoming"
     let FinishedOutgoingAddressPart = addr "finished/outgoing"
     let FieldFeelerName = Lun.make "feeler"
@@ -80,14 +81,14 @@ module WorldModule =
         match simulant with
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
-        | GroupModel _ -> GroupModelPublishingPriority
+        | Group _ -> GroupPublishingPriority
         | EntityModel entityModel -> getPickingPriority world.Dispatchers entityModel
 
     let getSimulant address world =
         match address with
         | [] -> Game <| get world gameLens
         | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
-        | [_; _] as groupAddress -> GroupModel <| get world (worldGroupModelLens groupAddress)
+        | [_; _] as groupAddress -> Group <| get world (worldGroupLens groupAddress)
         | [_; _; _] as entityAddress -> EntityModel <| get world (worldEntityModelLens entityAddress)
         | _ -> failwith <| "Invalid simulant address '" + str address + "'."
 
@@ -205,7 +206,7 @@ module WorldModule =
         let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
         match optSelectedScreenAddress with
         | None ->
-            trace <| "Program Error: Could not handle click as screen transition due to no selected screen model."
+            trace <| "Program Error: Could not handle click as screen transition due to no selected screen."
             (handle message, true, world)
         | Some selectedScreenAddress ->
             let world'' = setScreenState OutgoingState selectedScreenAddress world'
@@ -257,12 +258,16 @@ module WorldModule =
     let registerEntityXtension address world =
         match get world <| worldOptEntityModelLens address with
         | None -> world
-        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Register (address, entityModel, world)) (fun () -> world) world.Dispatchers entityModel
+        | Some entityModel ->
+            let entity = get entityModel entityLens
+            entity?Register (address, entityModel, world)
 
     let unregisterEntityXtension address world =
         match get world <| worldOptEntityModelLens address with
         | None -> world
-        | Some entityModel -> invokeEntityModelXtension (fun dispatcher -> dispatcher.Unregister (address, entityModel, world)) (fun () -> world) world.Dispatchers entityModel
+        | Some entityModel ->
+            let entity = get entityModel entityLens
+            entity?Unregister (address, entityModel, world)
 
     let handleButtonEventDownMouseLeft address subscriber message world =
         match message.Data with
@@ -565,12 +570,6 @@ module WorldModule =
             let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
             set (TileMap tileMap') world' <| worldEntityModelLens address
 
-    let registerGroup address group entityModels world =
-        addEntityModels address entityModels world
-
-    let unregisterGroup address world =
-        removeEntityModels address world
-
     let adjustFieldCamera groupAddress world =
         let avatarAddress = groupAddress @ [FieldAvatarName]
         let actor = get world <| worldActorLens avatarAddress
@@ -596,70 +595,86 @@ module WorldModule =
             (message, true, world')
         else (message, true, world)
 
-    let registerFieldGroup address (omniFieldGroup : OmniFieldGroup) entityModels world =
-        let world_ = subscribe TickAddress [] (moveFieldAvatarHandler address) world
-        let world_ = subscribe TickAddress [] (adjustFieldCameraHandler address) world_
-        let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-        let world_ = addEntityModels address entityModels world_
-        adjustFieldCamera address world_
+    type GroupDispatcher () =
+        class
+            abstract member Register : Address * Group * EntityModel list * World -> World
+            default this.Register (address, _, entityModels, world) =
+                addEntityModels address entityModels world
 
-    let unregisterFieldGroup address world =
-        let world_ = unsubscribe TickAddress [] world
-        let world_ = unsubscribe TickAddress [] world_
-        removeEntityModels address world_
+            abstract member Unregister : Address * Group * World -> World
+            default this.Unregister (address, _, world) =
+                removeEntityModels address world
 
-    let registerBattleGroup address (omniBattleGroup : OmniBattleGroup) entityModels world =
-        let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+            end
+
+    type OmniFieldGroupDispatcher () =
+        inherit GroupDispatcher () with
+            override this.Register (address, omniBattleGroup, entityModels, world) =
+                let world_ = subscribe TickAddress [] (moveFieldAvatarHandler address) world
+                let world_ = subscribe TickAddress [] (adjustFieldCameraHandler address) world_
+                let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
+                let world_ = base.Register (address, omniBattleGroup, entityModels, world_)
+                adjustFieldCamera address world_
+
+            override this.Unregister (address, omniFieldGroup, world) =
+                let world_ = unsubscribe TickAddress [] world
+                let world_ = unsubscribe TickAddress [] world_
+                base.Unregister (address, omniFieldGroup, world_)
+
+            end
+
+    type OmniBattleGroupDispatcher () =
+        inherit GroupDispatcher () with
+            override this.Register (address, omniBattleGroup, entityModels, world) =
+                let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+                base.Register (address, omniBattleGroup, entityModels, world')
+
+            override this.Unregister (address, omniBattleGroup, world) =
+                base.Unregister (address, omniBattleGroup, world)
+
+            end
+
+    let registerGroup address (group : Group) entityModels world =
+        let world' = group?Register (address, group, entityModels, world)
         addEntityModels address entityModels world'
 
-    let unregisterBattleGroup address world =
+    let unregisterGroup address world =
+        let group = get world <| worldGroupLens address
+        let world' = group?Unregister (address, world)
         removeEntityModels address world
 
-    let registerGroupModel address groupModel entityModels world =
-        match groupModel with
-        | Group group -> registerGroup address group entityModels world
-        | OmniFieldGroup omniFieldGroup -> registerFieldGroup address omniFieldGroup entityModels world
-        | OmniBattleGroup omniBattleGroup -> registerBattleGroup address omniBattleGroup entityModels world
+    let removeGroup address world =
+        let world' = unregisterGroup address world
+        set None world' (worldOptGroupLens address)
 
-    let unregisterGroupModel address world =
-        let groupModel = get world <| worldGroupModelLens address
-        match groupModel with
-        | Group _ -> unregisterGroup address world
-        | OmniFieldGroup _ -> unregisterFieldGroup address world
-        | OmniBattleGroup _ -> unregisterBattleGroup address world
-
-    let removeGroupModel address world =
-        let world' = unregisterGroupModel address world
-        set None world' (worldOptGroupModelLens address)
-
-    let removeGroupModels address world =
-        let groupModels = get world <| worldGroupModelsLens address
+    let removeGroups address world =
+        let groups = get world <| worldGroupsLens address
         Map.fold
-            (fun world' groupModelName _ -> removeGroupModel (address @ [groupModelName]) world')
+            (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
             world
-            groupModels
+            groups
 
-    let addGroupModel address (groupModel, entityModels) world =
+    let addGroup address (group : Group, entityModels) world =
         let world' =
-            match get world <| worldOptGroupModelLens address with
+            match get world <| worldOptGroupLens address with
             | None -> world
-            | Some _ -> removeGroupModel address world
-        let world'' = registerGroupModel address groupModel entityModels world'
-        set groupModel world'' (worldGroupModelLens address)
+            | Some _ -> removeGroup address world
+        let world'' = registerGroup address group entityModels world'
+        set group world'' <| worldGroupLens address
 
-    let addGroupModels address groupDescriptors world =
+    let addGroups address groupDescriptors world =
         List.fold
-            (fun world' (groupModelName, groupModel, entityModels) -> addGroupModel (address @ [groupModelName]) (groupModel, entityModels) world')
+            (fun world' (groupName, group, entityModels) -> addGroup (address @ [groupName]) (group, entityModels) world')
             world
             groupDescriptors
 
     let registerScreen address screen groupDescriptors world =
         // TODO: add Xtension register call
-        addGroupModels address groupDescriptors world
+        addGroups address groupDescriptors world
 
     let unregisterScreen address world =
         // TODO: add Xtension unregister call
-        removeGroupModels address world
+        removeGroups address world
 
     let removeScreen address world =
         let world' = unregisterScreen address world
@@ -682,7 +697,7 @@ module WorldModule =
             let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
             match optSelectedScreenAddress with
             | None ->
-                trace "Program Error: Could not handle splash screen tick due to no selected screen model."
+                trace "Program Error: Could not handle splash screen tick due to no selected screen."
                 (message, false, world)
             | Some selectedScreenAddress ->
                 let world'' = setScreenState OutgoingState selectedScreenAddress world'
@@ -694,16 +709,16 @@ module WorldModule =
 
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
-        let splashGroupModel = Group <| makeDefaultGroup ()
+        let splashGroup = makeDefaultGroup ()
         let splashLabel = Label { Gui = { makeDefaultGui (Some "splashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
-        let world' = addScreen address splashScreen [(Lun.make "splashGroup", splashGroupModel, [splashLabel])] world
+        let world' = addScreen address splashScreen [(Lun.make "splashGroup", splashGroup, [splashLabel])] world
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
 
-    let createDissolveScreenFromFile groupModelFileName groupModelName incomingTime outgoingTime screenAddress world =
+    let createDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
-        let (groupModel, entityModels) = loadGroupModelFile groupModelFileName world
-        addScreen screenAddress screen [(groupModelName, groupModel, entityModels)] world
+        let (group, entityModels) = loadGroupFile groupFileName world
+        addScreen screenAddress screen [(groupName, group, entityModels)] world
 
     let tryCreateEmptyWorld sdlDeps extData =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
@@ -712,7 +727,7 @@ module WorldModule =
             let world =
                 { Game = { Id = getNuId (); OptSelectedScreenAddress = None }
                   Screens = Map.empty
-                  GroupModels = Map.empty
+                  Groups = Map.empty
                   EntityModels = Map.empty
                   Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
                   Subscriptions = Map.empty
@@ -774,11 +789,8 @@ module WorldModule =
         | CustomEntity _
         | CustomGui _
         | CustomActor _ ->
-            invokeEntityModelXtension
-                (fun dispatcher -> dispatcher.GetRenderDescriptors entityModel)
-                (fun () -> [])
-                dispatchers
-                entityModel
+            let entity = get entityModel entityLens
+            entity?GetRenderDescriptors entityModel : RenderDescriptor list
         | Button button ->
             let (_, gui, entity) = buttonSep button
             if not entity.Visible then []
@@ -796,8 +808,7 @@ module WorldModule =
             let (_, gui, entity) = toggleSep toggle
             if not entity.Visible then []
             else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = (if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite); Color = Vector4.One }; Depth = gui.Depth })]
-        | Feeler _ ->
-            []
+        | Feeler _ -> []
         | Block block ->
             let (_, actor, entity) = blockSep block
             if not entity.Visible then []
@@ -829,7 +840,7 @@ module WorldModule =
                         LayerableDescriptor layeredTileLayerDescriptor)
                     layers
 
-    let getGroupModelRenderDescriptors camera dispatchers entityModels =
+    let getGroupRenderDescriptors camera dispatchers entityModels =
         let view = getInverseView camera
         let entitModelValues = Map.toValueSeq entityModels
         Seq.map (getEntityRenderDescriptors view dispatchers) entitModelValues
@@ -849,7 +860,7 @@ module WorldModule =
             | None -> []
             | Some groupMap ->
                 let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupModelRenderDescriptors world.Camera world.Dispatchers) entityMaps
+                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world.Dispatchers) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world (worldScreenLens activeScreenAddress)
@@ -882,13 +893,8 @@ module WorldModule =
                 | CustomEntity _
                 | CustomGui _
                 | CustomActor _ ->
-                    let world' =
-                        invokeEntityModelXtension
-                            (fun dispatcher -> dispatcher.HandleIntegrationMessage (integrationMessage, entityModelAddress, entityModel, world))
-                            (fun () -> world)
-                            world.Dispatchers
-                            entityModel
-                    (true, world')
+                    let entity = get entityModel entityLens
+                    (keepRunning, entity?HandleIntegrationMessage (integrationMessage, entityModelAddress, entityModel, world)) : bool * World
                 | Button _
                 | Label _
                 | TextBox _

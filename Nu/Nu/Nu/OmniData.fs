@@ -55,7 +55,7 @@ type [<StructuralEquality; NoComparison>] OmniCharacterData =
 
 type [<StructuralEquality; NoComparison>] OmniFieldData =
     { Id : Id
-      GroupModelFileName : string }
+      GroupFileName : string }
 
 type [<StructuralEquality; NoComparison>] OmniBattleData =
     { Id : Id

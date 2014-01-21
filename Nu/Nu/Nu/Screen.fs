@@ -68,11 +68,11 @@ module ScreenModule =
         { Get = fun world ->
             match address with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid screen model address '" + str address + "'."
+            | _ -> failwith <| "Invalid screen address '" + str address + "'."
           Set = fun screens world ->
             match address with
             | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
-            | _ -> failwith <| "Invalid screen model address '" + str address + "'." }
+            | _ -> failwith <| "Invalid screen address '" + str address + "'." }
 
     let worldIncomingLens address = worldScreenLens address >>| incomingLens
     let worldOutgoingLens address = worldScreenLens address >>| outgoingLens

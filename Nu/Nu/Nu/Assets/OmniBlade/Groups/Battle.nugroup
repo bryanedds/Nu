@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <GroupModel>
-    <ModelType>Nu.GroupModel+Group</ModelType>
+  <Group>
+    <ModelType>Nu.Group+Group</ModelType>
     <EntityModels>map [(dualSpecial, Nu.EntityModel+Button); (back, Nu.EntityModel+Button); (defend, Nu.EntityModel+Button); ... ]</EntityModels>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -138,5 +138,5 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
     </EntityModel>
-  </GroupModel>
+  </Group>
 </Root>
