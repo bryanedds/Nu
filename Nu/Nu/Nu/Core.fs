@@ -1,5 +1,4 @@
 ﻿namespace Nu
-open System.ComponentModel
 
 /// Specifies the address of an element in a game.
 /// Note that subscribing to a partial address results in listening to all messages whose
@@ -11,10 +10,6 @@ module Core =
     /// Create a Nu Id.
     /// NOTE: Ironically, not purely functional.
     let getNuId = createGetNextId ()
-
-    /// Add a custom TypeConverter to an existing type.
-    let AssignTypeConverter<'t, 'c> () =
-        ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
     let addr (str : string) : Address =
         let strs = List.ofArray <| str.Split '/'

@@ -91,11 +91,11 @@ module Entities =
           Size = actor.Size
           Rotation = actor.Rotation }
 
-    let getEntityModelQuickSize assetMetadataMap dispatchers entityModel =
+    let getEntityModelQuickSize assetMetadataMap dispatcherContainer entityModel =
         match entityModel with
         | CustomEntity _
         | CustomGui _
-        | CustomActor _ -> let entity = get entityModel entityLens in entity?GetQuickSize entityModel : Vector2
+        | CustomActor _ -> let entity = get entityModel entityLens in entity?GetQuickSize (entityModel, dispatcherContainer) : Vector2
         | Button button -> getTextureSizeAsVector2 button.UpSprite.SpriteAssetName button.UpSprite.PackageName assetMetadataMap
         | Label label -> getTextureSizeAsVector2 label.LabelSprite.SpriteAssetName label.LabelSprite.PackageName assetMetadataMap
         | TextBox textBox -> getTextureSizeAsVector2 textBox.BoxSprite.SpriteAssetName textBox.BoxSprite.PackageName assetMetadataMap
@@ -539,10 +539,10 @@ module Entities =
           Set = fun tileMap world -> setWorldOptEntityModelWithLens tileMap address world tileMapLens }
 
     // TODO: turn into a lens
-    let getEntityModelTransform optCamera dispatchers entityModel =
+    let getEntityModelTransform optCamera dispatcherContainer entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity customEntity -> customEntity.Entity?GetTransform entityModel : Transform
+        | CustomEntity customEntity -> customEntity.Entity?GetTransform (entityModel, dispatcherContainer) : Transform
         | CustomGui customGui -> getGuiTransform customGui.Gui
         | Button button -> getGuiTransform button.Gui
         | Label label -> getGuiTransform label.Gui
@@ -577,10 +577,10 @@ module Entities =
         setActorTransform positionSnap rotationSnap transform' entityModel lens
 
     // TODO: turn into a lens
-    let setEntityModelTransform optCamera positionSnap rotationSnap transform dispatchers entityModel =
+    let setEntityModelTransform optCamera positionSnap rotationSnap transform dispatcherContainer entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity customEntity -> customEntity.Entity?SetTransform (positionSnap, rotationSnap, transform, entityModel) : EntityModel
+        | CustomEntity customEntity -> customEntity.Entity?SetTransform (positionSnap, rotationSnap, transform, entityModel, dispatcherContainer) : EntityModel
         | CustomGui _
         | Button _
         | Label _
@@ -592,8 +592,8 @@ module Entities =
         | Avatar _
         | TileMap _ -> setActorTransformRelative view positionSnap rotationSnap transform entityModel actorLens
 
-    let getPickingPriority dispatchers entityModel =
-        let transform = getEntityModelTransform None dispatchers entityModel
+    let getPickingPriority dispatcherContainer entityModel =
+        let transform = getEntityModelTransform None dispatcherContainer entityModel
         transform.Depth
 
     let makeTileMapData tileMap =
@@ -630,7 +630,7 @@ module Entities =
           Name = match optName with None -> str id | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = { OptName = Some <| Lun.make "entityModelDispatcher"; Fields = Map.empty }}
+          Xtension = { OptName = Some <| Lun.make "EntityModelDispatcher"; Fields = Map.empty }}
 
     let makeDefaultCustomEntity optName =
         { CustomEntity.Entity = makeDefaultEntity optName }

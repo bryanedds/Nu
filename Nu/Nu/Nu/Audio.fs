@@ -91,8 +91,8 @@ type SongTypeConverter () =
 module Audio = 
 
     let initAudioConverters () =
-        AssignTypeConverter<Sound, SoundTypeConverter> ()
-        AssignTypeConverter<Song, SongTypeConverter> ()
+        assignTypeConverter<Sound, SoundTypeConverter> ()
+        assignTypeConverter<Song, SongTypeConverter> ()
 
     let haltSound () =
         ignore (SDL_mixer.Mix_HaltMusic ())
@@ -107,18 +107,18 @@ module Audio =
         | ".wav" ->
             let optWav = SDL_mixer.Mix_LoadWAV asset.FileName
             if optWav <> IntPtr.Zero then Some (Lun.make asset.Name, WavAsset optWav)
-            else trace ("Could not load wav '" + asset.FileName + "'."); None
+            else trace <| "Could not load wav '" + asset.FileName + "'."; None
         | ".ogg" ->
             let optOgg = SDL_mixer.Mix_LoadMUS asset.FileName
             if optOgg <> IntPtr.Zero then Some (Lun.make asset.Name, OggAsset optOgg)
-            else trace ("Could not load ogg '" + asset.FileName + "'."); None
-        | _ -> trace ("Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'."); None
+            else trace <| "Could not load ogg '" + asset.FileName + "'."; None
+        | _ -> trace <| "Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'."; None
 
     let tryLoadAudioPackage packageName fileName audioPlayer =
         let optAssets = tryLoadAssets "Audio" packageName.LunStr fileName
         match optAssets with
         | Left error ->
-            trace ("HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
+            trace <| "HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'."
             audioPlayer
         | Right assets ->
             let optAudioAssets = List.map (tryLoadAudioAsset2 audioPlayer.AudioContext) assets
@@ -137,7 +137,7 @@ module Audio =
         let (audioPlayer_, optAssetMap_) =
             match optAssetMap with
             | None ->
-                log ("Loading audio package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly.")
+                note <| "Loading audio package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly."
                 let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer_
                 (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
             | Some assetMap -> (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
@@ -146,8 +146,8 @@ module Audio =
     let playSong (song : Song) audioPlayer =
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
         match optAudioAsset with
-        | None -> debug ("PlaySong failed due to unloadable assets for '" + str song + "'.")
-        | Some (WavAsset wavAsset) -> debug ("Cannot play wav file as song '" + str song + "'.")
+        | None -> debug <| "PlaySong failed due to unloadable assets for '" + str song + "'."
+        | Some (WavAsset wavAsset) -> debug <| "Cannot play wav file as song '" + str song + "'."
         | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayMusic (oggAsset, -1))
         { audioPlayer' with OptCurrentSong = Some song }
 
@@ -191,9 +191,9 @@ module Audio =
         let sound = playSound.Sound
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
         match optAudioAsset with
-        | None -> debug ("PlaySound failed due to unloadable assets for '" + str sound + "'.")
+        | None -> debug <| "PlaySound failed due to unloadable assets for '" + str sound + "'."
         | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0))
-        | Some (OggAsset oggAsset) -> debug ("Cannot play ogg file as sound '" + str sound + "'.")
+        | Some (OggAsset oggAsset) -> debug <| "Cannot play ogg file as sound '" + str sound + "'."
         audioPlayer'
 
     let handlePlaySong playSongValue audioPlayer =

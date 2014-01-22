@@ -140,9 +140,9 @@ type TileMapAssetTypeConverter () =
 module Rendering =
 
     let initRenderConverters () =
-        AssignTypeConverter<Sprite, SpriteTypeConverter> ()
-        AssignTypeConverter<Font, FontTypeConverter> ()
-        AssignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
+        assignTypeConverter<Sprite, SpriteTypeConverter> ()
+        assignTypeConverter<Font, FontTypeConverter> ()
+        assignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
 
     let getLayerableDepth layerable =
         match layerable with
@@ -163,7 +163,7 @@ module Rendering =
             let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FileName)
             if optTexture <> IntPtr.Zero then Some (Lun.make asset.Name, TextureAsset optTexture)
             else
-                trace ("Could not load texture '" + asset.FileName + "'.")
+                trace <| "Could not load texture '" + asset.FileName + "'."
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FileName
@@ -174,18 +174,18 @@ module Rendering =
                 if Int32.TryParse (fontSizeText, fontSize) then
                     let optFont = SDL_ttf.TTF_OpenFont (asset.FileName, !fontSize)
                     if optFont <> IntPtr.Zero then Some (Lun.make asset.Name, FontAsset (optFont, !fontSize))
-                    else trace ("Could not load font due to unparsable font size in file name '" + asset.FileName + "'."); None
-                else trace ("Could not load font due to file name being too short: '" + asset.FileName + "'."); None
-            else trace ("Could not load font '" + asset.FileName + "'."); None
+                    else trace <| "Could not load font due to unparsable font size in file name '" + asset.FileName + "'."; None
+                else trace <| "Could not load font due to file name being too short: '" + asset.FileName + "'."; None
+            else trace <| "Could not load font '" + asset.FileName + "'."; None
         | _ ->
-            trace ("Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'.")
+            trace <| "Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'."
             None
 
     let tryLoadRenderPackage packageName fileName renderer =
         let optAssets = tryLoadAssets "Rendering" packageName.LunStr fileName
         match optAssets with
         | Left error ->
-            log ("HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'.")
+            note <| "HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'."
             renderer
         | Right assets ->
             let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -204,7 +204,7 @@ module Rendering =
         let (renderer_, optAssetMap_) =
             match optAssetMap with
             | None ->
-                log ("Loading render package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly.")
+                note <| "Loading render package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly."
                 let renderer_ = tryLoadRenderPackage packageName packageFileName renderer_
                 (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
             | Some assetMap -> (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
@@ -246,7 +246,7 @@ module Rendering =
             let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
-                log ("LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+                note <| "LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'."
                 renderer'
             | Some renderAsset ->
                 match renderAsset with
@@ -275,7 +275,7 @@ module Rendering =
                              double spriteDescriptor.Rotation * RadiansToDegrees,
                              ref rotationCenter,
                              SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then debug ("Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                    if renderResult <> 0 then debug <| "Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + "."
                     renderer'
                 | _ ->
                     trace "Cannot render sprite with a non-texture asset."
@@ -293,7 +293,7 @@ module Rendering =
             let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
-                debug ("LayeredTileLayerDescriptor failed due to unloadable assets for '" + str sprite + "'.")
+                debug <| "LayeredTileLayerDescriptor failed due to unloadable assets for '" + str sprite + "'."
                 renderer'
             | Some renderAsset ->
                 match renderAsset with
@@ -339,7 +339,7 @@ module Rendering =
             let (renderer', optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
             match optRenderAsset with
             | None ->
-                debug ("LayeredTextDescriptor failed due to unloadable assets for '" + str font + "'.")
+                debug <| "LayeredTextDescriptor failed due to unloadable assets for '" + str font + "'."
                 renderer'
             | Some renderAsset ->
                 match renderAsset with
@@ -384,7 +384,7 @@ module Rendering =
             let sortedDescriptors = Seq.sortBy getLayerableDepth layerableDescriptors
             Seq.fold renderLayerableDescriptor renderer sortedDescriptors
         | _ ->
-            trace ("Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
+            trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
 
     let render (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
