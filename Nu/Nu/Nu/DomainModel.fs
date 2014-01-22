@@ -32,6 +32,21 @@ module DomainModel =
             let value = converter.ConvertFrom valueStr
             property.SetValue (obj, value)
 
+    let setModelProperty2<'a>
+        (modelNode : XmlNode)
+        (obj : 'a) =
+        let modelName = modelNode.Name
+        for node in modelNode.ChildNodes do
+            let valueStr = node.InnerText
+            let optProperty_ = typeof<'a>.GetProperty modelName
+            match optProperty_ with
+            | null -> ()
+            | property -> trySetProperty property valueStr <| obj
+
+    let setModelProperties2<'a> (groupNode : XmlNode) (obj : 'a) =
+        for node in groupNode.ChildNodes do
+            setModelProperty2<'a> node obj
+
     let setModelProperty3<'a, 'b>
         (getterB : 'a -> 'b)
         (modelNode : XmlNode)

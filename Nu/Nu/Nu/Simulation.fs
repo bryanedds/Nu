@@ -49,17 +49,11 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
         let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
         { this with Xtension = xtension }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] CustomEntity =
-    { Entity : Entity }
-
 type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
     { Entity : Entity
       Position : Vector2
       Depth : single
       Size : Vector2 }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] CustomGui =
-    { Gui : Gui }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
     { Gui : Gui
@@ -99,9 +93,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
       Size : Vector2
       Rotation : single }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] CustomActor =
-    { Actor : Actor }
-      
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
     { Actor : Actor
       PhysicsId : PhysicsId
@@ -124,14 +115,14 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
       TileMapSprites : Sprite list }
 
 type [<StructuralEquality; NoComparison>] EntityModel =
-    | CustomEntity of CustomEntity
-    | CustomGui of CustomGui
+    | CustomEntity of Entity
+    | CustomGui of Gui
     | Button of Button
     | Label of Label
     | TextBox of TextBox
     | Toggle of Toggle
     | Feeler of Feeler
-    | CustomActor of CustomActor
+    | CustomActor of Actor
     | Block of Block
     | Avatar of Avatar
     | TileMap of TileMap

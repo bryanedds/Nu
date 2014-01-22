@@ -24,27 +24,27 @@ module Entities =
     let entityLens =
         { Get = fun entityModel ->
             match entityModel with
-            | CustomEntity customEntity -> customEntity.Entity
-            | CustomGui customGui -> customGui.Gui.Entity
+            | CustomEntity customEntity -> customEntity
+            | CustomGui customGui -> customGui.Entity
             | Button button -> button.Gui.Entity
             | Label label -> label.Gui.Entity
             | TextBox textBox -> textBox.Gui.Entity
             | Toggle toggle -> toggle.Gui.Entity
             | Feeler feeler -> feeler.Gui.Entity
-            | CustomActor customActor -> customActor.Actor.Entity
+            | CustomActor customActor -> customActor.Entity
             | Block block -> block.Actor.Entity
             | Avatar avatar -> avatar.Actor.Entity
             | TileMap tileMap -> tileMap.Actor.Entity
           Set = fun entity entityModel ->
             match entityModel with
-            | CustomEntity customEntity -> CustomEntity { customEntity with Entity = entity }
-            | CustomGui customGui -> CustomGui { customGui with Gui = { customGui.Gui with Entity = entity }}
+            | CustomEntity customEntity -> CustomEntity entity
+            | CustomGui customGui -> CustomGui { customGui with Entity = entity }
             | Button button -> Button { button with Gui = { button.Gui with Entity = entity }}
             | Label label -> Label { label with Gui = { label.Gui with Entity = entity }}
             | TextBox textBox -> TextBox { textBox with Gui = { textBox.Gui with Entity = entity }}
             | Toggle toggle -> Toggle { toggle with Gui = { toggle.Gui with Entity = entity }}
             | Feeler feeler -> Feeler { feeler with Gui = { feeler.Gui with Entity = entity }}
-            | CustomActor customActor -> CustomActor { customActor with Actor = { customActor.Actor with Entity = entity }}
+            | CustomActor customActor -> CustomActor { customActor with Entity = entity }
             | Block block -> Block { block with Actor = { block.Actor with Entity = entity }}
             | Avatar avatar -> Avatar { avatar with Actor = { avatar.Actor with Entity = entity }}
             | TileMap tileMap -> TileMap { tileMap with Actor = { tileMap.Actor with Entity = entity }}}
@@ -113,16 +113,10 @@ module Entities =
         { Get = fun entityModel -> Option.get (get entityModel optCustomEntityLens)
           Set = fun customEntity entityModel -> set (Some customEntity) entityModel optCustomEntityLens }
 
-    let customEntitySep (customEntity : CustomEntity) =
-        (customEntity, customEntity.Entity)
-    
-    let customEntityCmb (customEntity : CustomEntity, gui, entity) =
-        { customEntity with Entity = entity }
-
     let optGuiLens =
         { Get = fun entityModel ->
             match entityModel with
-            | CustomGui customGui -> Some customGui.Gui
+            | CustomGui customGui -> Some customGui
             | Button button -> Some button.Gui
             | Label label -> Some label.Gui
             | TextBox textBox -> Some textBox.Gui
@@ -132,7 +126,7 @@ module Entities =
           Set = fun optGui entityModel ->
             let gui = Option.get optGui
             match entityModel with
-            | CustomGui customGui -> CustomGui { customGui with Gui = gui }
+            | CustomGui _ -> CustomGui gui
             | Button button -> Button { button with Gui = gui }
             | Label label -> Label { label with Gui = gui }
             | TextBox textBox -> TextBox { textBox with Gui = gui }
@@ -158,11 +152,11 @@ module Entities =
         { Get = fun entityModel -> Option.get (get entityModel optCustomGuiLens)
           Set = fun customGui entityModel -> set (Some customGui) entityModel optCustomGuiLens }
 
-    let customGuiSep (customGui : CustomGui) =
-        (customGui, customGui.Gui, customGui.Gui.Entity)
+    let customGuiSep (customGui : Gui) =
+        (customGui, customGui.Entity)
     
-    let customGuiCmb (customGui : CustomGui, gui, entity) =
-        { customGui with Gui = { gui with Entity = entity }}
+    let customGuiCmb (customGui : Gui, gui, entity) =
+        { customGui with Entity = entity }
 
     let optButtonLens =
         { Get = fun entityModel -> match entityModel with Button button -> Some button | _ -> None
@@ -244,7 +238,7 @@ module Entities =
             | TextBox _
             | Toggle _
             | Feeler _ -> None
-            | CustomActor customActor -> Some customActor.Actor
+            | CustomActor customActor -> Some customActor
             | Block block -> Some block.Actor
             | Avatar avatar -> Some avatar.Actor
             | TileMap tileMap -> Some tileMap.Actor
@@ -258,7 +252,7 @@ module Entities =
             | TextBox _
             | Toggle _
             | Feeler _ -> failwith "EntityModel is not an actor."
-            | CustomActor customActor -> CustomActor { customActor with Actor = actor }
+            | CustomActor _ -> CustomActor actor
             | Block block -> Block { block with Actor = actor }
             | Avatar avatar -> Avatar { avatar with Actor = actor }
             | TileMap tileMap -> TileMap { tileMap with Actor = actor }}
@@ -281,11 +275,11 @@ module Entities =
         { Get = fun entityModel -> Option.get (get entityModel optCustomActorLens)
           Set = fun customActor entityModel -> set (Some customActor) entityModel optCustomActorLens }
 
-    let customActorSep (customActor : CustomActor) =
-        (customActor, customActor.Actor, customActor.Actor.Entity)
+    let customActorSep (customActor : Actor) =
+        (customActor, customActor.Entity)
     
-    let customActorCmb (customActor : CustomActor, actor, entity) =
-        { customActor with Actor = { actor with Entity = entity }}
+    let customActorCmb (customActor : Actor, actor, entity) =
+        { customActor with Entity = entity }
 
     let optBlockLens =
         { Get = fun entityModel -> match entityModel with Block block -> Some block | _ -> None
@@ -542,14 +536,14 @@ module Entities =
     let getEntityModelTransform optCamera dispatcherContainer entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity customEntity -> customEntity.Entity?GetTransform (entityModel, dispatcherContainer) : Transform
-        | CustomGui customGui -> getGuiTransform customGui.Gui
+        | CustomEntity customEntity -> customEntity?GetTransform (entityModel, dispatcherContainer) : Transform
+        | CustomGui customGui -> getGuiTransform customGui
         | Button button -> getGuiTransform button.Gui
         | Label label -> getGuiTransform label.Gui
         | TextBox textBox -> getGuiTransform textBox.Gui
         | Toggle toggle -> getGuiTransform toggle.Gui
         | Feeler feeler -> getGuiTransform feeler.Gui
-        | CustomActor customActor -> getActorTransformRelative view customActor.Actor
+        | CustomActor customActor -> getActorTransformRelative view customActor
         | Block block -> getActorTransformRelative view block.Actor
         | Avatar avatar -> getActorTransformRelative view avatar.Actor
         | TileMap tileMap -> getActorTransformRelative view tileMap.Actor
@@ -580,7 +574,7 @@ module Entities =
     let setEntityModelTransform optCamera positionSnap rotationSnap transform dispatcherContainer entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity customEntity -> customEntity.Entity?SetTransform (positionSnap, rotationSnap, transform, entityModel, dispatcherContainer) : EntityModel
+        | CustomEntity customEntity -> customEntity?SetTransform (positionSnap, rotationSnap, transform, entityModel, dispatcherContainer) : EntityModel
         | CustomGui _
         | Button _
         | Label _
@@ -633,7 +627,7 @@ module Entities =
           Xtension = { OptName = Some <| Lun.make "EntityModelDispatcher"; Fields = Map.empty }}
 
     let makeDefaultCustomEntity optName =
-        { CustomEntity.Entity = makeDefaultEntity optName }
+        CustomEntity <| makeDefaultEntity optName
 
     let makeDefaultGui optName =
         { Gui.Entity = makeDefaultEntity optName
@@ -642,7 +636,7 @@ module Entities =
           Size = Vector2.One }
 
     let makeDefaultCustomGui optName =
-        { CustomGui.Gui = makeDefaultGui optName }
+        CustomGui <| makeDefaultGui optName
 
     let makeDefaultActor optName =
         { Actor.Entity = makeDefaultEntity optName
@@ -652,14 +646,14 @@ module Entities =
           Rotation = 0.0f }
 
     let makeDefaultCustomActor optName =
-        { CustomActor.Actor = makeDefaultActor optName }
+        CustomActor <| makeDefaultActor optName
 
     let makeDefaultEntityModel typeName optName =
         let assemblyName = (Assembly.GetExecutingAssembly ()).FullName
         let entityModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
         match entityModel with
-        | CustomEntity _ -> CustomEntity { CustomEntity.Entity = makeDefaultEntity optName }
-        | CustomGui _ -> CustomGui { CustomGui.Gui = makeDefaultGui optName }
+        | CustomEntity _ -> CustomEntity <| makeDefaultEntity optName
+        | CustomGui _ -> CustomGui <| makeDefaultGui optName
         | Button _ ->
             Button
                 { Gui = makeDefaultGui optName
@@ -688,7 +682,7 @@ module Entities =
                   OnSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
                   ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
         | Feeler _ -> Feeler { Gui = makeDefaultGui optName; IsTouched = false }
-        | CustomActor _ -> CustomActor { CustomActor.Actor = makeDefaultActor optName }
+        | CustomActor _ -> CustomActor <| makeDefaultActor optName
         | Block _ ->
             Block
                 { Actor = makeDefaultActor optName
@@ -715,14 +709,14 @@ module Entities =
     let writeEntityModelToXml (writer : XmlWriter) entityModel =
         writer.WriteStartElement typeof<EntityModel>.Name
         match entityModel with
-        | CustomEntity customEntity -> writeModelPropertiesMany writer "Nu.EntityModel+CustomEntity" [customEntity :> obj; customEntity.Entity :> obj]
-        | CustomGui customGui -> writeModelPropertiesMany writer "Nu.EntityModel+CustomGui" [customGui :> obj; customGui.Gui :> obj; customGui.Gui.Entity :> obj]
+        | CustomEntity customEntity -> writeModelPropertiesMany writer "Nu.EntityModel+CustomEntity" [customEntity :> obj]
+        | CustomGui customGui -> writeModelPropertiesMany writer "Nu.EntityModel+CustomGui" [customGui :> obj; customGui.Entity :> obj]
         | Button button -> writeModelPropertiesMany writer "Nu.EntityModel+Button" [button :> obj; button.Gui :> obj; button.Gui.Entity :> obj]
         | Label label -> writeModelPropertiesMany writer "Nu.EntityModel+Label" [label :> obj; label.Gui :> obj; label.Gui.Entity :> obj]
         | TextBox textBox -> writeModelPropertiesMany writer "Nu.EntityModel+TextBox" [textBox :> obj; textBox.Gui :> obj; textBox.Gui.Entity :> obj]
         | Toggle toggle -> writeModelPropertiesMany writer "Nu.EntityModel+Toggle" [toggle :> obj; toggle.Gui :> obj; toggle.Gui.Entity :> obj]
         | Feeler feeler -> writeModelPropertiesMany writer "Nu.EntityModel+Feeler" [feeler :> obj; feeler.Gui :> obj; feeler.Gui.Entity :> obj]
-        | CustomActor customActor -> writeModelPropertiesMany writer "Nu.EntityModel+CustomActor" [customActor :> obj; customActor.Actor :> obj; customActor.Actor.Entity :> obj]
+        | CustomActor customActor -> writeModelPropertiesMany writer "Nu.EntityModel+CustomActor" [customActor :> obj; customActor.Entity :> obj]
         | Block block -> writeModelPropertiesMany writer "Nu.EntityModel+Block" [block :> obj; block.Actor :> obj; block.Actor.Entity :> obj]
         | Avatar avatar -> writeModelPropertiesMany writer "Nu.EntityModel+Avatar" [avatar :> obj; avatar.Actor :> obj; avatar.Actor.Entity :> obj]
         | TileMap tileMap -> writeModelPropertiesMany writer "Nu.EntityModel+TileMap" [tileMap :> obj; tileMap.Actor :> obj; tileMap.Actor.Entity :> obj]
@@ -733,14 +727,14 @@ module Entities =
         let entityModelTypeName = entityModelTypeNode.InnerText
         let entityModel = makeDefaultEntityModel entityModelTypeName None // TODO: consider setting the name here
         match entityModel with
-        | CustomEntity customEntity -> setModelProperties3<CustomEntity, Entity> (fun obj -> obj.Entity) entityModelNode customEntity
-        | CustomGui customGui -> setModelProperties4<CustomGui, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode customGui
+        | CustomEntity customEntity -> setModelProperties2<Entity> entityModelNode customEntity
+        | CustomGui customGui -> setModelProperties3<Gui, Entity> (fun obj -> obj.Entity) entityModelNode customGui
         | Button button -> setModelProperties4<Button, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode button
         | Label label -> setModelProperties4<Label, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode label
         | TextBox textBox -> setModelProperties4<TextBox, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode textBox
         | Toggle toggle -> setModelProperties4<Toggle, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode toggle
         | Feeler feeler -> setModelProperties4<Feeler, Gui, Entity> (fun obj -> obj.Gui) (fun obj -> obj.Gui.Entity) entityModelNode feeler
-        | CustomActor customActor -> setModelProperties4<CustomActor, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode customActor
+        | CustomActor customActor -> setModelProperties3<Actor, Entity> (fun obj -> obj.Entity) entityModelNode customActor
         | Block block -> setModelProperties4<Block, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode block
         | Avatar avatar -> setModelProperties4<Avatar, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode avatar
         | TileMap tileMap -> setModelProperties4<TileMap, Actor, Entity> (fun obj -> obj.Actor) (fun obj -> obj.Actor.Entity) entityModelNode tileMap
