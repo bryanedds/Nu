@@ -2,7 +2,7 @@
 <Root>
   <Group>
     <ModelType>Nu.Group+Group</ModelType>
-    <EntityModels>map [(dualSpecial, Nu.EntityModel+Button); (back, Nu.EntityModel+Button); (defend, Nu.EntityModel+Button); ... ]</EntityModels>
+    <Xtension>XtensionModule+Xtension</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -17,66 +17,7 @@
       <Name>dualSpecial</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>Back;OmniBattle;AssetGraph.xml</UpSprite>
-      <DownSprite>BackDown;OmniBattle;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>384;256</Position>
-      <Depth>0</Depth>
-      <Size>64;64</Size>
-      <Name>back</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>Defend;OmniBattle;AssetGraph.xml</UpSprite>
-      <DownSprite>DefendDown;OmniBattle;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>456;256</Position>
-      <Depth>0</Depth>
-      <Size>64;64</Size>
-      <Name>defend</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>Item;OmniBattle;AssetGraph.xml</UpSprite>
-      <DownSprite>ItemDown;OmniBattle;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>384;328</Position>
-      <Depth>0</Depth>
-      <Size>64;64</Size>
-      <Name>item</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>Fight;OmniBattle;AssetGraph.xml</UpSprite>
-      <DownSprite>FightDown;OmniBattle;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>384;184</Position>
-      <Depth>0</Depth>
-      <Size>64;64</Size>
-      <Name>fight</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -92,21 +33,7 @@
       <Name>target</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>TripleSpecial;OmniBattle;AssetGraph.xml</UpSprite>
-      <DownSprite>TripleSpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>456;400</Position>
-      <Depth>0</Depth>
-      <Size>64;64</Size>
-      <Name>tripleSpecial</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -122,6 +49,7 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -137,6 +65,87 @@
       <Name>special</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Fight;OmniBattle;AssetGraph.xml</UpSprite>
+      <DownSprite>FightDown;OmniBattle;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>384;184</Position>
+      <Depth>0</Depth>
+      <Size>64;64</Size>
+      <Name>fight</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Back;OmniBattle;AssetGraph.xml</UpSprite>
+      <DownSprite>BackDown;OmniBattle;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>384;256</Position>
+      <Depth>0</Depth>
+      <Size>64;64</Size>
+      <Name>back</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>TripleSpecial;OmniBattle;AssetGraph.xml</UpSprite>
+      <DownSprite>TripleSpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>456;400</Position>
+      <Depth>0</Depth>
+      <Size>64;64</Size>
+      <Name>tripleSpecial</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Item;OmniBattle;AssetGraph.xml</UpSprite>
+      <DownSprite>ItemDown;OmniBattle;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>384;328</Position>
+      <Depth>0</Depth>
+      <Size>64;64</Size>
+      <Name>item</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Defend;OmniBattle;AssetGraph.xml</UpSprite>
+      <DownSprite>DefendDown;OmniBattle;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>456;256</Position>
+      <Depth>0</Depth>
+      <Size>64;64</Size>
+      <Name>defend</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
   </Group>
 </Root>
