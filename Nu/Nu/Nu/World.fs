@@ -692,6 +692,16 @@ module WorldModule =
             world
             groupDescriptors
 
+    type TransitionDispatcher () =
+        class
+            abstract member Register : Address * Transition * World -> World
+            default this.Register (_, _, world) = world
+
+            abstract member Unregister : Address * Transition * World -> World
+            default this.Unregister (_, _, world) = world
+
+            end
+
     type ScreenDispatcher () =
         class
             abstract member Register : Address * Screen * ((Lun * Group * EntityModel list) list) * World -> World
@@ -757,6 +767,12 @@ module WorldModule =
 
     type GameDispatcher () =
         class
+            abstract member Register : Address * Game * World -> World
+            default this.Register (_, _, world) = world
+
+            abstract member Unregister : Address * Game * World -> World
+            default this.Unregister (_, _, world) = world
+
             end
 
     let tryCreateEmptyWorld sdlDeps extData =
@@ -767,6 +783,7 @@ module WorldModule =
                 Map.ofArray
                     [|Lun.make "EntityModelDispatcher", EntityModelDispatcher () :> obj
                       Lun.make "GroupDispatcher", GroupDispatcher () :> obj
+                      Lun.make "TransitionDispatcher", TransitionDispatcher () :> obj
                       Lun.make "ScreenDispatcher", ScreenDispatcher () :> obj
                       Lun.make "GameDispatcher", GameDispatcher () :> obj
                       Lun.make "OmniBattleGroupDispatcher", OmniBattleGroupDispatcher () :> obj // TODO: move this under OmniBlade game registration

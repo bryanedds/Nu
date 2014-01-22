@@ -180,8 +180,16 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
       Lifetime : int
       Ticks : int
       Type : TransitionType
-      Sprite : Sprite } // TODO: make Sprite an XField
-      // TODO: add Xtension field
+      Sprite : Sprite // TODO: make Sprite an XField
+      Xtension : Xtension }
+
+    static member (?) (this : Transition, memberName) =
+        fun args ->
+            (?) this.Xtension memberName args
+
+    static member (?<-) (this : Transition, memberName, value) =
+        let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+        { this with Xtension = xtension }
 
 type [<StructuralEquality; NoComparison>] ScreenState =
     | IncomingState
