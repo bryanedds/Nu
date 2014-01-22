@@ -23,6 +23,14 @@ module ScreenModule =
         { Get = fun transition -> transition.Type
           Set = fun value transition -> { transition with Type = value }}
 
+    let transitionXtensionLens =
+        { Get = fun (transition : Transition) -> transition.Xtension
+          Set = fun value transition -> { transition with Xtension = value }}
+
+    let transitionDynamicLens memberName =
+        { Get = fun (transition : Transition) -> (?) transition memberName
+          Set = fun value transition -> (?<-) transition memberName value }
+
     let screenIdLens =
         { Get = fun (screen : Screen) -> screen.Id
           Set = fun value screen -> { screen with Id = value }}
@@ -38,6 +46,14 @@ module ScreenModule =
     let screenOutgoingLens =
         { Get = fun screen -> screen.Outgoing
           Set = fun value screen -> { screen with Outgoing = value }}
+
+    let screenXtensionLens =
+        { Get = fun (screen : Screen) -> screen.Xtension
+          Set = fun value screen -> { screen with Xtension = value }}
+
+    let screenDynamicLens memberName =
+        { Get = fun (screen : Screen) -> (?) screen memberName
+          Set = fun value screen -> (?<-) screen memberName value }
 
     let incomingLens =
         { Get = fun screen -> screen.Incoming
