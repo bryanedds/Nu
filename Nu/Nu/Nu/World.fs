@@ -255,6 +255,31 @@ module WorldModule =
         if keepRunning then update world'
         else (keepRunning, world')
 
+    type EntityModelDispatcher () =
+        class
+            abstract member Register : Address * EntityModel * World -> World
+            default this.Register (_, _, world) = world
+
+            abstract member Unregister : Address * EntityModel * World -> World
+            default this.Unregister (_, _, world) = world
+
+            abstract member HandleIntegrationMessage : IntegrationMessage * Address * EntityModel * World -> World
+            default this.HandleIntegrationMessage (_, _, _, world) = world
+
+            abstract member GetRenderDescriptors : EntityModel -> RenderDescriptor list
+            default this.GetRenderDescriptors _ = []
+
+            abstract member GetQuickSize : EntityModel -> Vector2
+            default this.GetQuickSize _ = Vector2.One
+
+            abstract member GetTransform : EntityModel -> Transform
+            default this.GetTransform _ = identity
+
+            abstract member SetTransform : int * int * Transform * EntityModel -> EntityModel
+            default this.SetTransform (_, _, _, entityModel) = entityModel
+    
+            end
+
     let registerEntityXtension address world =
         match get world <| worldOptEntityModelLens address with
         | None -> world
@@ -635,13 +660,11 @@ module WorldModule =
             end
 
     let registerGroup address (group : Group) entityModels world =
-        let world' = group?Register (address, group, entityModels, world)
-        addEntityModels address entityModels world'
+        group?Register (address, group, entityModels, world)
 
     let unregisterGroup address world =
         let group = get world <| worldGroupLens address
-        let world' = group?Unregister (address, world)
-        removeEntityModels address world
+        group?Unregister (address, world)
 
     let removeGroup address world =
         let world' = unregisterGroup address world
@@ -668,13 +691,24 @@ module WorldModule =
             world
             groupDescriptors
 
+    type ScreenDispatcher () =
+        class
+            abstract member Register : Address * Screen * ((Lun * Group * EntityModel list) list) * World -> World
+            default this.Register (address, _, groupDescriptors, world) =
+                addGroups address groupDescriptors world
+
+            abstract member Unregister : Address * Screen * World -> World
+            default this.Unregister (address, _, world) =
+                removeGroups address world
+
+            end
+
     let registerScreen address screen groupDescriptors world =
-        // TODO: add Xtension register call
-        addGroups address groupDescriptors world
+        screen?Register (address, screen, groupDescriptors, world)
 
     let unregisterScreen address world =
-        // TODO: add Xtension unregister call
-        removeGroups address world
+        let group = get world <| worldGroupLens address
+        group?Unregister (address, world)
 
     let removeScreen address world =
         let world' = unregisterScreen address world
@@ -720,12 +754,22 @@ module WorldModule =
         let (group, entityModels) = loadGroupFile groupFileName world
         addScreen screenAddress screen [(groupName, group, entityModels)] world
 
+    type GameDispatcher () =
+        class
+            end
+
     let tryCreateEmptyWorld sdlDeps extData =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
+            let defaultDispatchers =
+                Map.ofArray
+                    [|Lun.make "entityModelDispatcher", EntityModelDispatcher () :> obj
+                      Lun.make "groupDispatcher", GroupDispatcher () :> obj
+                      Lun.make "screenDispatcher", ScreenDispatcher () :> obj
+                      Lun.make "gameDispatcher", GameDispatcher () :> obj|]
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = Xtension.empty }
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptName = Some <| Lun.make "gameDispatcher"; Fields = Map.empty }}
                   Screens = Map.empty
                   Groups = Map.empty
                   EntityModels = Map.empty
@@ -740,7 +784,8 @@ module WorldModule =
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
                   Components = []
-                  Dispatchers = Map.empty
+                  Implications = Map.empty
+                  Dispatchers = defaultDispatchers
                   ExtData = extData }
             Right world
 

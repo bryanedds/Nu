@@ -71,7 +71,7 @@ module GroupModule =
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
-          Xtension = Xtension.empty }
+          Xtension = { OptName = Some <| Lun.make "groupDispatcher"; Fields = Map.empty }}
 
     let writeGroupEntitiesToXml (writer : XmlWriter) (entityModels : Map<Lun, EntityModel>) =
         for entityModelKvp in entityModels do
