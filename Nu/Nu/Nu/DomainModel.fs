@@ -67,31 +67,6 @@ module DomainModel =
         for node in groupNode.ChildNodes do
             setModelProperty3<'a, 'b> getterB node obj
 
-    let setModelProperty4<'a, 'b, 'c>
-        (getterB : 'a -> 'b)
-        (getterC : 'a -> 'c)
-        (modelNode : XmlNode)
-        (obj : 'a) =
-        let modelName = modelNode.Name
-        for node in modelNode.ChildNodes do
-            let valueStr = node.InnerText
-            let optProperty_ = typeof<'a>.GetProperty modelName
-            match optProperty_ with
-            | null ->
-                let optProperty_ = typeof<'b>.GetProperty modelName
-                match optProperty_ with
-                | null ->
-                    let optProperty_ = typeof<'c>.GetProperty modelName
-                    match optProperty_ with
-                    | null -> ()
-                    | property -> trySetProperty property valueStr <| getterC obj
-                | property -> trySetProperty property valueStr <| getterB obj
-            | property -> trySetProperty property valueStr <| obj
-
-    let setModelProperties4<'a, 'b, 'c> getterB getterC (modelNode : XmlNode) (obj : 'a) =
-        for node in modelNode.ChildNodes do
-            setModelProperty4<'a, 'b, 'c> getterB getterC node obj
-
     let writeModelProperties (writer : XmlWriter) obj =
         let aType = obj.GetType ()
         let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)

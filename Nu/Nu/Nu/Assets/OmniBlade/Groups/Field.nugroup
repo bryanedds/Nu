@@ -1,81 +1,79 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
     <ModelType />
     <Xtension>OmniFieldGroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Avatar</ModelType>
-      <Actor>Nu.Actor</Actor>
+      <Entity>Nu.Entity</Entity>
       <Density>10</Density>
       <Sprite>Image7;Default;AssetGraph.xml</Sprite>
-      <Entity>Nu.Entity</Entity>
-      <Position>472;392</Position>
-      <Depth>1</Depth>
-      <Size>64;64</Size>
-      <Rotation>0</Rotation>
       <Name>Avatar</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>472;392</Position>
+      <Depth>1</Depth>
+      <Size>64;64</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Feeler</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsTouched>False</IsTouched>
       <Entity>Nu.Entity</Entity>
-      <Position>0;0</Position>
-      <Depth>-5</Depth>
-      <Size>960;544</Size>
+      <IsTouched>False</IsTouched>
       <Name>Feeler</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>0;0</Position>
+      <Depth>-5</Depth>
+      <Size>960;544</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TileMap</ModelType>
-      <Actor>Nu.Actor</Actor>
+      <Entity>Nu.Entity</Entity>
       <Density>10</Density>
       <TileMapAsset>TileMap;Default;AssetGraph.xml</TileMapAsset>
       <TmxMap>TiledSharp.TmxMap</TmxMap>
       <TileMapSprites>[Nu.Sprite]</TileMapSprites>
-      <Entity>Nu.Entity</Entity>
-      <Position>0;0</Position>
-      <Depth>0</Depth>
-      <Size>1200;1200</Size>
-      <Rotation>0</Rotation>
       <Name>15</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>0;0</Position>
+      <Depth>0</Depth>
+      <Size>1200;1200</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
       <Entity>Nu.Entity</Entity>
-      <Position>0;0</Position>
-      <Depth>-10</Depth>
-      <Size>960;544</Size>
+      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>0;0</Position>
+      <Depth>-10</Depth>
+      <Size>960;544</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
+      <Entity>Nu.Entity</Entity>
       <IsDown>False</IsDown>
       <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>336;456</Position>
-      <Depth>10</Depth>
-      <Size>256;64</Size>
       <Name>Back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>336;456</Position>
+      <Depth>10</Depth>
+      <Size>256;64</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
   </Group>
 </Root>

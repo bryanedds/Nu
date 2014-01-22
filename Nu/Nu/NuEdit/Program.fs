@@ -15,6 +15,7 @@ open Microsoft.FSharp.Reflection
 open Nu
 open Nu.Core
 open Nu.Voords
+open Nu.Constants
 open Nu.Math
 open Nu.Metadata
 open Nu.Physics
@@ -52,8 +53,6 @@ module Program =
     let DefaultPositionSnap = 8
     let DefaultRotationSnap = 5
     let DefaultCreationDepth = 0.0f
-    let DefaultSize = 64.0f
-    let DefaultRotation = 0.0f
     let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
     let pushPastWorld pastWorld world =
@@ -283,7 +282,7 @@ module Program =
         let changer = (fun world ->
             let pastWorld = world
             let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-            let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultSize; Rotation = DefaultRotation }
+            let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultEntitySize; Rotation = DefaultEntityRotation }
             let entityTypeName = typeof<EntityModel>.FullName + "+" + form.createEntityComboBox.Text
             let entityModel_ = makeDefaultEntityModel entityTypeName None
             let (positionSnap, rotationSnap) = getSnaps form
