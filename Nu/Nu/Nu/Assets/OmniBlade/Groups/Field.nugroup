@@ -13,10 +13,10 @@
       <Depth>1</Depth>
       <Size>64;64</Size>
       <Rotation>0</Rotation>
-      <Name>avatar</Name>
+      <Name>Avatar</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Feeler</ModelType>
@@ -26,10 +26,10 @@
       <Position>0;0</Position>
       <Depth>-5</Depth>
       <Size>960;544</Size>
-      <Name>feeler</Name>
+      <Name>Feeler</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TileMap</ModelType>
@@ -46,7 +46,7 @@
       <Name>15</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
@@ -59,7 +59,7 @@
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -72,10 +72,10 @@
       <Position>336;456</Position>
       <Depth>10</Depth>
       <Size>256;64</Size>
-      <Name>back</Name>
+      <Name>Back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>

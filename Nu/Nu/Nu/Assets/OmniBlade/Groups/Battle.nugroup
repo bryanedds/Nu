@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
     <ModelType />
-    <Xtension>groupDispatcher</Xtension>
+    <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -14,10 +14,10 @@
       <Position>384;400</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>dualSpecial</Name>
+      <Name>DualSpecial</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -30,10 +30,10 @@
       <Position>384;472</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>target</Name>
+      <Name>Target</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -49,7 +49,7 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -62,10 +62,10 @@
       <Position>312;256</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>special</Name>
+      <Name>Special</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -78,10 +78,10 @@
       <Position>384;184</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>fight</Name>
+      <Name>Fight</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -94,10 +94,10 @@
       <Position>384;256</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>back</Name>
+      <Name>Back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -110,10 +110,10 @@
       <Position>456;400</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>tripleSpecial</Name>
+      <Name>TripleSpecial</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -126,10 +126,10 @@
       <Position>384;328</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>item</Name>
+      <Name>Item</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -142,10 +142,10 @@
       <Position>456;256</Position>
       <Depth>0</Depth>
       <Size>64;64</Size>
-      <Name>defend</Name>
+      <Name>Defend</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>

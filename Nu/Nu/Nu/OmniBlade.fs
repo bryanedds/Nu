@@ -24,41 +24,41 @@ module OmniBlade =
     let OutgoingTime = 30
 
     // splash literals
-    let SplashAddress = addr "splash"
+    let SplashAddress = addr "Splash"
 
     // title literals
-    let TitleAddress = addr "title"
-    let TitleGroupName = Lun.make "group"
+    let TitleAddress = addr "Title"
+    let TitleGroupName = Lun.make "Group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
     let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
-    let ClickTitleGroupNewAddress = straddrstr "click" TitleGroupAddress "new"
-    let ClickTitleGroupLoadAddress = straddrstr "click" TitleGroupAddress "load"
-    let ClickTitleGroupCreditsAddress = straddrstr "click" TitleGroupAddress "credits"
-    let ClickTitleGroupExitAddress = straddrstr "click" TitleGroupAddress "exit"
+    let ClickTitleGroupNewAddress = straddrstr "Click" TitleGroupAddress "New"
+    let ClickTitleGroupLoadAddress = straddrstr "Click" TitleGroupAddress "Load"
+    let ClickTitleGroupCreditsAddress = straddrstr "Click" TitleGroupAddress "Credits"
+    let ClickTitleGroupExitAddress = straddrstr "Click" TitleGroupAddress "Exit"
 
     // load literals
-    let LoadAddress = addr "load"
-    let LoadGroupName = Lun.make "group"
+    let LoadAddress = addr "Load"
+    let LoadGroupName = Lun.make "Group"
     let LoadGroupAddress = LoadAddress @ [LoadGroupName]
     let LoadGroupFileName = "Assets/OmniBlade/Groups/Load.nugroup"
-    let ClickLoadGroupBackAddress = straddrstr "click" LoadGroupAddress "back"
+    let ClickLoadGroupBackAddress = straddrstr "Click" LoadGroupAddress "Back"
 
     // credits literals
-    let CreditsAddress = addr "credits"
-    let CreditsGroupName = Lun.make "group"
+    let CreditsAddress = addr "Credits"
+    let CreditsGroupName = Lun.make "Group"
     let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
     let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
-    let ClickCreditsGroupBackAddress = straddrstr "click" CreditsGroupAddress "back"
+    let ClickCreditsGroupBackAddress = straddrstr "Click" CreditsGroupAddress "Back"
 
     // field literals
-    let FieldAddress = addr "field"
-    let FieldGroupName = Lun.make "group"
+    let FieldAddress = addr "Field"
+    let FieldGroupName = Lun.make "Group"
     let FieldGroupAddress = FieldAddress @ [FieldGroupName]
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
-    let ClickFieldGroupBackAddress = straddrstr "click" FieldGroupAddress "back"
+    let ClickFieldGroupBackAddress = straddrstr "Click" FieldGroupAddress "Back"
 
     // time literals
-    let TimeAddress = addr "time"
+    let TimeAddress = addr "Time"
 
     let createTitleScreen world =
         let world_ = createDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world

@@ -29,25 +29,25 @@ open Nu.ScreenModule
 open Nu.GameModule
 module WorldModule =
 
-    let TickAddress = addr "tick"
-    let MouseDragAddress = addr "mouse/drag"
-    let MouseMoveAddress = addr "mouse/move"
-    let MouseLeftAddress = addr "mouse/left"
-    let MouseCenterAddress = addr "mouse/center"
-    let MouseRightAddress = addr "mouse/right"
-    let DownMouseLeftAddress = straddr "down" MouseLeftAddress
-    let DownMouseCenterAddress = straddr "down" MouseCenterAddress
-    let DownMousRightAddress = straddr "down" MouseRightAddress
-    let UpMouseLeftAddress = straddr "up" MouseLeftAddress
-    let UpMouseCenterAddress = straddr "up" MouseCenterAddress
-    let UpMouseRightAddress = straddr "up" MouseRightAddress
+    let TickAddress = addr "Tick"
+    let MouseDragAddress = addr "Mouse/Drag"
+    let MouseMoveAddress = addr "Mouse/Move"
+    let MouseLeftAddress = addr "Mouse/Left"
+    let MouseCenterAddress = addr "Mouse/Center"
+    let MouseRightAddress = addr "Mouse/Right"
+    let DownMouseLeftAddress = straddr "Down" MouseLeftAddress
+    let DownMouseCenterAddress = straddr "Down" MouseCenterAddress
+    let DownMousRightAddress = straddr "Down" MouseRightAddress
+    let UpMouseLeftAddress = straddr "Up" MouseLeftAddress
+    let UpMouseCenterAddress = straddr "Up" MouseCenterAddress
+    let UpMouseRightAddress = straddr "Up" MouseRightAddress
     let GamePublishingPriority = Single.MaxValue
     let ScreenPublishingPriority = GamePublishingPriority * 0.5f
     let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
-    let FinishedIncomingAddressPart = addr "finished/incoming"
-    let FinishedOutgoingAddressPart = addr "finished/outgoing"
-    let FieldFeelerName = Lun.make "feeler"
-    let FieldAvatarName = Lun.make "avatar"
+    let FinishedIncomingAddressPart = addr "Finished/Incoming"
+    let FinishedOutgoingAddressPart = addr "Finished/Outgoing"
+    let FieldFeelerName = Lun.make "Feeler"
+    let FieldAvatarName = Lun.make "Avatar"
 
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
@@ -303,7 +303,7 @@ module WorldModule =
                 if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
                     let button' = { button with IsDown = true }
                     let world' = set button' world (worldButtonLens subscriber)
-                    let (keepRunning, world'') = publish (straddr "down" subscriber) { Handled = false; Data = NoData } world'
+                    let (keepRunning, world'') = publish (straddr "Down" subscriber) { Handled = false; Data = NoData } world'
                     (handle message, keepRunning, world'')
                 else (message, true, world)
             else (message, true, world)
@@ -317,9 +317,9 @@ module WorldModule =
                 let (keepRunning, world') =
                     let button' = { button with IsDown = false }
                     let world'' = set button' world (worldButtonLens subscriber)
-                    publish (straddr "up" subscriber) { Handled = false; Data = NoData } world''
+                    publish (straddr "Up" subscriber) { Handled = false; Data = NoData } world''
                 if keepRunning && isInBox3 mousePosition button.Gui.Position button.Gui.Size && button.IsDown then
-                    let (keepRunning', world'') = publish (straddr "click" subscriber) { Handled = false; Data = NoData } world'
+                    let (keepRunning', world'') = publish (straddr "Click" subscriber) { Handled = false; Data = NoData } world'
                     let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                     let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
                     (handle message, keepRunning', world'3)
@@ -361,7 +361,7 @@ module WorldModule =
                 if isInBox3 mousePosition toggle'.Gui.Position toggle'.Gui.Size then
                     let toggle'' = { toggle' with IsOn = not toggle'.IsOn }
                     let world' = set toggle'' world (worldToggleLens subscriber)
-                    let messageType = if toggle''.IsOn then "on" else "off"
+                    let messageType = if toggle''.IsOn then "On" else "Off"
                     let (keepRunning, world'') = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world'
                     let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
                     let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
@@ -392,7 +392,7 @@ module WorldModule =
                 if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
                     let feeler' = { feeler with IsTouched = true }
                     let world' = set feeler' world (worldFeelerLens subscriber)
-                    let (keepRunning, world'') = publish (straddr "touch" subscriber) { Handled = false; Data = mouseButtonData } world'
+                    let (keepRunning, world'') = publish (straddr "Touch" subscriber) { Handled = false; Data = mouseButtonData } world'
                     (handle message, keepRunning, world'')
                 else (message, true, world)
             else (message, true, world)
@@ -405,7 +405,7 @@ module WorldModule =
             if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
                 let feeler' = { feeler with IsTouched = false }
                 let world' = set feeler' world (worldFeelerLens subscriber)
-                let (keepRunning, world'') = publish (straddr "release" subscriber) { Handled = false; Data = NoData } world'
+                let (keepRunning, world'') = publish (straddr "Release" subscriber) { Handled = false; Data = NoData } world'
                 (handle message, keepRunning, world'')
             else (message, true, world)
         | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -745,8 +745,8 @@ module WorldModule =
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
-        let splashLabel = Label { Gui = { makeDefaultGui (Some "splashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
-        let world' = addScreen address splashScreen [(Lun.make "splashGroup", splashGroup, [splashLabel])] world
+        let splashLabel = Label { Gui = { makeDefaultGui (Some "SplashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
+        let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel])] world
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
 
@@ -961,7 +961,7 @@ module WorldModule =
                     // nothing to do here for tile map
                     (keepRunning, world)
             | BodyCollisionMessage bodyCollisionMessage ->
-                let collisionAddress = straddr "collision" bodyCollisionMessage.EntityAddress
+                let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
                 let collisionMessage = { Handled = false; Data = collisionData }
                 publish collisionAddress collisionMessage world
@@ -991,7 +991,7 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
                     let world' = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
-                    let messageAddress = addr ("down/mouse" </> str mouseButton)
+                    let messageAddress = addr ("Down/Mouse" </> str mouseButton)
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                     publish messageAddress { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
@@ -999,7 +999,7 @@ module WorldModule =
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
-                        let messageAddress = addr ("up/mouse" </> str mouseButton)
+                        let messageAddress = addr ("Up/Mouse" </> str mouseButton)
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                         publish messageAddress { Handled = false; Data = messageData } world'
                     else (true, world)
