@@ -2,34 +2,7 @@
 <Root>
   <Group>
     <ModelType>Nu.Group+Group</ModelType>
-    <EntityModels>map [(back, Nu.EntityModel+Button); (21, Nu.EntityModel+Label); (23, Nu.EntityModel+TextBox)]</EntityModels>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
-      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>336;456</Position>
-      <Depth>0</Depth>
-      <Size>256;64</Size>
-      <Name>back</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Label</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
-      <Entity>Nu.Entity</Entity>
-      <Position>0;0</Position>
-      <Depth>-1</Depth>
-      <Size>960;544</Size>
-      <Name>21</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-    </EntityModel>
+    <Xtension>XtensionModule+Xtension</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -45,6 +18,36 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Label</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
+      <Entity>Nu.Entity</Entity>
+      <Position>0;0</Position>
+      <Depth>-1</Depth>
+      <Size>960;544</Size>
+      <Name>21</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
+      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>336;456</Position>
+      <Depth>0</Depth>
+      <Size>256;64</Size>
+      <Name>back</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
   </Group>
 </Root>

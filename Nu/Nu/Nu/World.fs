@@ -664,7 +664,7 @@ module WorldModule =
 
     let unregisterGroup address world =
         let group = get world <| worldGroupLens address
-        group?Unregister (address, world)
+        group?Unregister (address, group, world)
 
     let removeGroup address world =
         let world' = unregisterGroup address world
@@ -707,8 +707,8 @@ module WorldModule =
         screen?Register (address, screen, groupDescriptors, world)
 
     let unregisterScreen address world =
-        let group = get world <| worldGroupLens address
-        group?Unregister (address, world)
+        let screen = get world <| worldScreenLens address
+        screen?Unregister (address, screen, world)
 
     let removeScreen address world =
         let world' = unregisterScreen address world
