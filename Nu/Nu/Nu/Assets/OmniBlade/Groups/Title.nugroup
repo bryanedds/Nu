@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
     <ModelType />
-    <Xtension>groupDispatcher</Xtension>
+    <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -14,10 +14,10 @@
       <Position>344;216</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>new</Name>
+      <Name>New</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -30,10 +30,10 @@
       <Position>344;456</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>exit</Name>
+      <Name>Exit</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
@@ -46,7 +46,7 @@
       <Name>17</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
@@ -63,7 +63,7 @@
       <Name>11</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -76,10 +76,10 @@
       <Position>344;376</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>credits</Name>
+      <Name>Credits</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -92,10 +92,10 @@
       <Position>344;296</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>load</Name>
+      <Name>Load</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>

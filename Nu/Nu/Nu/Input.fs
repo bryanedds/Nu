@@ -11,9 +11,9 @@ type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseRight
     override this.ToString () =
         match this with
-        | MouseLeft -> "left"
-        | MouseCenter -> "center"
-        | MouseRight -> "right"
+        | MouseLeft -> "Left"
+        | MouseCenter -> "Center"
+        | MouseRight -> "Right"
 
 /// Describes a mouse event.
 /// A serializable value type.
