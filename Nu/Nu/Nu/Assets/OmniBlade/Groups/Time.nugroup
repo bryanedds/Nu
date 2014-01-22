@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
     <ModelType />
-    <Xtension>groupDispatcher</Xtension>
+    <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -14,10 +14,10 @@
       <Position>336;456</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
-      <Name>save</Name>
+      <Name>Save</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
@@ -34,7 +34,7 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
@@ -47,7 +47,7 @@
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>entityModelDispatcher</Xtension>
+      <Xtension>EntityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>
