@@ -1,27 +1,26 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
     <ModelType />
     <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
+      <Entity>Nu.Entity</Entity>
       <IsDown>False</IsDown>
       <UpSprite>DualSpecial;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>DualSpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
-      <Position>384;400</Position>
-      <Depth>0</Depth>
-      <Size>64;64</Size>
       <Name>DualSpecial</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>384;400</Position>
+      <Depth>0</Depth>
+      <Size>64;64</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Target;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>TargetDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -34,10 +33,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Go;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>GoDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -50,10 +49,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Special;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>SpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -66,10 +65,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Fight;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>FightDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -82,10 +81,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Back;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>BackDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -98,10 +97,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>TripleSpecial;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>TripleSpecialDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -114,10 +113,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Item;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>ItemDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -130,10 +129,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
       <IsDown>False</IsDown>
       <UpSprite>Defend;OmniBattle;AssetGraph.xml</UpSprite>
       <DownSprite>DefendDown;OmniBattle;AssetGraph.xml</DownSprite>
@@ -146,6 +145,7 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
   </Group>
 </Root>

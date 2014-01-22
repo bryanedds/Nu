@@ -16,3 +16,5 @@ module Constants =
     let DegreesToRadians = 1.0 / RadiansToDegrees
     let RadiansToDegreesF = single RadiansToDegrees
     let DegreesToRadiansF = single DegreesToRadians
+    let DefaultEntitySize = 64.0f
+    let DefaultEntityRotation = 0.0f
