@@ -85,7 +85,8 @@ module ScreenModule =
           Lifetime = 0
           Ticks = 0
           Type = transitionType
-          Sprite = makeDissolveSprite () }
+          Sprite = makeDissolveSprite ()
+          Xtension = { OptName = Some <| Lun.make "TransitionDispatcher"; Fields = Map.empty }}
 
     let makeDefaultScreen () =
         { Id = getNuId ()
