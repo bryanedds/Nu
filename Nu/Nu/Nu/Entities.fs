@@ -630,7 +630,7 @@ module Entities =
           Name = match optName with None -> str id | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = Xtension.empty }
+          Xtension = { OptName = Some <| Lun.make "entityModelDispatcher"; Fields = Map.empty }}
 
     let makeDefaultCustomEntity optName =
         { CustomEntity.Entity = makeDefaultEntity optName }
