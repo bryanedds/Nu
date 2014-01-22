@@ -23,7 +23,15 @@ module GameModule =
     let gameIdLens =
         { Get = fun world -> (get world gameLens).Id
           Set = fun value world -> set { get world gameLens with Id = value } world gameLens }
-      
+
+    let gameXtensionLens =
+        { Get = fun (game : Game) -> game.Xtension
+          Set = fun value game -> { game with Xtension = value }}
+
+    let gameDynamicLens memberName =
+        { Get = fun (game : Game) -> (?) game memberName
+          Set = fun value game -> (?<-) game memberName value }
+
     let cameraLens =
         { Get = fun world -> world.Camera
           Set = fun camera world -> { world with Camera = camera }}
@@ -34,7 +42,7 @@ module GameModule =
 
     let worldOptSelectedScreenAddressLens =
         { Get = fun world -> (get world gameLens).OptSelectedScreenAddress
-          Set = fun value world -> set { (get world gameLens) with OptSelectedScreenAddress = value } world gameLens}
+          Set = fun value world -> set { (get world gameLens) with OptSelectedScreenAddress = value } world gameLens }
 
     let worldOptSelectedScreenLens =
         { Get = fun world ->
