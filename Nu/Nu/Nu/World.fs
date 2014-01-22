@@ -911,10 +911,13 @@ module WorldModule =
         Seq.map (getEntityRenderDescriptors view dispatcherContainer) entitModelValues
 
     let getTransitionModelRenderDescriptors camera dispatcherContainer transition =
-        let progress = single transition.Ticks / single transition.Lifetime
-        let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
-        let color = Vector4 (Vector3.One, alpha)
-        [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = transition.Sprite; Color = color }; Depth = Single.MaxValue })]
+        match transition.OptDissolveSprite with
+        | None -> []
+        | Some dissolveSprite ->
+            let progress = single transition.Ticks / single transition.Lifetime
+            let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
+            let color = Vector4 (Vector3.One, alpha)
+            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
 
     let getWorldRenderDescriptors world =
         match get world worldOptSelectedScreenAddressLens with

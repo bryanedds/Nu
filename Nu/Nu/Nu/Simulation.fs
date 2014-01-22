@@ -180,7 +180,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
       Lifetime : int
       Ticks : int
       Type : TransitionType
-      Sprite : Sprite // TODO: make Sprite an XField
+      OptDissolveSprite : Sprite option
       Xtension : Xtension }
 
     static member (?) (this : Transition, memberName) =
