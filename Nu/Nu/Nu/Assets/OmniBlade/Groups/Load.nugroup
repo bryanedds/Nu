@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <ModelType>Nu.Group+Group</ModelType>
-    <Xtension>XtensionModule+Xtension</Xtension>
+    <ModelType />
+    <Xtension>groupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -18,7 +18,7 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
@@ -31,7 +31,7 @@
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -47,7 +47,7 @@
       <Name>back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>

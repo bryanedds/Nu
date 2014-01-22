@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <ModelType>Nu.Group+Group</ModelType>
-    <Xtension>XtensionModule+Xtension</Xtension>
+    <ModelType />
+    <Xtension>groupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -17,7 +17,7 @@
       <Name>dualSpecial</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -33,7 +33,7 @@
       <Name>target</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -49,7 +49,7 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -65,7 +65,7 @@
       <Name>special</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -81,7 +81,7 @@
       <Name>fight</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -97,7 +97,7 @@
       <Name>back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -113,7 +113,7 @@
       <Name>tripleSpecial</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -129,7 +129,7 @@
       <Name>item</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -145,7 +145,7 @@
       <Name>defend</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>

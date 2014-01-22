@@ -52,6 +52,7 @@ module WorldModule =
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
     let initTypeConverters () =
+        initXtensionConverters ()
         initMathConverters ()
         initAudioConverters ()
         initRenderConverters ()
@@ -82,7 +83,7 @@ module WorldModule =
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | EntityModel entityModel -> getPickingPriority world.Dispatchers entityModel
+        | EntityModel entityModel -> getPickingPriority (xdc world) entityModel
 
     let getSimulant address world =
         match address with
@@ -96,7 +97,7 @@ module WorldModule =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let pickingSort entityModels world =
-        let priorities = List.map (getPickingPriority world.Dispatchers) entityModels
+        let priorities = List.map (getPickingPriority <| xdc world) entityModels
         let prioritiesAndEntityModels = List.zip priorities entityModels
         let prioritiesAndEntityModelsSorted = List.sortWith sortFstAsc prioritiesAndEntityModels
         List.map snd prioritiesAndEntityModelsSorted
@@ -105,7 +106,7 @@ module WorldModule =
         let entityModelsSorted = pickingSort entityModels world
         List.tryFind
             (fun entityModel ->
-                let transform = getEntityModelTransform (Some world.Camera) world.Dispatchers entityModel
+                let transform = getEntityModelTransform (Some world.Camera) (xdc world) entityModel
                 position.X >= transform.Position.X &&
                     position.X < transform.Position.X + transform.Size.X &&
                     position.Y >= transform.Position.Y &&
@@ -266,17 +267,17 @@ module WorldModule =
             abstract member HandleIntegrationMessage : IntegrationMessage * Address * EntityModel * World -> World
             default this.HandleIntegrationMessage (_, _, _, world) = world
 
-            abstract member GetRenderDescriptors : EntityModel -> RenderDescriptor list
-            default this.GetRenderDescriptors _ = []
+            abstract member GetRenderDescriptors : EntityModel * IXDispatcherContainer -> RenderDescriptor list
+            default this.GetRenderDescriptors (_, _) = []
 
-            abstract member GetQuickSize : EntityModel -> Vector2
-            default this.GetQuickSize _ = Vector2.One
+            abstract member GetQuickSize : EntityModel * IXDispatcherContainer -> Vector2
+            default this.GetQuickSize (_, _) = Vector2.One
 
-            abstract member GetTransform : EntityModel -> Transform
-            default this.GetTransform _ = identity
+            abstract member GetTransform : EntityModel * IXDispatcherContainer -> Transform
+            default this.GetTransform (_, _) = identity
 
-            abstract member SetTransform : int * int * Transform * EntityModel -> EntityModel
-            default this.SetTransform (_, _, _, entityModel) = entityModel
+            abstract member SetTransform : int * int * Transform * EntityModel * IXDispatcherContainer -> EntityModel
+            default this.SetTransform (_, _, _, entityModel, _) = entityModel
     
             end
 
@@ -764,12 +765,14 @@ module WorldModule =
         | Right assetMetadataMap ->
             let defaultDispatchers =
                 Map.ofArray
-                    [|Lun.make "entityModelDispatcher", EntityModelDispatcher () :> obj
-                      Lun.make "groupDispatcher", GroupDispatcher () :> obj
-                      Lun.make "screenDispatcher", ScreenDispatcher () :> obj
-                      Lun.make "gameDispatcher", GameDispatcher () :> obj|]
+                    [|Lun.make "EntityModelDispatcher", EntityModelDispatcher () :> obj
+                      Lun.make "GroupDispatcher", GroupDispatcher () :> obj
+                      Lun.make "ScreenDispatcher", ScreenDispatcher () :> obj
+                      Lun.make "GameDispatcher", GameDispatcher () :> obj
+                      Lun.make "OmniBattleGroupDispatcher", OmniBattleGroupDispatcher () :> obj // TODO: move this under OmniBlade game registration
+                      Lun.make "OmniFieldGroupDispatcher", OmniFieldGroupDispatcher () :> obj|] // TODO: same as above
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptName = Some <| Lun.make "gameDispatcher"; Fields = Map.empty }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptName = Some <| Lun.make "GameDispatcher"; Fields = Map.empty }}
                   Screens = Map.empty
                   Groups = Map.empty
                   EntityModels = Map.empty
@@ -829,13 +832,13 @@ module WorldModule =
         let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
         List.collect (fun descs -> descs) descriptorLists
 
-    let getEntityRenderDescriptors view dispatchers entityModel =
+    let getEntityRenderDescriptors view dispatcherContainer entityModel =
         match entityModel with
         | CustomEntity _
         | CustomGui _
         | CustomActor _ ->
             let entity = get entityModel entityLens
-            entity?GetRenderDescriptors entityModel : RenderDescriptor list
+            entity?GetRenderDescriptors (entityModel, dispatcherContainer) : RenderDescriptor list
         | Button button ->
             let (_, gui, entity) = buttonSep button
             if not entity.Visible then []
@@ -885,12 +888,12 @@ module WorldModule =
                         LayerableDescriptor layeredTileLayerDescriptor)
                     layers
 
-    let getGroupRenderDescriptors camera dispatchers entityModels =
+    let getGroupRenderDescriptors camera dispatcherContainer entityModels =
         let view = getInverseView camera
         let entitModelValues = Map.toValueSeq entityModels
-        Seq.map (getEntityRenderDescriptors view dispatchers) entitModelValues
+        Seq.map (getEntityRenderDescriptors view dispatcherContainer) entitModelValues
 
-    let getTransitionModelRenderDescriptors camera dispatchers transition =
+    let getTransitionModelRenderDescriptors camera dispatcherContainer transition =
         let progress = single transition.Ticks / single transition.Lifetime
         let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
         let color = Vector4 (Vector3.One, alpha)
@@ -905,13 +908,13 @@ module WorldModule =
             | None -> []
             | Some groupMap ->
                 let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world.Dispatchers) entityMaps
+                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera <| xdc world) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world (worldScreenLens activeScreenAddress)
                 match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera world.Dispatchers activeScreen.Outgoing
+                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera (xdc world) activeScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera (xdc world) activeScreen.Outgoing
                 | IdlingState -> descriptors
 
     let getRenderDescriptors world : RenderDescriptor rQueue =
