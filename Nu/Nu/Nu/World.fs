@@ -271,13 +271,7 @@ module WorldModule =
             default this.GetRenderDescriptors (_, _) = []
 
             abstract member GetQuickSize : EntityModel * IXDispatcherContainer -> Vector2
-            default this.GetQuickSize (_, _) = Vector2.One
-
-            abstract member GetTransform : EntityModel * IXDispatcherContainer -> Transform
-            default this.GetTransform (_, _) = identity
-
-            abstract member SetTransform : int * int * Transform * EntityModel * IXDispatcherContainer -> EntityModel
-            default this.SetTransform (_, _, _, entityModel, _) = entityModel
+            default this.GetQuickSize (_, _) = Vector2 DefaultEntitySize
     
             end
 
@@ -299,8 +293,8 @@ module WorldModule =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
             let button = get world (worldButtonLens subscriber)
-            if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
-                if isInBox3 mousePosition button.Gui.Position button.Gui.Size then
+            if button.Entity.Enabled && button.Entity.Visible then
+                if isInBox3 mousePosition button.Entity.Position button.Entity.Size then
                     let button' = { button with IsDown = true }
                     let world' = set button' world (worldButtonLens subscriber)
                     let (keepRunning, world'') = publish (straddr "Down" subscriber) { Handled = false; Data = NoData } world'
@@ -313,12 +307,12 @@ module WorldModule =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
             let button = get world (worldButtonLens subscriber)
-            if button.Gui.Entity.Enabled && button.Gui.Entity.Visible then
+            if button.Entity.Enabled && button.Entity.Visible then
                 let (keepRunning, world') =
                     let button' = { button with IsDown = false }
                     let world'' = set button' world (worldButtonLens subscriber)
                     publish (straddr "Up" subscriber) { Handled = false; Data = NoData } world''
-                if keepRunning && isInBox3 mousePosition button.Gui.Position button.Gui.Size && button.IsDown then
+                if keepRunning && isInBox3 mousePosition button.Entity.Position button.Entity.Size && button.IsDown then
                     let (keepRunning', world'') = publish (straddr "Click" subscriber) { Handled = false; Data = NoData } world'
                     let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                     let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
@@ -343,8 +337,8 @@ module WorldModule =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
             let toggle = get world (worldToggleLens subscriber)
-            if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible then
-                if isInBox3 mousePosition toggle.Gui.Position toggle.Gui.Size then
+            if toggle.Entity.Enabled && toggle.Entity.Visible then
+                if isInBox3 mousePosition toggle.Entity.Position toggle.Entity.Size then
                     let toggle' = { toggle with IsPressed = true }
                     let world' = set toggle' world (worldToggleLens subscriber)
                     (handle message, true, world')
@@ -356,9 +350,9 @@ module WorldModule =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
             let toggle = get world (worldToggleLens subscriber)
-            if toggle.Gui.Entity.Enabled && toggle.Gui.Entity.Visible && toggle.IsPressed then
+            if toggle.Entity.Enabled && toggle.Entity.Visible && toggle.IsPressed then
                 let toggle' = { toggle with IsPressed = false }
-                if isInBox3 mousePosition toggle'.Gui.Position toggle'.Gui.Size then
+                if isInBox3 mousePosition toggle'.Entity.Position toggle'.Entity.Size then
                     let toggle'' = { toggle' with IsOn = not toggle'.IsOn }
                     let world' = set toggle'' world (worldToggleLens subscriber)
                     let messageType = if toggle''.IsOn then "On" else "Off"
@@ -388,8 +382,8 @@ module WorldModule =
         match message.Data with
         | MouseButtonData (mousePosition, _) as mouseButtonData ->
             let feeler = get world (worldFeelerLens subscriber)
-            if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
-                if isInBox3 mousePosition feeler.Gui.Position feeler.Gui.Size then
+            if feeler.Entity.Enabled && feeler.Entity.Visible then
+                if isInBox3 mousePosition feeler.Entity.Position feeler.Entity.Size then
                     let feeler' = { feeler with IsTouched = true }
                     let world' = set feeler' world (worldFeelerLens subscriber)
                     let (keepRunning, world'') = publish (straddr "Touch" subscriber) { Handled = false; Data = mouseButtonData } world'
@@ -402,7 +396,7 @@ module WorldModule =
         match message.Data with
         | MouseButtonData _ ->
             let feeler = get world (worldFeelerLens subscriber)
-            if feeler.Gui.Entity.Enabled && feeler.Gui.Entity.Visible then
+            if feeler.Entity.Enabled && feeler.Entity.Visible then
                 let feeler' = { feeler with IsTouched = false }
                 let world' = set feeler' world (worldFeelerLens subscriber)
                 let (keepRunning, world'') = publish (straddr "Release" subscriber) { Handled = false; Data = NoData } world'
@@ -423,22 +417,22 @@ module WorldModule =
             unsubscribe DownMouseLeftAddress address
 
     let registerBlockPhysics address (block : Block) world =
-        let block' = { block with PhysicsId = getPhysicsId block.Actor.Entity.Id }
+        let block' = { block with PhysicsId = getPhysicsId block.Entity.Id }
         let bodyCreateMessage =
             BodyCreateMessage
                 { EntityAddress = address
                   PhysicsId = block'.PhysicsId
                   Shape =
                     BoxShape
-                        { Extent = block'.Actor.Size * 0.5f
+                        { Extent = block'.Entity.Size * 0.5f
                           Properties =
                             { Center = Vector2.Zero
                               Restitution = 0.0f
                               FixedRotation = false
                               LinearDamping = 5.0f
                               AngularDamping = 5.0f }}
-                  Position = block'.Actor.Position + block'.Actor.Size * 0.5f
-                  Rotation = block'.Actor.Rotation
+                  Position = block'.Entity.Position + block'.Entity.Size * 0.5f
+                  Rotation = block'.Entity.Rotation
                   Density = block'.Density
                   BodyType = block'.BodyType }
         let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
@@ -449,22 +443,22 @@ module WorldModule =
         { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
     let registerAvatarPhysics address (avatar : Avatar) world =
-        let avatar' = { avatar with PhysicsId = getPhysicsId avatar.Actor.Entity.Id }
+        let avatar' = { avatar with PhysicsId = getPhysicsId avatar.Entity.Id }
         let bodyCreateMessage =
             BodyCreateMessage
                 { EntityAddress = address
                   PhysicsId = avatar'.PhysicsId
                   Shape =
                     CircleShape
-                        { Radius = avatar'.Actor.Size.X * 0.5f
+                        { Radius = avatar'.Entity.Size.X * 0.5f
                           Properties =
                             { Center = Vector2.Zero
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = 10.0f
                               AngularDamping = 0.0f }}
-                  Position = avatar'.Actor.Position + avatar'.Actor.Size * 0.5f
-                  Rotation = avatar'.Actor.Rotation
+                  Position = avatar'.Entity.Position + avatar'.Entity.Size * 0.5f
+                  Rotation = avatar'.Entity.Rotation
                   Density = avatar'.Density
                   BodyType = BodyType.Dynamic }
         let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
@@ -480,7 +474,7 @@ module WorldModule =
         | None -> (world, physicsIds)
         | Some tileSetTile when not <| tileSetTile.Properties.ContainsKey "c" -> (world, physicsIds)
         | Some tileSetTile ->
-            let physicsId = getPhysicsId tileMap.Actor.Entity.Id
+            let physicsId = getPhysicsId tileMap.Entity.Id
             let boxShapeProperties =
                 { Center = Vector2.Zero
                   Restitution = 0.0f
@@ -493,7 +487,7 @@ module WorldModule =
                       PhysicsId = physicsId
                       Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
                       Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2)
-                      Rotation = tileMap.Actor.Rotation
+                      Rotation = tileMap.Entity.Rotation
                       Density = tileMap.Density
                       BodyType = BodyType.Static }
             let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
@@ -517,13 +511,11 @@ module WorldModule =
     let registerEntityModel address entityModel world =
         match entityModel with
         | CustomEntity _ -> (entityModel, registerEntityXtension address world)
-        | CustomGui _ -> (entityModel, registerEntityXtension address world)
         | Button _ -> (entityModel, registerButton address world)
         | Label _ -> (entityModel, registerEntityXtension address world)
         | TextBox _ -> (entityModel, registerEntityXtension address world)
         | Toggle _ -> (entityModel, registerToggle address world)
         | Feeler _ -> (entityModel, registerFeeler address world)
-        | CustomActor _ -> (entityModel, registerEntityXtension address world)
         | Block block ->
             let (block', world') = world |> registerEntityXtension address |> registerBlockPhysics address block
             (Block block', world')
@@ -538,13 +530,11 @@ module WorldModule =
         let entityModel = get world <| worldEntityModelLens address
         match entityModel with
         | CustomEntity _ -> unregisterEntityXtension address world
-        | CustomGui _ -> unregisterEntityXtension address world
         | Button _ -> unregisterButton address world
         | Label _ -> unregisterEntityXtension address world
         | TextBox _ -> unregisterEntityXtension address world
         | Toggle _ -> unregisterToggle address world
         | Feeler _ -> unregisterFeeler address world
-        | CustomActor _ -> unregisterEntityXtension address world
         | Block block -> unregisterBlockPhysics address block world
         | Avatar avatar -> unregisterAvatarPhysics address avatar world
         | TileMap tileMap -> unregisterTileMapPhysics address tileMap world
@@ -579,13 +569,11 @@ module WorldModule =
     let propagateEntityModelPhysics address entityModel world =
         match entityModel with
         | CustomEntity _
-        | CustomGui _
         | Button _
         | Label _
         | TextBox _
         | Toggle _
         | Feeler _ -> world
-        | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
         | Block block ->
             let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
             set (Block block') world' <| worldEntityModelLens address
@@ -598,8 +586,8 @@ module WorldModule =
 
     let adjustFieldCamera groupAddress world =
         let avatarAddress = groupAddress @ [FieldAvatarName]
-        let actor = get world <| worldActorLens avatarAddress
-        let camera = { world.Camera with EyePosition = actor.Position + actor.Size * 0.5f }
+        let entity = get world <| worldEntityLens avatarAddress
+        let camera = { world.Camera with EyePosition = entity.Position + entity.Size * 0.5f }
         { world with Camera = camera }
 
     let adjustFieldCameraHandler groupAddress _ _ message world =
@@ -614,8 +602,8 @@ module WorldModule =
             let camera = world.Camera
             let view = getInverseViewF camera
             let mousePositionWorld = world.MouseState.MousePosition + view
-            let actorCenter = avatar.Actor.Position + avatar.Actor.Size * 0.5f
-            let impulseVector = (mousePositionWorld - actorCenter) * 5.0f
+            let avatarCenter = avatar.Entity.Position + avatar.Entity.Size * 0.5f
+            let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
             let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
             (message, true, world')
@@ -755,7 +743,7 @@ module WorldModule =
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
-        let splashLabel = Label { Gui = { makeDefaultGui (Some "SplashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
+        let splashLabel = Label { Entity = { makeDefaultEntity (Some "SplashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel])] world
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
@@ -812,25 +800,23 @@ module WorldModule =
     let reregisterPhysicsHack4 groupAddress world _ entityModel =
         match entityModel with
         | CustomEntity _
-        | CustomGui _
         | Button _
         | Label _
         | TextBox _
         | Toggle _
         | Feeler _ -> world
-        | CustomActor _ -> world // TODO: consider if this should invoke an Xtension
         | Block block ->
-            let address = addrstr groupAddress block.Actor.Entity.Name
+            let address = addrstr groupAddress block.Entity.Name
             let world' = unregisterBlockPhysics address block world
             let (block', world'') = registerBlockPhysics address block world'
             set block' world'' <| worldBlockLens address
         | Avatar avatar ->
-            let address = addrstr groupAddress avatar.Actor.Entity.Name
+            let address = addrstr groupAddress avatar.Entity.Name
             let world' = unregisterAvatarPhysics address avatar world
             let (avatar', world'') = registerAvatarPhysics address avatar world'
             set avatar' world'' <| worldAvatarLens address
         | TileMap tileMap -> 
-            let address = addrstr groupAddress tileMap.Actor.Entity.Name
+            let address = addrstr groupAddress tileMap.Entity.Name
             let world' = unregisterTileMapPhysics address tileMap world
             let (tileMap', world'') = registerTileMapPhysics address tileMap world'
             set tileMap' world'' <| worldTileMapLens address
@@ -851,39 +837,37 @@ module WorldModule =
 
     let getEntityRenderDescriptors view dispatcherContainer entityModel =
         match entityModel with
-        | CustomEntity _
-        | CustomGui _
-        | CustomActor _ ->
+        | CustomEntity _ ->
             let entity = get entityModel entityLens
             entity?GetRenderDescriptors (entityModel, dispatcherContainer) : RenderDescriptor list
         | Button button ->
-            let (_, gui, entity) = buttonSep button
+            let (_, entity) = buttonSep button
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = (if button.IsDown then button.DownSprite else button.UpSprite); Color = Vector4.One }; Depth = gui.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if button.IsDown then button.DownSprite else button.UpSprite); Color = Vector4.One }; Depth = entity.Depth })]
         | Label label ->
-            let (_, gui, entity) = labelSep label
-            if not label.Gui.Entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = label.LabelSprite; Color = Vector4.One }; Depth = gui.Depth })]
+            let (_, entity) = labelSep label
+            if not label.Entity.Visible then []
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = label.LabelSprite; Color = Vector4.One }; Depth = entity.Depth })]
         | TextBox textBox ->
-            let (_, gui, entity) = textBoxSep textBox
+            let (_, entity) = textBoxSep textBox
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite; Color = Vector4.One }; Depth = gui.Depth })
-                  LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = gui.Position + textBox.TextOffset; Size = gui.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = gui.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite; Color = Vector4.One }; Depth = entity.Depth })
+                  LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = entity.Position + textBox.TextOffset; Size = entity.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = entity.Depth })]
         | Toggle toggle ->
-            let (_, gui, entity) = toggleSep toggle
+            let (_, entity) = toggleSep toggle
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = gui.Position; Size = gui.Size; Rotation = 0.0f; Sprite = (if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite); Color = Vector4.One }; Depth = gui.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite); Color = Vector4.One }; Depth = entity.Depth })]
         | Feeler _ -> []
         | Block block ->
-            let (_, actor, entity) = blockSep block
+            let (_, entity) = blockSep block
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = block.Sprite; Color = Vector4.One }; Depth = actor.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = block.Sprite; Color = Vector4.One }; Depth = entity.Depth })]
         | Avatar avatar ->
-            let (_, actor, entity) = avatarSep avatar
+            let (_, entity) = avatarSep avatar
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = actor.Position - view; Size = actor.Size; Rotation = actor.Rotation; Sprite = avatar.Sprite; Color = Vector4.One }; Depth = actor.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = avatar.Sprite; Color = Vector4.One }; Depth = entity.Depth })]
         | TileMap tileMap ->
-            let (_, actor, entity) = tileMapSep tileMap
+            let (_, entity) = tileMapSep tileMap
             if not entity.Visible then []
             else
                 let map = tileMap.TmxMap
@@ -893,15 +877,15 @@ module WorldModule =
                         let layeredTileLayerDescriptor =
                             LayeredTileLayerDescriptor
                                 { Descriptor =
-                                    { Position = tileMap.Actor.Position - view
-                                      Size = tileMap.Actor.Size
-                                      Rotation = actor.Rotation
+                                    { Position = entity.Position - view
+                                      Size = entity.Size
+                                      Rotation = entity.Rotation
                                       MapSize = Vector2 (single map.Width, single map.Height)
                                       Tiles = layer.Tiles
                                       TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                                       TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                       TileSetSprite = tileMap.TileMapSprites.[0] } // MAGIC_VALUE: for same reason as above
-                                  Depth = actor.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
+                                  Depth = entity.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
                         LayerableDescriptor layeredTileLayerDescriptor)
                     layers
 
@@ -958,9 +942,7 @@ module WorldModule =
                 let entityModelAddress = bodyTransformMessage.EntityAddress
                 let entityModel = get world <| worldEntityModelLens entityModelAddress
                 match entityModel with
-                | CustomEntity _
-                | CustomGui _
-                | CustomActor _ ->
+                | CustomEntity _ ->
                     let entity = get entityModel entityLens
                     (keepRunning, entity?HandleIntegrationMessage (integrationMessage, entityModelAddress, entityModel, world)) : bool * World
                 | Button _
@@ -972,10 +954,10 @@ module WorldModule =
                     (keepRunning, world)
                 | Block _
                 | Avatar _ ->
-                    let actor = get entityModel actorLens
-                    let actor' = { actor with Position = bodyTransformMessage.Position - actor.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                                              Rotation = bodyTransformMessage.Rotation }
-                    let world' = set actor' world <| worldActorLens bodyTransformMessage.EntityAddress
+                    let entity = get entityModel entityLens
+                    let entity' = { entity with Position = bodyTransformMessage.Position - entity.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                                                Rotation = bodyTransformMessage.Rotation }
+                    let world' = set entity' world <| worldEntityLens bodyTransformMessage.EntityAddress
                     (keepRunning, world')
                 | TileMap _ ->
                     // nothing to do here for tile map

@@ -1,28 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
     <ModelType />
     <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
-      <Gui>Nu.Gui</Gui>
+      <Entity>Nu.Entity</Entity>
       <BoxSprite>Image3;Default;AssetGraph.xml</BoxSprite>
       <Text>Code: Bryan Edds</Text>
       <TextFont>Font;Default;AssetGraph.xml</TextFont>
       <TextOffset>0;0</TextOffset>
       <TextColor>1;1;1;1</TextColor>
-      <Entity>Nu.Entity</Entity>
-      <Position>144;224</Position>
-      <Depth>0</Depth>
-      <Size>640;64</Size>
       <Name>27</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Position>144;224</Position>
+      <Depth>0</Depth>
+      <Size>640;64</Size>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
-      <Gui>Nu.Gui</Gui>
       <BoxSprite>Image4;Default;AssetGraph.xml</BoxSprite>
       <Text>Credits</Text>
       <TextFont>Font;Default;AssetGraph.xml</TextFont>
@@ -36,12 +35,12 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
       <Entity>Nu.Entity</Entity>
+      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
       <Position>0;0</Position>
       <Depth>-1</Depth>
       <Size>960;544</Size>
@@ -49,10 +48,10 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
-      <Gui>Nu.Gui</Gui>
       <BoxSprite>Image3;Default;AssetGraph.xml</BoxSprite>
       <Text>Art: Dan Rivera</Text>
       <TextFont>Font;Default;AssetGraph.xml</TextFont>
@@ -66,15 +65,15 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
-      <Gui>Nu.Gui</Gui>
+      <Entity>Nu.Entity</Entity>
       <IsDown>False</IsDown>
       <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
       <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
       <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Entity>Nu.Entity</Entity>
       <Position>336;456</Position>
       <Depth>0</Depth>
       <Size>256;64</Size>
@@ -82,6 +81,7 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension>EntityModelDispatcher</Xtension>
+      <Rotation>0</Rotation>
     </EntityModel>
   </Group>
 </Root>

@@ -39,7 +39,12 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Name : string
       Enabled : bool
       Visible : bool
-      Xtension : Xtension }
+      Xtension : Xtension
+      // NOTE: if this engine ever gets 3D capabilities, turn the following into XFields -
+      Position : Vector2
+      Depth : single
+      Size : Vector2
+      Rotation : single }
 
     static member (?) (this : Entity, memberName) =
         fun args ->
@@ -49,25 +54,19 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
         let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
         { this with Xtension = xtension }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] Gui =
-    { Entity : Entity
-      Position : Vector2
-      Depth : single
-      Size : Vector2 }
-
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
-    { Gui : Gui
+    { Entity : Entity
       IsDown : bool
       UpSprite : Sprite
       DownSprite : Sprite
       ClickSound : Sound }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Label =
-    { Gui : Gui
+    { Entity : Entity
       LabelSprite : Sprite }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
-    { Gui : Gui
+    { Entity : Entity
       BoxSprite : Sprite
       Text : string
       TextFont : Font
@@ -75,7 +74,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
       TextColor : Vector4 }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
-    { Gui : Gui
+    { Entity : Entity
       IsOn : bool
       IsPressed : bool
       OffSprite : Sprite
@@ -83,31 +82,24 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
       ToggleSound : Sound }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Feeler =
-    { Gui : Gui
+    { Entity : Entity
       IsTouched : bool }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] Actor =
-    { Entity : Entity
-      Position : Vector2
-      Depth : single
-      Size : Vector2
-      Rotation : single }
-
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
-    { Actor : Actor
+    { Entity : Entity
       PhysicsId : PhysicsId
       Density : single
       BodyType : BodyType
       Sprite : Sprite }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
-    { Actor : Actor
+    { Entity : Entity
       PhysicsId : PhysicsId
       Density : single
       Sprite : Sprite }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
-    { Actor : Actor
+    { Entity : Entity
       PhysicsIds : PhysicsId list
       Density : single
       TileMapAsset : TileMapAsset
@@ -116,13 +108,11 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
 
 type [<StructuralEquality; NoComparison>] EntityModel =
     | CustomEntity of Entity
-    | CustomGui of Gui
     | Button of Button
     | Label of Label
     | TextBox of TextBox
     | Toggle of Toggle
     | Feeler of Feeler
-    | CustomActor of Actor
     | Block of Block
     | Avatar of Avatar
     | TileMap of TileMap
