@@ -2,23 +2,7 @@
 <Root>
   <Group>
     <ModelType>Nu.Group+Group</ModelType>
-    <EntityModels>map [(11, Nu.EntityModel+TextBox); (new, Nu.EntityModel+Button); (exit, Nu.EntityModel+Button); ... ]</EntityModels>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+TextBox</ModelType>
-      <Gui>Nu.Gui</Gui>
-      <BoxSprite>Image6;Default;AssetGraph.xml</BoxSprite>
-      <Text>OmniBlade</Text>
-      <TextFont>Font;Default;AssetGraph.xml</TextFont>
-      <TextOffset>0;0</TextOffset>
-      <TextColor>1;1;1;1</TextColor>
-      <Entity>Nu.Entity</Entity>
-      <Position>144;32</Position>
-      <Depth>0</Depth>
-      <Size>640;128</Size>
-      <Name>11</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-    </EntityModel>
+    <Xtension>XtensionModule+Xtension</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Gui>Nu.Gui</Gui>
@@ -33,6 +17,7 @@
       <Name>new</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -48,6 +33,7 @@
       <Name>exit</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
@@ -60,21 +46,24 @@
       <Name>17</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
+      <ModelType>Nu.EntityModel+TextBox</ModelType>
       <Gui>Nu.Gui</Gui>
-      <IsDown>False</IsDown>
-      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
-      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <BoxSprite>Image6;Default;AssetGraph.xml</BoxSprite>
+      <Text>OmniBlade</Text>
+      <TextFont>Font;Default;AssetGraph.xml</TextFont>
+      <TextOffset>0;0</TextOffset>
+      <TextColor>1;1;1;1</TextColor>
       <Entity>Nu.Entity</Entity>
-      <Position>344;296</Position>
+      <Position>144;32</Position>
       <Depth>0</Depth>
-      <Size>256;64</Size>
-      <Name>load</Name>
+      <Size>640;128</Size>
+      <Name>11</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -90,6 +79,23 @@
       <Name>credits</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
+    </EntityModel>
+    <EntityModel>
+      <ModelType>Nu.EntityModel+Button</ModelType>
+      <Gui>Nu.Gui</Gui>
+      <IsDown>False</IsDown>
+      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
+      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
+      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+      <Entity>Nu.Entity</Entity>
+      <Position>344;296</Position>
+      <Depth>0</Depth>
+      <Size>256;64</Size>
+      <Name>load</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension>XtensionModule+Xtension</Xtension>
     </EntityModel>
   </Group>
 </Root>
