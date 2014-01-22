@@ -85,7 +85,7 @@ module ScreenModule =
           Lifetime = 0
           Ticks = 0
           Type = transitionType
-          Sprite = makeDissolveSprite ()
+          OptDissolveSprite = None
           Xtension = { OptName = Some <| Lun.make "TransitionDispatcher"; Fields = Map.empty }}
 
     let makeDefaultScreen () =
@@ -96,6 +96,7 @@ module ScreenModule =
           Xtension = { OptName = Some <| Lun.make "ScreenDispatcher"; Fields = Map.empty }}
 
     let makeDissolveScreen incomingTime outgoingTime =
-        let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime }
-        let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime }
+        let optDissolveSprite = Some <| makeDissolveSprite ()
+        let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
+        let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite  }
         { makeDefaultScreen () with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
