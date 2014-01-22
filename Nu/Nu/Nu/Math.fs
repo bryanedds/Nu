@@ -59,9 +59,9 @@ type Vector4TypeConverter () =
 module Math =
 
     let initMathConverters () =
-        AssignTypeConverter<Vector2, Vector2TypeConverter> ()
-        AssignTypeConverter<Vector3, Vector3TypeConverter> ()
-        AssignTypeConverter<Vector4, Vector4TypeConverter> ()
+        assignTypeConverter<Vector2, Vector2TypeConverter> ()
+        assignTypeConverter<Vector3, Vector3TypeConverter> ()
+        assignTypeConverter<Vector4, Vector4TypeConverter> ()
 
     type [<StructuralEquality; NoComparison>] Transform =
         { Position : Vector2

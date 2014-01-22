@@ -62,7 +62,7 @@ module Sdl =
         let initResult = create ()
         let error = SDL.SDL_GetError ()
         if initResult <> 0 && error <> "CoInitialize() DirectX error -2147417850" then
-            trace ("SDL2# initialization failed due to '" + error + "'.")
+            trace <| "SDL2# initialization failed due to '" + error + "'."
             FailureReturnCode
         else
             let result = action ()

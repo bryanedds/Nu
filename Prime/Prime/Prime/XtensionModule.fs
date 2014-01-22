@@ -44,7 +44,9 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
                             | None -> Xtension.EmptyDispatcher
                             | Some name ->
                                 let dispatchers = context.GetDispatchers ()
-                                Map.find name dispatchers
+                                match Map.tryFind name dispatchers with
+                                | None -> note <| "Invalid dispatcher '" + name.LunStr + "'."; Xtension.EmptyDispatcher
+                                | Some dispatcher -> dispatcher
 
                         // dispatch method call
                         match (dispatcher.GetType ()).GetMethod memberName with

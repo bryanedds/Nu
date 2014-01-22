@@ -2,6 +2,7 @@
 module Miscellanea
 open System
 open System.Diagnostics
+open System.ComponentModel
 
 /// A generic identification code type.
 type Id = int64
@@ -43,3 +44,7 @@ let createGetNextId () =
             if !nextId = 0L then Debug.Fail "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
             !nextId)
     getNextId
+
+/// Add a custom TypeConverter to an existing type.
+let assignTypeConverter<'t, 'c> () =
+    ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)

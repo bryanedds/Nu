@@ -1,22 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <ModelType>Nu.Group+Group</ModelType>
-    <Xtension>XtensionModule+Xtension</Xtension>
+    <ModelType />
+    <Xtension>OmniFieldGroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Avatar</ModelType>
       <Actor>Nu.Actor</Actor>
       <Density>10</Density>
       <Sprite>Image7;Default;AssetGraph.xml</Sprite>
       <Entity>Nu.Entity</Entity>
-      <Position>723.7806;699.3636</Position>
+      <Position>472;392</Position>
       <Depth>1</Depth>
       <Size>64;64</Size>
       <Rotation>0</Rotation>
       <Name>avatar</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Feeler</ModelType>
@@ -29,7 +29,7 @@
       <Name>feeler</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+TileMap</ModelType>
@@ -46,7 +46,7 @@
       <Name>15</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Label</ModelType>
@@ -59,7 +59,7 @@
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
@@ -75,7 +75,7 @@
       <Name>back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>XtensionModule+Xtension</Xtension>
+      <Xtension>entityModelDispatcher</Xtension>
     </EntityModel>
   </Group>
 </Root>

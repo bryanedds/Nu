@@ -71,7 +71,7 @@ module GroupModule =
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
-          Xtension = { OptName = Some <| Lun.make "groupDispatcher"; Fields = Map.empty }}
+          Xtension = { OptName = Some <| Lun.make "GroupDispatcher"; Fields = Map.empty }}
 
     let writeGroupEntitiesToXml (writer : XmlWriter) (entityModels : Map<Lun, EntityModel>) =
         for entityModelKvp in entityModels do
@@ -79,7 +79,7 @@ module GroupModule =
 
     let writeGroupToXml (writer : XmlWriter) group entityModels =
         writer.WriteStartElement typeof<Group>.Name
-        writeModelPropertiesMany writer "Nu.Group+Group" [group :> obj]
+        writeModelPropertiesMany writer String.Empty [group :> obj]
         writeGroupEntitiesToXml writer entityModels
 
     let loadEntityModelsFromXml (groupNode : XmlNode) =
