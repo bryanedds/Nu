@@ -92,7 +92,7 @@ module ScreenModule =
           State = IdlingState
           Incoming = makeDefaultTransition Incoming
           Outgoing = makeDefaultTransition Outgoing
-          Xtension = Xtension.empty }
+          Xtension = { OptName = Some <| Lun.make "screenDispatcher"; Fields = Map.empty }}
 
     let makeDissolveScreen incomingTime outgoingTime =
         let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime }

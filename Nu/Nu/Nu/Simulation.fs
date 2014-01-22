@@ -181,6 +181,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
       Ticks : int
       Type : TransitionType
       Sprite : Sprite } // TODO: make Sprite an XField
+      // TODO: add Xtension field
 
 type [<StructuralEquality; NoComparison>] ScreenState =
     | IncomingState
@@ -242,8 +243,10 @@ and [<ReferenceEquality>] World =
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list
+      Implications : XImplications
       Dispatchers : IXDispatchers
       ExtData : obj }
+
     interface IXDispatcherContainer with
         member this.GetDispatchers () = this.Dispatchers
         end
@@ -255,31 +258,6 @@ and IWorldComponent =
         // TODO: abstract member GetRenderMessages : World -> RenderMessage rQueue
         // TODO: abstract member GetPhysicsMessages : World -> PhysicsMessage rQueue
         // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
-        end
-
-type EntityModelDispatcher () =
-    class
-        abstract member Register : Address * EntityModel * World -> World
-        default this.Register (_, _, world) = world
-
-        abstract member Unregister : Address * EntityModel * World -> World
-        default this.Unregister (_, _, world) = world
-
-        abstract member HandleIntegrationMessage : IntegrationMessage * Address * EntityModel * World -> World
-        default this.HandleIntegrationMessage (_, _, _, world) = world
-
-        abstract member GetRenderDescriptors : EntityModel -> RenderDescriptor list
-        default this.GetRenderDescriptors _ = []
-
-        abstract member GetQuickSize : EntityModel -> Vector2
-        default this.GetQuickSize _ = Vector2.One
-
-        abstract member GetTransform : EntityModel -> Transform
-        default this.GetTransform _ = identity
-
-        abstract member SetTransform : int * int * Transform * EntityModel -> EntityModel
-        default this.SetTransform (_, _, _, entityModel) = entityModel
-    
         end
 
 type [<StructuralEquality; NoComparison>] Simulant =
