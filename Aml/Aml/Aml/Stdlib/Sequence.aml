@@ -114,7 +114,7 @@
          (end (drop start seq))
          (take resultWidth end))]
       
-#|   Affirmations |#
+#| Affirmations |#
     
 [def seqLst (list 0 5 10 15 20)]
 [def seqIncLst (list 1 6 11 16 21)]
