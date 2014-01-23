@@ -176,7 +176,8 @@ module WorldModule =
         let screen = get world <| worldScreenLens address
         get screen screenStateLens
 
-    let setScreenState state address world =
+    // TODO: consider turning this into a lens, and removing the screenStateLens
+    let setScreenState address state world =
         let screen = set state (get world <| worldScreenLens address) screenStateLens
         let world' = set screen world <| worldScreenLens address
         match state with
@@ -190,7 +191,7 @@ module WorldModule =
                 subscribe UpMouseLeftAddress address handleEventAsSwallow
 
     let transitionScreen address world =
-        let world' = setScreenState IncomingState address world
+        let world' = setScreenState address IncomingState world
         set (Some address) world' worldOptSelectedScreenAddressLens
 
     let transitionScreenHandler address _ _ message world =
@@ -210,7 +211,7 @@ module WorldModule =
             trace <| "Program Error: Could not handle click as screen transition due to no selected screen."
             (handle message, true, world)
         | Some selectedScreenAddress ->
-            let world'' = setScreenState OutgoingState selectedScreenAddress world'
+            let world'' = setScreenState selectedScreenAddress OutgoingState world'
             (handle message, true, world'')
 
     let updateTransition1 transition =
@@ -232,7 +233,7 @@ module WorldModule =
                     let (incoming', finished) = updateTransition1 incoming
                     let selectedScreen' = set incoming' selectedScreen incomingLens
                     let world'' = set selectedScreen' world <| worldScreenLens selectedScreenAddress
-                    let world'3 = setScreenState (if finished then IdlingState else IncomingState) selectedScreenAddress world''
+                    let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
                     if finished then
                         publish
                             (FinishedIncomingAddressPart @ selectedScreenAddress)
@@ -245,7 +246,7 @@ module WorldModule =
                     let (outgoing', finished) = updateTransition1 outgoing
                     let selectedScreen' = set outgoing' selectedScreen outgoingLens
                     let world'' = set selectedScreen' world <| worldScreenLens selectedScreenAddress
-                    let world'3 = setScreenState (if finished then IdlingState else OutgoingState) selectedScreenAddress world''
+                    let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
                     if finished then
                         publish
                             (FinishedOutgoingAddressPart @ selectedScreenAddress)
@@ -682,12 +683,6 @@ module WorldModule =
 
     type TransitionDispatcher () =
         class
-            abstract member Register : Address * Transition * World -> World
-            default this.Register (_, _, world) = world
-
-            abstract member Unregister : Address * Transition * World -> World
-            default this.Unregister (_, _, world) = world
-
             end
 
     type ScreenDispatcher () =
@@ -733,7 +728,7 @@ module WorldModule =
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."
                 (message, false, world)
             | Some selectedScreenAddress ->
-                let world'' = setScreenState OutgoingState selectedScreenAddress world'
+                let world'' = setScreenState selectedScreenAddress OutgoingState world'
                 (message, true, world'')
 
     let handleSplashScreenIdle idlingTime address subscriber message world =
@@ -755,12 +750,19 @@ module WorldModule =
 
     type GameDispatcher () =
         class
-            abstract member Register : Address * Game * World -> World
-            default this.Register (_, _, world) = world
+            abstract member Register : Game * World -> World
+            default this.Register (_, world) = world
+            end
 
-            abstract member Unregister : Address * Game * World -> World
-            default this.Unregister (_, _, world) = world
-
+    type OmniGameDispatcher () =
+        inherit GameDispatcher () with
+            override this.Register (omniGame, world) =
+                let dispatchers =
+                    Map.addMany
+                        [|Lun.make "OmniBattleGroupDispatcher", OmniBattleGroupDispatcher () :> obj
+                          Lun.make "OmniFieldGroupDispatcher", OmniFieldGroupDispatcher () :> obj|]
+                        world.Dispatchers
+                { world with Dispatchers = dispatchers }
             end
 
     let tryCreateEmptyWorld sdlDeps extData =
@@ -774,8 +776,10 @@ module WorldModule =
                       Lun.make "TransitionDispatcher", TransitionDispatcher () :> obj
                       Lun.make "ScreenDispatcher", ScreenDispatcher () :> obj
                       Lun.make "GameDispatcher", GameDispatcher () :> obj
-                      Lun.make "OmniBattleGroupDispatcher", OmniBattleGroupDispatcher () :> obj // TODO: move this under OmniBlade game registration
-                      Lun.make "OmniFieldGroupDispatcher", OmniFieldGroupDispatcher () :> obj|] // TODO: same as above
+                      // TODO: remove these when editor has a way to specify the GameDispatcher
+                      Lun.make "OmniBattleGroupDispatcher", OmniBattleGroupDispatcher () :> obj
+                      Lun.make "OmniFieldGroupDispatcher", OmniFieldGroupDispatcher () :> obj
+                      Lun.make "OmniGameDispatcher", OmniGameDispatcher () :> obj|]
             let world =
                 { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptName = Some <| Lun.make "GameDispatcher"; Fields = Map.empty }}
                   Screens = Map.empty
@@ -980,7 +984,10 @@ module WorldModule =
 
     let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
         runSdl
-            (fun sdlDeps -> tryCreateWorld sdlDeps)
+            (fun sdlDeps ->
+                match tryCreateWorld sdlDeps with
+                | Left _ as left -> left
+                | Right world -> Right <| world.Game?Register (world.Game, world))
             (fun refEvent world ->
                 let event = !refEvent
                 match event.``type`` with
