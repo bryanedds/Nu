@@ -48,10 +48,10 @@ let getAndModifyState = Lens.getAndModifyState
 /// Applies a lens in the 'get' direction within a state monad
 let getState = Lens.getState
 
-(*/// Identity lens
-let id = Lens.id
+/// Identity lens
+let idL = Lens.id
 
-/// Undocumented
+(*/// Undocumented
 let ignore = Lens.ignore
 
 /// Creates a lens that maps the given lens in a list

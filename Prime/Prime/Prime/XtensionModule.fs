@@ -6,12 +6,14 @@ open Microsoft.FSharp.Reflection
 type XFields =
     Map<Lun, obj>
 
+/// Xtensions are a way to solve the 'expression problem' in F#.
 type [<StructuralEqualityAttribute; NoComparison>] Xtension =
     { OptName : Lun option
       Fields : XFields }
 
     // NOTE: this could instead be a special class with a MethodMissing method
-    static member private EmptyDispatcher = new obj ()
+    static member private EmptyDispatcher =
+        new obj ()
 
     static member (?) (this : Xtension, memberName) : 'a -> 'r =
 

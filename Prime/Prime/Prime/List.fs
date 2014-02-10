@@ -12,7 +12,7 @@ open System.Collections.Generic
 let singleton elem = [elem]
 
 /// The missing cons function.
-let cons head tail = head :: tail
+let cons = Sectioning.cons
 
 /// Cons with flipped arguments.
 let flipCons tail head = head :: tail
@@ -187,13 +187,13 @@ let distinctBy pred list =
     List.ofSeq results
 
 /// Get the last item from a list.
-let last (list : 'a list) =
-    let length = list.Length
+let last list =
+    let length = List.length list
     List.nth list (length - 1)
 
 /// Get all but the last item from a list.
-let allButLast (list : 'a list) =
-    take (list.Length - 1) list
+let allButLast list =
+    take (List.length list - 1) list
 
 /// Convert option values to definite values.
 let definitize opts =
@@ -218,31 +218,31 @@ let padWithLast count list =
     list @ padding
 
 /// Pad a list with instances of its last elem so that it is proportion to another list.
-let padWithLastToProportion (list : 'b list) (list2 : 'a list) =
-    let deficit = list2.Length - list.Length
+let padWithLastToProportion list list2 =
+    let deficit = List.length list2 - List.length list
     padWithLast deficit list
 
 /// Join a list into a string separated by sep.
-let join sep (list : string list) =
-    if list.IsEmpty then String.Empty
+let join sep list =
+    if List.isEmpty list then String.Empty
     else List.reduce (fun acc elem -> acc + sep + elem) list
 
 /// Join a list into a string separated by sep.
 /// TODO: consider optimizing with a StringBuilder.
-let joinBy by sep (list : 'a list) =
-    if list.IsEmpty then String.Empty
+let joinBy by sep list =
+    if List.isEmpty list then String.Empty
     else
         List.fold 
-            (fun (acc : string) elem ->
+            (fun acc elem ->
                 let elemStr = by elem
-                if acc.Length = 0 then elemStr
+                if String.length acc = 0 then elemStr
                 else acc + sep + elemStr)
             String.Empty
             list
 
 /// Join a list of lists into a list separated by sep.
-let joinList sep (list : 'a list list) =
-    if list.IsEmpty then []
+let joinList sep list =
+    if List.isEmpty list then []
     else List.reduce (fun acc elem -> acc @ sep @ elem) list
 
 /// Take elements until an element satisfies a predicate, taking also that element.
@@ -256,7 +256,7 @@ let takeTillInclusive pred list =
         else take index list
 
 /// Runs a binary set operation on two lists that are converted to sets.
-let setBinop binop (firstList : 'a list) (secondList : 'a list) =
+let setBinop binop firstList secondList =
     let firstSet = Set.ofList firstList
     let secondSet = Set.ofList secondList
     binop firstSet secondSet
@@ -296,8 +296,8 @@ let toHashSet list =
     List.iter (fun elem -> ignore <| hashSet.Add elem) list
     hashSet
 
-let foldWhile f initial (input : 'a list) =
-    Seq.foldWhile f initial input
+let foldWhile f initial input =
+    Seq.foldWhile f initial <| List.toSeq input
 
 /// TODO: see if List.rev can be removed.
 let rec remove pred list =
