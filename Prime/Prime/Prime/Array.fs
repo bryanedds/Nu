@@ -1,8 +1,8 @@
 ﻿module Array
 
 /// Try to find an index in reverse.
-let tryFindIndexRev pred (arr : 'a array) =
-    let mutable index = arr.Length - 1
+let tryFindIndexRev pred arr =
+    let mutable index = Array.length arr - 1
     let mutable found = false
     while index >= 0 && not found do
         if pred arr.[index] then found <- true
@@ -10,7 +10,7 @@ let tryFindIndexRev pred (arr : 'a array) =
     if found then Some index else None
 
 /// Get the last element of an array
-let last (arr : 'a array) =
-    let arrLength = arr.Length
+let last arr =
+    let arrLength = Array.length arr
     if arrLength = 0 then failwith "Cannot get the last element of an empty array."
     arr.[arrLength - 1]

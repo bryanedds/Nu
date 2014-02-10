@@ -22,7 +22,7 @@ let foldi folder state seq =
     snd state'
 
 /// Check if no elements satisfy a predicate in a seq.
-let fornone pred (seq : 'a seq) =
+let fornone pred seq =
     let notPred = not << pred
     Seq.forall notPred seq
 
