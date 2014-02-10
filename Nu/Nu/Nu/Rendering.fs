@@ -167,7 +167,7 @@ module Rendering =
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FileName
-            let fileFirstNameLength = fileFirstName.Length
+            let fileFirstNameLength = String.length fileFirstName
             if fileFirstNameLength >= 3 then
                 let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
                 let fontSize = ref 0
