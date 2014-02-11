@@ -19,4 +19,4 @@ let inline quack this =
 let howard = name { RedDuck.Name = "Howard" }
 let bob = name { BlueDuck.Name = "Bob" }
 let red = quack { RedDuck.Name = "Jim" }
-let blue = quack { RedDuck.Name = "Fred" }
+let blue = quack { BlueDuck.Name = "Fred" }

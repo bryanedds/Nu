@@ -470,7 +470,7 @@ module Entities =
           Name = match optName with None -> str id | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = { OptName = Some <| Lun.make "EntityModelDispatcher"; Fields = Map.empty }
+          Xtension = { OptXTypeName = Some <| Lun.make "EntityModelDispatcher"; Fields = Map.empty }
           Position = Vector2.Zero
           Depth = 0.0f
           Size = Vector2 DefaultEntitySize

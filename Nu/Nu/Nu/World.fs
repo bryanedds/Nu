@@ -781,7 +781,7 @@ module WorldModule =
                       Lun.make "OmniFieldGroupDispatcher", OmniFieldGroupDispatcher () :> obj
                       Lun.make "OmniGameDispatcher", OmniGameDispatcher () :> obj|]
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptName = Some <| Lun.make "GameDispatcher"; Fields = Map.empty }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some <| Lun.make "GameDispatcher"; Fields = Map.empty }}
                   Screens = Map.empty
                   Groups = Map.empty
                   EntityModels = Map.empty
@@ -796,7 +796,7 @@ module WorldModule =
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
                   Components = []
-                  Implications = Map.empty
+                  XTypes = Map.empty
                   Dispatchers = defaultDispatchers
                   ExtData = extData }
             Right world
