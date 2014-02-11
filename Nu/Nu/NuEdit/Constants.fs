@@ -2,6 +2,6 @@
 open Nu.Core
 module Constants =
 
-    let EditorScreenAddress = addr "editorScreen"
-    let EditorGroupName = Lun.make "editorGroup"
+    let EditorScreenAddress = addr "EditorScreen"
+    let EditorGroupName = Lun.make "EditorGroup"
     let EditorGroupAddress = EditorScreenAddress @ [EditorGroupName]
