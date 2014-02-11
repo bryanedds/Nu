@@ -232,7 +232,7 @@ and [<ReferenceEquality>] World =
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
       Components : IWorldComponent list
-      Implications : XImplications
+      XTypes : XTypes
       Dispatchers : IXDispatchers
       ExtData : obj } // TODO: consider if this is still the right approach in the context of the new Xtension stuff
 

@@ -3,12 +3,25 @@ module XtensionModule
 open System.Reflection
 open Microsoft.FSharp.Reflection
 
+type XFieldDescriptor =
+    { FieldName : Lun
+      TypeName : Lun } // the .NET type name
+
+type XType =
+    { XTypeName : Lun
+      XSubtypeNames : Lun list // the child XType names
+      XFieldDescriptors : XFieldDescriptor list }
+
+type XTypes =
+    Map<Lun, XType>
+
 type XFields =
     Map<Lun, obj>
 
-/// Xtensions are a way to solve the 'expression problem' in F#.
+/// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way to
+/// solve the 'expression problem' in F#.
 type [<StructuralEqualityAttribute; NoComparison>] Xtension =
-    { OptName : Lun option
+    { OptXTypeName : Lun option
       Fields : XFields }
 
     // NOTE: this could instead be a special class with a MethodMissing method
@@ -42,12 +55,12 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
 
                         // find dispatcher, or use the empty dispatcher
                         let dispatcher = 
-                            match this.OptName with
+                            match this.OptXTypeName with
                             | None -> Xtension.EmptyDispatcher
-                            | Some name ->
+                            | Some xTypeName ->
                                 let dispatchers = context.GetDispatchers ()
-                                match Map.tryFind name dispatchers with
-                                | None -> note <| "Invalid dispatcher '" + name.LunStr + "'."; Xtension.EmptyDispatcher
+                                match Map.tryFind xTypeName dispatchers with
+                                | None -> note <| "Invalid dispatcher '" + xTypeName.LunStr + "'."; Xtension.EmptyDispatcher
                                 | Some dispatcher -> dispatcher
 
                         // dispatch method call
@@ -76,14 +89,3 @@ and [<StructuralEquality; NoComparison>] XDispatcherContainer =
     interface IXDispatcherContainer with
         member this.GetDispatchers () = this.Dispatchers
         end
-
-type XFieldDescriptor =
-    { Name : Lun
-      Type : Lun }
-
-type XImplication =
-    | NameToNames of Lun * Lun list
-    | NameToFields of Lun * XFieldDescriptor list
-
-type XImplications =
-    Map<Lun, XImplication>
