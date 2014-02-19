@@ -3,7 +3,7 @@ open System
 open System.ComponentModel
 
 /// The empty extension.
-let empty = { OptXTypeName = None; Fields = Map.empty }
+let empty = { OptXTypeName = None; XFields = Map.empty }
 
 type XtensionTypeConverter () =
     inherit TypeConverter ()
@@ -20,7 +20,7 @@ type XtensionTypeConverter () =
         if sourceType = typeof<Xtension> then obj
         else
             let optXTypeName = match obj :?> string with "" -> None | xTypeNameStr -> Some <| Lun.make xTypeNameStr
-            { OptXTypeName = optXTypeName; Fields = Map.empty } :> obj
+            { OptXTypeName = optXTypeName; XFields = Map.empty } :> obj
 
 let initXtensionConverters () =
     assignTypeConverter<Xtension, XtensionTypeConverter> ()
