@@ -781,7 +781,7 @@ module WorldModule =
                       Lun.make "OmniFieldGroupDispatcher", OmniFieldGroupDispatcher () :> obj
                       Lun.make "OmniGameDispatcher", OmniGameDispatcher () :> obj|]
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some <| Lun.make "GameDispatcher"; Fields = Map.empty }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some <| Lun.make "GameDispatcher"; XFields = Map.empty }}
                   Screens = Map.empty
                   Groups = Map.empty
                   EntityModels = Map.empty

@@ -2,7 +2,6 @@
 <Root>
   <Group>
     <ModelType />
-    <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+Button</ModelType>
       <Entity>Nu.Entity</Entity>
@@ -16,7 +15,6 @@
       <Name>New</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -32,7 +30,6 @@
       <Name>Exit</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -45,7 +42,6 @@
       <Name>17</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -62,7 +58,6 @@
       <Name>11</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -78,7 +73,6 @@
       <Name>Credits</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -94,7 +88,6 @@
       <Name>Load</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
   </Group>
