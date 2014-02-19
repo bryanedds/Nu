@@ -22,7 +22,7 @@ type XFields =
 /// solve the 'expression problem' in F#.
 type [<StructuralEqualityAttribute; NoComparison>] Xtension =
     { OptXTypeName : Lun option
-      Fields : XFields }
+      XFields : XFields }
 
     // NOTE: this could instead be a special class with a MethodMissing method
     static member private EmptyDispatcher =
@@ -35,7 +35,7 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
         fun args ->
 
             // check if dynamic member is a method or a field
-            match Map.tryFind (Lun.makeFast memberName) this.Fields with
+            match Map.tryFind (Lun.makeFast memberName) this.XFields with
             | None ->
                 
                 // try to convert method args to an array
@@ -73,8 +73,8 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
             | Some field -> field :?> 'r
 
     static member (?<-) (this : Xtension, fieldName, value) =
-        let fields = Map.add (Lun.makeFast fieldName) (value :> obj) this.Fields
-        { this with Fields = fields }
+        let xFields = Map.add (Lun.makeFast fieldName) (value :> obj) this.XFields
+        { this with XFields = xFields }
 
 and IXDispatchers =
     Map<Lun, obj>

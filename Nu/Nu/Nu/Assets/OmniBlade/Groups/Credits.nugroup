@@ -2,7 +2,6 @@
 <Root>
   <Group>
     <ModelType />
-    <Xtension>GroupDispatcher</Xtension>
     <EntityModel>
       <ModelType>Nu.EntityModel+TextBox</ModelType>
       <Entity>Nu.Entity</Entity>
@@ -14,7 +13,6 @@
       <Name>27</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Position>144;224</Position>
       <Depth>0</Depth>
       <Size>640;64</Size>
@@ -34,7 +32,6 @@
       <Name>23</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -47,7 +44,6 @@
       <Name>21</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -64,7 +60,6 @@
       <Name>29</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
     <EntityModel>
@@ -80,7 +75,6 @@
       <Name>Back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension>EntityModelDispatcher</Xtension>
       <Rotation>0</Rotation>
     </EntityModel>
   </Group>

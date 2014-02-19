@@ -80,8 +80,10 @@ module Program =
         override this.ShouldSerializeValue source = true
 
         override this.IsReadOnly
-            // NOTE: we make entity ids read-only
-            with get () = property.Name.Contains "Id"
+            // NOTE: we make ids read-only
+            with get () =
+                property.Name.EndsWith "Id" ||
+                property.Name.EndsWith "Ids" // TODO: find an remove duplication of this expression
 
         override this.GetValue source =
             // BUG: sometimes source is null, and I have no idea WHY!
