@@ -2,6 +2,7 @@
 <Root>
   <Group>
     <ModelType />
+    <Xtension xType="OmniFieldGroupDispatcher" />
     <EntityModel>
       <ModelType>Nu.EntityModel+Avatar</ModelType>
       <Entity>Nu.Entity</Entity>
