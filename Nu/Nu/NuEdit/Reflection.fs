@@ -16,7 +16,6 @@ module Reflection =
 
     let getEntityModelTypes entityModel =
         match entityModel with
-        | CustomEntity _ -> [typeof<Entity>]
         | Button _ -> [typeof<Button>; typeof<Entity>]
         | Label _ -> [typeof<Label>; typeof<Entity>]
         | TextBox _ -> [typeof<TextBox>; typeof<Entity>]
@@ -41,7 +40,6 @@ module Reflection =
 
     let getEntityModelPropertyValue property entityModel =
         match entityModel with
-        | CustomEntity _ -> getValue property entityModel customEntityLens
         | Button _ -> getValue property entityModel buttonLens
         | Label _ -> getValue property entityModel labelLens
         | TextBox _ -> getValue property entityModel textBoxLens
@@ -64,10 +62,6 @@ module Reflection =
             let entityModel_ =
                 // TODO: so much code duplication, make me wanna slap your momma!
                 match entityModel_ with
-                | CustomEntity customEntity_ ->
-                    let customEntity_ = { customEntity_ with Id = customEntity_.Id } // NOTE: hacky copy
-                    p.SetValue (customEntity_, value)
-                    CustomEntity customEntity_
                 | Button button_ ->
                     let button_ = { button_ with Entity = button_.Entity } // NOTE: hacky copy
                     if typeof<Button>.GetProperty (p.Name, BindingFlags.Instance ||| BindingFlags.Public) = p

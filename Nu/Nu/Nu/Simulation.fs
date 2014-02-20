@@ -107,7 +107,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
       TileMapSprites : Sprite list }
 
 type [<StructuralEquality; NoComparison>] EntityModel =
-    | CustomEntity of Entity
     | Button of Button
     | Label of Label
     | TextBox of TextBox
