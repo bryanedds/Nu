@@ -792,7 +792,6 @@ module WorldModule =
                   AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
-                  Components = []
                   XTypes = Map.empty
                   Dispatchers = defaultDispatchers
                   ExtData = extData }
@@ -830,10 +829,6 @@ module WorldModule =
         let audioMessages = world.AudioMessages
         let world' = { world with AudioMessages = [] }
         { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
-
-    let getComponentRenderDescriptors world : RenderDescriptor rQueue =
-        let descriptorLists = List.fold (fun descs (comp : IWorldComponent) -> comp.GetRenderDescriptors world :: descs) [] world.Components // TODO: get render descriptors
-        List.collect (fun descs -> descs) descriptorLists
 
     let getEntityRenderDescriptors view dispatcherContainer entityModel =
         match entityModel with
@@ -900,7 +895,7 @@ module WorldModule =
             let color = Vector4 (Vector3.One, alpha)
             [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
 
-    let getWorldRenderDescriptors world =
+    let getRenderDescriptors world =
         match get world worldOptSelectedScreenAddressLens with
         | None -> []
         | Some activeScreenAddress ->
@@ -917,11 +912,6 @@ module WorldModule =
                 | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera (xdc world) activeScreen.Incoming
                 | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera (xdc world) activeScreen.Outgoing
                 | IdlingState -> descriptors
-
-    let getRenderDescriptors world : RenderDescriptor rQueue =
-        let componentDescriptors = getComponentRenderDescriptors world
-        let worldDescriptors = getWorldRenderDescriptors world
-        componentDescriptors @ worldDescriptors // NOTE: pretty inefficient
 
     /// Render the world.
     let render world =
