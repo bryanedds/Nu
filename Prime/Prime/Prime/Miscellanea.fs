@@ -48,3 +48,11 @@ let createGetNextId () =
 /// Add a custom TypeConverter to an existing type.
 let assignTypeConverter<'t, 'c> () =
     ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
+
+let tryFindType typeName =
+    Type.GetType typeName
+
+let findType typeName =
+    match tryFindType typeName with
+    | null -> failwith <| "Could not find type with name '" + typeName + "'."
+    | aType -> aType
