@@ -3,6 +3,7 @@ open NuEditDesign
 open SDL2
 open OpenTK
 open TiledSharp
+open Miscellanea
 open System
 open System.IO
 open System.Collections.Generic
@@ -29,7 +30,6 @@ open NuEdit.Constants
 open NuEdit.Reflection
 
 type WorldChanger = World -> World
-
 type WorldChangers = WorldChanger List
 
 type DragEntityState =
@@ -71,10 +71,14 @@ module Program =
           WorldChangers : WorldChangers
           RefWorld : World ref }
 
-    and EntityModelPropertyDescriptor (property : PropertyInfo) =
-        inherit PropertyDescriptor (property.Name, Array.empty)
-        override this.ComponentType with get () = property.DeclaringType
-        override this.PropertyType with get () = property.PropertyType
+    and EntityModelPropertyDescriptor (property) =
+        inherit PropertyDescriptor ((match property with XFieldDescriptor x -> x.FieldName.LunStr | PropertyInfo p -> p.Name), Array.empty)
+
+        let propertyName = match property with XFieldDescriptor x -> x.FieldName.LunStr | PropertyInfo p -> p.Name
+        let propertyType = match property with XFieldDescriptor x -> findType x.TypeName.LunStr | PropertyInfo p -> p.PropertyType
+
+        override this.ComponentType with get () = propertyType.DeclaringType
+        override this.PropertyType with get () = propertyType
         override this.CanResetValue source = false
         override this.ResetValue source = ()
         override this.ShouldSerializeValue source = true
@@ -82,13 +86,13 @@ module Program =
         override this.IsReadOnly
             // NOTE: we make ids read-only
             with get () =
-                property.Name.EndsWith "Id" ||
-                property.Name.EndsWith "Ids" // TODO: find an remove duplication of this expression
+                // TODO: find an remove duplication of this expression
+                propertyName.EndsWith "Id" || propertyName.EndsWith "Ids"
 
-        override this.GetValue source =
-            // BUG: sometimes source is null, and I have no idea WHY!
-            if source = null then null
-            else
+        override this.GetValue optSource =
+            match optSource with
+            | null -> null
+            | source ->
                 let entityModelTds = source :?> EntityModelTypeDescriptorSource
                 let entityModelLens = worldEntityModelLens entityModelTds.Address
                 let entityModel = get !entityModelTds.RefWorld entityModelLens
@@ -100,7 +104,7 @@ module Program =
                 let pastWorld = world
                 let world_ =
                     // handle special case for an entity's Name field change
-                    if property.Name = "Name" then
+                    if propertyName = "Name" then
                         let valueStr = str value
                         if Int64.TryParse (valueStr, ref 0L) then
                             trace <| "Invalid entity model name '" + valueStr + "' (must not be a number)."
@@ -122,7 +126,7 @@ module Program =
                         let entityModel_ = get world_ <| worldEntityModelLens entityModelTds.Address
                         let entityModel_ =
                             // handle special case for TileMap's TileMapAsset field change
-                            if property.Name = "TileMapAsset" then
+                            if propertyName = "TileMapAsset" then
                                 match entityModel_ with
                                 | TileMap tileMap_ ->
                                     let tileMapAsset = tileMap_.TileMapAsset
@@ -130,7 +134,7 @@ module Program =
                                     match optTileMapMetadata with
                                     | None -> entityModel_
                                     | Some (tileMapFileName, tileMapSprites) ->
-                                        let tileMap_ = { tileMap_ with TmxMap = new TmxMap (tileMapFileName) }
+                                        let tileMap_ = { tileMap_ with TmxMap = TmxMap tileMapFileName }
                                         let tileMap_ = { tileMap_ with TileMapSprites = tileMapSprites }
                                         TileMap tileMap_
                                 | _ -> entityModel_
@@ -142,10 +146,30 @@ module Program =
             entityModelTds.WorldChangers.Add changer
 
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
-        static member GetPropertyDescriptors (aType : Type) =
+        static member GetPropertyDescriptors (aType : Type) optSource =
             let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
-            let propertyDescriptors = Seq.map (fun property -> new EntityModelPropertyDescriptor (property) :> PropertyDescriptor) properties
-            List.ofSeq propertyDescriptors
+            let propertyDescriptors =
+                Seq.map
+                    (fun property -> EntityModelPropertyDescriptor (NuEdit.PropertyInfo property) :> PropertyDescriptor)
+                    properties
+            let optProperty = Array.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
+            let propertyDescriptors' =
+                match (optProperty, optSource) with
+                | (None, _) 
+                | (_, None) -> propertyDescriptors
+                | (Some property, Some source) ->
+                    let entity = get source entityLens
+                    let xtension = property.GetValue entity :?> Xtension
+                    let xFieldDescriptors =
+                        Seq.map
+                            (fun (xField : KeyValuePair<Lun, obj>) ->
+                                let fieldName = xField.Key
+                                let typeName = Lun.make (xField.Value.GetType ()).FullName
+                                let xFieldDescriptor = NuEdit.XFieldDescriptor { FieldName = fieldName; TypeName = typeName }
+                                EntityModelPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
+                            xtension.XFields
+                    Seq.append propertyDescriptors xFieldDescriptors
+            List.ofSeq propertyDescriptors'
 
     and EntityModelTypeDescriptor (optSource : obj) =
         inherit CustomTypeDescriptor ()
@@ -157,8 +181,8 @@ module Program =
                     let entityModel = get !source.RefWorld entityModelLens
                     let entityModelTypes = getEntityModelTypes entityModel
                     // NOTE: this line could be simplified by a List.concatBy function.
-                    List.fold (fun propertyDescriptors aType -> EntityModelPropertyDescriptor.GetPropertyDescriptors aType @ propertyDescriptors) [] entityModelTypes
-                | _ -> EntityModelPropertyDescriptor.GetPropertyDescriptors typeof<EntityModel>
+                    List.fold (fun propertyDescriptors aType -> EntityModelPropertyDescriptor.GetPropertyDescriptors aType (Some entityModel) @ propertyDescriptors) [] entityModelTypes
+                | _ -> EntityModelPropertyDescriptor.GetPropertyDescriptors typeof<EntityModel> None
             PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     and EntityModelTypeDescriptorProvider () =
@@ -448,6 +472,77 @@ module Program =
         refWorld := changer !refWorld
         worldChangers.Add changer
 
+    let handleAddXField (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        match (form.xFieldNameTextBox.Text, form.typeNameTextBox.Text) with
+        | ("", _) -> ignore <| MessageBox.Show "Enter an XField name."
+        | (_, "") -> ignore <| MessageBox.Show "Enter a type name."
+        | (xFieldName, typeName) ->
+            match tryFindType typeName with
+            | null -> ignore <| MessageBox.Show "Enter a valid type name."
+            | aType ->
+                let selectedObject = form.propertyGrid.SelectedObject
+                match selectedObject with
+                | :? EntityModelTypeDescriptorSource as entityModelTds ->
+                    let changer = (fun world ->
+                        let pastWorld = world
+                        let entityModel = get world <| worldEntityModelLens entityModelTds.Address
+                        let entity = get entityModel entityLens
+                        let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
+                        let xFieldLun = Lun.make xFieldName
+                        let xFields = Map.add xFieldLun xFieldValue entity.Xtension.XFields
+                        let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+                        let world' = set entity' world <| worldEntityLens entityModelTds.Address
+                        let world'' = pushPastWorld pastWorld world'
+                        refWorld := world'' // must be set for property grid
+                        form.propertyGrid.Refresh ()
+                        form.propertyGrid.Select ()
+                        form.propertyGrid.SelectedGridItem <- form.propertyGrid.SelectedGridItem.Parent.GridItems.[xFieldName]
+                        world'')
+                    refWorld := changer !refWorld
+                    worldChangers.Add changer
+                | _ -> ignore <| MessageBox.Show "Select an entity to add the XField to."
+
+    let handleRemoveSelectedXField (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let selectedObject = form.propertyGrid.SelectedObject
+        match selectedObject with
+        | :? EntityModelTypeDescriptorSource as entityModelTds ->
+            match form.propertyGrid.SelectedGridItem.Label with
+            | "" -> ignore <| MessageBox.Show "Select an XField."
+            | xFieldName ->
+                let changer = (fun world ->
+                    let pastWorld = world
+                    let entityModel = get world <| worldEntityModelLens entityModelTds.Address
+                    let entity = get entityModel entityLens
+                    let xFieldLun = Lun.make xFieldName
+                    let xFields = Map.remove xFieldLun entity.Xtension.XFields
+                    let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+                    let world' = set entity' world <| worldEntityLens entityModelTds.Address
+                    let world'' = pushPastWorld pastWorld world'
+                    refWorld := world'' // must be set for property grid
+                    form.propertyGrid.Refresh ()
+                    world'')
+                refWorld := changer !refWorld
+                worldChangers.Add changer
+        | _ -> ignore <| MessageBox.Show "Select an entity to remove an XField from."
+
+    let handleClearAllXFields (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let selectedObject = form.propertyGrid.SelectedObject
+        match selectedObject with
+        | :? EntityModelTypeDescriptorSource as entityModelTds ->
+            let changer = (fun world ->
+                let pastWorld = world
+                let entityModel = get world <| worldEntityModelLens entityModelTds.Address
+                let entity = get entityModel entityLens
+                let entity' = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
+                let world' = set entity' world <| worldEntityLens entityModelTds.Address
+                let world'' = pushPastWorld pastWorld world'
+                refWorld := world'' // must be set for property grid
+                form.propertyGrid.Refresh ()
+                world'')
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+        | _ -> ignore <| MessageBox.Show "Select an entity to clear all XFields from."
+        
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (VirtualResolutionX, VirtualResolutionY)
@@ -479,6 +574,9 @@ module Program =
         form.pasteContextMenuItem.Click.Add (handlePaste form worldChangers refWorld true)
         form.quickSizeToolStripButton.Click.Add (handleQuickSize form worldChangers refWorld)
         form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
+        form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
+        form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
+        form.clearAllXFieldsButton.Click.Add (handleClearAllXFields form worldChangers refWorld)
         form.Show ()
         form
 
