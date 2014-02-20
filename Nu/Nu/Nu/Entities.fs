@@ -81,14 +81,14 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
 
     let getEntityModelQuickSize assetMetadataMap dispatcherContainer entityModel =
         match entityModel with
-        | Button button -> getTextureSizeAsVector2 button.UpSprite.SpriteAssetName button.UpSprite.PackageName assetMetadataMap
-        | Label label -> getTextureSizeAsVector2 label.LabelSprite.SpriteAssetName label.LabelSprite.PackageName assetMetadataMap
-        | TextBox textBox -> getTextureSizeAsVector2 textBox.BoxSprite.SpriteAssetName textBox.BoxSprite.PackageName assetMetadataMap
-        | Toggle toggle -> getTextureSizeAsVector2 toggle.OffSprite.SpriteAssetName toggle.OnSprite.PackageName assetMetadataMap
+        | Button button -> getTextureSizeAsVector2 (button.Entity?UpSprite ()).SpriteAssetName (button.Entity?UpSprite () : Sprite).PackageName assetMetadataMap
+        | Label label -> getTextureSizeAsVector2 (label.Entity?LabelSprite ()).SpriteAssetName (label.Entity?LabelSprite () : Sprite).PackageName assetMetadataMap
+        | TextBox textBox -> getTextureSizeAsVector2 (textBox.Entity?BoxSprite ()).SpriteAssetName (textBox.Entity?BoxSprite () : Sprite).PackageName assetMetadataMap
+        | Toggle toggle -> getTextureSizeAsVector2 (toggle.Entity?OffSprite ()).SpriteAssetName (toggle.Entity?OnSprite () : Sprite).PackageName assetMetadataMap
         | Feeler feeler -> Vector2 64.0f
-        | Block block -> getTextureSizeAsVector2 block.Sprite.SpriteAssetName block.Sprite.PackageName assetMetadataMap
-        | Avatar avatar -> getTextureSizeAsVector2 avatar.Sprite.SpriteAssetName avatar.Sprite.PackageName assetMetadataMap
-        | TileMap tileMap -> Vector2 (single <| tileMap.TmxMap.Width * tileMap.TmxMap.TileWidth, single <| tileMap.TmxMap.Height * tileMap.TmxMap.TileHeight)
+        | Block block -> getTextureSizeAsVector2 (block.Entity?Sprite ()).SpriteAssetName (block.Entity?Sprite () : Sprite).PackageName assetMetadataMap
+        | Avatar avatar -> getTextureSizeAsVector2 (avatar.Entity?Sprite ()).SpriteAssetName (avatar.Entity?Sprite () : Sprite).PackageName assetMetadataMap
+        | TileMap tileMap -> Vector2 (single <| (tileMap.Entity?TmxMap () : TmxMap).Width * (tileMap.Entity?TmxMap () : TmxMap).TileWidth, single <| (tileMap.Entity?TmxMap () : TmxMap).Height * (tileMap.Entity?TmxMap () : TmxMap).TileHeight)
 
     let optButtonLens =
         { Get = fun entityModel -> match entityModel with Button button -> Some button | _ -> None
@@ -417,7 +417,7 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         transform.Depth
 
     let makeTileMapData tileMap =
-        let map = tileMap.TmxMap
+        let map = tileMap.Entity?TmxMap () : TmxMap
         let mapSize = (map.Width, map.Height)
         let tileSize = (map.TileWidth, map.TileHeight)
         let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
@@ -460,56 +460,66 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         let entityModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
         match entityModel with
         | Button _ ->
-            Button
-                { Entity = makeDefaultEntity optName
-                  IsDown = false
-                  UpSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  DownSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  ClickSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+            let entity =
+                ((((makeDefaultEntity optName)
+                    ?IsDown <- false)
+                    ?UpSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                    ?DownSprite <- { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                    ?ClickSound <- { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            Button { Entity = entity }
         | Label _ ->
-            Label
-                { Entity = makeDefaultEntity optName
-                  LabelSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+            let entity =
+                (makeDefaultEntity optName)
+                    ?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            Label { Entity = entity }
         | TextBox _ ->
-            TextBox
-                { Entity = makeDefaultEntity optName
-                  BoxSprite = { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  Text = String.Empty
-                  TextFont = { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  TextOffset = Vector2.Zero
-                  TextColor = Vector4.One }
+            let entity =
+                (((((makeDefaultEntity optName)
+                        ?BoxSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?Text <- String.Empty)
+                        ?TextFont <- { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?TextOffset <- Vector2.Zero)
+                        ?TextColor <- Vector4.One
+            TextBox { Entity = entity }
         | Toggle _ ->
-            Toggle
-                { Entity = makeDefaultEntity optName
-                  IsOn = false
-                  IsPressed = false
-                  OffSprite = { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  OnSprite = { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  ToggleSound = { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+            let entity =
+                (((((makeDefaultEntity optName)
+                        ?IsOn <- false)
+                        ?IsPressed <- false)
+                        ?OffSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?OnSprite <- { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?ToggleSound <- { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            Toggle { Entity = entity }
         | Feeler _ ->
-            Feeler { Entity = makeDefaultEntity optName; IsTouched = false }
+            let entity =
+                (makeDefaultEntity optName)
+                    ?IsTouched <- false
+            Feeler { Entity = entity }
         | Block _ ->
-            Block
-                { Entity = makeDefaultEntity optName
-                  PhysicsId = InvalidPhysicsId
-                  Density = NormalDensity
-                  BodyType = BodyType.Dynamic
-                  Sprite = { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+            let entity =
+                ((((makeDefaultEntity optName)
+                    ?PhysicsId <- InvalidPhysicsId)
+                    ?Density <- NormalDensity)
+                    ?BodyType <- BodyType.Dynamic)
+                    ?Sprite <- { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            Block { Entity = entity }
         | Avatar _ ->
-            Avatar
-                { Entity = makeDefaultEntity optName
-                  PhysicsId = InvalidPhysicsId
-                  Density = NormalDensity
-                  Sprite = { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }}
+            let entity =
+                (((makeDefaultEntity optName)
+                    ?PhysicsId <- InvalidPhysicsId)
+                    ?Density <- NormalDensity)
+                    ?Sprite <- { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            Avatar { Entity = entity }
         | TileMap _ ->
             let tmxMap = TmxMap "Assets/Default/TileMap.tmx"
-            TileMap
-                { Entity = makeDefaultEntity optName
-                  PhysicsIds = []
-                  Density = NormalDensity
-                  TileMapAsset = { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-                  TmxMap = tmxMap
-                  TileMapSprites = [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]}
+            let entity =
+                (((((makeDefaultEntity optName)
+                      ?PhysicsIds <- [])
+                      ?Density <- NormalDensity)
+                      ?TileMapAsset <- { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                      ?TmxMap <- tmxMap)
+                      ?TileMapSprites <- [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]
+            TileMap { Entity = entity }
 
     let writeEntityModelToXml (writer : XmlWriter) entityModel =
         writer.WriteStartElement typeof<EntityModel>.Name

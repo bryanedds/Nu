@@ -40,7 +40,6 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Enabled : bool
       Visible : bool
       Xtension : Xtension
-      // NOTE: if this engine ever gets 3D capabilities, turn the following into XFields -
       Position : Vector2
       Depth : single
       Size : Vector2
@@ -55,56 +54,28 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
         { this with Xtension = xtension }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Button =
-    { Entity : Entity
-      IsDown : bool
-      UpSprite : Sprite
-      DownSprite : Sprite
-      ClickSound : Sound }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Label =
-    { Entity : Entity
-      LabelSprite : Sprite }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
-    { Entity : Entity
-      BoxSprite : Sprite
-      Text : string
-      TextFont : Font
-      TextOffset : Vector2
-      TextColor : Vector4 }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
-    { Entity : Entity
-      IsOn : bool
-      IsPressed : bool
-      OffSprite : Sprite
-      OnSprite : Sprite
-      ToggleSound : Sound }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Feeler =
-    { Entity : Entity
-      IsTouched : bool }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Block =
-    { Entity : Entity
-      PhysicsId : PhysicsId
-      Density : single
-      BodyType : BodyType
-      Sprite : Sprite }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
-    { Entity : Entity
-      PhysicsId : PhysicsId
-      Density : single
-      Sprite : Sprite }
+    { Entity : Entity }
       
 type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
-    { Entity : Entity
-      PhysicsIds : PhysicsId list
-      Density : single
-      TileMapAsset : TileMapAsset
-      TmxMap : TmxMap
-      TileMapSprites : Sprite list }
+    { Entity : Entity }
 
 type [<StructuralEquality; NoComparison>] EntityModel =
     | Button of Button
