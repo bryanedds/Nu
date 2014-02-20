@@ -35,14 +35,12 @@ module DomainModel =
                 Seq.map
                     (fun (xNode : XmlNode) ->
                         let typeName = xNode.Attributes.["type"].InnerText
-                        match Type.GetType typeName with
-                        | null -> failwith <| "Could not find type with name '" + typeName + "'."
-                        | aType ->
-                            let xValueStr = xNode.InnerText
-                            let converter = TypeDescriptor.GetConverter aType
-                            if not <| converter.CanConvertFrom typeof<string>
-                            then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
-                            else (Lun.make xNode.Name, converter.ConvertFrom xValueStr))
+                        let aType = findType typeName
+                        let xValueStr = xNode.InnerText
+                        let converter = TypeDescriptor.GetConverter aType
+                        if not <| converter.CanConvertFrom typeof<string>
+                        then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
+                        else (Lun.make xNode.Name, converter.ConvertFrom xValueStr))
                     childNodes
             let xtension = { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields }
             property.SetValue (obj, xtension)

@@ -56,6 +56,14 @@
             this.copyContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.typeNameTextBox = new System.Windows.Forms.ComboBox();
+            this.xFieldNameTextBox = new System.Windows.Forms.TextBox();
+            this.clearAllXFieldsButton = new System.Windows.Forms.Button();
+            this.removeSelectedXFieldButton = new System.Windows.Forms.Button();
+            this.addXFieldButton = new System.Windows.Forms.Button();
+            this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
@@ -80,26 +88,18 @@
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactButton = new System.Windows.Forms.ToolStripButton();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.propertyGrid = new System.Windows.Forms.PropertyGrid();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button2 = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip
@@ -307,6 +307,107 @@
             this.splitContainer1.SplitterDistance = 963;
             this.splitContainer1.TabIndex = 3;
             // 
+            // splitContainer2
+            // 
+            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.splitContainer2.IsSplitterFixed = true;
+            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer2.Name = "splitContainer2";
+            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer2.Panel1
+            // 
+            this.splitContainer2.Panel1.Controls.Add(this.groupBox1);
+            this.splitContainer2.Panel1.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            // 
+            // splitContainer2.Panel2
+            // 
+            this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
+            this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.splitContainer2.Size = new System.Drawing.Size(305, 662);
+            this.splitContainer2.SplitterDistance = 79;
+            this.splitContainer2.TabIndex = 0;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.typeNameTextBox);
+            this.groupBox1.Controls.Add(this.xFieldNameTextBox);
+            this.groupBox1.Controls.Add(this.clearAllXFieldsButton);
+            this.groupBox1.Controls.Add(this.removeSelectedXFieldButton);
+            this.groupBox1.Controls.Add(this.addXFieldButton);
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.groupBox1.Location = new System.Drawing.Point(0, 0);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(305, 79);
+            this.groupBox1.TabIndex = 0;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "XFields";
+            // 
+            // typeNameTextBox
+            // 
+            this.typeNameTextBox.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.typeNameTextBox.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
+            this.typeNameTextBox.FormattingEnabled = true;
+            this.typeNameTextBox.Items.AddRange(new object[] {
+            "System.String",
+            "System.Boolean",
+            "System.Int32",
+            "System.Int64",
+            "System.Single",
+            "System.Double",
+            "OpenTK.Vector2",
+            "OpenTK.Vector3",
+            "OpenTK.Vector4"});
+            this.typeNameTextBox.Location = new System.Drawing.Point(152, 22);
+            this.typeNameTextBox.Name = "typeNameTextBox";
+            this.typeNameTextBox.Size = new System.Drawing.Size(147, 24);
+            this.typeNameTextBox.TabIndex = 10;
+            this.typeNameTextBox.Text = "System.String";
+            // 
+            // xFieldNameTextBox
+            // 
+            this.xFieldNameTextBox.Location = new System.Drawing.Point(53, 22);
+            this.xFieldNameTextBox.Name = "xFieldNameTextBox";
+            this.xFieldNameTextBox.Size = new System.Drawing.Size(93, 22);
+            this.xFieldNameTextBox.TabIndex = 9;
+            this.xFieldNameTextBox.Text = "MyField";
+            // 
+            // clearAllXFieldsButton
+            // 
+            this.clearAllXFieldsButton.Location = new System.Drawing.Point(152, 50);
+            this.clearAllXFieldsButton.Name = "clearAllXFieldsButton";
+            this.clearAllXFieldsButton.Size = new System.Drawing.Size(147, 23);
+            this.clearAllXFieldsButton.TabIndex = 8;
+            this.clearAllXFieldsButton.Text = "&Clear All";
+            this.clearAllXFieldsButton.UseVisualStyleBackColor = true;
+            // 
+            // removeSelectedXFieldButton
+            // 
+            this.removeSelectedXFieldButton.Location = new System.Drawing.Point(6, 50);
+            this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
+            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(140, 23);
+            this.removeSelectedXFieldButton.TabIndex = 7;
+            this.removeSelectedXFieldButton.Text = "&Remove Selected";
+            this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
+            // 
+            // addXFieldButton
+            // 
+            this.addXFieldButton.Location = new System.Drawing.Point(6, 21);
+            this.addXFieldButton.Name = "addXFieldButton";
+            this.addXFieldButton.Size = new System.Drawing.Size(41, 23);
+            this.addXFieldButton.TabIndex = 6;
+            this.addXFieldButton.Text = "&Add";
+            this.addXFieldButton.UseVisualStyleBackColor = true;
+            // 
+            // propertyGrid
+            // 
+            this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.propertyGrid.Location = new System.Drawing.Point(0, 0);
+            this.propertyGrid.Name = "propertyGrid";
+            this.propertyGrid.Size = new System.Drawing.Size(305, 579);
+            this.propertyGrid.TabIndex = 3;
+            // 
             // openFileDialog
             // 
             this.openFileDialog.DefaultExt = "nugroup";
@@ -488,110 +589,6 @@
             this.interactButton.Size = new System.Drawing.Size(64, 23);
             this.interactButton.Text = "&Interact";
             // 
-            // splitContainer2
-            // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer2.IsSplitterFixed = true;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Name = "splitContainer2";
-            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer2.Panel1
-            // 
-            this.splitContainer2.Panel1.Controls.Add(this.groupBox1);
-            this.splitContainer2.Panel1.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            // 
-            // splitContainer2.Panel2
-            // 
-            this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(305, 662);
-            this.splitContainer2.SplitterDistance = 79;
-            this.splitContainer2.TabIndex = 0;
-            // 
-            // propertyGrid
-            // 
-            this.propertyGrid.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.propertyGrid.Location = new System.Drawing.Point(0, 0);
-            this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(305, 579);
-            this.propertyGrid.TabIndex = 3;
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.comboBox1);
-            this.groupBox1.Controls.Add(this.textBox1);
-            this.groupBox1.Controls.Add(this.button3);
-            this.groupBox1.Controls.Add(this.button2);
-            this.groupBox1.Controls.Add(this.button1);
-            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox1.Location = new System.Drawing.Point(0, 0);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(305, 79);
-            this.groupBox1.TabIndex = 0;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "XFields";
-            // 
-            // textBox1
-            // 
-            this.textBox1.Location = new System.Drawing.Point(53, 22);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(93, 22);
-            this.textBox1.TabIndex = 9;
-            this.textBox1.Text = "MyField";
-            // 
-            // button3
-            // 
-            this.button3.Location = new System.Drawing.Point(152, 50);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(147, 23);
-            this.button3.TabIndex = 8;
-            this.button3.Text = "&Clear All";
-            this.button3.UseVisualStyleBackColor = true;
-            // 
-            // button2
-            // 
-            this.button2.Location = new System.Drawing.Point(6, 50);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(140, 23);
-            this.button2.TabIndex = 7;
-            this.button2.Text = "&Remove Selected";
-            this.button2.UseVisualStyleBackColor = true;
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(6, 21);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(41, 23);
-            this.button1.TabIndex = 6;
-            this.button1.Text = "&Add";
-            this.button1.UseVisualStyleBackColor = true;
-            // 
-            // comboBox1
-            // 
-            this.comboBox1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
-            this.comboBox1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Items.AddRange(new object[] {
-            "System.String",
-            "System.Bool",
-            "System.Int32",
-            "System.Int64",
-            "System.Single",
-            "System.Double",
-            "d",
-            "f",
-            "g",
-            "h",
-            "j",
-            "k"});
-            this.comboBox1.Location = new System.Drawing.Point(152, 22);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(147, 24);
-            this.comboBox1.TabIndex = 10;
-            this.comboBox1.Text = "System.String";
-            // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -610,14 +607,14 @@
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
-            this.toolStrip.ResumeLayout(false);
-            this.toolStrip.PerformLayout();
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.toolStrip.ResumeLayout(false);
+            this.toolStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -677,12 +674,12 @@
         public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
         private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.ComboBox comboBox1;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button1;
         public System.Windows.Forms.PropertyGrid propertyGrid;
+        public System.Windows.Forms.Button addXFieldButton;
+        public System.Windows.Forms.TextBox xFieldNameTextBox;
+        public System.Windows.Forms.ComboBox typeNameTextBox;
+        public System.Windows.Forms.Button clearAllXFieldsButton;
+        public System.Windows.Forms.Button removeSelectedXFieldButton;
 
     }
 }
