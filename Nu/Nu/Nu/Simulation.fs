@@ -230,22 +230,12 @@ and [<ReferenceEquality>] World =
       AudioMessages : AudioMessage rQueue
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
-      Components : IWorldComponent list
       XTypes : XTypes
       Dispatchers : IXDispatchers
       ExtData : obj } // TODO: consider if this is still the right approach in the context of the new Xtension stuff
 
     interface IXDispatcherContainer with
         member this.GetDispatchers () = this.Dispatchers
-        end
-
-/// Enables components that open the world for extension.
-and IWorldComponent =
-    interface
-        abstract member GetRenderDescriptors : World -> RenderDescriptor list
-        // TODO: abstract member GetRenderMessages : World -> RenderMessage rQueue
-        // TODO: abstract member GetPhysicsMessages : World -> PhysicsMessage rQueue
-        // TODO: abstract member HandleIntegrationMessages : IntegrationMessage rQueue -> World -> World
         end
 
 type [<StructuralEquality; NoComparison>] Simulant =
