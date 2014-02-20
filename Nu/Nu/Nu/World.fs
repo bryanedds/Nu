@@ -296,7 +296,7 @@ module WorldModule =
             let button = get world (worldButtonLens subscriber)
             if button.Entity.Enabled && button.Entity.Visible then
                 if isInBox3 mousePosition button.Entity.Position button.Entity.Size then
-                    let button' = { button with IsDown = true }
+                    let button' = { Button.Entity = button.Entity?IsDown <- true }
                     let world' = set button' world (worldButtonLens subscriber)
                     let (keepRunning, world'') = publish (straddr "Down" subscriber) { Handled = false; Data = NoData } world'
                     (handle message, keepRunning, world'')
@@ -310,12 +310,12 @@ module WorldModule =
             let button = get world (worldButtonLens subscriber)
             if button.Entity.Enabled && button.Entity.Visible then
                 let (keepRunning, world') =
-                    let button' = { button with IsDown = false }
+                    let button' = { Button.Entity = button.Entity?IsDown <- false }
                     let world'' = set button' world (worldButtonLens subscriber)
                     publish (straddr "Up" subscriber) { Handled = false; Data = NoData } world''
-                if keepRunning && isInBox3 mousePosition button.Entity.Position button.Entity.Size && button.IsDown then
+                if keepRunning && isInBox3 mousePosition button.Entity.Position button.Entity.Size && button.Entity?IsDown () then
                     let (keepRunning', world'') = publish (straddr "Click" subscriber) { Handled = false; Data = NoData } world'
-                    let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
+                    let sound = PlaySound { Volume = 1.0f; Sound = button.Entity?ClickSound () }
                     let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
                     (handle message, keepRunning', world'3)
                 else (message, keepRunning, world')
@@ -340,7 +340,7 @@ module WorldModule =
             let toggle = get world (worldToggleLens subscriber)
             if toggle.Entity.Enabled && toggle.Entity.Visible then
                 if isInBox3 mousePosition toggle.Entity.Position toggle.Entity.Size then
-                    let toggle' = { toggle with IsPressed = true }
+                    let toggle' = { Toggle.Entity = toggle.Entity?IsPressed <- true }
                     let world' = set toggle' world (worldToggleLens subscriber)
                     (handle message, true, world')
                 else (message, true, world)
@@ -351,14 +351,14 @@ module WorldModule =
         match message.Data with
         | MouseButtonData (mousePosition, _) ->
             let toggle = get world (worldToggleLens subscriber)
-            if toggle.Entity.Enabled && toggle.Entity.Visible && toggle.IsPressed then
-                let toggle' = { toggle with IsPressed = false }
+            if toggle.Entity.Enabled && toggle.Entity.Visible && toggle.Entity?IsPressed () then
+                let toggle' = { Toggle.Entity = toggle.Entity?IsPressed <- false }
                 if isInBox3 mousePosition toggle'.Entity.Position toggle'.Entity.Size then
-                    let toggle'' = { toggle' with IsOn = not toggle'.IsOn }
+                    let toggle'' = { Toggle.Entity = toggle'.Entity?IsOn <- not <| toggle'.Entity?IsOn () }
                     let world' = set toggle'' world (worldToggleLens subscriber)
-                    let messageType = if toggle''.IsOn then "On" else "Off"
+                    let messageType = if toggle''.Entity?IsOn () then "On" else "Off"
                     let (keepRunning, world'') = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world'
-                    let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
+                    let sound = PlaySound { Volume = 1.0f; Sound = toggle''.Entity?ToggleSound () }
                     let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
                     (handle message, keepRunning, world'3)
                 else
@@ -385,7 +385,7 @@ module WorldModule =
             let feeler = get world (worldFeelerLens subscriber)
             if feeler.Entity.Enabled && feeler.Entity.Visible then
                 if isInBox3 mousePosition feeler.Entity.Position feeler.Entity.Size then
-                    let feeler' = { feeler with IsTouched = true }
+                    let feeler' = { Feeler.Entity = feeler.Entity?IsTouched <- true }
                     let world' = set feeler' world (worldFeelerLens subscriber)
                     let (keepRunning, world'') = publish (straddr "Touch" subscriber) { Handled = false; Data = mouseButtonData } world'
                     (handle message, keepRunning, world'')
@@ -398,7 +398,7 @@ module WorldModule =
         | MouseButtonData _ ->
             let feeler = get world (worldFeelerLens subscriber)
             if feeler.Entity.Enabled && feeler.Entity.Visible then
-                let feeler' = { feeler with IsTouched = false }
+                let feeler' = { Feeler.Entity = feeler.Entity?IsTouched <- false }
                 let world' = set feeler' world (worldFeelerLens subscriber)
                 let (keepRunning, world'') = publish (straddr "Release" subscriber) { Handled = false; Data = NoData } world'
                 (handle message, keepRunning, world'')
@@ -418,11 +418,11 @@ module WorldModule =
             unsubscribe DownMouseLeftAddress address
 
     let registerBlockPhysics address (block : Block) world =
-        let block' = { block with PhysicsId = getPhysicsId block.Entity.Id }
+        let block' = { Block.Entity = block.Entity?PhysicsId <- getPhysicsId block.Entity.Id }
         let bodyCreateMessage =
             BodyCreateMessage
                 { EntityAddress = address
-                  PhysicsId = block'.PhysicsId
+                  PhysicsId = block'.Entity?PhysicsId ()
                   Shape =
                     BoxShape
                         { Extent = block'.Entity.Size * 0.5f
@@ -434,21 +434,21 @@ module WorldModule =
                               AngularDamping = 5.0f }}
                   Position = block'.Entity.Position + block'.Entity.Size * 0.5f
                   Rotation = block'.Entity.Rotation
-                  Density = block'.Density
-                  BodyType = block'.BodyType }
+                  Density = block'.Entity?Density ()
+                  BodyType = block'.Entity? BodyType () }
         let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
         (block', world')
 
     let unregisterBlockPhysics address (block : Block) world =
-        let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
+        let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.Entity?PhysicsId () }
         { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
     let registerAvatarPhysics address (avatar : Avatar) world =
-        let avatar' = { avatar with PhysicsId = getPhysicsId avatar.Entity.Id }
+        let avatar' = { Avatar.Entity = avatar.Entity?PhysicsId <- getPhysicsId avatar.Entity.Id }
         let bodyCreateMessage =
             BodyCreateMessage
                 { EntityAddress = address
-                  PhysicsId = avatar'.PhysicsId
+                  PhysicsId = avatar'.Entity?PhysicsId ()
                   Shape =
                     CircleShape
                         { Radius = avatar'.Entity.Size.X * 0.5f
@@ -460,13 +460,13 @@ module WorldModule =
                               AngularDamping = 0.0f }}
                   Position = avatar'.Entity.Position + avatar'.Entity.Size * 0.5f
                   Rotation = avatar'.Entity.Rotation
-                  Density = avatar'.Density
+                  Density = avatar'.Entity?Density ()
                   BodyType = BodyType.Dynamic }
         let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
         (avatar', world')
 
-    let unregisterAvatarPhysics address avatar world =
-        let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
+    let unregisterAvatarPhysics address (avatar : Avatar) world =
+        let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.Entity?PhysicsId () }
         { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
     let registerTilePhysics tileMap tmd tld address n (world, physicsIds) tile =
@@ -489,7 +489,7 @@ module WorldModule =
                       Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
                       Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2)
                       Rotation = tileMap.Entity.Rotation
-                      Density = tileMap.Density
+                      Density = tileMap.Entity?Density ()
                       BodyType = BodyType.Static }
             let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
             (world', physicsId :: physicsIds)
@@ -499,7 +499,7 @@ module WorldModule =
         let tmd = makeTileMapData tileMap
         let tld = makeTileLayerData tileMap tmd collisionLayer
         let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld address) (world, []) tld.Tiles
-        let tileMap' = { tileMap with PhysicsIds = physicsIds }
+        let tileMap' = { TileMap.Entity = tileMap.Entity?PhysicsIds <- physicsIds }
         (tileMap', world')
 
     let unregisterTilePhysics world physicsId =
@@ -507,7 +507,7 @@ module WorldModule =
         { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
     let unregisterTileMapPhysics address tileMap world =
-        List.fold unregisterTilePhysics world tileMap.PhysicsIds
+        List.fold unregisterTilePhysics world <| tileMap.Entity?PhysicsIds ()
 
     let registerEntityModel address entityModel world =
         match entityModel with
@@ -594,7 +594,7 @@ module WorldModule =
     let moveFieldAvatarHandler groupAddress _ _ message world =
         let feelerAddress = groupAddress @ [FieldFeelerName]
         let feeler = get world (worldFeelerLens feelerAddress)
-        if feeler.IsTouched then
+        if feeler.Entity?IsTouched () then
             let avatarAddress = groupAddress @ [FieldAvatarName]
             let avatar = get world <| worldAvatarLens avatarAddress
             let camera = world.Camera
@@ -602,7 +602,7 @@ module WorldModule =
             let mousePositionWorld = world.MouseState.MousePosition + view
             let avatarCenter = avatar.Entity.Position + avatar.Entity.Size * 0.5f
             let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
-            let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
+            let applyImpulseMessage = { PhysicsId = avatar.Entity?PhysicsId (); Impulse = impulseVector }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
             (message, true, world')
         else (message, true, world)
@@ -735,7 +735,7 @@ module WorldModule =
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
-        let splashLabel = Label { Entity = { makeDefaultEntity (Some "SplashLabel") with Size = world.Camera.EyeSize }; LabelSprite = sprite }
+        let splashLabel = Label { Entity = { makeDefaultEntity (Some "SplashLabel") with Size = world.Camera.EyeSize }?LabelSprite <- (sprite : Sprite) }
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel])] world
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
@@ -835,34 +835,34 @@ module WorldModule =
         | Button button ->
             let (_, entity) = buttonSep button
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if button.IsDown then button.DownSprite else button.UpSprite); Color = Vector4.One }; Depth = entity.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if button.Entity?IsDown () then button.Entity?DownSprite () else button.Entity?UpSprite ()); Color = Vector4.One }; Depth = entity.Depth })]
         | Label label ->
             let (_, entity) = labelSep label
             if not label.Entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = label.LabelSprite; Color = Vector4.One }; Depth = entity.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = label.Entity?LabelSprite (); Color = Vector4.One }; Depth = entity.Depth })]
         | TextBox textBox ->
             let (_, entity) = textBoxSep textBox
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite; Color = Vector4.One }; Depth = entity.Depth })
-                  LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = entity.Position + textBox.TextOffset; Size = entity.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = entity.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = textBox.Entity?BoxSprite (); Color = Vector4.One }; Depth = entity.Depth })
+                  LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Entity?Text (); Position = entity.Position + textBox.Entity?TextOffset (); Size = entity.Size - textBox.Entity?TextOffset (); Font = textBox.Entity?TextFont (); Color = textBox.Entity?TextColor () }; Depth = entity.Depth })]
         | Toggle toggle ->
             let (_, entity) = toggleSep toggle
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite); Color = Vector4.One }; Depth = entity.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if toggle.Entity?IsOn () || toggle.Entity?IsPressed () then toggle.Entity?OnSprite () else toggle.Entity?OffSprite ()); Color = Vector4.One }; Depth = entity.Depth })]
         | Feeler _ -> []
         | Block block ->
             let (_, entity) = blockSep block
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = block.Sprite; Color = Vector4.One }; Depth = entity.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = block.Entity?Sprite (); Color = Vector4.One }; Depth = entity.Depth })]
         | Avatar avatar ->
             let (_, entity) = avatarSep avatar
             if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = avatar.Sprite; Color = Vector4.One }; Depth = entity.Depth })]
+            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = avatar.Entity?Sprite (); Color = Vector4.One }; Depth = entity.Depth })]
         | TileMap tileMap ->
             let (_, entity) = tileMapSep tileMap
             if not entity.Visible then []
             else
-                let map = tileMap.TmxMap
+                let map = tileMap.Entity?TmxMap () : TmxMap
                 let layers = List.ofSeq map.Layers
                 List.mapi
                     (fun i (layer : TmxLayer) ->
@@ -876,7 +876,7 @@ module WorldModule =
                                       Tiles = layer.Tiles
                                       TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                                       TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                      TileSetSprite = tileMap.TileMapSprites.[0] } // MAGIC_VALUE: for same reason as above
+                                      TileSetSprite = List.head <| tileMap.Entity?TileMapSprites () } // MAGIC_VALUE: for same reason as above
                                   Depth = entity.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
                         LayerableDescriptor layeredTileLayerDescriptor)
                     layers
