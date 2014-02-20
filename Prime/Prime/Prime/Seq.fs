@@ -8,6 +8,12 @@ module Seq
 let tryHead seq =
     Seq.tryFind (fun _ -> true) seq
 
+/// Get a seq head or a default value if there is none.
+let headOrDefault seq aDefault =
+    match tryHead seq with
+    | None -> aDefault
+    | Some _ as head -> head
+
 /// Convert option values to definite values.
 let definitize opts =
     Seq.choose id opts

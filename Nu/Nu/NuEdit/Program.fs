@@ -129,13 +129,13 @@ module Program =
                             if propertyName = "TileMapAsset" then
                                 match entityModel_ with
                                 | TileMap tileMap_ ->
-                                    let tileMapAsset = tileMap_.TileMapAsset
+                                    let tileMapAsset = tileMap_.Entity?TileMapAsset ()
                                     let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world_.AssetMetadataMap
                                     match optTileMapMetadata with
                                     | None -> entityModel_
                                     | Some (tileMapFileName, tileMapSprites) ->
-                                        let tileMap_ = { tileMap_ with TmxMap = TmxMap tileMapFileName }
-                                        let tileMap_ = { tileMap_ with TileMapSprites = tileMapSprites }
+                                        let tileMap_ = { TileMap.Entity = tileMap_.Entity?TmxMap <- TmxMap tileMapFileName }
+                                        let tileMap_ = { TileMap.Entity = tileMap_.Entity?TileMapSprites <- tileMapSprites }
                                         TileMap tileMap_
                                 | _ -> entityModel_
                             else entityModel_
@@ -478,8 +478,8 @@ module Program =
         | (_, "") -> ignore <| MessageBox.Show "Enter a type name."
         | (xFieldName, typeName) ->
             match tryFindType typeName with
-            | null -> ignore <| MessageBox.Show "Enter a valid type name."
-            | aType ->
+            | None -> ignore <| MessageBox.Show "Enter a valid type name."
+            | Some aType ->
                 let selectedObject = form.propertyGrid.SelectedObject
                 match selectedObject with
                 | :? EntityModelTypeDescriptorSource as entityModelTds ->

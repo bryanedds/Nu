@@ -3,6 +3,7 @@ module Miscellanea
 open System
 open System.Diagnostics
 open System.ComponentModel
+open System.Reflection
 
 /// A generic identification code type.
 type Id = int64
@@ -50,9 +51,17 @@ let assignTypeConverter<'t, 'c> () =
     ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
 let tryFindType typeName =
-    Type.GetType typeName
+    match Type.GetType typeName with
+    | null ->
+        let allAssemblies = AppDomain.CurrentDomain.GetAssemblies ()
+        let types =
+            Seq.choose
+                (fun (assembly : Assembly) -> match assembly.GetType typeName with null -> None | aType -> Some aType)
+                allAssemblies
+        Seq.tryFind (fun _ -> true) types 
+    | aType -> Some aType
 
 let findType typeName =
     match tryFindType typeName with
-    | null -> failwith <| "Could not find type with name '" + typeName + "'."
-    | aType -> aType
+    | None -> failwith <| "Could not find type with name '" + typeName + "'."
+    | Some aType -> aType
