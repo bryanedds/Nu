@@ -511,7 +511,6 @@ module WorldModule =
 
     let registerEntityModel address entityModel world =
         match entityModel with
-        | CustomEntity _ -> (entityModel, registerEntityXtension address world)
         | Button _ -> (entityModel, registerButton address world)
         | Label _ -> (entityModel, registerEntityXtension address world)
         | TextBox _ -> (entityModel, registerEntityXtension address world)
@@ -530,7 +529,6 @@ module WorldModule =
     let unregisterEntityModel address world =
         let entityModel = get world <| worldEntityModelLens address
         match entityModel with
-        | CustomEntity _ -> unregisterEntityXtension address world
         | Button _ -> unregisterButton address world
         | Label _ -> unregisterEntityXtension address world
         | TextBox _ -> unregisterEntityXtension address world
@@ -569,7 +567,6 @@ module WorldModule =
 
     let propagateEntityModelPhysics address entityModel world =
         match entityModel with
-        | CustomEntity _
         | Button _
         | Label _
         | TextBox _
@@ -803,7 +800,6 @@ module WorldModule =
 
     let reregisterPhysicsHack4 groupAddress world _ entityModel =
         match entityModel with
-        | CustomEntity _
         | Button _
         | Label _
         | TextBox _
@@ -841,9 +837,6 @@ module WorldModule =
 
     let getEntityRenderDescriptors view dispatcherContainer entityModel =
         match entityModel with
-        | CustomEntity _ ->
-            let entity = get entityModel entityLens
-            entity?GetRenderDescriptors (entityModel, dispatcherContainer) : RenderDescriptor list
         | Button button ->
             let (_, entity) = buttonSep button
             if not entity.Visible then []
@@ -946,9 +939,6 @@ module WorldModule =
                 let entityModelAddress = bodyTransformMessage.EntityAddress
                 let entityModel = get world <| worldEntityModelLens entityModelAddress
                 match entityModel with
-                | CustomEntity _ ->
-                    let entity = get entityModel entityLens
-                    (keepRunning, entity?HandleIntegrationMessage (integrationMessage, entityModelAddress, entityModel, world)) : bool * World
                 | Button _
                 | Label _
                 | TextBox _

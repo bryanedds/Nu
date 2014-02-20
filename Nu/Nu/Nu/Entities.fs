@@ -19,12 +19,11 @@ open Nu.Rendering
 open Nu.Metadata
 open Nu.DomainModel
 open Nu.CameraModule
-module Entities =
+module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
 
     let entityLens =
         { Get = fun entityModel ->
             match entityModel with
-            | CustomEntity customEntity -> customEntity
             | Button button -> button.Entity
             | Label label -> label.Entity
             | TextBox textBox -> textBox.Entity
@@ -35,7 +34,6 @@ module Entities =
             | TileMap tileMap -> tileMap.Entity
           Set = fun entity entityModel ->
             match entityModel with
-            | CustomEntity customEntity -> CustomEntity entity
             | Button button -> Button { button with Entity = entity }
             | Label label -> Label { label with Entity = entity }
             | TextBox textBox -> TextBox { textBox with Entity = entity }
@@ -83,7 +81,6 @@ module Entities =
 
     let getEntityModelQuickSize assetMetadataMap dispatcherContainer entityModel =
         match entityModel with
-        | CustomEntity _ -> let entity = get entityModel entityLens in entity?GetQuickSize (entityModel, dispatcherContainer) : Vector2
         | Button button -> getTextureSizeAsVector2 button.UpSprite.SpriteAssetName button.UpSprite.PackageName assetMetadataMap
         | Label label -> getTextureSizeAsVector2 label.LabelSprite.SpriteAssetName label.LabelSprite.PackageName assetMetadataMap
         | TextBox textBox -> getTextureSizeAsVector2 textBox.BoxSprite.SpriteAssetName textBox.BoxSprite.PackageName assetMetadataMap
@@ -92,14 +89,6 @@ module Entities =
         | Block block -> getTextureSizeAsVector2 block.Sprite.SpriteAssetName block.Sprite.PackageName assetMetadataMap
         | Avatar avatar -> getTextureSizeAsVector2 avatar.Sprite.SpriteAssetName avatar.Sprite.PackageName assetMetadataMap
         | TileMap tileMap -> Vector2 (single <| tileMap.TmxMap.Width * tileMap.TmxMap.TileWidth, single <| tileMap.TmxMap.Height * tileMap.TmxMap.TileHeight)
-
-    let optCustomEntityLens =
-        { Get = fun entityModel -> match entityModel with CustomEntity customEntity -> Some customEntity | _ -> None
-          Set = fun optCustomEntity entityModel -> CustomEntity <| Option.get optCustomEntity }
-
-    let customEntityLens =
-        { Get = fun entityModel -> Option.get (get entityModel optCustomEntityLens)
-          Set = fun customEntity entityModel -> set (Some customEntity) entityModel optCustomEntityLens }
 
     let optButtonLens =
         { Get = fun entityModel -> match entityModel with Button button -> Some button | _ -> None
@@ -318,14 +307,6 @@ module Entities =
         { Get = fun world -> getWorldOptEntityModelWithLens address world entityLens
           Set = fun optEntity world -> setWorldOptEntityModelWithLens optEntity address world entityLens }
 
-    let worldCustomEntityLens address =
-        { Get = fun world -> getWorldEntityModelWithLens address world customEntityLens
-          Set = fun entity world -> setWorldEntityModelWithLens entity address world customEntityLens }
-
-    let worldOptCustomEntityLens address =
-        { Get = fun world -> getWorldOptEntityModelWithLens address world customEntityLens
-          Set = fun optEntity world -> setWorldOptEntityModelWithLens optEntity address world customEntityLens }
-
     let worldButtonLens address =
         { Get = fun world -> getWorldEntityModelWithLens address world buttonLens
           Set = fun button world -> setWorldEntityModelWithLens button address world buttonLens }
@@ -394,7 +375,6 @@ module Entities =
     let getEntityModelTransform optCamera dispatcherContainer entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity customEntity -> getEntityTransform customEntity // TODO: perhaps add a flag to Entity to decide if transformation is relative
         | Button button -> getEntityTransform button.Entity
         | Label label -> getEntityTransform label.Entity
         | TextBox textBox -> getEntityTransform textBox.Entity
@@ -423,7 +403,6 @@ module Entities =
     let setEntityModelTransform optCamera positionSnap rotationSnap transform dispatcherContainer entityModel =
         let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
         match entityModel with
-        | CustomEntity customEntity -> setEntityTransform positionSnap rotationSnap transform entityModel entityLens // TODO: perhaps add a flag to Entity to decide if transformation is relative
         | Button _
         | Label _
         | TextBox _
@@ -476,15 +455,10 @@ module Entities =
           Size = Vector2 DefaultEntitySize
           Rotation = 0.0f }
 
-    let makeDefaultCustomEntity optName =
-        CustomEntity <| makeDefaultEntity optName
-
     let makeDefaultEntityModel typeName optName =
         let assemblyName = (Assembly.GetExecutingAssembly ()).FullName
         let entityModel = (Activator.CreateInstance (assemblyName, typeName, false, BindingFlags.Instance ||| BindingFlags.NonPublic, null, [|null|], null, null)).Unwrap () :?> EntityModel
         match entityModel with
-        | CustomEntity _ ->
-            CustomEntity <| makeDefaultEntity optName
         | Button _ ->
             Button
                 { Entity = makeDefaultEntity optName
@@ -540,7 +514,6 @@ module Entities =
     let writeEntityModelToXml (writer : XmlWriter) entityModel =
         writer.WriteStartElement typeof<EntityModel>.Name
         match entityModel with
-        | CustomEntity customEntity -> writeModelPropertiesMany writer "Nu.EntityModel+CustomEntity" [customEntity :> obj]
         | Button button -> writeModelPropertiesMany writer "Nu.EntityModel+Button" [button :> obj; button.Entity :> obj]
         | Label label -> writeModelPropertiesMany writer "Nu.EntityModel+Label" [label :> obj; label.Entity :> obj]
         | TextBox textBox -> writeModelPropertiesMany writer "Nu.EntityModel+TextBox" [textBox :> obj; textBox.Entity :> obj]
@@ -556,7 +529,6 @@ module Entities =
         let entityModelTypeName = entityModelTypeNode.InnerText
         let entityModel = makeDefaultEntityModel entityModelTypeName None // TODO: consider setting the name here
         match entityModel with
-        | CustomEntity customEntity -> setModelProperties2<Entity> entityModelNode customEntity
         | Button button -> setModelProperties3<Button, Entity> (fun obj -> obj.Entity) entityModelNode button
         | Label label -> setModelProperties3<Label, Entity> (fun obj -> obj.Entity) entityModelNode label
         | TextBox textBox -> setModelProperties3<TextBox, Entity> (fun obj -> obj.Entity) entityModelNode textBox
