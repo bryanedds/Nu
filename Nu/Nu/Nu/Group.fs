@@ -51,7 +51,7 @@ module GroupModule =
 
     let worldOptGroupLens address =
         { Get = fun world -> worldOptGroupFinder address world
-          Set = fun optGroup world -> match optGroup with None -> worldGroupRemover address world | Some entity -> worldGroupAdder address world entity }
+          Set = fun optGroup world -> match optGroup with None -> worldGroupRemover address world | Some group -> worldGroupAdder address world group }
 
     let worldGroupsLens address =
         { Get = fun world ->
@@ -73,24 +73,24 @@ module GroupModule =
         { Group.Id = getNuId ()
           Xtension = { OptXTypeName = Some <| Lun.make "GroupDispatcher"; XFields = Map.empty }}
 
-    let writeGroupEntitiesToXml (writer : XmlWriter) (entityModels : Map<Lun, EntityModel>) =
-        for entityModelKvp in entityModels do
-            Entities.writeEntityModelToXml writer entityModelKvp.Value
+    let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<Lun, Entity>) =
+        for entityKvp in entities do
+            Entities.writeEntityToXml writer entityKvp.Value
 
-    let writeGroupToXml (writer : XmlWriter) group entityModels =
+    let writeGroupToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
-        writeModelPropertiesMany writer String.Empty [group :> obj]
-        writeGroupEntitiesToXml writer entityModels
+        writeModelProperties writer group
+        writeGroupEntitiesToXml writer entities
 
-    let loadEntityModelsFromXml (groupNode : XmlNode) =
-        let entityModelNodes = groupNode.SelectNodes "EntityModel"
-        Seq.toList <| Seq.map Entities.loadEntityModelFromXml (System.Linq.Enumerable.Cast entityModelNodes)
+    let loadEntitiesFromXml (groupNode : XmlNode) =
+        let entityNodes = groupNode.SelectNodes "Entity"
+        Seq.toList <| Seq.map Entities.loadEntityFromXml (System.Linq.Enumerable.Cast entityNodes) // TODO: create Miscellanea.enumCast function
 
     let loadGroupFromXml (groupNode : XmlNode) =
         let group = makeDefaultGroup ()
-        let entityModels = loadEntityModelsFromXml (groupNode : XmlNode)
-        setModelProperties3 (fun _ -> ()) groupNode group
-        (group, entityModels)
+        let entities = loadEntitiesFromXml (groupNode : XmlNode)
+        setModelProperties groupNode group
+        (group, entities)
 
     let writeGroupFile group entityModels fileName world =
         use file = File.Open (fileName, FileMode.Create)

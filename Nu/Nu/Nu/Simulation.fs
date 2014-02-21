@@ -43,7 +43,8 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Position : Vector2
       Depth : single
       Size : Vector2
-      Rotation : single }
+      Rotation : single
+      IsTransformRelative : bool }
 
     static member (?) (this : Entity, memberName) =
         fun args ->
@@ -53,39 +54,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
         let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
         { this with Xtension = xtension }
 
-type [<StructuralEquality; NoComparison; CLIMutable>] Button =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] Label =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] TextBox =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] Toggle =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] Feeler =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] Block =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison; CLIMutable>] Avatar =
-    { Entity : Entity }
-      
-type [<StructuralEquality; NoComparison; CLIMutable>] TileMap =
-    { Entity : Entity }
-
-type [<StructuralEquality; NoComparison>] EntityModel =
-    | Button of Button
-    | Label of Label
-    | TextBox of TextBox
-    | Toggle of Toggle
-    | Feeler of Feeler
-    | Block of Block
-    | Avatar of Avatar
-    | TileMap of TileMap
+// TODO: move this tile map stuff elsewhere
 
 type [<StructuralEquality; NoComparison>] TileMapData =
     { Map : TmxMap
@@ -190,7 +159,7 @@ and [<ReferenceEquality>] World =
     { Game : Game
       Screens : Map<Lun, Screen>
       Groups : Map<Lun, Map<Lun, Group>>
-      EntityModels : Map<Lun, Map<Lun, Map<Lun, EntityModel>>>
+      Entities : Map<Lun, Map<Lun, Map<Lun, Entity>>>
       Camera : Camera
       Subscriptions : Subscriptions
       MouseState : MouseState
@@ -213,4 +182,4 @@ type [<StructuralEquality; NoComparison>] Simulant =
     | Game of Game
     | Screen of Screen
     | Group of Group
-    | EntityModel of EntityModel
+    | Entity of Entity
