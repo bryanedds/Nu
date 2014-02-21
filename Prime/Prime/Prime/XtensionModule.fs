@@ -7,14 +7,6 @@ type XFieldDescriptor =
     { FieldName : Lun
       TypeName : Lun } // the .NET type name
 
-type XType =
-    { XTypeName : Lun
-      XSubtypeNames : Lun list // the child XType names
-      XFieldDescriptors : XFieldDescriptor list }
-
-type XTypes =
-    Map<Lun, XType>
-
 type XFields =
     Map<Lun, obj>
 
