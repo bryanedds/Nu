@@ -21,7 +21,7 @@ open Nu.Math
 open Nu.Metadata
 open Nu.Physics
 open Nu.Sdl
-open Nu.Entities
+open Nu.EntityModule
 open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
@@ -133,7 +133,7 @@ module Program =
                                     entity_?TileMapSprites <- tileMapSprites
                             else entity_
                         let world_ = set entity_ world_ <| worldEntityLens entityTds.Address
-                        propagateEntityPhysics entityTds.Address entity_ world_
+                        entity_?PropagatePhysics (entityTds.Address, entity_, world_)
                 pushPastWorld pastWorld world_)
             entityTds.RefWorld := changer !entityTds.RefWorld
             entityTds.WorldChangers.Add changer
@@ -203,7 +203,6 @@ module Program =
                 | None -> (handle message, true, world)
                 | Some entity ->
                     let pastWorld = world
-                    let entity = get entity entityLens
                     let entityAddress = addrstr EditorGroupAddress entity.Name
                     let entityTransform = getEntityTransform (Some world.Camera) (xdc world) entity
                     let dragState = DragEntityPosition (entityTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityAddress)
@@ -244,7 +243,7 @@ module Program =
             let world_ = set entity_ world <| worldEntityLens address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, origMousePosition, address) }
             let world_ = { world_ with ExtData = editorState_ }
-            let world_ = propagateEntityPhysics address entity_ world_
+            let world_ = entity_?PropagatePhysics (address, entity_, world_)
             form.propertyGrid.Refresh ()
             world_
         | DragEntityRotation (pickOffset, origPosition, address) -> world

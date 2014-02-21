@@ -12,7 +12,7 @@ open Nu.Audio
 open Nu.Rendering
 open Nu.Physics
 open Nu.Metadata
-open Nu.Entities
+open Nu.EntityModule
 open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
