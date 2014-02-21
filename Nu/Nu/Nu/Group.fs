@@ -96,14 +96,14 @@ module GroupModule =
         setModelProperties groupNode group
         (group, entities)
 
-    let writeGroupFile group entityModels fileName world =
+    let writeGroupFile group entities fileName world =
         use file = File.Open (fileName, FileMode.Create)
         let writerSettings = XmlWriterSettings ()
         writerSettings.Indent <- true
         use writer = XmlWriter.Create (file, writerSettings)
         writer.WriteStartDocument ()
         writer.WriteStartElement "Root"
-        writeGroupToXml writer group entityModels
+        writeGroupToXml writer group entities
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 

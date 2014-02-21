@@ -153,9 +153,9 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
                         Rotation = transform'.Rotation }
 
     // TODO: turn into a lens
-    let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entityModel =
+    let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
         let transform' = { transform with Position = transform.Position + view }
-        setEntityTransform4 positionSnap rotationSnap transform' entityModel
+        setEntityTransform4 positionSnap rotationSnap transform' entity
 
     // TODO: turn into a lens
     let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer entity =

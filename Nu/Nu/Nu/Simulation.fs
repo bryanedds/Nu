@@ -40,6 +40,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Enabled : bool
       Visible : bool
       Xtension : Xtension
+      // TODO: consider making the below into XFields
       Position : Vector2
       Depth : single
       Size : Vector2
@@ -170,7 +171,6 @@ and [<ReferenceEquality>] World =
       AudioMessages : AudioMessage rQueue
       RenderMessages : RenderMessage rQueue
       PhysicsMessages : PhysicsMessage rQueue
-      XTypes : XTypes
       Dispatchers : IXDispatchers
       ExtData : obj } // TODO: consider if this is still the right approach in the context of the new Xtension stuff
 

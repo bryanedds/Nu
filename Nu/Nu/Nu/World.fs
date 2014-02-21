@@ -448,22 +448,25 @@ module WorldModule =
             default this.Init entity = entity
 
             abstract member Register : Address * Entity * World -> Entity * World
-            default this.Register (_, entity, world) = (entity, world)
+            default this.Register (address, entity, world) = (entity, world)
 
             abstract member Unregister : Address * Entity * World -> World
-            default this.Unregister (_, _, world) = world
+            default this.Unregister (address, entity, world) = world
 
             abstract member PropagatePhysics : Address * Entity * World -> World
             default this.PropagatePhysics (address, entity, world) = world
 
-            abstract member HandleIntegrationMessage : IntegrationMessage * Address * Entity * World -> World
-            default this.HandleIntegrationMessage (_, _, _, world) = world
+            abstract member ReregisterPhysicsHack : Address * Entity * World -> World
+            default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
 
-            abstract member GetRenderDescriptors : Entity * IXDispatcherContainer -> RenderDescriptor list
-            default this.GetRenderDescriptors (_, _) = []
+            abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
+            default this.HandleBodyTransformMessage (message, address, entity, world) = world
+
+            abstract member GetRenderDescriptors : Vector2 * Entity * IXDispatcherContainer -> RenderDescriptor list
+            default this.GetRenderDescriptors (view, entity, dispatcherContainer) = []
 
             abstract member GetQuickSize : Entity * World -> Vector2
-            default this.GetQuickSize (_, _) = Vector2 DefaultEntitySize
+            default this.GetQuickSize (entity, world) = Vector2 DefaultEntitySize
 
             end
 
@@ -491,6 +494,10 @@ module WorldModule =
                     unsubscribe DownMouseLeftAddress address |>
                     unsubscribe UpMouseLeftAddress address
 
+            override this.GetRenderDescriptors (view, button, dispatcherContainer) =
+                if not button.Visible then []
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = button.Position; Size = button.Size; Rotation = 0.0f; Sprite = (if button?IsDown () then button?DownSprite () else button?UpSprite ()); Color = Vector4.One }; Depth = button.Depth })]
+
             override this.GetQuickSize (button, world) =
                 let sprite = button?UpSprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
@@ -502,6 +509,10 @@ module WorldModule =
                 let label' = base.Init label
                 let label'' = { label with IsTransformRelative = false }
                 label''?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+            override this.GetRenderDescriptors (view, label, dispatcherContainer) =
+                if not label.Visible then []
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = label.Position; Size = label.Size; Rotation = 0.0f; Sprite = label?LabelSprite (); Color = Vector4.One }; Depth = label.Depth })]
 
             override this.GetQuickSize (label, world) =
                 let sprite = label?LabelSprite ()
@@ -519,6 +530,11 @@ module WorldModule =
                         ?TextFont <- { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
                         ?TextOffset <- Vector2.Zero)
                         ?TextColor <- Vector4.One
+
+            override this.GetRenderDescriptors (view, textBox, dispatcherContainer) =
+                if not textBox.Visible then []
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = textBox.Position; Size = textBox.Size; Rotation = 0.0f; Sprite = textBox?BoxSprite (); Color = Vector4.One }; Depth = textBox.Depth })
+                      LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox?Text (); Position = textBox.Position + textBox?TextOffset (); Size = textBox.Size - textBox?TextOffset (); Font = textBox?TextFont (); Color = textBox?TextColor () }; Depth = textBox.Depth })]
 
             override this.GetQuickSize (textBox, world) =
                 let sprite = textBox?BoxSprite ()
@@ -548,6 +564,10 @@ module WorldModule =
                 world |>
                     unsubscribe DownMouseLeftAddress address |>
                     unsubscribe UpMouseLeftAddress address
+
+            override this.GetRenderDescriptors (view, toggle, dispatcherContainer) =
+                if not toggle.Visible then []
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = toggle.Position; Size = toggle.Size; Rotation = 0.0f; Sprite = (if toggle?IsOn () || toggle?IsPressed () then toggle?OnSprite () else toggle?OffSprite ()); Color = Vector4.One }; Depth = toggle.Depth })]
 
             override this.GetQuickSize (toggle, world) =
                 let sprite = toggle?OffSprite ()
@@ -598,6 +618,21 @@ module WorldModule =
                 let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
                 set block' world' <| worldEntityLens address
 
+            override this.ReregisterPhysicsHack (groupAddress, block, world) =
+                let address = addrstr groupAddress block.Name
+                let world' = unregisterBlockPhysics address block world
+                let (block', world'') = registerBlockPhysics address block world'
+                set block' world'' <| worldEntityLens address
+
+            override this.HandleBodyTransformMessage (message, address, block, world) =
+                let block' = { block with Position = message.Position - block.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                                          Rotation = message.Rotation }
+                set block' world <| worldEntityLens message.EntityAddress
+            
+            override this.GetRenderDescriptors (view, block, dispatcherContainer) =
+                if not block.Visible then []
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = block.Position - view; Size = block.Size; Rotation = block.Rotation; Sprite = block?Sprite (); Color = Vector4.One }; Depth = block.Depth })]
+
             override this.GetQuickSize (block, world) =
                 let sprite = block?Sprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
@@ -622,6 +657,21 @@ module WorldModule =
             override this.PropagatePhysics (address, avatar, world) =
                 let (avatar', world') = world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
                 set avatar' world' <| worldEntityLens address
+
+            override this.ReregisterPhysicsHack (groupAddress, avatar, world) =
+                let address = addrstr groupAddress avatar.Name
+                let world' = unregisterAvatarPhysics address avatar world
+                let (avatar', world'') = registerAvatarPhysics address avatar world'
+                set avatar' world'' <| worldEntityLens address
+
+            override this.HandleBodyTransformMessage (message, address, avatar, world) =
+                let avatar' = { avatar with Position = message.Position - avatar.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                                            Rotation = message.Rotation }
+                set avatar' world <| worldEntityLens message.EntityAddress
+
+            override this.GetRenderDescriptors (view, avatar, dispatcherContainer) =
+                if not avatar.Visible then []
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = avatar.Position - view; Size = avatar.Size; Rotation = avatar.Rotation; Sprite = avatar?Sprite (); Color = Vector4.One }; Depth = avatar.Depth })]
 
             override this.GetQuickSize (avatar, world) =
                 let sprite = avatar?Sprite ()
@@ -650,6 +700,34 @@ module WorldModule =
             override this.PropagatePhysics (address, tileMap, world) =
                 let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
                 set tileMap' world' <| worldEntityLens address
+
+            override this.ReregisterPhysicsHack (groupAddress, tileMap, world) =
+                let address = addrstr groupAddress tileMap.Name
+                let world' = unregisterTileMapPhysics address tileMap world
+                let (tileMap', world'') = registerTileMapPhysics address tileMap world'
+                set tileMap' world'' <| worldEntityLens address
+
+            override this.GetRenderDescriptors (view, tileMap, dispatcherContainer) =
+                if not tileMap.Visible then []
+                else
+                    let map = tileMap?TmxMap () : TmxMap
+                    let layers = List.ofSeq map.Layers
+                    List.mapi
+                        (fun i (layer : TmxLayer) ->
+                            let layeredTileLayerDescriptor =
+                                LayeredTileLayerDescriptor
+                                    { Descriptor =
+                                        { Position = tileMap.Position - view
+                                          Size = tileMap.Size
+                                          Rotation = tileMap.Rotation
+                                          MapSize = Vector2 (single map.Width, single map.Height)
+                                          Tiles = layer.Tiles
+                                          TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                                          TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                          TileSetSprite = List.head <| tileMap?TileMapSprites () } // MAGIC_VALUE: for same reason as above
+                                      Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
+                            LayerableDescriptor layeredTileLayerDescriptor)
+                        layers
 
             override this.GetQuickSize (tileMap, world) =
                 let map = tileMap?TmxMap () : TmxMap
@@ -901,37 +979,13 @@ module WorldModule =
                   AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
-                  XTypes = Map.empty
                   Dispatchers = defaultDispatchers
                   ExtData = extData }
             Right world
 
-    let reregisterPhysicsHack4 groupAddress world _ entityModel =
-        match entityModel with
-        | Button _
-        | Label _
-        | TextBox _
-        | Toggle _
-        | Feeler _ -> world
-        | Block block ->
-            let address = addrstr groupAddress block.Name
-            let world' = unregisterBlockPhysics address block world
-            let (block', world'') = registerBlockPhysics address block world'
-            set block' world'' <| worldBlockLens address
-        | Avatar avatar ->
-            let address = addrstr groupAddress avatar.Name
-            let world' = unregisterAvatarPhysics address avatar world
-            let (avatar', world'') = registerAvatarPhysics address avatar world'
-            set avatar' world'' <| worldAvatarLens address
-        | TileMap tileMap -> 
-            let address = addrstr groupAddress tileMap.Name
-            let world' = unregisterTileMapPhysics address tileMap world
-            let (tileMap', world'') = registerTileMapPhysics address tileMap world'
-            set tileMap' world'' <| worldTileMapLens address
-
     let reregisterPhysicsHack groupAddress world =
-        let entities = get world <| worldEntityModelsLens groupAddress
-        Map.fold (reregisterPhysicsHack4 groupAddress) world entities
+        let entities = get world <| worldEntitiesLens groupAddress
+        Map.fold (fun world _ entity -> entity?ReregisterPhysicsHack (groupAddress, entity, world)) world entities
 
     /// Play the world's audio.
     let play world =
@@ -939,63 +993,12 @@ module WorldModule =
         let world' = { world with AudioMessages = [] }
         { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
-    let getEntityRenderDescriptors view dispatcherContainer entityModel =
-        match entityModel with
-        | Button button ->
-            let (_, entity) = buttonSep button
-            if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if button?IsDown () then button?DownSprite () else button?UpSprite ()); Color = Vector4.One }; Depth = entity.Depth })]
-        | Label label ->
-            let (_, entity) = labelSep label
-            if not label.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = label?LabelSprite (); Color = Vector4.One }; Depth = entity.Depth })]
-        | TextBox textBox ->
-            let (_, entity) = textBoxSep textBox
-            if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = textBox?BoxSprite (); Color = Vector4.One }; Depth = entity.Depth })
-                  LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox?Text (); Position = entity.Position + textBox?TextOffset (); Size = entity.Size - textBox?TextOffset (); Font = textBox?TextFont (); Color = textBox?TextColor () }; Depth = entity.Depth })]
-        | Toggle toggle ->
-            let (_, entity) = toggleSep toggle
-            if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position; Size = entity.Size; Rotation = 0.0f; Sprite = (if toggle?IsOn () || toggle?IsPressed () then toggle?OnSprite () else toggle?OffSprite ()); Color = Vector4.One }; Depth = entity.Depth })]
-        | Feeler _ -> []
-        | Block block ->
-            let (_, entity) = blockSep block
-            if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = block?Sprite (); Color = Vector4.One }; Depth = entity.Depth })]
-        | Avatar avatar ->
-            let (_, entity) = avatarSep avatar
-            if not entity.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = entity.Position - view; Size = entity.Size; Rotation = entity.Rotation; Sprite = avatar?Sprite (); Color = Vector4.One }; Depth = entity.Depth })]
-        | TileMap tileMap ->
-            let (_, entity) = tileMapSep tileMap
-            if not entity.Visible then []
-            else
-                let map = tileMap?TmxMap () : TmxMap
-                let layers = List.ofSeq map.Layers
-                List.mapi
-                    (fun i (layer : TmxLayer) ->
-                        let layeredTileLayerDescriptor =
-                            LayeredTileLayerDescriptor
-                                { Descriptor =
-                                    { Position = entity.Position - view
-                                      Size = entity.Size
-                                      Rotation = entity.Rotation
-                                      MapSize = Vector2 (single map.Width, single map.Height)
-                                      Tiles = layer.Tiles
-                                      TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                                      TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                      TileSetSprite = List.head <| tileMap?TileMapSprites () } // MAGIC_VALUE: for same reason as above
-                                  Depth = entity.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
-                        LayerableDescriptor layeredTileLayerDescriptor)
-                    layers
-
     let getGroupRenderDescriptors camera dispatcherContainer entities =
         let view = getInverseView camera
-        let entitModelValues = Map.toValueSeq entities
-        Seq.map (getEntityRenderDescriptors view dispatcherContainer) entitModelValues
+        let entityValues = Map.toValueSeq entities
+        Seq.map (fun entity -> entity?GetRenderDescriptors (view, entity, dispatcherContainer)) entityValues
 
-    let getTransitionModelRenderDescriptors camera dispatcherContainer transition =
+    let getTransitionRenderDescriptors camera dispatcherContainer transition =
         match transition.OptDissolveSprite with
         | None -> []
         | Some dissolveSprite ->
@@ -1008,7 +1011,7 @@ module WorldModule =
         match get world worldOptSelectedScreenAddressLens with
         | None -> []
         | Some activeScreenAddress ->
-            let optGroupMap = Map.tryFind activeScreenAddress.[0] world.EntityModels
+            let optGroupMap = Map.tryFind activeScreenAddress.[0] world.Entities
             match optGroupMap with
             | None -> []
             | Some groupMap ->
@@ -1018,8 +1021,8 @@ module WorldModule =
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world (worldScreenLens activeScreenAddress)
                 match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera (xdc world) activeScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionModelRenderDescriptors world.Camera (xdc world) activeScreen.Outgoing
+                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera (xdc world) activeScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera (xdc world) activeScreen.Outgoing
                 | IdlingState -> descriptors
 
     /// Render the world.
@@ -1034,27 +1037,10 @@ module WorldModule =
         if not keepRunning then (keepRunning, world)
         else
             match integrationMessage with
-            | BodyTransformMessage bodyTransformMessage ->
-                let entityModelAddress = bodyTransformMessage.EntityAddress
-                let entityModel = get world <| worldEntityModelLens entityModelAddress
-                match entityModel with
-                | Button _
-                | Label _
-                | TextBox _
-                | Toggle _
-                | Feeler _ ->
-                    debug "Unexpected gui match in Nu.WorldModule.handleIntegrationMessage."
-                    (keepRunning, world)
-                | Block _
-                | Avatar _ ->
-                    let entity = get entityModel entityLens
-                    let entity' = { entity with Position = bodyTransformMessage.Position - entity.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                                                Rotation = bodyTransformMessage.Rotation }
-                    let world' = set entity' world <| worldEntityLens bodyTransformMessage.EntityAddress
-                    (keepRunning, world')
-                | TileMap _ ->
-                    // nothing to do here for tile map
-                    (keepRunning, world)
+            | BodyTransformMessage bodyTransformMessage -> 
+                let entityAddress = bodyTransformMessage.EntityAddress
+                let entity = get world <| worldEntityLens entityAddress
+                (keepRunning, entity?HandleBodyTransformMessage (bodyTransformMessage, entityAddress, entity, world))
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
