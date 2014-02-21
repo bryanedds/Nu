@@ -220,6 +220,7 @@ module EntityModule =
         writer.WriteEndElement ()
 
     let loadEntityFromXml (entityNode : XmlNode) dispatcherContainer =
-        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None dispatcherContainer // TODO: remove this hard-coded string
+        // TODO: create entity with loaded XTypeName
+        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None dispatcherContainer
         setModelProperties entityNode entity
         entity
