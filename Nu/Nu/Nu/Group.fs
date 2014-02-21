@@ -79,7 +79,7 @@ module GroupModule =
             writeEntityToXml writer entityKvp.Value
 
     let writeGroupToXml (writer : XmlWriter) group entities =
-        writer.WriteStartElement typeof<Group>.Name
+        writer.WriteStartElement typeof<Group>.FullName
         writeModelProperties writer group
         writeGroupEntitiesToXml writer entities
 
