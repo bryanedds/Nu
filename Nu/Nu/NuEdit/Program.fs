@@ -418,8 +418,7 @@ module Program =
         | Some entity_ ->
             let changer = (fun world ->
                 let pastWorld = world
-                let id = getNuId ()
-                let entity_ = { entity_ with Id = id; Name = str id }
+                let entity_ = { entity_ with Id = getNuId (); Name = str <| Guid.NewGuid () }
                 let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
                 let entityTransform_ = getEntityTransform (Some world.Camera) world entity_
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
