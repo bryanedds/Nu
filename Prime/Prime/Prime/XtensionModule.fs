@@ -75,9 +75,3 @@ and IXDispatcherContainer =
     interface
         abstract GetDispatchers : unit -> IXDispatchers
         end
-
-and [<StructuralEquality; NoComparison>] XDispatcherContainer =
-    { Dispatchers : IXDispatchers }
-    interface IXDispatcherContainer with
-        member this.GetDispatchers () = this.Dispatchers
-        end
