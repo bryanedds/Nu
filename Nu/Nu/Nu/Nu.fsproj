@@ -62,7 +62,7 @@
     <Compile Include="OmniData.fs" />
     <Compile Include="OmniState.fs" />
     <Compile Include="Simulation.fs" />
-    <Compile Include="Entities.fs" />
+    <Compile Include="Entity.fs" />
     <Compile Include="Group.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Game.fs" />

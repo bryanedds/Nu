@@ -8,6 +8,7 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
+open Nu.EntityModule
 module GroupModule =
 
     let groupIdLens =
@@ -75,7 +76,7 @@ module GroupModule =
 
     let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<Lun, Entity>) =
         for entityKvp in entities do
-            Entities.writeEntityToXml writer entityKvp.Value
+            writeEntityToXml writer entityKvp.Value
 
     let writeGroupToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
@@ -86,7 +87,7 @@ module GroupModule =
         let entityNodes = groupNode.SelectNodes "Entity"
         let entities =
             Seq.map
-                (fun entityNode -> Entities.loadEntityFromXml entityNode world)
+                (fun entityNode -> loadEntityFromXml entityNode world)
                 (System.Linq.Enumerable.Cast entityNodes) // TODO: create Miscellanea.enumCast function
         Seq.toList entities
 

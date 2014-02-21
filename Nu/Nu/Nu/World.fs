@@ -23,7 +23,7 @@ open Nu.Audio
 open Nu.Sdl
 open Nu.DomainModel
 open Nu.CameraModule
-open Nu.Entities
+open Nu.EntityModule
 open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
