@@ -52,15 +52,10 @@ module WorldModule =
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
     let initTypeConverters () =
-        initXtensionConverters ()
         initMathConverters ()
         initAudioConverters ()
         initRenderConverters ()
     
-    /// Derive an XDispatcherContainer from a world.
-    let xdc world =
-        { XDispatcherContainer.Dispatchers = world.Dispatchers }
-
     /// Mark a message as handled.
     let handle message =
         { Handled = true; Data = message.Data }
@@ -83,11 +78,11 @@ module WorldModule =
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | Entity entity -> getPickingPriority (xdc world) entity
+        | Entity entity -> getPickingPriority world entity
 
     let getSimulant address world =
         match address with
-        | [] -> Game <| get world gameLens
+        | [] -> Game <| world.Game
         | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
         | [_; _] as groupAddress -> Group <| get world (worldGroupLens groupAddress)
         | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
@@ -97,7 +92,7 @@ module WorldModule =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let pickingSort entities world =
-        let priorities = List.map (getPickingPriority <| xdc world) entities
+        let priorities = List.map (getPickingPriority world) entities
         let prioritiesAndEntities = List.zip priorities entities
         let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
         List.map snd prioritiesAndEntitiesSorted
@@ -106,7 +101,7 @@ module WorldModule =
         let entitiesSorted = pickingSort entities world
         List.tryFind
             (fun entity ->
-                let transform = getEntityTransform (Some world.Camera) (xdc world) entity
+                let transform = getEntityTransform (Some world.Camera) world entity
                 position.X >= transform.Position.X &&
                     position.X < transform.Position.X + transform.Size.X &&
                     position.Y >= transform.Position.Y &&
@@ -1016,13 +1011,13 @@ module WorldModule =
             | None -> []
             | Some groupMap ->
                 let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera <| xdc world) entityMaps
+                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world (worldScreenLens activeScreenAddress)
                 match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera (xdc world) activeScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera (xdc world) activeScreen.Outgoing
+                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Outgoing
                 | IdlingState -> descriptors
 
     /// Render the world.
@@ -1069,12 +1064,12 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_QUIT -> (false, world)
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                    let world' = set { world.MouseState with MousePosition = mousePosition } world mouseStateLens
+                    let world' = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
                     if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world'
                     else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
-                    let world' = set { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns } world mouseStateLens
+                    let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                     let messageAddress = addr ("Down/Mouse" </> str mouseButton)
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                     publish messageAddress { Handled = false; Data = messageData } world'
@@ -1082,7 +1077,7 @@ module WorldModule =
                     let mouseState = world.MouseState
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
-                        let world' = set { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns } world mouseStateLens
+                        let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                         let messageAddress = addr ("Up/Mouse" </> str mouseButton)
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                         publish messageAddress { Handled = false; Data = messageData } world'

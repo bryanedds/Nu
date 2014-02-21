@@ -447,7 +447,7 @@
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(93, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1042, 26);
+            this.toolStrip.Size = new System.Drawing.Size(1124, 26);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -517,9 +517,18 @@
             // 
             // createEntityComboBox
             // 
-            this.createEntityComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.createEntityComboBox.Items.AddRange(new object[] {
+            "Nu.ButtonDispatcher",
+            "Nu.LabelDispatcher",
+            "Nu.TextBoxDispatcher",
+            "Nu.ToggleDispatcher",
+            "Nu.FeelerDispatcher",
+            "Nu.BlockDispatcher",
+            "Nu.AvatarDispatcher",
+            "Nu.TileMapDispatcher"});
             this.createEntityComboBox.Name = "createEntityComboBox";
-            this.createEntityComboBox.Size = new System.Drawing.Size(121, 26);
+            this.createEntityComboBox.Size = new System.Drawing.Size(172, 26);
+            this.createEntityComboBox.Text = "Nu.ButtonDispatcher";
             // 
             // creationDepthLabel
             // 

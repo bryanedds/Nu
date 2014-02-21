@@ -2,25 +2,5 @@
 open System
 open System.ComponentModel
 
-/// The empty extension.
+/// The empty Xtension.
 let empty = { OptXTypeName = None; XFields = Map.empty }
-
-type XtensionTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let xtension = obj :?> Xtension
-        let xTypeNameStr = match xtension.OptXTypeName with None -> String.Empty | Some xTypeName -> xTypeName.LunStr
-        String.Format (culture, "{0}", xTypeNameStr) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Xtension> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Xtension> then obj
-        else
-            let optXTypeName = match obj :?> string with "" -> None | xTypeNameStr -> Some <| Lun.make xTypeNameStr
-            { OptXTypeName = optXTypeName; XFields = Map.empty } :> obj
-
-let initXtensionConverters () =
-    assignTypeConverter<Xtension, XtensionTypeConverter> ()

@@ -122,7 +122,7 @@ module Program =
                         let world_ = setEntityPropertyValue entityTds.Address property value world
                         let entity_ = get world_ <| worldEntityLens entityTds.Address
                         let entity_ =
-                            // handle special case for TileMap's TileMapAsset field change
+                            // handle special case for TileMapAsset field change
                             if propertyName = "TileMapAsset" then
                                 let tileMapAsset = entity_?TileMapAsset ()
                                 let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world_.AssetMetadataMap
@@ -204,7 +204,7 @@ module Program =
                 | Some entity ->
                     let pastWorld = world
                     let entityAddress = addrstr EditorGroupAddress entity.Name
-                    let entityTransform = getEntityTransform (Some world.Camera) (xdc world) entity
+                    let entityTransform = getEntityTransform (Some world.Camera) world entity
                     let dragState = DragEntityPosition (entityTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityAddress)
                     let editorState_ = world.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
@@ -236,10 +236,10 @@ module Program =
         | DragEntityNone -> world
         | DragEntityPosition (pickOffset, origMousePosition, address) ->
             let entity_ = get world <| worldEntityLens address
-            let transform_ = getEntityTransform (Some world.Camera) (xdc world) entity_
+            let transform_ = getEntityTransform (Some world.Camera) world entity_
             let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
             let (positionSnap, rotationSnap) = getSnaps form
-            let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap transform_ (xdc world) entity_
+            let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap transform_ world entity_
             let world_ = set entity_ world <| worldEntityLens address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, origMousePosition, address) }
             let world_ = { world_ with ExtData = editorState_ }
@@ -297,12 +297,11 @@ module Program =
             let pastWorld = world
             let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
             let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultEntitySize; Rotation = DefaultEntityRotation }
-            let entityTypeName = typeof<Entity>.FullName + "+" + form.createEntityComboBox.Text
-            let entity_ = makeDefaultEntity entityTypeName None
+            let entityXTypeName = Lun.make form.createEntityComboBox.Text
+            let entity_ = makeDefaultEntity entityXTypeName None world
             let (positionSnap, rotationSnap) = getSnaps form
-            let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform (xdc world) entity_
-            let entity = get entity_ entityLens
-            let entityAddress = addrstr EditorGroupAddress entity.Name
+            let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform world entity_
+            let entityAddress = addrstr EditorGroupAddress entity_.Name
             let world_ = addEntity entityAddress entity_ world
             let world_ = pushPastWorld pastWorld world_
             refWorld := world_ // must be set for property grid
@@ -410,7 +409,7 @@ module Program =
             let entity = get !refWorld <| worldEntityLens entityTds.Address
             let editorState = (!refWorld).ExtData :?> EditorState
             editorState.Clipboard := Some entity
-        | _ -> trace <| "Invalid copy operation (likely a code note in NuEdit)."
+        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."
 
     let handlePaste (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let editorState = (!refWorld).ExtData :?> EditorState
@@ -418,17 +417,15 @@ module Program =
         | None -> ()
         | Some entity_ ->
             let changer = (fun world ->
-                let entity_ = get entity_ entityLens
+                let pastWorld = world
                 let id = getNuId ()
                 let entity_ = { entity_ with Id = id; Name = str id }
-                let entity_ = set entity_ entity_ entityLens
                 let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-                let entityTransform_ = getEntityTransform (Some world.Camera) (xdc world) entity_
+                let entityTransform_ = getEntityTransform (Some world.Camera) world entity_
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
-                let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform_ (xdc world) entity_
+                let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform_ world entity_
                 let address = addrstr EditorGroupAddress entity_.Name
-                let pastWorld = world
                 let world_ = pushPastWorld pastWorld world
                 addEntity address entity_ world_)
             refWorld := changer !refWorld
@@ -442,9 +439,9 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             let changer = (fun world ->
                 let entity_ = get world <| worldEntityLens entityTds.Address
-                let entityQuickSize = getEntityQuickSize world.AssetMetadataMap (xdc world) entity_
-                let entityTransform = { getEntityTransform None (xdc world) entity_ with Size = entityQuickSize }
-                let entity_ = setEntityTransform None 0 0 entityTransform (xdc world) entity_
+                let entityQuickSize = entity_?GetQuickSize (entity_, world)
+                let entityTransform = { getEntityTransform None world entity_ with Size = entityQuickSize }
+                let entity_ = setEntityTransform None 0 0 entityTransform world entity_
                 let world_ = set entity_ world <| worldEntityLens entityTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()
@@ -474,7 +471,6 @@ module Program =
                     let changer = (fun world ->
                         let pastWorld = world
                         let entity = get world <| worldEntityLens entityTds.Address
-                        let entity = get entity entityLens
                         let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
                         let xFieldLun = Lun.make xFieldName
                         let xFields = Map.add xFieldLun xFieldValue entity.Xtension.XFields
@@ -500,7 +496,6 @@ module Program =
                 let changer = (fun world ->
                     let pastWorld = world
                     let entity = get world <| worldEntityLens entityTds.Address
-                    let entity = get entity entityLens
                     let xFieldLun = Lun.make xFieldName
                     let xFields = Map.remove xFieldLun entity.Xtension.XFields
                     let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
@@ -520,7 +515,6 @@ module Program =
             let changer = (fun world ->
                 let pastWorld = world
                 let entity = get world <| worldEntityLens entityTds.Address
-                let entity = get entity entityLens
                 let entity' = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
                 let world' = set entity' world <| worldEntityLens entityTds.Address
                 let world'' = pushPastWorld pastWorld world'
