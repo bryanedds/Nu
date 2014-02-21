@@ -439,8 +439,8 @@ module WorldModule =
     type EntityDispatcher () =
         class
 
-            abstract member Init : Entity -> Entity
-            default this.Init entity = entity
+            abstract member Init : Entity * IXDispatcherContainer -> Entity
+            default this.Init (entity, dispatcherContainer) = entity
 
             abstract member Register : Address * Entity * World -> Entity * World
             default this.Register (address, entity, world) = (entity, world)
@@ -468,8 +468,8 @@ module WorldModule =
     type ButtonDispatcher () =
         inherit EntityDispatcher ()
             
-            override this.Init button =
-                let button' = base.Init button
+            override this.Init (button, dispatcherContainer) =
+                let button' = base.Init (button, dispatcherContainer)
                 let button'' = { button with IsTransformRelative = false }
                 (((button''
                     ?IsDown <- false)
@@ -500,8 +500,8 @@ module WorldModule =
     type LabelDispatcher () =
         inherit EntityDispatcher ()
             
-            override this.Init label =
-                let label' = base.Init label
+            override this.Init (label, dispatcherContainer) =
+                let label' = base.Init (label, dispatcherContainer)
                 let label'' = { label with IsTransformRelative = false }
                 label''?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
 
@@ -516,8 +516,8 @@ module WorldModule =
     type TextBoxDispatcher () =
         inherit EntityDispatcher ()
             
-            override this.Init textBox =
-                let textBox' = base.Init textBox
+            override this.Init (textBox, dispatcherContainer) =
+                let textBox' = base.Init (textBox, dispatcherContainer)
                 let textBox'' = { textBox with IsTransformRelative = false }
                 ((((textBox''
                         ?BoxSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -537,9 +537,9 @@ module WorldModule =
 
     type ToggleDispatcher () =
         inherit EntityDispatcher ()
-
-            override this.Init toggle =
-                let toggle' = base.Init toggle
+        
+            override this.Init (toggle, dispatcherContainer) =
+                let toggle' = base.Init (toggle, dispatcherContainer)
                 let toggle'' = { toggle with IsTransformRelative = false }
                 ((((toggle''
                         ?IsOn <- false)
@@ -570,9 +570,9 @@ module WorldModule =
 
     type FeelerDispatcher () =
         inherit EntityDispatcher ()
-
-            override this.Init feeler =
-                let feeler' = base.Init feeler
+        
+            override this.Init (feeler, dispatcherContainer) =
+                let feeler' = base.Init (feeler, dispatcherContainer)
                 let feeler'' = { feeler with IsTransformRelative = false }
                 feeler''?IsTouched <- false
 
@@ -593,9 +593,9 @@ module WorldModule =
 
     type BlockDispatcher () =
         inherit EntityDispatcher ()
-
-            override this.Init block =
-                let block' = base.Init block
+        
+            override this.Init (block, dispatcherContainer) =
+                let block' = base.Init (block, dispatcherContainer)
                 let block'' = { block with IsTransformRelative = true }
                 (((block''
                     ?PhysicsId <- InvalidPhysicsId)
@@ -634,9 +634,9 @@ module WorldModule =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher ()
-
-            override this.Init avatar =
-                let avatar' = base.Init avatar
+        
+            override this.Init (avatar, dispatcherContainer) =
+                let avatar' = base.Init (avatar, dispatcherContainer)
                 let avatar'' = { avatar with IsTransformRelative = true }
                 ((avatar''
                     ?PhysicsId <- InvalidPhysicsId)
@@ -674,10 +674,10 @@ module WorldModule =
 
     type TileMapDispatcher () =
         inherit EntityDispatcher ()
-
-            override this.Init tileMap =
+        
+            override this.Init (tileMap, dispatcherContainer) =
                 let tmxMap = TmxMap "Assets/Default/TileMap.tmx"
-                let tileMap' = base.Init tileMap
+                let tileMap' = base.Init (tileMap, dispatcherContainer)
                 let tileMap'' = { tileMap with IsTransformRelative = true }
                 ((((tileMap''
                         ?PhysicsIds <- [])
@@ -733,7 +733,7 @@ module WorldModule =
 
     let unregisterEntity address world =
         let entity = get world <| worldEntityLens address
-        entity?Unregister world
+        entity?Unregister (address, entity, world)
 
     let removeEntity address world =
         let world' = unregisterEntity address world
@@ -951,6 +951,14 @@ module WorldModule =
             let defaultDispatchers =
                 Map.ofArray
                     [|Lun.make typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
+                      Lun.make typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
+                      Lun.make typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
+                      Lun.make typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
+                      Lun.make typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
+                      Lun.make typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
+                      Lun.make typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
+                      Lun.make typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
+                      Lun.make typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
                       Lun.make typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
                       Lun.make typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
                       Lun.make typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj

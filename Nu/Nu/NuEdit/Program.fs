@@ -531,8 +531,6 @@ module Program =
         form.positionSnapTextBox.Text <- str DefaultPositionSnap
         form.rotationSnapTextBox.Text <- str DefaultRotationSnap
         form.creationDepthTextBox.Text <- str DefaultCreationDepth
-        for unionCase in FSharpType.GetUnionCases typeof<Entity> do
-            ignore <| form.createEntityComboBox.Items.Add unionCase.Name
         form.createEntityComboBox.SelectedIndex <- 0
         form.exitToolStripMenuItem.Click.Add (handleExit form)
         form.createEntityButton.Click.Add (handleCreate form worldChangers refWorld false)

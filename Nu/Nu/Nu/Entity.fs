@@ -213,7 +213,7 @@ module EntityModule =
         | None -> failwith <| "Invalid XType name '" + xTypeName.LunStr + "'."
         | Some dispatcher ->
             let entity = makeDefaultEntity2 xTypeName optName
-            entity?Init entity
+            entity?Init (entity, dispatcherContainer) : Entity
 
     let writeEntityToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name

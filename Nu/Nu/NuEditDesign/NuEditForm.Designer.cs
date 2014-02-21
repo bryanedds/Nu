@@ -518,17 +518,17 @@
             // createEntityComboBox
             // 
             this.createEntityComboBox.Items.AddRange(new object[] {
-            "Nu.ButtonDispatcher",
-            "Nu.LabelDispatcher",
-            "Nu.TextBoxDispatcher",
-            "Nu.ToggleDispatcher",
-            "Nu.FeelerDispatcher",
-            "Nu.BlockDispatcher",
-            "Nu.AvatarDispatcher",
-            "Nu.TileMapDispatcher"});
+            "ButtonDispatcher",
+            "LabelDispatcher",
+            "TextBoxDispatcher",
+            "ToggleDispatcher",
+            "FeelerDispatcher",
+            "BlockDispatcher",
+            "AvatarDispatcher",
+            "TileMapDispatcher"});
             this.createEntityComboBox.Name = "createEntityComboBox";
             this.createEntityComboBox.Size = new System.Drawing.Size(172, 26);
-            this.createEntityComboBox.Text = "Nu.ButtonDispatcher";
+            this.createEntityComboBox.Text = "ButtonDispatcher";
             // 
             // creationDepthLabel
             // 
