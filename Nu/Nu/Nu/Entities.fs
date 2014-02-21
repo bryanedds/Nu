@@ -45,7 +45,7 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         { Get = fun (entity : Entity) -> (?) entity memberName
           Set = fun value entity -> (?<-) entity memberName value }
 
-    let getEntityTransform (entity : Entity) =
+    let getEntityTransform1 (entity : Entity) =
         { Transform.Position = entity.Position
           Depth = entity.Depth
           Size = entity.Size
@@ -115,7 +115,7 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         { Get = fun world -> worldOptEntityFinder address world
           Set = fun optEntity world -> match optEntity with None -> worldEntityRemover address world | Some entity -> worldEntityAdder address world entity }
 
-    let worldEntityLens address =
+    let worldEntitiesLens address =
         { Get = fun world ->
             match address with
             | [screenLun; groupLun] ->
@@ -142,10 +142,10 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         if entity.IsTransformRelative then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             getEntityTransformRelative view entity
-        else getEntityTransform entity 
+        else getEntityTransform1 entity 
 
     // TODO: turn into a lens
-    let setEntityTransform positionSnap rotationSnap (transform : Transform) entity =
+    let setEntityTransform4 positionSnap rotationSnap (transform : Transform) entity =
         let transform' = snapTransform positionSnap rotationSnap transform
         { entity with   Entity.Position = transform'.Position
                         Depth = transform'.Depth
@@ -155,14 +155,14 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
     // TODO: turn into a lens
     let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entityModel =
         let transform' = { transform with Position = transform.Position + view }
-        setEntityTransform positionSnap rotationSnap transform' entityModel
+        setEntityTransform4 positionSnap rotationSnap transform' entityModel
 
     // TODO: turn into a lens
     let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer entity =
         if entity.IsTransformRelative then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             setEntityTransformRelative view positionSnap rotationSnap transform entity
-        else setEntityTransform positionSnap rotationSnap transform entity
+        else setEntityTransform4 positionSnap rotationSnap transform entity
 
     let getPickingPriority dispatcherContainer entity =
         let transform = getEntityTransform None dispatcherContainer entity
@@ -184,7 +184,7 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         let tiles = layer.Tiles
         { Layer = layer; Tiles = tiles }
 
-    let makeTileData tileMap tmd tld n =
+    let makeTileData (tileMap : Entity) tmd tld n =
         let (i, j) = (n % fst tmd.MapSize, n / snd tmd.MapSize)
         let tile = tld.Tiles.[n]
         let gid = tile.Gid - tmd.TileSet.FirstGid
@@ -195,7 +195,7 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
 
-    let makeEntity2 xTypeName optName =
+    let makeDefaultEntity2 xTypeName optName =
         let id = getNuId ()
         { Id = id
           Name = match optName with None -> str id | Some name -> name
@@ -208,11 +208,11 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
           Rotation = 0.0f
           IsTransformRelative = true }
 
-    let makeEntity xTypeName optName dispatcherContainer =
-        match Map.tryFind xTypeName dispatcherContainer with
+    let makeDefaultEntity xTypeName optName (dispatcherContainer : IXDispatcherContainer) =
+        match Map.tryFind xTypeName <| dispatcherContainer.GetDispatchers () with
         | None -> failwith <| "Invalid XType name '" + xTypeName.LunStr + "'."
         | Some dispatcher ->
-            let entity = makeEntity2 xTypeName optName
+            let entity = makeDefaultEntity2 xTypeName optName
             entity?Init entity
 
     let writeEntityToXml (writer : XmlWriter) entity =
@@ -221,6 +221,6 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         writer.WriteEndElement ()
 
     let loadEntityFromXml (entityNode : XmlNode) dispatcherContainer =
-        let entity = makeEntity (Lun.make "EntityDispatcher") None dispatcherContainer
+        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None dispatcherContainer
         setModelProperties entityNode entity
         entity

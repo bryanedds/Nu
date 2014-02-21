@@ -82,13 +82,17 @@ module GroupModule =
         writeModelProperties writer group
         writeGroupEntitiesToXml writer entities
 
-    let loadEntitiesFromXml (groupNode : XmlNode) =
+    let loadEntitiesFromXml (groupNode : XmlNode) world =
         let entityNodes = groupNode.SelectNodes "Entity"
-        Seq.toList <| Seq.map Entities.loadEntityFromXml (System.Linq.Enumerable.Cast entityNodes) // TODO: create Miscellanea.enumCast function
+        let entities =
+            Seq.map
+                (fun entityNode -> Entities.loadEntityFromXml entityNode world)
+                (System.Linq.Enumerable.Cast entityNodes) // TODO: create Miscellanea.enumCast function
+        Seq.toList entities
 
-    let loadGroupFromXml (groupNode : XmlNode) =
+    let loadGroupFromXml (groupNode : XmlNode) world =
         let group = makeDefaultGroup ()
-        let entities = loadEntitiesFromXml (groupNode : XmlNode)
+        let entities = loadEntitiesFromXml (groupNode : XmlNode) world
         setModelProperties groupNode group
         (group, entities)
 
@@ -108,4 +112,4 @@ module GroupModule =
         document.Load fileName
         let rootNode = document.Item "Root"
         let groupNode = rootNode.FirstChild
-        loadGroupFromXml groupNode
+        loadGroupFromXml groupNode world
