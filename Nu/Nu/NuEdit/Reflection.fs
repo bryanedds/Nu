@@ -8,14 +8,14 @@ open Nu.GroupModule
 open Nu.WorldModule
 open NuEdit.Constants
 
-type EntityModelPropertyInfo =
+type EntityPropertyInfo =
     | XFieldDescriptor of XFieldDescriptor
     | PropertyInfo of PropertyInfo
 
 module Reflection =
 
-    let getEntityModelTypes entityModel =
-        match entityModel with
+    let getEntityTypes entity =
+        match entity with
         | Button _ -> [typeof<Button>; typeof<Entity>]
         | Label _ -> [typeof<Label>; typeof<Entity>]
         | TextBox _ -> [typeof<TextBox>; typeof<Entity>]
@@ -28,40 +28,40 @@ module Reflection =
     let containsProperty<'m> (property : PropertyInfo) =
         typeof<'m>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
 
-    let getValue property entityModel (lens : FSharpx.Lens<_, 'm>) =
+    let getValue property entity (lens : FSharpx.Lens<_, 'm>) =
         match property with
         | XFieldDescriptor x ->
-            let entity = get entityModel entityLens
+            let entity = get entity entityLens
             let xtension = entity.Xtension
             Map.find x.FieldName xtension.XFields
         | PropertyInfo p ->
-            if containsProperty<'m> p then p.GetValue (get entityModel lens)
-            else p.GetValue (get entityModel entityLens)
+            if containsProperty<'m> p then p.GetValue (get entity lens)
+            else p.GetValue (get entity entityLens)
 
-    let getEntityModelPropertyValue property entityModel =
-        match entityModel with
-        | Button _ -> getValue property entityModel buttonLens
-        | Label _ -> getValue property entityModel labelLens
-        | TextBox _ -> getValue property entityModel textBoxLens
-        | Toggle _ -> getValue property entityModel toggleLens
-        | Feeler _ -> getValue property entityModel feelerLens
-        | Block _ -> getValue property entityModel blockLens
-        | Avatar _ -> getValue property entityModel avatarLens
-        | TileMap _ -> getValue property entityModel tileMapLens
+    let getEntityPropertyValue property entity =
+        match entity with
+        | Button _ -> getValue property entity buttonLens
+        | Label _ -> getValue property entity labelLens
+        | TextBox _ -> getValue property entity textBoxLens
+        | Toggle _ -> getValue property entity toggleLens
+        | Feeler _ -> getValue property entity feelerLens
+        | Block _ -> getValue property entity blockLens
+        | Avatar _ -> getValue property entity avatarLens
+        | TileMap _ -> getValue property entity tileMapLens
 
-    let setEntityModelPropertyValue address property value world =
-        let entityModelLens = worldEntityModelLens address
-        let entityModel_ = get world entityModelLens
+    let setEntityPropertyValue address property value world =
+        let entityLens = worldEntityLens address
+        let entity_ = get world entityLens
         match property with
         | XFieldDescriptor x ->
-            let entity = get entityModel_ entityLens
+            let entity = get entity_ entityLens
             let xFields = Map.add x.FieldName value entity.Xtension.XFields
             let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
             set entity' world <| worldEntityLens address
         | PropertyInfo p ->
-            let entityModel_ =
+            let entity_ =
                 // TODO: so much code duplication, make me wanna slap your momma!
-                match entityModel_ with
+                match entity_ with
                 | Button button_ ->
                     let button_ = { button_ with Entity = button_.Entity } // NOTE: hacky copy
                     if typeof<Button>.GetProperty (p.Name, BindingFlags.Instance ||| BindingFlags.Public) = p
@@ -126,12 +126,12 @@ module Reflection =
                         let entity_ = { tileMap_.Entity with Id = tileMap_.Entity.Id } // NOTE: hacky copy
                         p.SetValue (entity_, value)
                         TileMap { tileMap_ with Entity = entity_ }
-            set entityModel_ world entityModelLens
+            set entity_ world entityLens
 
     let writeFile fileName world =
         let editorGroup = get world <| worldGroupLens EditorGroupAddress
-        let editorEntityModels = get world <| worldEntityModelsLens EditorGroupAddress
-        writeGroupFile editorGroup editorEntityModels fileName world
+        let editorEntitys = get world <| worldEntitysLens EditorGroupAddress
+        writeGroupFile editorGroup editorEntitys fileName world
 
     let loadFile fileName world =
         let world' = removeGroup EditorGroupAddress world

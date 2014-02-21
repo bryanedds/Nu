@@ -30,7 +30,7 @@ module DomainModel =
         if property.PropertyType = typeof<Xtension> then
             // TODO: move xtension serialization code out to Prime.
             let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some <| Lun.make str
-            let childNodes = seq { for node in valueNode.ChildNodes do yield node } // manual seq conversion... (ugh)
+            let childNodes = System.Linq.Enumerable.Cast valueNode.ChildNodes
             let xFields =
                 Seq.map
                     (fun (xNode : XmlNode) ->
@@ -51,36 +51,16 @@ module DomainModel =
                 let value = converter.ConvertFrom valueStr
                 property.SetValue (obj, value)
 
-    let setModelProperty2<'a>
-        (fieldNode : XmlNode)
-        (obj : 'a) =
+    let setModelProperty<'a> (fieldNode : XmlNode) (obj : 'a) =
         let fieldName = fieldNode.Name
         let optProperty_ = typeof<'a>.GetProperty fieldName
         match optProperty_ with
         | null -> ()
         | property -> trySetProperty property fieldNode <| obj
 
-    let setModelProperties2<'a> (modelNode : XmlNode) (obj : 'a) =
+    let setModelProperties<'a> (modelNode : XmlNode) (obj : 'a) =
         for node in modelNode.ChildNodes do
-            setModelProperty2<'a> node obj
-
-    let setModelProperty3<'a, 'b>
-        (getterB : 'a -> 'b)
-        (fieldNode : XmlNode)
-        (obj : 'a) =
-        let fieldName = fieldNode.Name
-        let optProperty_ = typeof<'a>.GetProperty fieldName
-        match optProperty_ with
-        | null ->
-            let optProperty_ = typeof<'b>.GetProperty fieldName
-            match optProperty_ with
-            | null -> ()
-            | property -> trySetProperty property fieldNode <| getterB obj
-        | property -> trySetProperty property fieldNode <| obj
-
-    let setModelProperties3<'a, 'b> getterB (modelNode : XmlNode) (obj : 'a) =
-        for node in modelNode.ChildNodes do
-            setModelProperty3<'a, 'b> getterB node obj
+            setModelProperty<'a> node obj
 
     let writeModelProperties (writer : XmlWriter) (obj : obj) =
         let aType = obj.GetType ()
@@ -107,8 +87,3 @@ module DomainModel =
                     let converter = TypeDescriptor.GetConverter property.PropertyType
                     let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
                     writer.WriteElementString (property.Name, valueStr)
-
-    let writeModelPropertiesMany (writer : XmlWriter) modelTypeName objs =
-        writer.WriteElementString ("ModelType", modelTypeName)
-        for obj in objs do
-            writeModelProperties writer obj
