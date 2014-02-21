@@ -19,7 +19,7 @@ open Nu.Rendering
 open Nu.Metadata
 open Nu.DomainModel
 open Nu.CameraModule
-module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
+module EntityModule =
 
     let entityIdLens =
         { Get = fun entity -> entity.Id
@@ -221,6 +221,6 @@ module Entities = // TODO: rename to EntityModule (and file to Entity.fs)
         writer.WriteEndElement ()
 
     let loadEntityFromXml (entityNode : XmlNode) dispatcherContainer =
-        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None dispatcherContainer
+        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None dispatcherContainer // TODO: remove this hard-coded string
         setModelProperties entityNode entity
         entity
