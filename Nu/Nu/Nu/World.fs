@@ -257,24 +257,142 @@ module WorldModule =
         if keepRunning then update world'
         else (keepRunning, world')
 
-    type EntityModelDispatcher () =
+    // TODO: try to use normal F# call conventions rather than param tuples
+    type EntityDispatcher () =
         class
-            abstract member Register : Address * EntityModel * World -> World
+            abstract member Init : Entity -> Entity
+            default this.Init entity = entity
+
+            abstract member Register : Address * Entity * World -> World
             default this.Register (_, _, world) = world
 
-            abstract member Unregister : Address * EntityModel * World -> World
+            abstract member Unregister : Address * Entity * World -> World
             default this.Unregister (_, _, world) = world
 
-            abstract member HandleIntegrationMessage : IntegrationMessage * Address * EntityModel * World -> World
+            abstract member HandleIntegrationMessage : IntegrationMessage * Address * Entity * World -> World
             default this.HandleIntegrationMessage (_, _, _, world) = world
 
-            abstract member GetRenderDescriptors : EntityModel * IXDispatcherContainer -> RenderDescriptor list
+            abstract member GetRenderDescriptors : Entity * IXDispatcherContainer -> RenderDescriptor list
             default this.GetRenderDescriptors (_, _) = []
 
-            abstract member GetQuickSize : EntityModel * IXDispatcherContainer -> Vector2
+            abstract member GetQuickSize : Entity * World -> Vector2
             default this.GetQuickSize (_, _) = Vector2 DefaultEntitySize
-    
+
             end
+
+    type ButtonDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = false }
+                (((entity''
+                    ?IsDown <- false)
+                    ?UpSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                    ?DownSprite <- { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                    ?ClickSound <- { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+            override this.GetQuickSize (entity, world) =
+                let sprite = entity?UpSprite ()
+                getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+
+    type LabelDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = false }
+                entity''?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+            override this.GetQuickSize (entity, world) =
+                let sprite = entity?LabelSprite ()
+                getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+
+    type TextBoxDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = false }
+                ((((entity''
+                        ?BoxSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?Text <- String.Empty)
+                        ?TextFont <- { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?TextOffset <- Vector2.Zero)
+                        ?TextColor <- Vector4.One
+
+            override this.GetQuickSize (entity, world) =
+                let sprite = entity?BoxSprite ()
+                getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+
+    type ToggleDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = false }
+                ((((entity''
+                        ?IsOn <- false)
+                        ?IsPressed <- false)
+                        ?OffSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?OnSprite <- { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?ToggleSound <- { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+            override this.GetQuickSize (entity, world) =
+                let sprite = entity?OffSprite ()
+                getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+
+    type FeelerDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = false }
+                entity''?IsTouched <- false
+
+            override this.GetQuickSize (entity, world) =
+                Vector2 64.0f
+
+    type BlockDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = true }
+                (((entity''
+                    ?PhysicsId <- InvalidPhysicsId)
+                    ?Density <- NormalDensity)
+                    ?BodyType <- BodyType.Dynamic)
+                    ?Sprite <- { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+            override this.GetQuickSize (entity, world) =
+                let sprite = entity?Sprite ()
+                getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+
+    type AvatarDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = true }
+                ((entity''
+                    ?PhysicsId <- InvalidPhysicsId)
+                    ?Density <- NormalDensity)
+                    ?Sprite <- { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+
+            override this.GetQuickSize (entity, world) =
+                let sprite = entity?Sprite ()
+                getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+
+    type TileMapDispatcher () =
+        inherit EntityDispatcher ()
+            override this.Init entity =
+                let tmxMap = TmxMap "Assets/Default/TileMap.tmx"
+                let entity' = base.Init entity
+                let entity'' = { entity with IsTransformRelative = true }
+                ((((entity''
+                        ?PhysicsIds <- [])
+                        ?Density <- NormalDensity)
+                        ?TileMapAsset <- { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?TmxMap <- tmxMap)
+                        ?TileMapSprites <- [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]
+
+            override this.GetQuickSize (entity, world) =
+                let map = entity?TmxMap () : TmxMap
+                Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
     let registerEntityXtension address world =
         match get world <| worldOptEntityModelLens address with
