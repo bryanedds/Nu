@@ -16,13 +16,9 @@ module GameModule =
     // NOTE: for simulation types, value semantics are preferred over open semantics as it eases
     // serialization and other forms of automation. However, perhaps there is a way to get both...
 
-    let gameLens =
-        { Get = fun world -> world.Game
-          Set = fun game world -> { world with Game = game }}
-
     let gameIdLens =
-        { Get = fun world -> (get world gameLens).Id
-          Set = fun value world -> set { get world gameLens with Id = value } world gameLens }
+        { Get = fun (game : Game) -> game.Id
+          Set = fun value game -> { game with Id = value }}
 
     let gameXtensionLens =
         { Get = fun (game : Game) -> game.Xtension
@@ -32,17 +28,9 @@ module GameModule =
         { Get = fun (game : Game) -> (?) game memberName
           Set = fun value game -> (?<-) game memberName value }
 
-    let cameraLens =
-        { Get = fun world -> world.Camera
-          Set = fun camera world -> { world with Camera = camera }}
-
-    let mouseStateLens =
-        { Get = fun world -> world.MouseState
-          Set = fun mouseState world -> { world with MouseState = mouseState }}
-
     let worldOptSelectedScreenAddressLens =
-        { Get = fun world -> (get world gameLens).OptSelectedScreenAddress
-          Set = fun value world -> set { (get world gameLens) with OptSelectedScreenAddress = value } world gameLens }
+        { Get = fun world -> world.Game.OptSelectedScreenAddress
+          Set = fun value world -> { world with Game = { world.Game with OptSelectedScreenAddress = value }}}
 
     let worldOptSelectedScreenLens =
         { Get = fun world ->
