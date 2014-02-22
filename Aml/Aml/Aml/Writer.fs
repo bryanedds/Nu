@@ -9,7 +9,7 @@ open Aml.Ast
 open Aml.Constants
 open Aml.Primitives
 
-/// TODO: Consider using lazy lists or difference lists for string appending.
+/// TODO: Consider using lazy lists or difference lists for faster string appending (would Seqs also work?)
 
 /// Insert a space between strings.
 let private (<+>) x y = x + SpaceStr + y
