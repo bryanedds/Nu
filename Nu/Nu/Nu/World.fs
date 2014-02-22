@@ -676,6 +676,10 @@ module WorldModule =
         inherit EntityDispatcher ()
         
             override this.Init (tileMap, dispatcherContainer) =
+
+                // TODO: contrive of an 'ActiveField' type that can combine TmxMapAsset with TmxMap and TileMapSprites
+                // that allows specialization of setting and serialization behavior.
+
                 let tmxMap = TmxMap "Assets/Default/TileMap.tmx"
                 let tileMap' = base.Init (tileMap, dispatcherContainer)
                 let tileMap'' = { tileMap with IsTransformRelative = true }
