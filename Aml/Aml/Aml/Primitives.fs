@@ -558,7 +558,8 @@ let makeTypeEntry typeName doc optPositions =
     TypeEntry (typeName, makeType typeName optPositions, doc)
 
 /// Overlay an environment with the executing one.
-/// TODO: Consider using lazy lists or difference lists so that appending here is constant-time.
+/// TODO: Consider using lazy lists or difference lists so that appending here is constant-time
+/// (would Seqs also work?)
 let overlayEnv (optEnv : Env option) env =
     match optEnv with
     | Some someEnv ->

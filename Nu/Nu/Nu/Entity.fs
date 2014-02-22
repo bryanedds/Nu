@@ -225,7 +225,6 @@ module EntityModule =
         setModelProperties entityNode entity
         let entity' =
             // special-case for tile maps
-            // TODO: see if this can be moved into TileMapDispatcher.Init
             match Map.tryFind (Lun.make "TileMapAsset") entity.Xtension.XFields with
             | None -> entity
             | Some tileMapAssetObj ->
