@@ -435,7 +435,6 @@ module WorldModule =
     let unregisterTileMapPhysics address tileMap world =
         List.fold unregisterTilePhysics world <| tileMap?PhysicsIds ()
 
-    // TODO: try to use normal F# call conventions rather than param tuples
     type EntityDispatcher () =
         class
 
@@ -967,7 +966,7 @@ module WorldModule =
                       Lun.make typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
                       Lun.make typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                       Lun.make typeof<GameDispatcher>.Name, GameDispatcher () :> obj
-                      // TODO: reemove these when editor has a way to specify the GameDispatcher
+                      // TODO: remove these when editor has a way to specify the GameDispatcher
                       Lun.make typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
                       Lun.make typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj
                       Lun.make typeof<OmniGameDispatcher>.Name, OmniGameDispatcher () :> obj|]
