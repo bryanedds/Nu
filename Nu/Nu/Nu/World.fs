@@ -422,7 +422,7 @@ module WorldModule =
 
     let registerTileMapPhysics address tileMap world =
         let collisionLayer = 0 // MAGIC_VALUE: assumption
-        let tmd = makeTileMapData tileMap
+        let tmd = makeTileMapData tileMap world
         let tld = makeTileLayerData tileMap tmd collisionLayer
         let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld address) (world, []) tld.Tiles
         let tileMap' = tileMap?PhysicsIds <- physicsIds
@@ -456,8 +456,8 @@ module WorldModule =
             abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
             default this.HandleBodyTransformMessage (message, address, entity, world) = world
 
-            abstract member GetRenderDescriptors : Vector2 * Entity * IXDispatcherContainer -> RenderDescriptor list
-            default this.GetRenderDescriptors (view, entity, dispatcherContainer) = []
+            abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
+            default this.GetRenderDescriptors (view, entity, world) = []
 
             abstract member GetQuickSize : Entity * World -> Vector2
             default this.GetQuickSize (entity, world) = Vector2 DefaultEntitySize
@@ -488,7 +488,7 @@ module WorldModule =
                     unsubscribe DownMouseLeftAddress address |>
                     unsubscribe UpMouseLeftAddress address
 
-            override this.GetRenderDescriptors (view, button, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, button, world) =
                 if not button.Visible then []
                 else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = button.Position; Size = button.Size; Rotation = 0.0f; Sprite = (if button?IsDown () then button?DownSprite () else button?UpSprite ()); Color = Vector4.One }; Depth = button.Depth })]
 
@@ -504,7 +504,7 @@ module WorldModule =
                 let label'' = { label with IsTransformRelative = false }
                 label''?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
 
-            override this.GetRenderDescriptors (view, label, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, label, world) =
                 if not label.Visible then []
                 else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = label.Position; Size = label.Size; Rotation = 0.0f; Sprite = label?LabelSprite (); Color = Vector4.One }; Depth = label.Depth })]
 
@@ -525,7 +525,7 @@ module WorldModule =
                         ?TextOffset <- Vector2.Zero)
                         ?TextColor <- Vector4.One
 
-            override this.GetRenderDescriptors (view, textBox, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, textBox, world) =
                 if not textBox.Visible then []
                 else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = textBox.Position; Size = textBox.Size; Rotation = 0.0f; Sprite = textBox?BoxSprite (); Color = Vector4.One }; Depth = textBox.Depth })
                       LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox?Text (); Position = textBox.Position + textBox?TextOffset (); Size = textBox.Size - textBox?TextOffset (); Font = textBox?TextFont (); Color = textBox?TextColor () }; Depth = textBox.Depth })]
@@ -559,7 +559,7 @@ module WorldModule =
                     unsubscribe DownMouseLeftAddress address |>
                     unsubscribe UpMouseLeftAddress address
 
-            override this.GetRenderDescriptors (view, toggle, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, toggle, world) =
                 if not toggle.Visible then []
                 else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = toggle.Position; Size = toggle.Size; Rotation = 0.0f; Sprite = (if toggle?IsOn () || toggle?IsPressed () then toggle?OnSprite () else toggle?OffSprite ()); Color = Vector4.One }; Depth = toggle.Depth })]
 
@@ -623,7 +623,7 @@ module WorldModule =
                                           Rotation = message.Rotation }
                 set block' world <| worldEntityLens message.EntityAddress
             
-            override this.GetRenderDescriptors (view, block, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, block, world) =
                 if not block.Visible then []
                 else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = block.Position - view; Size = block.Size; Rotation = block.Rotation; Sprite = block?Sprite (); Color = Vector4.One }; Depth = block.Depth })]
 
@@ -663,7 +663,7 @@ module WorldModule =
                                             Rotation = message.Rotation }
                 set avatar' world <| worldEntityLens message.EntityAddress
 
-            override this.GetRenderDescriptors (view, avatar, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, avatar, world) =
                 if not avatar.Visible then []
                 else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = avatar.Position - view; Size = avatar.Size; Rotation = avatar.Rotation; Sprite = avatar?Sprite (); Color = Vector4.One }; Depth = avatar.Depth })]
 
@@ -675,19 +675,12 @@ module WorldModule =
         inherit EntityDispatcher ()
         
             override this.Init (tileMap, dispatcherContainer) =
-
-                // TODO: contrive of an 'ActiveField' type that can combine TmxMapAsset with TmxMap and TileMapSprites
-                // that allows specialization of setting and serialization behavior.
-
-                let tmxMap = TmxMap "Assets/Default/TileMap.tmx"
                 let tileMap' = base.Init (tileMap, dispatcherContainer)
                 let tileMap'' = { tileMap with IsTransformRelative = true }
-                ((((tileMap''
-                        ?PhysicsIds <- [])
-                        ?Density <- NormalDensity)
-                        ?TileMapAsset <- { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                        ?TmxMap <- tmxMap)
-                        ?TileMapSprites <- [{ SpriteAssetName = Lun.make "TileSet"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }]
+                ((tileMap''
+                    ?PhysicsIds <- [])
+                    ?Density <- NormalDensity)
+                    ?TileMapAsset <- { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
 
             override this.Register (address, tileMap, world) =
                 registerTileMapPhysics address tileMap world
@@ -705,31 +698,36 @@ module WorldModule =
                 let (tileMap', world'') = registerTileMapPhysics address tileMap world'
                 set tileMap' world'' <| worldEntityLens address
 
-            override this.GetRenderDescriptors (view, tileMap, dispatcherContainer) =
+            override this.GetRenderDescriptors (view, tileMap, world) =
                 if not tileMap.Visible then []
                 else
-                    let map = tileMap?TmxMap () : TmxMap
-                    let layers = List.ofSeq map.Layers
-                    List.mapi
-                        (fun i (layer : TmxLayer) ->
-                            let layeredTileLayerDescriptor =
-                                LayeredTileLayerDescriptor
-                                    { Descriptor =
-                                        { Position = tileMap.Position - view
-                                          Size = tileMap.Size
-                                          Rotation = tileMap.Rotation
-                                          MapSize = Vector2 (single map.Width, single map.Height)
-                                          Tiles = layer.Tiles
-                                          TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                                          TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                          TileSetSprite = List.head <| tileMap?TileMapSprites () } // MAGIC_VALUE: for same reason as above
-                                      Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
-                            LayerableDescriptor layeredTileLayerDescriptor)
-                        layers
+                    let tileMapAsset = tileMap?TileMapAsset ()
+                    match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+                    | None -> []
+                    | Some (_, sprites, map) ->
+                        let layers = List.ofSeq map.Layers
+                        List.mapi
+                            (fun i (layer : TmxLayer) ->
+                                let layeredTileLayerDescriptor =
+                                    LayeredTileLayerDescriptor
+                                        { Descriptor =
+                                            { Position = tileMap.Position - view
+                                              Size = tileMap.Size
+                                              Rotation = tileMap.Rotation
+                                              MapSize = Vector2 (single map.Width, single map.Height)
+                                              Tiles = layer.Tiles
+                                              TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                                              TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                              TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
+                                          Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
+                                LayerableDescriptor layeredTileLayerDescriptor)
+                            layers
 
             override this.GetQuickSize (tileMap, world) =
-                let map = tileMap?TmxMap () : TmxMap
-                Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
+                let tileMapAsset = tileMap?TileMapAsset ()
+                match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+                | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
+                | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
     let registerEntity address entity world =
         entity?Register (address, entity, world)

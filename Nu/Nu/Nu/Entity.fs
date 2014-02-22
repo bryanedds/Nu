@@ -168,16 +168,19 @@ module EntityModule =
         let transform = getEntityTransform None dispatcherContainer entity
         transform.Depth
 
-    let makeTileMapData (tileMap : Entity) =
-        let map = tileMap?TmxMap () : TmxMap
-        let mapSize = (map.Width, map.Height)
-        let tileSize = (map.TileWidth, map.TileHeight)
-        let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
-        let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-        let optTileSetWidth = tileSet.Image.Width
-        let optTileSetHeight = tileSet.Image.Height
-        let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
-        { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+    let makeTileMapData (tileMap : Entity) world =
+        let tileMapAsset = tileMap?TileMapAsset ()
+        match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+        | None -> failwith "Unexpected match failure in Nu.Entity.makeTileMapData."
+        | Some (_, _, map) ->
+            let mapSize = (map.Width, map.Height)
+            let tileSize = (map.TileWidth, map.TileHeight)
+            let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
+            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+            let optTileSetWidth = tileSet.Image.Width
+            let optTileSetHeight = tileSet.Image.Height
+            let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
+            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
     let makeTileLayerData tileMap tmd (layerIndex : int) =
         let layer = tmd.Map.Layers.[layerIndex]
@@ -223,16 +226,4 @@ module EntityModule =
         // TODO: create entity with loaded XTypeName
         let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None world
         setModelProperties entityNode entity
-        let entity' =
-            // special-case for tile maps
-            match Map.tryFind (Lun.make "TileMapAsset") entity.Xtension.XFields with
-            | None -> entity
-            | Some tileMapAssetObj ->
-                let tileMapAsset = tileMapAssetObj :?> TileMapAsset
-                let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
-                match optTileMapMetadata with
-                | None -> entity
-                | Some (tileMapFileName, tileMapSprites) ->
-                    let entity' = entity?TmxMap <- TmxMap tileMapFileName
-                    entity'?TileMapSprites <- tileMapSprites
-        entity'
+        entity
