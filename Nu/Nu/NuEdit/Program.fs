@@ -122,19 +122,6 @@ module Program =
                     | _ ->
                         let world_ = setEntityPropertyValue entityTds.Address property value world
                         let entity_ = get world_ <| worldEntityLens entityTds.Address
-                        let entity_ =
-                            // handle special case for TileMapAsset field change
-                            match propertyName with
-                            | "TileMapAsset" -> // MAGIC_VALUE
-                                let tileMapAsset = entity_?TileMapAsset ()
-                                let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world_.AssetMetadataMap
-                                match optTileMapMetadata with
-                                | None -> entity_
-                                | Some (tileMapFileName, tileMapSprites) ->
-                                    let entity_ = entity_?TmxMap <- TmxMap tileMapFileName
-                                    entity_?TileMapSprites <- tileMapSprites
-                            | _ -> entity_
-                        let world_ = set entity_ world_ <| worldEntityLens entityTds.Address
                         entity_?PropagatePhysics (entityTds.Address, entity_, world_)
                 pushPastWorld world world_)
             entityTds.RefWorld := changer !entityTds.RefWorld
