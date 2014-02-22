@@ -97,13 +97,15 @@ module Program =
                 let entity = get !entityTds.RefWorld <| worldEntityLens entityTds.Address
                 getEntityPropertyValue property entity
 
+        // NOTE: the hard-coded special casing going on in this function is really bad :(
         override this.SetValue (source, value) =
             let entityTds = source :?> EntityTypeDescriptorSource
             let changer = (fun world ->
                 let pastWorld = world
                 let world_ =
-                    // handle special case for an entity's Name field change
-                    if propertyName = "Name" then
+                    match propertyName with
+                    | "Name" -> // MAGIC_VALUE
+                        // handle special case for an entity's Name field change
                         let valueStr = str value
                         if Int64.TryParse (valueStr, ref 0L) then
                             trace <| "Invalid entity model name '" + valueStr + "' (must not be a number)."
@@ -118,12 +120,13 @@ module Program =
                             entityTds.RefWorld := world_ // must be set for property grid
                             entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                             world_
-                    else
+                    | _ ->
                         let world_ = setEntityPropertyValue entityTds.Address property value world
                         let entity_ = get world_ <| worldEntityLens entityTds.Address
                         let entity_ =
                             // handle special case for TileMapAsset field change
-                            if propertyName = "TileMapAsset" then
+                            match propertyName with
+                            | "TileMapAsset" -> // MAGIC_VALUE
                                 let tileMapAsset = entity_?TileMapAsset ()
                                 let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world_.AssetMetadataMap
                                 match optTileMapMetadata with
@@ -131,7 +134,7 @@ module Program =
                                 | Some (tileMapFileName, tileMapSprites) ->
                                     let entity_ = entity_?TmxMap <- TmxMap tileMapFileName
                                     entity_?TileMapSprites <- tileMapSprites
-                            else entity_
+                            | _ -> entity_
                         let world_ = set entity_ world_ <| worldEntityLens entityTds.Address
                         entity_?PropagatePhysics (entityTds.Address, entity_, world_)
                 pushPastWorld pastWorld world_)
