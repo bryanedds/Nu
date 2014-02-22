@@ -14,7 +14,7 @@ open Nu.Rendering
 
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of int * int
-    | TileMapMetadata of string * Sprite list
+    | TileMapMetadata of string * Sprite list * TmxMap
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -50,7 +50,7 @@ module Metadata =
                                             | ".bmp"
                                             | ".png" -> use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
                                             | ".tmx" ->
-                                                let tmxMap = new TmxMap (asset.FileName)
+                                                let tmxMap = TmxMap asset.FileName
                                                 let tileSets = List.ofSeq tmxMap.Tilesets
                                                 let tileSetSprites =
                                                     List.map
@@ -60,7 +60,7 @@ module Metadata =
                                                               PackageName = Lun.make tileSetProperties.["PackageName"]
                                                               PackageFileName = tileSetProperties.["PackageFileName"] })
                                                         tileSets
-                                                TileMapMetadata (asset.FileName, tileSetSprites)
+                                                TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
                                             | ".wav" -> SoundMetadata
                                             | ".ogg" -> SongMetadata
                                             | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
@@ -102,7 +102,7 @@ module Metadata =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
         | None -> None
-        | Some (TileMapMetadata (fileName, sprites)) -> Some (fileName, sprites)
+        | Some (TileMapMetadata (fileName, sprites, tmxMap)) -> Some (fileName, sprites, tmxMap)
         | _ -> None
 
     let getTileMapMetadata assetName packageName assetMetadataMap =
