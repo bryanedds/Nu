@@ -74,7 +74,11 @@ module DomainModel =
                     writer.WriteStartElement property.Name
                     writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name.LunStr)
                     for xField in xtension.XFields do
-                        if (xField.Key.LunStr.EndsWith "Id" || xField.Key.LunStr.EndsWith "Ids") then ()
+                        let xFieldName = xField.Key.LunStr
+                        if (xFieldName.EndsWith "Id" ||
+                            xFieldName.EndsWith "Ids" ||
+                            xFieldName = "TileMapSprites" || // MAGIC_VALUE
+                            xFieldName = "TmxMap") then ()
                         else
                             let xValue = xField.Value
                             let xType = xValue.GetType ()

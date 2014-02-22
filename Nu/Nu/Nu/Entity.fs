@@ -219,8 +219,21 @@ module EntityModule =
         writeModelProperties writer entity
         writer.WriteEndElement ()
 
-    let loadEntityFromXml (entityNode : XmlNode) dispatcherContainer =
+    let loadEntityFromXml (entityNode : XmlNode) (world : World) =
         // TODO: create entity with loaded XTypeName
-        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None dispatcherContainer
+        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None world
         setModelProperties entityNode entity
-        entity
+        let entity' =
+            // special-case for tile maps
+            // TODO: see if this can be moved into TileMapDispatcher.Init
+            match Map.tryFind (Lun.make "TileMapAsset") entity.Xtension.XFields with
+            | None -> entity
+            | Some tileMapAssetObj ->
+                let tileMapAsset = tileMapAssetObj :?> TileMapAsset
+                let optTileMapMetadata = tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
+                match optTileMapMetadata with
+                | None -> entity
+                | Some (tileMapFileName, tileMapSprites) ->
+                    let entity' = entity?TmxMap <- TmxMap tileMapFileName
+                    entity'?TileMapSprites <- tileMapSprites
+        entity'
