@@ -15,6 +15,18 @@
     <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
     <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
   </package>
+  <package name="OmniUI">
+    <asset name="BackButtonUp" fileName="Assets/OmniBlade/Gui/BackButtonUp.png" associations="Rendering"/>
+    <asset name="BackButtonDown" fileName="Assets/OmniBlade/Gui/BackButtonDown.png" associations="Rendering"/>
+    <asset name="ExitButtonUp" fileName="Assets/OmniBlade/Gui/ExitButtonUp.png" associations="Rendering"/>
+    <asset name="ExitButtonDown" fileName="Assets/OmniBlade/Gui/ExitButtonDown.png" associations="Rendering"/>
+    <asset name="NewGameButtonUp" fileName="Assets/OmniBlade/Gui/NewGameButtonUp.png" associations="Rendering"/>
+    <asset name="NewGameButtonDown" fileName="Assets/OmniBlade/Gui/NewGameButtonDown.png" associations="Rendering"/>
+    <asset name="LoadGameButtonUp" fileName="Assets/OmniBlade/Gui/LoadGameButtonUp.png" associations="Rendering"/>
+    <asset name="LoadGameButtonDown" fileName="Assets/OmniBlade/Gui/LoadGameButtonDown.png" associations="Rendering"/>
+    <asset name="CreditsButtonUp" fileName="Assets/OmniBlade/Gui/CreditsButtonUp.png" associations="Rendering"/>
+    <asset name="CreditsButtonDown" fileName="Assets/OmniBlade/Gui/CreditsButtonDown.png" associations="Rendering"/>
+  </package>
   <package name="OmniBattle">
     <asset name="Ally" fileName="Assets/OmniBlade/Battle/Placeholder/Ally.png" associations="Rendering"/>
     <asset name="AllyDamage" fileName="Assets/OmniBlade/Battle/Placeholder/AllyDamage.png" associations="Rendering"/>

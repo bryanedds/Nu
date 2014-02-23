@@ -213,6 +213,36 @@
     <None Include="Assets\OmniBlade\Groups\Credits.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Assets\OmniBlade\Gui\BackButtonUp.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\CreditsButtonDown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\CreditsButtonUp.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\ExitButtonDown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\ExitButtonUp.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\LoadGameButtonDown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\LoadGameButtonUp.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\NewGameButtonDown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\NewGameButtonUp.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\OmniBlade\Gui\BackButtonDown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Interactive.fsx" />
     <None Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
