@@ -50,12 +50,12 @@
       <Xtension xType="ButtonDispatcher">
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">10</Depth>
-        <UpSprite type="Nu.Sprite">BackButtonUp;OmniUI;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
         <Position type="OpenTK.Vector2">376;448</Position>
         <IsDown type="System.Boolean">False</IsDown>
-        <DownSprite type="Nu.Sprite">BackButtonDown;OmniUI;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.Sprite">BackButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>

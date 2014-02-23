@@ -19,9 +19,11 @@ open Nu.WorldModule
 module OmniBlade =
 
     // transition literals
+    let IncomingTimeSplash = 60
     let IncomingTime = 20
     let IdlingTime = 60
-    let OutgoingTime = 40
+    let OutgoingTimeSplash = 40
+    let OutgoingTime = 20
 
     // splash literals
     let SplashAddress = addr "Splash"
@@ -87,7 +89,7 @@ module OmniBlade =
             let playSong = PlaySong { Song = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }; FadeOutCurrentSong = true }
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
             let world_ = { world with AudioMessages = playSong :: world.AudioMessages }
-            let world_ = addSplashScreen (transitionScreenHandler TitleAddress) SplashAddress IncomingTime IdlingTime OutgoingTime splashScreenSprite world_
+            let world_ = addSplashScreen (transitionScreenHandler TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world_
             let world_ = createTitleScreen world_
             let world_ = createLoadScreen world_
             let world_ = createCreditsScreen world_
