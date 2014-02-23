@@ -1,5 +1,7 @@
 ﻿namespace Nu
+open System
 open OpenTK
+open Nu.Core
 module Constants =
 
     let DesiredFps = 60
@@ -15,3 +17,20 @@ module Constants =
     let DegreesToRadiansF = single DegreesToRadians
     let DefaultEntitySize = 64.0f
     let DefaultEntityRotation = 0.0f
+    let TickAddress = addr "Tick"
+    let MouseDragAddress = addr "Mouse/Drag"
+    let MouseMoveAddress = addr "Mouse/Move"
+    let MouseLeftAddress = addr "Mouse/Left"
+    let MouseCenterAddress = addr "Mouse/Center"
+    let MouseRightAddress = addr "Mouse/Right"
+    let DownMouseLeftAddress = straddr "Down" MouseLeftAddress
+    let DownMouseCenterAddress = straddr "Down" MouseCenterAddress
+    let DownMousRightAddress = straddr "Down" MouseRightAddress
+    let UpMouseLeftAddress = straddr "Up" MouseLeftAddress
+    let UpMouseCenterAddress = straddr "Up" MouseCenterAddress
+    let UpMouseRightAddress = straddr "Up" MouseRightAddress
+    let FinishedIncomingAddressPart = addr "Finished/Incoming"
+    let FinishedOutgoingAddressPart = addr "Finished/Outgoing"
+    let GamePublishingPriority = Single.MaxValue
+    let ScreenPublishingPriority = GamePublishingPriority * 0.5f
+    let GroupPublishingPriority = ScreenPublishingPriority * 0.5f

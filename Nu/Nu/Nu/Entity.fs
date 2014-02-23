@@ -19,6 +19,36 @@ open Nu.Rendering
 open Nu.Metadata
 open Nu.DomainModel
 open Nu.CameraModule
+
+type EntityDispatcher () =
+    class
+
+        abstract member Init : Entity * IXDispatcherContainer -> Entity
+        default this.Init (entity, dispatcherContainer) = entity
+
+        abstract member Register : Address * Entity * World -> Entity * World
+        default this.Register (address, entity, world) = (entity, world)
+
+        abstract member Unregister : Address * Entity * World -> World
+        default this.Unregister (address, entity, world) = world
+
+        abstract member PropagatePhysics : Address * Entity * World -> World
+        default this.PropagatePhysics (address, entity, world) = world
+
+        abstract member ReregisterPhysicsHack : Address * Entity * World -> World
+        default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
+
+        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
+        default this.HandleBodyTransformMessage (message, address, entity, world) = world
+
+        abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
+        default this.GetRenderDescriptors (view, entity, world) = []
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default this.GetQuickSize (entity, world) = Vector2 DefaultEntitySize
+
+        end
+
 module EntityModule =
 
     let entityIdLens =
@@ -214,6 +244,38 @@ module EntityModule =
             let entity = makeDefaultEntity2 xTypeName optName
             entity?Init (entity, dispatcherContainer) : Entity
 
+    let registerEntity address entity world =
+        entity?Register (address, entity, world)
+
+    let unregisterEntity address world =
+        let entity = get world <| worldEntityLens address
+        entity?Unregister (address, entity, world)
+
+    let removeEntity address world =
+        let world' = unregisterEntity address world
+        set None world' <| worldOptEntityLens address
+
+    let removeEntities address world =
+        let entities = get world <| worldEntitiesLens address
+        Map.fold
+            (fun world' entityName _ -> removeEntity (address @ [entityName]) world')
+            world
+            entities
+
+    let addEntity address entity world =
+        let world' =
+            match get world <| worldOptEntityLens address with
+            | None -> world
+            | Some _ -> removeEntity address world
+        let (entity', world'') = registerEntity address entity world'
+        set entity' world'' <| worldEntityLens address
+
+    let addEntities address entities world =
+        List.fold
+            (fun world' entity -> addEntity (addrstr address entity.Name) entity world')
+            world
+            entities
+
     let writeEntityToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name
         writeModelProperties writer entity
@@ -221,6 +283,6 @@ module EntityModule =
 
     let loadEntityFromXml (entityNode : XmlNode) (world : World) =
         // TODO: create entity with loaded XTypeName
-        let entity = makeDefaultEntity (Lun.make "EntityDispatcher") None world
+        let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None world
         setModelProperties entityNode entity
         entity

@@ -4,7 +4,30 @@ open FSharpx
 open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
+open Nu.Constants
 open Nu.DomainModel
+open Nu.GroupModule
+
+type GroupDescriptor =
+    Lun * Group * Entity list
+
+type TransitionDispatcher () =
+    class
+        end
+
+type ScreenDispatcher () =
+    class
+        
+        abstract member Register : Address * Screen * GroupDescriptor list * World -> World
+        default this.Register (address, _, groupDescriptors, world) =
+            addGroups address groupDescriptors world
+
+        abstract member Unregister : Address * Screen * World -> World
+        default this.Unregister (address, _, world) =
+            removeGroups address world
+
+        end
+
 module ScreenModule =
 
     let transitionIdLens =
@@ -116,3 +139,22 @@ module ScreenModule =
         let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
         let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite  }
         { makeDefaultScreen () with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+
+    let registerScreen address screen (groupDescriptors : GroupDescriptor list) world =
+        screen?Register (address, screen, groupDescriptors, world)
+
+    let unregisterScreen address world =
+        let screen = get world <| worldScreenLens address
+        screen?Unregister (address, screen, world)
+
+    let removeScreen address world =
+        let world' = unregisterScreen address world
+        set None world' (worldOptScreenLens address)
+
+    let addScreen address screen groupDescriptors world =
+        let world' =
+            match get world <| worldOptScreenLens address with
+            | None -> world
+            | Some _ -> removeScreen address world
+        let world'' = registerScreen address screen groupDescriptors world'
+        set screen world'' (worldScreenLens address)

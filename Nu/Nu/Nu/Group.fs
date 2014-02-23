@@ -9,6 +9,18 @@ open Nu
 open Nu.Core
 open Nu.DomainModel
 open Nu.EntityModule
+
+type GroupDispatcher () =
+    class
+        
+        abstract member Register : Address * Group * Entity list * World -> World
+        default this.Register (address, _, entities, world) = addEntities address entities world
+
+        abstract member Unregister : Address * Group * World -> World
+        default this.Unregister (address, _, world) = removeEntities address world
+
+        end
+
 module GroupModule =
 
     let groupIdLens =
@@ -72,7 +84,39 @@ module GroupModule =
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
-          Xtension = { OptXTypeName = Some <| Lun.make "GroupDispatcher"; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some <| Lun.make typeof<GroupDispatcher>.Name; XFields = Map.empty }}
+
+    let registerGroup address (group : Group) entities world =
+        group?Register (address, group, entities, world)
+
+    let unregisterGroup address world =
+        let group = get world <| worldGroupLens address
+        group?Unregister (address, group, world)
+
+    let removeGroup address world =
+        let world' = unregisterGroup address world
+        set None world' (worldOptGroupLens address)
+
+    let removeGroups address world =
+        let groups = get world <| worldGroupsLens address
+        Map.fold
+            (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
+            world
+            groups
+
+    let addGroup address (group : Group, entities) world =
+        let world' =
+            match get world <| worldOptGroupLens address with
+            | None -> world
+            | Some _ -> removeGroup address world
+        let world'' = registerGroup address group entities world'
+        set group world'' <| worldGroupLens address
+
+    let addGroups address groupDescriptors world =
+        List.fold
+            (fun world' (groupName, group, entities) -> addGroup (address @ [groupName]) (group, entities) world')
+            world
+            groupDescriptors
 
     let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<Lun, Entity>) =
         for entityKvp in entities do
