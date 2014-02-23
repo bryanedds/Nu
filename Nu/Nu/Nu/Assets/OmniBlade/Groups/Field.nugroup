@@ -3,6 +3,33 @@
   <Nu.Group>
     <Xtension xType="OmniFieldGroupDispatcher" />
     <Entity>
+      <Name>Avatar</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xType="AvatarDispatcher">
+        <IsTransformRelative type="System.Boolean">True</IsTransformRelative>
+        <Depth type="System.Single">2</Depth>
+        <Size type="OpenTK.Vector2">64;64</Size>
+        <Position type="OpenTK.Vector2">106.7553;10.11232</Position>
+        <Sprite type="Nu.Sprite">Image7;Default;AssetGraph.xml</Sprite>
+        <Rotation type="System.Single">0</Rotation>
+        <Density type="System.Single">10</Density>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>Feeler</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xType="FeelerDispatcher">
+        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
+        <Depth type="System.Single">-5</Depth>
+        <Size type="OpenTK.Vector2">960;544</Size>
+        <Position type="OpenTK.Vector2">0;0</Position>
+        <IsTouched type="System.Boolean">False</IsTouched>
+        <Rotation type="System.Single">0</Rotation>
+      </Xtension>
+    </Entity>
+    <Entity>
       <Name>be5eff5e-18e8-4ec9-9370-0994fb4d6565</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
@@ -23,39 +50,12 @@
       <Xtension xType="ButtonDispatcher">
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">10</Depth>
-        <UpSprite type="Nu.Sprite">Image;Default;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.Sprite">BackButtonUp;OmniUI;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
         <Position type="OpenTK.Vector2">376;448</Position>
         <IsDown type="System.Boolean">False</IsDown>
-        <DownSprite type="Nu.Sprite">Image2;Default;AssetGraph.xml</DownSprite>
-        <Rotation type="System.Single">0</Rotation>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>Avatar</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-      <Xtension xType="AvatarDispatcher">
-        <IsTransformRelative type="System.Boolean">True</IsTransformRelative>
-        <Depth type="System.Single">2</Depth>
-        <Size type="OpenTK.Vector2">64;64</Size>
-        <Position type="OpenTK.Vector2">-208;191.5487</Position>
-        <Sprite type="Nu.Sprite">Image7;Default;AssetGraph.xml</Sprite>
-        <Rotation type="System.Single">0</Rotation>
-        <Density type="System.Single">10</Density>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>Feeler</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-      <Xtension xType="FeelerDispatcher">
-        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
-        <Depth type="System.Single">-5</Depth>
-        <Size type="OpenTK.Vector2">960;544</Size>
-        <Position type="OpenTK.Vector2">0;0</Position>
-        <IsTouched type="System.Boolean">False</IsTouched>
+        <DownSprite type="Nu.Sprite">BackButtonDown;OmniUI;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
