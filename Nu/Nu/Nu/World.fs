@@ -562,14 +562,14 @@ module WorldModule =
                     ?IsTransformRelative <- false)
                     ?IsTouched <- false
 
-            override this.Register (address, textBox, world) =
+            override this.Register (address, feeler, world) =
                 let world' =
                     world |>
                     subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft |>
                     subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft
-                (textBox, world)
+                (feeler, world')
 
-            override this.Unregister (address, textBox, world) =
+            override this.Unregister (address, feeler, world) =
                 world |>
                     unsubscribe UpMouseLeftAddress address |>
                     unsubscribe DownMouseLeftAddress address

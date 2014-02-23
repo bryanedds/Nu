@@ -1,49 +1,52 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
-    <ModelType />
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Button</ModelType>
-      <Entity>Nu.Entity</Entity>
-      <IsDown>False</IsDown>
-      <UpSprite>Image;Default;AssetGraph.xml</UpSprite>
-      <DownSprite>Image2;Default;AssetGraph.xml</DownSprite>
-      <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-      <Position>336;456</Position>
-      <Depth>0</Depth>
-      <Size>256;64</Size>
-      <Name>Save</Name>
+  <Nu.Group>
+    <Xtension xType="GroupDispatcher" />
+    <Entity>
+      <Name>Back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Rotation>0</Rotation>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+TextBox</ModelType>
-      <Entity>Nu.Entity</Entity>
-      <BoxSprite>Image4;Default;AssetGraph.xml</BoxSprite>
-      <Text>You have died. The OmniBlade beckons you back in time.</Text>
-      <TextFont>Font;Default;AssetGraph.xml</TextFont>
-      <TextOffset>0;0</TextOffset>
-      <TextColor>1;1;1;1</TextColor>
-      <Position>144;32</Position>
-      <Depth>0</Depth>
-      <Size>640;128</Size>
-      <Name>23</Name>
+      <Xtension xType="ButtonDispatcher">
+        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
+        <Depth type="System.Single">0</Depth>
+        <UpSprite type="Nu.Sprite">Image;Default;AssetGraph.xml</UpSprite>
+        <ClickSound type="Nu.Sound">Sound;Default;AssetGraph.xml</ClickSound>
+        <Size type="OpenTK.Vector2">256;64</Size>
+        <Position type="OpenTK.Vector2">376;448</Position>
+        <IsDown type="System.Boolean">False</IsDown>
+        <DownSprite type="Nu.Sprite">Image2;Default;AssetGraph.xml</DownSprite>
+        <Rotation type="System.Single">0</Rotation>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Rotation>0</Rotation>
-    </EntityModel>
-    <EntityModel>
-      <ModelType>Nu.EntityModel+Label</ModelType>
-      <LabelSprite>Image8;Default;AssetGraph.xml</LabelSprite>
-      <Entity>Nu.Entity</Entity>
-      <Position>0;0</Position>
-      <Depth>-1</Depth>
-      <Size>960;544</Size>
-      <Name>21</Name>
+      <Xtension xType="TextBoxDispatcher">
+        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
+        <Depth type="System.Single">0</Depth>
+        <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
+        <Text type="System.String">You have died. The OmniBlade beckons you back in time.</Text>
+        <Size type="OpenTK.Vector2">640;128</Size>
+        <Position type="OpenTK.Vector2">176;64</Position>
+        <BoxSprite type="Nu.Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
+        <TextFont type="Nu.Font">Font;Default;AssetGraph.xml</TextFont>
+        <Rotation type="System.Single">0</Rotation>
+        <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Rotation>0</Rotation>
-    </EntityModel>
-  </Group>
+      <Xtension xType="LabelDispatcher">
+        <LabelSprite type="Nu.Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
+        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
+        <Depth type="System.Single">-1</Depth>
+        <Size type="OpenTK.Vector2">960;544</Size>
+        <Position type="OpenTK.Vector2">0;0</Position>
+        <Rotation type="System.Single">0</Rotation>
+      </Xtension>
+    </Entity>
+  </Nu.Group>
 </Root>
