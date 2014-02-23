@@ -19,9 +19,9 @@ open Nu.WorldModule
 module OmniBlade =
 
     // transition literals
-    let IncomingTime = 60
+    let IncomingTime = 20
     let IdlingTime = 60
-    let OutgoingTime = 30
+    let OutgoingTime = 40
 
     // splash literals
     let SplashAddress = addr "Splash"
