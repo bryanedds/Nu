@@ -15,7 +15,7 @@
     <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
     <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
   </package>
-  <package name="OmniUI">
+  <package name="OmniGui">
     <asset name="BackButtonUp" fileName="Assets/OmniBlade/Gui/BackButtonUp.png" associations="Rendering"/>
     <asset name="BackButtonDown" fileName="Assets/OmniBlade/Gui/BackButtonDown.png" associations="Rendering"/>
     <asset name="ExitButtonUp" fileName="Assets/OmniBlade/Gui/ExitButtonUp.png" associations="Rendering"/>
