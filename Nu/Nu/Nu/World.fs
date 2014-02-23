@@ -29,23 +29,6 @@ open Nu.ScreenModule
 open Nu.GameModule
 module WorldModule =
 
-    let TickAddress = addr "Tick"
-    let MouseDragAddress = addr "Mouse/Drag"
-    let MouseMoveAddress = addr "Mouse/Move"
-    let MouseLeftAddress = addr "Mouse/Left"
-    let MouseCenterAddress = addr "Mouse/Center"
-    let MouseRightAddress = addr "Mouse/Right"
-    let DownMouseLeftAddress = straddr "Down" MouseLeftAddress
-    let DownMouseCenterAddress = straddr "Down" MouseCenterAddress
-    let DownMousRightAddress = straddr "Down" MouseRightAddress
-    let UpMouseLeftAddress = straddr "Up" MouseLeftAddress
-    let UpMouseCenterAddress = straddr "Up" MouseCenterAddress
-    let UpMouseRightAddress = straddr "Up" MouseRightAddress
-    let GamePublishingPriority = Single.MaxValue
-    let ScreenPublishingPriority = GamePublishingPriority * 0.5f
-    let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
-    let FinishedIncomingAddressPart = addr "Finished/Incoming"
-    let FinishedOutgoingAddressPart = addr "Finished/Outgoing"
     let FieldFeelerName = Lun.make "Feeler"
     let FieldAvatarName = Lun.make "Avatar"
 
@@ -60,36 +43,10 @@ module WorldModule =
     let handle message =
         { Handled = true; Data = message.Data }
 
-    let isAddressSelected address world =
-        let optScreenAddress = get world worldOptSelectedScreenAddressLens
-        match (address, optScreenAddress) with
-        | ([], _) -> true
-        | (_, None) -> false
-        | (_, Some []) -> false
-        | (addressHead :: addressTail, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
-
     let sortFstAsc (priority, _) (priority2, _) =
         if priority = priority2 then 0
         elif priority > priority2 then -1
         else 1
-
-    let getPublishingPriority simulant world =
-        match simulant with
-        | Game _ -> GamePublishingPriority
-        | Screen _ -> ScreenPublishingPriority
-        | Group _ -> GroupPublishingPriority
-        | Entity entity -> getPickingPriority world entity
-
-    let getSimulant address world =
-        match address with
-        | [] -> Game <| world.Game
-        | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
-        | [_; _] as groupAddress -> Group <| get world (worldGroupLens groupAddress)
-        | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
-        | _ -> failwith <| "Invalid simulant address '" + str address + "'."
-
-    let getSimulants subscriptions world =
-        List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let pickingSort entities world =
         let priorities = List.map (getPickingPriority world) entities
@@ -107,6 +64,32 @@ module WorldModule =
                     position.Y >= transform.Position.Y &&
                     position.Y < transform.Position.Y + transform.Size.Y)
             entitiesSorted
+
+    let getSimulant address world =
+        match address with
+        | [] -> Game <| world.Game
+        | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
+        | [_; _] as groupAddress -> Group <| get world (worldGroupLens groupAddress)
+        | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
+        | _ -> failwith <| "Invalid simulant address '" + str address + "'."
+
+    let getSimulants subscriptions world =
+        List.map (fun (address, _) -> getSimulant address world) subscriptions
+
+    let isAddressSelected address world =
+        let optScreenAddress = get world worldOptSelectedScreenAddressLens
+        match (address, optScreenAddress) with
+        | ([], _) -> true
+        | (_, None) -> false
+        | (_, Some []) -> false
+        | (addressHead :: addressTail, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
+
+    let getPublishingPriority simulant world =
+        match simulant with
+        | Game _ -> GamePublishingPriority
+        | Screen _ -> ScreenPublishingPriority
+        | Group _ -> GroupPublishingPriority
+        | Entity entity -> getPickingPriority world entity
 
     let subscriptionSort subscriptions world =
         let simulants = getSimulants subscriptions world
@@ -191,6 +174,25 @@ module WorldModule =
 
     let transitionScreenHandler address _ _ message world =
         let world' = transitionScreen address world
+        (handle message, true, world')
+
+    let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
+        let world' = unsubscribe address subscriber world
+        if ticks < idlingTime then
+            let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
+            (message, true, world'')
+        else
+            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
+            match optSelectedScreenAddress with
+            | None ->
+                trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                (message, false, world)
+            | Some selectedScreenAddress ->
+                let world'' = setScreenState selectedScreenAddress OutgoingState world'
+                (message, true, world'')
+
+    let handleSplashScreenIdle idlingTime address subscriber message world =
+        let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
         (handle message, true, world')
 
     let handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
@@ -434,35 +436,6 @@ module WorldModule =
 
     let unregisterTileMapPhysics address tileMap world =
         List.fold unregisterTilePhysics world <| tileMap?PhysicsIds ()
-
-    type EntityDispatcher () =
-        class
-
-            abstract member Init : Entity * IXDispatcherContainer -> Entity
-            default this.Init (entity, dispatcherContainer) = entity
-
-            abstract member Register : Address * Entity * World -> Entity * World
-            default this.Register (address, entity, world) = (entity, world)
-
-            abstract member Unregister : Address * Entity * World -> World
-            default this.Unregister (address, entity, world) = world
-
-            abstract member PropagatePhysics : Address * Entity * World -> World
-            default this.PropagatePhysics (address, entity, world) = world
-
-            abstract member ReregisterPhysicsHack : Address * Entity * World -> World
-            default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
-
-            abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
-            default this.HandleBodyTransformMessage (message, address, entity, world) = world
-
-            abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
-            default this.GetRenderDescriptors (view, entity, world) = []
-
-            abstract member GetQuickSize : Entity * World -> Vector2
-            default this.GetQuickSize (entity, world) = Vector2 DefaultEntitySize
-
-            end
 
     type Entity2dDispatcher () =
         inherit EntityDispatcher ()
@@ -747,38 +720,6 @@ module WorldModule =
                 | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
                 | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
-    let registerEntity address entity world =
-        entity?Register (address, entity, world)
-
-    let unregisterEntity address world =
-        let entity = get world <| worldEntityLens address
-        entity?Unregister (address, entity, world)
-
-    let removeEntity address world =
-        let world' = unregisterEntity address world
-        set None world' <| worldOptEntityLens address
-
-    let removeEntities address world =
-        let entities = get world <| worldEntitiesLens address
-        Map.fold
-            (fun world' entityName _ -> removeEntity (address @ [entityName]) world')
-            world
-            entities
-
-    let addEntity address entity world =
-        let world' =
-            match get world <| worldOptEntityLens address with
-            | None -> world
-            | Some _ -> removeEntity address world
-        let (entity', world'') = registerEntity address entity world'
-        set entity' world'' <| worldEntityLens address
-
-    let addEntities address entities world =
-        List.fold
-            (fun world' entity -> addEntity (addrstr address entity.Name) entity world')
-            world
-            entities
-
     let adjustFieldCamera groupAddress world =
         let avatarAddress = groupAddress @ [FieldAvatarName]
         let entity = get world <| worldEntityLens avatarAddress
@@ -804,17 +745,7 @@ module WorldModule =
             (message, true, world')
         else (message, true, world)
 
-    type GroupDispatcher () =
-        class
-        
-            abstract member Register : Address * Group * Entity list * World -> World
-            default this.Register (address, _, entities, world) = addEntities address entities world
-
-            abstract member Unregister : Address * Group * World -> World
-            default this.Unregister (address, _, world) = removeEntities address world
-
-            end
-
+    // TODO: move this to OmniBlade.fs
     type OmniFieldGroupDispatcher () =
         inherit GroupDispatcher () with
         
@@ -832,6 +763,7 @@ module WorldModule =
 
             end
 
+    // TODO: move this to OmniBlade.fs
     type OmniBattleGroupDispatcher () =
         inherit GroupDispatcher () with
 
@@ -844,92 +776,16 @@ module WorldModule =
 
             end
 
-    let registerGroup address (group : Group) entities world =
-        group?Register (address, group, entities, world)
-
-    let unregisterGroup address world =
-        let group = get world <| worldGroupLens address
-        group?Unregister (address, group, world)
-
-    let removeGroup address world =
-        let world' = unregisterGroup address world
-        set None world' (worldOptGroupLens address)
-
-    let removeGroups address world =
-        let groups = get world <| worldGroupsLens address
-        Map.fold
-            (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
-            world
-            groups
-
-    let addGroup address (group : Group, entities) world =
-        let world' =
-            match get world <| worldOptGroupLens address with
-            | None -> world
-            | Some _ -> removeGroup address world
-        let world'' = registerGroup address group entities world'
-        set group world'' <| worldGroupLens address
-
-    let addGroups address groupDescriptors world =
-        List.fold
-            (fun world' (groupName, group, entities) -> addGroup (address @ [groupName]) (group, entities) world')
-            world
-            groupDescriptors
-
-    type TransitionDispatcher () =
-        class
-            end
-
-    type ScreenDispatcher () =
-        class
+    type OmniGameDispatcher () =
+        inherit GameDispatcher ()
         
-            abstract member Register : Address * Screen * ((Lun * Group * Entity list) list) * World -> World
-            default this.Register (address, _, groupDescriptors, world) =
-                addGroups address groupDescriptors world
-
-            abstract member Unregister : Address * Screen * World -> World
-            default this.Unregister (address, _, world) =
-                removeGroups address world
-
-            end
-
-    let registerScreen address screen groupDescriptors world =
-        screen?Register (address, screen, groupDescriptors, world)
-
-    let unregisterScreen address world =
-        let screen = get world <| worldScreenLens address
-        screen?Unregister (address, screen, world)
-
-    let removeScreen address world =
-        let world' = unregisterScreen address world
-        set None world' (worldOptScreenLens address)
-
-    let addScreen address screen groupDescriptors world =
-        let world' =
-            match get world <| worldOptScreenLens address with
-            | None -> world
-            | Some _ -> removeScreen address world
-        let world'' = registerScreen address screen groupDescriptors world'
-        set screen world'' (worldScreenLens address)
-
-    let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
-        let world' = unsubscribe address subscriber world
-        if ticks < idlingTime then
-            let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
-            (message, true, world'')
-        else
-            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
-            match optSelectedScreenAddress with
-            | None ->
-                trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                (message, false, world)
-            | Some selectedScreenAddress ->
-                let world'' = setScreenState selectedScreenAddress OutgoingState world'
-                (message, true, world'')
-
-    let handleSplashScreenIdle idlingTime address subscriber message world =
-        let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
-        (handle message, true, world')
+            override this.Register (omniGame, world) =
+                let dispatchers =
+                    Map.addMany
+                        [|Lun.make typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
+                          Lun.make typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj|]
+                        world.Dispatchers
+                { world with Dispatchers = dispatchers }
 
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
@@ -945,23 +801,6 @@ module WorldModule =
         let screen = makeDissolveScreen incomingTime outgoingTime
         let (group, entities) = loadGroupFile groupFileName world
         addScreen screenAddress screen [(groupName, group, entities)] world
-
-    type GameDispatcher () =
-        class
-            abstract member Register : Game * World -> World
-            default this.Register (_, world) = world
-            end
-
-    type OmniGameDispatcher () =
-        inherit GameDispatcher ()
-        
-            override this.Register (omniGame, world) =
-                let dispatchers =
-                    Map.addMany
-                        [|Lun.make typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
-                          Lun.make typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj|]
-                        world.Dispatchers
-                { world with Dispatchers = dispatchers }
 
     let tryCreateEmptyWorld sdlDeps extData =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
