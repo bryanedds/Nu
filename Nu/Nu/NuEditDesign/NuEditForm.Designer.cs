@@ -60,7 +60,6 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.typeNameTextBox = new System.Windows.Forms.ComboBox();
             this.xFieldNameTextBox = new System.Windows.Forms.TextBox();
-            this.clearAllXFieldsButton = new System.Windows.Forms.Button();
             this.removeSelectedXFieldButton = new System.Windows.Forms.Button();
             this.addXFieldButton = new System.Windows.Forms.Button();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
@@ -333,7 +332,6 @@
             // 
             this.groupBox1.Controls.Add(this.typeNameTextBox);
             this.groupBox1.Controls.Add(this.xFieldNameTextBox);
-            this.groupBox1.Controls.Add(this.clearAllXFieldsButton);
             this.groupBox1.Controls.Add(this.removeSelectedXFieldButton);
             this.groupBox1.Controls.Add(this.addXFieldButton);
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -373,20 +371,11 @@
             this.xFieldNameTextBox.TabIndex = 9;
             this.xFieldNameTextBox.Text = "MyField";
             // 
-            // clearAllXFieldsButton
-            // 
-            this.clearAllXFieldsButton.Location = new System.Drawing.Point(152, 50);
-            this.clearAllXFieldsButton.Name = "clearAllXFieldsButton";
-            this.clearAllXFieldsButton.Size = new System.Drawing.Size(147, 23);
-            this.clearAllXFieldsButton.TabIndex = 8;
-            this.clearAllXFieldsButton.Text = "&Clear All";
-            this.clearAllXFieldsButton.UseVisualStyleBackColor = true;
-            // 
             // removeSelectedXFieldButton
             // 
             this.removeSelectedXFieldButton.Location = new System.Drawing.Point(6, 50);
             this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
-            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(140, 23);
+            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(293, 23);
             this.removeSelectedXFieldButton.TabIndex = 7;
             this.removeSelectedXFieldButton.Text = "&Remove Selected";
             this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
@@ -447,7 +436,7 @@
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(93, 0);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1124, 26);
+            this.toolStrip.Size = new System.Drawing.Size(1093, 26);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -687,7 +676,6 @@
         public System.Windows.Forms.Button addXFieldButton;
         public System.Windows.Forms.TextBox xFieldNameTextBox;
         public System.Windows.Forms.ComboBox typeNameTextBox;
-        public System.Windows.Forms.Button clearAllXFieldsButton;
         public System.Windows.Forms.Button removeSelectedXFieldButton;
 
     }
