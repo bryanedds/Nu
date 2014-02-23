@@ -6,6 +6,13 @@ open Nu
 open Nu.Core
 open Nu.DomainModel
 open Nu.ScreenModule
+
+type GameDispatcher () =
+    class
+        abstract member Register : Game * World -> World
+        default this.Register (_, world) = world
+        end
+
 module GameModule =
 
     // WISDOM:
