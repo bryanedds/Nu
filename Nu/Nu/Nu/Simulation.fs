@@ -39,13 +39,7 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
       Name : string
       Enabled : bool
       Visible : bool
-      Xtension : Xtension
-      // TODO: consider making the below into XFields
-      Position : Vector2
-      Depth : single
-      Size : Vector2
-      Rotation : single
-      IsTransformRelative : bool }
+      Xtension : Xtension }
 
     static member (?) (this : Entity, memberName) =
         fun args ->
