@@ -257,7 +257,7 @@ module WorldModule =
         | MouseButtonData (mousePosition, _) ->
             let button = get world <| worldEntityLens subscriber
             if button.Enabled && button.Visible then
-                if isInBox3 mousePosition button.Position button.Size then
+                if isInBox3 mousePosition (button?Position ()) (button?Size ()) then
                     let button' = button?IsDown <- true
                     let world' = set button' world <| worldEntityLens subscriber
                     let (keepRunning, world'') = publish (straddr "Down" subscriber) { Handled = false; Data = NoData } world'
@@ -275,7 +275,7 @@ module WorldModule =
                     let button' = button?IsDown <- false
                     let world'' = set button' world <| worldEntityLens subscriber
                     publish (straddr "Up" subscriber) { Handled = false; Data = NoData } world''
-                if keepRunning && isInBox3 mousePosition button.Position button.Size && button?IsDown () then
+                if keepRunning && isInBox3 mousePosition (button?Position ()) (button?Size ()) && button?IsDown () then
                     let (keepRunning', world'') = publish (straddr "Click" subscriber) { Handled = false; Data = NoData } world'
                     let sound = PlaySound { Volume = 1.0f; Sound = button?ClickSound () }
                     let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
@@ -289,7 +289,7 @@ module WorldModule =
         | MouseButtonData (mousePosition, _) ->
             let toggle = get world <| worldEntityLens subscriber
             if toggle.Enabled && toggle.Visible then
-                if isInBox3 mousePosition toggle.Position toggle.Size then
+                if isInBox3 mousePosition (toggle?Position ()) (toggle?Size ()) then
                     let toggle' = toggle?IsPressed <- true
                     let world' = set toggle' world <| worldEntityLens subscriber
                     (handle message, true, world')
@@ -303,7 +303,7 @@ module WorldModule =
             let toggle = get world <| worldEntityLens subscriber
             if toggle.Enabled && toggle.Visible && toggle?IsPressed () then
                 let toggle' = toggle?IsPressed <- false
-                if isInBox3 mousePosition toggle'.Position toggle'.Size then
+                if isInBox3 mousePosition (toggle'?Position ()) (toggle'?Size ()) then
                     let toggle'' = toggle'?IsOn <- not <| toggle'?IsOn ()
                     let world' = set toggle'' world <| worldEntityLens subscriber
                     let messageType = if toggle''?IsOn () then "On" else "Off"
@@ -322,7 +322,7 @@ module WorldModule =
         | MouseButtonData (mousePosition, _) as mouseButtonData ->
             let feeler = get world <| worldEntityLens subscriber
             if feeler.Enabled && feeler.Visible then
-                if isInBox3 mousePosition feeler.Position feeler.Size then
+                if isInBox3 mousePosition (feeler?Position ()) (feeler?Size ()) then
                     let feeler' = feeler?IsTouched <- true
                     let world' = set feeler' world <| worldEntityLens subscriber
                     let (keepRunning, world'') = publish (straddr "Touch" subscriber) { Handled = false; Data = mouseButtonData } world'
@@ -351,15 +351,15 @@ module WorldModule =
                   PhysicsId = block'?PhysicsId ()
                   Shape =
                     BoxShape
-                        { Extent = block'.Size * 0.5f
+                        { Extent = (block'?Size () : Vector2) * 0.5f
                           Properties =
                             { Center = Vector2.Zero
                               Restitution = 0.0f
                               FixedRotation = false
                               LinearDamping = 5.0f
                               AngularDamping = 5.0f }}
-                  Position = block'.Position + block'.Size * 0.5f
-                  Rotation = block'.Rotation
+                  Position = block'?Position () + (block'?Size () : Vector2) * 0.5f
+                  Rotation = block'?Rotation ()
                   Density = block'?Density ()
                   BodyType = block'?BodyType () }
         let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
@@ -377,15 +377,15 @@ module WorldModule =
                   PhysicsId = avatar'?PhysicsId ()
                   Shape =
                     CircleShape
-                        { Radius = avatar'.Size.X * 0.5f
+                        { Radius = (avatar'?Size () : Vector2).X * 0.5f
                           Properties =
                             { Center = Vector2.Zero
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = 10.0f
                               AngularDamping = 0.0f }}
-                  Position = avatar'.Position + avatar'.Size * 0.5f
-                  Rotation = avatar'.Rotation
+                  Position = avatar'?Position () + (avatar'?Size () : Vector2) * 0.5f
+                  Rotation = avatar'?Rotation ()
                   Density = avatar'?Density ()
                   BodyType = BodyType.Dynamic }
         let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
@@ -414,7 +414,7 @@ module WorldModule =
                       PhysicsId = physicsId
                       Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
                       Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2)
-                      Rotation = tileMap.Rotation
+                      Rotation = tileMap?Rotation ()
                       Density = tileMap?Density ()
                       BodyType = BodyType.Static }
             let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
@@ -464,17 +464,29 @@ module WorldModule =
 
             end
 
-    type ButtonDispatcher () =
+    type Entity2dDispatcher () =
         inherit EntityDispatcher ()
+            
+            override this.Init (entity2d, dispatcherContainer) =
+                let entity2d' = base.Init (entity2d, dispatcherContainer)
+                ((((entity2d'
+                        ?Position <- Vector2.Zero)
+                        ?Depth <- 0.0f)
+                        ?Size <- Vector2 DefaultEntitySize)
+                        ?Rotation <- 0.0f)
+                        ?IsTransformRelative <- true
+
+    type ButtonDispatcher () =
+        inherit Entity2dDispatcher ()
             
             override this.Init (button, dispatcherContainer) =
                 let button' = base.Init (button, dispatcherContainer)
-                let button'' = { button with IsTransformRelative = false }
-                (((button''
-                    ?IsDown <- false)
-                    ?UpSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    ?DownSprite <- { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    ?ClickSound <- { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+                ((((button'
+                        ?IsTransformRelative <- false)
+                        ?IsDown <- false)
+                        ?UpSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?DownSprite <- { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                        ?ClickSound <- { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
 
             override this.Register (address, button, world) =
                 let world' =
@@ -490,35 +502,36 @@ module WorldModule =
 
             override this.GetRenderDescriptors (view, button, world) =
                 if not button.Visible then []
-                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = button.Position; Size = button.Size; Rotation = 0.0f; Sprite = (if button?IsDown () then button?DownSprite () else button?UpSprite ()); Color = Vector4.One }; Depth = button.Depth })]
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = button?Position (); Size = button?Size (); Rotation = 0.0f; Sprite = (if button?IsDown () then button?DownSprite () else button?UpSprite ()); Color = Vector4.One }; Depth = button?Depth () })]
 
             override this.GetQuickSize (button, world) =
                 let sprite = button?UpSprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type LabelDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
             
             override this.Init (label, dispatcherContainer) =
                 let label' = base.Init (label, dispatcherContainer)
-                let label'' = { label with IsTransformRelative = false }
-                label''?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+                (label'
+                    ?IsTransformRelative <- false)
+                    ?LabelSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
 
             override this.GetRenderDescriptors (view, label, world) =
                 if not label.Visible then []
-                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = label.Position; Size = label.Size; Rotation = 0.0f; Sprite = label?LabelSprite (); Color = Vector4.One }; Depth = label.Depth })]
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = label?Position (); Size = label?Size (); Rotation = 0.0f; Sprite = label?LabelSprite (); Color = Vector4.One }; Depth = label?Depth () })]
 
             override this.GetQuickSize (label, world) =
                 let sprite = label?LabelSprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type TextBoxDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
             
             override this.Init (textBox, dispatcherContainer) =
                 let textBox' = base.Init (textBox, dispatcherContainer)
-                let textBox'' = { textBox with IsTransformRelative = false }
-                ((((textBox''
+                (((((textBox'
+                        ?IsTransformRelative <- false)
                         ?BoxSprite <- { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
                         ?Text <- String.Empty)
                         ?TextFont <- { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -527,20 +540,20 @@ module WorldModule =
 
             override this.GetRenderDescriptors (view, textBox, world) =
                 if not textBox.Visible then []
-                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = textBox.Position; Size = textBox.Size; Rotation = 0.0f; Sprite = textBox?BoxSprite (); Color = Vector4.One }; Depth = textBox.Depth })
-                      LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox?Text (); Position = textBox.Position + textBox?TextOffset (); Size = textBox.Size - textBox?TextOffset (); Font = textBox?TextFont (); Color = textBox?TextColor () }; Depth = textBox.Depth })]
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = textBox?Position (); Size = textBox?Size (); Rotation = 0.0f; Sprite = textBox?BoxSprite (); Color = Vector4.One }; Depth = textBox?Depth () })
+                      LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox?Text (); Position = textBox?Position () + textBox?TextOffset (); Size = textBox?Size () - textBox?TextOffset (); Font = textBox?TextFont (); Color = textBox?TextColor () }; Depth = textBox?Depth () })]
 
             override this.GetQuickSize (textBox, world) =
                 let sprite = textBox?BoxSprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type ToggleDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
         
             override this.Init (toggle, dispatcherContainer) =
                 let toggle' = base.Init (toggle, dispatcherContainer)
-                let toggle'' = { toggle with IsTransformRelative = false }
-                ((((toggle''
+                (((((toggle'
+                        ?IsTransformRelative <- false)
                         ?IsOn <- false)
                         ?IsPressed <- false)
                         ?OffSprite <- { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -561,19 +574,20 @@ module WorldModule =
 
             override this.GetRenderDescriptors (view, toggle, world) =
                 if not toggle.Visible then []
-                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = toggle.Position; Size = toggle.Size; Rotation = 0.0f; Sprite = (if toggle?IsOn () || toggle?IsPressed () then toggle?OnSprite () else toggle?OffSprite ()); Color = Vector4.One }; Depth = toggle.Depth })]
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = toggle?Position (); Size = toggle?Size(); Rotation = 0.0f; Sprite = (if toggle?IsOn () || toggle?IsPressed () then toggle?OnSprite () else toggle?OffSprite ()); Color = Vector4.One }; Depth = toggle?Depth () })]
 
             override this.GetQuickSize (toggle, world) =
                 let sprite = toggle?OffSprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type FeelerDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
         
             override this.Init (feeler, dispatcherContainer) =
                 let feeler' = base.Init (feeler, dispatcherContainer)
-                let feeler'' = { feeler with IsTransformRelative = false }
-                feeler''?IsTouched <- false
+                (feeler'
+                    ?IsTransformRelative <- false)
+                    ?IsTouched <- false
 
             override this.Register (address, textBox, world) =
                 let world' =
@@ -591,16 +605,16 @@ module WorldModule =
                 Vector2 64.0f
 
     type BlockDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
         
             override this.Init (block, dispatcherContainer) =
                 let block' = base.Init (block, dispatcherContainer)
-                let block'' = { block with IsTransformRelative = true }
-                (((block''
-                    ?PhysicsId <- InvalidPhysicsId)
-                    ?Density <- NormalDensity)
-                    ?BodyType <- BodyType.Dynamic)
-                    ?Sprite <- { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+                ((((block'
+                        ?IsTransformRelative <- true)
+                        ?PhysicsId <- InvalidPhysicsId)
+                        ?Density <- NormalDensity)
+                        ?BodyType <- BodyType.Dynamic)
+                        ?Sprite <- { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
 
             override this.Register (address, block, world) =
                 registerBlockPhysics address block world
@@ -619,25 +633,27 @@ module WorldModule =
                 set block' world'' <| worldEntityLens address
 
             override this.HandleBodyTransformMessage (message, address, block, world) =
-                let block' = { block with Position = message.Position - block.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                                          Rotation = message.Rotation }
+                let block' =
+                    (block
+                        ?Position <- message.Position - (block?Size () : Vector2) * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                        ?Rotation <- message.Rotation
                 set block' world <| worldEntityLens message.EntityAddress
             
             override this.GetRenderDescriptors (view, block, world) =
                 if not block.Visible then []
-                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = block.Position - view; Size = block.Size; Rotation = block.Rotation; Sprite = block?Sprite (); Color = Vector4.One }; Depth = block.Depth })]
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = block?Position () - view; Size = block?Size (); Rotation = block?Rotation (); Sprite = block?Sprite (); Color = Vector4.One }; Depth = block?Depth () })]
 
             override this.GetQuickSize (block, world) =
                 let sprite = block?Sprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type AvatarDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
         
             override this.Init (avatar, dispatcherContainer) =
                 let avatar' = base.Init (avatar, dispatcherContainer)
-                let avatar'' = { avatar with IsTransformRelative = true }
-                ((avatar''
+                (((avatar'
+                    ?IsTransformRelative <- true)
                     ?PhysicsId <- InvalidPhysicsId)
                     ?Density <- NormalDensity)
                     ?Sprite <- { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -659,25 +675,27 @@ module WorldModule =
                 set avatar' world'' <| worldEntityLens address
 
             override this.HandleBodyTransformMessage (message, address, avatar, world) =
-                let avatar' = { avatar with Position = message.Position - avatar.Size * 0.5f // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                                            Rotation = message.Rotation }
+                let avatar' =
+                    (avatar
+                        ?Position <- message.Position - (avatar?Size () : Vector2) * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                        ?Rotation <- message.Rotation
                 set avatar' world <| worldEntityLens message.EntityAddress
 
             override this.GetRenderDescriptors (view, avatar, world) =
                 if not avatar.Visible then []
-                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = avatar.Position - view; Size = avatar.Size; Rotation = avatar.Rotation; Sprite = avatar?Sprite (); Color = Vector4.One }; Depth = avatar.Depth })]
+                else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = avatar?Position () - view; Size = avatar?Size (); Rotation = avatar?Rotation (); Sprite = avatar?Sprite (); Color = Vector4.One }; Depth = avatar?Depth () })]
 
             override this.GetQuickSize (avatar, world) =
                 let sprite = avatar?Sprite ()
                 getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher ()
+        inherit Entity2dDispatcher ()
         
             override this.Init (tileMap, dispatcherContainer) =
                 let tileMap' = base.Init (tileMap, dispatcherContainer)
-                let tileMap'' = { tileMap with IsTransformRelative = true }
-                ((tileMap''
+                (((tileMap'
+                    ?IsTransformRelative <- true)
                     ?PhysicsIds <- [])
                     ?Density <- NormalDensity)
                     ?TileMapAsset <- { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
@@ -711,15 +729,15 @@ module WorldModule =
                                 let layeredTileLayerDescriptor =
                                     LayeredTileLayerDescriptor
                                         { Descriptor =
-                                            { Position = tileMap.Position - view
-                                              Size = tileMap.Size
-                                              Rotation = tileMap.Rotation
+                                            { Position = tileMap?Position () - view
+                                              Size = tileMap?Size ()
+                                              Rotation = tileMap?Rotation ()
                                               MapSize = Vector2 (single map.Width, single map.Height)
                                               Tiles = layer.Tiles
                                               TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                                               TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                               TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
-                                          Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
+                                          Depth = tileMap?Depth () + single i * 2.0f } // MAGIC_VALUE: assumption
                                 LayerableDescriptor layeredTileLayerDescriptor)
                             layers
 
@@ -764,7 +782,7 @@ module WorldModule =
     let adjustFieldCamera groupAddress world =
         let avatarAddress = groupAddress @ [FieldAvatarName]
         let entity = get world <| worldEntityLens avatarAddress
-        let camera = { world.Camera with EyePosition = entity.Position + entity.Size * 0.5f }
+        let camera = { world.Camera with EyePosition = entity?Position () + (entity?Size () : Vector2) * 0.5f }
         { world with Camera = camera }
 
     let adjustFieldCameraHandler groupAddress _ _ message world =
@@ -779,7 +797,7 @@ module WorldModule =
             let camera = world.Camera
             let view = getInverseViewF camera
             let mousePositionWorld = world.MouseState.MousePosition + view
-            let avatarCenter = avatar.Position + avatar.Size * 0.5f
+            let avatarCenter = avatar?Position () + (avatar?Size () : Vector2) * 0.5f
             let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
             let applyImpulseMessage = { PhysicsId = avatar?PhysicsId (); Impulse = impulseVector }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
@@ -917,7 +935,7 @@ module WorldModule =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
         let splashLabel = makeDefaultEntity (Lun.make typeof<LabelDispatcher>.Name) (Some "SplashLabel") world
-        let splashLabel' = { splashLabel with Entity.Size = world.Camera.EyeSize }
+        let splashLabel' = splashLabel?Size <- world.Camera.EyeSize
         let splashLabel'' = splashLabel'?LabelSprite <- (sprite : Sprite)
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel''])] world
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'

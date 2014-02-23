@@ -46,16 +46,16 @@ module EntityModule =
           Set = fun value entity -> (?<-) entity memberName value }
 
     let getEntityTransform1 (entity : Entity) =
-        { Transform.Position = entity.Position
-          Depth = entity.Depth
-          Size = entity.Size
-          Rotation = entity.Rotation }
+        { Transform.Position = entity?Position ()
+          Depth = entity?Depth ()
+          Size = entity?Size ()
+          Rotation = entity?Rotation () }
 
     let getEntityTransformRelative (view : Vector2) (entity : Entity) =
-        { Transform.Position = entity.Position - view
-          Depth = entity.Depth
-          Size = entity.Size
-          Rotation = entity.Rotation }
+        { Transform.Position = entity?Position () - view
+          Depth = entity?Depth ()
+          Size = entity?Size ()
+          Rotation = entity?Rotation () }
 
     let worldOptEntityFinder (address : Address) world =
         let optGroupMap = Map.tryFind address.[0] world.Entities
@@ -139,18 +139,19 @@ module EntityModule =
 
     // TODO: turn into a lens
     let getEntityTransform optCamera dispatcherContainer entity =
-        if entity.IsTransformRelative then
+        if entity?IsTransformRelative () then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             getEntityTransformRelative view entity
         else getEntityTransform1 entity 
 
     // TODO: turn into a lens
-    let setEntityTransform4 positionSnap rotationSnap (transform : Transform) entity =
+    let setEntityTransform4 positionSnap rotationSnap (transform : Transform) (entity : Entity) =
         let transform' = snapTransform positionSnap rotationSnap transform
-        { entity with   Entity.Position = transform'.Position
-                        Depth = transform'.Depth
-                        Size = transform'.Size
-                        Rotation = transform'.Rotation }
+        (((entity
+            ?Position <- transform'.Position)
+            ?Depth <- transform'.Depth)
+            ?Size <- transform'.Size)
+            ?Rotation <- transform'.Rotation
 
     // TODO: turn into a lens
     let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
@@ -159,7 +160,7 @@ module EntityModule =
 
     // TODO: turn into a lens
     let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer entity =
-        if entity.IsTransformRelative then
+        if entity?IsTransformRelative () then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             setEntityTransformRelative view positionSnap rotationSnap transform entity
         else setEntityTransform4 positionSnap rotationSnap transform entity
@@ -193,7 +194,8 @@ module EntityModule =
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
-        let tilePosition = (int tileMap.Position.X + (fst tmd.TileSize * i), int tileMap.Position.Y + (snd tmd.TileSize * j))
+        let tileMapPosition = tileMap?Position () : Vector2
+        let tilePosition = (int tileMapPosition.X + (fst tmd.TileSize * i), int tileMapPosition.Y + (snd tmd.TileSize * j))
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
         let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
@@ -203,12 +205,7 @@ module EntityModule =
           Name = match optName with None -> str <| Guid.NewGuid () | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty }
-          Position = Vector2.Zero
-          Depth = 0.0f
-          Size = Vector2 DefaultEntitySize
-          Rotation = 0.0f
-          IsTransformRelative = true }
+          Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty }}
 
     let makeDefaultEntity xTypeName optName (dispatcherContainer : IXDispatcherContainer) =
         match Map.tryFind xTypeName <| dispatcherContainer.GetDispatchers () with
