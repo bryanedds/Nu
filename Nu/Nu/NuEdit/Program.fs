@@ -535,7 +535,6 @@ module Program =
         form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
         form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
         form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
-        form.clearAllXFieldsButton.Click.Add (handleClearAllXFields form worldChangers refWorld)
         form.Show ()
         form
 
