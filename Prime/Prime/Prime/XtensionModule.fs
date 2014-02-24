@@ -1,5 +1,6 @@
 ﻿[<AutoOpen>]
 module XtensionModule
+open System
 open System.Reflection
 open Microsoft.FSharp.Reflection
 
@@ -46,19 +47,24 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
                     | :? IXDispatcherContainer as context ->
 
                         // find dispatcher, or use the empty dispatcher
-                        let dispatcher = 
-                            match this.OptXTypeName with
+                        let optXTypeName = this.OptXTypeName
+                        let dispatcher =
+                            match optXTypeName with
                             | None -> Xtension.EmptyDispatcher
                             | Some xTypeName ->
                                 let dispatchers = context.GetDispatchers ()
                                 match Map.tryFind xTypeName dispatchers with
-                                | None -> note <| "Invalid dispatcher '" + xTypeName.LunStr + "'."; Xtension.EmptyDispatcher
+                                | None -> failwith <| "Invalid dispatcher '" + xTypeName.LunStr + "'."
                                 | Some dispatcher -> dispatcher
 
                         // dispatch method call
-                        match (dispatcher.GetType ()).GetMethod memberName with
-                        | null -> failwith <| "Could not find method '" + memberName + "'."
-                        | aMethod -> aMethod.Invoke (dispatcher, argArray) :?> 'r
+                        let dispatcherType = dispatcher.GetType ()
+                        match dispatcherType.GetMethod memberName with
+                        | null -> failwith <| "Could not find method '" + memberName + "' on dispatcher '" + dispatcherType.Name + "'."
+                        | aMethod ->
+                            try aMethod.Invoke (dispatcher, argArray) :?> 'r with
+                            | ex when ex.InnerException <> null -> raise ex.InnerException
+                            | ex -> debug <| "Unknown failure during method invocation'" + str ex + "'."; raise ex
                     | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer."
 
             // just return field

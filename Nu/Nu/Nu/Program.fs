@@ -17,7 +17,6 @@ open Nu.GroupModule
 open Nu.ScreenModule
 open Nu.GameModule
 open Nu.WorldModule
-open Nu.OmniBlade
 module Program =
 
     (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
@@ -38,11 +37,12 @@ module Program =
 
     let [<EntryPoint>] main _ =
         initTypeConverters ()
-        let sdlViewConfig = NewWindow { WindowTitle = "OmniBlade"; WindowX = 32; WindowY = 32; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+        let sdlViewConfig = NewWindow { WindowTitle = "Nu Game Engine"; WindowX = 32; WindowY = 32; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig = makeSdlConfig sdlViewConfig VirtualResolutionX VirtualResolutionY sdlRenderFlags 1024
+        let gameDispatcher = GameDispatcher () :> obj
         run
-            (fun sdlDeps -> tryCreateOmniBladeWorld sdlDeps ())
+            (fun sdlDeps -> tryCreateEmptyWorld sdlDeps gameDispatcher ())
             (fun world -> updateTransition (fun world' -> (true, world')) world)
             sdlConfig
 
