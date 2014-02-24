@@ -7,12 +7,12 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xType="ToggleDispatcher">
-        <ToggleSound type="Nu.Sound">Sound;Default;AssetGraph.xml</ToggleSound>
-        <OffSprite type="Nu.Sprite">Image;Default;AssetGraph.xml</OffSprite>
+        <ToggleSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ToggleSound>
+        <OffSprite type="Nu.RenderingModule+Sprite">Image;Default;AssetGraph.xml</OffSprite>
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">0</Depth>
         <IsOn type="System.Boolean">True</IsOn>
-        <OnSprite type="Nu.Sprite">Image2;Default;AssetGraph.xml</OnSprite>
+        <OnSprite type="Nu.RenderingModule+Sprite">Image2;Default;AssetGraph.xml</OnSprite>
         <IsPressed type="System.Boolean">False</IsPressed>
         <Size type="OpenTK.Vector2">256;64</Size>
         <Position type="OpenTK.Vector2">0;200</Position>
@@ -37,12 +37,12 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xType="BlockDispatcher">
-        <BodyType type="Nu.BodyType">Dynamic</BodyType>
+        <BodyType type="Nu.PhysicsModule.BodyType">Dynamic</BodyType>
         <IsTransformRelative type="System.Boolean">True</IsTransformRelative>
         <Depth type="System.Single">0</Depth>
         <Size type="OpenTK.Vector2">64;64</Size>
         <Position type="OpenTK.Vector2">247.9961;31.03653</Position>
-        <Sprite type="Nu.Sprite">Image3;Default;AssetGraph.xml</Sprite>
+        <Sprite type="Nu.RenderingModule+Sprite">Image3;Default;AssetGraph.xml</Sprite>
         <Rotation type="System.Single">-0.000104752631</Rotation>
         <Density type="System.Single">10</Density>
       </Xtension>
@@ -72,8 +72,8 @@
         <Text type="System.String">programming is hard</Text>
         <Size type="OpenTK.Vector2">640;64</Size>
         <Position type="OpenTK.Vector2">8;136</Position>
-        <BoxSprite type="Nu.Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
-        <TextFont type="Nu.Font">Font;Default;AssetGraph.xml</TextFont>
+        <BoxSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
+        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <Rotation type="System.Single">0</Rotation>
         <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
       </Xtension>
@@ -85,12 +85,12 @@
       <Xtension xType="ButtonDispatcher">
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">0</Depth>
-        <UpSprite type="Nu.Sprite">Image;Default;AssetGraph.xml</UpSprite>
-        <ClickSound type="Nu.Sound">Sound;Default;AssetGraph.xml</ClickSound>
+        <UpSprite type="Nu.RenderingModule+Sprite">Image;Default;AssetGraph.xml</UpSprite>
+        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
         <Position type="OpenTK.Vector2">0;0</Position>
         <IsDown type="System.Boolean">False</IsDown>
-        <DownSprite type="Nu.Sprite">Image2;Default;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">Image2;Default;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
@@ -99,7 +99,7 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xType="LabelDispatcher">
-        <LabelSprite type="Nu.Sprite">Image4;Default;AssetGraph.xml</LabelSprite>
+        <LabelSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</LabelSprite>
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">0</Depth>
         <Size type="OpenTK.Vector2">640;64</Size>
@@ -116,7 +116,7 @@
         <Depth type="System.Single">0</Depth>
         <Size type="OpenTK.Vector2">64;64</Size>
         <Position type="OpenTK.Vector2">127.5218;31.43011</Position>
-        <Sprite type="Nu.Sprite">Image7;Default;AssetGraph.xml</Sprite>
+        <Sprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</Sprite>
         <Rotation type="System.Single">0</Rotation>
         <Density type="System.Single">10</Density>
       </Xtension>

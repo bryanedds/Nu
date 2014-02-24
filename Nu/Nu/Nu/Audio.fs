@@ -8,85 +8,86 @@ open Nu.Core
 open Nu.Constants
 open Nu.Assets
 
-type [<StructuralEquality; NoComparison>] Sound =
-    { SoundAssetName : Lun
-      PackageName : Lun
-      PackageFileName : string }
+[<AutoOpen>]
+module AudioModule =
 
-type [<StructuralEquality; NoComparison>] Song =
-    { SongAssetName : Lun
-      PackageName : Lun
-      PackageFileName : string }
+    type [<StructuralEquality; NoComparison>] Sound =
+        { SoundAssetName : Lun
+          PackageName : Lun
+          PackageFileName : string }
 
-type [<StructuralEquality; NoComparison>] PlaySong =
-    { Song : Song
-      FadeOutCurrentSong : bool }
+    type [<StructuralEquality; NoComparison>] Song =
+        { SongAssetName : Lun
+          PackageName : Lun
+          PackageFileName : string }
 
-type [<StructuralEquality; NoComparison>] PlaySound =
-    { Volume : single
-      Sound : Sound }
+    type [<StructuralEquality; NoComparison>] PlaySong =
+        { Song : Song
+          FadeOutCurrentSong : bool }
 
-type [<StructuralEquality; NoComparison>] HintAudioPackageUse =
-    { FileName : string
-      PackageName : string
-      HAPU : unit }
+    type [<StructuralEquality; NoComparison>] PlaySound =
+        { Volume : single
+          Sound : Sound }
 
-type [<StructuralEquality; NoComparison>] HintAudioPackageDisuse =
-    { FileName : string
-      PackageName : string
-      HAPD : unit }
+    type [<StructuralEquality; NoComparison>] HintAudioPackageUse =
+        { FileName : string
+          PackageName : string
+          HAPU : unit }
 
-type [<StructuralEquality; NoComparison>] AudioMessage =
-    | HintAudioPackageUse of HintAudioPackageUse
-    | HintAudioPackageDisuse of HintAudioPackageDisuse
-    | PlaySound of PlaySound
-    | PlaySong of PlaySong
-    | FadeOutSong
-    | StopSong
+    type [<StructuralEquality; NoComparison>] HintAudioPackageDisuse =
+        { FileName : string
+          PackageName : string
+          HAPD : unit }
 
-type [<ReferenceEquality>] AudioAsset =
-    private 
+    type [<StructuralEquality; NoComparison>] AudioMessage =
+        | HintAudioPackageUse of HintAudioPackageUse
+        | HintAudioPackageDisuse of HintAudioPackageDisuse
+        | PlaySound of PlaySound
+        | PlaySong of PlaySong
+        | FadeOutSong
+        | StopSong
+
+    type [<ReferenceEquality>] AudioAsset =
         | WavAsset of nativeint
         | OggAsset of nativeint
 
-type [<ReferenceEquality>] AudioPlayer =
-    private
+    type [<ReferenceEquality>] AudioPlayer =
         { AudioContext : unit // audio context, interestingly, is global
           AudioAssetMap : AudioAsset AssetMap
           OptCurrentSong : Song option
           OptNextSong : Song option }
 
-type SoundTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Sound
-        String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Sound> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Sound> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { SoundAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+    type SoundTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let s = obj :?> Sound
+            String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Sound> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<Sound> then obj
+            else
+                let args = (obj :?> string).Split ';'
+                { SoundAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
-type SongTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Song
-        String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Song> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Song> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { SongAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+    type SongTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let s = obj :?> Song
+            String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Song> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<Song> then obj
+            else
+                let args = (obj :?> string).Split ';'
+                { SongAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
 module Audio = 
 

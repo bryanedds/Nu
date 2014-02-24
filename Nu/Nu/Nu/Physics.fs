@@ -8,97 +8,99 @@ open Nu
 open Nu.Core
 open Nu.Constants
 
-type PhysicsId = Id * Id
+[<AutoOpen>]
+module PhysicsModule =
 
-type [<StructuralEquality; NoComparison>] CommonShapeProperties =
-    { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
-      Restitution : single
-      FixedRotation : bool
-      LinearDamping : single
-      AngularDamping : single }
+    type PhysicsId = Id * Id
 
-type [<StructuralEquality; NoComparison>] BoxShape =
-    { Extent : Vector2
-      Properties : CommonShapeProperties }
+    type [<StructuralEquality; NoComparison>] CommonShapeProperties =
+        { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
+          Restitution : single
+          FixedRotation : bool
+          LinearDamping : single
+          AngularDamping : single }
 
-type [<StructuralEquality; NoComparison>] CircleShape =
-    { Radius : single
-      Properties : CommonShapeProperties }
+    type [<StructuralEquality; NoComparison>] BoxShape =
+        { Extent : Vector2
+          Properties : CommonShapeProperties }
 
-type [<StructuralEquality; NoComparison>] BodyShape =
-    | BoxShape of BoxShape
-    | CircleShape of CircleShape
+    type [<StructuralEquality; NoComparison>] CircleShape =
+        { Radius : single
+          Properties : CommonShapeProperties }
 
-type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] BodyType =
-    | Static
-    | Kinematic
-    | Dynamic
+    type [<StructuralEquality; NoComparison>] BodyShape =
+        | BoxShape of BoxShape
+        | CircleShape of CircleShape
 
-and BodyTypeTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let bodyType = obj :?> BodyType
-        match bodyType with
-        | Static -> "Static" :> obj
-        | Kinematic -> "Kinematic" :> obj
-        | Dynamic -> "Dynamic" :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Vector2> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<BodyType> then obj
-        else
-            match obj :?> string with
-            | "Static" -> Static :> obj
-            | "Kinematic" -> Kinematic :> obj
-            | "Dynamic" -> Dynamic :> obj
-            | other -> failwith <| "Unknown BodyType '" + other + "'."
+    type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] BodyType =
+        | Static
+        | Kinematic
+        | Dynamic
 
-type [<StructuralEquality; NoComparison>] BodyCreateMessage =
-    { EntityAddress : Address
-      PhysicsId : PhysicsId
-      Shape : BodyShape
-      Position : Vector2
-      Rotation : single
-      Density : single
-      BodyType : BodyType }
+    and BodyTypeTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let bodyType = obj :?> BodyType
+            match bodyType with
+            | Static -> "Static" :> obj
+            | Kinematic -> "Kinematic" :> obj
+            | Dynamic -> "Dynamic" :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Vector2> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<BodyType> then obj
+            else
+                match obj :?> string with
+                | "Static" -> Static :> obj
+                | "Kinematic" -> Kinematic :> obj
+                | "Dynamic" -> Dynamic :> obj
+                | other -> failwith <| "Unknown BodyType '" + other + "'."
 
-type [<StructuralEquality; NoComparison>] BodyDestroyMessage =
-    { PhysicsId : PhysicsId }
+    type [<StructuralEquality; NoComparison>] BodyCreateMessage =
+        { EntityAddress : Address
+          PhysicsId : PhysicsId
+          Shape : BodyShape
+          Position : Vector2
+          Rotation : single
+          Density : single
+          BodyType : BodyType }
 
-type [<StructuralEquality; NoComparison>] ApplyImpulseMessage =
-    { PhysicsId : PhysicsId
-      Impulse : Vector2 }
+    type [<StructuralEquality; NoComparison>] BodyDestroyMessage =
+        { PhysicsId : PhysicsId }
 
-type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-    { EntityAddress : Address
-      EntityAddress2 : Address
-      Normal : Vector2
-      Speed : single }
+    type [<StructuralEquality; NoComparison>] ApplyImpulseMessage =
+        { PhysicsId : PhysicsId
+          Impulse : Vector2 }
 
-type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-    { EntityAddress : Address
-      Position : Vector2
-      Rotation : single }
+    type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
+        { EntityAddress : Address
+          EntityAddress2 : Address
+          Normal : Vector2
+          Speed : single }
 
-type BodyDictionary =
-    Dictionary<PhysicsId, Dynamics.Body>
+    type [<StructuralEquality; NoComparison>] BodyTransformMessage =
+        { EntityAddress : Address
+          Position : Vector2
+          Rotation : single }
 
-type [<StructuralEquality; NoComparison>] PhysicsMessage =
-    | BodyCreateMessage of BodyCreateMessage
-    | BodyDestroyMessage of BodyDestroyMessage
-    | ApplyImpulseMessage of ApplyImpulseMessage
-    | SetGravityMessage of Vector2
-    | ResetHackMessage
+    type BodyDictionary =
+        Dictionary<PhysicsId, Dynamics.Body>
 
-type [<StructuralEquality; NoComparison>] IntegrationMessage =
-    | BodyCollisionMessage of BodyCollisionMessage
-    | BodyTransformMessage of BodyTransformMessage
+    type [<StructuralEquality; NoComparison>] PhysicsMessage =
+        | BodyCreateMessage of BodyCreateMessage
+        | BodyDestroyMessage of BodyDestroyMessage
+        | ApplyImpulseMessage of ApplyImpulseMessage
+        | SetGravityMessage of Vector2
+        | ResetHackMessage
 
-type [<ReferenceEquality>] Integrator =
-    private
+    type [<StructuralEquality; NoComparison>] IntegrationMessage =
+        | BodyCollisionMessage of BodyCollisionMessage
+        | BodyTransformMessage of BodyTransformMessage
+
+    type [<ReferenceEquality>] Integrator =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
           IntegrationMessages : IntegrationMessage List }

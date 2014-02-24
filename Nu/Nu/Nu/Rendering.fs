@@ -11,131 +11,132 @@ open Nu.Core
 open Nu.Constants
 open Nu.Assets
 
-type [<StructuralEquality; NoComparison>] Sprite =
-    { SpriteAssetName : Lun
-      PackageName : Lun
-      PackageFileName : string }
+[<AutoOpen>]
+module RenderingModule =
 
-type [<StructuralEquality; NoComparison>] SpriteDescriptor =
-    { Position : Vector2
-      Size : Vector2
-      Rotation : single
-      Sprite : Sprite
-      Color : Vector4 }
+    type [<StructuralEquality; NoComparison>] Sprite =
+        { SpriteAssetName : Lun
+          PackageName : Lun
+          PackageFileName : string }
 
-type [<StructuralEquality; NoComparison>] TileMapAsset =
-    { TileMapAssetName : Lun
-      PackageName : Lun
-      PackageFileName : string }
+    type [<StructuralEquality; NoComparison>] SpriteDescriptor =
+        { Position : Vector2
+          Size : Vector2
+          Rotation : single
+          Sprite : Sprite
+          Color : Vector4 }
 
-type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
-    { Position : Vector2
-      Size : Vector2
-      Rotation : single
-      MapSize : Vector2
-      Tiles : TmxLayerTile Collections.Generic.List
-      TileSize : Vector2
-      TileSet : TmxTileset
-      TileSetSprite : Sprite }
+    type [<StructuralEquality; NoComparison>] TileMapAsset =
+        { TileMapAssetName : Lun
+          PackageName : Lun
+          PackageFileName : string }
 
-type [<StructuralEquality; NoComparison>] Font =
-    { FontAssetName : Lun
-      PackageName : Lun
-      PackageFileName : string }
+    type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
+        { Position : Vector2
+          Size : Vector2
+          Rotation : single
+          MapSize : Vector2
+          Tiles : TmxLayerTile Collections.Generic.List
+          TileSize : Vector2
+          TileSet : TmxTileset
+          TileSetSprite : Sprite }
 
-type [<StructuralEquality; NoComparison>] TextDescriptor =
-    { Text : string
-      Position : Vector2
-      Size : Vector2
-      Font : Font
-      Color : Vector4 }
+    type [<StructuralEquality; NoComparison>] Font =
+        { FontAssetName : Lun
+          PackageName : Lun
+          PackageFileName : string }
 
-type [<StructuralEquality; NoComparison>] 'd LayeredDescriptor =
-    { Descriptor : 'd
-      Depth : single }
+    type [<StructuralEquality; NoComparison>] TextDescriptor =
+        { Text : string
+          Position : Vector2
+          Size : Vector2
+          Font : Font
+          Color : Vector4 }
 
-type [<StructuralEquality; NoComparison>] LayerableDescriptor =
-    | LayeredSpriteDescriptor of SpriteDescriptor LayeredDescriptor
-    | LayeredTileLayerDescriptor of TileLayerDescriptor LayeredDescriptor
-    | LayeredTextDescriptor of TextDescriptor LayeredDescriptor
+    type [<StructuralEquality; NoComparison>] 'd LayeredDescriptor =
+        { Descriptor : 'd
+          Depth : single }
 
-/// Describes a rendering asset.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] RenderDescriptor =
-    | LayerableDescriptor of LayerableDescriptor
+    type [<StructuralEquality; NoComparison>] LayerableDescriptor =
+        | LayeredSpriteDescriptor of SpriteDescriptor LayeredDescriptor
+        | LayeredTileLayerDescriptor of TileLayerDescriptor LayeredDescriptor
+        | LayeredTextDescriptor of TextDescriptor LayeredDescriptor
 
-type [<StructuralEquality; NoComparison>] HintRenderingPackageUse =
-    { FileName : string
-      PackageName : string
-      HRPU : unit }
+    /// Describes a rendering asset.
+    /// A serializable value type.
+    type [<StructuralEquality; NoComparison>] RenderDescriptor =
+        | LayerableDescriptor of LayerableDescriptor
 
-type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuse =
-    { FileName : string
-      PackageName : string
-      HRPD : unit }
+    type [<StructuralEquality; NoComparison>] HintRenderingPackageUse =
+        { FileName : string
+          PackageName : string
+          HRPU : unit }
 
-type [<StructuralEquality; NoComparison>] RenderMessage =
-    | HintRenderingPackageUse of HintRenderingPackageUse
-    | HintRenderingPackageDisuse of HintRenderingPackageDisuse
-    | ScreenFlash // of ...
+    type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuse =
+        { FileName : string
+          PackageName : string
+          HRPD : unit }
 
-type [<ReferenceEquality>] RenderAsset =
-    private
+    type [<StructuralEquality; NoComparison>] RenderMessage =
+        | HintRenderingPackageUse of HintRenderingPackageUse
+        | HintRenderingPackageDisuse of HintRenderingPackageDisuse
+        | ScreenFlash // of ...
+
+    type [<ReferenceEquality>] RenderAsset =
         | TextureAsset of nativeint
         | FontAsset of nativeint * int
 
-type [<ReferenceEquality>] Renderer =
-    private
+    type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap }
 
-type SpriteTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Sprite
-        String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Sprite> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Sprite> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { SpriteAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+    type SpriteTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let s = obj :?> Sprite
+            String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Sprite> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<Sprite> then obj
+            else
+                let args = (obj :?> string).Split ';'
+                { SpriteAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
-type FontTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> Font
-        String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Font> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<Font> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+    type FontTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let s = obj :?> Font
+            String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Font> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<Font> then obj
+            else
+                let args = (obj :?> string).Split ';'
+                { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
-type TileMapAssetTypeConverter () =
-    inherit TypeConverter ()
-    override this.CanConvertTo (_, destType) =
-        destType = typeof<string>
-    override this.ConvertTo (_, culture, obj : obj, _) =
-        let s = obj :?> TileMapAsset
-        String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
-    override this.CanConvertFrom (_, sourceType) =
-        sourceType = typeof<Sprite> || sourceType = typeof<string>
-    override this.ConvertFrom (_, culture, obj : obj) =
-        let sourceType = obj.GetType ()
-        if sourceType = typeof<TileMapAsset> then obj
-        else
-            let args = (obj :?> string).Split ';'
-            { TileMapAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+    type TileMapAssetTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let s = obj :?> TileMapAsset
+            String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Sprite> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<TileMapAsset> then obj
+            else
+                let args = (obj :?> string).Split ';'
+                { TileMapAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
 module Rendering =
 

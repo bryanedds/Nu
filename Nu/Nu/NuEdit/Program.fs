@@ -21,11 +21,11 @@ open Nu.Math
 open Nu.Metadata
 open Nu.Physics
 open Nu.Sdl
-open Nu.EntityModule
-open Nu.GroupModule
-open Nu.ScreenModule
-open Nu.GameModule
-open Nu.WorldModule
+open Nu.Entity
+open Nu.Group
+open Nu.Screen
+open Nu.Game
+open Nu.World
 open NuEdit.Constants
 open NuEdit.Reflection
 
@@ -72,10 +72,10 @@ module Program =
           RefWorld : World ref }
 
     and EntityPropertyDescriptor (property) =
-        inherit PropertyDescriptor ((match property with XFieldDescriptor x -> x.FieldName.LunStr | PropertyInfo p -> p.Name), Array.empty)
+        inherit PropertyDescriptor ((match property with EntityXFieldDescriptor x -> x.FieldName.LunStr | EntityPropertyInfo p -> p.Name), Array.empty)
 
-        let propertyName = match property with XFieldDescriptor x -> x.FieldName.LunStr | PropertyInfo p -> p.Name
-        let propertyType = match property with XFieldDescriptor x -> findType x.TypeName.LunStr | PropertyInfo p -> p.PropertyType
+        let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName.LunStr | EntityPropertyInfo p -> p.Name
+        let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName.LunStr | EntityPropertyInfo p -> p.PropertyType
 
         override this.ComponentType with get () = propertyType.DeclaringType
         override this.PropertyType with get () = propertyType
@@ -132,7 +132,7 @@ module Program =
             let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
             let propertyDescriptors =
                 Seq.map
-                    (fun property -> EntityPropertyDescriptor (NuEdit.PropertyInfo property) :> PropertyDescriptor)
+                    (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor)
                     properties
             let optProperty = Array.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let propertyDescriptors' =
@@ -146,7 +146,7 @@ module Program =
                             (fun (xField : KeyValuePair<Lun, obj>) ->
                                 let fieldName = xField.Key
                                 let typeName = Lun.make (xField.Value.GetType ()).FullName
-                                let xFieldDescriptor = NuEdit.XFieldDescriptor { FieldName = fieldName; TypeName = typeName }
+                                let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
                                 EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
                             xtension.XFields
                     Seq.append propertyDescriptors xFieldDescriptors

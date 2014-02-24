@@ -45,7 +45,7 @@
     <Compile Include="OmniData.fs" />
     <Compile Include="OmniState.fs" />
     <Compile Include="OmniDispatchers.fs" />
-    <Compile Include="OmniBlade.fs" />
+    <Compile Include="OmniFlow.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="Assets\OmniBlade\Battle\Placeholder\AllyMove.png">

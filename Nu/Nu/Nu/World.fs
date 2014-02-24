@@ -22,12 +22,12 @@ open Nu.Metadata
 open Nu.Audio
 open Nu.Sdl
 open Nu.DomainModel
-open Nu.CameraModule
-open Nu.EntityModule
-open Nu.GroupModule
-open Nu.ScreenModule
-open Nu.GameModule
-module WorldModule =
+open Nu.Camera
+open Nu.Entity
+open Nu.Group
+open Nu.Screen
+open Nu.Game
+module World =
 
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.

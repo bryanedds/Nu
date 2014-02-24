@@ -5,28 +5,31 @@ open System.Threading
 open SDL2
 open Nu
 
-type SdlWindowConfig =
-    { WindowTitle : string
-      WindowX : int
-      WindowY : int
-      WindowFlags : SDL.SDL_WindowFlags }
+[<AutoOpen>]
+module SdlModule =
 
-type SdlViewConfig =
-    | NewWindow of SdlWindowConfig
-    | ExistingWindow of nativeint // NOTE: exposed pointer
-    //| FullScreen
+    type SdlWindowConfig =
+        { WindowTitle : string
+          WindowX : int
+          WindowY : int
+          WindowFlags : SDL.SDL_WindowFlags }
 
-type SdlConfig =
-    { ViewConfig : SdlViewConfig
-      ViewW : int
-      ViewH : int
-      RendererFlags : SDL.SDL_RendererFlags
-      AudioChunkSize : int }
+    type SdlViewConfig =
+        | NewWindow of SdlWindowConfig
+        | ExistingWindow of nativeint // NOTE: exposed pointer
+        //| FullScreen
 
-type SdlDeps =
-    { RenderContext : nativeint // NOTE: exposed pointer
-      Window : nativeint // NOTE: exposed pointer
-      Config : SdlConfig }
+    type SdlConfig =
+        { ViewConfig : SdlViewConfig
+          ViewW : int
+          ViewH : int
+          RendererFlags : SDL.SDL_RendererFlags
+          AudioChunkSize : int }
+
+    type SdlDeps =
+        { RenderContext : nativeint // NOTE: exposed pointer
+          Window : nativeint // NOTE: exposed pointer
+          Config : SdlConfig }
 
 module Sdl =
 

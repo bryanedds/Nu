@@ -3,24 +3,27 @@ open OpenTK
 open Nu
 open Nu.Core
 
-/// Describes a mouse button.
-/// A serializable value type.
-type [<StructuralEquality; StructuralComparison>] MouseButton =
-    | MouseLeft
-    | MouseCenter
-    | MouseRight
-    override this.ToString () =
-        match this with
-        | MouseLeft -> "Left"
-        | MouseCenter -> "Center"
-        | MouseRight -> "Right"
+[<AutoOpen>]
+module InputModule =
 
-/// Describes a mouse event.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] MouseEvent =
-    { Button : MouseButton
-      Position : Vector2 }
+    /// Describes a mouse button.
+    /// A serializable value type.
+    type [<StructuralEquality; StructuralComparison>] MouseButton =
+        | MouseLeft
+        | MouseCenter
+        | MouseRight
+        override this.ToString () =
+            match this with
+            | MouseLeft -> "Left"
+            | MouseCenter -> "Center"
+            | MouseRight -> "Right"
 
-type [<StructuralEquality; NoComparison>] MouseState =
-    { MousePosition : Vector2
-      MouseDowns : MouseButton Set }
+    /// Describes a mouse event.
+    /// A serializable value type.
+    type [<StructuralEquality; NoComparison>] MouseEvent =
+        { Button : MouseButton
+          Position : Vector2 }
+
+    type [<StructuralEquality; NoComparison>] MouseState =
+        { MousePosition : Vector2
+          MouseDowns : MouseButton Set }
