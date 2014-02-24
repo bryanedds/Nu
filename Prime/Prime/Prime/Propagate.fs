@@ -1,10 +1,13 @@
 ﻿namespace Prime
 
-type Propagation<'s, 'r> =
-    | Propagation of 's * 'r list
-    override this.ToString () =
-        match this with
-        | Propagation (state, recordings) -> "State: " + str state + " Recordings: " + List.joinBy str " " recordings
+[<AutoOpen>]
+module PropagateModule =
+
+    type Propagation<'s, 'r> =
+        | Propagation of 's * 'r list
+        override this.ToString () =
+            match this with
+            | Propagation (state, recordings) -> "State: " + str state + " Recordings: " + List.joinBy str " " recordings
 
 module Propagate =
 

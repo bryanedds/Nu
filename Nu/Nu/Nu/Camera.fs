@@ -2,12 +2,15 @@
 open OpenTK
 open Nu
 
-/// The camera used to dictate what is rendered on the screen.
-type [<StructuralEquality; NoComparison>] Camera =
-    { EyePosition : Vector2
-      EyeSize : Vector2 }
-
+[<AutoOpen>]
 module CameraModule =
+
+    /// The camera used to dictate what is rendered on the screen.
+    type [<StructuralEquality; NoComparison>] Camera =
+        { EyePosition : Vector2
+          EyeSize : Vector2 }
+
+module Camera =
 
     /// The position of the center of the camera's eye.
     let getEyeCenter camera =

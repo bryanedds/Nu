@@ -5,15 +5,18 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
-open Nu.ScreenModule
+open Nu.Screen
 
-type GameDispatcher () =
-    class
-        abstract member Register : Game * World -> World
-        default this.Register (_, world) = world
-        end
-
+[<AutoOpen>]
 module GameModule =
+
+    type GameDispatcher () =
+        class
+            abstract member Register : Game * World -> World
+            default this.Register (_, world) = world
+            end
+
+module Game =
 
     // WISDOM:
     //

@@ -3,37 +3,40 @@ open System
 open System.Reflection
 open Nu
 open Nu.Core
-open Nu.EntityModule
-open Nu.GroupModule
-open Nu.WorldModule
+open Nu.Entity
+open Nu.Group
+open Nu.World
 open NuEdit.Constants
 
-type EntityPropertyInfo =
-    | XFieldDescriptor of XFieldDescriptor
-    | PropertyInfo of PropertyInfo
+[<AutoOpen>]
+module ReflectionModule =
+
+    type EntityProperty =
+        | EntityXFieldDescriptor of XFieldDescriptor
+        | EntityPropertyInfo of PropertyInfo
 
 module Reflection =
 
     let containsProperty<'t> (property : PropertyInfo) =
         typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
 
-    let getEntityPropertyValue property entity =
+    let getEntityPropertyValue property (entity : Entity) =
         match property with
-        | XFieldDescriptor x ->
+        | EntityXFieldDescriptor x ->
             let xtension = entity.Xtension
             Map.find x.FieldName xtension.XFields
-        | PropertyInfo p ->
+        | EntityPropertyInfo p ->
             if containsProperty<Entity> p then p.GetValue entity
             else p.GetValue entity
 
     let setEntityPropertyValue address property value world =
         let entity = get world <| worldEntityLens address
         match property with
-        | XFieldDescriptor x ->
+        | EntityXFieldDescriptor x ->
             let xFields = Map.add x.FieldName value entity.Xtension.XFields
             let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
             set entity' world <| worldEntityLens address
-        | PropertyInfo p ->
+        | EntityPropertyInfo p ->
             let entity' = { entity with Id = entity.Id } // NOTE: hacky copy
             p.SetValue (entity', value)
             set entity' world <| worldEntityLens address
