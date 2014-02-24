@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Nu.Group>
+  <Group>
     <Xtension xType="GroupDispatcher" />
     <Entity>
       <Name>New</Name>
@@ -96,5 +96,5 @@
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
-  </Nu.Group>
+  </Group>
 </Root>

@@ -50,6 +50,9 @@ let createGetNextId () =
 let assignTypeConverter<'t, 'c> () =
     ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
+let enumCast =
+    System.Linq.Enumerable.Cast
+
 let tryFindType typeName =
     match Type.GetType typeName with
     | null ->

@@ -45,5 +45,5 @@ module Reflection =
 
     let loadFile fileName world =
         let world' = removeGroup EditorGroupAddress world
-        let testGroupDescriptor = loadGroupFile fileName world'
-        addGroup EditorGroupAddress testGroupDescriptor world'
+        let (group, entities, world'') = loadGroupFile fileName world' true
+        addGroup EditorGroupAddress group entities world''

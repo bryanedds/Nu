@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Nu.Group>
+  <GameDispatcher>
+    <AssemblyFileName>../../../../../OmniBlade/OmniBlade/OmniBlade/bin/Debug/OmniBlade.exe</AssemblyFileName>
+    <FullName>OmniBlade.OmniGameDispatcher</FullName>
+  </GameDispatcher>
+  <Group>
     <Xtension xType="OmniFieldGroupDispatcher" />
     <Entity>
       <Name>Avatar</Name>
@@ -72,5 +76,5 @@
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
-  </Nu.Group>
+  </Group>
 </Root>
