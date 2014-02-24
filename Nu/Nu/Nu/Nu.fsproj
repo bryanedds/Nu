@@ -58,7 +58,7 @@
     <Compile Include="Camera.fs" />
     <Compile Include="DomainModel.fs" />
     <Compile Include="Sdl.fs" />
-    <Compile Include="Simulation.fs" />
+    <Compile Include="Sim.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Group.fs" />
     <Compile Include="Screen.fs" />
