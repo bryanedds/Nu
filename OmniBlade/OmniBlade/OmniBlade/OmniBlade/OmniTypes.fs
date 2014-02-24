@@ -1,4 +1,4 @@
-﻿namespace Nu
+﻿namespace OmniBlade
 open OpenTK
 open Nu
 
