@@ -542,8 +542,8 @@ module Program =
         let screen = makeDissolveScreen 100 100
         let group = makeDefaultGroup ()
         let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
-        let gameDispatcherName = Lun.make typeof<GameDispatcher>.Name
-        let optWorld = tryCreateEmptyWorld sdlDeps gameDispatcherName editorState
+        let gameDispatcher = GameDispatcher () :> obj
+        let optWorld = tryCreateEmptyWorld sdlDeps gameDispatcher editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->
