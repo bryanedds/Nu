@@ -178,7 +178,7 @@ type [<StructuralEquality; NoComparison>] Simulant =
     | Group of Group
     | Entity of Entity
 
-module SimulationModule =
+module SimModule =
 
     let activateGameDispatcher assemblyFileName gameDispatcherFullName world =
         let assembly = Assembly.LoadFrom assemblyFileName
