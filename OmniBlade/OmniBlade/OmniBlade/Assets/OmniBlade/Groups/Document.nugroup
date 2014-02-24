@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Nu.Group>
+  <Group>
     <Xtension xType="GroupDispatcher" />
     <Entity>
       <Name>72bf4d97-cab3-4327-ba4a-8a7e40c67721</Name>
@@ -121,5 +121,5 @@
         <Density type="System.Single">10</Density>
       </Xtension>
     </Entity>
-  </Nu.Group>
+  </Group>
 </Root>
