@@ -6,7 +6,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 
 /// The manner in which entries are appended to a procedural frame.
 type AppendType =

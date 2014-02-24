@@ -7,7 +7,7 @@ open FParsec
 open FParsec.Primitives
 open FParsec.CharParsers
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Conversions
 

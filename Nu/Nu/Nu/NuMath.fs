@@ -8,6 +8,12 @@ open Nu.NuConstants
 [<AutoOpen>]
 module NuMathModule =
 
+    type [<StructuralEquality; NoComparison>] Transform =
+        { Position : Vector2
+          Depth : single
+          Size : Vector2
+          Rotation : single }
+
     type Vector2TypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -65,12 +71,6 @@ module NuMath =
         assignTypeConverter<Vector2, Vector2TypeConverter> ()
         assignTypeConverter<Vector3, Vector3TypeConverter> ()
         assignTypeConverter<Vector4, Vector4TypeConverter> ()
-
-    type [<StructuralEquality; NoComparison>] Transform =
-        { Position : Vector2
-          Depth : single
-          Size : Vector2
-          Rotation : single }
 
     let identity =
         { Position = Vector2.Zero

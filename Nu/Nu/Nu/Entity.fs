@@ -198,6 +198,11 @@ module Entity =
             setEntityTransformRelative view positionSnap rotationSnap transform entity
         else setEntityTransformAbsolute positionSnap rotationSnap transform entity
 
+    let sortFstAsc (priority, _) (priority2, _) =
+        if priority = priority2 then 0
+        elif priority > priority2 then -1
+        else 1
+
     let getPickingPriority entity =
         let transform = getEntityTransform None entity
         transform.Depth
@@ -288,11 +293,6 @@ module Entity =
         let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None world
         setModelProperties entityNode entity
         entity
-
-    let sortFstAsc (priority, _) (priority2, _) =
-        if priority = priority2 then 0
-        elif priority > priority2 then -1
-        else 1
 
     let pickingSort entities world =
         let priorities = List.map getPickingPriority entities

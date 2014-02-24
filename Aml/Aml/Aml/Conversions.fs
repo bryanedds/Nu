@@ -5,7 +5,7 @@ module Aml.Conversions
 open System
 open System.IO
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Writer
 
