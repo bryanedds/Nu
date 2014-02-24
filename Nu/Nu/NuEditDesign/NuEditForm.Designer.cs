@@ -375,7 +375,7 @@
             // 
             this.removeSelectedXFieldButton.Location = new System.Drawing.Point(6, 50);
             this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
-            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(293, 23);
+            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(140, 23);
             this.removeSelectedXFieldButton.TabIndex = 7;
             this.removeSelectedXFieldButton.Text = "&Remove Selected";
             this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;

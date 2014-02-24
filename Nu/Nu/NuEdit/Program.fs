@@ -588,10 +588,19 @@ module Program =
         updateRedo form !refWorld
         (not form.IsDisposed, !refWorld)
 
+    let selectWorkingDirectory () =
+        use openDialog = new OpenFileDialog ()
+        openDialog.Filter <- "Executable Files (*.exe)|*.exe"
+        openDialog.Title <- "Select your game's executable file to make its assets available to the editor (or cancel for default assets)."
+        if openDialog.ShowDialog () = DialogResult.OK then
+            let workingDirectory = Path.GetDirectoryName openDialog.FileName
+            Directory.SetCurrentDirectory workingDirectory
+
     let [<EntryPoint; STAThread>] main _ =
         initTypeConverters ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
+        selectWorkingDirectory ()
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
