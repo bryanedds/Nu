@@ -145,18 +145,18 @@ module Rendering =
         assignTypeConverter<Font, FontTypeConverter> ()
         assignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
 
-    let getLayerableDepth layerable =
+    let private getLayerableDepth layerable =
         match layerable with
         | LayeredSpriteDescriptor descriptor -> descriptor.Depth
         | LayeredTileLayerDescriptor descriptor -> descriptor.Depth
         | LayeredTextDescriptor descriptor -> descriptor.Depth
 
-    let freeRenderAsset renderAsset =
+    let private freeRenderAsset renderAsset =
         match renderAsset with
         | TextureAsset texture -> SDL.SDL_DestroyTexture texture
         | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
-    let tryLoadRenderAsset2 renderContext (asset : Asset) =
+    let private tryLoadRenderAsset2 renderContext (asset : Asset) =
         let extension = Path.GetExtension asset.FileName
         match extension with
         | ".bmp"
@@ -182,7 +182,7 @@ module Rendering =
             trace <| "Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'."
             None
 
-    let tryLoadRenderPackage packageName fileName renderer =
+    let private tryLoadRenderPackage packageName fileName renderer =
         let optAssets = tryLoadAssets "Rendering" packageName.LunStr fileName
         match optAssets with
         | Left error ->
@@ -200,7 +200,7 @@ module Rendering =
                 let renderAssetMap' = Map.addMany renderAssets renderAssetMap
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap' renderer.RenderAssetMap }
 
-    let tryLoadRenderAsset packageName packageFileName assetName renderer_ =
+    let private tryLoadRenderAsset packageName packageFileName assetName renderer_ =
         let optAssetMap = Map.tryFind packageName renderer_.RenderAssetMap
         let (renderer_, optAssetMap_) =
             match optAssetMap with
@@ -211,10 +211,10 @@ module Rendering =
             | Some assetMap -> (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
         (renderer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
-    let handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
+    let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
         tryLoadRenderPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName renderer
     
-    let handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuse) renderer =
+    let private handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuse) renderer =
         let packageNameLun = Lun.make hintPackageDisuse.PackageName
         let optAssets = Map.tryFind packageNameLun renderer.RenderAssetMap
         match optAssets with
@@ -223,22 +223,16 @@ module Rendering =
             for asset in Map.toValueList assets do freeRenderAsset asset
             { renderer with RenderAssetMap = Map.remove packageNameLun renderer.RenderAssetMap }
 
-    let handleRenderMessage renderer renderMessage =
+    let private handleRenderMessage renderer renderMessage =
         match renderMessage with
         | HintRenderingPackageUse hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
         | HintRenderingPackageDisuse hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
         | ScreenFlash -> renderer // TODO: render screen flash for one frame
 
-    let handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
+    let private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
         List.fold handleRenderMessage renderer (List.rev renderMessages)
 
-    let handleRenderExit renderer =
-        let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
-        let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
-        for renderAsset in renderAssets do freeRenderAsset renderAsset
-        { renderer with RenderAssetMap = Map.empty }
-
-    let renderLayerableDescriptor renderer layerableDescriptor =
+    let private renderLayerableDescriptor renderer layerableDescriptor =
         match layerableDescriptor with
         | LayeredSpriteDescriptor lsd ->
             let spriteDescriptor = lsd.Descriptor
@@ -374,7 +368,7 @@ module Rendering =
                     trace "Cannot render text with a non-font asset."
                     renderer'
 
-    let renderDescriptors renderDescriptorsValue renderer =
+    let private renderDescriptors renderDescriptorsValue renderer =
         let renderContext = renderer.RenderContext
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
@@ -387,6 +381,12 @@ module Rendering =
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
+
+    let handleRenderExit renderer =
+        let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
+        let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps
+        for renderAsset in renderAssets do freeRenderAsset renderAsset
+        { renderer with RenderAssetMap = Map.empty }
 
     let render (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
         let renderer' = handleRenderMessages renderMessages renderer

@@ -6,7 +6,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 
 /// TODO: Consider using lazy lists or difference lists for faster string appending (would Seqs also work?)

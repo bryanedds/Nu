@@ -5,7 +5,7 @@ module Aml.EvalPrims
 open System
 open System.Collections.Generic
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Initial
 open Aml.Writer

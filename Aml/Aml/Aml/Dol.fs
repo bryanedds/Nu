@@ -8,7 +8,7 @@ open System.Collections.Generic
 open System.Linq
 open System.Threading
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Conversions
 open Aml.EvalPrims

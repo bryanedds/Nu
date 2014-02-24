@@ -5,7 +5,7 @@ module Aml.Tests
 open FParsec.CharParsers
 open Xunit
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Reader
 open Aml.Writer

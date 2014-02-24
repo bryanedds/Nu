@@ -95,14 +95,14 @@ module Audio =
         assignTypeConverter<Sound, SoundTypeConverter> ()
         assignTypeConverter<Song, SongTypeConverter> ()
 
-    let haltSound () =
+    let private haltSound () =
         ignore (SDL_mixer.Mix_HaltMusic ())
         let channelCount = ref 0
         ignore (SDL_mixer.Mix_QuerySpec (ref 0, ref 0us, channelCount))
         for i in [0 .. !channelCount - 1] do
             ignore (SDL_mixer.Mix_HaltChannel i)
 
-    let tryLoadAudioAsset2 audioContext (asset : Asset) =
+    let private tryLoadAudioAsset2 audioContext (asset : Asset) =
         let extension = Path.GetExtension asset.FileName
         match extension with
         | ".wav" ->
@@ -115,7 +115,7 @@ module Audio =
             else trace <| "Could not load ogg '" + asset.FileName + "'."; None
         | _ -> trace <| "Could not load audio asset '" + str asset + "' due to unknown extension '" + extension + "'."; None
 
-    let tryLoadAudioPackage packageName fileName audioPlayer =
+    let private tryLoadAudioPackage packageName fileName audioPlayer =
         let optAssets = tryLoadAssets "Audio" packageName.LunStr fileName
         match optAssets with
         | Left error ->
@@ -133,7 +133,7 @@ module Audio =
                 let audioAssetMap' = Map.addMany audioAssets audioAssetMap
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap' audioPlayer.AudioAssetMap }
 
-    let tryLoadAudioAsset packageName packageFileName assetName audioPlayer_ =
+    let private tryLoadAudioAsset packageName packageFileName assetName audioPlayer_ =
         let optAssetMap = Map.tryFind packageName audioPlayer_.AudioAssetMap
         let (audioPlayer_, optAssetMap_) =
             match optAssetMap with
@@ -144,7 +144,7 @@ module Audio =
             | Some assetMap -> (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
         (audioPlayer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
-    let playSong (song : Song) audioPlayer =
+    let private playSong (song : Song) audioPlayer =
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
         match optAudioAsset with
         | None -> debug <| "PlaySong failed due to unloadable assets for '" + str song + "'."
@@ -152,11 +152,11 @@ module Audio =
         | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayMusic (oggAsset, -1))
         { audioPlayer' with OptCurrentSong = Some song }
 
-    let tryUpdateCurrentSong audioPlayer =
+    let private tryUpdateCurrentSong audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
         else { audioPlayer with OptCurrentSong = None }
 
-    let tryUpdateNextSong audioPlayer =
+    let private tryUpdateNextSong audioPlayer =
         match audioPlayer.OptNextSong with
         | None -> audioPlayer
         | Some nextSong ->
@@ -165,15 +165,15 @@ module Audio =
                 let audioPlayer' = playSong nextSong audioPlayer
                 { audioPlayer' with OptNextSong = None }
 
-    let updateAudioPlayer audioPlayer =
+    let private updateAudioPlayer audioPlayer =
         audioPlayer |>
             tryUpdateCurrentSong |>
             tryUpdateNextSong
 
-    let handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer =
+    let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer =
         tryLoadAudioPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName audioPlayer
 
-    let handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) audioPlayer =
+    let private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) audioPlayer =
         let packageNameLun = Lun.make hintPackageDisuse.PackageName
         let optAssets = Map.tryFind packageNameLun audioPlayer.AudioAssetMap
         match optAssets with
@@ -188,7 +188,7 @@ module Audio =
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
             { audioPlayer with AudioAssetMap = Map.remove packageNameLun audioPlayer.AudioAssetMap }
 
-    let handlePlaySound playSound audioPlayer =
+    let private handlePlaySound playSound audioPlayer =
         let sound = playSound.Sound
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
         match optAudioAsset with
@@ -197,7 +197,7 @@ module Audio =
         | Some (OggAsset oggAsset) -> debug <| "Cannot play ogg file as sound '" + str sound + "'."
         audioPlayer'
 
-    let handlePlaySong playSongValue audioPlayer =
+    let private handlePlaySong playSongValue audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             if  playSongValue.FadeOutCurrentSong &&
                 not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
@@ -205,17 +205,17 @@ module Audio =
             { audioPlayer with OptNextSong = Some playSongValue.Song }
         else playSong playSongValue.Song audioPlayer
 
-    let handleFadeOutSong audioPlayer =
+    let private handleFadeOutSong audioPlayer =
         if  SDL_mixer.Mix_PlayingMusic () = 1 &&
             not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
             ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
         audioPlayer
 
-    let handleStopSong audioPlayer =
+    let private handleStopSong audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_HaltMusic ())
         audioPlayer
 
-    let handleAudioMessage audioPlayer audioMessage =
+    let private handleAudioMessage audioPlayer audioMessage =
         match audioMessage with
         | HintAudioPackageUse hintPackageUse -> handleHintAudioPackageUse hintPackageUse audioPlayer
         | HintAudioPackageDisuse hintPackageDisuse -> handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
@@ -224,7 +224,7 @@ module Audio =
         | FadeOutSong -> handleFadeOutSong audioPlayer
         | StopSong -> handleStopSong audioPlayer
 
-    let handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
+    let private handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)
 
     let play audioMessages audioPlayer =

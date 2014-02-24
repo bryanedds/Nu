@@ -5,7 +5,7 @@ module Aml.Program
 open System
 open System.Runtime
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Initial
 open Aml.Primitives
 open Aml.Evaluator

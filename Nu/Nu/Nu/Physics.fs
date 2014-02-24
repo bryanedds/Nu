@@ -114,25 +114,25 @@ module Physics =
         let getNextId = createGetNextId ()
         fun (entityId : Id) -> (entityId, getNextId ())
 
-    let toPixel value =
+    let private toPixel value =
         value * Nu.NuConstants.PhysicsToPixelRatio
 
-    let toPhysics value =
+    let private toPhysics value =
         value * Nu.NuConstants.PixelToPhysicsRatio
 
-    let toPixelV2 (v2 : Framework.Vector2) =
+    let private toPixelV2 (v2 : Framework.Vector2) =
         Vector2 (toPixel v2.X, toPixel v2.Y)
 
-    let toPhysicsV2 (v2 : Vector2) =
+    let private toPhysicsV2 (v2 : Vector2) =
         Framework.Vector2 (toPhysics v2.X, toPhysics v2.Y)
 
-    let toPhysicsBodyType bodyType =
+    let private toPhysicsBodyType bodyType =
         match bodyType with
         | Static -> Dynamics.BodyType.Static
         | Kinematic -> Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
 
-    let handlePhysicsCollision
+    let private handlePhysicsCollision
         integrator
         (fixture : Dynamics.Fixture)
         (fixture2 : Dynamics.Fixture)
@@ -147,7 +147,7 @@ module Physics =
         true
 
     // TODO: remove code duplication here
-    let createBody integrator bodyCreateMessage =
+    let private createBody integrator bodyCreateMessage =
         match bodyCreateMessage.Shape with
         | BoxShape boxShape ->
             let physicsShapeCenter = toPhysicsV2 boxShape.Properties.Center
@@ -193,20 +193,20 @@ module Physics =
             body.add_OnCollision (fun f f2 c -> handlePhysicsCollision integrator f f2 c) // NOTE: F# requires us to use an lambda inline here (not sure why)
             integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
-    let destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
+    let private destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
         let body = ref Unchecked.defaultof<Dynamics.Body>
         if  integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
             ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
             integrator.PhysicsContext.RemoveBody !body
         else note <| "Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'."
 
-    let applyImpulse integrator applyImpulseMessage =
+    let private applyImpulse integrator applyImpulseMessage =
         let body = ref Unchecked.defaultof<Dynamics.Body>
         if  integrator.Bodies.TryGetValue (applyImpulseMessage.PhysicsId, body) then
             (!body).ApplyLinearImpulse (toPhysicsV2 applyImpulseMessage.Impulse)
         else debug <| "Could not apply impulse to non-existent body with PhysicsId = " + str applyImpulseMessage.PhysicsId + "'."
 
-    let handlePhysicsMessage integrator physicsMessage =
+    let private handlePhysicsMessage integrator physicsMessage =
         match physicsMessage with
         | BodyCreateMessage bodyCreateMessage -> createBody integrator bodyCreateMessage
         | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
@@ -218,11 +218,11 @@ module Physics =
             integrator.Bodies.Clear ()
             integrator.IntegrationMessages.Clear ()
     
-    let handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
+    let private handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
         for physicsMessage in List.rev physicsMessages do
             handlePhysicsMessage integrator physicsMessage
 
-    let createTransformMessages integrator =
+    let private createTransformMessages integrator =
         for body in integrator.Bodies.Values do
             if body.Awake then
                 let bodyTransformMessage =

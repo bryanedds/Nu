@@ -7,7 +7,7 @@ open System.IO
 open System.Collections.Generic
 open FParsec.CharParsers
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Reader
 open Aml.Writer

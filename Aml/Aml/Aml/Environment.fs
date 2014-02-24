@@ -7,7 +7,7 @@ open System.IO
 open System.Collections
 open System.Collections.Generic
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Initial
 open Aml.Primitives
 open Aml.Evaluator

@@ -5,7 +5,7 @@ module Aml.Initial
 open System
 open System.Collections.Generic
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 
 /// Make an initial variable entry value.

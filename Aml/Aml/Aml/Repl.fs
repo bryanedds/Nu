@@ -5,7 +5,7 @@ module Aml.Repl
 open System
 open FParsec.CharParsers
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Reader
 open Aml.Writer
