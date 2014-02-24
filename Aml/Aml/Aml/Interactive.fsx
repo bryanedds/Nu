@@ -9,7 +9,7 @@
 #r "C:/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
 
 #load "Ast.fs"
-#load "Constants.fs"
+#load "AmlConstants.fs"
 #load "Primitives.fs"
 #load "Initial.fs"
 #load "Writer.fs"
@@ -20,7 +20,7 @@ open System
 open FParsec.Primitives
 open FParsec.CharParsers
 open Aml.Ast
-open Aml.Constants
+open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Initial
 open Aml.Writer
