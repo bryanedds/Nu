@@ -488,6 +488,22 @@ module Program =
                 worldChangers.Add changer
         | _ -> ignore <| MessageBox.Show "Select an entity to remove an XField from."
 
+    let handleClearAllXFields (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        let selectedObject = form.propertyGrid.SelectedObject
+        match selectedObject with
+        | :? EntityTypeDescriptorSource as entityTds ->
+            let changer = (fun world ->
+                let entity = get world <| worldEntityLens entityTds.Address
+                let entity' = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
+                let world' = set entity' world <| worldEntityLens entityTds.Address
+                let world'' = pushPastWorld world world'
+                refWorld := world'' // must be set for property grid
+                form.propertyGrid.Refresh ()
+                world'')
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+        | _ -> ignore <| MessageBox.Show "Select an entity to clear all XFields from."
+
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (VirtualResolutionX, VirtualResolutionY)
@@ -519,6 +535,7 @@ module Program =
         form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
         form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
         form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
+        form.clearAllXFieldsButton.Click.Add (handleClearAllXFields form worldChangers refWorld)
         // TODO: populate form.createEntityComboBox properly!
         form.Show ()
         form
