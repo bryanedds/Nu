@@ -8,7 +8,7 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
-open Nu.SimulationModule
+open Nu.SimModule
 open Nu.EntityModule
 
 type GroupDispatcher () =
