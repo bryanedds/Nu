@@ -4,7 +4,7 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
-module OmniBlade =
+module OmniBladeModule =
 
     // transition literals
     let IncomingTimeSplash = 60

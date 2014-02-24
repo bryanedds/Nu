@@ -4,7 +4,8 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
-open OmniBlade.OmniBlade
+open OmniBlade
+open OmniBlade.OmniBladeModule
 module Program =
 
     let [<EntryPoint>] main _ =
