@@ -8,14 +8,18 @@ open System.Collections.Generic
 
 // TODO: for speed, implement List functions _without_ using Seq functions.
 
-/// Create a singleton list.
-let singleton elem = [elem]
-
 /// The missing cons function.
 let cons = Sectioning.cons
 
+/// Create a singleton list.
+let inline singleton elem = [elem]
+
 /// Cons with flipped arguments.
-let flipCons tail head = head :: tail
+let inline flipCons tail head = head :: tail
+
+/// Index into a list.
+let inline at index (list : 'a list)=
+    list.[index]
 
 let rec private subpartitionPlus fnOptU list left right =
     match list with

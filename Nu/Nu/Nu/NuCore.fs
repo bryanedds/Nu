@@ -1,4 +1,5 @@
 ﻿namespace Nu
+open System
 
 [<AutoOpen>]
 module NuCoreModule =
@@ -26,6 +27,9 @@ module NuCore =
 
     let straddrstr str (address : Address) str2 : Address =
         addr str @ address @ addr str2
+
+    let addrToStr (address : Address) =
+        List.fold (fun str (lun : Lun) -> str + lun.LunStr) String.Empty address
 
     let (</>) str str2 =
         str + "/" + str2

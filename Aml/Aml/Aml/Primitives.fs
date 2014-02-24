@@ -119,15 +119,6 @@ let EmptyStringValue = String { SRValue = { SVValue = String.Empty; SVType = Lit
 /// An Aml zero int value.
 let ZeroIntValue = Int { IRValue = 0; IROptPositions = None }
 
-/// The identity function.
-let identity value = value
-
-/// The tautology function.
-let tautology _ = true
-
-/// The absurdity function.
-let absurdity _ = false
-
 /// Make an argument.
 let makeArg name argType expr = {
     ArgName = name
@@ -730,7 +721,7 @@ let tryAppendDeclarationEntries env entries =
         Some env
     else
         let existences = Seq.map (fun (key, _) -> declarationFrame.ContainsKey key) entries
-        if Seq.exists identity existences then None
+        if Seq.exists id existences then None
         else
             for entry in entries do  declarationFrame.Add entry
             Some env

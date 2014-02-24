@@ -87,62 +87,62 @@ module Entity =
           Set = fun value entity -> { entity with Xtension = value }}
 
     let entityDynamicLens memberName =
-        { Get = fun (entity : Entity) -> (?) entity memberName
+        { Get = fun entity -> (?) (entity : Entity) memberName
           Set = fun value entity -> (?<-) entity memberName value }
 
-    let getEntityTransformAbsolute (entity : Entity) =
-        { Transform.Position = entity?Position ()
+    let getEntityTransformAbsolute entity =
+        { Transform.Position = (entity : Entity)?Position ()
           Depth = entity?Depth ()
           Size = entity?Size ()
           Rotation = entity?Rotation () }
 
-    let getEntityTransformRelative (view : Vector2) (entity : Entity) =
-        { Transform.Position = entity?Position () - view
+    let getEntityTransformRelative view entity =
+        { Transform.Position = (entity : Entity)?Position () - (view : Vector2)
           Depth = entity?Depth ()
           Size = entity?Size ()
           Rotation = entity?Rotation () }
 
-    let private worldOptEntityFinder (address : Address) world =
-        let optGroupMap = Map.tryFind address.[0] world.Entities
+    let private worldOptEntityFinder address world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None -> None
         | Some groupMap ->
-            let optEntityMap = Map.tryFind address.[1] groupMap
+            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
             match optEntityMap with
             | None -> None
-            | Some entityMap -> Map.tryFind address.[2] entityMap
+            | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
 
-    let private worldEntityAdder (address : Address) world (child : Entity) =
-        let optGroupMap = Map.tryFind address.[0] world.Entities
+    let private worldEntityAdder address world (child : Entity) =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None ->
-            let entityMap = Map.singleton address.[2] child
-            let groupMap = Map.singleton address.[1] entityMap
-            { world with Entities = Map.add address.[0] groupMap world.Entities }
+            let entityMap = Map.singleton (List.at 2 address) child
+            let groupMap = Map.singleton (List.at 1 address) entityMap
+            { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
         | Some groupMap ->
-            let optEntityMap = Map.tryFind address.[1] groupMap
+            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
             match optEntityMap with
             | None ->
-                let entityMap = Map.singleton address.[2] child
-                let groupMap' = Map.add address.[1] entityMap groupMap
-                { world with Entities = Map.add address.[0] groupMap' world.Entities }
+                let entityMap = Map.singleton (List.at 2 address) child
+                let groupMap' = Map.add (List.at 1 address) entityMap groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
             | Some entityMap ->
-                let entityMap' = Map.add address.[2] child entityMap
-                let groupMap' = Map.add address.[1] entityMap' groupMap
-                { world with Entities = Map.add address.[0] groupMap' world.Entities }
+                let entityMap' = Map.add (List.at 2 address) child entityMap
+                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
 
-    let private worldEntityRemover (address : Address) world =
-        let optGroupMap = Map.tryFind address.[0] world.Entities
+    let private worldEntityRemover address world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None -> world
         | Some groupMap ->
-            let optEntityMap = Map.tryFind address.[1] groupMap
+            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
             match optEntityMap with
             | None -> world
             | Some entityMap ->
-                let entityMap' = Map.remove address.[2] entityMap
-                let groupMap' = Map.add address.[1] entityMap' groupMap
-                { world with Entities = Map.add address.[0] groupMap' world.Entities }
+                let entityMap' = Map.remove (List.at 2 address) entityMap
+                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
 
     let private getWorldEntityWithLens address world lens =
         get (getChild worldOptEntityFinder address world) lens
@@ -170,7 +170,7 @@ module Entity =
                     match Map.tryFind groupLun groupMap with
                     | None -> Map.empty
                     | Some entityMap -> entityMap
-            | _ -> failwith <| "Invalid entity address '" + str address + "'."
+            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
           Set = fun entities world ->
             match address with
             | [screenLun; groupLun] ->
@@ -180,7 +180,7 @@ module Entity =
                     match Map.tryFind groupLun groupMap with
                     | None -> { world with Entities = Map.add screenLun (Map.add groupLun entities groupMap) world.Entities }
                     | Some entityMap -> { world with Entities = Map.add screenLun (Map.add groupLun (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
-            | _ -> failwith <| "Invalid entity address '" + str address + "'." }
+            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
     // TODO: turn into a lens
     let getEntityTransform optCamera entity =
@@ -190,13 +190,13 @@ module Entity =
         else getEntityTransformAbsolute entity 
 
     // TODO: turn into a lens
-    let setEntityTransformAbsolute positionSnap rotationSnap (transform : Transform) (entity : Entity) =
+    let setEntityTransformAbsolute positionSnap rotationSnap transform entity =
         let transform' = snapTransform positionSnap rotationSnap transform
-        (((entity
-            ?Position <- transform'.Position)
-            ?Depth <- transform'.Depth)
-            ?Size <- transform'.Size)
-            ?Rotation <- transform'.Rotation
+        ((((entity : Entity)
+                ?Position <- transform'.Position)
+                ?Depth <- transform'.Depth)
+                ?Size <- transform'.Size)
+                ?Rotation <- transform'.Rotation
 
     // TODO: turn into a lens
     let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
@@ -219,8 +219,8 @@ module Entity =
         let transform = getEntityTransform None entity
         transform.Depth
 
-    let makeTileMapData (tileMap : Entity) world =
-        let tileMapAsset = tileMap?TileMapAsset ()
+    let makeTileMapData tileMap world =
+        let tileMapAsset = (tileMap : Entity)?TileMapAsset ()
         match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
         | None -> failwith "Unexpected match failure in Nu.Entity.makeTileMapData."
         | Some (_, _, map) ->
@@ -238,13 +238,13 @@ module Entity =
         let tiles = layer.Tiles
         { Layer = layer; Tiles = tiles }
 
-    let makeTileData (tileMap : Entity) tmd tld n =
+    let makeTileData tileMap tmd tld n =
         let (i, j) = (n % fst tmd.MapSize, n / snd tmd.MapSize)
         let tile = tld.Tiles.[n]
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
-        let tileMapPosition = tileMap?Position () : Vector2
+        let tileMapPosition = (tileMap : Entity)?Position () : Vector2
         let tilePosition = (int tileMapPosition.X + (fst tmd.TileSize * i), int tileMapPosition.Y + (snd tmd.TileSize * j))
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
         let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
