@@ -46,7 +46,7 @@ module World =
         | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
         | [_; _] as groupAddress -> Group <| get world (worldGroupLens groupAddress)
         | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
-        | _ -> failwith <| "Invalid simulant address '" + str address + "'."
+        | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
     let private getSubscribedSimulants subscriptions world =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
@@ -118,10 +118,10 @@ module World =
         let world'' = procedure world'
         unsubscribe address subscriber world''
     
-    let handleEventAsSwallow _ _ message world =
+    let handleEventAsSwallow (_ : Address) (_ : Address) message (world : World) =
         (handleMessage message, true, world)
 
-    let handleEventAsExit _ _ message world =
+    let handleEventAsExit (_ : Address) (_ : Address) message (world : World) =
         (handleMessage message, false, world)
 
     // TODO: consider turning this into a lens, and removing the screenStateLens
@@ -147,7 +147,7 @@ module World =
         let world' = setScreenState address IncomingState world
         set (Some address) world' worldOptSelectedScreenAddressLens
 
-    let transitionScreenHandler address _ _ message world =
+    let transitionScreenHandler address (_ : Address) (_ : Address) message world =
         let world' = transitionScreen address world
         (handleMessage message, true, world')
 
@@ -175,7 +175,7 @@ module World =
         let world'' = transitionScreen destScreenAddress world'
         (handleMessage message, true, world'')
 
-    let handleEventAsScreenTransition screenAddress destScreenAddress address subscriber message world =
+    let handleEventAsScreenTransition screenAddress destScreenAddress (_ : Address) (_ : Address) message world =
         let world' = subscribe (FinishedOutgoingAddressPart @ screenAddress) [] (handleFinishedScreenOutgoing screenAddress destScreenAddress) world
         let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
         match optSelectedScreenAddress with
@@ -243,7 +243,7 @@ module World =
                         (handleMessage message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
     
         let handleButtonEventUpMouseLeft address subscriber message world =
             match message.Data with
@@ -261,7 +261,7 @@ module World =
                         (handleMessage message, keepRunning', world'3)
                     else (message, keepRunning, world')
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
             
         override this.Init (button, dispatcherContainer) =
             let button' = base.Init (button, dispatcherContainer)
@@ -345,7 +345,7 @@ module World =
                         (handleMessage message, true, world')
                     else (message, true, world)
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
     
         let handleToggleEventUpMouseLeft address subscriber message world =
             match message.Data with
@@ -365,7 +365,7 @@ module World =
                         let world' = set toggle' world <| worldEntityLens subscriber
                         (message, true, world')
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
         
         override this.Init (toggle, dispatcherContainer) =
             let toggle' = base.Init (toggle, dispatcherContainer)
@@ -412,7 +412,7 @@ module World =
                         (handleMessage message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
     
         let handleFeelerEventUpMouseLeft address subscriber message world =
             match message.Data with
@@ -424,7 +424,7 @@ module World =
                     let (keepRunning, world'') = publish (straddr "Release" subscriber) { Handled = false; Data = NoData } world'
                     (handleMessage message, keepRunning, world'')
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
         
         override this.Init (feeler, dispatcherContainer) =
             let feeler' = base.Init (feeler, dispatcherContainer)
@@ -450,8 +450,8 @@ module World =
     type [<AutoOpen>] BlockDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let registerBlockPhysics address (block : Entity) world =
-            let block' = block?PhysicsId <- getPhysicsId block.Id
+        let registerBlockPhysics address block world =
+            let block' = (block : Entity)?PhysicsId <- getPhysicsId block.Id
             let bodyCreateMessage =
                 BodyCreateMessage
                     { EntityAddress = address
@@ -472,8 +472,8 @@ module World =
             let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
             (block', world')
 
-        let unregisterBlockPhysics address (block : Entity) world =
-            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block?PhysicsId () }
+        let unregisterBlockPhysics (_ : Address) block world =
+            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = (block : Entity)?PhysicsId () }
             { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
         override this.Init (block, dispatcherContainer) =
@@ -519,8 +519,8 @@ module World =
     type [<AutoOpen>] AvatarDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let registerAvatarPhysics address (avatar : Entity) world =
-            let avatar' = avatar?PhysicsId <- getPhysicsId avatar.Id
+        let registerAvatarPhysics address avatar world =
+            let avatar' = (avatar : Entity)?PhysicsId <- getPhysicsId avatar.Id
             let bodyCreateMessage =
                 BodyCreateMessage
                     { EntityAddress = address
@@ -541,8 +541,8 @@ module World =
             let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
             (avatar', world')
 
-        let unregisterAvatarPhysics address (avatar : Entity) world =
-            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar?PhysicsId () }
+        let unregisterAvatarPhysics (_ : Address) avatar world =
+            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = (avatar : Entity)?PhysicsId () }
             { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
         override this.Init (avatar, dispatcherContainer) =
@@ -587,7 +587,7 @@ module World =
     type [<AutoOpen>] TileMapDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let registerTilePhysics tileMap tmd tld address n (world, physicsIds) tile =
+        let registerTilePhysics tileMap tmd tld address n (world, physicsIds) (_ : TmxLayerTile) =
             let td = makeTileData tileMap tmd tld n
             match td.OptTileSetTile with
             | None -> (world, physicsIds)
@@ -624,7 +624,7 @@ module World =
             let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = physicsId }
             { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
 
-        let unregisterTileMapPhysics address tileMap world =
+        let unregisterTileMapPhysics (_ : Address) tileMap world =
             List.fold unregisterTilePhysics world <| tileMap?PhysicsIds ()
         
         override this.Init (tileMap, dispatcherContainer) =
@@ -735,7 +735,7 @@ module World =
                   PhysicsMessages = []
                   Dispatchers = dispatchers
                   ExtData = extData }
-            let world' = world.Game?Register (world.Game, world)
+            let world' = world.Game?Register (world.Game, world) : World
             Right world'
 
     let reregisterPhysicsHack groupAddress world =

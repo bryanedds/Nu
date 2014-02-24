@@ -6,7 +6,8 @@ module Dictionary
 open System.Collections.Generic
 
 /// Create a dictionary with a single item.
-let singleton elem = List.toDictionary [elem] // TODO: change implementation to accommodate 2 separate params (1 for key, 1 for value)
+let singleton elem =
+    List.toDictionary [elem] // TODO: change implementation to accommodate 2 separate params (1 for key, 1 for value)
 
 /// Map over a dictionary. A new dictionary is produced.
 let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) =

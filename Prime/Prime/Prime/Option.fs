@@ -5,7 +5,7 @@
 module Option
 
 /// Concatenate an option option.
-let concat opt =
+let inline concat opt =
     match opt with
     | None -> None
     | Some None -> None

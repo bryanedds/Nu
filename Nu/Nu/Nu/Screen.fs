@@ -81,14 +81,14 @@ module Screen =
         { Get = fun (screen : Screen) -> (?) screen memberName
           Set = fun value screen -> (?<-) screen memberName value }
 
-    let worldOptScreenFinder (address : Address)  world =
-        Map.tryFind address.[0] world.Screens
+    let worldOptScreenFinder address world =
+        Map.tryFind (List.at 0 address) world.Screens
 
-    let worldScreenAdder (address : Address) world (child : Screen) =
-        { world with Screens = Map.add address.[0] child world.Screens }
+    let worldScreenAdder address world child =
+        { world with Screens = Map.add (List.at 0 address) child world.Screens }
 
-    let worldScreenRemover (address : Address)  world =
-        { world with Screens = Map.remove address.[0] world.Screens }
+    let worldScreenRemover address world =
+        { world with Screens = Map.remove (List.at 0 address) world.Screens }
 
     let worldScreenLens address =
         { Get = fun world -> Option.get <| worldOptScreenFinder address world
@@ -102,11 +102,11 @@ module Screen =
         { Get = fun world ->
             match address with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid screen address '" + str address + "'."
+            | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'."
           Set = fun screens world ->
             match address with
             | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
-            | _ -> failwith <| "Invalid screen address '" + str address + "'." }
+            | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'." }
 
     let worldScreenIncomingLens address = worldScreenLens address >>| screenIncomingLens
     let worldScreenOutgoingLens address = worldScreenLens address >>| screenOutgoingLens

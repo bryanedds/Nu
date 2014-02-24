@@ -1,5 +1,9 @@
 ﻿module Array
 
+/// Index into an array.
+let inline at index (arr : 'a array)=
+    arr.[index]
+
 /// Try to find an index in reverse.
 let tryFindIndexRev pred arr =
     let mutable index = Array.length arr - 1
