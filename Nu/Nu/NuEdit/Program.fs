@@ -187,7 +187,7 @@ module Program =
             else
                 let group = get world (worldGroupLens EditorGroupAddress)
                 let entities = Map.toValueList (get world <| worldEntitiesLens EditorGroupAddress)
-                let optPicked = tryPick position entities world
+                let optPicked = tryPickEntity position entities world
                 match optPicked with
                 | None -> (handle message, true, world)
                 | Some entity ->

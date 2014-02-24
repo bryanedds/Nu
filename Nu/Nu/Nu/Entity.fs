@@ -288,3 +288,25 @@ module Entity =
         let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None world
         setModelProperties entityNode entity
         entity
+
+    let sortFstAsc (priority, _) (priority2, _) =
+        if priority = priority2 then 0
+        elif priority > priority2 then -1
+        else 1
+
+    let pickingSort entities world =
+        let priorities = List.map (getPickingPriority world) entities
+        let prioritiesAndEntities = List.zip priorities entities
+        let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
+        List.map snd prioritiesAndEntitiesSorted
+
+    let tryPickEntity (position : Vector2) entities world =
+        let entitiesSorted = pickingSort entities world
+        List.tryFind
+            (fun entity ->
+                let transform = getEntityTransform (Some world.Camera) world entity
+                position.X >= transform.Position.X &&
+                    position.X < transform.Position.X + transform.Size.X &&
+                    position.Y >= transform.Position.Y &&
+                    position.Y < transform.Position.Y + transform.Size.Y)
+            entitiesSorted
