@@ -40,7 +40,7 @@ module World =
     let handleMessage message =
         { Handled = true; Data = message.Data }
 
-    let getSimulant address world =
+    let private getSimulant address world =
         match address with
         | [] -> Game <| world.Game
         | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
@@ -48,10 +48,10 @@ module World =
         | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
         | _ -> failwith <| "Invalid simulant address '" + str address + "'."
 
-    let getSubscribedSimulants subscriptions world =
+    let private getSubscribedSimulants subscriptions world =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
-    let isAddressSelected address world =
+    let private isAddressSelected address world =
         let optScreenAddress = get world worldOptSelectedScreenAddressLens
         match (address, optScreenAddress) with
         | ([], _) -> true
@@ -59,14 +59,14 @@ module World =
         | (_, Some []) -> false
         | (addressHead :: addressTail, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
-    let getPublishingPriority simulant =
+    let private getPublishingPriority simulant =
         match simulant with
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
         | Entity entity -> getPickingPriority entity
 
-    let subscriptionSort subscriptions world =
+    let private subscriptionSort subscriptions world =
         let simulants = getSubscribedSimulants subscriptions world
         let priorities = List.map getPublishingPriority simulants
         let prioritiesAndSubscriptions = List.zip priorities subscriptions
@@ -228,19 +228,7 @@ module World =
         if keepRunning then update world'
             else (keepRunning, world')
 
-    type Entity2dDispatcher () =
-        inherit EntityDispatcher ()
-            
-        override this.Init (entity2d, dispatcherContainer) =
-            let entity2d' = base.Init (entity2d, dispatcherContainer)
-            ((((entity2d'
-                    ?Position <- Vector2.Zero)
-                    ?Depth <- 0.0f)
-                    ?Size <- Vector2 DefaultEntitySize)
-                    ?Rotation <- 0.0f)
-                    ?IsTransformRelative <- true
-
-    type ButtonDispatcher () =
+    type [<AutoOpen>] ButtonDispatcher () =
         inherit Entity2dDispatcher ()
 
         let handleButtonEventDownMouseLeft address subscriber message world =
@@ -304,7 +292,7 @@ module World =
             let sprite = button?UpSprite ()
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
-    type LabelDispatcher () =
+    type [<AutoOpen>] LabelDispatcher () =
         inherit Entity2dDispatcher ()
             
         override this.Init (label, dispatcherContainer) =
@@ -321,7 +309,7 @@ module World =
             let sprite = label?LabelSprite ()
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
-    type TextBoxDispatcher () =
+    type [<AutoOpen>] TextBoxDispatcher () =
         inherit Entity2dDispatcher ()
             
         override this.Init (textBox, dispatcherContainer) =
@@ -343,7 +331,7 @@ module World =
             let sprite = textBox?BoxSprite ()
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
-    type ToggleDispatcher () =
+    type [<AutoOpen>] ToggleDispatcher () =
         inherit Entity2dDispatcher ()
 
         let handleToggleEventDownMouseLeft address subscriber message world =
@@ -409,7 +397,7 @@ module World =
             let sprite = toggle?OffSprite ()
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
-    type FeelerDispatcher () =
+    type [<AutoOpen>] FeelerDispatcher () =
         inherit Entity2dDispatcher ()
 
         let handleFeelerEventDownMouseLeft address subscriber message world =
@@ -459,7 +447,7 @@ module World =
         override this.GetQuickSize (feeler, world) =
             Vector2 64.0f
 
-    type BlockDispatcher () =
+    type [<AutoOpen>] BlockDispatcher () =
         inherit Entity2dDispatcher ()
 
         let registerBlockPhysics address (block : Entity) world =
@@ -527,8 +515,8 @@ module World =
         override this.GetQuickSize (block, world) =
             let sprite = block?Sprite ()
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
-
-    type AvatarDispatcher () =
+    
+    type [<AutoOpen>] AvatarDispatcher () =
         inherit Entity2dDispatcher ()
 
         let registerAvatarPhysics address (avatar : Entity) world =
@@ -596,7 +584,7 @@ module World =
             let sprite = avatar?Sprite ()
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
-    type TileMapDispatcher () =
+    type [<AutoOpen>] TileMapDispatcher () =
         inherit Entity2dDispatcher ()
 
         let registerTilePhysics tileMap tmd tld address n (world, physicsIds) tile =
@@ -755,17 +743,17 @@ module World =
         Map.fold (fun world _ entity -> entity?ReregisterPhysicsHack (groupAddress, entity, world)) world entities
 
     /// Play the world's audio.
-    let play world =
+    let private play world =
         let audioMessages = world.AudioMessages
         let world' = { world with AudioMessages = [] }
         { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
-    let getGroupRenderDescriptors camera dispatcherContainer entities =
+    let private getGroupRenderDescriptors camera dispatcherContainer entities =
         let view = getInverseView camera
         let entityValues = Map.toValueSeq entities
         Seq.map (fun entity -> entity?GetRenderDescriptors (view, entity, dispatcherContainer)) entityValues
 
-    let getTransitionRenderDescriptors camera dispatcherContainer transition =
+    let private getTransitionRenderDescriptors camera dispatcherContainer transition =
         match transition.OptDissolveSprite with
         | None -> []
         | Some dissolveSprite ->
@@ -774,7 +762,7 @@ module World =
             let color = Vector4 (Vector3.One, alpha)
             [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
 
-    let getRenderDescriptors world =
+    let private getRenderDescriptors world =
         match get world worldOptSelectedScreenAddressLens with
         | None -> []
         | Some activeScreenAddress ->
@@ -793,7 +781,7 @@ module World =
                 | IdlingState -> descriptors
 
     /// Render the world.
-    let render world =
+    let private render world =
         let renderMessages = world.RenderMessages
         let renderDescriptors = getRenderDescriptors world
         let renderer = world.Renderer
@@ -818,7 +806,7 @@ module World =
         List.fold handleIntegrationMessage (true, world) integrationMessages
 
     /// Integrate the world.
-    let integrate world =
+    let private integrate world =
         let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
         let world' = { world with PhysicsMessages = [] }
         handleIntegrationMessages integrationMessages world'
