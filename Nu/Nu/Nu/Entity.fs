@@ -52,6 +52,18 @@ module EntityModule =
 
             end
 
+    type Entity2dDispatcher () =
+        inherit EntityDispatcher ()
+            
+        override this.Init (entity2d, dispatcherContainer) =
+            let entity2d' = base.Init (entity2d, dispatcherContainer)
+            ((((entity2d'
+                    ?Position <- Vector2.Zero)
+                    ?Depth <- 0.0f)
+                    ?Size <- Vector2 DefaultEntitySize)
+                    ?Rotation <- 0.0f)
+                    ?IsTransformRelative <- true
+
 module Entity =
 
     let entityIdLens =
