@@ -87,6 +87,7 @@
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactButton = new System.Windows.Forms.ToolStripButton();
+            this.clearAllXFieldsButton = new System.Windows.Forms.Button();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -330,6 +331,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.clearAllXFieldsButton);
             this.groupBox1.Controls.Add(this.typeNameTextBox);
             this.groupBox1.Controls.Add(this.xFieldNameTextBox);
             this.groupBox1.Controls.Add(this.removeSelectedXFieldButton);
@@ -357,9 +359,9 @@
             "OpenTK.Vector2",
             "OpenTK.Vector3",
             "OpenTK.Vector4"});
-            this.typeNameTextBox.Location = new System.Drawing.Point(152, 22);
+            this.typeNameTextBox.Location = new System.Drawing.Point(155, 22);
             this.typeNameTextBox.Name = "typeNameTextBox";
-            this.typeNameTextBox.Size = new System.Drawing.Size(147, 24);
+            this.typeNameTextBox.Size = new System.Drawing.Size(144, 24);
             this.typeNameTextBox.TabIndex = 10;
             this.typeNameTextBox.Text = "System.String";
             // 
@@ -367,15 +369,16 @@
             // 
             this.xFieldNameTextBox.Location = new System.Drawing.Point(53, 22);
             this.xFieldNameTextBox.Name = "xFieldNameTextBox";
-            this.xFieldNameTextBox.Size = new System.Drawing.Size(93, 22);
+            this.xFieldNameTextBox.Size = new System.Drawing.Size(96, 22);
             this.xFieldNameTextBox.TabIndex = 9;
             this.xFieldNameTextBox.Text = "MyField";
             // 
             // removeSelectedXFieldButton
             // 
+            this.removeSelectedXFieldButton.Enabled = false;
             this.removeSelectedXFieldButton.Location = new System.Drawing.Point(6, 50);
             this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
-            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(140, 23);
+            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(143, 23);
             this.removeSelectedXFieldButton.TabIndex = 7;
             this.removeSelectedXFieldButton.Text = "&Remove Selected";
             this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
@@ -587,6 +590,16 @@
             this.interactButton.Size = new System.Drawing.Size(64, 23);
             this.interactButton.Text = "&Interact";
             // 
+            // clearAllXFieldsButton
+            // 
+            this.clearAllXFieldsButton.Enabled = false;
+            this.clearAllXFieldsButton.Location = new System.Drawing.Point(155, 50);
+            this.clearAllXFieldsButton.Name = "clearAllXFieldsButton";
+            this.clearAllXFieldsButton.Size = new System.Drawing.Size(144, 23);
+            this.clearAllXFieldsButton.TabIndex = 11;
+            this.clearAllXFieldsButton.Text = "&Clear All";
+            this.clearAllXFieldsButton.UseVisualStyleBackColor = true;
+            // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -677,6 +690,7 @@
         public System.Windows.Forms.TextBox xFieldNameTextBox;
         public System.Windows.Forms.ComboBox typeNameTextBox;
         public System.Windows.Forms.Button removeSelectedXFieldButton;
+        public System.Windows.Forms.Button clearAllXFieldsButton;
 
     }
 }
