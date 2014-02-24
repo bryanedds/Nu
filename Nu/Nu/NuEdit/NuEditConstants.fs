@@ -1,6 +1,6 @@
 ﻿namespace NuEdit
-open Nu.Core
-module Constants =
+open Nu.NuCore
+module NuEditConstants =
 
     let EditorScreenAddress = addr "EditorScreen"
     let EditorGroupName = Lun.make "EditorGroup"

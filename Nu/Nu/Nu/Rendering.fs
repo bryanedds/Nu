@@ -7,8 +7,8 @@ open OpenTK
 open SDL2
 open TiledSharp
 open Nu
-open Nu.Core
-open Nu.Constants
+open Nu.NuCore
+open Nu.NuConstants
 open Nu.Assets
 
 [<AutoOpen>]

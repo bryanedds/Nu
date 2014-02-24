@@ -4,8 +4,8 @@ open System.IO
 open System.ComponentModel
 open SDL2
 open Nu
-open Nu.Core
-open Nu.Constants
+open Nu.NuCore
+open Nu.NuConstants
 open Nu.Assets
 
 [<AutoOpen>]

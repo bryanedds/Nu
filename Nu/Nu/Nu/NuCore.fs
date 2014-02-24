@@ -1,14 +1,14 @@
 ﻿namespace Nu
 
 [<AutoOpen>]
-module CoreModule =
+module NuCoreModule =
 
     /// Specifies the address of an element in a game.
     /// Note that subscribing to a partial address results in listening to all messages whose
     /// beginning address nodes match the partial address (sort of a wild-card).
     type Address = Lun list
 
-module Core =
+module NuCore =
 
     /// Create a Nu Id.
     /// NOTE: Ironically, not purely functional.
