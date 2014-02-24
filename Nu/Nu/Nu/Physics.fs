@@ -5,8 +5,8 @@ open FarseerPhysics
 open OpenTK
 open Microsoft.Xna
 open Nu
-open Nu.Core
-open Nu.Constants
+open Nu.NuCore
+open Nu.NuConstants
 
 [<AutoOpen>]
 module PhysicsModule =
@@ -115,10 +115,10 @@ module Physics =
         fun (entityId : Id) -> (entityId, getNextId ())
 
     let toPixel value =
-        value * Nu.Constants.PhysicsToPixelRatio
+        value * Nu.NuConstants.PhysicsToPixelRatio
 
     let toPhysics value =
-        value * Nu.Constants.PixelToPhysicsRatio
+        value * Nu.NuConstants.PixelToPhysicsRatio
 
     let toPixelV2 (v2 : Framework.Vector2) =
         Vector2 (toPixel v2.X, toPixel v2.Y)

@@ -2,11 +2,11 @@
 open System
 open System.ComponentModel
 open OpenTK
-open Nu.Core
-open Nu.Constants
+open Nu.NuCore
+open Nu.NuConstants
 
 [<AutoOpen>]
-module MathModule =
+module NuMathModule =
 
     type Vector2TypeConverter () =
         inherit TypeConverter ()
@@ -59,7 +59,7 @@ module MathModule =
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
-module Math =
+module NuMath =
 
     let initMathConverters () =
         assignTypeConverter<Vector2, Vector2TypeConverter> ()

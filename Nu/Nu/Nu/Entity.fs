@@ -10,9 +10,9 @@ open FSharpx.Lens.Operators
 open OpenTK
 open TiledSharp
 open Nu
-open Nu.Core
-open Nu.Constants
-open Nu.Math
+open Nu.NuCore
+open Nu.NuConstants
+open Nu.NuMath
 open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
@@ -78,7 +78,7 @@ module Entity =
         { Get = fun (entity : Entity) -> (?) entity memberName
           Set = fun value entity -> (?<-) entity memberName value }
 
-    let getEntityTransform1 (entity : Entity) =
+    let getEntityTransformAbsolute (entity : Entity) =
         { Transform.Position = entity?Position ()
           Depth = entity?Depth ()
           Size = entity?Size ()
@@ -90,7 +90,7 @@ module Entity =
           Size = entity?Size ()
           Rotation = entity?Rotation () }
 
-    let worldOptEntityFinder (address : Address) world =
+    let private worldOptEntityFinder (address : Address) world =
         let optGroupMap = Map.tryFind address.[0] world.Entities
         match optGroupMap with
         | None -> None
@@ -100,7 +100,7 @@ module Entity =
             | None -> None
             | Some entityMap -> Map.tryFind address.[2] entityMap
 
-    let worldEntityAdder (address : Address) world (child : Entity) =
+    let private worldEntityAdder (address : Address) world (child : Entity) =
         let optGroupMap = Map.tryFind address.[0] world.Entities
         match optGroupMap with
         | None ->
@@ -119,7 +119,7 @@ module Entity =
                 let groupMap' = Map.add address.[1] entityMap' groupMap
                 { world with Entities = Map.add address.[0] groupMap' world.Entities }
 
-    let worldEntityRemover (address : Address) world =
+    let private worldEntityRemover (address : Address) world =
         let optGroupMap = Map.tryFind address.[0] world.Entities
         match optGroupMap with
         | None -> world
@@ -132,10 +132,10 @@ module Entity =
                 let groupMap' = Map.add address.[1] entityMap' groupMap
                 { world with Entities = Map.add address.[0] groupMap' world.Entities }
 
-    let getWorldEntityWithLens address world lens =
+    let private getWorldEntityWithLens address world lens =
         get (getChild worldOptEntityFinder address world) lens
 
-    let setWorldEntityWithLens child address world lens =
+    let private setWorldEntityWithLens child address world lens =
         let entity = getChild worldOptEntityFinder address world
         let entity' = set child entity lens
         setChild worldEntityAdder worldEntityRemover address world entity'
@@ -171,14 +171,14 @@ module Entity =
             | _ -> failwith <| "Invalid entity address '" + str address + "'." }
 
     // TODO: turn into a lens
-    let getEntityTransform optCamera dispatcherContainer entity =
+    let getEntityTransform optCamera entity =
         if entity?IsTransformRelative () then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             getEntityTransformRelative view entity
-        else getEntityTransform1 entity 
+        else getEntityTransformAbsolute entity 
 
     // TODO: turn into a lens
-    let setEntityTransform4 positionSnap rotationSnap (transform : Transform) (entity : Entity) =
+    let setEntityTransformAbsolute positionSnap rotationSnap (transform : Transform) (entity : Entity) =
         let transform' = snapTransform positionSnap rotationSnap transform
         (((entity
             ?Position <- transform'.Position)
@@ -189,17 +189,17 @@ module Entity =
     // TODO: turn into a lens
     let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
         let transform' = { transform with Position = transform.Position + view }
-        setEntityTransform4 positionSnap rotationSnap transform' entity
+        setEntityTransformAbsolute positionSnap rotationSnap transform' entity
 
     // TODO: turn into a lens
     let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer entity =
         if entity?IsTransformRelative () then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             setEntityTransformRelative view positionSnap rotationSnap transform entity
-        else setEntityTransform4 positionSnap rotationSnap transform entity
+        else setEntityTransformAbsolute positionSnap rotationSnap transform entity
 
-    let getPickingPriority dispatcherContainer entity =
-        let transform = getEntityTransform None dispatcherContainer entity
+    let getPickingPriority entity =
+        let transform = getEntityTransform None entity
         transform.Depth
 
     let makeTileMapData (tileMap : Entity) world =
@@ -295,7 +295,7 @@ module Entity =
         else 1
 
     let pickingSort entities world =
-        let priorities = List.map (getPickingPriority world) entities
+        let priorities = List.map getPickingPriority entities
         let prioritiesAndEntities = List.zip priorities entities
         let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
         List.map snd prioritiesAndEntitiesSorted
@@ -304,7 +304,7 @@ module Entity =
         let entitiesSorted = pickingSort entities world
         List.tryFind
             (fun entity ->
-                let transform = getEntityTransform (Some world.Camera) world entity
+                let transform = getEntityTransform (Some world.Camera) entity
                 position.X >= transform.Position.X &&
                     position.X < transform.Position.X + transform.Size.X &&
                     position.Y >= transform.Position.Y &&

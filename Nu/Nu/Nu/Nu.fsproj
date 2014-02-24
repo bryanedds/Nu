@@ -45,9 +45,9 @@
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
   <ItemGroup>
     <Compile Include="RQueue.fs" />
-    <Compile Include="Core.fs" />
-    <Compile Include="Constants.fs" />
-    <Compile Include="Math.fs" />
+    <Compile Include="NuCore.fs" />
+    <Compile Include="NuConstants.fs" />
+    <Compile Include="NuMath.fs" />
     <Compile Include="Voords.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />

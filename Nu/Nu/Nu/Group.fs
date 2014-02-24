@@ -6,7 +6,7 @@ open System.Reflection
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu
-open Nu.Core
+open Nu.NuCore
 open Nu.DomainModel
 open Nu.Sim
 open Nu.Entity
@@ -39,13 +39,13 @@ module Group =
         { Get = fun (group : Group) -> (?) group memberName
           Set = fun value group -> (?<-) group memberName value }
 
-    let worldOptGroupFinder (address : Address) world =
+    let private worldOptGroupFinder (address : Address) world =
         let optGroupMap = Map.tryFind address.[0] world.Groups
         match optGroupMap with
         | None -> None
         | Some groupMap -> Map.tryFind address.[1] groupMap
 
-    let worldGroupAdder (address : Address) world (child : Group) =
+    let private worldGroupAdder (address : Address) world (child : Group) =
         let optGroupMap = Map.tryFind address.[0] world.Groups
         match optGroupMap with
         | None ->
@@ -54,7 +54,7 @@ module Group =
             let groupMap' = Map.add address.[1] child groupMap
             { world with Groups = Map.add address.[0] groupMap' world.Groups }
 
-    let worldGroupRemover (address : Address) world =
+    let private worldGroupRemover (address : Address) world =
         let optGroupMap = Map.tryFind address.[0] world.Groups
         match optGroupMap with
         | None -> world

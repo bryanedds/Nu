@@ -1,7 +1,7 @@
 // Aml - A Modular Language.
 // Copyright (C) Bryan Edds, 2012-2013.
 
-module Aml.Constants
+module Aml.AmlConstants
 open Aml.Ast
 
 let [<Literal>] AmlVersion = 0.044f

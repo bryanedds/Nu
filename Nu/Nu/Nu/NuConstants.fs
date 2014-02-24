@@ -1,8 +1,8 @@
 ﻿namespace Nu
 open System
 open OpenTK
-open Nu.Core
-module Constants =
+open Nu.NuCore
+module NuConstants =
 
     let DesiredFps = 60
     let PhysicsStepRate = 1.0f / single DesiredFps

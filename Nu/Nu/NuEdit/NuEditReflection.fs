@@ -2,20 +2,20 @@
 open System
 open System.Reflection
 open Nu
-open Nu.Core
+open Nu.NuCore
 open Nu.Entity
 open Nu.Group
 open Nu.World
-open NuEdit.Constants
+open NuEdit.NuEditConstants
 
 [<AutoOpen>]
-module ReflectionModule =
+module NuEditReflectionModule =
 
     type EntityProperty =
         | EntityXFieldDescriptor of XFieldDescriptor
         | EntityPropertyInfo of PropertyInfo
 
-module Reflection =
+module NuEditReflection =
 
     let containsProperty<'t> (property : PropertyInfo) =
         typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
