@@ -125,14 +125,14 @@ module ScreenModule =
           Ticks = 0
           Type = transitionType
           OptDissolveSprite = None
-          Xtension = { OptXTypeName = Some <| Lun.make "TransitionDispatcher"; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some <| Lun.make typeof<TransitionDispatcher>.Name; XFields = Map.empty }}
 
     let makeDefaultScreen () =
         { Id = getNuId ()
           State = IdlingState
           Incoming = makeDefaultTransition Incoming
           Outgoing = makeDefaultTransition Outgoing
-          Xtension = { OptXTypeName = Some <| Lun.make "ScreenDispatcher"; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some <| Lun.make typeof<ScreenDispatcher>.Name; XFields = Map.empty }}
 
     let makeDissolveScreen incomingTime outgoingTime =
         let optDissolveSprite = Some <| makeDissolveSprite ()
@@ -140,8 +140,8 @@ module ScreenModule =
         let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite  }
         { makeDefaultScreen () with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 
-    let registerScreen address screen (groupDescriptors : GroupDescriptor list) world =
-        screen?Register (address, screen, groupDescriptors, world)
+    let registerScreen address screen groupDescriptors world =
+        screen?Register (address, screen, (groupDescriptors : GroupDescriptor list), world)
 
     let unregisterScreen address world =
         let screen = get world <| worldScreenLens address

@@ -29,9 +29,6 @@ open Nu.ScreenModule
 open Nu.GameModule
 module WorldModule =
 
-    let FieldFeelerName = Lun.make "Feeler"
-    let FieldAvatarName = Lun.make "Avatar"
-
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
     let initTypeConverters () =
@@ -720,73 +717,6 @@ module WorldModule =
                 | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
                 | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
-    let adjustFieldCamera groupAddress world =
-        let avatarAddress = groupAddress @ [FieldAvatarName]
-        let entity = get world <| worldEntityLens avatarAddress
-        let camera = { world.Camera with EyePosition = entity?Position () + (entity?Size () : Vector2) * 0.5f }
-        { world with Camera = camera }
-
-    let adjustFieldCameraHandler groupAddress _ _ message world =
-        (message, true, adjustFieldCamera groupAddress world)
-
-    let moveFieldAvatarHandler groupAddress _ _ message world =
-        let feelerAddress = groupAddress @ [FieldFeelerName]
-        let feeler = get world <| worldEntityLens feelerAddress
-        if feeler?IsTouched () then
-            let avatarAddress = groupAddress @ [FieldAvatarName]
-            let avatar = get world <| worldEntityLens avatarAddress
-            let camera = world.Camera
-            let view = getInverseViewF camera
-            let mousePositionWorld = world.MouseState.MousePosition + view
-            let avatarCenter = avatar?Position () + (avatar?Size () : Vector2) * 0.5f
-            let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
-            let applyImpulseMessage = { PhysicsId = avatar?PhysicsId (); Impulse = impulseVector }
-            let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
-            (message, true, world')
-        else (message, true, world)
-
-    // TODO: move this to OmniBlade.fs
-    type OmniFieldGroupDispatcher () =
-        inherit GroupDispatcher () with
-        
-            override this.Register (address, omniBattleGroup, entities, world) =
-                let world_ = subscribe TickAddress [] (moveFieldAvatarHandler address) world
-                let world_ = subscribe TickAddress [] (adjustFieldCameraHandler address) world_
-                let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-                let world_ = base.Register (address, omniBattleGroup, entities, world_)
-                adjustFieldCamera address world_
-
-            override this.Unregister (address, omniFieldGroup, world) =
-                let world_ = unsubscribe TickAddress [] world
-                let world_ = unsubscribe TickAddress [] world_
-                base.Unregister (address, omniFieldGroup, world_)
-
-            end
-
-    // TODO: move this to OmniBlade.fs
-    type OmniBattleGroupDispatcher () =
-        inherit GroupDispatcher () with
-
-            override this.Register (address, omniBattleGroup, entities, world) =
-                let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-                base.Register (address, omniBattleGroup, entities, world')
-
-            override this.Unregister (address, omniBattleGroup, world) =
-                base.Unregister (address, omniBattleGroup, world)
-
-            end
-
-    type OmniGameDispatcher () =
-        inherit GameDispatcher ()
-        
-            override this.Register (omniGame, world) =
-                let dispatchers =
-                    Map.addMany
-                        [|Lun.make typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
-                          Lun.make typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj|]
-                        world.Dispatchers
-                { world with Dispatchers = dispatchers }
-
     let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
@@ -802,11 +732,12 @@ module WorldModule =
         let (group, entities) = loadGroupFile groupFileName world
         addScreen screenAddress screen [(groupName, group, entities)] world
 
-    let tryCreateEmptyWorld sdlDeps extData =
+    let tryCreateEmptyWorld sdlDeps userGameDispatcher extData =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
-            let defaultDispatchers =
+            let userGameDispatcherName = Lun.make (userGameDispatcher.GetType ()).Name
+            let dispatchers =
                 Map.ofArray
                     [|Lun.make typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                       Lun.make typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
@@ -821,12 +752,9 @@ module WorldModule =
                       Lun.make typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
                       Lun.make typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                       Lun.make typeof<GameDispatcher>.Name, GameDispatcher () :> obj
-                      // TODO: remove these when editor has a way to specify the GameDispatcher
-                      Lun.make typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
-                      Lun.make typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj
-                      Lun.make typeof<OmniGameDispatcher>.Name, OmniGameDispatcher () :> obj|]
+                      userGameDispatcherName, userGameDispatcher|]
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some <| Lun.make typeof<GameDispatcher>.Name; XFields = Map.empty }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some userGameDispatcherName; XFields = Map.empty }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
@@ -840,9 +768,10 @@ module WorldModule =
                   AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]
                   RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
                   PhysicsMessages = []
-                  Dispatchers = defaultDispatchers
+                  Dispatchers = dispatchers
                   ExtData = extData }
-            Right world
+            let world' = world.Game?Register (world.Game, world)
+            Right world'
 
     let reregisterPhysicsHack groupAddress world =
         let entities = get world <| worldEntitiesLens groupAddress
@@ -920,10 +849,7 @@ module WorldModule =
 
     let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
         runSdl
-            (fun sdlDeps ->
-                match tryCreateWorld sdlDeps with
-                | Left _ as left -> left
-                | Right world -> Right <| world.Game?Register (world.Game, world))
+            (fun sdlDeps -> tryCreateWorld sdlDeps)
             (fun refEvent world ->
                 let event = !refEvent
                 match event.``type`` with
