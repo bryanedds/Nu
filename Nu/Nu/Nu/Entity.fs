@@ -18,38 +18,41 @@ open Nu.Audio
 open Nu.Rendering
 open Nu.Metadata
 open Nu.DomainModel
-open Nu.CameraModule
+open Nu.Camera
 
-type EntityDispatcher () =
-    class
-
-        abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default this.Init (entity, dispatcherContainer) = entity
-
-        abstract member Register : Address * Entity * World -> Entity * World
-        default this.Register (address, entity, world) = (entity, world)
-
-        abstract member Unregister : Address * Entity * World -> World
-        default this.Unregister (address, entity, world) = world
-
-        abstract member PropagatePhysics : Address * Entity * World -> World
-        default this.PropagatePhysics (address, entity, world) = world
-
-        abstract member ReregisterPhysicsHack : Address * Entity * World -> World
-        default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
-
-        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
-        default this.HandleBodyTransformMessage (message, address, entity, world) = world
-
-        abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
-        default this.GetRenderDescriptors (view, entity, world) = []
-
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (entity, world) = Vector2 DefaultEntitySize
-
-        end
-
+[<AutoOpen>]
 module EntityModule =
+
+    type EntityDispatcher () =
+        class
+
+            abstract member Init : Entity * IXDispatcherContainer -> Entity
+            default this.Init (entity, dispatcherContainer) = entity
+
+            abstract member Register : Address * Entity * World -> Entity * World
+            default this.Register (address, entity, world) = (entity, world)
+
+            abstract member Unregister : Address * Entity * World -> World
+            default this.Unregister (address, entity, world) = world
+
+            abstract member PropagatePhysics : Address * Entity * World -> World
+            default this.PropagatePhysics (address, entity, world) = world
+
+            abstract member ReregisterPhysicsHack : Address * Entity * World -> World
+            default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
+
+            abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
+            default this.HandleBodyTransformMessage (message, address, entity, world) = world
+
+            abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
+            default this.GetRenderDescriptors (view, entity, world) = []
+
+            abstract member GetQuickSize : Entity * World -> Vector2
+            default this.GetQuickSize (entity, world) = Vector2 DefaultEntitySize
+
+            end
+
+module Entity =
 
     let entityIdLens =
         { Get = fun entity -> entity.Id

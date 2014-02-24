@@ -6,29 +6,32 @@ open Nu
 open Nu.Core
 open Nu.Constants
 open Nu.DomainModel
-open Nu.GroupModule
+open Nu.Group
 
-type GroupDescriptor =
-    Lun * Group * Entity list
-
-type TransitionDispatcher () =
-    class
-        end
-
-type ScreenDispatcher () =
-    class
-        
-        abstract member Register : Address * Screen * GroupDescriptor list * World -> World
-        default this.Register (address, _, groupDescriptors, world) =
-            addGroups address groupDescriptors world
-
-        abstract member Unregister : Address * Screen * World -> World
-        default this.Unregister (address, _, world) =
-            removeGroups address world
-
-        end
-
+[<AutoOpen>]
 module ScreenModule =
+
+    type GroupDescriptor =
+        Lun * Group * Entity list
+
+    type TransitionDispatcher () =
+        class
+            end
+
+    type ScreenDispatcher () =
+        class
+        
+            abstract member Register : Address * Screen * GroupDescriptor list * World -> World
+            default this.Register (address, _, groupDescriptors, world) =
+                addGroups address groupDescriptors world
+
+            abstract member Unregister : Address * Screen * World -> World
+            default this.Unregister (address, _, world) =
+                removeGroups address world
+
+            end
+
+module Screen =
 
     let transitionIdLens =
         { Get = fun (transition : Transition) -> transition.Id

@@ -12,16 +12,19 @@ open Nu.Assets
 open Nu.Audio
 open Nu.Rendering
 
-type [<StructuralEquality; NoComparison>] AssetMetadata =
-    | TextureMetadata of int * int
-    | TileMapMetadata of string * Sprite list * TmxMap
-    | SoundMetadata
-    | SongMetadata
-    | OtherMetadata of obj
-    | InvalidMetadata of string
+[<AutoOpen>]
+module MetadataModule =
 
-type AssetMetadataMap =
-    Map<Lun, Map<Lun, AssetMetadata>>
+    type [<StructuralEquality; NoComparison>] AssetMetadata =
+        | TextureMetadata of int * int
+        | TileMapMetadata of string * Sprite list * TmxMap
+        | SoundMetadata
+        | SongMetadata
+        | OtherMetadata of obj
+        | InvalidMetadata of string
+
+    type AssetMetadataMap =
+        Map<Lun, Map<Lun, AssetMetadata>>
 
 module Metadata =
 

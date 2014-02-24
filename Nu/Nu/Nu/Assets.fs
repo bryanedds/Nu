@@ -3,41 +3,44 @@ open System
 open System.Linq
 open System.Xml
 
-(* WISDOM: require all abstract types, like Person, to be marked with a version number during
-serialization. Elide versioning, however, on concrete types like Vector2. *)
+[<AutoOpen>]
+module AssetsModule =
 
-/// Describes a game asset, such as a texture, sound, or model in detail.
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] Asset =
-    { Name : string
-      FileName : string
-      Associations : string list
-      PackageName : string }
+    (* WISDOM: require all abstract types, like Person, to be marked with a version number during
+    serialization. Elide versioning, however, on concrete types like Vector2. *)
 
-/// All assets must belong to an asset Package, which is a unit of asset loading.
-///
-/// In order for the renderer to render a single texture, that texture, along with all the other
-/// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
-/// assets is to send an AssetPackageUnload message to the renderer, which unloads them all. There
-/// is an AssetPackageLoad message to load a package when convenient.
-///
-/// The use of a message system for the renderer should enable streamed loading, optionally with
-/// smooth fading-in of late-loaded assets (IE - assets that are already in the view frustum but are
-/// still being loaded).
-///
-/// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
-/// avoid unnecessary Large Object Heap fragmentation.
-///
-/// A serializable value type.
-type [<StructuralEquality; NoComparison>] Package =
-    { Name : string
-      AssetNames : string list }
+    /// Describes a game asset, such as a texture, sound, or model in detail.
+    /// A serializable value type.
+    type [<StructuralEquality; NoComparison>] Asset =
+        { Name : string
+          FileName : string
+          Associations : string list
+          PackageName : string }
 
-type [<StructuralEquality; NoComparison>] AssetKey =
-    { Name : Lun
-      PackageName : Lun }
+    /// All assets must belong to an asset Package, which is a unit of asset loading.
+    ///
+    /// In order for the renderer to render a single texture, that texture, along with all the other
+    /// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
+    /// assets is to send an AssetPackageUnload message to the renderer, which unloads them all. There
+    /// is an AssetPackageLoad message to load a package when convenient.
+    ///
+    /// The use of a message system for the renderer should enable streamed loading, optionally with
+    /// smooth fading-in of late-loaded assets (IE - assets that are already in the view frustum but are
+    /// still being loaded).
+    ///
+    /// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
+    /// avoid unnecessary Large Object Heap fragmentation.
+    ///
+    /// A serializable value type.
+    type [<StructuralEquality; NoComparison>] Package =
+        { Name : string
+          AssetNames : string list }
 
-type 'a AssetMap = Map<Lun, Map<Lun, 'a>>
+    type [<StructuralEquality; NoComparison>] AssetKey =
+        { Name : Lun
+          PackageName : Lun }
+
+    type 'a AssetMap = Map<Lun, Map<Lun, 'a>>
 
 module Assets =
 

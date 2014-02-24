@@ -8,21 +8,24 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
-open Nu.SimModule
-open Nu.EntityModule
+open Nu.Sim
+open Nu.Entity
 
-type GroupDispatcher () =
-    class
-        
-        abstract member Register : Address * Group * Entity list * World -> World
-        default this.Register (address, _, entities, world) = addEntities address entities world
-
-        abstract member Unregister : Address * Group * World -> World
-        default this.Unregister (address, _, world) = removeEntities address world
-
-        end
-
+[<AutoOpen>]
 module GroupModule =
+
+    type GroupDispatcher () =
+        class
+        
+            abstract member Register : Address * Group * Entity list * World -> World
+            default this.Register (address, _, entities, world) = addEntities address entities world
+
+            abstract member Unregister : Address * Group * World -> World
+            default this.Unregister (address, _, world) = removeEntities address world
+
+            end
+
+module Group =
 
     let groupIdLens =
         { Get = fun group -> group.Id

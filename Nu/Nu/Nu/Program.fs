@@ -12,11 +12,11 @@ open Nu.Audio
 open Nu.Rendering
 open Nu.Physics
 open Nu.Metadata
-open Nu.EntityModule
-open Nu.GroupModule
-open Nu.ScreenModule
-open Nu.GameModule
-open Nu.WorldModule
+open Nu.Entity
+open Nu.Group
+open Nu.Screen
+open Nu.Game
+open Nu.World
 module Program =
 
     (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)

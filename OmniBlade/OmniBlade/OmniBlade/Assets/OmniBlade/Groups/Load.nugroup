@@ -9,12 +9,12 @@
       <Xtension xType="ButtonDispatcher">
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">0</Depth>
-        <UpSprite type="Nu.Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
-        <ClickSound type="Nu.Sound">Sound;Default;AssetGraph.xml</ClickSound>
+        <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
         <Position type="OpenTK.Vector2">376;448</Position>
         <IsDown type="System.Boolean">False</IsDown>
-        <DownSprite type="Nu.Sprite">BackButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
@@ -29,8 +29,8 @@
         <Text type="System.String">Load a Game</Text>
         <Size type="OpenTK.Vector2">640;128</Size>
         <Position type="OpenTK.Vector2">176;64</Position>
-        <BoxSprite type="Nu.Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
-        <TextFont type="Nu.Font">Font;Default;AssetGraph.xml</TextFont>
+        <BoxSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
+        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <Rotation type="System.Single">0</Rotation>
         <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
       </Xtension>
@@ -40,7 +40,7 @@
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xType="LabelDispatcher">
-        <LabelSprite type="Nu.Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
+        <LabelSprite type="Nu.RenderingModule+Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">-1</Depth>
         <Size type="OpenTK.Vector2">960;544</Size>

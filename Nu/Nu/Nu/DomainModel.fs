@@ -6,7 +6,6 @@ open System.Xml
 open System.Xml.Serialization
 open Nu
 open Nu.Core
-
 module DomainModel =
 
     let getOptChild optChildFinder address parent =
