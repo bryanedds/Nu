@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <package name="Default">
+    <asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
+    <asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
+    <asset name="Image3" fileName="Assets/Default/Image3.png" associations="Rendering"/>
+    <asset name="Image4" fileName="Assets/Default/Image4.png" associations="Rendering"/>
+    <asset name="Image5" fileName="Assets/Default/Image5.png" associations="Rendering"/>
+    <asset name="Image6" fileName="Assets/Default/Image6.png" associations="Rendering"/>
+    <asset name="Image7" fileName="Assets/Default/Image7.png" associations="Rendering"/>
+    <asset name="Image8" fileName="Assets/Default/Image8.png" associations="Rendering"/>
+    <asset name="Font" fileName="Assets/Default/FreeMonoBold.032.ttf" associations="Rendering"/>
+    <asset name="TileSet" fileName="Assets/Default/TileSet.png" associations="Rendering"/>
+    <asset name="Sound" fileName="Assets/Default/Sound.wav" associations="Audio"/>
+    <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
+    <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
+  </package>
+  <package name="OmniGui">
+    <asset name="BackButtonUp" fileName="Assets/OmniBlade/Gui/BackButtonUp.png" associations="Rendering"/>
+    <asset name="BackButtonDown" fileName="Assets/OmniBlade/Gui/BackButtonDown.png" associations="Rendering"/>
+    <asset name="ExitButtonUp" fileName="Assets/OmniBlade/Gui/ExitButtonUp.png" associations="Rendering"/>
+    <asset name="ExitButtonDown" fileName="Assets/OmniBlade/Gui/ExitButtonDown.png" associations="Rendering"/>
+    <asset name="NewGameButtonUp" fileName="Assets/OmniBlade/Gui/NewGameButtonUp.png" associations="Rendering"/>
+    <asset name="NewGameButtonDown" fileName="Assets/OmniBlade/Gui/NewGameButtonDown.png" associations="Rendering"/>
+    <asset name="LoadGameButtonUp" fileName="Assets/OmniBlade/Gui/LoadGameButtonUp.png" associations="Rendering"/>
+    <asset name="LoadGameButtonDown" fileName="Assets/OmniBlade/Gui/LoadGameButtonDown.png" associations="Rendering"/>
+    <asset name="CreditsButtonUp" fileName="Assets/OmniBlade/Gui/CreditsButtonUp.png" associations="Rendering"/>
+    <asset name="CreditsButtonDown" fileName="Assets/OmniBlade/Gui/CreditsButtonDown.png" associations="Rendering"/>
+  </package>
+  <package name="OmniBattle">
+    <asset name="Ally" fileName="Assets/OmniBlade/Battle/Placeholder/Ally.png" associations="Rendering"/>
+    <asset name="AllyDamage" fileName="Assets/OmniBlade/Battle/Placeholder/AllyDamage.png" associations="Rendering"/>
+    <asset name="AllyMove" fileName="Assets/OmniBlade/Battle/Placeholder/AllyMove.png" associations="Rendering"/>
+    <asset name="Claw" fileName="Assets/OmniBlade/Battle/Placeholder/Claw.png" associations="Rendering"/>
+    <asset name="Back" fileName="Assets/OmniBlade/Battle/Placeholder/Back.png" associations="Rendering"/>
+    <asset name="BackDown" fileName="Assets/OmniBlade/Battle/Placeholder/BackDown.png" associations="Rendering"/>
+    <asset name="Defend" fileName="Assets/OmniBlade/Battle/Placeholder/Defend.png" associations="Rendering"/>
+    <asset name="DefendDown" fileName="Assets/OmniBlade/Battle/Placeholder/DefendDown.png" associations="Rendering"/>
+    <asset name="DualSpecial" fileName="Assets/OmniBlade/Battle/Placeholder/DualSpecial.png" associations="Rendering"/>
+    <asset name="DualSpecialDown" fileName="Assets/OmniBlade/Battle/Placeholder/DualSpecialDown.png" associations="Rendering"/>
+    <asset name="Enemy" fileName="Assets/OmniBlade/Battle/Placeholder/Enemy.png" associations="Rendering"/>
+    <asset name="EnemyDamage" fileName="Assets/OmniBlade/Battle/Placeholder/EnemyDamage.png" associations="Rendering"/>
+    <asset name="EnemyMove" fileName="Assets/OmniBlade/Battle/Placeholder/EnemyMove.png" associations="Rendering"/>
+    <asset name="Fight" fileName="Assets/OmniBlade/Battle/Placeholder/Fight.png" associations="Rendering"/>
+    <asset name="FightDown" fileName="Assets/OmniBlade/Battle/Placeholder/FightDown.png" associations="Rendering"/>
+    <asset name="Go" fileName="Assets/OmniBlade/Battle/Placeholder/Go.png" associations="Rendering"/>
+    <asset name="GoDown" fileName="Assets/OmniBlade/Battle/Placeholder/GoDown.png" associations="Rendering"/>
+    <asset name="Item" fileName="Assets/OmniBlade/Battle/Placeholder/Item.png" associations="Rendering"/>
+    <asset name="ItemDown" fileName="Assets/OmniBlade/Battle/Placeholder/ItemDown.png" associations="Rendering"/>
+    <asset name="Special" fileName="Assets/OmniBlade/Battle/Placeholder/Special.png" associations="Rendering"/>
+    <asset name="SpecialDown" fileName="Assets/OmniBlade/Battle/Placeholder/SpecialDown.png" associations="Rendering"/>
+    <asset name="SpecialField" fileName="Assets/OmniBlade/Battle/Placeholder/SpecialField.png" associations="Rendering"/>
+    <asset name="Strike" fileName="Assets/OmniBlade/Battle/Placeholder/Strike.png" associations="Rendering"/>
+    <asset name="Target" fileName="Assets/OmniBlade/Battle/Placeholder/Target.png" associations="Rendering"/>
+    <asset name="TargetDown" fileName="Assets/OmniBlade/Battle/Placeholder/TargetDown.png" associations="Rendering"/>
+    <asset name="TripleSpecial" fileName="Assets/OmniBlade/Battle/Placeholder/TripleSpecial.png" associations="Rendering"/>
+    <asset name="TripleSpecialDown" fileName="Assets/OmniBlade/Battle/Placeholder/TripleSpecialDown.png" associations="Rendering"/>
+  </package>
+</root>
