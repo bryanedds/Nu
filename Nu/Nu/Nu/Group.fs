@@ -39,28 +39,28 @@ module Group =
         { Get = fun (group : Group) -> (?) group memberName
           Set = fun value group -> (?<-) group memberName value }
 
-    let private worldOptGroupFinder (address : Address) world =
-        let optGroupMap = Map.tryFind address.[0] world.Groups
+    let private worldOptGroupFinder address world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> None
-        | Some groupMap -> Map.tryFind address.[1] groupMap
+        | Some groupMap -> Map.tryFind (List.at 1 address) groupMap
 
-    let private worldGroupAdder (address : Address) world (child : Group) =
-        let optGroupMap = Map.tryFind address.[0] world.Groups
+    let private worldGroupAdder address world child =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None ->
-            { world with Groups = Map.singleton address.[0] <| Map.singleton address.[1] child }
+            { world with Groups = Map.singleton (List.at 0 address) <| Map.singleton (List.at 1 address) child }
         | Some groupMap ->
-            let groupMap' = Map.add address.[1] child groupMap
-            { world with Groups = Map.add address.[0] groupMap' world.Groups }
+            let groupMap' = Map.add (List.at 1 address) child groupMap
+            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
 
-    let private worldGroupRemover (address : Address) world =
-        let optGroupMap = Map.tryFind address.[0] world.Groups
+    let private worldGroupRemover address world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> world
         | Some groupMap ->
-            let groupMap' = Map.remove address.[1] groupMap
-            { world with Groups = Map.add address.[0] groupMap' world.Groups }
+            let groupMap' = Map.remove (List.at 1 address) groupMap
+            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
 
     let worldGroupLens address =
         { Get = fun world -> Option.get <| worldOptGroupFinder address world
@@ -77,14 +77,14 @@ module Group =
                 match Map.tryFind screenLun world.Groups with
                 | None -> Map.empty
                 | Some groupMap -> groupMap
-            | _ -> failwith <| "Invalid group address '" + str address + "'."
+            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
           Set = fun groups world ->
             match address with
             | [screenLun] ->
                 match Map.tryFind screenLun world.Groups with
                 | None -> { world with Groups = Map.add screenLun groups world.Groups }
                 | Some groupMap -> { world with Groups = Map.add screenLun (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
-            | _ -> failwith <| "Invalid group address '" + str address + "'." }
+            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
@@ -136,7 +136,7 @@ module Group =
         let entities =
             Seq.map
                 (fun entityNode -> loadEntityFromXml entityNode world)
-                (enumCast entityNodes)
+                (enbCast entityNodes)
         Seq.toList entities
 
     let loadGroupFromXml (groupNode : XmlNode) world =
@@ -162,7 +162,7 @@ module Group =
         let rootNode = document.["Root"]
         let world' =
             if activatesGameDispatcher then
-                match Seq.tryFind (fun (node : XmlNode)-> node.Name = "GameDispatcher") <| enumCast rootNode.ChildNodes with
+                match Seq.tryFind (fun (node : XmlNode)-> node.Name = "GameDispatcher") <| enbCast rootNode.ChildNodes with
                 | None -> world
                 | Some gameDispatcherNode ->
                     let assemblyFileName = gameDispatcherNode.["AssemblyFileName"].InnerText

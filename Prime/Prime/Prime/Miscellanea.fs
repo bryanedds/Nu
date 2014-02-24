@@ -5,6 +5,12 @@ open System.Diagnostics
 open System.ComponentModel
 open System.Reflection
 
+/// The tautology function.
+let inline tautology _ = true
+
+/// The absurdity function.
+let inline absurdity _ = false
+
 /// A generic identification code type.
 type Id = int64
 
@@ -12,15 +18,15 @@ type Id = int64
 let [<Literal>] InvalidId = 0L
 
 /// Perform a ToString operation on an object.
-let str obj =
+let inline str obj =
     obj.ToString ()
 
 /// Perform a formatted ToString operation on an object.
-let strf (obj : IFormattable) format =
+let inline strf (obj : IFormattable) format =
     obj.ToString (format, null)
 
 /// Perform a formatted ToString operation on an object.
-let strfp (obj : IFormattable) format formatProvider =
+let inline strfp (obj : IFormattable) format formatProvider =
     obj.ToString (format, formatProvider)
 
 /// Apply a function recursively n times.
@@ -50,7 +56,8 @@ let createGetNextId () =
 let assignTypeConverter<'t, 'c> () =
     ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
-let enumCast =
+/// Short-hand for linq enumerable cast.
+let enbCast =
     System.Linq.Enumerable.Cast
 
 let tryFindType typeName =

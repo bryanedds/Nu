@@ -8,28 +8,28 @@ type Either<'a, 'b> =
     | Right of 'b
 
 /// Monadic return.
-let return' a =
+let inline return' a =
     Right a
 
 /// Monadic returnFrom.
 /// TODO: ensure this is defined correctly!
-let returnFrom a =
+let inline returnFrom a =
     a
 
 /// Monadic bind.
-let (>>=) c f =
+let inline (>>=) c f =
     match c with
     | Left _ -> c
     | Right a -> Right <| f a
 
 /// Bind that allows indication of failure.
-let (>>=?) c f =
+let inline (>>=?) c f =
     match c with
     | Left _ -> c
     | Right a -> f a
 
 /// Bind that allows handling of failure.
-let (>>=??) (c : Either<_, _>) f : Either<_, _> =
+let inline (>>=??) (c : Either<_, _>) f : Either<_, _> =
     f c
 
 type EitherBuilder () =
