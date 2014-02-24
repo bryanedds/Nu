@@ -282,7 +282,6 @@ module EntityModule =
         writer.WriteEndElement ()
 
     let loadEntityFromXml (entityNode : XmlNode) (world : World) =
-        // TODO: create entity with loaded XTypeName
         let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None world
         setModelProperties entityNode entity
         entity

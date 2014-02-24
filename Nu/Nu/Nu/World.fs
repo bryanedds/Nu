@@ -729,8 +729,8 @@ module WorldModule =
 
     let createDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
-        let (group, entities) = loadGroupFile groupFileName world
-        addScreen screenAddress screen [(groupName, group, entities)] world
+        let (group, entities, world') = loadGroupFile groupFileName world false
+        addScreen screenAddress screen [(groupName, group, entities)] world'
 
     let tryCreateEmptyWorld sdlDeps userGameDispatcher extData =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with

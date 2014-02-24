@@ -8,6 +8,7 @@ open FSharpx.Lens.Operators
 open Nu
 open Nu.Core
 open Nu.DomainModel
+open Nu.SimulationModule
 open Nu.EntityModule
 
 type GroupDispatcher () =
@@ -104,7 +105,7 @@ module GroupModule =
             world
             groups
 
-    let addGroup address (group : Group, entities) world =
+    let addGroup address (group : Group) entities world =
         let world' =
             match get world <| worldOptGroupLens address with
             | None -> world
@@ -114,7 +115,7 @@ module GroupModule =
 
     let addGroups address groupDescriptors world =
         List.fold
-            (fun world' (groupName, group, entities) -> addGroup (address @ [groupName]) (group, entities) world')
+            (fun world' (groupName, group, entities) -> addGroup (address @ [groupName]) group entities world')
             world
             groupDescriptors
 
@@ -123,7 +124,7 @@ module GroupModule =
             writeEntityToXml writer entityKvp.Value
 
     let writeGroupToXml (writer : XmlWriter) group entities =
-        writer.WriteStartElement typeof<Group>.FullName
+        writer.WriteStartElement typeof<Group>.Name
         writeModelProperties writer group
         writeGroupEntitiesToXml writer entities
 
@@ -132,7 +133,7 @@ module GroupModule =
         let entities =
             Seq.map
                 (fun entityNode -> loadEntityFromXml entityNode world)
-                (System.Linq.Enumerable.Cast entityNodes) // TODO: create Miscellanea.enumCast function
+                (enumCast entityNodes)
         Seq.toList entities
 
     let loadGroupFromXml (groupNode : XmlNode) world =
@@ -152,9 +153,19 @@ module GroupModule =
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
-    let loadGroupFile (fileName : string) world =
+    let loadGroupFile (fileName : string) world activatesGameDispatcher =
         let document = XmlDocument ()
         document.Load fileName
-        let rootNode = document.Item "Root"
-        let groupNode = rootNode.FirstChild
-        loadGroupFromXml groupNode world
+        let rootNode = document.["Root"]
+        let world' =
+            if activatesGameDispatcher then
+                match Seq.tryFind (fun (node : XmlNode)-> node.Name = "GameDispatcher") <| enumCast rootNode.ChildNodes with
+                | None -> world
+                | Some gameDispatcherNode ->
+                    let assemblyFileName = gameDispatcherNode.["AssemblyFileName"].InnerText
+                    let gameDispatcherFullName = gameDispatcherNode.["FullName"].InnerText
+                    activateGameDispatcher assemblyFileName gameDispatcherFullName world
+            else world
+        let groupNode = rootNode.["Group"]
+        let (group, entities) = loadGroupFromXml groupNode world'
+        (group, entities, world')

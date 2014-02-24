@@ -30,7 +30,7 @@ module DomainModel =
         if property.PropertyType = typeof<Xtension> then
             // TODO: move xtension serialization code out to Prime.
             let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some <| Lun.make str
-            let childNodes = System.Linq.Enumerable.Cast valueNode.ChildNodes
+            let childNodes = enumCast valueNode.ChildNodes
             let xFields =
                 Seq.map
                     (fun (xNode : XmlNode) ->
