@@ -177,3 +177,15 @@ type [<StructuralEquality; NoComparison>] Simulant =
     | Screen of Screen
     | Group of Group
     | Entity of Entity
+
+module SimulationModule =
+
+    let activateGameDispatcher assemblyFileName gameDispatcherFullName world =
+        let assembly = Assembly.LoadFrom assemblyFileName
+        let gameDispatcherType = assembly.GetType gameDispatcherFullName
+        let gameDispatcherShortName = gameDispatcherType.Name
+        let gameDispatcher = Activator.CreateInstance gameDispatcherType
+        let dispatchers = Map.add (Lun.make gameDispatcherShortName) gameDispatcher world.Dispatchers
+        let world' = { world with Dispatchers = dispatchers }
+        let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXTypeName = Some <| Lun.make gameDispatcherShortName }}}
+        world''.Game?Register (world''.Game, world'')
