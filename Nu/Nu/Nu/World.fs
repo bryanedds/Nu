@@ -13,9 +13,9 @@ open OpenTK
 open TiledSharp
 open Xtension
 open Nu
-open Nu.Core
-open Nu.Constants
-open Nu.Math
+open Nu.NuCore
+open Nu.NuConstants
+open Nu.NuMath
 open Nu.Physics
 open Nu.Rendering
 open Nu.Metadata
@@ -37,7 +37,7 @@ module World =
         initRenderConverters ()
     
     /// Mark a message as handled.
-    let handle message =
+    let handleMessage message =
         { Handled = true; Data = message.Data }
 
     let getSimulant address world =
@@ -48,7 +48,7 @@ module World =
         | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
         | _ -> failwith <| "Invalid simulant address '" + str address + "'."
 
-    let getSimulants subscriptions world =
+    let getSubscribedSimulants subscriptions world =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let isAddressSelected address world =
@@ -59,16 +59,16 @@ module World =
         | (_, Some []) -> false
         | (addressHead :: addressTail, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
-    let getPublishingPriority simulant world =
+    let getPublishingPriority simulant =
         match simulant with
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | Entity entity -> getPickingPriority world entity
+        | Entity entity -> getPickingPriority entity
 
     let subscriptionSort subscriptions world =
-        let simulants = getSimulants subscriptions world
-        let priorities = List.map (fun simulant -> getPublishingPriority simulant world) simulants
+        let simulants = getSubscribedSimulants subscriptions world
+        let priorities = List.map getPublishingPriority simulants
         let prioritiesAndSubscriptions = List.zip priorities subscriptions
         let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
         List.map snd prioritiesAndSubscriptionsSorted
@@ -119,10 +119,10 @@ module World =
         unsubscribe address subscriber world''
     
     let handleEventAsSwallow _ _ message world =
-        (handle message, true, world)
+        (handleMessage message, true, world)
 
     let handleEventAsExit _ _ message world =
-        (handle message, false, world)
+        (handleMessage message, false, world)
 
     // TODO: consider turning this into a lens, and removing the screenStateLens
     let getScreenState address world =
@@ -149,9 +149,9 @@ module World =
 
     let transitionScreenHandler address _ _ message world =
         let world' = transitionScreen address world
-        (handle message, true, world')
+        (handleMessage message, true, world')
 
-    let rec handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
+    let rec private handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
         let world' = unsubscribe address subscriber world
         if ticks < idlingTime then
             let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
@@ -166,14 +166,14 @@ module World =
                 let world'' = setScreenState selectedScreenAddress OutgoingState world'
                 (message, true, world'')
 
-    let handleSplashScreenIdle idlingTime address subscriber message world =
+    let private handleSplashScreenIdle idlingTime address subscriber message world =
         let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
-        (handle message, true, world')
+        (handleMessage message, true, world')
 
-    let handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
+    let private handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
         let world' = unsubscribe address subscriber world
         let world'' = transitionScreen destScreenAddress world'
-        (handle message, true, world'')
+        (handleMessage message, true, world'')
 
     let handleEventAsScreenTransition screenAddress destScreenAddress address subscriber message world =
         let world' = subscribe (FinishedOutgoingAddressPart @ screenAddress) [] (handleFinishedScreenOutgoing screenAddress destScreenAddress) world
@@ -181,16 +181,15 @@ module World =
         match optSelectedScreenAddress with
         | None ->
             trace <| "Program Error: Could not handle click as screen transition due to no selected screen."
-            (handle message, true, world)
+            (handleMessage message, true, world)
         | Some selectedScreenAddress ->
             let world'' = setScreenState selectedScreenAddress OutgoingState world'
-            (handle message, true, world'')
-
-    let updateTransition1 transition =
-        if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
-        else ({ transition with Ticks = transition.Ticks + 1 }, false)
+            (handleMessage message, true, world'')
 
     let updateTransition update world : bool * World =
+        let updateTransition1 transition =
+            if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
+            else ({ transition with Ticks = transition.Ticks + 1 }, false)
         let (keepRunning, world') =
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
             match optSelectedScreenAddress with
@@ -201,9 +200,9 @@ module World =
                 | IncomingState ->
                     // TODO: remove duplication with below
                     let selectedScreen = get world <| worldScreenLens selectedScreenAddress
-                    let incoming = get selectedScreen incomingLens
+                    let incoming = get selectedScreen screenIncomingLens
                     let (incoming', finished) = updateTransition1 incoming
-                    let selectedScreen' = set incoming' selectedScreen incomingLens
+                    let selectedScreen' = set incoming' selectedScreen screenIncomingLens
                     let world'' = set selectedScreen' world <| worldScreenLens selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
                     if finished then
@@ -214,9 +213,9 @@ module World =
                     else (true, world'3)
                 | OutgoingState ->
                     let selectedScreen = get world <| worldScreenLens selectedScreenAddress
-                    let outgoing = get selectedScreen outgoingLens
+                    let outgoing = get selectedScreen screenOutgoingLens
                     let (outgoing', finished) = updateTransition1 outgoing
-                    let selectedScreen' = set outgoing' selectedScreen outgoingLens
+                    let selectedScreen' = set outgoing' selectedScreen screenOutgoingLens
                     let world'' = set selectedScreen' world <| worldScreenLens selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
                     if finished then
@@ -253,7 +252,7 @@ module World =
                         let button' = button?IsDown <- true
                         let world' = set button' world <| worldEntityLens subscriber
                         let (keepRunning, world'') = publish (straddr "Down" subscriber) { Handled = false; Data = NoData } world'
-                        (handle message, keepRunning, world'')
+                        (handleMessage message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -271,7 +270,7 @@ module World =
                         let (keepRunning', world'') = publish (straddr "Click" subscriber) { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = button?ClickSound () }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
-                        (handle message, keepRunning', world'3)
+                        (handleMessage message, keepRunning', world'3)
                     else (message, keepRunning, world')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -355,7 +354,7 @@ module World =
                     if isInBox3 mousePosition (toggle?Position ()) (toggle?Size ()) then
                         let toggle' = toggle?IsPressed <- true
                         let world' = set toggle' world <| worldEntityLens subscriber
-                        (handle message, true, world')
+                        (handleMessage message, true, world')
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -373,7 +372,7 @@ module World =
                         let (keepRunning, world'') = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle''?ToggleSound () }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
-                        (handle message, keepRunning, world'3)
+                        (handleMessage message, keepRunning, world'3)
                     else
                         let world' = set toggle' world <| worldEntityLens subscriber
                         (message, true, world')
@@ -422,7 +421,7 @@ module World =
                         let feeler' = feeler?IsTouched <- true
                         let world' = set feeler' world <| worldEntityLens subscriber
                         let (keepRunning, world'') = publish (straddr "Touch" subscriber) { Handled = false; Data = mouseButtonData } world'
-                        (handle message, keepRunning, world'')
+                        (handleMessage message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
@@ -435,7 +434,7 @@ module World =
                     let feeler' = feeler?IsTouched <- false
                     let world' = set feeler' world <| worldEntityLens subscriber
                     let (keepRunning, world'') = publish (straddr "Release" subscriber) { Handled = false; Data = NoData } world'
-                    (handle message, keepRunning, world'')
+                    (handleMessage message, keepRunning, world'')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from address '" + str address + "'.")
         
@@ -695,7 +694,7 @@ module World =
             | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
-    let addSplashScreen handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
+    let addSplashScreenFromData handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
         let splashLabel = makeDefaultEntity (Lun.make typeof<LabelDispatcher>.Name) (Some "SplashLabel") world
@@ -705,12 +704,12 @@ module World =
         let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
 
-    let createDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
+    let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
         let (group, entities, world') = loadGroupFile groupFileName world false
         addScreen screenAddress screen [(groupName, group, entities)] world'
 
-    let tryCreateEmptyWorld sdlDeps userGameDispatcher extData =
+    let tryCreateEmptyWorld sdlDeps userGameDispatcher (extData : obj) =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
@@ -801,7 +800,7 @@ module World =
         let renderer' = Nu.Rendering.render renderMessages renderDescriptors renderer
         { world with RenderMessages = []; Renderer = renderer' }
 
-    let handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
+    let private handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
         if not keepRunning then (keepRunning, world)
         else
             match integrationMessage with
@@ -815,8 +814,7 @@ module World =
                 let collisionMessage = { Handled = false; Data = collisionData }
                 publish collisionAddress collisionMessage world
 
-    /// Handle physics integration messages.
-    let handleIntegrationMessages integrationMessages world : bool * World =
+    let private handleIntegrationMessages integrationMessages world : bool * World =
         List.fold handleIntegrationMessage (true, world) integrationMessages
 
     /// Integrate the world.

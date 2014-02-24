@@ -6,8 +6,8 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
-open Nu.Core
-open Nu.Math
+open Nu.NuCore
+open Nu.NuMath
 
 // WISDOM: On avoiding threads where possible...
 //

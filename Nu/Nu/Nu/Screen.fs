@@ -3,8 +3,8 @@ open System
 open FSharpx
 open FSharpx.Lens.Operators
 open Nu
-open Nu.Core
-open Nu.Constants
+open Nu.NuCore
+open Nu.NuConstants
 open Nu.DomainModel
 open Nu.Group
 
@@ -81,14 +81,6 @@ module Screen =
         { Get = fun (screen : Screen) -> (?) screen memberName
           Set = fun value screen -> (?<-) screen memberName value }
 
-    let incomingLens =
-        { Get = fun screen -> screen.Incoming
-          Set = fun incoming screen -> { screen with Incoming = incoming }}
-
-    let outgoingLens =
-        { Get = fun screen -> screen.Outgoing
-          Set = fun outgoing screen -> { screen with Outgoing = outgoing }}
-       
     let worldOptScreenFinder (address : Address)  world =
         Map.tryFind address.[0] world.Screens
 
@@ -116,8 +108,8 @@ module Screen =
             | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
             | _ -> failwith <| "Invalid screen address '" + str address + "'." }
 
-    let worldIncomingLens address = worldScreenLens address >>| incomingLens
-    let worldOutgoingLens address = worldScreenLens address >>| outgoingLens
+    let worldScreenIncomingLens address = worldScreenLens address >>| screenIncomingLens
+    let worldScreenOutgoingLens address = worldScreenLens address >>| screenOutgoingLens
     
     let makeDissolveSprite () =
         { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }

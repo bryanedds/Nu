@@ -4,9 +4,9 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
-open Nu.Core
+open Nu.NuCore
 open Nu.Voords
-open Nu.Constants
+open Nu.NuConstants
 open Nu.Sdl
 open Nu.Audio
 open Nu.Rendering
