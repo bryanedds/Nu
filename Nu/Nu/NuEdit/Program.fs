@@ -583,8 +583,7 @@ module Program =
             form.redoToolStripMenuItem.Enabled <- true
 
     let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
-        refWorld := snd <| updateTransition (fun world2 -> true, world2) world 
-        refWorld := updateEntityDrag form !refWorld
+        refWorld := updateEntityDrag form world
         refWorld := updateCameraDrag form !refWorld
         refWorld := Seq.fold (fun world' changer -> changer world') !refWorld worldChangers
         worldChangers.Clear ()

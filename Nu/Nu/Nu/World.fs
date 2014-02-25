@@ -151,45 +151,11 @@ module World =
         let world' = transitionScreen address world
         (handleMessage message, true, world')
 
-    let rec private handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
-        let world' = unsubscribe address subscriber world
-        if ticks < idlingTime then
-            let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
-            (message, true, world'')
-        else
-            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
-            match optSelectedScreenAddress with
-            | None ->
-                trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                (message, false, world)
-            | Some selectedScreenAddress ->
-                let world'' = setScreenState selectedScreenAddress OutgoingState world'
-                (message, true, world'')
+    let private updateTransition1 transition =
+        if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
+        else ({ transition with Ticks = transition.Ticks + 1 }, false)
 
-    let private handleSplashScreenIdle idlingTime address subscriber message world =
-        let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
-        (handleMessage message, true, world')
-
-    let private handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
-        let world' = unsubscribe address subscriber world
-        let world'' = transitionScreen destScreenAddress world'
-        (handleMessage message, true, world'')
-
-    let handleEventAsScreenTransition screenAddress destScreenAddress (_ : Address) (_ : Address) message world =
-        let world' = subscribe (FinishedOutgoingAddressPart @ screenAddress) [] (handleFinishedScreenOutgoing screenAddress destScreenAddress) world
-        let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
-        match optSelectedScreenAddress with
-        | None ->
-            trace <| "Program Error: Could not handle click as screen transition due to no selected screen."
-            (handleMessage message, true, world)
-        | Some selectedScreenAddress ->
-            let world'' = setScreenState selectedScreenAddress OutgoingState world'
-            (handleMessage message, true, world'')
-
-    let updateTransition update world : bool * World =
-        let updateTransition1 transition =
-            if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
-            else ({ transition with Ticks = transition.Ticks + 1 }, false)
+    let private updateTransition update world =
         let (keepRunning, world') =
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
             match optSelectedScreenAddress with
@@ -227,6 +193,41 @@ module World =
                 | IdlingState -> (true, world)
         if keepRunning then update world'
             else (keepRunning, world')
+
+    let rec private handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
+        let world' = unsubscribe address subscriber world
+        if ticks < idlingTime then
+            let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
+            (message, true, world'')
+        else
+            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
+            match optSelectedScreenAddress with
+            | None ->
+                trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                (message, false, world)
+            | Some selectedScreenAddress ->
+                let world'' = setScreenState selectedScreenAddress OutgoingState world'
+                (message, true, world'')
+
+    let private handleSplashScreenIdle idlingTime address subscriber message world =
+        let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
+        (handleMessage message, true, world')
+
+    let private handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
+        let world' = unsubscribe address subscriber world
+        let world'' = transitionScreen destScreenAddress world'
+        (handleMessage message, true, world'')
+
+    let handleEventAsScreenTransition screenAddress destScreenAddress (_ : Address) (_ : Address) message world =
+        let world' = subscribe (FinishedOutgoingAddressPart @ screenAddress) [] (handleFinishedScreenOutgoing screenAddress destScreenAddress) world
+        let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
+        match optSelectedScreenAddress with
+        | None ->
+            trace "Program Error: Could not handle click as screen transition due to no selected screen."
+            (handleMessage message, true, world)
+        | Some selectedScreenAddress ->
+            let world'' = setScreenState selectedScreenAddress OutgoingState world'
+            (handleMessage message, true, world'')
 
     type [<AutoOpen>] ButtonDispatcher () =
         inherit Entity2dDispatcher ()
@@ -682,6 +683,115 @@ module World =
             | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
+    let private play world =
+        let audioMessages = world.AudioMessages
+        let world' = { world with AudioMessages = [] }
+        { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
+
+    let private getGroupRenderDescriptors camera dispatcherContainer entities =
+        let view = getInverseView camera
+        let entityValues = Map.toValueSeq entities
+        Seq.map (fun entity -> entity?GetRenderDescriptors (view, entity, dispatcherContainer)) entityValues
+
+    let private getTransitionRenderDescriptors camera dispatcherContainer transition =
+        match transition.OptDissolveSprite with
+        | None -> []
+        | Some dissolveSprite ->
+            let progress = single transition.Ticks / single transition.Lifetime
+            let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
+            let color = Vector4 (Vector3.One, alpha)
+            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
+
+    let private getRenderDescriptors world =
+        match get world worldOptSelectedScreenAddressLens with
+        | None -> []
+        | Some activeScreenAddress ->
+            let optGroupMap = Map.tryFind activeScreenAddress.[0] world.Entities
+            match optGroupMap with
+            | None -> []
+            | Some groupMap ->
+                let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
+                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world) entityMaps
+                let descriptorSeq = Seq.concat descriptorSeqs
+                let descriptors = List.concat descriptorSeq
+                let activeScreen = get world (worldScreenLens activeScreenAddress)
+                match activeScreen.State with
+                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Outgoing
+                | IdlingState -> descriptors
+
+    let private render world =
+        let renderMessages = world.RenderMessages
+        let renderDescriptors = getRenderDescriptors world
+        let renderer = world.Renderer
+        let renderer' = Nu.Rendering.render renderMessages renderDescriptors renderer
+        { world with RenderMessages = []; Renderer = renderer' }
+
+    let private handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
+        if not keepRunning then (keepRunning, world)
+        else
+            match integrationMessage with
+            | BodyTransformMessage bodyTransformMessage -> 
+                let entityAddress = bodyTransformMessage.EntityAddress
+                let entity = get world <| worldEntityLens entityAddress
+                (keepRunning, entity?HandleBodyTransformMessage (bodyTransformMessage, entityAddress, entity, world))
+            | BodyCollisionMessage bodyCollisionMessage ->
+                let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
+                let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
+                let collisionMessage = { Handled = false; Data = collisionData }
+                publish collisionAddress collisionMessage world
+
+    let private handleIntegrationMessages integrationMessages world : bool * World =
+        List.fold handleIntegrationMessage (true, world) integrationMessages
+
+    let private integrate world =
+        let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
+        let world' = { world with PhysicsMessages = [] }
+        handleIntegrationMessages integrationMessages world'
+
+    let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
+        runSdl
+            (fun sdlDeps -> tryCreateWorld sdlDeps)
+            (fun refEvent world ->
+                let event = !refEvent
+                match event.``type`` with
+                | SDL.SDL_EventType.SDL_QUIT -> (false, world)
+                | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                    let mousePosition = Vector2 (single event.button.x, single event.button.y)
+                    let world' = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
+                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world'
+                    else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
+                | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
+                    let mouseButton = makeMouseButton event.button.button
+                    let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
+                    let messageAddress = addr ("Down/Mouse" </> str mouseButton)
+                    let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
+                    publish messageAddress { Handled = false; Data = messageData } world'
+                | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
+                    let mouseState = world.MouseState
+                    let mouseButton = makeMouseButton event.button.button
+                    if Set.contains mouseButton mouseState.MouseDowns then
+                        let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
+                        let messageAddress = addr ("Up/Mouse" </> str mouseButton)
+                        let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
+                        publish messageAddress { Handled = false; Data = messageData } world'
+                    else (true, world)
+                | _ -> (true, world))
+            (fun world ->
+                let (keepRunning, world') = integrate world
+                if not keepRunning then (keepRunning, world')
+                else
+                    let (keepRunning', world'') = publish TickAddress { Handled = false; Data = NoData } world'
+                    if not keepRunning' then (keepRunning', world'')
+                    else updateTransition handleUpdate world'')
+            (fun world -> let world' = render world in handleRender world')
+            (fun world -> play world)
+            (fun world -> { world with Renderer = handleRenderExit world.Renderer })
+            sdlConfig
+
+    let run tryCreateWorld handleUpdate sdlConfig =
+        run4 tryCreateWorld handleUpdate id sdlConfig
+
     let addSplashScreenFromData handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
@@ -741,115 +851,3 @@ module World =
     let reregisterPhysicsHack groupAddress world =
         let entities = get world <| worldEntitiesLens groupAddress
         Map.fold (fun world _ entity -> entity?ReregisterPhysicsHack (groupAddress, entity, world)) world entities
-
-    /// Play the world's audio.
-    let private play world =
-        let audioMessages = world.AudioMessages
-        let world' = { world with AudioMessages = [] }
-        { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
-
-    let private getGroupRenderDescriptors camera dispatcherContainer entities =
-        let view = getInverseView camera
-        let entityValues = Map.toValueSeq entities
-        Seq.map (fun entity -> entity?GetRenderDescriptors (view, entity, dispatcherContainer)) entityValues
-
-    let private getTransitionRenderDescriptors camera dispatcherContainer transition =
-        match transition.OptDissolveSprite with
-        | None -> []
-        | Some dissolveSprite ->
-            let progress = single transition.Ticks / single transition.Lifetime
-            let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
-            let color = Vector4 (Vector3.One, alpha)
-            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
-
-    let private getRenderDescriptors world =
-        match get world worldOptSelectedScreenAddressLens with
-        | None -> []
-        | Some activeScreenAddress ->
-            let optGroupMap = Map.tryFind activeScreenAddress.[0] world.Entities
-            match optGroupMap with
-            | None -> []
-            | Some groupMap ->
-                let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world) entityMaps
-                let descriptorSeq = Seq.concat descriptorSeqs
-                let descriptors = List.concat descriptorSeq
-                let activeScreen = get world (worldScreenLens activeScreenAddress)
-                match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Outgoing
-                | IdlingState -> descriptors
-
-    /// Render the world.
-    let private render world =
-        let renderMessages = world.RenderMessages
-        let renderDescriptors = getRenderDescriptors world
-        let renderer = world.Renderer
-        let renderer' = Nu.Rendering.render renderMessages renderDescriptors renderer
-        { world with RenderMessages = []; Renderer = renderer' }
-
-    let private handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
-        if not keepRunning then (keepRunning, world)
-        else
-            match integrationMessage with
-            | BodyTransformMessage bodyTransformMessage -> 
-                let entityAddress = bodyTransformMessage.EntityAddress
-                let entity = get world <| worldEntityLens entityAddress
-                (keepRunning, entity?HandleBodyTransformMessage (bodyTransformMessage, entityAddress, entity, world))
-            | BodyCollisionMessage bodyCollisionMessage ->
-                let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
-                let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
-                let collisionMessage = { Handled = false; Data = collisionData }
-                publish collisionAddress collisionMessage world
-
-    let private handleIntegrationMessages integrationMessages world : bool * World =
-        List.fold handleIntegrationMessage (true, world) integrationMessages
-
-    /// Integrate the world.
-    let private integrate world =
-        let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
-        let world' = { world with PhysicsMessages = [] }
-        handleIntegrationMessages integrationMessages world'
-
-    let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
-        runSdl
-            (fun sdlDeps -> tryCreateWorld sdlDeps)
-            (fun refEvent world ->
-                let event = !refEvent
-                match event.``type`` with
-                | SDL.SDL_EventType.SDL_QUIT -> (false, world)
-                | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                    let world' = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world'
-                    else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
-                | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mouseButton = makeMouseButton event.button.button
-                    let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                    let messageAddress = addr ("Down/Mouse" </> str mouseButton)
-                    let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                    publish messageAddress { Handled = false; Data = messageData } world'
-                | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mouseState = world.MouseState
-                    let mouseButton = makeMouseButton event.button.button
-                    if Set.contains mouseButton mouseState.MouseDowns then
-                        let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
-                        let messageAddress = addr ("Up/Mouse" </> str mouseButton)
-                        let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                        publish messageAddress { Handled = false; Data = messageData } world'
-                    else (true, world)
-                | _ -> (true, world))
-            (fun world ->
-                let (keepRunning, world') = integrate world
-                if not keepRunning then (keepRunning, world')
-                else
-                    let (keepRunning', world'') = publish TickAddress { Handled = false; Data = NoData } world'
-                    if not keepRunning' then (keepRunning', world'')
-                    else handleUpdate world'')
-            (fun world -> let world' = render world in handleRender world')
-            (fun world -> play world)
-            (fun world -> { world with Renderer = handleRenderExit world.Renderer })
-            sdlConfig
-
-    let run tryCreateWorld handleUpdate sdlConfig =
-        run4 tryCreateWorld handleUpdate id sdlConfig

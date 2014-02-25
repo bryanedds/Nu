@@ -723,7 +723,7 @@ let tryAppendDeclarationEntries env entries =
         let existences = Seq.map (fun (key, _) -> declarationFrame.ContainsKey key) entries
         if Seq.exists id existences then None
         else
-            for entry in entries do  declarationFrame.Add entry
+            for entry in entries do declarationFrame.Add entry
             Some env
 
 /// Augment an environment with multiple procedural entries.
