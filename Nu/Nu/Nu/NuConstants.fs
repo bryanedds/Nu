@@ -5,6 +5,7 @@ open Nu.NuCore
 module NuConstants =
 
     let DesiredFps = 60
+    let ScreenClearing = ColorClear (255uy, 255uy, 255uy)
     let PhysicsStepRate = 1.0f / single DesiredFps
     let PhysicsToPixelRatio = 64.0f
     let PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
