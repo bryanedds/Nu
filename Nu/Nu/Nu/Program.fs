@@ -43,7 +43,7 @@ module Program =
         let gameDispatcher = GameDispatcher () :> obj
         run
             (fun sdlDeps -> tryCreateEmptyWorld sdlDeps gameDispatcher ())
-            (fun world -> updateTransition (fun world' -> (true, world')) world)
+            (fun world -> (true, world))
             sdlConfig
 
     (*moduleProgram
