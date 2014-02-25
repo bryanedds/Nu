@@ -15,5 +15,5 @@ module Program =
         let sdlConfig = Sdl.makeSdlConfig sdlViewConfig Voords.VirtualResolutionX Voords.VirtualResolutionY sdlRenderFlags 1024
         World.run
             (fun sdlDeps -> tryCreateOmniBladeWorld sdlDeps ())
-            (fun world -> World.updateTransition (fun world' -> (true, world')) world)
+            (fun world -> (true, world))
             sdlConfig
