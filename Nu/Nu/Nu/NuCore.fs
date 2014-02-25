@@ -9,6 +9,11 @@ module NuCoreModule =
     /// beginning address nodes match the partial address (sort of a wild-card).
     type Address = Lun list
 
+    /// Specifies the screen-clearing routine.
+    type ScreenClear =
+        | NoClear
+        | ColorClear of byte * byte * byte
+
 module NuCore =
 
     /// Create a Nu Id.
