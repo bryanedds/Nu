@@ -4,6 +4,7 @@ open System.Diagnostics
 open System.Threading
 open SDL2
 open Nu
+open Nu.NuConstants
 
 [<AutoOpen>]
 module SdlModule =
@@ -33,8 +34,8 @@ module SdlModule =
 
 module Sdl =
 
-    let [<Literal>] SuccessReturnCode = 0
-    let [<Literal>] FailureReturnCode = 1
+    let private SuccessReturnCode = 0
+    let private FailureReturnCode = 1
 
     let makeMouseButton sdlMouseButton =
         if sdlMouseButton = byte SDL.SDL_BUTTON_LEFT then MouseLeft
@@ -105,8 +106,11 @@ module Sdl =
         result
 
     let renderSdl handleRender sdlDeps world =
-        ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, 0uy, 0uy, 179uy, 255uy))
-        ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
+        match ScreenClearing with
+        | NoClear -> ()
+        | ColorClear (r, g, b) ->
+            ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, r, g, b, 255uy))
+            ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
         let world' = handleRender world
         SDL.SDL_RenderPresent sdlDeps.RenderContext
         world'

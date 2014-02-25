@@ -1,23 +1,69 @@
 ﻿namespace Nu
-open System
 open SDL2
-open OpenTK
-open TiledSharp
 open Nu
-open Nu.NuCore
-open Nu.Voords
-open Nu.NuConstants
-open Nu.Sdl
-open Nu.Audio
-open Nu.Rendering
-open Nu.Physics
-open Nu.Metadata
-open Nu.Entity
-open Nu.Group
-open Nu.Screen
-open Nu.Game
-open Nu.World
 module Program =
+
+    let [<EntryPoint>] main _ =
+
+        // this initializes all the .Net TypeConverters that Nu uses for serialization. This should
+        // always be the first line in your Nu program.
+        World.initTypeConverters ()
+
+        // this specifies the manner in which Nu is viewed. With this configuration, a new window
+        // is created with a title of "Nu Game Engine" and is placed at (32, 32) pixels from the
+        // top left of the screen.
+        let sdlViewConfig =
+            NewWindow
+                { WindowTitle = "Nu Game Engine"
+                  WindowX = 32
+                  WindowY = 32
+                  WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
+
+        // this specifices the manner in which Nu's rendering takes place. With this configuration,
+        // rendering in Nu is hardware accelerated and synchronized with the system's vertical
+        // trace, making for smoother rendering.
+        let sdlRenderFlags =
+            enum<SDL.SDL_RendererFlags>
+                (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
+                 int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+
+        // this makes a configuration record with the specifications we set out above.
+        let sdlConfig =
+            Sdl.makeSdlConfig
+                sdlViewConfig
+                Voords.VirtualResolutionX
+                Voords.VirtualResolutionY
+                sdlRenderFlags
+                1024
+
+        // this is a callback that attempts to create 'the world' in a functional programming
+        // sense. In Nu, the world is represented as a complex record type name World.
+        let tryCreateWorld sdlDeps =
+            
+            // Game dispatchers specify some unique, high-level behavior and data for your game.
+            // Since this particular program has no unique behavior, the vanilla base class
+            // GameDispatcher is used.            
+            let gameDispatcher = GameDispatcher () :> obj
+            
+            // here is an attempt to create Nu's world using SDL dependencies that will be created
+            // from the invoking function using the SDL configuration we defined above, the
+            // gameDispatcher immediately above, and a value that could have been used to
+            // user-defined data to the world had we needed it (we don't, so we pass unit).
+            World.tryCreateEmptyWorld sdlDeps gameDispatcher ()
+
+        // this is a callback that specifies your program's unique behavior when updating the world
+        // every tick. It's return type is a (bool * World). The bool value is whether the program
+        // should continue (true), or exit (false). The World value is the state of the world
+        // after the callback has transformed it. It is here where we initially see Nu's purely-
+        // functional(ish) design. Nu's World type is almost entirely immutable, and the only way
+        // to update it is by making a new copy of an existing one (such as the one we receive in
+        // the parameter here). Since we need no special in this program, we simply return the
+        // world the we received.
+        let updateWorld world =
+            (true, world)
+
+        // after some configuration it is time to run Nu. We're off and running!
+        World.run tryCreateWorld updateWorld sdlConfig
 
     (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 
@@ -34,17 +80,6 @@ module Program =
     1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
     ? gain - avoid rendering clear tiles! *)
-
-    let [<EntryPoint>] main _ =
-        initTypeConverters ()
-        let sdlViewConfig = NewWindow { WindowTitle = "Nu Game Engine"; WindowX = 32; WindowY = 32; WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
-        let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-        let sdlConfig = makeSdlConfig sdlViewConfig VirtualResolutionX VirtualResolutionY sdlRenderFlags 1024
-        let gameDispatcher = GameDispatcher () :> obj
-        run
-            (fun sdlDeps -> tryCreateEmptyWorld sdlDeps gameDispatcher ())
-            (fun world -> (true, world))
-            sdlConfig
 
     (*moduleProgram
     open System
