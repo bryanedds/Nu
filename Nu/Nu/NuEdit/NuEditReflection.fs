@@ -41,12 +41,13 @@ module NuEditReflection =
             p.SetValue (entity', value)
             set entity' world <| worldEntityLens address
 
-    let writeFile fileName world =
+    let writeFile optGameDispatcherDescriptor fileName world =
         let editorGroup = get world <| worldGroupLens EditorGroupAddress
         let editorEntities = get world <| worldEntitiesLens EditorGroupAddress
-        writeGroupFile editorGroup editorEntities fileName world
+        writeGroupFile optGameDispatcherDescriptor editorGroup editorEntities fileName world
 
     let loadFile fileName world =
         let world' = removeGroup EditorGroupAddress world
-        let (group, entities, world'') = loadGroupFile fileName world' true
-        addGroup EditorGroupAddress group entities world''
+        let (optGameDispatcherDescriptor, group, entities, world'') = loadGroupFile fileName world' true
+        let world'3 = addGroup EditorGroupAddress group entities world''
+        (optGameDispatcherDescriptor, world'3)
