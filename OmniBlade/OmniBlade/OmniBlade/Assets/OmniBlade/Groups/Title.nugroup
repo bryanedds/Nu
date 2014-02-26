@@ -3,22 +3,6 @@
   <Group>
     <Xtension xType="GroupDispatcher" />
     <Entity>
-      <Name>New</Name>
-      <Enabled>True</Enabled>
-      <Visible>True</Visible>
-      <Xtension xType="ButtonDispatcher">
-        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
-        <Depth type="System.Single">0</Depth>
-        <UpSprite type="Nu.RenderingModule+Sprite">NewGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
-        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
-        <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">376;232</Position>
-        <IsDown type="System.Boolean">False</IsDown>
-        <DownSprite type="Nu.RenderingModule+Sprite">NewGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
-        <Rotation type="System.Single">0</Rotation>
-      </Xtension>
-    </Entity>
-    <Entity>
       <Name>Exit</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
@@ -31,6 +15,22 @@
         <Position type="OpenTK.Vector2">376;448</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <Rotation type="System.Single">0</Rotation>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>LoadGame</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xType="ButtonDispatcher">
+        <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
+        <Depth type="System.Single">0</Depth>
+        <UpSprite type="Nu.RenderingModule+Sprite">LoadGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
+        <Size type="OpenTK.Vector2">256;64</Size>
+        <Position type="OpenTK.Vector2">376;304</Position>
+        <IsDown type="System.Boolean">False</IsDown>
+        <DownSprite type="Nu.RenderingModule+Sprite">LoadGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
@@ -51,18 +51,18 @@
       </Xtension>
     </Entity>
     <Entity>
-      <Name>Load</Name>
+      <Name>NewGame</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xType="ButtonDispatcher">
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">0</Depth>
-        <UpSprite type="Nu.RenderingModule+Sprite">LoadGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">NewGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">376;304</Position>
+        <Position type="OpenTK.Vector2">376;232</Position>
         <IsDown type="System.Boolean">False</IsDown>
-        <DownSprite type="Nu.RenderingModule+Sprite">LoadGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">NewGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>

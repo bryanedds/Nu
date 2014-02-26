@@ -2,7 +2,7 @@
 <Root>
   <GameDispatcher>
     <AssemblyFileName>../../../../../OmniBlade/OmniBlade/OmniBlade/bin/Debug/OmniBlade.exe</AssemblyFileName>
-    <FullName>OmniBlade.OmniGameDispatcher</FullName>
+    <FullName>OmniBlade.OmniDispatchersModule+OmniGameDispatcher</FullName>
   </GameDispatcher>
   <Group>
     <Xtension xType="OmniFieldGroupDispatcher" />
