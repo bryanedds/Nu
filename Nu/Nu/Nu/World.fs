@@ -804,7 +804,7 @@ module World =
 
     let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
-        let (group, entities, world') = loadGroupFile groupFileName world false
+        let (_, group, entities, world') = loadGroupFile groupFileName world false
         addScreen screenAddress screen [(groupName, group, entities)] world'
 
     let tryCreateEmptyWorld sdlDeps userGameDispatcher (extData : obj) =

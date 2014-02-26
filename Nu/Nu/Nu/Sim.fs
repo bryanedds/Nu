@@ -2,6 +2,7 @@
 open System
 open System.Collections.Generic
 open System.Reflection
+open System.Xml
 open SDL2
 open OpenTK
 open TiledSharp
@@ -191,4 +192,4 @@ module Sim =
         let dispatchers = Map.add (Lun.make gameDispatcherShortName) gameDispatcher world.Dispatchers
         let world' = { world with Dispatchers = dispatchers }
         let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXTypeName = Some <| Lun.make gameDispatcherShortName }}}
-        world''.Game?Register (world''.Game, world'')
+        world''.Game?Register (world''.Game, world'') : World

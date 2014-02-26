@@ -47,6 +47,7 @@ module ProgramModule =
     type EditorState =
         { DragEntityState : DragEntityState
           DragCameraState : DragCameraState
+          OptGameDispatcherDescriptor : (string * string) option
           PastWorlds : World list
           FutureWorlds : World list
           Clipboard : (Entity option) ref }
@@ -90,7 +91,7 @@ module Program =
             // NOTE: we make ids read-only
             with get () =
                 // TODO: find an remove duplication of this expression
-                propertyName.EndsWith "Id" || propertyName.EndsWith "Ids"
+                propertyName.EndsWith "Id" || propertyName.EndsWith "Ids" || propertyName.EndsWith "Ns"
 
         override this.GetValue optSource =
             match optSource with
@@ -316,7 +317,10 @@ module Program =
     let handleSave (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let saveFileResult = form.saveFileDialog.ShowDialog form
         match saveFileResult with
-        | DialogResult.OK -> writeFile form.saveFileDialog.FileName !refWorld
+        | DialogResult.OK ->
+            let world = !refWorld
+            let editorState = world.ExtData :?> EditorState
+            writeFile editorState.OptGameDispatcherDescriptor form.saveFileDialog.FileName world
         | _ -> ()
 
     let handleOpen (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
@@ -324,7 +328,9 @@ module Program =
         match openFileResult with
         | DialogResult.OK ->
             let changer = (fun world ->
-                let world_ = loadFile form.openFileDialog.FileName world
+                let (optGameDispatcherDescriptor, world_) = loadFile form.openFileDialog.FileName world
+                let editorState = { (world.ExtData :?> EditorState) with OptGameDispatcherDescriptor = optGameDispatcherDescriptor }
+                let world_ = { world_ with ExtData = editorState }
                 let world_ = clearPastWorlds world_
                 form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false
@@ -546,7 +552,13 @@ module Program =
     let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
         let screen = makeDissolveScreen 100 100
         let group = makeDefaultGroup ()
-        let editorState = { DragEntityState = DragEntityNone; DragCameraState = DragCameraNone; PastWorlds = []; FutureWorlds = []; Clipboard = ref None }
+        let editorState =
+            { DragEntityState = DragEntityNone
+              DragCameraState = DragCameraNone
+              OptGameDispatcherDescriptor = None
+              PastWorlds = []
+              FutureWorlds = []
+              Clipboard = ref None }
         let gameDispatcher = GameDispatcher () :> obj
         let optWorld = tryCreateEmptyWorld sdlDeps gameDispatcher editorState
         match optWorld with
