@@ -1,7 +1,11 @@
 OmniBlade
 =========
 
-This repository hosts several projects, including the **Nu Game Engine**, the programming language **Aml**, and the haphazard but potentially useful F# code library **Prime**.
+This repository hosts several projects, including -
+
+- the **Nu Game Engine**,
+- the programming language **Aml**, and
+- the small but potentially useful F# code library **Prime**.
 
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents, and if studying Aml, to run the *AmlRepl project* from Visual Studio.
 
