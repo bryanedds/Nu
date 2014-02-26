@@ -19,9 +19,9 @@ module Program =
                   WindowY = 32
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
 
-        // this specifices the manner in which Nu's rendering takes place. With this configuration,
-        // rendering in Nu is hardware accelerated and synchronized with the system's vertical
-        // trace, making for smoother rendering.
+        // this specifies the manner in which Nu's rendering takes place. With this configuration,
+        // rendering in Nu is hardware-accelerated and synchronized with the system's vertical
+        // trace, making for fast and smooth rendering.
         let sdlRenderFlags =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
@@ -50,15 +50,16 @@ module Program =
             // gameDispatcher immediately above, and a value that could have been used to
             // user-defined data to the world had we needed it (we don't, so we pass unit).
             World.tryCreateEmptyWorld sdlDeps gameDispatcher ()
-
-        // this is a callback that specifies your program's unique behavior when updating the world
-        // every tick. It's return type is a (bool * World). The bool value is whether the program
+            
+        // this is a callback that specifies your game's unique behavior when updating the world
+        // every tick. Its return type is a (bool * World). The bool value is whether the program
         // should continue (true), or exit (false). The World value is the state of the world
-        // after the callback has transformed it. It is here where we initially see Nu's purely-
-        // functional(ish) design. Nu's World type is almost entirely immutable, and the only way
-        // to update it is by making a new copy of an existing one (such as the one we receive in
-        // the parameter here). Since we need no special in this program, we simply return the
-        // world the we received.
+        // after the callback has transformed the one it receives. It is here where we first clearly
+        // see Nu's purely-functional(ish) design. The World type is almost entirely immutable, and
+        // thus the only way to update it is by making a new copy of an existing instance. Since we
+        // need no special update behavoir in this program, we simply return the world as it was
+        // received.
+
         let updateWorld world =
             (true, world)
 

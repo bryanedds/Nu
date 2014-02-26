@@ -6,7 +6,8 @@ open TiledSharp
 open Nu
 module OmniFlow =
 
-    // transition constants
+    // transition constants. These, and the following constants, will be explained in depth later.
+    // Just scan over them for now, or look at them in the debugger on your own.
     let IncomingTimeSplash = 60
     let IncomingTime = 20
     let IdlingTime = 60
@@ -50,11 +51,11 @@ module OmniFlow =
     // time constants
     let TimeAddress = NuCore.addr "Time"
 
-    // describes how to add the OmniBlade title screen to the world.
+    // now we have something worth explaining. This function adds the OmniBlade title screen to
+    // the world.
     let addTitleScreen world =
         
-        // add a dissolve screen from the specified file with the given
-        // parameter
+        // this adds a dissolve screen from the specified file with the given parameter
         let world_ =
             World.addDissolveScreenFromFile
                 TitleGroupFileName
@@ -64,9 +65,8 @@ module OmniFlow =
                 TitleAddress
                 world
         
-        // subscribe to the event that is raised when the Title screen's New
-        // Game button is clicked, and handle the event by transitioning to the
-        // Field screen
+        // this subscribes to the event that is raised when the Title screen's New Game button is
+        // clicked, and handle the event by transitioning to the Field screen
         let world_ =
             World.subscribe
                 ClickTitleNewGameAddress
@@ -74,9 +74,8 @@ module OmniFlow =
                 (World.handleEventAsScreenTransition TitleAddress FieldAddress)
                 world_
         
-        // subscribe to the event that is raised when the Title screen's Load
-        // Game button is clicked, and handle the event by transitioning to the
-        // Field screen
+        // subscribes to the event that is raised when the Title screen's Load Game button is
+        // clicked, and handle the event by transitioning to the Field screen
         let world_ =
             World.subscribe
                 ClickTitleLoadGameAddress
@@ -84,9 +83,8 @@ module OmniFlow =
                 (World.handleEventAsScreenTransition TitleAddress LoadGameAddress)
                 world_
         
-        // subscribe to the event that is raised when the Title screen's Credits
-        // button is clicked, and handle the event by transitioning to the
-        // Field screen
+        // subscribes to the event that is raised when the Title screen's Credits button is
+        // clicked, and handle the event by transitioning to the Field screen
         let world_ =
             World.subscribe
                 ClickTitleCreditsAddress
@@ -94,8 +92,8 @@ module OmniFlow =
                 (World.handleEventAsScreenTransition TitleAddress CreditsAddress)
                 world_
         
-        // subscribe to the event that is raised when the Title screen's Exit
-        // button is clicked, and handle the event by exiting the game
+        // subscribes to the event that is raised when the Title screen's Exit button is clicked,
+        // and handle the event by exiting the game
         World.subscribe ClickTitleExitAddress [] World.handleEventAsExit world_
 
     // pretty much the same as above, but for the Load Game screen
@@ -157,9 +155,8 @@ module OmniFlow =
         // our custom game dispatcher here is OmniGameDispatcher
         let gameDispatcher = OmniGameDispatcher () :> obj
 
-        // we use the World.tryCreateEmptyWorld as a convenience function to
-        // create an empty world that we will transform to create the OmniBlade
-        // world.
+        // we use the World.tryCreateEmptyWorld as a convenience function to create an empty world
+        // that we will transform to create the OmniBlade world.
         let optWorld = World.tryCreateEmptyWorld sdlDeps gameDispatcher extData
         match optWorld with
         | Left _ as left -> left
@@ -171,8 +168,8 @@ module OmniFlow =
                   PackageName = Lun.make "Default"
                   PackageFileName = "AssetGraph.xml" }
 
-            // add to the world a splash screen that automatically transitions to the
-            // Title screen when finished
+            // add to the world a splash screen that automatically transitions to the Title screen
+            // when finished
             let world_ =
                 World.addSplashScreenFromData
                     (World.transitionScreenHandler TitleAddress)
