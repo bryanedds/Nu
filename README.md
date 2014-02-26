@@ -1,7 +1,27 @@
 OmniBlade
 =========
 
-- License -
+This repository hosts several projects, including -
+
+- the **Nu Game Engine**,
+- the programming language **Aml**,
+- the small but potentially useful F# code library **Prime**, and
+- the game **OmniBlade** that I just barely started on.
+
+The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
+
+The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/OmniBlade/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
+
+The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/OmniBlade/tree/master/Aml/Documentation
+
+If you're looking at Aml, run the **AmlRepl project** from Visual Studio and follow its instructions (especially in studying the StdLib Aml code to get a real feel for the language).
+
+Finally, please check out the license for this repository below!
+
+Thanks all for checking out my work so far!
+
+License
+=======
 
 Copyright (c) 2013 Bryan Edds
 
@@ -20,7 +40,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-- End of License -
+End of License
+==============
 
-TL;DR - The code in this repository  is free and open source, but the art
-(images, music, sound effects, etc.) is not.
+License TL;DR: In fewer words, the code in this repositoryis free and open source,
+but the art (images, music, sound effects, etc.) is not.
