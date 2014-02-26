@@ -11,7 +11,8 @@ The current documentation for the Aml programming language is found here - https
 
 Check out the license for this repository below.
 
-- License -
+License
+=======
 
 Copyright (c) 2013 Bryan Edds
 
@@ -30,7 +31,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-- End of License -
+End of License
+==============
 
-TL;DR - The code in this repository  is free and open source, but the art
-(images, music, sound effects, etc.) is not.
+License TL;DR: In fewer words, the code in this repositoryis free and open source,
+but the art (images, music, sound effects, etc.) is not.
