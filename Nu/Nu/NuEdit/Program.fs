@@ -69,6 +69,14 @@ module Program =
         let editorState_ = { editorState_ with PastWorlds = [] }
         { world with ExtData = editorState_ }
 
+    let populateEntityDispatcherComboBox (form : NuEditForm) =
+        form.createEntityComboBox.Items.Clear ()
+        let entityDispatcherType = typeof<EntityDispatcher>
+        for assembly in AppDomain.CurrentDomain.GetAssemblies () do
+            for aType in assembly.DefinedTypes do
+                if aType.IsSubclassOf entityDispatcherType && not aType.IsAbstract then
+                    ignore <| form.createEntityComboBox.Items.Add aType.Name
+
     type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
         { Address : Address
           Form : NuEditForm
@@ -285,21 +293,24 @@ module Program =
         form.Close ()
 
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
-        let changer = (fun world ->
-            let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-            let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultEntitySize; Rotation = DefaultEntityRotation }
-            let entityXTypeName = Lun.make form.createEntityComboBox.Text
-            let entity_ = makeDefaultEntity entityXTypeName None world
-            let (positionSnap, rotationSnap) = getSnaps form
-            let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform world entity_
-            let entityAddress = addrstr EditorGroupAddress entity_.Name
-            let world_ = addEntity entityAddress entity_ world
-            let world_ = pushPastWorld world world_
-            refWorld := world_ // must be set for property grid
-            form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-            world_)
-        refWorld := changer !refWorld
-        worldChangers.Add changer
+        let world = !refWorld
+        let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
+        let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultEntitySize; Rotation = DefaultEntityRotation }
+        let entityXTypeName = Lun.make form.createEntityComboBox.Text
+        try let entity_ = makeDefaultEntity entityXTypeName None world
+            let changer = (fun world_ ->
+                let (positionSnap, rotationSnap) = getSnaps form
+                let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform world_ entity_
+                let entityAddress = addrstr EditorGroupAddress entity_.Name
+                let world_ = addEntity entityAddress entity_ world_
+                let world_ = pushPastWorld world world_
+                refWorld := world_ // must be set for property grid
+                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                world_)
+            refWorld := changer !refWorld
+            worldChangers.Add changer
+        with exn ->
+            ignore <| MessageBox.Show ("Invalid entity XType name '" + entityXTypeName.LunStr + "'.")
 
     let handleDelete (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let selectedObject = form.propertyGrid.SelectedObject
@@ -332,6 +343,7 @@ module Program =
                 let editorState = { (world.ExtData :?> EditorState) with OptGameDispatcherDescriptor = optGameDispatcherDescriptor }
                 let world_ = { world_ with ExtData = editorState }
                 let world_ = clearPastWorlds world_
+                populateEntityDispatcherComboBox form
                 form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false
                 world_)
@@ -519,7 +531,6 @@ module Program =
         form.positionSnapTextBox.Text <- str DefaultPositionSnap
         form.rotationSnapTextBox.Text <- str DefaultRotationSnap
         form.creationDepthTextBox.Text <- str DefaultCreationDepth
-        form.createEntityComboBox.SelectedIndex <- 0
         form.exitToolStripMenuItem.Click.Add (handleExit form)
         form.createEntityButton.Click.Add (handleCreate form worldChangers refWorld false)
         form.createToolStripMenuItem.Click.Add (handleCreate form worldChangers refWorld false)
@@ -545,7 +556,7 @@ module Program =
         form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
         form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
         form.clearAllXFieldsButton.Click.Add (handleClearAllXFields form worldChangers refWorld)
-        // TODO: populate form.createEntityComboBox properly!
+        populateEntityDispatcherComboBox form
         form.Show ()
         form
 

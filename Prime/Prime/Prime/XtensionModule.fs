@@ -63,8 +63,8 @@ type [<StructuralEqualityAttribute; NoComparison>] Xtension =
                         | null -> failwith <| "Could not find method '" + memberName + "' on dispatcher '" + dispatcherType.Name + "'."
                         | aMethod ->
                             try aMethod.Invoke (dispatcher, argArray) :?> 'r with
-                            | ex when ex.InnerException <> null -> raise ex.InnerException
-                            | ex -> debug <| "Unknown failure during method invocation'" + str ex + "'."; raise ex
+                            | exn when exn.InnerException <> null -> raise exn.InnerException
+                            | exn -> debug <| "Unknown failure during method invocation'" + str exn + "'."; raise exn
                     | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer."
 
             // just return field
