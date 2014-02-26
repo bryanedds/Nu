@@ -326,6 +326,7 @@ module Program =
         worldChangers.Add changer
 
     let handleSave (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
+        form.saveFileDialog.FileName <- String.Empty
         let saveFileResult = form.saveFileDialog.ShowDialog form
         match saveFileResult with
         | DialogResult.OK ->
