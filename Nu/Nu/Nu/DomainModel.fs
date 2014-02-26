@@ -65,7 +65,8 @@ module DomainModel =
         let aType = obj.GetType ()
         let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
         for property in publicProperties do
-            if not (property.Name.EndsWith "Id" || property.Name.EndsWith "Ids") then
+            // TODO: find an remove duplication of this expression
+            if not (property.Name.EndsWith "Id" || property.Name.EndsWith "Ids" || property.Name.EndsWith "Ns") then
                 let propertyValue = property.GetValue obj
                 match propertyValue with
                 | :? Xtension as xtension ->
@@ -74,7 +75,8 @@ module DomainModel =
                     writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name.LunStr)
                     for xField in xtension.XFields do
                         let xFieldName = xField.Key.LunStr
-                        if (xFieldName.EndsWith "Id" || xFieldName.EndsWith "Ids") then ()
+                        // TODO: find an remove duplication of this expression
+                        if (xFieldName.EndsWith "Id" || xFieldName.EndsWith "Ids" || property.Name.EndsWith "Ns") then ()
                         else
                             let xValue = xField.Value
                             let xType = xValue.GetType ()
