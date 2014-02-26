@@ -161,8 +161,9 @@ module Group =
         document.Load fileName
         let rootNode = document.["Root"]
         let world' =
+            // TODO: have editor save the game dispatcher info
             if activatesGameDispatcher then
-                match Seq.tryFind (fun (node : XmlNode)-> node.Name = "GameDispatcher") <| enbCast rootNode.ChildNodes with
+                match Seq.tryFind (fun (node : XmlNode) -> node.Name = "GameDispatcher") <| enbCast rootNode.ChildNodes with
                 | None -> world
                 | Some gameDispatcherNode ->
                     let assemblyFileName = gameDispatcherNode.["AssemblyFileName"].InnerText
