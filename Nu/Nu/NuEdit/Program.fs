@@ -638,3 +638,8 @@ module Program =
             (updateEditorWorld form worldChangers refWorld)
             (fun world -> form.displayPanel.Invalidate (); world)
             sdlConfig
+
+    let buttonAddress = NuCore.addr "TitleScreen/MainGroup/MyButton"
+    let button = get world <| Entity.worldEntityLens buttonAddress
+
+    let button' = { button with Enabled = false }
