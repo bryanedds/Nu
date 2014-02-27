@@ -27,6 +27,11 @@ The **Nu Game Engine** is looking for sponsors! If you're interested in sponsori
 
 **OmniBlade** is also looking for sponsors!
 
+Project Vlog
+============
+
+Keep up with the state of development and get some insight on how the project is implemented here - https://www.youtube.com/channel/UCPoDCc41MwqEwhIHp32LpSA
+
 License
 =======
 
