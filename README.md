@@ -48,5 +48,5 @@ THE SOFTWARE.
 End of License
 ==============
 
-License TL;DR: In fewer words, the code in this repositoryis free and open source,
+License TL;DR: The code in this repositoryis free and open source,
 but the art (images, music, sound effects, etc.) is not.
