@@ -20,6 +20,11 @@ Finally, please check out the license for this repository below!
 
 Thanks all for checking out my work so far!
 
+Sponsors
+========
+
+**The Nu Game Engine** is looking for sponsors! If you're interested in sponsoring development for what I hope will become **the world's first mainstream functional game engine**, please contact me at bryanedds@gmail.com . Otherwise, I'll just have to work on it in my spare time, which can be erratic :S
+
 License
 =======
 
