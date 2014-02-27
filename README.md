@@ -25,6 +25,8 @@ Sponsors
 
 The **Nu Game Engine** is looking for sponsors! If you're interested in sponsoring development for what I hope will become **the world's first mainstream functional game engine**, please contact me at bryanedds@gmail.com . Otherwise, I'll just have to work on it in my spare time, which can be erratic :S
 
+**OmniBlade** is also looking for sponsors!
+
 License
 =======
 
