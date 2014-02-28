@@ -73,7 +73,7 @@ module NuMath =
         assignTypeConverter<Vector3, Vector3TypeConverter> ()
         assignTypeConverter<Vector4, Vector4TypeConverter> ()
 
-    let identity =
+    let transformIdentity =
         { Position = Vector2.Zero
           Depth = 0.0f
           Size = Vector2.One

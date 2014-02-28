@@ -37,7 +37,7 @@ module Program =
                 1024
 
         // this is a callback that attempts to create 'the world' in a functional programming
-        // sense. In Nu, the world is represented as a complex record type name World.
+        // sense. In Nu, the world is represented as a complex record type named World.
         let tryCreateWorld sdlDeps =
             
             // Game dispatchers specify some unique, high-level behavior and data for your game.
@@ -46,7 +46,7 @@ module Program =
             let gameDispatcher = GameDispatcher () :> obj
             
             // here is an attempt to create Nu's world using SDL dependencies that will be created
-            // from the invoking function using the SDL configuration we defined above, the
+            // from the invoking function using the SDL configuration that we defined above, the
             // gameDispatcher immediately above, and a value that could have been used to
             // user-defined data to the world had we needed it (we don't, so we pass unit).
             World.tryCreateEmptyWorld sdlDeps gameDispatcher ()
