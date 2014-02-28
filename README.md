@@ -20,6 +20,18 @@ Finally, please check out the license for this repository below!
 
 Thanks all for checking out my work so far!
 
+Sponsors
+========
+
+The **Nu Game Engine** is looking for sponsors! If you're interested in sponsoring development for what I hope will become **the world's first mainstream functional game engine**, please contact me at bryanedds@gmail.com . Otherwise, I'll just have to work on it in my spare time, which can be erratic :S
+
+**OmniBlade** is also looking for sponsors!
+
+Project Vlog
+============
+
+Keep up with the state of development and get some insight on how the project is implemented here - https://www.youtube.com/channel/UCPoDCc41MwqEwhIHp32LpSA
+
 License
 =======
 
@@ -43,5 +55,5 @@ THE SOFTWARE.
 End of License
 ==============
 
-License TL;DR: In fewer words, the code in this repositoryis free and open source,
+License TL;DR: The code in this repositoryis free and open source,
 but the art (images, music, sound effects, etc.) is not.
