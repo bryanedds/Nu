@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open FParsec.CharParsers
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Primitives

@@ -1,4 +1,8 @@
-﻿module Array
+﻿// Prime - A PRIMitivEs code library.
+// Copyright (C) Bryan Edds, 2012-2013.
+
+[<RequireQualifiedAccess>]
+module Array
 
 /// Index into an array.
 let inline at index (arr : 'a array)=

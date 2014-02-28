@@ -1,5 +1,6 @@
 ﻿namespace OmniBlade
 open OpenTK
+open Prime
 open Nu
 
 [<AutoOpen>]

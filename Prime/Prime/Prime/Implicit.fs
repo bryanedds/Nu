@@ -1,9 +1,11 @@
-﻿[<AutoOpen>]
-module Implicit
+﻿namespace Prime
 
-/// As close as we can get to F# implicits.
-let inline implicit arg =
-    (^a : (static member op_Implicit : ^b -> ^a) arg)
+[<AutoOpen>]
+module Implicit =
+
+    /// As close as we can get to F# implicits.
+    let inline implicit arg =
+        (^a : (static member op_Implicit : ^b -> ^a) arg)
 
 /// Implicit-conversion example.
 module Example =

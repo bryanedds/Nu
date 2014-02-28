@@ -4,6 +4,7 @@
 module Aml.Initial
 open System
 open System.Collections.Generic
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Primitives

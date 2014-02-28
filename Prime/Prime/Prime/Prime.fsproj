@@ -55,16 +55,12 @@
     <Compile Include="Map.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
-    <Compile Include="MapPlusModule.fs" />
     <Compile Include="MapPlus.fs" />
-    <Compile Include="LunModule.fs" />
     <Compile Include="Lun.fs" />
     <Compile Include="Lensx.fs" />
-    <Compile Include="RduTreeModule.fs" />
     <Compile Include="RduTree.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Propagate.fs" />
-    <Compile Include="XtensionModule.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />

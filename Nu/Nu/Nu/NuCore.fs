@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open Prime
 
 [<AutoOpen>]
 module NuCoreModule =

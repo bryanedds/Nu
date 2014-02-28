@@ -7,6 +7,7 @@ open System.Linq
 open System.Xml
 open OpenTK
 open TiledSharp
+open Prime
 open Nu
 open Nu.Assets
 open Nu.Audio

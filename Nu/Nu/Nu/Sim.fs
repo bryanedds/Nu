@@ -6,6 +6,7 @@ open System.Xml
 open SDL2
 open OpenTK
 open TiledSharp
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuMath

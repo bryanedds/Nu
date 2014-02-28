@@ -11,7 +11,7 @@ open FSharpx.Lens.Operators
 open SDL2
 open OpenTK
 open TiledSharp
-open Xtension
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuConstants

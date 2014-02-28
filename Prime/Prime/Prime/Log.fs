@@ -1,27 +1,38 @@
-﻿[<AutoOpen>]
-module Log
+﻿namespace Prime
 open System
 open System.Diagnostics
 
-let note message =
-    Trace.WriteLine message
+[<AutoOpen>]
+module Log =
 
-let trace message =
-    Trace.Fail message
-    note message
+    /// Log a message with a Trace.WriteLine.
+    let note message =
+        Trace.WriteLine message
 
-let traceIf bl message =
-    if bl then trace message
+    /// Log a message with a Trace.Fail and call to note.
+    let trace message =
+        Trace.Fail message
+        note message
 
-let debug message =
-    Debug.Fail message
-    note message
+    /// Conditional trace call where condition is eagerly evaluted.
+    let traceIf bl message =
+        if bl then trace message
 
-let debugIf predicate message =
+    /// Log a message with Debug.Fail and call to note.
+    let debug message =
 #if DEBUG
-    if predicate () then
         Debug.Fail message
         note message
 #else
-    ()
+        ()
+#endif
+
+    /// Conditional debug call where condition is lazily evaluated.
+    let debugIf predicate message =
+#if DEBUG
+        if predicate () then
+            Debug.Fail message
+            note message
+#else
+        ()
 #endif

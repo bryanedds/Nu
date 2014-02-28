@@ -1,91 +1,93 @@
-﻿[<AutoOpen>]
-module Lensx
+﻿namespace Prime
 open FSharpx
 
-// Here, Lens operations are globalized for convenience, except for Lens creation, composition, and
-// conversion operations.
+[<AutoOpen>]
+module Lensx =
 
-(*/// Creates a lens that maps the given lens in an array
-let arrayMap = Lens.arrayMap
+    // Here, Lens operations are globalized for convenience, except for Lens creation, composition, and
+    // conversion operations.
 
-/// Composes two lenses through a sum in the source
-let choice = Lens.choice
+    (*/// Creates a lens that maps the given lens in an array
+    let arrayMap = Lens.arrayMap
 
-/// Sequentially composes two lenses
-let compose = Lens.compose
+    /// Composes two lenses through a sum in the source
+    let choice = Lens.choice
 
-/// Undocumented
-let codiag<'T> = Lens.codiag
+    /// Sequentially composes two lenses
+    let compose = Lens.compose
 
-/// <summary>
-/// <paramref name="pred"/> is applied to source. 
-/// If true, <paramref name="lensTrue"/> is selected.
-/// If false, <paramref name="lensFalse"/> is selected.
-/// </summary>
-let cond = Lens.cond*)
+    /// Undocumented
+    let codiag<'T> = Lens.codiag
 
-/// Lens for a particular position in an array
-let forArray = Lens.forArray
+    /// <summary>
+    /// <paramref name="pred"/> is applied to source. 
+    /// If true, <paramref name="lensTrue"/> is selected.
+    /// If false, <paramref name="lensFalse"/> is selected.
+    /// </summary>
+    let cond = Lens.cond*)
 
-/// Lens for a particular position in a list
-let forList = Lens.forList
+    /// Lens for a particular position in an array
+    let forArray = Lens.forArray
 
-/// Lens for a particular key in a map
-let forMap = Lens.forMap
+    /// Lens for a particular position in a list
+    let forList = Lens.forList
 
-/// Lens for a particular value in a set
-let forSet = Lens.forSet
+    /// Lens for a particular key in a map
+    let forMap = Lens.forMap
 
-/// Gets/sets the fst element in a pair through a lens
-let fstL = Lens.fst
+    /// Lens for a particular value in a set
+    let forSet = Lens.forSet
 
-/// Get a value through a lens
-let get = Lens.get
+    /// Gets/sets the fst element in a pair through a lens
+    let fstL = Lens.fst
 
-/// Modifies the state in a state monad and returns the original value
-let getAndModifyState = Lens.getAndModifyState
+    /// Get a value through a lens
+    let get = Lens.get
 
-/// Applies a lens in the 'get' direction within a state monad
-let getState = Lens.getState
+    /// Modifies the state in a state monad and returns the original value
+    let getAndModifyState = Lens.getAndModifyState
 
-/// Identity lens
-let idL = Lens.id
+    /// Applies a lens in the 'get' direction within a state monad
+    let getState = Lens.getState
 
-(*/// Undocumented
-let ignore = Lens.ignore
+    /// Identity lens
+    let idL = Lens.id
 
-/// Creates a lens that maps the given lens in a list
-let listMap = Lens.listMap
+    (*/// Undocumented
+    let ignore = Lens.ignore
 
-/// Converts a lens that views a list into a lens that views an array
-let listToArray = Lens.listToArray*)
+    /// Creates a lens that maps the given lens in a list
+    let listMap = Lens.listMap
 
-/// Modifies the state in a state monad and returns the modified value.
-let modifyAndGetState = Lens.modifyAndGetState
+    /// Converts a lens that views a list into a lens that views an array
+    let listToArray = Lens.listToArray*)
 
-(*/// Pair two lenses
-let pair = Lens.pair
+    /// Modifies the state in a state monad and returns the modified value.
+    let modifyAndGetState = Lens.modifyAndGetState
 
-/// Creates a lens that maps the given lens in a sequence
-let seqMap = Lens.seqMap*)
+    (*/// Pair two lenses
+    let pair = Lens.pair
 
-/// Set a value through a lens
-let set = Lens.set
+    /// Creates a lens that maps the given lens in a sequence
+    let seqMap = Lens.seqMap*)
 
-/// Set a value through a lens with piping state
-let inline setP a lens b = Lens.set a b lens
+    /// Set a value through a lens
+    let set = Lens.set
 
-/// Applies a lens in the 'set' direction within a state monad
-let setState = Lens.setState
+    /// Set a value through a lens with piping state
+    let inline setP a lens b = Lens.set a b lens
 
-/// Gets/sets the snd element in a pair through a lens
-let sndL = Lens.snd
+    /// Applies a lens in the 'set' direction within a state monad
+    let setState = Lens.setState
 
-/// Update a value through a lens
-let update = Lens.update
+    /// Gets/sets the snd element in a pair through a lens
+    let sndL = Lens.snd
 
-/// Update through a lens within a state monad
-let updateState = Lens.updateState
+    /// Update a value through a lens
+    let update = Lens.update
 
-/// Applies an isomorphism to the value viewed through a lens
-let xmap = Lens.xmap
+    /// Update through a lens within a state monad
+    let updateState = Lens.updateState
+
+    /// Applies an isomorphism to the value viewed through a lens
+    let xmap = Lens.xmap

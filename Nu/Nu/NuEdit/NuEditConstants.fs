@@ -1,4 +1,5 @@
 ﻿namespace NuEdit
+open Prime
 open Nu.NuCore
 module NuEditConstants =
 
