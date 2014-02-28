@@ -3,6 +3,7 @@
 
 [<RequireQualifiedAccess>]
 module Seq
+open Prime
 
 /// Get Some head of the seq or None.
 let inline tryHead seq =

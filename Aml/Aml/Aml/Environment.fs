@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Collections
 open System.Collections.Generic
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Initial

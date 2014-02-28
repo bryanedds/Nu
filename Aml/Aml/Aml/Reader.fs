@@ -6,6 +6,7 @@ open System
 open FParsec
 open FParsec.Primitives
 open FParsec.CharParsers
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Primitives

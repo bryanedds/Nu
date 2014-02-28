@@ -2,6 +2,7 @@
 open System
 open FSharpx
 open FSharpx.Lens.Operators
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuConstants

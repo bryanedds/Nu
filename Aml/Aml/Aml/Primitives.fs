@@ -5,6 +5,7 @@ module Aml.Primitives
 open System
 open System.Collections.Generic
 open System.IO
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 

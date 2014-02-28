@@ -5,6 +5,7 @@ open System.Xml
 open System.Reflection
 open FSharpx
 open FSharpx.Lens.Operators
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.DomainModel

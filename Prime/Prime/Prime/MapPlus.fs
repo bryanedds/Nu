@@ -1,76 +1,84 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2013.
-
-[<RequireQualifiedAccess>]
-module MapPlus
+namespace Prime
 open System
 
-type Key<'p, 'm> = 'p * 'm
+[<AutoOpen>]
+module MapPlusModule =
 
-let empty : MapPlus<'p, 'm, 'v> = Map.empty
+    // A Map with additional key input (such as a version number).
+    type MapPlus<'p, 'm, 'v when 'm : comparison and 'p : comparison> =
+        Map<'p, Map<'m, 'v>>
 
-let isEmpty (mapPlus : MapPlus<'p, 'm, 'v>) = Map.isEmpty
+[<RequireQualifiedAccess>]
+module MapPlus =
 
-let tryFind (plusKey, mapKey) mapPlus =
-    let optMap = Map.tryFind plusKey mapPlus
-    match optMap with
-    | None -> None
-    | Some map -> Map.tryFind mapKey map
+    type Key<'p, 'm> = 'p * 'm
 
-let containsKey (plusKey, mapKey) plus mapPlus =
-    let optMap = Map.tryFind plusKey mapPlus
-    match optMap with
-    | None -> false
-    | Some map -> Option.isSome <| Map.tryFind mapKey map
+    let empty : MapPlus<'p, 'm, 'v> = Map.empty
 
-let add (plusKey, mapKey) value mapPlus =
-    let optMap = Map.tryFind plusKey mapPlus
-    match optMap with
-    | None -> Map.singleton plusKey (Map.singleton mapKey value)
-    | Some map -> Map.add plusKey (Map.add mapKey value map) mapPlus
+    let isEmpty (mapPlus : MapPlus<'p, 'm, 'v>) = Map.isEmpty
 
-let rec addMany kvps mapPlus =
-    if Seq.isEmpty kvps then mapPlus
-    else
-        let kvpHead = Seq.head kvps
-        let kvpTail = Seq.skip 1 kvps
-        let map' = add (fst kvpHead) (snd kvpHead) mapPlus
-        addMany kvpTail map'
+    let tryFind (plusKey, mapKey) mapPlus =
+        let optMap = Map.tryFind plusKey mapPlus
+        match optMap with
+        | None -> None
+        | Some map -> Map.tryFind mapKey map
 
-let remove (versionKey, mapKey) mapPlus =
-    let optMap = Map.tryFind versionKey mapPlus
-    match optMap with
-    | None -> Map.empty
-    | Some map -> Map.add versionKey (Map.remove mapKey map) mapPlus
+    let containsKey (plusKey, mapKey) plus mapPlus =
+        let optMap = Map.tryFind plusKey mapPlus
+        match optMap with
+        | None -> false
+        | Some map -> Option.isSome <| Map.tryFind mapKey map
 
-let rec removeMany keys map =
-    if Seq.isEmpty keys then map
-    else
-        let keyHead = Seq.head keys
-        let keyTail = Seq.skip 1 keys
-        let map' = remove keyHead map
-        removeMany keyTail map'
+    let add (plusKey, mapKey) value mapPlus =
+        let optMap = Map.tryFind plusKey mapPlus
+        match optMap with
+        | None -> Map.singleton plusKey (Map.singleton mapKey value)
+        | Some map -> Map.add plusKey (Map.add mapKey value map) mapPlus
 
-let ofList kvps =
-    addMany kvps empty
+    let rec addMany kvps mapPlus =
+        if Seq.isEmpty kvps then mapPlus
+        else
+            let kvpHead = Seq.head kvps
+            let kvpTail = Seq.skip 1 kvps
+            let map' = add (fst kvpHead) (snd kvpHead) mapPlus
+            addMany kvpTail map'
 
-let ofListBy by kvps =
-    let pairs = List.map by kvps
-    ofList pairs
+    let remove (versionKey, mapKey) mapPlus =
+        let optMap = Map.tryFind versionKey mapPlus
+        match optMap with
+        | None -> Map.empty
+        | Some map -> Map.add versionKey (Map.remove mapKey map) mapPlus
 
-let fold (folder : 'a -> Key<'p, 'm> -> 'b -> 'a) state mapPlus =
-    let foldFolder = fun state (plusKey, mapKey) value -> folder state (plusKey, mapKey) value
-    Map.fold foldFolder state mapPlus
+    let rec removeMany keys map =
+        if Seq.isEmpty keys then map
+        else
+            let keyHead = Seq.head keys
+            let keyTail = Seq.skip 1 keys
+            let map' = remove keyHead map
+            removeMany keyTail map'
 
-let map (mapper : Key<'p, 'm> -> 'v -> 'a) (mapPlus : MapPlus<'p, 'm, 'v>) : MapPlus<'p, 'm, 'a> =
-    let mapMapper = fun plusKey map -> Map.map (fun mapKey value -> mapper (plusKey, mapKey) value) map
-    Map.map mapMapper mapPlus
+    let ofList kvps =
+        addMany kvps empty
 
-let toValueListBy by map =
-    fold (fun state _ value -> by value :: state) [] map
+    let ofListBy by kvps =
+        let pairs = List.map by kvps
+        ofList pairs
 
-let toValueList map =
-    toValueListBy id map
+    let fold (folder : 'a -> Key<'p, 'm> -> 'b -> 'a) state mapPlus =
+        let foldFolder = fun state (plusKey, mapKey) value -> folder state (plusKey, mapKey) value
+        Map.fold foldFolder state mapPlus
 
-let singleton (key, value) =
-    add key value empty
+    let map (mapper : Key<'p, 'm> -> 'v -> 'a) (mapPlus : MapPlus<'p, 'm, 'v>) : MapPlus<'p, 'm, 'a> =
+        let mapMapper = fun plusKey map -> Map.map (fun mapKey value -> mapper (plusKey, mapKey) value) map
+        Map.map mapMapper mapPlus
+
+    let toValueListBy by map =
+        fold (fun state _ value -> by value :: state) [] map
+
+    let toValueList map =
+        toValueListBy id map
+
+    let singleton (key, value) =
+        add key value empty

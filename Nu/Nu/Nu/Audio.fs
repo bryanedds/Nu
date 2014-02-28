@@ -3,6 +3,7 @@ open System
 open System.IO
 open System.ComponentModel
 open SDL2
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuConstants

@@ -1,6 +1,7 @@
 ﻿namespace NuEdit
 open System
 open System.Reflection
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.Entity
