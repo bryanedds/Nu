@@ -56,7 +56,7 @@ module OmniFlow =
     // the world.
     let addTitleScreen world =
         
-        // this adds a dissolve screen from the specified file with the given parameter
+        // this adds a dissolve screen from the specified file with the given parameters
         let world_ =
             World.addDissolveScreenFromFile
                 TitleGroupFileName
@@ -67,7 +67,7 @@ module OmniFlow =
                 world
         
         // this subscribes to the event that is raised when the Title screen's New Game button is
-        // clicked, and handle the event by transitioning to the Field screen
+        // clicked, and handles the event by transitioning to the Field screen
         let world_ =
             World.subscribe
                 ClickTitleNewGameAddress
@@ -76,7 +76,7 @@ module OmniFlow =
                 world_
         
         // subscribes to the event that is raised when the Title screen's Load Game button is
-        // clicked, and handle the event by transitioning to the Field screen
+        // clicked, and handles the event by transitioning to the Field screen
         let world_ =
             World.subscribe
                 ClickTitleLoadGameAddress
@@ -85,7 +85,7 @@ module OmniFlow =
                 world_
         
         // subscribes to the event that is raised when the Title screen's Credits button is
-        // clicked, and handle the event by transitioning to the Field screen
+        // clicked, and handles the event by transitioning to the Field screen
         let world_ =
             World.subscribe
                 ClickTitleCreditsAddress
@@ -94,7 +94,7 @@ module OmniFlow =
                 world_
         
         // subscribes to the event that is raised when the Title screen's Exit button is clicked,
-        // and handle the event by exiting the game
+        // and handles the event by exiting the game
         World.subscribe ClickTitleExitAddress [] World.handleEventAsExit world_
 
     // pretty much the same as above, but for the Load Game screen
