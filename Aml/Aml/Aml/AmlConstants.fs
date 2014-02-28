@@ -5,7 +5,7 @@ module Aml.AmlConstants
 open Aml.Ast
 open Prime
 
-let [<Literal>] AmlVersion = 0.044f
+let [<Literal>] AmlVersion = 0.045f
 let [<Literal>] EmptyStr = ""
 let [<Literal>] SpaceChar = ' '
 let [<Literal>] SpaceStr = " "
