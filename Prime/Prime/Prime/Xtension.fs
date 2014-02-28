@@ -6,15 +6,18 @@ open Microsoft.FSharp.Reflection
 [<AutoOpen>]
 module XtensionModule =
 
+    /// Describes an XField.
     type XFieldDescriptor =
         { FieldName : Lun
           TypeName : Lun } // the .NET type name
 
+    /// An indexible collection of XFields.
     type XFields =
         Map<Lun, obj>
 
-    /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way to
-    /// solve the 'expression problem' in F#.
+    /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
+    /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
+    /// 'Entity-Component System'.
     type [<StructuralEqualityAttribute; NoComparison>] Xtension =
         { OptXTypeName : Lun option
           XFields : XFields }
@@ -23,6 +26,7 @@ module XtensionModule =
         static member private EmptyDispatcher =
             new obj ()
 
+        /// The dynamic XType dispatch operator.
         static member (?) (this : Xtension, memberName) : 'a -> 'r =
 
             // NOTE: I think the explicit args abstraction is required here to satisfy the signature
@@ -76,9 +80,13 @@ module XtensionModule =
             let xFields = Map.add (Lun.makeFast fieldName) (value :> obj) this.XFields
             { this with XFields = xFields }
 
+    /// A collection of objects that can handle dynamically dispatched messages via reflection.
+    /// These are just POFO types, except without any data (the data they use would be in a related
+    /// value's XField).
     and IXDispatchers =
         Map<Lun, obj>
 
+    /// Represents a container of XDispatchers.
     and IXDispatcherContainer =
         interface
             abstract GetDispatchers : unit -> IXDispatchers
