@@ -1,7 +1,9 @@
 ﻿namespace Prime
-
-/// Demonstrates F#'s compile-time duck-typing.
 module DuckTyping =
+
+    (*
+    This file merely contains code that demonstrates F#'s compile-time duck-typing.
+    *)
 
     type RedDuck =
         { Name : string }
