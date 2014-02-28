@@ -6,6 +6,7 @@ open System.ComponentModel
 open OpenTK
 open SDL2
 open TiledSharp
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuConstants

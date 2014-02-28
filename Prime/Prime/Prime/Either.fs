@@ -1,40 +1,44 @@
-﻿[<AutoOpen>]
-module Either
+﻿namespace Prime
 
-/// Hsakell-style Either type.
-/// TODO: more nice operators definitions.
-type Either<'a, 'b> =
-    | Left of 'a
-    | Right of 'b
+[<AutoOpen>]
+module EitherModule =
 
-/// Monadic return.
-let inline return' a =
-    Right a
+    /// Haskell-style Either type.
+    /// TODO: more nice operators definitions.
+    type Either<'a, 'b> =
+        | Left of 'a
+        | Right of 'b
 
-/// Monadic returnFrom.
-/// TODO: ensure this is defined correctly!
-let inline returnFrom a =
-    a
+    /// Monadic bind.
+    let inline (>>=) c f =
+        match c with
+        | Left _ -> c
+        | Right a -> Right <| f a
 
-/// Monadic bind.
-let inline (>>=) c f =
-    match c with
-    | Left _ -> c
-    | Right a -> Right <| f a
+    /// Bind that allows indication of failure.
+    let inline (>>=?) c f =
+        match c with
+        | Left _ -> c
+        | Right a -> f a
 
-/// Bind that allows indication of failure.
-let inline (>>=?) c f =
-    match c with
-    | Left _ -> c
-    | Right a -> f a
+    /// Bind that allows handling of failure.
+    let inline (>>=??) (c : Either<_, _>) f : Either<_, _> =
+        f c
 
-/// Bind that allows handling of failure.
-let inline (>>=??) (c : Either<_, _>) f : Either<_, _> =
-    f c
+module Either =
 
-type EitherBuilder () =
-    member this.Bind (c, f) = c >>= f
-    member this.Return a = return' a
-    member this.ReturnFrom a = returnFrom a
+    /// Monadic return.
+    let inline return' a =
+        Right a
 
-let either = EitherBuilder ()
+    /// Monadic returnFrom.
+    /// TODO: ensure this is defined correctly!
+    let inline returnFrom a =
+        a
+
+    type EitherBuilder () =
+        member this.Bind (c, f) = c >>= f
+        member this.Return a = return' a
+        member this.ReturnFrom a = returnFrom a
+
+    let either = EitherBuilder ()

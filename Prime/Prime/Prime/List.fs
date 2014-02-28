@@ -9,7 +9,7 @@ open System.Collections.Generic
 // TODO: for speed, implement List functions _without_ using Seq functions.
 
 /// The missing cons function.
-let cons = Sectioning.cons
+let cons = Prime.Sectioning.cons
 
 /// Create a singleton list.
 let inline singleton elem = [elem]
@@ -300,9 +300,11 @@ let toHashSet list =
     List.iter (fun elem -> ignore <| hashSet.Add elem) list
     hashSet
 
+/// Implement a fold while predicate f passes.
 let foldWhile f initial input =
     Seq.foldWhile f initial <| List.toSeq input
 
+/// Remove all elements from a list that satisfy a predicate.
 /// TODO: see if List.rev can be removed.
 let rec remove pred list =
     let list' =

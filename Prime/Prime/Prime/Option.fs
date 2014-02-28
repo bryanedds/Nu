@@ -1,12 +1,13 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2013.
+namespace Prime
 
 [<RequireQualifiedAccess>]
-module Option
+module Option =
 
-/// Concatenate an option option.
-let inline concat opt =
-    match opt with
-    | None -> None
-    | Some None -> None
-    | Some (Some s) -> Some s
+    /// Concatenate an option option.
+    let inline concat opt =
+        match opt with
+        | None -> None
+        | Some None -> None
+        | Some (Some s) -> Some s

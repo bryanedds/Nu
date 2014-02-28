@@ -8,6 +8,7 @@ module Aml.Ast
 open System
 open System.Collections.Generic
 open FParsec // NOTE: I do not like this dependency here...
+open Prime
 #nowarn "342" // suppress warning related to Member in Dictionary hack.
 
 /// Creates Special Ids.

@@ -4,6 +4,7 @@
 module Aml.Program
 open System
 open System.Runtime
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Initial

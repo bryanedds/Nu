@@ -15,12 +15,14 @@ let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) 
     for kvp in dictionary do dictionary'.Add (kvp.Key, mapper kvp)
     dictionary'
 
+/// Try to find a value in a dictonary.
 let inline tryFind key (dictionary : Dictionary<'k, 'v>) =
     let valueRef = ref Unchecked.defaultof<'v>
     if dictionary.TryGetValue (key, valueRef)
     then Some valueRef.Value
     else None
 
+/// Like dict, but returns a concrete Dictionary instance.
 let dictC kvps =
     let dictionary = Dictionary ()
     for (key, value) in kvps do dictionary.Add (key, value)

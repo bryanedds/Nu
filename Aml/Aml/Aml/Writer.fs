@@ -5,6 +5,7 @@ module Aml.Writer
 open System
 open System.IO
 open System.Collections.Generic
+open Prime
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Primitives

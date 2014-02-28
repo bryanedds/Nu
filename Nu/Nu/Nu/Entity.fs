@@ -9,6 +9,7 @@ open FSharpx
 open FSharpx.Lens.Operators
 open OpenTK
 open TiledSharp
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuConstants

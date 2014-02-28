@@ -2,6 +2,7 @@
 open System
 open System.Linq
 open System.Xml
+open Prime
 
 [<AutoOpen>]
 module AssetsModule =

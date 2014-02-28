@@ -3,7 +3,7 @@ open NuEditDesign
 open SDL2
 open OpenTK
 open TiledSharp
-open Miscellanea
+open Prime
 open System
 open System.IO
 open System.Collections.Generic
@@ -13,6 +13,7 @@ open System.ComponentModel
 open System.Xml
 open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
+open Prime
 open Nu
 open Nu.NuCore
 open Nu.Voords
@@ -422,8 +423,9 @@ module Program =
         match !editorState.Clipboard with
         | None -> ()
         | Some entity_ ->
+            let id = getNuId ()
             let changer = (fun world ->
-                let entity_ = { entity_ with Id = getNuId (); Name = str <| Guid.NewGuid () }
+                let entity_ = { entity_ with Id = id; Name = str <| Guid.NewGuid () }
                 let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
                 let entityTransform_ = getEntityTransform (Some world.Camera) entity_
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }

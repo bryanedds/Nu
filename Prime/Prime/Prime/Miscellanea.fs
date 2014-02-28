@@ -1,77 +1,84 @@
-﻿[<AutoOpen>]
-module Miscellanea
+﻿namespace Prime
 open System
 open System.Diagnostics
 open System.ComponentModel
 open System.Reflection
 
-/// The tautology function.
-let inline tautology _ = true
+[<AutoOpen>]
+module Miscellanea =
 
-/// The absurdity function.
-let inline absurdity _ = false
+    /// The tautology function.
+    /// No matter what you pass it, it returns true.
+    let inline tautology _ = true
 
-/// A generic identification code type.
-type Id = int64
+    /// The absurdity function.
+    /// No matter what you pass it, it returns false.
+    let inline absurdity _ = false
 
-/// The invalid Id.
-let [<Literal>] InvalidId = 0L
+    /// A generic identification code type.
+    type Id = int64
 
-/// Perform a ToString operation on an object.
-let inline str obj =
-    obj.ToString ()
+    /// The invalid Id.
+    let [<Literal>] InvalidId = 0L
 
-/// Perform a formatted ToString operation on an object.
-let inline strf (obj : IFormattable) format =
-    obj.ToString (format, null)
+    /// Perform a ToString operation on an object.
+    let inline str obj =
+        obj.ToString ()
 
-/// Perform a formatted ToString operation on an object.
-let inline strfp (obj : IFormattable) format formatProvider =
-    obj.ToString (format, formatProvider)
+    /// Perform a formatted ToString operation on an object.
+    let inline strf (obj : IFormattable) format =
+        obj.ToString (format, null)
 
-/// Apply a function recursively n times.
-let rec doTimes f x n =
-    if n < 0 then failwith "Cannot call doTimes with n < 0."
-    elif n = 0 then x
-    else doTimes f (f x) (n - 1)
+    /// Perform a formatted ToString operation on an object.
+    let inline strfp (obj : IFormattable) format formatProvider =
+        obj.ToString (format, formatProvider)
 
-/// Perform an operation until a predicate passes.
-let rec doUntil op pred =
-    if not <| pred () then
-        op ()
-        doUntil op pred
+    /// Apply a function recursively n times.
+    let rec doTimes f x n =
+        if n < 0 then failwith "Cannot call doTimes with n < 0."
+        elif n = 0 then x
+        else doTimes f (f x) (n - 1)
 
-// TODO: place a mutex lock in this
-// TODO: see if returned function can be optimized by minimizing dereferences
-let createGetNextId () =
-    let nextId = ref InvalidId
-    let getNextId =
-        (fun () ->
-            nextId := !nextId + 1L
-            if !nextId = 0L then Debug.Fail "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
-            !nextId)
-    getNextId
+    /// Perform an operation until a predicate passes.
+    let rec doUntil op pred =
+        if not <| pred () then
+            op ()
+            doUntil op pred
 
-/// Add a custom TypeConverter to an existing type.
-let assignTypeConverter<'t, 'c> () =
-    ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
+    /// Creates a function that creates a unique number.
+    /// TODO: place a mutex lock in this
+    /// TODO: see if returned function can be optimized by minimizing dereferences
+    let createGetNextId () =
+        let nextId = ref InvalidId
+        let getNextId =
+            (fun () ->
+                nextId := !nextId + 1L
+                if !nextId = 0L then Debug.Fail "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
+                !nextId)
+        getNextId
 
-/// Short-hand for linq enumerable cast.
-let enbCast =
-    System.Linq.Enumerable.Cast
+    /// Add a custom TypeConverter to an existing type.
+    let assignTypeConverter<'t, 'c> () =
+        ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
-let tryFindType typeName =
-    match Type.GetType typeName with
-    | null ->
-        let allAssemblies = AppDomain.CurrentDomain.GetAssemblies ()
-        let types =
-            Seq.choose
-                (fun (assembly : Assembly) -> match assembly.GetType typeName with null -> None | aType -> Some aType)
-                allAssemblies
-        Seq.tryFind (fun _ -> true) types 
-    | aType -> Some aType
+    /// Short-hand for linq enumerable cast.
+    let enbCast =
+        System.Linq.Enumerable.Cast
 
-let findType typeName =
-    match tryFindType typeName with
-    | None -> failwith <| "Could not find type with name '" + typeName + "'."
-    | Some aType -> aType
+    /// Try to find a type by its name from all the loaded assemblies. Time-intensive.
+    let tryFindType typeName =
+        match Type.GetType typeName with
+        | null ->
+            let allAssemblies = AppDomain.CurrentDomain.GetAssemblies ()
+            let types =
+                Seq.choose
+                    (fun (assembly : Assembly) -> match assembly.GetType typeName with null -> None | aType -> Some aType)
+                    allAssemblies
+            Seq.tryFind (fun _ -> true) types 
+        | aType -> Some aType
+
+    /// Find a type by its name from all the loaded assemblies. Time-intensive.
+    let findType typeName =
+        match tryFindType typeName with
+        | None -> failwith <| "Could not find type with name '" + typeName + "'."
+        | Some aType -> aType
