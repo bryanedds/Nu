@@ -219,7 +219,7 @@ module World =
         (handleMessage message, true, world'')
 
     let handleEventAsScreenTransition destinationScreen subscriber x message world =
-        let sourceScreen = [List.at 1 subscriber]
+        let sourceScreen = [subscriber |> List.rev |> List.at 2]
         let world' = subscribe (FinishedOutgoingAddressPart @ sourceScreen) [] (handleFinishedScreenOutgoing destinationScreen) world
         let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
         match optSelectedScreenAddress with
