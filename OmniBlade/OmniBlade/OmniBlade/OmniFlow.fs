@@ -66,7 +66,7 @@ module OmniFlow =
                 TitleAddress
                 world
         
-        // this subscribes to the event that is raised when the Title screen's New Game button is
+        // this subscribes to the event that is raised when the Title screen's NewGame button is
         // clicked, and handles the event by transitioning to the Field screen
         let world_ =
             World.subscribe
@@ -75,8 +75,8 @@ module OmniFlow =
                 (World.handleEventAsScreenTransition TitleAddress FieldAddress)
                 world_
         
-        // subscribes to the event that is raised when the Title screen's Load Game button is
-        // clicked, and handles the event by transitioning to the Field screen
+        // subscribes to the event that is raised when the Title screen's LoadGame button is
+        // clicked, and handles the event by transitioning to the LoadGame screen
         let world_ =
             World.subscribe
                 ClickTitleLoadGameAddress
@@ -85,7 +85,7 @@ module OmniFlow =
                 world_
         
         // subscribes to the event that is raised when the Title screen's Credits button is
-        // clicked, and handles the event by transitioning to the Field screen
+        // clicked, and handles the event by transitioning to the Credits screen
         let world_ =
             World.subscribe
                 ClickTitleCreditsAddress
@@ -97,7 +97,7 @@ module OmniFlow =
         // and handles the event by exiting the game
         World.subscribe ClickTitleExitAddress [] World.handleEventAsExit world_
 
-    // pretty much the same as above, but for the Load Game screen
+    // pretty much the same as above, but for the LoadGame screen
     let addLoadGameScreen world =
         
         let world' =
