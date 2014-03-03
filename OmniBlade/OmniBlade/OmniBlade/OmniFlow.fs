@@ -72,7 +72,7 @@ module OmniFlow =
             World.subscribe
                 ClickTitleNewGameAddress
                 []
-                (World.handleEventAsScreenTransition TitleAddress FieldAddress)
+                (World.handleEventAsScreenTransition FieldAddress)
                 world_
         
         // subscribes to the event that is raised when the Title screen's LoadGame button is
@@ -81,7 +81,7 @@ module OmniFlow =
             World.subscribe
                 ClickTitleLoadGameAddress
                 []
-                (World.handleEventAsScreenTransition TitleAddress LoadGameAddress)
+                (World.handleEventAsScreenTransition LoadGameAddress)
                 world_
         
         // subscribes to the event that is raised when the Title screen's Credits button is
@@ -90,7 +90,7 @@ module OmniFlow =
             World.subscribe
                 ClickTitleCreditsAddress
                 []
-                (World.handleEventAsScreenTransition TitleAddress CreditsAddress)
+                (World.handleEventAsScreenTransition CreditsAddress)
                 world_
         
         // subscribes to the event that is raised when the Title screen's Exit button is clicked,
@@ -112,7 +112,7 @@ module OmniFlow =
         World.subscribe
             ClickLoadGameBackAddress
             []
-            (World.handleEventAsScreenTransition LoadGameAddress TitleAddress)
+            (World.handleEventAsScreenTransition TitleAddress)
             world'
 
     // and so on...
@@ -130,7 +130,7 @@ module OmniFlow =
         World.subscribe
             ClickCreditsBackAddress
             []
-            (World.handleEventAsScreenTransition CreditsAddress TitleAddress) world'
+            (World.handleEventAsScreenTransition TitleAddress) world'
 
     // and so on.
     let addFieldScreen world =
@@ -147,7 +147,7 @@ module OmniFlow =
         World.subscribe
             ClickFieldBackAddress
             []
-            (World.handleEventAsScreenTransition FieldAddress TitleAddress)
+            (World.handleEventAsScreenTransition TitleAddress)
             world'
 
     // here we create the OmniBlade world in a callback from the World.run function.
