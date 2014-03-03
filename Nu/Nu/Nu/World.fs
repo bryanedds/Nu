@@ -143,12 +143,12 @@ module World =
                 subscribe DownMouseLeftAddress address handleEventAsSwallow |>
                 subscribe UpMouseLeftAddress address handleEventAsSwallow
 
-    let transitionScreen address world =
-        let world' = setScreenState address IncomingState world
-        set (Some address) world' worldOptSelectedScreenAddressLens
+    let transitionScreen destinationScreen world =
+        let world' = setScreenState destinationScreen IncomingState world
+        set (Some destinationScreen) world' worldOptSelectedScreenAddressLens
 
-    let transitionScreenHandler address (_ : Address) (_ : Address) message world =
-        let world' = transitionScreen address world
+    let transitionScreenHandler destinationScreen (_ : Address) (_ : Address) message world =
+        let world' = transitionScreen destinationScreen world
         (handleMessage message, true, world')
 
     let private updateTransition1 transition =
@@ -213,13 +213,14 @@ module World =
         let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
         (handleMessage message, true, world')
 
-    let private handleFinishedScreenOutgoing screenAddress destScreenAddress address subscriber message world =
+    let private handleFinishedScreenOutgoing destinationScreen address subscriber message world =
         let world' = unsubscribe address subscriber world
-        let world'' = transitionScreen destScreenAddress world'
+        let world'' = transitionScreen destinationScreen world'
         (handleMessage message, true, world'')
 
-    let handleEventAsScreenTransition screenAddress destScreenAddress (_ : Address) (_ : Address) message world =
-        let world' = subscribe (FinishedOutgoingAddressPart @ screenAddress) [] (handleFinishedScreenOutgoing screenAddress destScreenAddress) world
+    let handleEventAsScreenTransition destinationScreen subscriber x message world =
+        let sourceScreen = [List.at 1 subscriber]
+        let world' = subscribe (FinishedOutgoingAddressPart @ sourceScreen) [] (handleFinishedScreenOutgoing destinationScreen) world
         let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
         match optSelectedScreenAddress with
         | None ->
