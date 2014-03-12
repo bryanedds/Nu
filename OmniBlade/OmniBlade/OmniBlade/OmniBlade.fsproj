@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -11,6 +11,7 @@
     <AssemblyName>OmniBlade</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Name>OmniBlade</Name>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -38,7 +39,19 @@
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="OmniConstants.fs" />
     <Compile Include="OmniTypes.fs" />
@@ -189,24 +202,21 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FarseerPhysics">
-      <HintPath>..\..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
+      <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
-    <Reference Include="FSharpx.Core">
-      <HintPath>..\..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
+    <Reference Include="FSharpx.Core">
+      <HintPath>..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="mscorlib" />
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="TiledSharp">
-      <HintPath>..\..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
-    </Reference>
     <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
@@ -217,6 +227,9 @@
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="TiledSharp">
+      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
