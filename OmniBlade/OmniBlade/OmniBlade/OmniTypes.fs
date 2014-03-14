@@ -98,26 +98,24 @@ module OmniTypesModule =
         | OmniPhysical
         | OmniMagical
 
-    type [<StructuralEquality; NoComparison>] OmniDualSpecialType =
+    type [<StructuralEquality; NoComparison>] OmniAllyDualSpecialType =
         | OmniJakkAndLana
         | OmniJakkAndMeryl
         | OmniJakkAndKane
         | OmniLanaAndMaryl
         | OmniLanaAndKane
         | OmniMaerylAndKane
-        //| OmniGoblinAndTurkey
 
-    type [<StructuralEquality; NoComparison>] OmniTripleSpecialType =
+    type [<StructuralEquality; NoComparison>] OmniAllyTripleSpecialType =
         | OmniJakkAndLanaAndMaryl
         | OmniJakkAndMarylAndKane
         | OmniJakkAndLanaAndKane
         | OmniLanaAndMarylAndKane
-        //| OmniGoblinAndTurkeyAndFrog
 
     type [<StructuralEquality; NoComparison>] OmniSpecialAbilityType =
-        | OmniSingleSpecial
-        | OmniDualSpecial of OmniDualSpecialType
-        | OmniTripleSpecial of OmniTripleSpecialType
+        | OmniCharacterSingleSpecial // enemies use only single specials
+        | OmniAllyDualSpecial of OmniAllyDualSpecialType
+        | OmniAllyTripleSpecial of OmniAllyTripleSpecialType
 
     type [<StructuralEquality; NoComparison>] OmniTargetType =
         | OmniSingle
