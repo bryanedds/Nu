@@ -18,8 +18,7 @@ module NuCoreModule =
 module NuCore =
 
     /// Create a Nu Id.
-    /// NOTE: Ironically, not purely functional.
-    let getNuId = createGetNextId ()
+    let getNuId = Guid.NewGuid
 
     let addr (str : string) : Address =
         let strs = List.ofArray <| str.Split '/'

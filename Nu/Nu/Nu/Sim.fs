@@ -40,7 +40,7 @@ module SimModule =
           Data : MessageData }
 
     type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
-        { Id : Id
+        { Id : Guid
           Name : string
           Enabled : bool
           Visible : bool
@@ -80,7 +80,7 @@ module SimModule =
           TileSetPosition : int * int }
 
     type [<StructuralEquality; NoComparison; CLIMutable>] Group =
-        { Id : Id
+        { Id : Guid
           Xtension : Xtension }
 
         static member (?) (this : Group, memberName) =
@@ -96,7 +96,7 @@ module SimModule =
         | Outgoing
 
     type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
-        { Id : Id
+        { Id : Guid
           Lifetime : int
           Ticks : int
           Type : TransitionType
@@ -117,7 +117,7 @@ module SimModule =
         | IdlingState
 
     type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
-        { Id : Id
+        { Id : Guid
           State : ScreenState
           Incoming : Transition
           Outgoing : Transition
@@ -132,7 +132,7 @@ module SimModule =
             { this with Xtension = xtension }
 
     type [<StructuralEquality; NoComparison; CLIMutable>] Game =
-        { Id : Id
+        { Id : Guid
           OptSelectedScreenAddress : Address option
           Xtension : Xtension }
 
