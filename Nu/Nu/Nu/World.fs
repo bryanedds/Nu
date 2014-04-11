@@ -813,9 +813,11 @@ module World =
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
             let userGameDispatcherName = Lun.make (userGameDispatcher.GetType ()).Name
+            // TODO: see if this hard-coding can be removed here
             let dispatchers =
                 Map.ofArray
                     [|Lun.make typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
+                      Lun.make typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
                       Lun.make typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
                       Lun.make typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
                       Lun.make typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
