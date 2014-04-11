@@ -1,4 +1,5 @@
 ﻿namespace Nu
+open System
 open System.ComponentModel
 open System.Collections.Generic
 open FarseerPhysics
@@ -12,7 +13,7 @@ open Nu.NuConstants
 [<AutoOpen>]
 module PhysicsModule =
 
-    type PhysicsId = Id * Id
+    type PhysicsId = Guid * Guid
 
     type [<StructuralEquality; NoComparison>] CommonShapeProperties =
         { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
@@ -110,10 +111,8 @@ module Physics =
 
     let InvalidPhysicsId = (InvalidId, InvalidId)
 
-    /// NOTE: Ironically, not purely functional.
-    let getPhysicsId =
-        let getNextId = createGetNextId ()
-        fun (entityId : Id) -> (entityId, getNextId ())
+    let getPhysicsId entityId =
+        (entityId, Guid.NewGuid ())
 
     let private toPixel value =
         value * Nu.NuConstants.PhysicsToPixelRatio

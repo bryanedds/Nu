@@ -252,8 +252,9 @@ module Entity =
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
 
     let makeDefaultEntity2 xTypeName optName =
-        { Id = getNuId ()
-          Name = match optName with None -> str <| Guid.NewGuid () | Some name -> name
+        let id = getNuId ()
+        { Id = id
+          Name = match optName with None -> str id | Some name -> name
           Enabled = true
           Visible = true
           Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty }}

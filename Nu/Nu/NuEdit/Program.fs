@@ -423,9 +423,9 @@ module Program =
         match !editorState.Clipboard with
         | None -> ()
         | Some entity_ ->
-            let id = getNuId ()
             let changer = (fun world ->
-                let entity_ = { entity_ with Id = id; Name = str <| Guid.NewGuid () }
+                let id = getNuId ()
+                let entity_ = { entity_ with Id = id; Name = str id }
                 let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
                 let entityTransform_ = getEntityTransform (Some world.Camera) entity_
                 let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
