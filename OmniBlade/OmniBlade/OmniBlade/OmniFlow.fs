@@ -57,41 +57,19 @@ module OmniFlow =
     let addTitleScreen world =
         
         // this adds a dissolve screen from the specified file with the given parameters
-        let world_ =
-            World.addDissolveScreenFromFile
-                TitleGroupFileName
-                TitleGroupName
-                IncomingTime
-                OutgoingTime
-                TitleAddress
-                world
+        let world_ = World.addDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
         
         // this subscribes to the event that is raised when the Title screen's NewGame button is
         // clicked, and handles the event by transitioning to the Field screen
-        let world_ =
-            World.subscribe
-                ClickTitleNewGameAddress
-                []
-                (World.handleEventAsScreenTransition FieldAddress)
-                world_
+        let world_ = World.subscribe ClickTitleNewGameAddress [] (World.handleEventAsScreenTransition FieldAddress) world_
         
         // subscribes to the event that is raised when the Title screen's LoadGame button is
         // clicked, and handles the event by transitioning to the LoadGame screen
-        let world_ =
-            World.subscribe
-                ClickTitleLoadGameAddress
-                []
-                (World.handleEventAsScreenTransition LoadGameAddress)
-                world_
+        let world_ = World.subscribe ClickTitleLoadGameAddress [] (World.handleEventAsScreenTransition LoadGameAddress) world_
         
         // subscribes to the event that is raised when the Title screen's Credits button is
         // clicked, and handles the event by transitioning to the Credits screen
-        let world_ =
-            World.subscribe
-                ClickTitleCreditsAddress
-                []
-                (World.handleEventAsScreenTransition CreditsAddress)
-                world_
+        let world_ = World.subscribe ClickTitleCreditsAddress [] (World.handleEventAsScreenTransition CreditsAddress) world_
         
         // subscribes to the event that is raised when the Title screen's Exit button is clicked,
         // and handles the event by exiting the game
@@ -99,56 +77,18 @@ module OmniFlow =
 
     // pretty much the same as above, but for the LoadGame screen
     let addLoadGameScreen world =
-        
-        let world' =
-            World.addDissolveScreenFromFile
-                LoadGameGroupFileName
-                LoadGameGroupName
-                IncomingTime
-                OutgoingTime
-                LoadGameAddress
-                world
-        
-        World.subscribe
-            ClickLoadGameBackAddress
-            []
-            (World.handleEventAsScreenTransition TitleAddress)
-            world'
+        let world' = World.addDissolveScreenFromFile LoadGameGroupFileName LoadGameGroupName IncomingTime OutgoingTime LoadGameAddress world
+        World.subscribe ClickLoadGameBackAddress [] (World.handleEventAsScreenTransition TitleAddress) world'
 
     // and so on...
     let addCreditsScreen world =
-        
-        let world' =
-            World.addDissolveScreenFromFile
-                CreditsGroupFileName
-                CreditsGroupName
-                IncomingTime
-                OutgoingTime
-                CreditsAddress
-                world
-        
-        World.subscribe
-            ClickCreditsBackAddress
-            []
-            (World.handleEventAsScreenTransition TitleAddress) world'
+        let world' = World.addDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress world
+        World.subscribe ClickCreditsBackAddress [] (World.handleEventAsScreenTransition TitleAddress) world'
 
     // and so on.
     let addFieldScreen world =
-        
-        let world' =
-            World.addDissolveScreenFromFile
-                FieldGroupFileName
-                FieldGroupName
-                IncomingTime
-                OutgoingTime
-                FieldAddress
-                world
-        
-        World.subscribe
-            ClickFieldBackAddress
-            []
-            (World.handleEventAsScreenTransition TitleAddress)
-            world'
+        let world' = World.addDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress world
+        World.subscribe ClickFieldBackAddress [] (World.handleEventAsScreenTransition TitleAddress) world'
 
     // here we create the OmniBlade world in a callback from the World.run function.
     let tryCreateOmniBladeWorld sdlDeps extData =
@@ -163,38 +103,15 @@ module OmniFlow =
         | Left _ as left -> left
         | Right world ->
             
-            // specify how to create the sprite used for the game's splash screen
-            let splashScreenSprite =
-                { SpriteAssetName = Lun.make "Image5"
-                  PackageName = Lun.make "Default"
-                  PackageFileName = "AssetGraph.xml" }
-
+            // specify a song to play for the duration of the game via the audio message system
+            let gameSong = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
+            let world_ = { world with AudioMessages = playSongMessage :: world.AudioMessages }
+            
             // add to the world a splash screen that automatically transitions to the Title screen
-            // when finished
-            let world_ =
-                World.addSplashScreenFromData
-                    (World.transitionScreenHandler TitleAddress)
-                    SplashAddress
-                    IncomingTimeSplash
-                    IdlingTime
-                    OutgoingTimeSplash
-                    splashScreenSprite
-                    world
-            
-            // specify the song to play for the duration of the game
-            let gameSong =
-                { SongAssetName = Lun.make "Song"
-                  PackageName = Lun.make "Default"
-                  PackageFileName = "AssetGraph.xml" }
-            
-            // create a message to the audio system to play said song
-            let playGameSong =
-                PlaySong
-                    { Song = gameSong
-                      FadeOutCurrentSong = true }
-            
-            // add the message to the audio message queue
-            let world_ = { world_ with AudioMessages = playGameSong :: world.AudioMessages }
+            let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            let titleTransitioner = World.transitionScreenHandler TitleAddress
+            let world_ = World.addSplashScreenFromData titleTransitioner SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world_
 
             // add our UI screens to the world
             let world_ = addTitleScreen world_
