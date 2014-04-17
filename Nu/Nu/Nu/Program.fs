@@ -3,14 +3,15 @@ open SDL2
 open Nu
 module Program =
 
+    // this the entry point for the empty Nu application
     let [<EntryPoint>] main _ =
-
-        // this initializes all the .Net TypeConverters that Nu uses for serialization. This should
-        // always be the first line in your Nu program.
+    
+        // this initializes all the .Net TypeConverters that the game uses for serialization. This
+        // should always be the first line in your game program.
         World.initTypeConverters ()
-
-        // this specifies the manner in which Nu is viewed. With this configuration, a new window
-        // is created with a title of "Nu Game Engine" and is placed at (32, 32) pixels from the
+        
+        // this specifies the manner in which the game is viewed. With this configuration, a new
+        // window is created with a title of "OmniBlade" and is placed at (32, 32) pixels from the
         // top left of the screen.
         let sdlViewConfig =
             NewWindow
@@ -18,15 +19,15 @@ module Program =
                   WindowX = 32
                   WindowY = 32
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
-
-        // this specifies the manner in which Nu's rendering takes place. With this configuration,
-        // rendering in Nu is hardware-accelerated and synchronized with the system's vertical
-        // trace, making for fast and smooth rendering.
+                  
+        // this specifies the manner in which the game's rendering takes place. With this
+        // configuration, rendering is hardware-accelerated and synchronized with the system's
+        // vertical re-trace, making for fast and smooth rendering.
         let sdlRenderFlags =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
                  int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-
+                 
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             Sdl.makeSdlConfig
@@ -37,7 +38,7 @@ module Program =
                 1024
 
         // this is a callback that attempts to create 'the world' in a functional programming
-        // sense. In Nu, the world is represented as a complex record type named World.
+        // sense. In a Nu game, the world is represented as a complex record type named World.
         let tryCreateWorld sdlDeps =
             
             // Game dispatchers specify some unique, high-level behavior and data for your game.
@@ -45,7 +46,7 @@ module Program =
             // GameDispatcher is used.            
             let gameDispatcher = GameDispatcher () :> obj
             
-            // here is an attempt to create Nu's world using SDL dependencies that will be created
+            // here is an attempt to create the world using SDL dependencies that will be created
             // from the invoking function using the SDL configuration that we defined above, the
             // gameDispatcher immediately above, and a value that could have been used to
             // user-defined data to the world had we needed it (we don't, so we pass unit).
@@ -59,7 +60,6 @@ module Program =
         // thus the only way to update it is by making a new copy of an existing instance. Since we
         // need no special update behavoir in this program, we simply return the world as it was
         // received.
-
         let updateWorld world =
             (true, world)
 
