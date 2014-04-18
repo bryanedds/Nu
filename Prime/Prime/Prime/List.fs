@@ -301,8 +301,8 @@ let toHashSet list =
     hashSet
 
 /// Implement a fold while predicate f passes.
-let foldWhile f initial input =
-    Seq.foldWhile f initial <| List.toSeq input
+let foldWhile fn initial input =
+    Seq.foldWhile fn initial <| List.toSeq input
 
 /// Remove all elements from a list that satisfy a predicate.
 /// TODO: see if List.rev can be removed.

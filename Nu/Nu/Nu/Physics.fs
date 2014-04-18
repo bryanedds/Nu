@@ -169,7 +169,7 @@ module Physics =
             body.LinearDamping <- boxShape.Properties.LinearDamping
             body.AngularDamping <- boxShape.Properties.AngularDamping
             body.SleepingAllowed <- true
-            body.add_OnCollision (fun f f2 c -> handlePhysicsCollision integrator f f2 c) // NOTE: F# requires us to use an lambda inline here (not sure why)
+            body.add_OnCollision (fun fn fn2 collision -> handlePhysicsCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
             integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
         | CircleShape circleShape ->
             let physicsShapeCenter = toPhysicsV2 circleShape.Properties.Center
@@ -190,7 +190,7 @@ module Physics =
             body.LinearDamping <- circleShape.Properties.LinearDamping
             body.AngularDamping <- circleShape.Properties.AngularDamping
             body.SleepingAllowed <- true
-            body.add_OnCollision (fun f f2 c -> handlePhysicsCollision integrator f f2 c) // NOTE: F# requires us to use an lambda inline here (not sure why)
+            body.add_OnCollision (fun fn fn2 collision -> handlePhysicsCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
             integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
     let private destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
