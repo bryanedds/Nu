@@ -73,64 +73,70 @@ module World =
         let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
         List.map snd prioritiesAndSubscriptionsSorted
 
-    /// Publish a message to the given address.
-    let publish address message world : bool * World =
-        let optSubList = Map.tryFind address world.Subscriptions
+    /// Publish a message for the given event.
+    let rec publish event publisher message world : bool * World =
+        let optSubList = Map.tryFind event world.Subscriptions
         match optSubList with
         | None -> (true, world)
         | Some subList ->
             let subListSorted = subscriptionSort subList world
             let (_, keepRunning, world'') =
                 List.foldWhile
-                    (fun (message', keepRunning', world'3) (subscriber, (Subscription subscription)) ->
+                    (fun (message', keepRunning', world'3) (subscriber, subscription) ->
                         if message'.Handled || not keepRunning' then None
-                        elif isAddressSelected subscriber world'3 then Some (subscription address subscriber message' world'3)
-                        else Some (message', keepRunning', world'3))
+                        elif not <| isAddressSelected subscriber world'3 then Some (message', keepRunning', world'3)
+                        else
+                            let result =
+                                match subscription with
+                                | ExitSub -> handleEventAsExit message' world'3
+                                | SwallowSub -> handleEventAsSwallow message' world'3
+                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination message' world'3 // SUSPECT
+                                | CustomSub fn -> fn event publisher subscriber message' world'3
+                            Some result)
                     (message, true, world)
                     subListSorted
             (keepRunning, world'')
 
-    /// Subscribe to messages at the given address.
-    let subscribe address subscriber subscription world =
-        let sub = Subscription subscription
+    /// Subscribe to messages for the given event.
+    and subscribe event subscriber subscription world =
         let subs = world.Subscriptions
-        let optSubList = Map.tryFind address subs
+        let optSubList = Map.tryFind event subs
         { world with
             Subscriptions =
                 match optSubList with
-                | None -> Map.add address [(subscriber, sub)] subs
-                | Some subList -> Map.add address ((subscriber, sub) :: subList) subs }
+                | None -> Map.add event [(subscriber, subscription)] subs
+                | Some subList -> Map.add event ((subscriber, subscription) :: subList) subs }
 
-    /// Unsubscribe to messages at the given address.
-    let unsubscribe address subscriber world =
+    /// Unsubscribe to messages for the given event.
+    and unsubscribe event subscriber world =
         let subs = world.Subscriptions
-        let optSubList = Map.tryFind address subs
+        let optSubList = Map.tryFind event subs
         match optSubList with
         | None -> world
         | Some subList ->
             let subList' = List.remove (fun (address, _) -> address = subscriber) subList
-            let subscriptions' = Map.add address subList' subs
+            let subscriptions' = Map.add event subList' subs
             { world with Subscriptions = subscriptions' }
 
-    /// Execute a procedure within the context of a given subscription at the given address.
-    let withSubscription address subscription subscriber procedure world =
-        let world' = subscribe address subscriber subscription world
+    /// Execute a procedure within the context of a given subscription for the given event.
+    and withSubscription event subscription subscriber procedure world =
+        let world' = subscribe event subscriber subscription world
         let world'' = procedure world'
-        unsubscribe address subscriber world''
+        unsubscribe event subscriber world''
     
-    let handleEventAsSwallow (_ : Address) (_ : Address) message (world : World) =
+    and handleEventAsSwallow message (world : World) =
         (handleMessage message, true, world)
 
-    let handleEventAsExit (_ : Address) (_ : Address) message (world : World) =
+    and handleEventAsExit message (world : World) =
         (handleMessage message, false, world)
 
     // TODO: consider turning this into a lens, and removing the screenStateLens
-    let getScreenState address world =
+    and private getScreenState address world =
         let screen = get world <| worldScreenLens address
         get screen screenStateLens
 
     // TODO: consider turning this into a lens, and removing the screenStateLens
-    let setScreenState address state world =
+    and private setScreenState address state world =
         let screen = set state (get world <| worldScreenLens address) screenStateLens
         let world' = set screen world <| worldScreenLens address
         match state with
@@ -140,22 +146,18 @@ module World =
                 unsubscribe UpMouseLeftAddress address
         | IncomingState | OutgoingState ->
             world' |>
-                subscribe DownMouseLeftAddress address handleEventAsSwallow |>
-                subscribe UpMouseLeftAddress address handleEventAsSwallow
+                subscribe DownMouseLeftAddress address SwallowSub |>
+                subscribe UpMouseLeftAddress address SwallowSub
 
-    let transitionScreen destinationScreen world =
-        let world' = setScreenState destinationScreen IncomingState world
-        set (Some destinationScreen) world' worldOptSelectedScreenAddressLens
+    and transitionScreen destination world =
+        let world' = setScreenState destination IncomingState world
+        set (Some destination) world' worldOptSelectedScreenAddressLens
 
-    let transitionScreenHandler destinationScreen (_ : Address) (_ : Address) message world =
-        let world' = transitionScreen destinationScreen world
-        (handleMessage message, true, world')
-
-    let private updateTransition1 transition =
+    and private updateTransition1 transition =
         if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
         else ({ transition with Ticks = transition.Ticks + 1 }, false)
 
-    let private updateTransition update world =
+    and private updateTransition update world =
         let (keepRunning, world') =
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
             match optSelectedScreenAddress with
@@ -173,7 +175,8 @@ module World =
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
                     if finished then
                         publish
-                            (FinishedIncomingAddressPart @ selectedScreenAddress)
+                            (FinishedIncomingAddress @ selectedScreenAddress)
+                            selectedScreenAddress
                             { Handled = false; Data = NoData }
                             world'3
                     else (true, world'3)
@@ -186,7 +189,8 @@ module World =
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
                     if finished then
                         publish
-                            (FinishedOutgoingAddressPart @ selectedScreenAddress)
+                            (FinishedOutgoingAddress @ selectedScreenAddress)
+                            selectedScreenAddress
                             { Handled = false; Data = NoData }
                             world'3
                     else (true, world'3)
@@ -194,10 +198,11 @@ module World =
         if keepRunning then update world'
             else (keepRunning, world')
 
-    let rec private handleSplashScreenIdleTick idlingTime ticks address subscriber message world =
-        let world' = unsubscribe address subscriber world
+    and private handleSplashScreenIdleTick idlingTime ticks event publisher subscriber message world =
+        let world' = unsubscribe event subscriber world
         if ticks < idlingTime then
-            let world'' = subscribe address subscriber (handleSplashScreenIdleTick idlingTime <| ticks + 1) world'
+            let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime (ticks + 1)
+            let world'' = subscribe event subscriber subscription world'
             (message, true, world'')
         else
             let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
@@ -209,31 +214,24 @@ module World =
                 let world'' = setScreenState selectedScreenAddress OutgoingState world'
                 (message, true, world'')
 
-    let private handleSplashScreenIdle idlingTime address subscriber message world =
-        let world' = subscribe TickAddress subscriber (handleSplashScreenIdleTick idlingTime 0) world
+    and private handleSplashScreenIdle idlingTime event publisher subscriber message world =
+        let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
+        let world' = subscribe TickAddress subscriber subscription world
         (handleMessage message, true, world')
 
-    let private handleFinishedScreenOutgoing destinationScreen address subscriber message world =
-        let world' = unsubscribe address subscriber world
-        let world'' = transitionScreen destinationScreen world'
+    and private handleFinishedScreenOutgoing destination event publisher subscriber message world =
+        let world' = unsubscribe event subscriber world
+        let world'' = transitionScreen destination world'
         (handleMessage message, true, world'')
 
-    let handleEventAsScreenTransition destinationScreen subscriber x message world =
-        let sourceScreen = [subscriber |> List.rev |> List.at 2]
-        let world' = subscribe (FinishedOutgoingAddressPart @ sourceScreen) [] (handleFinishedScreenOutgoing destinationScreen) world
-        let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
-        match optSelectedScreenAddress with
-        | None ->
-            trace "Program Error: Could not handle click as screen transition due to no selected screen."
-            (handleMessage message, true, world)
-        | Some selectedScreenAddress ->
-            let world'' = setScreenState selectedScreenAddress OutgoingState world'
-            (handleMessage message, true, world'')
+    and handleEventAsScreenTransition destination message world =
+        let world' = transitionScreen destination world
+        (handleMessage message, true, world')
 
     type [<AutoOpen>] ButtonDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let handleButtonEventDownMouseLeft address subscriber message world =
+        let handleButtonEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
@@ -241,13 +239,13 @@ module World =
                     if isInBox3 mousePosition (button?Position ()) (button?Size ()) then
                         let button' = button?IsDown <- true
                         let world' = set button' world <| worldEntityLens subscriber
-                        let (keepRunning, world'') = publish (straddr "Down" subscriber) { Handled = false; Data = NoData } world'
+                        let (keepRunning, world'') = publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world'
                         (handleMessage message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
-        let handleButtonEventUpMouseLeft address subscriber message world =
+        let handleButtonEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
@@ -255,15 +253,15 @@ module World =
                     let (keepRunning, world') =
                         let button' = button?IsDown <- false
                         let world'' = set button' world <| worldEntityLens subscriber
-                        publish (straddr "Up" subscriber) { Handled = false; Data = NoData } world''
+                        publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world''
                     if keepRunning && isInBox3 mousePosition (button?Position ()) (button?Size ()) && button?IsDown () then
-                        let (keepRunning', world'') = publish (straddr "Click" subscriber) { Handled = false; Data = NoData } world'
+                        let (keepRunning', world'') = publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = button?ClickSound () }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
                         (handleMessage message, keepRunning', world'3)
                     else (message, keepRunning, world')
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
             
         override this.Init (button, dispatcherContainer) =
             let button' = base.Init (button, dispatcherContainer)
@@ -277,8 +275,8 @@ module World =
         override this.Register (address, button, world) =
             let world' =
                 world |>
-                subscribe DownMouseLeftAddress address handleButtonEventDownMouseLeft |>
-                subscribe UpMouseLeftAddress address handleButtonEventUpMouseLeft
+                subscribe DownMouseLeftAddress address (CustomSub handleButtonEventDownMouseLeft) |>
+                subscribe UpMouseLeftAddress address (CustomSub handleButtonEventUpMouseLeft)
             (button, world')
 
         override this.Unregister (address, button, world) =
@@ -336,7 +334,7 @@ module World =
     type [<AutoOpen>] ToggleDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let handleToggleEventDownMouseLeft address subscriber message world =
+        let handleToggleEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
@@ -347,9 +345,9 @@ module World =
                         (handleMessage message, true, world')
                     else (message, true, world)
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
-        let handleToggleEventUpMouseLeft address subscriber message world =
+        let handleToggleEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
@@ -359,7 +357,7 @@ module World =
                         let toggle'' = toggle'?IsOn <- not <| toggle'?IsOn ()
                         let world' = set toggle'' world <| worldEntityLens subscriber
                         let messageType = if toggle''?IsOn () then "On" else "Off"
-                        let (keepRunning, world'') = publish (straddr messageType subscriber) { Handled = false; Data = NoData } world'
+                        let (keepRunning, world'') = publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle''?ToggleSound () }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
                         (handleMessage message, keepRunning, world'3)
@@ -367,7 +365,7 @@ module World =
                         let world' = set toggle' world <| worldEntityLens subscriber
                         (message, true, world')
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
         override this.Init (toggle, dispatcherContainer) =
             let toggle' = base.Init (toggle, dispatcherContainer)
@@ -382,8 +380,8 @@ module World =
         override this.Register (address, label, world) =
             let world' =
                 world |>
-                subscribe DownMouseLeftAddress address handleToggleEventDownMouseLeft |>
-                subscribe UpMouseLeftAddress address handleToggleEventUpMouseLeft
+                subscribe DownMouseLeftAddress address (CustomSub handleToggleEventDownMouseLeft) |>
+                subscribe UpMouseLeftAddress address (CustomSub handleToggleEventUpMouseLeft)
             (label, world')
 
         override this.Unregister (address, label, world) =
@@ -402,7 +400,7 @@ module World =
     type [<AutoOpen>] FeelerDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let handleFeelerEventDownMouseLeft address subscriber message world =
+        let handleFeelerEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
                 let feeler = get world <| worldEntityLens subscriber
@@ -410,23 +408,23 @@ module World =
                     if isInBox3 mousePosition (feeler?Position ()) (feeler?Size ()) then
                         let feeler' = feeler?IsTouched <- true
                         let world' = set feeler' world <| worldEntityLens subscriber
-                        let (keepRunning, world'') = publish (straddr "Touch" subscriber) { Handled = false; Data = mouseButtonData } world'
+                        let (keepRunning, world'') = publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world'
                         (handleMessage message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
-        let handleFeelerEventUpMouseLeft address subscriber message world =
+        let handleFeelerEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData _ ->
                 let feeler = get world <| worldEntityLens subscriber
                 if feeler.Enabled && feeler.Visible then
                     let feeler' = feeler?IsTouched <- false
                     let world' = set feeler' world <| worldEntityLens subscriber
-                    let (keepRunning, world'') = publish (straddr "Release" subscriber) { Handled = false; Data = NoData } world'
+                    let (keepRunning, world'') = publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world'
                     (handleMessage message, keepRunning, world'')
                 else (message, true, world)
-            | _ -> failwith ("Expected MouseButtonData from address '" + addrToStr address + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
         override this.Init (feeler, dispatcherContainer) =
             let feeler' = base.Init (feeler, dispatcherContainer)
@@ -437,8 +435,8 @@ module World =
         override this.Register (address, feeler, world) =
             let world' =
                 world |>
-                subscribe DownMouseLeftAddress address handleFeelerEventDownMouseLeft |>
-                subscribe UpMouseLeftAddress address handleFeelerEventUpMouseLeft
+                subscribe DownMouseLeftAddress address (CustomSub handleFeelerEventDownMouseLeft) |>
+                subscribe UpMouseLeftAddress address (CustomSub handleFeelerEventUpMouseLeft)
             (feeler, world')
 
         override this.Unregister (address, feeler, world) =
@@ -740,7 +738,7 @@ module World =
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
                 let collisionMessage = { Handled = false; Data = collisionData }
-                publish collisionAddress collisionMessage world
+                publish collisionAddress [] collisionMessage world
 
     let private handleIntegrationMessages integrationMessages world : bool * World =
         List.fold handleIntegrationMessage (true, world) integrationMessages
@@ -760,29 +758,29 @@ module World =
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world' = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress { Handled = false; Data = MouseMoveData mousePosition } world'
-                    else publish MouseMoveAddress { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
+                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress [] { Handled = false; Data = MouseMoveData mousePosition } world'
+                    else publish MouseMoveAddress [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
                     let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                    let messageAddress = addr ("Down/Mouse" </> str mouseButton)
+                    let messageAddress = addrstr DownMouseAddress <| str mouseButton
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                    publish messageAddress { Handled = false; Data = messageData } world'
+                    publish messageAddress [] { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
                     let mouseButton = makeMouseButton event.button.button
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
-                        let messageAddress = addr ("Up/Mouse" </> str mouseButton)
+                        let messageAddress = addrstr UpMouseAddress <| str mouseButton
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                        publish messageAddress { Handled = false; Data = messageData } world'
+                        publish messageAddress [] { Handled = false; Data = messageData } world'
                     else (true, world)
                 | _ -> (true, world))
             (fun world ->
                 let (keepRunning, world') = integrate world
                 if not keepRunning then (keepRunning, world')
                 else
-                    let (keepRunning', world'') = publish TickAddress { Handled = false; Data = NoData } world'
+                    let (keepRunning', world'') = publish TickAddress [] { Handled = false; Data = NoData } world'
                     if not keepRunning' then (keepRunning', world'')
                     else updateTransition handleUpdate world'')
             (fun world -> let world' = render world in handleRender world')
@@ -800,8 +798,8 @@ module World =
         let splashLabel' = splashLabel?Size <- world.Camera.EyeSize
         let splashLabel'' = splashLabel'?LabelSprite <- (sprite : Sprite)
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel''])] world
-        let world'' = subscribe (FinishedIncomingAddressPart @ address) address (handleSplashScreenIdle idlingTime) world'
-        subscribe (FinishedOutgoingAddressPart @ address) address handleFinishedOutgoing world''
+        let world'' = subscribe (FinishedIncomingAddress @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world' // SUSPECT
+        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world'' // SUSPECT
 
     let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
@@ -813,9 +811,9 @@ module World =
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
             let userGameDispatcherName = Lun.make (userGameDispatcher.GetType ()).Name
-            // TODO: see if this hard-coding can be removed here
             let dispatchers =
                 Map.ofArray
+                    // TODO: see if this hard-coding can be removed here
                     [|Lun.make typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                       Lun.make typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
                       Lun.make typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj

@@ -193,7 +193,7 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let beginEntityDrag (form : NuEditForm) worldChangers refWorld _ _ message world =
+    let beginEntityDrag (form : NuEditForm) worldChangers refWorld _ _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world)
@@ -216,7 +216,7 @@ module Program =
                     (handleMessage message, true, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-    let endEntityDrag (form : NuEditForm) _ _ message world =
+    let endEntityDrag (form : NuEditForm) _ _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world)
@@ -249,7 +249,7 @@ module Program =
             world_
         | DragEntityRotation (pickOffset, origPosition, address) -> world
 
-    let beginCameraDrag (form : NuEditForm) worldChangers refWorld _ _ message world =
+    let beginCameraDrag (form : NuEditForm) worldChangers refWorld _ _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world)
@@ -261,7 +261,7 @@ module Program =
                 (handleMessage message, true, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
 
-    let endCameraDrag (form : NuEditForm) _ _ message world =
+    let endCameraDrag (form : NuEditForm) _ _ _ message world =
         match message.Data with
         | MouseButtonData (position, _) ->
             if form.interactButton.Checked then (message, true, world)
@@ -581,10 +581,10 @@ module Program =
             refWorld := world
             refWorld := addScreen EditorScreenAddress screen [(EditorGroupName, group, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenAddressLens
-            refWorld := subscribe DownMouseLeftAddress [] (beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := subscribe UpMouseLeftAddress [] (endEntityDrag form) !refWorld
-            refWorld := subscribe DownMouseCenterAddress [] (beginCameraDrag form worldChangers refWorld) !refWorld
-            refWorld := subscribe UpMouseCenterAddress [] (endCameraDrag form) !refWorld
+            refWorld := subscribe DownMouseLeftAddress [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseLeftAddress [] (CustomSub <| endEntityDrag form) !refWorld
+            refWorld := subscribe DownMouseCenterAddress [] (CustomSub <| beginCameraDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseCenterAddress [] (CustomSub <| endCameraDrag form) !refWorld
             Right !refWorld
 
     // TODO: remove code duplication with below
