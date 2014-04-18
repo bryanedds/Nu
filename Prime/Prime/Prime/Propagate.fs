@@ -1,4 +1,5 @@
 ﻿namespace Prime
+open Prime
 
 [<AutoOpen>]
 module PropagateModule =

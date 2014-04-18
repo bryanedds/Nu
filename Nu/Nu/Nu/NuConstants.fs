@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open OpenTK
+open Nu
 open Nu.NuCore
 module NuConstants =
 
