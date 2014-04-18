@@ -33,11 +33,11 @@ module Miscellanea =
     let inline strfp (obj : IFormattable) format formatProvider =
         obj.ToString (format, formatProvider)
 
-    /// Apply a function recursively n times.
-    let rec doTimes f x n =
-        if n < 0 then failwith "Cannot call doTimes with n < 0."
-        elif n = 0 then x
-        else doTimes f (f x) (n - 1)
+    /// Apply a function recursively a number of times.
+    let rec doTimes fn arg times =
+        if times < 0 then failwith "Cannot call doTimes with times < 0."
+        elif times = 0 then arg
+        else doTimes fn (fn arg) (times - 1)
 
     /// Perform an operation until a predicate passes.
     let rec doUntil op pred =
