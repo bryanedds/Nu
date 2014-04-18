@@ -9,16 +9,16 @@ module OmniDispatchersModule =
     type OmniFieldGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let adjustFieldCamera groupAddress world =
+        let adjustFieldCamera (groupAddress : Address) world =
             let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
             let entity = get world <| Entity.worldEntityLens avatarAddress
             let camera = { world.Camera with EyePosition = entity?Position () + (entity?Size () : Vector2) * 0.5f }
             { world with Camera = camera }
 
-        let adjustFieldCameraHandler groupAddress _ _ message world =
+        let adjustFieldCameraHandler _ _ groupAddress message world =
             (message, true, adjustFieldCamera groupAddress world)
 
-        let moveFieldAvatarHandler groupAddress _ _ message world =
+        let moveFieldAvatarHandler _ _ (groupAddress : Address) message world =
             let feelerAddress = groupAddress @ [OmniConstants.FieldFeelerName]
             let feeler = get world <| Entity.worldEntityLens feelerAddress
             if feeler?IsTouched () then
@@ -35,15 +35,15 @@ module OmniDispatchersModule =
             else (message, true, world)
         
         override this.Register (address, omniBattleGroup, entities, world) =
-            let world_ = World.subscribe NuConstants.TickAddress [] (moveFieldAvatarHandler address) world
-            let world_ = World.subscribe NuConstants.TickAddress [] (adjustFieldCameraHandler address) world_
+            let world_ = World.subscribe NuConstants.TickAddress address (CustomSub moveFieldAvatarHandler) world
+            let world_ = World.subscribe NuConstants.TickAddress address (CustomSub adjustFieldCameraHandler) world_
             let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
             let world_ = base.Register (address, omniBattleGroup, entities, world_)
             adjustFieldCamera address world_
 
         override this.Unregister (address, omniFieldGroup, world) =
-            let world_ = World.unsubscribe NuConstants.TickAddress [] world
-            let world_ = World.unsubscribe NuConstants.TickAddress [] world_
+            let world_ = World.unsubscribe NuConstants.TickAddress address world
+            let world_ = World.unsubscribe NuConstants.TickAddress address world_
             base.Unregister (address, omniFieldGroup, world_)
 
     type OmniBattleGroupDispatcher () =

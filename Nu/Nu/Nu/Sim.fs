@@ -145,9 +145,14 @@ module SimModule =
             { this with Xtension = xtension }
 
     /// Describes a game message subscription.
+    /// In addition to CustomSubs, allows for data-driven subscriptions to accomodate a visual event editor should
+    /// one be implemented.
     /// A reference type.
     type [<ReferenceEquality>] Subscription =
-        Subscription of (Address -> Address -> Message -> World -> (Message * bool * World))
+        | ExitSub
+        | SwallowSub
+        | ScreenTransitionSub of Address (*desinationScreen*)
+        | CustomSub of (Address (*event*) -> Address (*publisher*) -> Address (*subscriber*) -> Message -> World -> (Message * bool * World))
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
