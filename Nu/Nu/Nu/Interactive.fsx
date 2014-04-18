@@ -12,10 +12,10 @@
 #r "C:/OmniBlade/Nu/TiledSharp/Debug/TiledSharp.dll"
 System.IO.Directory.SetCurrentDirectory "C:/OmniBlade/Nu/Nu/Nu/bin/Debug"
 
-#load "Core.fs"
+#load "NuCore.fs"
 #load "RQueue.fs"
-#load "Constants.fs"
-#load "Math.fs"
+#load "NuConstants.fs"
+#load "NuMath.fs"
 #load "Voords.fs"
 #load "Assets.fs"
 #load "Physics.fs"
