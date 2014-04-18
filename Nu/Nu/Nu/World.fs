@@ -175,7 +175,7 @@ module World =
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
                     if finished then
                         publish
-                            (FinishedIncomingAddress @ selectedScreenAddress)
+                            (FinishedIncomingEvent @ selectedScreenAddress)
                             selectedScreenAddress
                             { Handled = false; Data = NoData }
                             world'3
@@ -189,7 +189,7 @@ module World =
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
                     if finished then
                         publish
-                            (FinishedOutgoingAddress @ selectedScreenAddress)
+                            (FinishedOutgoingEvent @ selectedScreenAddress)
                             selectedScreenAddress
                             { Handled = false; Data = NoData }
                             world'3
@@ -798,8 +798,8 @@ module World =
         let splashLabel' = splashLabel?Size <- world.Camera.EyeSize
         let splashLabel'' = splashLabel'?LabelSprite <- (sprite : Sprite)
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel''])] world
-        let world'' = subscribe (FinishedIncomingAddress @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
-        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world''
+        let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
+        subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
     let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
