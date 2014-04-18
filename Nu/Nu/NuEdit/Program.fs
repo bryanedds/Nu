@@ -581,10 +581,10 @@ module Program =
             refWorld := world
             refWorld := addScreen EditorScreenAddress screen [(EditorGroupName, group, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenAddressLens
-            refWorld := subscribe DownMouseLeftAddress [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := subscribe UpMouseLeftAddress [] (CustomSub <| endEntityDrag form) !refWorld
-            refWorld := subscribe DownMouseCenterAddress [] (CustomSub <| beginCameraDrag form worldChangers refWorld) !refWorld
-            refWorld := subscribe UpMouseCenterAddress [] (CustomSub <| endCameraDrag form) !refWorld
+            refWorld := subscribe DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
+            refWorld := subscribe DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form worldChangers refWorld) !refWorld
+            refWorld := subscribe UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
             Right !refWorld
 
     // TODO: remove code duplication with below
