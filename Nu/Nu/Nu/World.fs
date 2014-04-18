@@ -90,7 +90,7 @@ module World =
                                 match subscription with
                                 | ExitSub -> handleEventAsExit message' world'3
                                 | SwallowSub -> handleEventAsSwallow message' world'3
-                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination message' world'3 // SUSPECT
+                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination message' world'3
                                 | CustomSub fn -> fn event publisher subscriber message' world'3
                             Some result)
                     (message, true, world)
@@ -798,8 +798,8 @@ module World =
         let splashLabel' = splashLabel?Size <- world.Camera.EyeSize
         let splashLabel'' = splashLabel'?LabelSprite <- (sprite : Sprite)
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel''])] world
-        let world'' = subscribe (FinishedIncomingAddress @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world' // SUSPECT
-        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world'' // SUSPECT
+        let world'' = subscribe (FinishedIncomingAddress @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
+        subscribe (FinishedOutgoingAddress @ address) address handleFinishedOutgoing world''
 
     let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = makeDissolveScreen incomingTime outgoingTime
