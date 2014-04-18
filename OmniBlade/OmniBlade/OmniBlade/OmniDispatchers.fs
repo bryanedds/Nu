@@ -35,15 +35,15 @@ module OmniDispatchersModule =
             else (message, true, world)
         
         override this.Register (address, omniBattleGroup, entities, world) =
-            let world_ = World.subscribe NuConstants.TickAddress address (CustomSub moveFieldAvatarHandler) world
-            let world_ = World.subscribe NuConstants.TickAddress address (CustomSub adjustFieldCameraHandler) world_
+            let world_ = World.subscribe NuConstants.TickEvent address (CustomSub moveFieldAvatarHandler) world
+            let world_ = World.subscribe NuConstants.TickEvent address (CustomSub adjustFieldCameraHandler) world_
             let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
             let world_ = base.Register (address, omniBattleGroup, entities, world_)
             adjustFieldCamera address world_
 
         override this.Unregister (address, omniFieldGroup, world) =
-            let world_ = World.unsubscribe NuConstants.TickAddress address world
-            let world_ = World.unsubscribe NuConstants.TickAddress address world_
+            let world_ = World.unsubscribe NuConstants.TickEvent address world
+            let world_ = World.unsubscribe NuConstants.TickEvent address world_
             base.Unregister (address, omniFieldGroup, world_)
 
     type OmniBattleGroupDispatcher () =
