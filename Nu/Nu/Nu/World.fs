@@ -142,12 +142,12 @@ module World =
         match state with
         | IdlingState ->
             world' |>
-                unsubscribe DownMouseLeftAddress address |>
-                unsubscribe UpMouseLeftAddress address
+                unsubscribe DownMouseLeftEvent address |>
+                unsubscribe UpMouseLeftEvent address
         | IncomingState | OutgoingState ->
             world' |>
-                subscribe DownMouseLeftAddress address SwallowSub |>
-                subscribe UpMouseLeftAddress address SwallowSub
+                subscribe DownMouseLeftEvent address SwallowSub |>
+                subscribe UpMouseLeftEvent address SwallowSub
 
     and transitionScreen destination world =
         let world' = setScreenState destination IncomingState world
@@ -216,7 +216,7 @@ module World =
 
     and private handleSplashScreenIdle idlingTime event publisher subscriber message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
-        let world' = subscribe TickAddress subscriber subscription world
+        let world' = subscribe TickEvent subscriber subscription world
         (handleMessage message, true, world')
 
     and private handleFinishedScreenOutgoing destination event publisher subscriber message world =
@@ -275,14 +275,14 @@ module World =
         override this.Register (address, button, world) =
             let world' =
                 world |>
-                subscribe DownMouseLeftAddress address (CustomSub handleButtonEventDownMouseLeft) |>
-                subscribe UpMouseLeftAddress address (CustomSub handleButtonEventUpMouseLeft)
+                subscribe DownMouseLeftEvent address (CustomSub handleButtonEventDownMouseLeft) |>
+                subscribe UpMouseLeftEvent address (CustomSub handleButtonEventUpMouseLeft)
             (button, world')
 
         override this.Unregister (address, button, world) =
             world |>
-                unsubscribe DownMouseLeftAddress address |>
-                unsubscribe UpMouseLeftAddress address
+                unsubscribe DownMouseLeftEvent address |>
+                unsubscribe UpMouseLeftEvent address
 
         override this.GetRenderDescriptors (view, button, world) =
             if not button.Visible then []
@@ -380,14 +380,14 @@ module World =
         override this.Register (address, label, world) =
             let world' =
                 world |>
-                subscribe DownMouseLeftAddress address (CustomSub handleToggleEventDownMouseLeft) |>
-                subscribe UpMouseLeftAddress address (CustomSub handleToggleEventUpMouseLeft)
+                subscribe DownMouseLeftEvent address (CustomSub handleToggleEventDownMouseLeft) |>
+                subscribe UpMouseLeftEvent address (CustomSub handleToggleEventUpMouseLeft)
             (label, world')
 
         override this.Unregister (address, label, world) =
             world |>
-                unsubscribe DownMouseLeftAddress address |>
-                unsubscribe UpMouseLeftAddress address
+                unsubscribe DownMouseLeftEvent address |>
+                unsubscribe UpMouseLeftEvent address
 
         override this.GetRenderDescriptors (view, toggle, world) =
             if not toggle.Visible then []
@@ -435,14 +435,14 @@ module World =
         override this.Register (address, feeler, world) =
             let world' =
                 world |>
-                subscribe DownMouseLeftAddress address (CustomSub handleFeelerEventDownMouseLeft) |>
-                subscribe UpMouseLeftAddress address (CustomSub handleFeelerEventUpMouseLeft)
+                subscribe DownMouseLeftEvent address (CustomSub handleFeelerEventDownMouseLeft) |>
+                subscribe UpMouseLeftEvent address (CustomSub handleFeelerEventUpMouseLeft)
             (feeler, world')
 
         override this.Unregister (address, feeler, world) =
             world |>
-                unsubscribe UpMouseLeftAddress address |>
-                unsubscribe DownMouseLeftAddress address
+                unsubscribe UpMouseLeftEvent address |>
+                unsubscribe DownMouseLeftEvent address
 
         override this.GetQuickSize (feeler, world) =
             Vector2 64.0f
@@ -758,29 +758,29 @@ module World =
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world' = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragAddress [] { Handled = false; Data = MouseMoveData mousePosition } world'
-                    else publish MouseMoveAddress [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
+                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragEvent [] { Handled = false; Data = MouseMoveData mousePosition } world'
+                    else publish MouseMoveEvent [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
+                    let mouseEvent = addrstr DownMouseEvent <| str mouseButton
                     let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                    let messageAddress = addrstr DownMouseAddress <| str mouseButton
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                    publish messageAddress [] { Handled = false; Data = messageData } world'
+                    publish mouseEvent [] { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
                     let mouseButton = makeMouseButton event.button.button
+                    let mouseEvent = addrstr UpMouseEvent <| str mouseButton
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
-                        let messageAddress = addrstr UpMouseAddress <| str mouseButton
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                        publish messageAddress [] { Handled = false; Data = messageData } world'
+                        publish mouseEvent [] { Handled = false; Data = messageData } world'
                     else (true, world)
                 | _ -> (true, world))
             (fun world ->
                 let (keepRunning, world') = integrate world
                 if not keepRunning then (keepRunning, world')
                 else
-                    let (keepRunning', world'') = publish TickAddress [] { Handled = false; Data = NoData } world'
+                    let (keepRunning', world'') = publish TickEvent [] { Handled = false; Data = NoData } world'
                     if not keepRunning' then (keepRunning', world'')
                     else updateTransition handleUpdate world'')
             (fun world -> let world' = render world in handleRender world')
