@@ -23,31 +23,31 @@ module OmniFlow =
     let TitleGroupName = Lun.make "Group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
     let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
-    let ClickTitleNewGameAddress = NuCore.straddrstr "Click" TitleGroupAddress "NewGame"
-    let ClickTitleLoadGameAddress = NuCore.straddrstr "Click" TitleGroupAddress "LoadGame"
-    let ClickTitleCreditsAddress = NuCore.straddrstr "Click" TitleGroupAddress "Credits"
-    let ClickTitleExitAddress = NuCore.straddrstr "Click" TitleGroupAddress "Exit"
+    let ClickTitleNewGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "NewGame"
+    let ClickTitleLoadGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "LoadGame"
+    let ClickTitleCreditsEvent = NuCore.straddrstr "Click" TitleGroupAddress "Credits"
+    let ClickTitleExitEvent = NuCore.straddrstr "Click" TitleGroupAddress "Exit"
 
     // load game constants
     let LoadGameAddress = NuCore.addr "LoadGame"
     let LoadGameGroupName = Lun.make "Group"
     let LoadGameGroupAddress = LoadGameAddress @ [LoadGameGroupName]
     let LoadGameGroupFileName = "Assets/OmniBlade/Groups/LoadGame.nugroup"
-    let ClickLoadGameBackAddress = NuCore.straddrstr "Click" LoadGameGroupAddress "Back"
+    let ClickLoadGameBackEvent = NuCore.straddrstr "Click" LoadGameGroupAddress "Back"
 
     // credits constants
     let CreditsAddress = NuCore.addr "Credits"
     let CreditsGroupName = Lun.make "Group"
     let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
     let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
-    let ClickCreditsBackAddress = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
+    let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
 
     // field constants
     let FieldAddress = NuCore.addr "Field"
     let FieldGroupName = Lun.make "Group"
     let FieldGroupAddress = FieldAddress @ [FieldGroupName]
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
-    let ClickFieldBackAddress = NuCore.straddrstr "Click" FieldGroupAddress "Back"
+    let ClickFieldBackEvent = NuCore.straddrstr "Click" FieldGroupAddress "Back"
 
     // time constants
     let TimeAddress = NuCore.addr "Time"
@@ -61,34 +61,34 @@ module OmniFlow =
         
         // this subscribes to the event that is raised when the Title screen's NewGame button is
         // clicked, and handles the event by transitioning to the Field screen
-        let world_ = World.subscribe ClickTitleNewGameAddress [] (World.handleEventAsScreenTransition FieldAddress) world_
+        let world_ = World.subscribe ClickTitleNewGameEvent [] (ScreenTransitionSub FieldAddress) world_
         
         // subscribes to the event that is raised when the Title screen's LoadGame button is
         // clicked, and handles the event by transitioning to the LoadGame screen
-        let world_ = World.subscribe ClickTitleLoadGameAddress [] (World.handleEventAsScreenTransition LoadGameAddress) world_
+        let world_ = World.subscribe ClickTitleLoadGameEvent [] (ScreenTransitionSub LoadGameAddress) world_
         
         // subscribes to the event that is raised when the Title screen's Credits button is
         // clicked, and handles the event by transitioning to the Credits screen
-        let world_ = World.subscribe ClickTitleCreditsAddress [] (World.handleEventAsScreenTransition CreditsAddress) world_
+        let world_ = World.subscribe ClickTitleCreditsEvent [] (ScreenTransitionSub CreditsAddress) world_
         
         // subscribes to the event that is raised when the Title screen's Exit button is clicked,
         // and handles the event by exiting the game
-        World.subscribe ClickTitleExitAddress [] World.handleEventAsExit world_
+        World.subscribe ClickTitleExitEvent [] ExitSub world_
 
     // pretty much the same as above, but for the LoadGame screen
     let addLoadGameScreen world =
         let world' = World.addDissolveScreenFromFile LoadGameGroupFileName LoadGameGroupName IncomingTime OutgoingTime LoadGameAddress world
-        World.subscribe ClickLoadGameBackAddress [] (World.handleEventAsScreenTransition TitleAddress) world'
+        World.subscribe ClickLoadGameBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // and so on...
     let addCreditsScreen world =
         let world' = World.addDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress world
-        World.subscribe ClickCreditsBackAddress [] (World.handleEventAsScreenTransition TitleAddress) world'
+        World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // and so on.
     let addFieldScreen world =
         let world' = World.addDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress world
-        World.subscribe ClickFieldBackAddress [] (World.handleEventAsScreenTransition TitleAddress) world'
+        World.subscribe ClickFieldBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // here we create the OmniBlade world in a callback from the World.run function.
     let tryCreateOmniBladeWorld sdlDeps extData =
@@ -110,8 +110,7 @@ module OmniFlow =
             
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-            let titleTransitioner = World.transitionScreenHandler TitleAddress
-            let world_ = World.addSplashScreenFromData titleTransitioner SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world_
+            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world_
 
             // add our UI screens to the world
             let world_ = addTitleScreen world_
