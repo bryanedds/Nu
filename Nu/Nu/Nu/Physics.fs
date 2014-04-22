@@ -109,9 +109,10 @@ module PhysicsModule =
 
 module Physics =
 
-    let InvalidPhysicsId = (InvalidId, InvalidId)
+    let InvalidPhysicsId =
+        (InvalidId, InvalidId)
 
-    let getPhysicsId entityId =
+    let getPhysicsId (entityId : Guid) =
         (entityId, Guid.NewGuid ())
 
     let private toPixel value =
