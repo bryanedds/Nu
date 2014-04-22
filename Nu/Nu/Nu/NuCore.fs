@@ -17,6 +17,9 @@ module NuCoreModule =
 
 module NuCore =
 
+    /// The invalid Id.
+    let InvalidId = Guid.Empty
+
     /// Create a Nu Id.
     let getNuId = Guid.NewGuid
 

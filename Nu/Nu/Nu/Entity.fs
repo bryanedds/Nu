@@ -25,21 +25,16 @@ open Nu.Camera
 module EntityModule =
 
     type Entity with
-        member this.position with get () = this?Position () : Vector2
-        member this.Position () = this.position
-        member this.Position (value : Vector2) : Entity = this?Position <- value
-        member this.depth with get () = this?Depth () : single
-        member this.Depth () = this.depth
-        member this.Depth (value : single) : Entity = this?Depth <- value
-        member this.rotation with get () = this?Rotation () : single
-        member this.Rotation () = this.rotation
-        member this.Rotation (value : single) : Entity = this?Rotation <- value
-        member this.size with get () = this?Size () : Vector2
-        member this.Size () = this.size
-        member this.Size (value : Vector2) : Entity = this?Size <- value
-        member this.isTransformRelative with get () = this?IsTransformRelative () : bool
-        member this.IsTransformRelative () = this.isTransformRelative
-        member this.IsTransformRelative (value : bool) : Entity = this?IsTransformRelative <- value
+        member this.Position with get () = this?Position () : Vector2
+        member this.SetPosition (value : Vector2) : Entity = this?Position <- value
+        member this.Depth with get () = this?Depth () : single
+        member this.SetDepth (value : single) : Entity = this?Depth <- value
+        member this.Rotation with get () = this?Rotation () : single
+        member this.SetRotation (value : single) : Entity = this?Rotation <- value
+        member this.Size with get () = this?Size () : Vector2
+        member this.SetSize (value : Vector2) : Entity = this?Size <- value
+        member this.IsTransformRelative with get () = this?IsTransformRelative () : bool
+        member this.SetIsTransformRelative (value : bool) : Entity = this?IsTransformRelative <- value
 
     type EntityDispatcher () =
         class
@@ -77,12 +72,12 @@ module EntityModule =
             let entity2d' = base.Init (entity2d, dispatcherContainer)
             // perhaps a nice 'with' syntax macro would work better here -
             // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
-            ((((entity2d'
-                    .Position Vector2.Zero)
-                    .Depth 0.0f)
-                    .Size DefaultEntitySize)
-                    .Rotation 0.0f)
-                    .IsTransformRelative true
+            entity2d'
+                .SetPosition(Vector2.Zero)
+                .SetDepth(0.0f)
+                .SetSize(DefaultEntitySize)
+                .SetRotation(0.0f)
+                .SetIsTransformRelative(true)
 
 module Entity =
 
@@ -111,36 +106,36 @@ module Entity =
           Set = fun value entity -> (?<-) entity memberName value }
 
     let entityPositionLens =
-        { Get = fun (entity : Entity) -> entity.Position ()
-          Set = fun value entity -> entity.Position value }
+        { Get = fun (entity : Entity) -> entity.Position
+          Set = fun value entity -> entity.SetPosition value }
 
     let entityDepthLens =
-        { Get = fun (entity : Entity) -> entity.Depth ()
-          Set = fun value entity -> entity.Depth value }
+        { Get = fun (entity : Entity) -> entity.Depth
+          Set = fun value entity -> entity.SetDepth value }
 
     let entityRotationLens =
-        { Get = fun (entity : Entity) -> entity.Rotation ()
-          Set = fun value entity -> entity.Rotation value }
+        { Get = fun (entity : Entity) -> entity.Rotation
+          Set = fun value entity -> entity.SetRotation value }
 
     let entitySizeLens =
-        { Get = fun (entity : Entity) -> entity.Size ()
-          Set = fun value entity -> entity.Size value }
+        { Get = fun (entity : Entity) -> entity.Size
+          Set = fun value entity -> entity.SetSize value }
 
     let entityIsTransformRelativeLens =
-        { Get = fun (entity : Entity) -> entity.IsTransformRelative ()
-          Set = fun value entity -> entity.IsTransformRelative value }
+        { Get = fun (entity : Entity) -> entity.IsTransformRelative
+          Set = fun value entity -> entity.SetIsTransformRelative value }
 
     let getEntityTransformAbsolute (entity : Entity) =
-        { Transform.Position = entity.Position ()
-          Depth = entity.Depth ()
-          Size = entity.Size ()
-          Rotation = entity.Rotation () }
+        { Transform.Position = entity.Position
+          Depth = entity.Depth
+          Size = entity.Size
+          Rotation = entity.Rotation }
 
     let getEntityTransformRelative view (entity : Entity) =
-        { Transform.Position = entity.Position () - view
-          Depth = entity.Depth ()
-          Size = entity.Size ()
-          Rotation = entity.Rotation () }
+        { Transform.Position = entity.Position - view
+          Depth = entity.Depth
+          Size = entity.Size
+          Rotation = entity.Rotation }
 
     let private worldOptEntityFinder address world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
@@ -224,7 +219,7 @@ module Entity =
 
     // TODO: turn into a lens
     let getEntityTransform optCamera (entity : Entity) =
-        if entity.isTransformRelative then
+        if entity.IsTransformRelative then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             getEntityTransformRelative view entity
         else getEntityTransformAbsolute entity 
@@ -233,10 +228,10 @@ module Entity =
     let setEntityTransformAbsolute positionSnap rotationSnap transform (entity : Entity) =
         let transform' = snapTransform positionSnap rotationSnap transform
         (((entity
-                .Position transform'.Position)
-                .Depth transform'.Depth)
-                .Size transform'.Size)
-                .Rotation transform'.Rotation
+                .SetPosition transform'.Position)
+                .SetDepth transform'.Depth)
+                .SetSize transform'.Size)
+                .SetRotation transform'.Rotation
 
     // TODO: turn into a lens
     let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
@@ -245,7 +240,7 @@ module Entity =
 
     // TODO: turn into a lens
     let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer (entity : Entity) =
-        if entity.isTransformRelative then
+        if entity.IsTransformRelative then
             let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
             setEntityTransformRelative view positionSnap rotationSnap transform entity
         else setEntityTransformAbsolute positionSnap rotationSnap transform entity
@@ -284,7 +279,7 @@ module Entity =
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
-        let tilePosition = (int tileMap.position.X + (fst tmd.TileSize * i), int tileMap.position.Y + (snd tmd.TileSize * j))
+        let tilePosition = (int tileMap.Position.X + (fst tmd.TileSize * i), int tileMap.Position.Y + (snd tmd.TileSize * j))
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
         let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
