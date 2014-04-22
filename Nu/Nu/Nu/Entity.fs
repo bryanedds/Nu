@@ -254,8 +254,7 @@ module Entity =
         let transform = getEntityTransform None entity
         transform.Depth
 
-    let makeTileMapData tileMap world =
-        let tileMapAsset = (tileMap : Entity)?TileMapAsset ()
+    let makeTileMapData tileMapAsset world =
         match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
         | None -> failwith "Unexpected match failure in Nu.Entity.makeTileMapData."
         | Some (_, _, map) ->

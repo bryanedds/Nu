@@ -706,7 +706,7 @@ module World =
                           Depth = avatar.Depth }]
 
         override this.GetQuickSize (avatar, world) =
-            let sprite = avatar?Sprite ()
+            let sprite = avatar.ImageSprite
             getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type [<AutoOpen>] TileMapDispatcher () =
@@ -737,9 +737,9 @@ module World =
                 let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
                 (world', physicsId :: physicsIds)
 
-        let registerTileMapPhysics address tileMap world =
+        let registerTileMapPhysics address (tileMap : Entity) world =
             let collisionLayer = 0 // MAGIC_VALUE: assumption
-            let tmd = makeTileMapData tileMap world
+            let tmd = makeTileMapData tileMap.TileMapAsset world
             let tld = makeTileLayerData tileMap tmd collisionLayer
             let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld address) (world, []) tld.Tiles
             let tileMap' = tileMap.SetPhysicsIds physicsIds
