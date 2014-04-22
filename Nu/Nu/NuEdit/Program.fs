@@ -296,7 +296,7 @@ module Program =
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let world = !refWorld
         let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-        let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = Vector2 DefaultEntitySize; Rotation = DefaultEntityRotation }
+        let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
         let entityXTypeName = Lun.make form.createEntityComboBox.Text
         try let entity_ = makeDefaultEntity entityXTypeName None world
             let changer = (fun world_ ->
