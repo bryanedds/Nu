@@ -22,9 +22,11 @@ open Nu.DomainModel
 open Nu.Camera
 
 [<AutoOpen>]
-module EntityModule =
+module XEntity =
 
     type Entity with
+
+        // xfields
         member this.Position with get () = this?Position () : Vector2
         member this.SetPosition (value : Vector2) : Entity = this?Position <- value
         member this.Depth with get () = this?Depth () : single
@@ -36,34 +38,44 @@ module EntityModule =
         member this.IsTransformRelative with get () = this?IsTransformRelative () : bool
         member this.SetIsTransformRelative (value : bool) : Entity = this?IsTransformRelative <- value
 
+        // xdispatches
+        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
+        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, this, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, this, world)
+        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, this, world)
+        member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, this, world)
+        member this.GetRenderDescriptors (view : Vector2, world : World) : RenderDescriptor list = this?GetRenderDescriptors (view, this, world)
+        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
+
+[<AutoOpen>]
+module EntityModule =
+
     type EntityDispatcher () =
-        class
 
-            abstract member Init : Entity * IXDispatcherContainer -> Entity
-            default this.Init (entity, dispatcherContainer) = entity
+        abstract member Init : Entity * IXDispatcherContainer -> Entity
+        default this.Init (entity, dispatcherContainer) = entity
 
-            abstract member Register : Address * Entity * World -> Entity * World
-            default this.Register (address, entity, world) = (entity, world)
+        abstract member Register : Address * Entity * World -> Entity * World
+        default this.Register (address, entity, world) = (entity, world)
 
-            abstract member Unregister : Address * Entity * World -> World
-            default this.Unregister (address, entity, world) = world
+        abstract member Unregister : Address * Entity * World -> World
+        default this.Unregister (address, entity, world) = world
 
-            abstract member PropagatePhysics : Address * Entity * World -> World
-            default this.PropagatePhysics (address, entity, world) = world
+        abstract member PropagatePhysics : Address * Entity * World -> World
+        default this.PropagatePhysics (address, entity, world) = world
 
-            abstract member ReregisterPhysicsHack : Address * Entity * World -> World
-            default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
+        abstract member ReregisterPhysicsHack : Address * Entity * World -> World
+        default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
 
-            abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
-            default this.HandleBodyTransformMessage (message, address, entity, world) = world
+        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
+        default this.HandleBodyTransformMessage (message, address, entity, world) = world
 
-            abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
-            default this.GetRenderDescriptors (view, entity, world) = []
+        abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
+        default this.GetRenderDescriptors (view, entity, world) = []
 
-            abstract member GetQuickSize : Entity * World -> Vector2
-            default this.GetQuickSize (entity, world) = DefaultEntitySize
-
-            end
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default this.GetQuickSize (entity, world) = DefaultEntitySize
 
     type Entity2dDispatcher () =
         inherit EntityDispatcher ()
@@ -296,14 +308,14 @@ module Entity =
         | None -> failwith <| "Invalid XType name '" + xTypeName.LunStr + "'."
         | Some dispatcher ->
             let entity = makeDefaultEntity2 xTypeName optName
-            entity?Init (entity, dispatcherContainer) : Entity
+            entity.Init dispatcherContainer
 
-    let registerEntity address entity world =
-        entity?Register (address, entity, world)
+    let registerEntity address (entity : Entity) world =
+        entity.Register (address, world)
 
     let unregisterEntity address world =
         let entity = get world <| worldEntityLens address
-        entity?Unregister (address, entity, world)
+        entity.Unregister (address, world)
 
     let removeEntity address world =
         let world' = unregisterEntity address world
