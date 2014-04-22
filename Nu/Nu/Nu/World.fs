@@ -23,6 +23,7 @@ open Nu.Audio
 open Nu.Sdl
 open Nu.DomainModel
 open Nu.Camera
+open Nu.XEntity
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
@@ -815,7 +816,7 @@ module World =
     let private getGroupRenderDescriptors camera dispatcherContainer entities =
         let view = getInverseView camera
         let entityValues = Map.toValueSeq entities
-        Seq.map (fun entity -> entity?GetRenderDescriptors (view, entity, dispatcherContainer)) entityValues
+        Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (view, dispatcherContainer)) entityValues
 
     let private getTransitionRenderDescriptors camera dispatcherContainer transition =
         match transition.OptDissolveSprite with
@@ -858,7 +859,7 @@ module World =
             | BodyTransformMessage bodyTransformMessage -> 
                 let entityAddress = bodyTransformMessage.EntityAddress
                 let entity = get world <| worldEntityLens entityAddress
-                (keepRunning, entity?HandleBodyTransformMessage (bodyTransformMessage, entityAddress, entity, world))
+                (keepRunning, entity.HandleBodyTransformMessage (bodyTransformMessage, entityAddress, world))
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
@@ -971,9 +972,9 @@ module World =
                   PhysicsMessages = []
                   Dispatchers = dispatchers
                   ExtData = extData }
-            let world' = world.Game?Register (world.Game, world) : World
+            let world' = world.Game.Register world
             Right world'
 
     let reregisterPhysicsHack groupAddress world =
         let entities = get world <| worldEntitiesLens groupAddress
-        Map.fold (fun world _ entity -> entity?ReregisterPhysicsHack (groupAddress, entity, world)) world entities
+        Map.fold (fun world _ (entity : Entity) -> entity.ReregisterPhysicsHack (groupAddress, world)) world entities
