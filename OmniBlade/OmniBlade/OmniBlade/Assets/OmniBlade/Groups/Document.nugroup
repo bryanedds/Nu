@@ -42,7 +42,7 @@
         <Depth type="System.Single">0</Depth>
         <Size type="OpenTK.Vector2">64;64</Size>
         <Position type="OpenTK.Vector2">247.9961;31.03653</Position>
-        <Sprite type="Nu.RenderingModule+Sprite">Image3;Default;AssetGraph.xml</Sprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Image3;Default;AssetGraph.xml</ImageSprite>
         <Rotation type="System.Single">-0.000104752631</Rotation>
         <Density type="System.Single">10</Density>
       </Xtension>
@@ -116,7 +116,7 @@
         <Depth type="System.Single">0</Depth>
         <Size type="OpenTK.Vector2">64;64</Size>
         <Position type="OpenTK.Vector2">127.5218;31.43011</Position>
-        <Sprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</Sprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</ImageSprite>
         <Rotation type="System.Single">0</Rotation>
         <Density type="System.Single">10</Density>
       </Xtension>

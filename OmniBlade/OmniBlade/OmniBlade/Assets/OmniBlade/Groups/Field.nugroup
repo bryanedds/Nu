@@ -15,7 +15,7 @@
         <Depth type="System.Single">2</Depth>
         <Size type="OpenTK.Vector2">64;64</Size>
         <Position type="OpenTK.Vector2">106.7553;10.11232</Position>
-        <Sprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</Sprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</ImageSprite>
         <Rotation type="System.Single">0</Rotation>
         <Density type="System.Single">10</Density>
       </Xtension>
