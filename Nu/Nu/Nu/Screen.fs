@@ -10,27 +10,28 @@ open Nu.DomainModel
 open Nu.Group
 
 [<AutoOpen>]
+module XScreen =
+
+    type GroupDescriptor = Lun * Group * Entity list
+
+    type Transition with end
+
+    type Screen with
+        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, this, groupDescriptors, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+
+[<AutoOpen>]
 module ScreenModule =
 
-    type GroupDescriptor =
-        Lun * Group * Entity list
-
-    type TransitionDispatcher () =
-        class
-            end
+    type TransitionDispatcher () = class end
 
     type ScreenDispatcher () =
-        class
-        
-            abstract member Register : Address * Screen * GroupDescriptor list * World -> World
-            default this.Register (address, _, groupDescriptors, world) =
-                addGroups address groupDescriptors world
 
-            abstract member Unregister : Address * Screen * World -> World
-            default this.Unregister (address, _, world) =
-                removeGroups address world
+        abstract member Register : Address * Screen * GroupDescriptor list * World -> World
+        default this.Register (address, _, groupDescriptors, world) = addGroups address groupDescriptors world
 
-            end
+        abstract member Unregister : Address * Screen * World -> World
+        default this.Unregister (address, _, world) = removeGroups address world
 
 module Screen =
 
@@ -136,12 +137,12 @@ module Screen =
         let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite  }
         { makeDefaultScreen () with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 
-    let registerScreen address screen groupDescriptors world =
-        screen?Register (address, screen, (groupDescriptors : GroupDescriptor list), world)
+    let registerScreen address (screen : Screen) groupDescriptors world =
+        screen.Register (address, groupDescriptors, world)
 
     let unregisterScreen address world =
         let screen = get world <| worldScreenLens address
-        screen?Unregister (address, screen, world)
+        screen.Unregister (address, world)
 
     let removeScreen address world =
         let world' = unregisterScreen address world

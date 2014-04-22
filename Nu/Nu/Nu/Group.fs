@@ -13,18 +13,22 @@ open Nu.Sim
 open Nu.Entity
 
 [<AutoOpen>]
+module XGroup =
+
+    type Group with
+        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, this, entities, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+
+[<AutoOpen>]
 module GroupModule =
 
     type GroupDispatcher () =
-        class
         
-            abstract member Register : Address * Group * Entity list * World -> World
-            default this.Register (address, _, entities, world) = addEntities address entities world
+        abstract member Register : Address * Group * Entity list * World -> World
+        default this.Register (address, _, entities, world) = addEntities address entities world
 
-            abstract member Unregister : Address * Group * World -> World
-            default this.Unregister (address, _, world) = removeEntities address world
-
-            end
+        abstract member Unregister : Address * Group * World -> World
+        default this.Unregister (address, _, world) = removeEntities address world
 
 module Group =
 
@@ -92,11 +96,11 @@ module Group =
           Xtension = { OptXTypeName = Some <| Lun.make typeof<GroupDispatcher>.Name; XFields = Map.empty }}
 
     let registerGroup address (group : Group) entities world =
-        group?Register (address, group, entities, world)
+        group.Register (address, entities, world)
 
     let unregisterGroup address world =
         let group = get world <| worldGroupLens address
-        group?Unregister (address, group, world)
+        group.Unregister (address, world)
 
     let removeGroup address world =
         let world' = unregisterGroup address world
