@@ -349,7 +349,16 @@ module World =
 
         override this.GetRenderDescriptors (view, button, world) =
             if not button.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = button.Position; Size = button.Size; Rotation = 0.0f; Sprite = (if button.IsDown then button.DownSprite else button.UpSprite); Color = Vector4.One }; Depth = button.Depth })]
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = button.Position
+                              Size = button.Size
+                              Rotation = 0.0f
+                              Sprite = if button.IsDown then button.DownSprite else button.UpSprite
+                              Color = Vector4.One }
+                          Depth = button.Depth }]
 
         override this.GetQuickSize (button, world) =
             let sprite = button.UpSprite
@@ -366,7 +375,16 @@ module World =
 
         override this.GetRenderDescriptors (view, label, world) =
             if not label.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = label.Position; Size = label.Size; Rotation = 0.0f; Sprite = label.LabelSprite; Color = Vector4.One }; Depth = label.Depth })]
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = label.Position
+                              Size = label.Size
+                              Rotation = 0.0f
+                              Sprite = label.LabelSprite
+                              Color = Vector4.One }
+                          Depth = label.Depth }]
 
         override this.GetQuickSize (label, world) =
             let sprite = label.LabelSprite
@@ -387,8 +405,25 @@ module World =
 
         override this.GetRenderDescriptors (view, textBox, world) =
             if not textBox.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = textBox.Position; Size = textBox.Size; Rotation = 0.0f; Sprite = textBox.BoxSprite; Color = Vector4.One }; Depth = textBox.Depth })
-                  LayerableDescriptor (LayeredTextDescriptor { Descriptor = { Text = textBox.Text; Position = textBox.Position + textBox.TextOffset; Size = textBox.Size - textBox.TextOffset; Font = textBox.TextFont; Color = textBox.TextColor }; Depth = textBox.Depth })]
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = textBox.Position
+                              Size = textBox.Size
+                              Rotation = 0.0f
+                              Sprite = textBox.BoxSprite
+                              Color = Vector4.One }
+                          Depth = textBox.Depth }
+                 LayerableDescriptor <|
+                    LayeredTextDescriptor
+                        { Descriptor =
+                            { Text = textBox.Text
+                              Position = textBox.Position + textBox.TextOffset
+                              Size = textBox.Size - textBox.TextOffset
+                              Font = textBox.TextFont
+                              Color = textBox.TextColor }
+                          Depth = textBox.Depth }]
 
         override this.GetQuickSize (textBox, world) =
             let sprite = textBox.BoxSprite
@@ -454,7 +489,16 @@ module World =
 
         override this.GetRenderDescriptors (view, toggle, world) =
             if not toggle.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = toggle.Position; Size = toggle.Size; Rotation = 0.0f; Sprite = (if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite); Color = Vector4.One }; Depth = toggle.Depth })]
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = toggle.Position
+                              Size = toggle.Size
+                              Rotation = 0.0f
+                              Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
+                              Color = Vector4.One }
+                          Depth = toggle.Depth }]
 
         override this.GetQuickSize (toggle, world) =
             let sprite = toggle.OffSprite
@@ -573,7 +617,16 @@ module World =
             
         override this.GetRenderDescriptors (view, block, world) =
             if not block.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = block.Position - view; Size = block.Size; Rotation = block.Rotation; Sprite = block.ImageSprite; Color = Vector4.One }; Depth = block.Depth })]
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = block.Position - view
+                              Size = block.Size
+                              Rotation = block.Rotation
+                              Sprite = block.ImageSprite
+                              Color = Vector4.One }
+                          Depth = block.Depth }]
 
         override this.GetQuickSize (block, world) =
             let sprite = block.ImageSprite
@@ -641,7 +694,16 @@ module World =
 
         override this.GetRenderDescriptors (view, avatar, world) =
             if not avatar.Visible then []
-            else [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = avatar.Position - view; Size = avatar.Size; Rotation = avatar.Rotation; Sprite = avatar.ImageSprite; Color = Vector4.One }; Depth = avatar.Depth })]
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = avatar.Position - view
+                              Size = avatar.Size
+                              Rotation = avatar.Rotation
+                              Sprite = avatar.ImageSprite
+                              Color = Vector4.One }
+                          Depth = avatar.Depth }]
 
         override this.GetQuickSize (avatar, world) =
             let sprite = avatar?Sprite ()
