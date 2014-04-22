@@ -2,6 +2,7 @@
 open OpenTK
 open Prime
 open Nu
+open Nu.World
 
 [<AutoOpen>]
 module OmniDispatchersModule =
@@ -12,7 +13,7 @@ module OmniDispatchersModule =
         let adjustFieldCamera (groupAddress : Address) world =
             let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
             let entity = get world <| Entity.worldEntityLens avatarAddress
-            let camera = { world.Camera with EyePosition = entity?Position () + (entity?Size () : Vector2) * 0.5f }
+            let camera = { world.Camera with EyePosition = entity.Position + entity.Size * 0.5f }
             { world with Camera = camera }
 
         let adjustFieldCameraHandler _ _ groupAddress message world =
@@ -21,15 +22,15 @@ module OmniDispatchersModule =
         let moveFieldAvatarHandler _ _ (groupAddress : Address) message world =
             let feelerAddress = groupAddress @ [OmniConstants.FieldFeelerName]
             let feeler = get world <| Entity.worldEntityLens feelerAddress
-            if feeler?IsTouched () then
+            if feeler.IsTouched then
                 let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
                 let avatar = get world <| Entity.worldEntityLens avatarAddress
                 let camera = world.Camera
                 let view = Camera.getInverseViewF camera
                 let mousePositionWorld = world.MouseState.MousePosition + view
-                let avatarCenter = avatar?Position () + (avatar?Size () : Vector2) * 0.5f
+                let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
-                let applyImpulseMessage = { PhysicsId = avatar?PhysicsId (); Impulse = impulseVector }
+                let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
                 let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
                 (message, true, world')
             else (message, true, world)
