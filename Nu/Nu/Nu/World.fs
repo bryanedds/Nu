@@ -255,7 +255,7 @@ module World =
         member this.SetTextOffset (value : Vector2) : Entity = this?TextOffset <- value
         member this.TextColor with get () = this?TextColor () : Vector4
         member this.SetTextColor (value : Vector4) : Entity = this?TextColor <- value
-        
+
         (* toggle xfields *)
         member this.IsOn with get () = this?IsOn () : bool
         member this.SetIsOn (value : bool) : Entity = this?IsOn <- value
@@ -271,6 +271,16 @@ module World =
         (* feeler xfields *)
         member this.IsTouched with get () = this?IsTouched () : bool
         member this.SetIsTouched (value : bool) : Entity = this?IsTouched <- value
+
+        (* fill bar xfields *)
+        member this.Fill with get () = this?Fill () : single
+        member this.SetFill (value : single) : Entity = this?Fill <- value
+        member this.FillInset with get () = this?FillInset () : single
+        member this.SetFillInset (value : single) : Entity = this?FillInset <- value
+        member this.FillSprite with get () = this?FillSprite () : Sprite
+        member this.SetFillSprite (value : Sprite) : Entity = this?FillSprite <- value
+        member this.BorderSprite with get () = this?BorderSprite () : Sprite
+        member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
 
         (* block xfields *)
         member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
@@ -553,6 +563,35 @@ module World =
 
         override this.GetQuickSize (feeler, world) =
             Vector2 64.0f
+
+    type [<AutoOpen>] FillBarDispatcher () =
+        inherit Entity2dDispatcher ()
+
+        override this.Init (fillBar, dispatcherContainer) =
+            let fillBar' = base.Init (fillBar, dispatcherContainer)
+            fillBar'
+                .SetIsTransformRelative(false)
+                .SetFill(0.0f)
+                .SetFillInset(0.0f)
+                .SetFillSprite({ SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetBorderSprite({ SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+
+        override this.GetRenderDescriptors (view, fillBar, world) =
+            if not fillBar.Visible then []
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = fillBar.Position
+                              Size = fillBar.Size
+                              Rotation = 0.0f
+                              Sprite = fillBar.BorderSprite
+                              Color = Vector4.One }
+                          Depth = fillBar.Depth }]
+
+        override this.GetQuickSize (fillBar, world) =
+            let sprite = fillBar.BorderSprite
+            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
 
     type [<AutoOpen>] BlockDispatcher () =
         inherit Entity2dDispatcher ()
@@ -938,7 +977,7 @@ module World =
             let userGameDispatcherName = Lun.make (userGameDispatcher.GetType ()).Name
             let dispatchers =
                 Map.ofArray
-                    // TODO: see if this hard-coding can be removed here
+                    // TODO: see if we can reflectively generate this array
                     [|Lun.make typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                       Lun.make typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
                       Lun.make typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
@@ -946,6 +985,7 @@ module World =
                       Lun.make typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
                       Lun.make typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
                       Lun.make typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
+                      Lun.make typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
                       Lun.make typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
                       Lun.make typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
                       Lun.make typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
