@@ -13,13 +13,6 @@ open Nu.Sim
 open Nu.Entity
 
 [<AutoOpen>]
-module XGroup =
-
-    type Group with
-        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, this, entities, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
-
-[<AutoOpen>]
 module GroupModule =
 
     type GroupDispatcher () =

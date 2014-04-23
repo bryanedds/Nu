@@ -10,17 +10,6 @@ open Nu.DomainModel
 open Nu.Group
 
 [<AutoOpen>]
-module XScreen =
-
-    type GroupDescriptor = Lun * Group * Entity list
-
-    type Transition with end
-
-    type Screen with
-        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, this, groupDescriptors, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
-
-[<AutoOpen>]
 module ScreenModule =
 
     type TransitionDispatcher () = class end

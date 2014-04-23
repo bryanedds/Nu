@@ -42,7 +42,7 @@ Thumbs.db
 bin/
 obj/
 
-#####################
-# WAVs Directory    #
-#####################
-WAVs/
+###############################
+# Generated Asset Directories #
+###############################
+/Music/Exports/WAVs/

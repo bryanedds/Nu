@@ -91,6 +91,9 @@ module SimModule =
             let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
+    type GroupDescriptor =
+        Lun * Group * Entity list
+
     type [<StructuralEquality; NoComparison>] TransitionType =
         | Incoming
         | Outgoing
@@ -144,6 +147,12 @@ module SimModule =
             let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
+    type [<StructuralEquality; NoComparison>] Simulant =
+        | Game of Game
+        | Screen of Screen
+        | Group of Group
+        | Entity of Entity
+
     /// Describes a game message subscription.
     /// In addition to CustomSubs, allows for data-driven subscriptions to accomodate a visual event editor should
     /// one be implemented.
@@ -182,11 +191,43 @@ module SimModule =
             member this.GetDispatchers () = this.Dispatchers
             end
 
-    type [<StructuralEquality; NoComparison>] Simulant =
-        | Game of Game
-        | Screen of Screen
-        | Group of Group
-        | Entity of Entity
+    type Entity with
+
+        (* xfields *)
+        member this.Position with get () = this?Position () : Vector2
+        member this.SetPosition (value : Vector2) : Entity = this?Position <- value
+        member this.Depth with get () = this?Depth () : single
+        member this.SetDepth (value : single) : Entity = this?Depth <- value
+        member this.Rotation with get () = this?Rotation () : single
+        member this.SetRotation (value : single) : Entity = this?Rotation <- value
+        member this.Size with get () = this?Size () : Vector2
+        member this.SetSize (value : Vector2) : Entity = this?Size <- value
+        member this.IsTransformRelative with get () = this?IsTransformRelative () : bool
+        member this.SetIsTransformRelative (value : bool) : Entity = this?IsTransformRelative <- value
+
+        (* xdispatches *)
+        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
+        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, this, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, this, world)
+        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, this, world)
+        member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, this, world)
+        member this.GetRenderDescriptors (view : Vector2, world : World) : RenderDescriptor list = this?GetRenderDescriptors (view, this, world)
+        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
+
+    type Group with
+        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, this, entities, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+
+    type Transition with
+        end
+
+    type Screen with
+        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, this, groupDescriptors, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+
+    type Game with
+        member this.Register (world : World) : World = this?Register (this, world)
 
 module Sim =
 
@@ -198,4 +239,4 @@ module Sim =
         let dispatchers = Map.add (Lun.make gameDispatcherShortName) gameDispatcher world.Dispatchers
         let world' = { world with Dispatchers = dispatchers }
         let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXTypeName = Some <| Lun.make gameDispatcherShortName }}}
-        world''.Game?Register (world''.Game, world'') : World
+        world''.Game.Register world''
