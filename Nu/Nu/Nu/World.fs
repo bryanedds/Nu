@@ -230,7 +230,7 @@ module World =
 
     type Entity with
         
-        // button
+        (* button xfields *)
         member this.IsDown with get () = this?IsDown () : bool
         member this.SetIsDown (value : bool) : Entity = this?IsDown <- value
         member this.UpSprite with get () = this?UpSprite () : Sprite
@@ -240,11 +240,11 @@ module World =
         member this.ClickSound with get () = this?ClickSound () : Sound
         member this.SetClickSound (value : Sound) : Entity = this?ClickSound <- value
 
-        // label
+        (* label xfields *)
         member this.LabelSprite with get () = this?LabelSprite () : Sprite
         member this.SetLabelSprite (value : Sprite) : Entity = this?LabelSprite <- value
 
-        // text box
+        (* text box xfields *)
         member this.BoxSprite with get () = this?BoxSprite () : Sprite
         member this.SetBoxSprite (value : Sprite) : Entity = this?BoxSprite <- value
         member this.Text with get () = this?Text () : string
@@ -256,7 +256,7 @@ module World =
         member this.TextColor with get () = this?TextColor () : Vector4
         member this.SetTextColor (value : Vector4) : Entity = this?TextColor <- value
         
-        // toggle
+        (* toggle xfields *)
         member this.IsOn with get () = this?IsOn () : bool
         member this.SetIsOn (value : bool) : Entity = this?IsOn <- value
         member this.IsPressed with get () = this?IsPressed () : bool
@@ -268,11 +268,11 @@ module World =
         member this.ToggleSound with get () = this?ToggleSound () : Sound
         member this.SetToggleSound (value : Sound) : Entity = this?ToggleSound <- value
 
-        // feeler
+        (* feeler xfields *)
         member this.IsTouched with get () = this?IsTouched () : bool
         member this.SetIsTouched (value : bool) : Entity = this?IsTouched <- value
 
-        // block
+        (* block xfields *)
         member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
         member this.SetPhysicsId (value : PhysicsId) : Entity = this?PhysicsId <- value
         member this.Density with get () = this?Density () : single
@@ -282,10 +282,10 @@ module World =
         member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
-        // avatar
-        // uses just block xfields
+        (* avatar xfields *)
+        // uses same xfields as block
 
-        // tile map
+        (* tile map xfields *)
         member this.PhysicsIds with get () = this?PhysicsIds () : PhysicsId list
         member this.SetPhysicsIds (value : PhysicsId list) : Entity = this?PhysicsIds <- value
         member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
@@ -307,7 +307,7 @@ module World =
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
-    
+
         let handleButtonEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
@@ -325,7 +325,7 @@ module World =
                     else (message, keepRunning, world')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
-            
+
         override this.Init (button, dispatcherContainer) =
             let button' = base.Init (button, dispatcherContainer)
             ((((button'
