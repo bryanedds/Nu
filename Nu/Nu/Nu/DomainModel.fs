@@ -52,11 +52,9 @@ module DomainModel =
                 property.SetValue (obj, value)
 
     let setModelProperty<'a> (fieldNode : XmlNode) (obj : 'a) =
-        let fieldName = fieldNode.Name
-        let optProperty_ = typeof<'a>.GetProperty fieldName
-        match optProperty_ with
-        | null -> ()
-        | property -> trySetProperty property fieldNode <| obj
+        match typeof<'a>.GetPropertyWritable (fieldNode.Name, BindingFlags.Public ||| BindingFlags.Instance) with
+        | None -> ()
+        | Some property -> trySetProperty property fieldNode <| obj
 
     let setModelProperties<'a> (modelNode : XmlNode) (obj : 'a) =
         for node in modelNode.ChildNodes do
@@ -64,9 +62,9 @@ module DomainModel =
 
     let writeModelProperties (writer : XmlWriter) (obj : obj) =
         let aType = obj.GetType ()
-        let publicProperties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
-        for property in publicProperties do
-            // TODO: find an remove duplication of this expression
+        let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
+        for property in properties do
+            // TODO: find and remove duplication of this expression
             if not (property.Name.EndsWith "Id" || property.Name.EndsWith "Ids" || property.Name.EndsWith "Ns") then
                 let propertyValue = property.GetValue obj
                 match propertyValue with
@@ -76,7 +74,7 @@ module DomainModel =
                     writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name.LunStr)
                     for xField in xtension.XFields do
                         let xFieldName = xField.Key.LunStr
-                        // TODO: find an remove duplication of this expression
+                        // TODO: find and remove duplication of this expression
                         if (xFieldName.EndsWith "Id" || xFieldName.EndsWith "Ids" || property.Name.EndsWith "Ns") then ()
                         else
                             let xValue = xField.Value
