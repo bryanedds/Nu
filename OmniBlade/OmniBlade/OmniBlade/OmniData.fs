@@ -7,20 +7,22 @@ open Nu
 module OmniDataModule =
 
     type [<StructuralEquality; NoComparison>] OmniWeaponData =
-        { Type : OmniWeaponType
+        { Name : Lun
+          Type : OmniWeaponType
           PhysicalPower : int
           MagicalPower : int
           ElementTypes : OmniElementType Set }
 
     type [<StructuralEquality; NoComparison>] OmniArmorData =
-        { Type : OmniArmorType
+        { Name : Lun
+          Type : OmniArmorType
           PhysicalDefense : int
           MagicalDefense : int
           ElementTypes : OmniElementType Set }
 
     type [<StructuralEquality; NoComparison>] OmniMoveData =
-        { Type : OmniMoveType
-          Name : string
+        { Name : Lun
+          Type : OmniMoveType
           SpecialAbilityType : OmniSpecialAbilityType
           OmniEffectType : OmniEffectType
           SpecialPointCost : int
@@ -30,7 +32,7 @@ module OmniDataModule =
           Percentive : bool
           Defending : bool
           PreCountering : bool
-          Countering : bool // can also be active with pre-countering!
+          Countering : bool // can be active simultaneously with pre-countering
           OmniElementType : OmniElementType
           AddStatusType : OmniStatusType Set
           RemoveStatusType : OmniStatusType Set
@@ -38,13 +40,12 @@ module OmniDataModule =
           MortalityType : OmniMortalityType }
 
     type [<StructuralEquality; NoComparison>] OmniItemData =
-        { Type : OmniItemType
-          Name : string
+        { Name : Lun
+          Type : OmniItemType
           OptMoveData : OmniMoveData option }
 
     type [<StructuralEquality; NoComparison>] OmniCharacterData =
-        { Type : OmniCharacterType
-          Name : string
+        { Name : Lun // because character names are used as keys, characters cannot be renamed in OmniBlade
           MoveData : OmniMoveData list // usable moves are queried
           EquipWeaponType : OmniWeaponType
           EquipArmorType : OmniArmorType
@@ -53,17 +54,16 @@ module OmniDataModule =
           StaminaRating : int // hp max is calculated
           AgilityRating : int // tt gain is calculated
           WillRating : int // sp max is calculated
-          StartingExperience : int // this is the only experience for enemies
-          ExperienceEarned : int // only used with enemies
-          GoldEarned : int } // only used with enemies
+          StartingExperience : int
+          ExperienceRewarded : int
+          GoldRewarded : int }
 
     type [<StructuralEquality; NoComparison>] OmniFieldData =
-        { Id : Id
+        { Name : Lun
           GroupFileName : string }
 
     type [<StructuralEquality; NoComparison>] OmniBattleData =
-        { Id : Id
-          Name : string
+        { Name : Lun
           BossEnemy : OmniCharacterData
           BossEnemyDefeatEndsBattle : bool
           MinorEnemies : OmniCharacterData list

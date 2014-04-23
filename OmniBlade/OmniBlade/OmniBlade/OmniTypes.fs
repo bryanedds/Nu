@@ -144,6 +144,7 @@ module OmniTypesModule =
         | OmniDeath
         | OmniMortalityNone
 
-    type [<StructuralEquality; NoComparison>] OmniCharacterType =
-        | OmniAlly
-        | OmniEnemy
+    type [<StructuralEquality; NoComparison>] OmniPartyAvailabilityAndPresenceType =
+        | OmniAvailableAndPresent
+        | OmniAvailableAndAbsent
+        | OmniUnavailable

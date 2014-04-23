@@ -9,10 +9,11 @@ module OmniStateModule =
     type [<StructuralEquality; NoComparison>] OmniCharacter =
         { Id : Id
           Data : OmniCharacterData
+          PartyAvailabilityAndPresence : OmniPartyAvailabilityAndPresenceType
           Hp : int // hp max is calculated
           Sp : int // sp max is calculated
           Tt : int // turn ticks
-          Defending : bool
+          IsDefending : bool
           Statuses : OmniStatusType Set
           EquippedWeapon : OmniWeaponType option
           EquippedArmor : OmniArmorType option
