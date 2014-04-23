@@ -56,8 +56,9 @@ module OmniFlow =
     // the world.
     let addTitleScreen world =
         
-        // this adds a dissolve screen from the specified file with the given parameters
-        let world_ = World.addDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress world
+        // this adds a dissolve screen from the specified file with the given parameters. Note that
+        // the 'seal' parameter is set to true as no XFields will be added to the title screen.
+        let world_ = World.addDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress true world
         
         // this subscribes to the event that is raised when the Title screen's NewGame button is
         // clicked, and handles the event by transitioning to the Field screen
@@ -77,17 +78,17 @@ module OmniFlow =
 
     // pretty much the same as above, but for the LoadGame screen
     let addLoadGameScreen world =
-        let world' = World.addDissolveScreenFromFile LoadGameGroupFileName LoadGameGroupName IncomingTime OutgoingTime LoadGameAddress world
+        let world' = World.addDissolveScreenFromFile LoadGameGroupFileName LoadGameGroupName IncomingTime OutgoingTime LoadGameAddress true world
         World.subscribe ClickLoadGameBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // and so on...
     let addCreditsScreen world =
-        let world' = World.addDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress world
+        let world' = World.addDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress true world
         World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // and so on.
     let addFieldScreen world =
-        let world' = World.addDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress world
+        let world' = World.addDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress true world
         World.subscribe ClickFieldBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // here we create the OmniBlade world in a callback from the World.run function.
@@ -110,7 +111,7 @@ module OmniFlow =
             
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
-            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world_
+            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite true world_
 
             // add our UI screens to the world
             let world_ = addTitleScreen world_
