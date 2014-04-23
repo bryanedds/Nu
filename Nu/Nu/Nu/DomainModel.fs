@@ -42,7 +42,7 @@ module DomainModel =
                         then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
                         else (Lun.make xNode.Name, converter.ConvertFrom xValueStr))
                     childNodes
-            let xtension = { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields }
+            let xtension = { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; IsSealed = false }
             property.SetValue (obj, xtension)
         else
             let valueStr = valueNode.InnerText

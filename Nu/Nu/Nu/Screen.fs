@@ -111,14 +111,14 @@ module Screen =
           Ticks = 0
           Type = transitionType
           OptDissolveSprite = None
-          Xtension = { OptXTypeName = Some <| Lun.make typeof<TransitionDispatcher>.Name; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some <| Lun.make typeof<TransitionDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
 
     let makeDefaultScreen () =
         { Id = getNuId ()
           State = IdlingState
           Incoming = makeDefaultTransition Incoming
           Outgoing = makeDefaultTransition Outgoing
-          Xtension = { OptXTypeName = Some <| Lun.make typeof<ScreenDispatcher>.Name; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some <| Lun.make typeof<ScreenDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
 
     let makeDissolveScreen incomingTime outgoingTime =
         let optDissolveSprite = Some <| makeDissolveSprite ()

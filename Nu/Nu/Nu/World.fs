@@ -916,19 +916,19 @@ module World =
     let run tryCreateWorld handleUpdate sdlConfig =
         run4 tryCreateWorld handleUpdate id sdlConfig
 
-    let addSplashScreenFromData handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite world =
+    let addSplashScreenFromData handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite seal world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
-        let splashLabel = makeDefaultEntity (Lun.make typeof<LabelDispatcher>.Name) (Some "SplashLabel") world
+        let splashLabel = makeDefaultEntity (Lun.make typeof<LabelDispatcher>.Name) (Some "SplashLabel") seal world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetLabelSprite (sprite : Sprite)
         let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel''])] world
         let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
-    let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress world =
+    let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress seal world =
         let screen = makeDissolveScreen incomingTime outgoingTime
-        let (_, group, entities, world') = loadGroupFile groupFileName world false
+        let (_, group, entities, world') = loadGroupFile groupFileName world seal false
         addScreen screenAddress screen [(groupName, group, entities)] world'
 
     let tryCreateEmptyWorld sdlDeps userGameDispatcher (extData : obj) =
@@ -955,7 +955,7 @@ module World =
                       Lun.make typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                       userGameDispatcherName, userGameDispatcher|]
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some userGameDispatcherName; XFields = Map.empty }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some userGameDispatcherName; XFields = Map.empty; IsSealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty

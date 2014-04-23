@@ -86,7 +86,7 @@ module Group =
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
-          Xtension = { OptXTypeName = Some <| Lun.make typeof<GroupDispatcher>.Name; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some <| Lun.make typeof<GroupDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
 
     let registerGroup address (group : Group) entities world =
         group.Register (address, entities, world)
@@ -129,17 +129,17 @@ module Group =
         writeModelProperties writer group
         writeGroupEntitiesToXml writer entities
 
-    let loadEntitiesFromXml (groupNode : XmlNode) world =
+    let loadEntitiesFromXml (groupNode : XmlNode) seal world =
         let entityNodes = groupNode.SelectNodes "Entity"
         let entities =
             Seq.map
-                (fun entityNode -> loadEntityFromXml entityNode world)
+                (fun entityNode -> loadEntityFromXml entityNode seal world)
                 (enbCast entityNodes)
         Seq.toList entities
 
-    let loadGroupFromXml (groupNode : XmlNode) world =
+    let loadGroupFromXml (groupNode : XmlNode) seal world =
         let group = makeDefaultGroup ()
-        let entities = loadEntitiesFromXml (groupNode : XmlNode) world
+        let entities = loadEntitiesFromXml (groupNode : XmlNode) seal world
         setModelProperties groupNode group
         (group, entities)
 
@@ -161,7 +161,7 @@ module Group =
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
-    let loadGroupFile (fileName : string) world activatesGameDispatcher =
+    let loadGroupFile (fileName : string) world seal activatesGameDispatcher =
         let document = XmlDocument ()
         document.Load fileName
         let rootNode = document.["Root"]
@@ -177,5 +177,5 @@ module Group =
                         (someDescriptor, world')
                     else (someDescriptor, world)
         let groupNode = rootNode.["Group"]
-        let (group, entities) = loadGroupFromXml groupNode world'
+        let (group, entities) = loadGroupFromXml groupNode seal world'
         (someDescriptor, group, entities, world')
