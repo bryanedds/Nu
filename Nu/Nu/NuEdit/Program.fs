@@ -298,7 +298,7 @@ module Program =
         let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
         let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
         let entityXTypeName = Lun.make form.createEntityComboBox.Text
-        try let entity_ = makeDefaultEntity entityXTypeName None world
+        try let entity_ = makeDefaultEntity entityXTypeName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform world_ entity_

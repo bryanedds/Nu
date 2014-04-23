@@ -268,20 +268,21 @@ module Entity =
         let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
 
-    let makeDefaultEntity2 xTypeName optName =
+    let private makeDefaultEntity2 xTypeName optName =
         let id = getNuId ()
         { Id = id
           Name = match optName with None -> str id | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty }}
+          Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty; IsSealed = false }}
 
-    let makeDefaultEntity xTypeName optName (dispatcherContainer : IXDispatcherContainer) =
+    let makeDefaultEntity xTypeName optName seal (dispatcherContainer : IXDispatcherContainer) =
         match Map.tryFind xTypeName <| dispatcherContainer.GetDispatchers () with
         | None -> failwith <| "Invalid XType name '" + xTypeName.LunStr + "'."
         | Some dispatcher ->
             let entity = makeDefaultEntity2 xTypeName optName
-            entity.Init dispatcherContainer
+            let entity' = entity.Init dispatcherContainer
+            { entity' with Xtension = { entity'.Xtension with IsSealed = seal }}
 
     let registerEntity address (entity : Entity) world =
         entity.Register (address, world)
@@ -320,8 +321,8 @@ module Entity =
         writeModelProperties writer entity
         writer.WriteEndElement ()
 
-    let loadEntityFromXml (entityNode : XmlNode) (world : World) =
-        let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None world
+    let loadEntityFromXml (entityNode : XmlNode) seal (world : World) =
+        let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None seal world
         setModelProperties entityNode entity
         entity
 

@@ -20,7 +20,8 @@ module XtensionModule =
     /// 'Entity-Component System'.
     type [<StructuralEqualityAttribute; NoComparison>] Xtension =
         { OptXTypeName : Lun option
-          XFields : XFields }
+          XFields : XFields
+          IsSealed : bool }
 
         // NOTE: this could instead be a special class with a MethodMissing method
         static member private EmptyDispatcher =
@@ -77,8 +78,17 @@ module XtensionModule =
                 | Some field -> field :?> 'r
 
         static member (?<-) (this : Xtension, fieldName, value) =
-            let xFields = Map.add (Lun.makeFast fieldName) (value :> obj) this.XFields
-            { this with XFields = xFields }
+            let fieldLun = Lun.makeFast fieldName
+#if DEBUG
+            // nop'ed outside of debug mode for efficiency
+            // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
+            // result that the key was contained.
+            if this.IsSealed && not <| Map.containsKey fieldLun this.XFields
+            then failwith "Cannot add field to a sealed Xtension."
+            else
+#endif
+                let xFields = Map.add fieldLun (value :> obj) this.XFields
+                { this with XFields = xFields }
 
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
     /// These are just POFO types, except without any data (the data they use would be in a related
@@ -96,4 +106,4 @@ module XtensionModule =
 module Xtension =
 
     /// The empty Xtension.
-    let empty = { OptXTypeName = None; XFields = Map.empty }
+    let empty = { OptXTypeName = None; XFields = Map.empty; IsSealed = false }

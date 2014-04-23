@@ -49,6 +49,6 @@ module NuEditReflection =
 
     let loadFile fileName world =
         let world' = removeGroup EditorGroupAddress world
-        let (optGameDispatcherDescriptor, group, entities, world'') = loadGroupFile fileName world' true
+        let (optGameDispatcherDescriptor, group, entities, world'') = loadGroupFile fileName world' false true
         let world'3 = addGroup EditorGroupAddress group entities world''
         (optGameDispatcherDescriptor, world'3)
