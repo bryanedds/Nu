@@ -65,9 +65,10 @@ module Program =
         let editorState_ = { editorState_ with PastWorlds = pastWorld :: editorState_.PastWorlds; FutureWorlds = [] }
         { world with ExtData = editorState_ }
 
-    let clearPastWorlds world =
+    let clearOtherWorlds world =
         let editorState_ = world.ExtData :?> EditorState
         let editorState_ = { editorState_ with PastWorlds = [] }
+        let editorState_ = { editorState_ with FutureWorlds = [] }
         { world with ExtData = editorState_ }
 
     let populateEntityDispatcherComboBox (form : NuEditForm) =
@@ -99,7 +100,7 @@ module Program =
         override this.IsReadOnly
             // NOTE: we make ids read-only
             with get () =
-                // TODO: find an remove duplication of this expression
+                // TODO: find and remove duplication of this expression
                 propertyName.EndsWith "Id" || propertyName.EndsWith "Ids" || propertyName.EndsWith "Ns"
 
         override this.GetValue optSource =
@@ -147,7 +148,7 @@ module Program =
                 Seq.map
                     (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor)
                     properties
-            let optProperty = Array.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
+            let optProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let propertyDescriptors' =
                 match (optProperty, optSource) with
                 | (None, _) 
@@ -162,7 +163,8 @@ module Program =
                                 let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
                                 EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
                             xtension.XFields
-                    Seq.append propertyDescriptors xFieldDescriptors
+                    let propertiesAppended = Seq.append propertyDescriptors xFieldDescriptors
+                    Seq.distinctBy (fun (property : PropertyDescriptor) -> property.Name) propertiesAppended
             List.ofSeq propertyDescriptors'
 
     and EntityTypeDescriptor (optSource : obj) =
@@ -344,7 +346,7 @@ module Program =
                 let (optGameDispatcherDescriptor, world_) = loadFile form.openFileDialog.FileName world
                 let editorState = { (world.ExtData :?> EditorState) with OptGameDispatcherDescriptor = optGameDispatcherDescriptor }
                 let world_ = { world_ with ExtData = editorState }
-                let world_ = clearPastWorlds world_
+                let world_ = clearOtherWorlds world_
                 populateEntityDispatcherComboBox form
                 form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false

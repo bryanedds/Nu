@@ -19,7 +19,8 @@ module NuEditReflectionModule =
 module NuEditReflection =
 
     let containsProperty<'t> (property : PropertyInfo) =
-        typeof<'t>.GetProperty (property.Name, BindingFlags.Instance ||| BindingFlags.Public) = property
+        let properties = typeof<'t>.GetProperties (property.Name, BindingFlags.Instance ||| BindingFlags.Public)
+        Seq.exists (fun property' -> property' = property) properties
 
     let getEntityPropertyValue property (entity : Entity) =
         match property with
