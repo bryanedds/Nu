@@ -22,33 +22,6 @@ open Nu.DomainModel
 open Nu.Camera
 
 [<AutoOpen>]
-module XEntity =
-
-    type Entity with
-
-        // xfields
-        member this.Position with get () = this?Position () : Vector2
-        member this.SetPosition (value : Vector2) : Entity = this?Position <- value
-        member this.Depth with get () = this?Depth () : single
-        member this.SetDepth (value : single) : Entity = this?Depth <- value
-        member this.Rotation with get () = this?Rotation () : single
-        member this.SetRotation (value : single) : Entity = this?Rotation <- value
-        member this.Size with get () = this?Size () : Vector2
-        member this.SetSize (value : Vector2) : Entity = this?Size <- value
-        member this.IsTransformRelative with get () = this?IsTransformRelative () : bool
-        member this.SetIsTransformRelative (value : bool) : Entity = this?IsTransformRelative <- value
-
-        // xdispatches
-        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
-        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, this, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
-        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, this, world)
-        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, this, world)
-        member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, this, world)
-        member this.GetRenderDescriptors (view : Vector2, world : World) : RenderDescriptor list = this?GetRenderDescriptors (view, this, world)
-        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
-
-[<AutoOpen>]
 module EntityModule =
 
     type EntityDispatcher () =

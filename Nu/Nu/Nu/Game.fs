@@ -9,12 +9,6 @@ open Nu.DomainModel
 open Nu.Screen
 
 [<AutoOpen>]
-module XGame =
-
-    type Game with
-        member this.Register (world : World) : World = this?Register (this, world)
-
-[<AutoOpen>]
 module GameModule =
 
     type GameDispatcher () =

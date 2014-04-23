@@ -23,7 +23,6 @@ open Nu.Audio
 open Nu.Sdl
 open Nu.DomainModel
 open Nu.Camera
-open Nu.XEntity
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
