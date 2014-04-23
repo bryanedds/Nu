@@ -12,8 +12,8 @@ module OmniDispatchersModule =
 
         let adjustFieldCamera (groupAddress : Address) world =
             let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
-            let entity = get world <| Entity.worldEntityLens avatarAddress
-            let camera = { world.Camera with EyePosition = entity.Position + entity.Size * 0.5f }
+            let avatar = get world <| Entity.worldEntityLens avatarAddress
+            let camera = { world.Camera with EyePosition = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
 
         let adjustFieldCameraHandler _ _ groupAddress message world =

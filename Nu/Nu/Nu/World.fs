@@ -328,12 +328,12 @@ module World =
 
         override this.Init (button, dispatcherContainer) =
             let button' = base.Init (button, dispatcherContainer)
-            ((((button'
-                    .SetIsTransformRelative false)
-                    .SetIsDown false)
-                    .SetUpSprite { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    .SetDownSprite { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    .SetClickSound { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            button'
+                .SetIsTransformRelative(false)
+                .SetIsDown(false)
+                .SetUpSprite({ SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetDownSprite({ SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetClickSound({ SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.Register (address, button, world) =
             let world' =
@@ -369,9 +369,9 @@ module World =
             
         override this.Init (label, dispatcherContainer) =
             let label' = base.Init (label, dispatcherContainer)
-            (label'
-                .SetIsTransformRelative false)
-                .SetLabelSprite { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            label'
+                .SetIsTransformRelative(false)
+                .SetLabelSprite({ SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.GetRenderDescriptors (view, label, world) =
             if not label.Visible then []
@@ -395,13 +395,13 @@ module World =
             
         override this.Init (textBox, dispatcherContainer) =
             let textBox' = base.Init (textBox, dispatcherContainer)
-            (((((textBox'
-                    .SetIsTransformRelative false)
-                    .SetBoxSprite { SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    .SetText String.Empty)
-                    .SetTextFont { FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    .SetTextOffset Vector2.Zero)
-                    .SetTextColor Vector4.One
+            textBox'
+                .SetIsTransformRelative(false)
+                .SetBoxSprite({ SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetText(String.Empty)
+                .SetTextFont({ FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetTextOffset(Vector2.Zero)
+                .SetTextColor(Vector4.One)
 
         override this.GetRenderDescriptors (view, textBox, world) =
             if not textBox.Visible then []
@@ -467,13 +467,13 @@ module World =
         
         override this.Init (toggle, dispatcherContainer) =
             let toggle' = base.Init (toggle, dispatcherContainer)
-            (((((toggle'
-                    .SetIsTransformRelative false)
-                    .SetIsOn false)
-                    .SetIsPressed false)
-                    .SetOffSprite { SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    .SetOnSprite { SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                    .SetToggleSound { SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            toggle'
+                .SetIsTransformRelative(false)
+                .SetIsOn(false)
+                .SetIsPressed(false)
+                .SetOffSprite({ SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetOnSprite({ SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetToggleSound({ SoundAssetName = Lun.make "Sound"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.Register (address, label, world) =
             let world' =
@@ -535,9 +535,9 @@ module World =
         
         override this.Init (feeler, dispatcherContainer) =
             let feeler' = base.Init (feeler, dispatcherContainer)
-            (feeler'
-                .SetIsTransformRelative false)
-                .SetIsTouched false
+            feeler'
+                .SetIsTransformRelative(false)
+                .SetIsTouched(false)
 
         override this.Register (address, feeler, world) =
             let world' =
@@ -585,12 +585,12 @@ module World =
 
         override this.Init (block, dispatcherContainer) =
             let block' = base.Init (block, dispatcherContainer)
-            ((((block'
-                    .SetIsTransformRelative true)
-                    .SetPhysicsId InvalidPhysicsId)
-                    .SetDensity NormalDensity)
-                    .SetBodyType BodyType.Dynamic)
-                    .SetImageSprite { SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            block'
+                .SetIsTransformRelative(true)
+                .SetPhysicsId(InvalidPhysicsId)
+                .SetDensity(NormalDensity)
+                .SetBodyType(BodyType.Dynamic)
+                .SetImageSprite({ SpriteAssetName = Lun.make "Image3"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.Register (address, block, world) =
             registerBlockPhysics address block world
@@ -663,11 +663,11 @@ module World =
 
         override this.Init (avatar, dispatcherContainer) =
             let avatar' = base.Init (avatar, dispatcherContainer)
-            (((avatar'
-                .SetIsTransformRelative true)
-                .SetPhysicsId InvalidPhysicsId)
-                .SetDensity NormalDensity)
-                .SetImageSprite { SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            avatar'
+                .SetIsTransformRelative(true)
+                .SetPhysicsId(InvalidPhysicsId)
+                .SetDensity(NormalDensity)
+                .SetImageSprite({ SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.Register (address, avatar, world) =
             registerAvatarPhysics address avatar world
@@ -754,11 +754,11 @@ module World =
         
         override this.Init (tileMap, dispatcherContainer) =
             let tileMap' = base.Init (tileMap, dispatcherContainer)
-            (((tileMap'
-                .SetIsTransformRelative true)
-                .SetPhysicsIds [])
-                .SetDensity NormalDensity)
-                .SetTileMapAsset { TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            tileMap'
+                .SetIsTransformRelative(true)
+                .SetPhysicsIds([])
+                .SetDensity(NormalDensity)
+                .SetTileMapAsset({ TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.Register (address, tileMap, world) =
             registerTileMapPhysics address tileMap world

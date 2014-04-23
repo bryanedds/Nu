@@ -212,11 +212,11 @@ module Entity =
     // TODO: turn into a lens
     let setEntityTransformAbsolute positionSnap rotationSnap transform (entity : Entity) =
         let transform' = snapTransform positionSnap rotationSnap transform
-        (((entity
-                .SetPosition transform'.Position)
-                .SetDepth transform'.Depth)
-                .SetSize transform'.Size)
-                .SetRotation transform'.Rotation
+        entity
+            .SetPosition(transform'.Position)
+            .SetDepth(transform'.Depth)
+            .SetSize(transform'.Size)
+            .SetRotation(transform'.Rotation)
 
     // TODO: turn into a lens
     let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
