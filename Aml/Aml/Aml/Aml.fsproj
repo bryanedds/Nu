@@ -91,8 +91,6 @@
     <Compile Include="Environment.fs" />
     <Compile Include="Repl.fs" />
     <Compile Include="Tests.fs" />
-    <Compile Include="Dal.fs" />
-    <Compile Include="Dol.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
