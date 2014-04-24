@@ -221,7 +221,7 @@ module Initial =
          (Lun.make CompositeTypeStr, CompositeType, makeDoc "An anonymous collection of values.")]
 
     /// The list of entries in the initial global environment.
-    /// NOTE: this has some duplication with EvalPrims.isBuiltin.
+    /// NOTE: this has some duplication with Evaluator.Prims.isBuiltin.
     let InitialEntriesList =
         List.concat
             [makeInitialVariableEntries InitialVariables

@@ -9,7 +9,7 @@ open Aml.AmlConstants
 open Aml.Primitives
 open Aml.Reader
 open Aml.Writer
-open Aml.EvalPrims
+open Aml.EvaluatorPrims
 open Aml.Evaluator
 module Repl =
 

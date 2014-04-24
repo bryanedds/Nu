@@ -12,7 +12,11 @@ open Aml.Primitives
 open Aml.Initial
 open Aml.Writer
 open Aml.Conversions
-module EvalPrims =
+
+// TODO: when module exportation is implemented in F# - http://fslang.uservoice.com/forums/245727-f-language/suggestions/5688199-allow-re-exporting-from-modules
+// make this module exported from Evaluator and rename to EvaluatorPrimsModule.
+
+module EvaluatorPrims =
 
     /// Make an evaluation result.
     let makeEvalResult env value = { Env = env; Value = value }
@@ -72,7 +76,7 @@ module EvalPrims =
         match optEntry with
         | None -> None
         | Some (Some (_, entry)) -> Some (entry, !offset, (!optIndex).Value)
-        | Some None -> failwith "Unexpected match failure in 'Aml.EvalPrims.tryFindProceduralEntry'."
+        | Some None -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.tryFindProceduralEntry'."
 
     /// Try to find an entry.
     let tryFindEntry env name =
@@ -85,7 +89,7 @@ module EvalPrims =
         match optEntry with
         | None -> tryFindDeclarationEntry env name
         | Some (Some entry) -> Some entry
-        | Some None -> failwith "Unexpected match failure in 'Aml.EvalPrims.tryFindEntry'."
+        | Some None -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.tryFindEntry'."
 
     /// Try to find a dynamic entry. 
     let tryFindDynamicEntry env name =
@@ -177,7 +181,7 @@ module EvalPrims =
     let expandLambda lambda =
         match lambda with
         | Lambda lambda -> lambda
-        | _ -> failwith "Unexpected match failure in 'Aml.EvalPrims.expandLambda'."
+        | _ -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.expandLambda'."
     
     /// Get a member from some composite members.
     let getMember env memberName (members : MemberDict) =
