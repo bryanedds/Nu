@@ -67,8 +67,7 @@ module Program =
 
     let clearOtherWorlds world =
         let editorState_ = world.ExtData :?> EditorState
-        let editorState_ = { editorState_ with PastWorlds = [] }
-        let editorState_ = { editorState_ with FutureWorlds = [] }
+        let editorState_ = { editorState_ with PastWorlds = []; FutureWorlds = [] }
         { world with ExtData = editorState_ }
 
     let populateEntityDispatcherComboBox (form : NuEditForm) =
