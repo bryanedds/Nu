@@ -372,7 +372,9 @@ module World =
 
         override this.GetQuickSize (button, world) =
             let sprite = button.UpSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type [<AutoOpen>] LabelDispatcher () =
         inherit Entity2dDispatcher ()
@@ -398,7 +400,9 @@ module World =
 
         override this.GetQuickSize (label, world) =
             let sprite = label.LabelSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type [<AutoOpen>] TextBoxDispatcher () =
         inherit Entity2dDispatcher ()
@@ -437,7 +441,9 @@ module World =
 
         override this.GetQuickSize (textBox, world) =
             let sprite = textBox.BoxSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type [<AutoOpen>] ToggleDispatcher () =
         inherit Entity2dDispatcher ()
@@ -512,7 +518,9 @@ module World =
 
         override this.GetQuickSize (toggle, world) =
             let sprite = toggle.OffSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type [<AutoOpen>] FeelerDispatcher () =
         inherit Entity2dDispatcher ()
@@ -567,19 +575,36 @@ module World =
     type [<AutoOpen>] FillBarDispatcher () =
         inherit Entity2dDispatcher ()
 
+        let getFillBarSpriteDims (fillBar : Entity) =
+            let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
+            let spritePosition = fillBar.Position + spriteInset
+            let spriteWidth = (fillBar.Size.X - spriteInset.X * 2.0f) * fillBar.Fill
+            let spriteHeight = fillBar.Size.Y - spriteInset.Y * 2.0f
+            (spritePosition, Vector2 (spriteWidth, spriteHeight))
+
         override this.Init (fillBar, dispatcherContainer) =
             let fillBar' = base.Init (fillBar, dispatcherContainer)
             fillBar'
                 .SetIsTransformRelative(false)
                 .SetFill(0.0f)
                 .SetFillInset(0.0f)
-                .SetFillSprite({ SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
-                .SetBorderSprite({ SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetFillSprite({ SpriteAssetName = Lun.make "Image9"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetBorderSprite({ SpriteAssetName = Lun.make "Image10"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
         override this.GetRenderDescriptors (view, fillBar, world) =
             if not fillBar.Visible then []
             else
+                let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
                 [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = fillBarSpritePosition
+                              Size = fillBarSpriteSize
+                              Rotation = 0.0f
+                              Sprite = fillBar.FillSprite
+                              Color = Vector4.One }
+                          Depth = fillBar.Depth }
+                 LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
                             { Position = fillBar.Position
@@ -591,7 +616,9 @@ module World =
 
         override this.GetQuickSize (fillBar, world) =
             let sprite = fillBar.BorderSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type [<AutoOpen>] BlockDispatcher () =
         inherit Entity2dDispatcher ()
@@ -669,7 +696,9 @@ module World =
 
         override this.GetQuickSize (block, world) =
             let sprite = block.ImageSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
     
     type [<AutoOpen>] AvatarDispatcher () =
         inherit Entity2dDispatcher ()
@@ -746,7 +775,9 @@ module World =
 
         override this.GetQuickSize (avatar, world) =
             let sprite = avatar.ImageSprite
-            getTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap
+            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type [<AutoOpen>] TileMapDispatcher () =
         inherit Entity2dDispatcher ()

@@ -9,6 +9,8 @@
     <asset name="Image6" fileName="Assets/Default/Image6.png" associations="Rendering"/>
     <asset name="Image7" fileName="Assets/Default/Image7.png" associations="Rendering"/>
     <asset name="Image8" fileName="Assets/Default/Image8.png" associations="Rendering"/>
+    <asset name="Image9" fileName="Assets/Default/Image9.png" associations="Rendering"/>
+    <asset name="Image10" fileName="Assets/Default/Image10.png" associations="Rendering"/>
     <asset name="Font" fileName="Assets/Default/FreeMonoBold.032.ttf" associations="Rendering"/>
     <asset name="TileSet" fileName="Assets/Default/TileSet.png" associations="Rendering"/>
     <asset name="Sound" fileName="Assets/Default/Sound.wav" associations="Audio"/>

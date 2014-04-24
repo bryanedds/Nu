@@ -52,19 +52,28 @@ module Metadata =
                                         let metadata =
                                             match extension with
                                             | ".bmp"
-                                            | ".png" -> use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
+                                            | ".png" ->
+                                                try use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
+                                                with _ as e ->
+                                                    let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + str e + "'."
+                                                    trace errorMessage
+                                                    InvalidMetadata errorMessage
                                             | ".tmx" ->
-                                                let tmxMap = TmxMap asset.FileName
-                                                let tileSets = List.ofSeq tmxMap.Tilesets
-                                                let tileSetSprites =
-                                                    List.map
-                                                        (fun (tileSet : TmxTileset) ->
-                                                            let tileSetProperties = tileSet.Properties
-                                                            { SpriteAssetName = Lun.make tileSetProperties.["SpriteAssetName"]
-                                                              PackageName = Lun.make tileSetProperties.["PackageName"]
-                                                              PackageFileName = tileSetProperties.["PackageFileName"] })
-                                                        tileSets
-                                                TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
+                                                try let tmxMap = TmxMap asset.FileName
+                                                    let tileSets = List.ofSeq tmxMap.Tilesets
+                                                    let tileSetSprites =
+                                                        List.map
+                                                            (fun (tileSet : TmxTileset) ->
+                                                                let tileSetProperties = tileSet.Properties
+                                                                { SpriteAssetName = Lun.make tileSetProperties.["SpriteAssetName"]
+                                                                  PackageName = Lun.make tileSetProperties.["PackageName"]
+                                                                  PackageFileName = tileSetProperties.["PackageFileName"] })
+                                                            tileSets
+                                                    TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
+                                                with _ as e ->
+                                                    let errorMessage = "Failed to TmxMap '" + asset.FileName + "' due to '" + str e + "'."
+                                                    trace errorMessage
+                                                    InvalidMetadata errorMessage
                                             | ".wav" -> SoundMetadata
                                             | ".ogg" -> SongMetadata
                                             | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
