@@ -1,7 +1,7 @@
 ﻿// Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2013.
+// Copyright (C) Bryan Edds, 2012-2014.
 
-// NOTE: change these paths to make this script run with your Aml installation.
+(* NOTE: change these paths to make this script run with your Aml installation. *)
 #r "C:/OmniBlade/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
 #r "C:/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsecCS.dll"
 #r "C:/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsec.dll"
@@ -19,6 +19,7 @@
 open System
 open FParsec.Primitives
 open FParsec.CharParsers
+open Aml
 open Aml.Ast
 open Aml.AmlConstants
 open Aml.Primitives

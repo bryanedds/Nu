@@ -1,4 +1,7 @@
-﻿using System;
+﻿// NuEdit - The Nu Game Engine editor.
+// Copyright (C) Bryan Edds, 2013-2014.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;

@@ -1,7 +1,7 @@
 ﻿// Prime - A PRIMitivEs code library.
-// Copyright (C) Bryan Edds, 2012-2013.
+// Copyright (C) Bryan Edds, 2012-2014.
 
-// NOTE: change these paths to make this script run with your Prime installation.
+(* NOTE: change these paths to make this script run with your Prime installation. *)
 #r "C:/OmniBlade/Prime/xUnit/xunit.dll"
 #r "C:/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
 

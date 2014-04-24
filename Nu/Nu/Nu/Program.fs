@@ -1,4 +1,7 @@
-﻿namespace Nu
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2014.
+
+namespace Nu
 open SDL2
 open Nu
 open Nu.NuConstants

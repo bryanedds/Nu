@@ -1,4 +1,7 @@
-﻿namespace OmniBlade
+﻿// OmniBlade.
+// Copyright (C) Bryan Edds, 2013-2014.
+
+namespace OmniBlade
 open Prime
 module OmniConstants =
 

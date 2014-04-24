@@ -1,5 +1,5 @@
 // Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2013.
+// Copyright (C) Bryan Edds, 2012-2014.
 
 namespace Aml
 open System
@@ -15,7 +15,10 @@ open Aml.Conversions
 module Reader =
 
     /// Parse one more than many1.
-    let many2 parser = parser .>>. many1 parser |>> fun (x, xs) -> x :: xs
+    let many2 parser =
+        parser .>>.
+        many1 parser |>>
+        fun (x, xs) -> x :: xs
 
     /// Query that a character is a special name character.
     let isSpecialNameChar = isAnyOf SpecialNameChars

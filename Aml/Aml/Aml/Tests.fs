@@ -1,5 +1,5 @@
 ﻿// Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2013.
+// Copyright (C) Bryan Edds, 2012-2014.
 
 namespace Aml
 open FParsec.CharParsers
@@ -27,11 +27,11 @@ module Tests =
         { Expected : string
           Actual : string }
 
-    type ParsedTestCase =
+    type [<ReferenceEquality>] ParsedTestCase =
         { ParsedExpected : string
           ParsedActual : ParserResult<Expr list, unit> }
     
-    type EvaledTestCase =
+    type [<ReferenceEquality>] EvaledTestCase =
         { EvaledExpected : string
           EvaledActual : Expr list }
 
