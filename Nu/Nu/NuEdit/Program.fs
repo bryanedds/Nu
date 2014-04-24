@@ -29,6 +29,7 @@ open Nu.Entity
 open Nu.Group
 open Nu.Screen
 open Nu.Game
+open Nu.WorldPrims
 open Nu.World
 open NuEdit.NuEditConstants
 open NuEdit.NuEditReflection
