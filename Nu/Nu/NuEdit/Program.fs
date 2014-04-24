@@ -635,7 +635,7 @@ module Program =
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-        let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags 1024
+        let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags AudioBufferSizeDefault
         run4
             (tryCreateEditorWorld form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)
