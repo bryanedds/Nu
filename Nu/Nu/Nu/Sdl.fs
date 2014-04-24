@@ -157,7 +157,7 @@ module Sdl =
                             (fun () -> SDL_mixer.Mix_Quit ())
                             (fun () ->
                             withSdlGlobalResource
-                                (fun () -> SDL_mixer.Mix_OpenAudio (SDL_mixer.MIX_DEFAULT_FREQUENCY, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                                (fun () -> SDL_mixer.Mix_OpenAudio (AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
                                 (fun () -> SDL_mixer.Mix_CloseAudio ())
                                 (fun () ->
                                     let sdlDeps = makeSdlDeps renderContext window sdlConfig
