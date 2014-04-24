@@ -162,7 +162,7 @@ module Program =
                                 let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
                                 EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
                             xtension.XFields
-                    let propertiesAppended = Seq.append propertyDescriptors xFieldDescriptors
+                    let propertiesAppended = Seq.append xFieldDescriptors propertyDescriptors
                     Seq.distinctBy (fun (property : PropertyDescriptor) -> property.Name) propertiesAppended
             List.ofSeq propertyDescriptors'
 
