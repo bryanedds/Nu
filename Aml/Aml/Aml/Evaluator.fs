@@ -11,11 +11,11 @@ open Aml.Ast
 open Aml.AstModule
 open Aml.AmlConstants
 open Aml.Primitives
-open Aml.Reader
-open Aml.Writer
 open Aml.Initial
-open Aml.EvalPrims
+open Aml.Writer
 open Aml.Conversions
+open Aml.Reader
+open Aml.EvaluatorPrims
 
 [<AutoOpen>]
 module EvaluatorModule =
@@ -134,7 +134,7 @@ module Evaluator =
         match sigImpl with
         | Variable variable -> (variable.VarName, evalExprDropEnv env variable.VarBody)
         | Function fn -> (fn.FnName, Lambda (makeLambdaRecord false fn.FnName fn.FnArgs fn.FnArgCount fn.FnBody tautology fn.FnPre fn.FnPost fn.FnEmptyUnification fn.FnOptPositions (Some env)))
-        | _ -> failwith "Unexpected match failure in EvalPrims.sigImplToNamedExpr."
+        | _ -> failwith "Unexpected match failure in Aml.Evaluator.Prims.sigImplToNamedExpr."
 
     /// Project a list of signature implementations to concrete values.
     and projectSigImpls env pname sigImpls =
