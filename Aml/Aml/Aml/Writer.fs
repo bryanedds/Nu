@@ -1,5 +1,5 @@
 ﻿// Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2013.
+// Copyright (C) Bryan Edds, 2012-2014.
 
 namespace Aml
 open System
@@ -7,6 +7,7 @@ open System.IO
 open System.Collections.Generic
 open Prime
 open Aml.Ast
+open Aml.AstModule // fixes issues when loading this file in fsi
 open Aml.AmlConstants
 open Aml.Primitives
 module Writer =

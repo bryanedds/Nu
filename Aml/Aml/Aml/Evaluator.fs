@@ -1,5 +1,5 @@
 ﻿// Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2013.
+// Copyright (C) Bryan Edds, 2012-2014.
 
 namespace Aml
 open System
@@ -21,7 +21,7 @@ open Aml.Conversions
 module EvaluatorModule =
 
     /// The status of a conditional expression once evaluated.
-    type ConditionalStatus =
+    type [<ReferenceEquality>] ConditionalStatus =
         | CSViolation of Expr
         | CSNormal
         | CSNotBoolean
