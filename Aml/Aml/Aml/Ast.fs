@@ -1,7 +1,5 @@
 ﻿// Aml - A Modular Language.
-// Copyright (C) Bryan Edds, 2012-2013.
-//
-// TODO: increase this project's warning level to 5 and fix the corresponding issues.
+// Copyright (C) Bryan Edds, 2012-2014.
 
 namespace Aml
 open System
@@ -44,24 +42,24 @@ module AstModule =
         | DoubleColonSelector
 
     /// A string value.
-    type StringValue =
+    type [<StructuralEquality; StructuralComparison>] StringValue =
         { SVValue : string
           SVType : StringType }
 
     /// A pair of parser positions describing the location of an expression.
-    type ParserPositions =
+    type [<NoEquality; NoComparison>] ParserPositions =
         { ParStart : Position
           ParStop : Position }
 
     /// A function or lambda argument.
-    type Arg =
+    type [<NoEquality; NoComparison>] Arg =
         { ArgName : Lun
           ArgType : ArgType
           ArgExpr : Expr }
 
     /// A composite member.
     /// Hacked with IComparable to make Dictionary equality work...
-    and Member =
+    and [<StructuralEquality; CustomComparison>] Member =
         { MemName : Lun
           MemExpr : Expr }
         interface IComparable with
@@ -71,13 +69,13 @@ module AstModule =
                 | _ -> -1
 
     /// A function or lambda signature.
-    and Signature =
+    and [<NoEquality; NoComparison>] Signature =
         { SigName : Lun
           SigArgs : Arg list
           SigDoc : StringValue option }
 
     /// A type constraint.
-    and Constraint =
+    and [<NoEquality; NoComparison>] Constraint =
         { ConstrName : Lun
           ConstrTypeName : Lun
           ConstrProtocolName : Lun

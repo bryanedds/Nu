@@ -1,7 +1,6 @@
 ﻿#r "System.Configuration"
-// IMPORTANT!
-// NOTE: change these paths to make this script run with your Nu installation.
-// IMPORTANT!
+
+(* IMPORTANT NOTE: change these paths to make this script run with your Nu installation! *)
 #r "C:/OmniBlade/Prime/xUnit/xunit.dll"
 #r "C:/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
 #r "C:/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
