@@ -71,7 +71,7 @@ module XtensionModule =
                             | aMethod ->
                                 try aMethod.Invoke (dispatcher, argArray) :?> 'r with
                                 | exn when exn.InnerException <> null -> raise exn.InnerException
-                                | exn -> debug <| "Unknown failure during method invocation'" + str exn + "'."; raise exn
+                                | exn -> debug <| "Unknown failure during method invocation'" + str exn + "'."; reraise ()
                         | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer."
 
                 // just return field
