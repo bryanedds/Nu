@@ -36,32 +36,36 @@ module Environment =
 
     /// Make an initial global environment.
     let makeInitialEnv () =
-        let initialDirectory = Directory.GetCurrentDirectory ()
-        let initialDeclarationFrame = List.toDictionary InitialEntriesList
-        let debugInfo = makeEmptyDebugInfo ()
+
+        // create the core envrionment
         let env =
             makeEnv
-                initialDeclarationFrame
+                (List.toDictionary InitialEntriesList)
                 []
                 (Generic.List<CachedEntry ref> ())
                 false
-                debugInfo
+                (makeEmptyDebugInfo ())
                 Set.empty
                 []
                 None
                 None
-                initialDirectory
+                (Directory.GetCurrentDirectory ())
                 0
                 []
-        let newEnv =
-            declareEquatable env
-        let newEnv2 =
+
+        // add equatable protocol declaration
+        let env' = declareEquatable env
+
+        // add equatable protocol instantiations for primitives types
+        let env'' =
             List.fold
                 (fun env initialType ->
                     let typeNameStr = (a__ initialType).LunStr
                     let rawTypeNameStr = typeNameStr.Substring TypePrefixStr.Length
                     let rawTypeName = Lun.make rawTypeNameStr
                     instantiateEquatable env rawTypeName)
-                newEnv
+                env'
                 InitialTypes
-        newEnv2
+
+        // present the full initial environment
+        env''
