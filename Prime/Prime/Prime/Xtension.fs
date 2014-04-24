@@ -87,8 +87,8 @@ module XtensionModule =
             then failwith "Cannot add field to a sealed Xtension."
             else
 #endif
-                let xFields = Map.add fieldLun (value :> obj) this.XFields
-                { this with XFields = xFields }
+            let xFields = Map.add fieldLun (value :> obj) this.XFields
+            { this with XFields = xFields }
 
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
     /// These are just POFO types, except without any data (the data they use would be in a related
