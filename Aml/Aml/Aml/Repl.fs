@@ -112,9 +112,9 @@ module Repl =
                 commandFailure ()
                 repl env
         else
-            let newEnv = { env with EnvDebugInfo = { env.EnvDebugInfo with DIOptFirstReplLine = Some firstLine }}
+            let env' = { env with EnvDebugInfo = { env.EnvDebugInfo with DIOptFirstReplLine = Some firstLine }}
             let readResult = run readExprsTillEnd input
-            let evalResult = echoEvalReadResult newEnv readResult
-            let newEvalResult = configureEvalResultFirstReplLine evalResult None
+            let evalResult = echoEvalReadResult env' readResult
+            let evalResult' = configureEvalResultFirstReplLine evalResult None
             Console.WriteLine ()
-            repl newEvalResult.Env
+            repl evalResult'.Env
