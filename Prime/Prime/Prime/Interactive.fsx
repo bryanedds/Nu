@@ -2,8 +2,8 @@
 // Copyright (C) Bryan Edds, 2012-2014.
 
 (* NOTE: change these paths to make this script run with your Prime installation. *)
-#r "C:/OmniBlade/Prime/xUnit/xunit.dll"
-#r "C:/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Development/OmniBlade/Prime/xUnit/xunit.dll"
+#r "C:/Development/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
 
 #load "ReferenceEquality.fs"
 #load "Miscellanea.fs"
