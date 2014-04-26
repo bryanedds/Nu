@@ -1,14 +1,14 @@
 ﻿#r "System.Configuration"
 
 (* IMPORTANT NOTE: change these paths to make this script run with your Nu installation! *)
-#r "C:/OmniBlade/Prime/xUnit/xunit.dll"
-#r "C:/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
-#r "C:/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
-#r "C:/OmniBlade/Nu/xUnit/xunit.dll"
-#r "C:/OmniBlade/Nu/FSharpx.Core/FSharpx.Core.dll"
-#r "C:/OmniBlade/Nu/Farseer/FarseerPhysics.dll"
-#r "C:/OmniBlade/Nu/SDL2#/Debug/SDL2#.dll"
-#r "C:/OmniBlade/Nu/TiledSharp/Debug/TiledSharp.dll"
+#r "C:/Development/OmniBlade/Prime/xUnit/xunit.dll"
+#r "C:/Development/OmniBlade/Prime/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Development/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
+#r "C:/Development/OmniBlade/Nu/xUnit/xunit.dll"
+#r "C:/Development/OmniBlade/Nu/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Development/OmniBlade/Nu/Farseer/FarseerPhysics.dll"
+#r "C:/Development/OmniBlade/Nu/SDL2#/Debug/SDL2#.dll"
+#r "C:/Development/OmniBlade/Nu/TiledSharp/Debug/TiledSharp.dll"
 System.IO.Directory.SetCurrentDirectory "C:/OmniBlade/Nu/Nu/Nu/bin/Debug"
 
 #load "NuCore.fs"
