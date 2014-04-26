@@ -233,6 +233,7 @@ module Rendering =
     let private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
         List.fold handleRenderMessage renderer (List.rev renderMessages)
 
+    // TODO: factor out with extraction when available from the IDE
     let private renderLayerableDescriptor renderer layerableDescriptor =
         match layerableDescriptor with
         | LayeredSpriteDescriptor lsd ->
@@ -247,30 +248,35 @@ module Rendering =
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
+                    let mutable textureFormat = ref 0u
+                    let mutable textureAccess = ref 0
+                    let mutable textureSizeX = ref 0
+                    let mutable textureSizeY = ref 0
+                    ignore <| SDL.SDL_QueryTexture (texture, textureFormat, textureAccess, textureSizeX, textureSizeY)
                     let mutable sourceRect = SDL.SDL_Rect ()
                     sourceRect.x <- 0
                     sourceRect.y <- 0
-                    sourceRect.w <- int spriteDescriptor.Size.X
-                    sourceRect.h <- int spriteDescriptor.Size.Y
+                    sourceRect.w <- !textureSizeX
+                    sourceRect.h <- !textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
                     destRect.x <- int spriteDescriptor.Position.X
                     destRect.y <- int spriteDescriptor.Position.Y
                     destRect.w <- int spriteDescriptor.Size.X
                     destRect.h <- int spriteDescriptor.Size.Y
                     let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int (spriteDescriptor.Size.X * 0.5f)
-                    rotationCenter.y <- int (spriteDescriptor.Size.Y * 0.5f)
+                    rotationCenter.x <- int <| spriteDescriptor.Size.X * 0.5f
+                    rotationCenter.y <- int <| spriteDescriptor.Size.Y * 0.5f
                     ignore <| SDL.SDL_SetTextureColorMod (texture, byte <| 255.0f * color.X, byte <| 255.0f * color.Y, byte <| 255.0f * color.Z)
                     ignore <| SDL.SDL_SetTextureAlphaMod (texture, byte <| 255.0f * color.W)
                     let renderResult =
-                        SDL.SDL_RenderCopyEx
-                            (renderer'.RenderContext,
-                             texture,
-                             ref sourceRect,
-                             ref destRect,
-                             double spriteDescriptor.Rotation * RadiansToDegrees,
-                             ref rotationCenter,
-                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
+                        SDL.SDL_RenderCopyEx (
+                            renderer'.RenderContext,
+                            texture,
+                            ref sourceRect,
+                            ref destRect,
+                            double spriteDescriptor.Rotation * RadiansToDegrees,
+                            ref rotationCenter,
+                            SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                     if renderResult <> 0 then debug <| "Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + "."
                     renderer'
                 | _ ->
@@ -312,17 +318,17 @@ module Rendering =
                             destRect.w <- int tileSize.X
                             destRect.h <- int tileSize.Y
                             let mutable rotationCenter = SDL.SDL_Point ()
-                            rotationCenter.x <- int (tileSize.X * 0.5f)
-                            rotationCenter.y <- int (tileSize.Y * 0.5f)
+                            rotationCenter.x <- int <| tileSize.X * 0.5f
+                            rotationCenter.y <- int <| tileSize.Y * 0.5f
                             let renderResult =
-                                SDL.SDL_RenderCopyEx
-                                    (renderer'.RenderContext,
-                                        texture,
-                                        ref sourceRect,
-                                        ref destRect,
-                                        double tileRotation * RadiansToDegrees,
-                                        ref rotationCenter,
-                                        SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                                SDL.SDL_RenderCopyEx (
+                                    renderer'.RenderContext,
+                                    texture,
+                                    ref sourceRect,
+                                    ref destRect,
+                                    double tileRotation * RadiansToDegrees,
+                                    ref rotationCenter,
+                                    SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
                             if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
                     renderer'
@@ -341,26 +347,35 @@ module Rendering =
                 match renderAsset with
                 | FontAsset (font, _) ->
                     let mutable color = SDL.SDL_Color ()
-                    color.r <- byte (textDescriptor.Color.X * 255.0f)
-                    color.g <- byte (textDescriptor.Color.Y * 255.0f)
-                    color.b <- byte (textDescriptor.Color.Z * 255.0f)
-                    color.a <- byte (textDescriptor.Color.W * 255.0f)
-                    let mutable sourceRect = SDL.SDL_Rect ()
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- int textDescriptor.Size.X
-                    sourceRect.h <- int textDescriptor.Size.Y
-                    let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int textDescriptor.Position.X
-                    destRect.y <- int textDescriptor.Position.Y
-                    destRect.w <- int textDescriptor.Size.X
-                    destRect.h <- int textDescriptor.Size.Y
+                    let textPositionX = int textDescriptor.Position.X
+                    let textPositionY = int textDescriptor.Position.Y
+                    let textSizeX = int textDescriptor.Size.X
+                    let textSizeY = int textDescriptor.Size.Y
+                    color.r <- byte <| textDescriptor.Color.X * 255.0f
+                    color.g <- byte <| textDescriptor.Color.Y * 255.0f
+                    color.b <- byte <| textDescriptor.Color.Z * 255.0f
+                    color.a <- byte <| textDescriptor.Color.W * 255.0f
                     // NOTE: the following code is not exception safe!
                     // TODO: the resource implications (perf and vram fragmentation?) of creating and
                     // destroying a texture one or more times a frame must be understood!
-                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, textDescriptor.Text, color, uint32 textDescriptor.Size.X)
+                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, textDescriptor.Text, color, uint32 textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
+                        let mutable textureFormat = ref 0u
+                        let mutable textureAccess = ref 0
+                        let mutable textureSizeX = ref 0
+                        let mutable textureSizeY = ref 0
+                        ignore <| SDL.SDL_QueryTexture (textTexture, textureFormat, textureAccess, textureSizeX, textureSizeY)
+                        let mutable sourceRect = SDL.SDL_Rect ()
+                        sourceRect.x <- 0
+                        sourceRect.y <- 0
+                        sourceRect.w <- !textureSizeX
+                        sourceRect.h <- !textureSizeY
+                        let mutable destRect = SDL.SDL_Rect ()
+                        destRect.x <- textPositionX
+                        destRect.y <- textPositionY
+                        destRect.w <- !textureSizeX
+                        destRect.h <- !textureSizeY
                         if textTexture <> IntPtr.Zero then ignore (SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect))
                         SDL.SDL_DestroyTexture textTexture
                         SDL.SDL_FreeSurface textSurface
