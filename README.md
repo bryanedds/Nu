@@ -3,7 +3,8 @@ OmniBlade
 
 This repository hosts several projects, including -
 
-- the **Nu Game Engine**,
+
+- ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, 
 - the programming language **Aml**,
 - the small but potentially useful F# code library **Prime**, and
 - the game **OmniBlade** that I just barely started on.
