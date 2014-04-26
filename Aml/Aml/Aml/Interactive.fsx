@@ -2,11 +2,11 @@
 // Copyright (C) Bryan Edds, 2012-2014.
 
 (* NOTE: change these paths to make this script run with your Aml installation. *)
-#r "C:/OmniBlade/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
-#r "C:/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsecCS.dll"
-#r "C:/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsec.dll"
-#r "C:/OmniBlade/Aml/xUnit/xunit.dll"
-#r "C:/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
+#r "C:/Development/OmniBlade/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
+#r "C:/Development/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsecCS.dll"
+#r "C:/Development/OmniBlade/Aml/Aml/Aml/bin/Debug/FParsec.dll"
+#r "C:/Development/OmniBlade/Aml/xUnit/xunit.dll"
+#r "C:/Development/OmniBlade/Prime/Prime/Prime/bin/Debug/Prime.dll"
 
 #load "Ast.fs"
 #load "AmlConstants.fs"
