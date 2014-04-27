@@ -462,19 +462,21 @@ module DispatchersModule =
 
         override this.HandleBodyTransformMessage (message, address, block, world) =
             let block' =
-                (block
-                    .SetPosition <| message.Position - block.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                    .SetRotation message.Rotation
+                block
+                    .SetPosition(message.Position - block.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                    .SetRotation(message.Rotation)
             set block' world <| worldEntityLens message.EntityAddress
             
         override this.GetRenderDescriptors (view, block, world) =
             if not block.Visible then []
             else
+                let spritePosition = block.Position * view
+                let spriteSize = block.Size * Matrix3.getScaleMatrix view
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = block.Position - view
-                              Size = block.Size
+                            { Position = spritePosition
+                              Size = spriteSize
                               Rotation = block.Rotation
                               Sprite = block.ImageSprite
                               Color = Vector4.One }
@@ -549,11 +551,13 @@ module DispatchersModule =
         override this.GetRenderDescriptors (view, avatar, world) =
             if not avatar.Visible then []
             else
+                let spritePosition = avatar.Position * view
+                let spriteSize = avatar.Size * Matrix3.getScaleMatrix view
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = avatar.Position - view
-                              Size = avatar.Size
+                            { Position = spritePosition
+                              Size = spriteSize
                               Rotation = avatar.Rotation
                               Sprite = avatar.ImageSprite
                               Color = Vector4.One }
@@ -640,17 +644,21 @@ module DispatchersModule =
                 | None -> []
                 | Some (_, sprites, map) ->
                     let layers = List.ofSeq map.Layers
+                    let viewScale = Matrix3.getScaleMatrix view
+                    let tileSourceSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                    let tileSize = tileSourceSize * viewScale
                     List.mapi
                         (fun i (layer : TmxLayer) ->
                             let layeredTileLayerDescriptor =
                                 LayeredTileLayerDescriptor
                                     { Descriptor =
-                                        { Position = tileMap.Position - view
-                                          Size = tileMap.Size
+                                        { Position = tileMap.Position * view
+                                          Size = Vector2.Zero
                                           Rotation = tileMap.Rotation
                                           MapSize = Vector2 (single map.Width, single map.Height)
                                           Tiles = layer.Tiles
-                                          TileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                                          TileSourceSize = tileSourceSize
+                                          TileSize = tileSize
                                           TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                           TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
                                       Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption

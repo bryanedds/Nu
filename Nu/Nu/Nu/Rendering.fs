@@ -38,6 +38,7 @@ module RenderingModule =
           Rotation : single
           MapSize : Vector2
           Tiles : TmxLayerTile Collections.Generic.List
+          TileSourceSize : Vector2
           TileSize : Vector2
           TileSet : TmxTileset
           TileSetSprite : Sprite }
@@ -89,7 +90,8 @@ module RenderingModule =
 
     type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
-          RenderAssetMap : RenderAsset AssetMap }
+          RenderAssetMap : RenderAsset AssetMap
+          IsPixelPerfect : bool }
 
     type SpriteTypeConverter () =
         inherit TypeConverter ()
@@ -287,6 +289,7 @@ module Rendering =
             let tiles = descriptor.Tiles
             let tileSet = descriptor.TileSet
             let mapSize = descriptor.MapSize
+            let tileSourceSize = descriptor.TileSourceSize
             let tileSize = descriptor.TileSize
             let tileRotation = descriptor.Rotation
             let sprite = descriptor.TileSetSprite
@@ -305,18 +308,23 @@ module Rendering =
                             let (i, j) = (n % (int mapSize.X), n / (int mapSize.Y))
                             let tilePosition = Vector2 (descriptor.Position.X + (tileSize.Y * single i), descriptor.Position.Y + (tileSize.Y * single j))
                             let gid = tiles.[n].Gid - tileSet.FirstGid
-                            let gidPosition = gid * int tileSize.X
-                            let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, (single <| gidPosition / tileSetWidth) * tileSize.Y)
+                            let gidPosition = gid * int tileSourceSize.X
+                            let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, (single <| gidPosition / tileSetWidth) * tileSourceSize.Y)
                             let mutable sourceRect = SDL.SDL_Rect ()
                             sourceRect.x <- int tileSetPosition.X
                             sourceRect.y <- int tileSetPosition.Y
-                            sourceRect.w <- int tileSize.X
-                            sourceRect.h <- int tileSize.Y
+                            sourceRect.w <- int tileSourceSize.X
+                            sourceRect.h <- int tileSourceSize.Y
                             let mutable destRect = SDL.SDL_Rect ()
                             destRect.x <- int tilePosition.X
                             destRect.y <- int tilePosition.Y
-                            destRect.w <- int tileSize.X
-                            destRect.h <- int tileSize.Y
+                            if renderer.IsPixelPerfect then
+                                destRect.w <- int <| tileSize.X
+                                destRect.h <- int <| tileSize.Y
+                            else
+                                // needed to keep lines from appearing between tiles at certain zoom levels
+                                destRect.w <- int <| Math.Ceiling (float tileSize.X)
+                                destRect.h <- int <| Math.Ceiling (float tileSize.Y)
                             let mutable rotationCenter = SDL.SDL_Point ()
                             rotationCenter.x <- int <| tileSize.X * 0.5f
                             rotationCenter.y <- int <| tileSize.Y * 0.5f
@@ -356,8 +364,9 @@ module Rendering =
                     color.b <- byte <| textDescriptor.Color.Z * 255.0f
                     color.a <- byte <| textDescriptor.Color.W * 255.0f
                     // NOTE: the following code is not exception safe!
-                    // TODO: the resource implications (perf and vram fragmentation?) of creating and
-                    // destroying a texture one or more times a frame must be understood!
+                    // TODO: the resource implications (perf and vram fragmentation?) of creating and destroying a
+                    // texture one or more times a frame must be understood! Although, maybe it all happens in software
+                    // and vram frag would not be a concern in the first place... perf could still be, however.
                     let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, textDescriptor.Text, color, uint32 textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
@@ -376,7 +385,7 @@ module Rendering =
                         destRect.y <- textPositionY
                         destRect.w <- !textureSizeX
                         destRect.h <- !textureSizeY
-                        if textTexture <> IntPtr.Zero then ignore (SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect))
+                        if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
                         SDL.SDL_DestroyTexture textTexture
                         SDL.SDL_FreeSurface textSurface
                     renderer'
@@ -389,7 +398,7 @@ module Rendering =
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
         | 0 ->
-            ignore (SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD))
+            ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
             let layerableDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor) renderDescriptorsValue
             //let (spriteDescriptors, renderDescriptorsValue_) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptorsValue
             let sortedDescriptors = Seq.sortBy getLayerableDepth layerableDescriptors
@@ -408,6 +417,7 @@ module Rendering =
         let renderer' = handleRenderMessages renderMessages renderer
         renderDescriptors renderDescriptorsValue renderer'
 
-    let makeRenderer renderContext =
+    let makeRenderer renderContext isPixelPerfect =
         { RenderContext = renderContext
-          RenderAssetMap = Map.empty }
+          RenderAssetMap = Map.empty
+          IsPixelPerfect = isPixelPerfect }

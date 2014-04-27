@@ -8,7 +8,8 @@ module CameraModule =
     /// The camera used to dictate what is rendered on the screen.
     type [<StructuralEquality; NoComparison>] Camera =
         { EyePosition : Vector2
-          EyeSize : Vector2 }
+          EyeSize : Vector2
+          EyeZoom : single }
 
 module Camera =
 
@@ -16,11 +17,14 @@ module Camera =
     let getEyeCenter camera =
         camera.EyePosition + camera.EyeSize * 0.5f
 
-    /// The inverse view of the camera, with floating-point accuracy (not good for rendering).
-    let getInverseViewF camera =
-        camera.EyePosition - camera.EyeSize * 0.5f
+    /// The view of the camera with original float values. Due to the problems with SDL_RenderCopyEx as described in
+    /// NuMath.fs, using this function to decide on sprite coordinates is very, very bad for rendering.
+    let getViewF camera =
+        let translation = camera.EyePosition - camera.EyeSize * 0.5f
+        Matrix3.makeFromTranslationAndScale translation camera.EyeZoom
 
-    /// The inverse view of the camera, with pixel-level accuracy (good for rendering).
-    let getInverseView camera =
-        let getInverseViewF = getInverseViewF camera
-        Vector2 (single <| int getInverseViewF.X, single <| int getInverseViewF.Y)
+    /// The view of the camera with translation sliced on integers. Good for rendering.
+    let getViewI camera =
+        let translation = camera.EyePosition - camera.EyeSize * 0.5f
+        let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
+        Matrix3.makeFromTranslationAndScale translationI camera.EyeZoom

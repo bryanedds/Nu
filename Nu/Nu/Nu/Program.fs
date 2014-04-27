@@ -39,6 +39,7 @@ module Program =
                 Voords.VirtualResolutionX
                 Voords.VirtualResolutionY
                 sdlRenderFlags
+                false
                 AudioBufferSizeDefault
 
         // this is a callback that attempts to create 'the world' in a functional programming

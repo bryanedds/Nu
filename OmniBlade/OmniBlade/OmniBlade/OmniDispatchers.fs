@@ -25,9 +25,8 @@ module OmniDispatchersModule =
             if feeler.IsTouched then
                 let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
                 let avatar = get world <| Entity.worldEntityLens avatarAddress
-                let camera = world.Camera
-                let view = Camera.getInverseViewF camera
-                let mousePositionWorld = world.MouseState.MousePosition + view
+                let view = Camera.getViewF world.Camera
+                let mousePositionWorld = world.MouseState.MousePosition * view
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
