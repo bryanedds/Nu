@@ -140,16 +140,13 @@ module NuMathModule =
         static member getTranslationAndScaleMatrix m =
             Matrix3.getScaleMatrix m |> Matrix3.setTranslation (Matrix3.getTranslation m)
 
-        static member private invertScale v =
-            -v + 2.0f
-
         /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
         /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
         /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
         static member getInverseViewMatrix m =
             { m with
                 M02 = -m.M02; M12 = -m.M12
-                M00 = Matrix3.invertScale m.M00; M11 = Matrix3.invertScale m.M11; M22 = Matrix3.invertScale m.M22 }
+                M00 = 1.0f / m.M00; M11 = 1.0f / m.M11 }
 
         static member getInverseMatrix m =
             // borrows inversion functionality from Matrix4
@@ -196,7 +193,7 @@ module NuMath =
           Size = Vector2.One
           Rotation = 0.0f }
 
-    let snap value offset =
+    let snap offset value =
         if offset = 0 then value
         else
             let rem = ref 0
@@ -204,18 +201,18 @@ module NuMath =
             let rem' = if !rem < offset / 2 then 0 else offset
             div * offset + rem'
 
-    let snapR (value : single) offset =
-        DegreesToRadiansF * single (snap (int <| value * RadiansToDegreesF) offset)
+    let snapR offset value =
+        DegreesToRadiansF * single (snap offset (int <| value * RadiansToDegreesF))
 
-    let snapF (value : single) offset =
-        single <| snap (int value) offset
+    let snapF offset (value : single) =
+        single <| snap offset (int value)
 
-    let snap2F (v2 : Vector2) offset =
-        Vector2 (snapF v2.X offset, snapF v2.Y offset)
+    let snap2F offset (v2 : Vector2) =
+        Vector2 (snapF offset v2.X, snapF offset v2.Y)
 
     let snapTransform positionSnap rotationSnap (transform : Transform) =
-        let transform' = { transform with Position = snap2F transform.Position positionSnap }
-        { transform' with Rotation = snapR transform'.Rotation rotationSnap }
+        let transform' = { transform with Position = snap2F positionSnap transform.Position }
+        { transform' with Rotation = snapR rotationSnap transform'.Rotation }
 
     let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
         point.X >= boxPos.X &&
