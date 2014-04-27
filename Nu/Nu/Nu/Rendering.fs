@@ -323,8 +323,8 @@ module Rendering =
                                 destRect.h <- int <| tileSize.Y
                             else
                                 // needed to keep lines from appearing between tiles at certain zoom levels
-                                destRect.w <- int <| Math.Ceiling (float tileSize.X)
-                                destRect.h <- int <| Math.Ceiling (float tileSize.Y)
+                                destRect.w <- int <| tileSize.X + 1.0f
+                                destRect.h <- int <| tileSize.Y + 1.0f
                             let mutable rotationCenter = SDL.SDL_Point ()
                             rotationCenter.x <- int <| tileSize.X * 0.5f
                             rotationCenter.y <- int <| tileSize.Y * 0.5f

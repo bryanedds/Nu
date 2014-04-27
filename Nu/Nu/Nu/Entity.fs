@@ -190,13 +190,31 @@ module Entity =
                     | Some entityMap -> { world with Entities = Map.add screenLun (Map.add groupLun (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
-    let getEntityTransformAbsolute (entity : Entity) =
+    // TODO: turn into a lens
+    let getEntityPosition (entity : Entity) =
+        entity.Position
+
+    // TODO: turn into a lens
+    let getEntityPositionFromViewRelative (view : Matrix3) (entity : Entity) =
+        let inverseView = Matrix3.getInverseViewMatrix view
+        entity.Position * inverseView
+
+    // TODO: turn into a lens
+    let getEntityPositionFromView camera (entity : Entity) =
+        if entity.IsTransformRelative then
+            let view = getViewF camera
+            getEntityPositionFromViewRelative view entity
+        else entity.Position
+
+    // TODO: turn into a lens
+    let getEntityTransform (entity : Entity) =
         { Transform.Position = entity.Position
           Depth = entity.Depth
           Size = entity.Size
           Rotation = entity.Rotation }
 
-    let getEntityTransformRelative (view : Matrix3) (entity : Entity) =
+    // TODO: turn into a lens
+    let getEntityTransformFromViewRelative (view : Matrix3) (entity : Entity) =
         let inverseView = Matrix3.getInverseViewMatrix view
         { Transform.Position = entity.Position * inverseView
           Depth = entity.Depth
@@ -204,17 +222,31 @@ module Entity =
           Rotation = entity.Rotation }
 
     // TODO: turn into a lens
-    let getEntityTransform optCamera (entity : Entity) =
+    let getEntityTransformFromView camera (entity : Entity) =
         if entity.IsTransformRelative then
-            let view =
-                match optCamera with
-                | None -> Matrix3.identity
-                | Some camera -> getViewF camera
-            getEntityTransformRelative view entity
-        else getEntityTransformAbsolute entity
+            let view = getViewF camera
+            getEntityTransformFromViewRelative view entity
+        else getEntityTransform entity
 
     // TODO: turn into a lens
-    let setEntityTransformAbsolute positionSnap rotationSnap transform (entity : Entity) =
+    let setEntityPosition snap position (entity : Entity) =
+        let position' = snap2F snap position
+        entity.SetPosition position'
+
+    // TODO: turn into a lens
+    let setEntityPositionFromViewRelative view snap position entity =
+        let position' = position * view
+        setEntityPosition snap position' entity
+
+    // TODO: turn into a lens
+    let setEntityPositionFromView camera snap position dispatcherContainer (entity : Entity) =
+        if entity.IsTransformRelative then
+            let view = getViewF camera
+            setEntityPositionFromViewRelative view snap position entity
+        else setEntityPosition snap position entity
+
+    // TODO: turn into a lens
+    let setEntityTransform positionSnap rotationSnap transform (entity : Entity) =
         let transform' = snapTransform positionSnap rotationSnap transform
         entity
             .SetPosition(transform'.Position)
@@ -223,19 +255,16 @@ module Entity =
             .SetRotation(transform'.Rotation)
 
     // TODO: turn into a lens
-    let setEntityTransformRelative view positionSnap rotationSnap (transform : Transform) entity =
+    let setEntityTransformFromViewRelative view positionSnap rotationSnap (transform : Transform) entity =
         let transform' = { transform with Position = transform.Position * view; Size = transform.Size * Matrix3.getScaleMatrix view }
-        setEntityTransformAbsolute positionSnap rotationSnap transform' entity
+        setEntityTransform positionSnap rotationSnap transform' entity
 
     // TODO: turn into a lens
-    let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer (entity : Entity) =
+    let setEntityTransformFromView camera positionSnap rotationSnap transform dispatcherContainer (entity : Entity) =
         if entity.IsTransformRelative then
-            let view =
-                match optCamera with
-                | None -> Matrix3.identity
-                | Some camera -> getViewF camera
-            setEntityTransformRelative view positionSnap rotationSnap transform entity
-        else setEntityTransformAbsolute positionSnap rotationSnap transform entity
+            let view = getViewF camera
+            setEntityTransformFromViewRelative view positionSnap rotationSnap transform entity
+        else setEntityTransform positionSnap rotationSnap transform entity
 
     let sortFstAsc (priority, _) (priority2, _) =
         if priority = priority2 then 0
@@ -342,7 +371,7 @@ module Entity =
         let entitiesSorted = pickingSort entities world
         List.tryFind
             (fun entity ->
-                let transform = getEntityTransform (Some world.Camera) entity
+                let transform = getEntityTransformFromView world.Camera entity
                 position.X >= transform.Position.X &&
                     position.X < transform.Position.X + transform.Size.X &&
                     position.Y >= transform.Position.Y &&
