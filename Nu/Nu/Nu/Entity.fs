@@ -44,11 +44,14 @@ module EntityModule =
         abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
         default this.HandleBodyTransformMessage (message, address, entity, world) = world
 
-        abstract member GetRenderDescriptors : Matrix3 * Entity * World -> RenderDescriptor list
-        default this.GetRenderDescriptors (view, entity, world) = []
+        abstract member GetRenderDescriptors : Matrix3 * Matrix3 * Entity * World -> RenderDescriptor list
+        default this.GetRenderDescriptors (viewAbsolute, viewRelative, entity, world) = []
 
         abstract member GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (entity, world) = DefaultEntitySize
+
+        abstract member IsTransformRelative : Entity * World -> bool
+        default this.IsTransformRelative (entity, world) = true
 
     type Entity2dDispatcher () =
         inherit EntityDispatcher ()
@@ -62,7 +65,6 @@ module EntityModule =
                 .SetDepth(0.0f)
                 .SetSize(DefaultEntitySize)
                 .SetRotation(0.0f)
-                .SetIsTransformRelative(true)
 
 module Entity =
 
@@ -105,10 +107,6 @@ module Entity =
     let entitySizeLens =
         { Get = fun (entity : Entity) -> entity.Size
           Set = fun value entity -> entity.SetSize value }
-
-    let entityIsTransformRelativeLens =
-        { Get = fun (entity : Entity) -> entity.IsTransformRelative
-          Set = fun value entity -> entity.SetIsTransformRelative value }
 
     let private worldOptEntityFinder address world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
@@ -190,10 +188,9 @@ module Entity =
                     | Some entityMap -> { world with Entities = Map.add screenLun (Map.add groupLun (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
-    let mouseToEntity (position : Vector2) (entity : Entity) camera =
-        let view = if entity.IsTransformRelative then Camera.getViewF camera else Matrix3.identity
-        let viewOffset = Matrix3.translate (-camera.EyeSize * 0.5f) view
-        position * viewOffset
+    let mouseToEntity (position : Vector2) (entity : Entity) world =
+        let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
+        position * view
 
     // TODO: turn into a lens
     let getEntityPosition (entity : Entity) =

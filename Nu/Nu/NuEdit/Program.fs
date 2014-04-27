@@ -206,11 +206,11 @@ module Program =
                 let group = get world (worldGroupLens EditorGroupAddress)
                 let entities = Map.toValueList (get world <| worldEntitiesLens EditorGroupAddress)
                 let mousePosition = world.MouseState.MousePosition
-                let optPicked = tryPickEntity mousePosition entities world.Camera
+                let optPicked = tryPickEntity mousePosition entities world
                 match optPicked with
                 | None -> (handleMessage message, true, world)
                 | Some entity ->
-                    let mousePositionEntity = Entity.mouseToEntity mousePosition entity world.Camera
+                    let mousePositionEntity = Entity.mouseToEntity mousePosition entity world
                     let entityAddress = addrstr EditorGroupAddress entity.Name
                     let entityPosition = getEntityPosition entity
                     let dragState = DragEntityPosition (entityPosition + mousePositionEntity, mousePositionEntity, entityAddress)
@@ -245,7 +245,7 @@ module Program =
         | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
             let (positionSnap, _) = getSnaps form
             let entity_ = get world <| worldEntityLens address
-            let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity_ world.Camera
+            let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity_ world
             let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
             let entity_ = setEntityPosition positionSnap entityPosition entity_
             let world_ = set entity_ world <| worldEntityLens address
@@ -308,7 +308,7 @@ module Program =
         try let entity_ = makeDefaultEntity entityXTypeName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity_ world.Camera
+                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity_ world
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
                 let entity_ = setEntityTransform positionSnap rotationSnap entityTransform entity_
@@ -436,7 +436,7 @@ module Program =
             let changer = (fun world ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = getNuId ()
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity world.Camera
+                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity world
                 let entity_ = { entity with Id = id; Name = str id }
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { getEntityTransform entity with Position = entityPosition; Depth = getCreationDepth form }
