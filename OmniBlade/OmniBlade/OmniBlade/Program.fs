@@ -39,6 +39,7 @@ module Program =
                 Voords.VirtualResolutionX
                 Voords.VirtualResolutionY
                 sdlRenderFlags
+                false
                 1024
 
         // after some configuration it is time to run the game. We're off and running!

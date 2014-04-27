@@ -51,7 +51,7 @@ module World =
         { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
     let private getGroupRenderDescriptors camera dispatcherContainer entities =
-        let view = getInverseView camera
+        let view = getViewI camera |> Matrix3.getInverseViewMatrix
         let entityValues = Map.toValueSeq entities
         Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (view, dispatcherContainer)) entityValues
 
@@ -198,11 +198,11 @@ module World =
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
-                  Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) }
+                  Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH); EyeZoom = 1.0f }
                   Subscriptions = Map.empty
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = makeAudioPlayer ()
-                  Renderer = makeRenderer sdlDeps.RenderContext
+                  Renderer = makeRenderer sdlDeps.RenderContext sdlDeps.Config.IsPixelPerfect
                   Integrator = makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
                   AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]
