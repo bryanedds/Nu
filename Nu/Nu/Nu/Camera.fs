@@ -15,11 +15,21 @@ module Camera =
 
     /// The view of the camera with original float values. Due to the problems with SDL_RenderCopyEx as described in
     /// NuMath.fs, using this function to decide on sprite coordinates is very, very bad for rendering.
-    let getViewF camera =
-        Matrix3.makeFromTranslationAndScale camera.EyeCenter camera.EyeZoom
-
+    let getViewAbsoluteF camera =
+        let translation = -camera.EyeSize * 0.5f
+        Matrix3.makeFromTranslation translation
+        
     /// The view of the camera with translation sliced on integers. Good for rendering.
-    let getViewI camera =
-        let translation = camera.EyeCenter
+    let getViewAbsoluteI camera =
+        let translation = -camera.EyeSize * 0.5f
+        let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
+        Matrix3.makeFromTranslation translationI
+
+    let getViewRelativeF camera =
+        let translation = camera.EyeCenter - camera.EyeSize * 0.5f
+        Matrix3.makeFromTranslationAndScale translation camera.EyeZoom
+
+    let getViewRelativeI camera =
+        let translation = camera.EyeCenter - camera.EyeSize * 0.5f
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
         Matrix3.makeFromTranslationAndScale translationI camera.EyeZoom

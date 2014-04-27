@@ -52,8 +52,9 @@ module World =
 
     let private getGroupRenderDescriptors camera dispatcherContainer entities =
         let entityValues = Map.toValueSeq entities
-        let view = getViewI camera |> Matrix3.getInverseViewMatrix
-        Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (view, dispatcherContainer)) entityValues
+        let viewAbsolute = getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
+        let viewRelative = getViewRelativeI camera |> Matrix3.getInverseViewMatrix
+        Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (viewAbsolute, viewRelative, dispatcherContainer)) entityValues
 
     let private getTransitionRenderDescriptors camera dispatcherContainer transition =
         match transition.OptDissolveSprite with
@@ -62,7 +63,15 @@ module World =
             let progress = single transition.Ticks / single transition.Lifetime
             let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
             let color = Vector4 (Vector3.One, alpha)
-            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = -camera.EyeSize * 0.5f; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
+            [LayerableDescriptor <|
+                LayeredSpriteDescriptor
+                    { Descriptor =
+                        { Position = Vector2.Zero
+                          Size = camera.EyeSize
+                          Rotation = 0.0f
+                          Sprite = dissolveSprite
+                          Color = color }
+                      Depth = Single.MaxValue }]
 
     let private getRenderDescriptors world =
         match get world worldOptSelectedScreenAddressLens with
