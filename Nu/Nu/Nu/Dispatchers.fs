@@ -95,7 +95,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
-                let mousePositionButton = Entity.mouseToEntity mousePosition button world.Camera
+                let mousePositionButton = Entity.mouseToEntity mousePosition button world
                 if button.Enabled && button.Visible then
                     if isInBox3 mousePositionButton button.Position button.Size then
                         let button' = button.SetIsDown true
@@ -110,7 +110,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
-                let mousePositionButton = Entity.mouseToEntity mousePosition button world.Camera
+                let mousePositionButton = Entity.mouseToEntity mousePosition button world
                 if button.Enabled && button.Visible then
                     let (keepRunning, world') =
                         let button' = button.SetIsDown false
@@ -128,7 +128,6 @@ module DispatchersModule =
         override this.Init (button, dispatcherContainer) =
             let button' = base.Init (button, dispatcherContainer)
             button'
-                .SetIsTransformRelative(false)
                 .SetIsDown(false)
                 .SetUpSprite({ SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetDownSprite({ SpriteAssetName = Lun.make "Image2"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -146,13 +145,13 @@ module DispatchersModule =
                 unsubscribe DownMouseLeftEvent address |>
                 unsubscribe UpMouseLeftEvent address
 
-        override this.GetRenderDescriptors (view, button, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, button, world) =
             if not button.Visible then []
             else
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = button.Position
+                            { Position = button.Position * viewAbsolute
                               Size = button.Size
                               Rotation = 0.0f
                               Sprite = if button.IsDown then button.DownSprite else button.UpSprite
@@ -165,22 +164,23 @@ module DispatchersModule =
             | None -> DefaultEntitySize
             | Some size -> size
 
+        override this.IsTransformRelative (_, _) =
+            false
+
     type LabelDispatcher () =
         inherit Entity2dDispatcher ()
             
         override this.Init (label, dispatcherContainer) =
             let label' = base.Init (label, dispatcherContainer)
-            label'
-                .SetIsTransformRelative(false)
-                .SetLabelSprite({ SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
+            label'.SetLabelSprite({ SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override this.GetRenderDescriptors (view, label, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, label, world) =
             if not label.Visible then []
             else
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = label.Position
+                            { Position = label.Position * viewAbsolute
                               Size = label.Size
                               Rotation = 0.0f
                               Sprite = label.LabelSprite
@@ -193,36 +193,38 @@ module DispatchersModule =
             | None -> DefaultEntitySize
             | Some size -> size
 
+        override this.IsTransformRelative (_, _) =
+            false
+
     type TextBoxDispatcher () =
         inherit Entity2dDispatcher ()
             
         override this.Init (textBox, dispatcherContainer) =
             let textBox' = base.Init (textBox, dispatcherContainer)
             textBox'
-                .SetIsTransformRelative(false)
                 .SetBoxSprite({ SpriteAssetName = Lun.make "Image4"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetText(String.Empty)
                 .SetTextFont({ FontAssetName = Lun.make "Font"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetTextOffset(Vector2.Zero)
                 .SetTextColor(Vector4.One)
 
-        override this.GetRenderDescriptors (view, textBox, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, textBox, world) =
             if not textBox.Visible then []
             else
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = textBox.Position
+                            { Position = textBox.Position * viewAbsolute
                               Size = textBox.Size
                               Rotation = 0.0f
                               Sprite = textBox.BoxSprite
                               Color = Vector4.One }
                           Depth = textBox.Depth }
-                    LayerableDescriptor <|
+                 LayerableDescriptor <|
                     LayeredTextDescriptor
                         { Descriptor =
                             { Text = textBox.Text
-                              Position = textBox.Position + textBox.TextOffset
+                              Position = (textBox.Position + textBox.TextOffset) * viewAbsolute
                               Size = textBox.Size - textBox.TextOffset
                               Font = textBox.TextFont
                               Color = textBox.TextColor }
@@ -234,6 +236,9 @@ module DispatchersModule =
             | None -> DefaultEntitySize
             | Some size -> size
 
+        override this.IsTransformRelative (_, _) =
+            false
+
     type ToggleDispatcher () =
         inherit Entity2dDispatcher ()
 
@@ -241,7 +246,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
-                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world.Camera
+                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world
                 if toggle.Enabled && toggle.Visible then
                     if isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle' = toggle.SetIsPressed true
@@ -255,7 +260,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
-                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world.Camera
+                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle' = toggle.SetIsPressed false
                     if isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
@@ -275,7 +280,6 @@ module DispatchersModule =
         override this.Init (toggle, dispatcherContainer) =
             let toggle' = base.Init (toggle, dispatcherContainer)
             toggle'
-                .SetIsTransformRelative(false)
                 .SetIsOn(false)
                 .SetIsPressed(false)
                 .SetOffSprite({ SpriteAssetName = Lun.make "Image"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -294,13 +298,13 @@ module DispatchersModule =
                 unsubscribe DownMouseLeftEvent address |>
                 unsubscribe UpMouseLeftEvent address
 
-        override this.GetRenderDescriptors (view, toggle, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, toggle, world) =
             if not toggle.Visible then []
             else
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = toggle.Position
+                            { Position = toggle.Position * viewAbsolute
                               Size = toggle.Size
                               Rotation = 0.0f
                               Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
@@ -313,6 +317,9 @@ module DispatchersModule =
             | None -> DefaultEntitySize
             | Some size -> size
 
+        override this.IsTransformRelative (_, _) =
+            false
+
     type FeelerDispatcher () =
         inherit Entity2dDispatcher ()
 
@@ -320,7 +327,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
                 let feeler = get world <| worldEntityLens subscriber
-                let mousePositionFeeler = Entity.mouseToEntity mousePosition feeler world.Camera
+                let mousePositionFeeler = Entity.mouseToEntity mousePosition feeler world
                 if feeler.Enabled && feeler.Visible then
                     if isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler' = feeler.SetIsTouched true
@@ -345,9 +352,7 @@ module DispatchersModule =
         
         override this.Init (feeler, dispatcherContainer) =
             let feeler' = base.Init (feeler, dispatcherContainer)
-            feeler'
-                .SetIsTransformRelative(false)
-                .SetIsTouched(false)
+            feeler'.SetIsTouched(false)
 
         override this.Register (address, feeler, world) =
             let world' =
@@ -364,6 +369,9 @@ module DispatchersModule =
         override this.GetQuickSize (feeler, world) =
             Vector2 64.0f
 
+        override this.IsTransformRelative (_, _) =
+            false
+
     type FillBarDispatcher () =
         inherit Entity2dDispatcher ()
 
@@ -377,20 +385,19 @@ module DispatchersModule =
         override this.Init (fillBar, dispatcherContainer) =
             let fillBar' = base.Init (fillBar, dispatcherContainer)
             fillBar'
-                .SetIsTransformRelative(false)
                 .SetFill(0.0f)
                 .SetFillInset(0.0f)
                 .SetFillSprite({ SpriteAssetName = Lun.make "Image9"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetBorderSprite({ SpriteAssetName = Lun.make "Image10"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override this.GetRenderDescriptors (view, fillBar, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, fillBar, world) =
             if not fillBar.Visible then []
             else
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = fillBarSpritePosition
+                            { Position = fillBarSpritePosition * viewAbsolute
                               Size = fillBarSpriteSize
                               Rotation = 0.0f
                               Sprite = fillBar.FillSprite
@@ -399,7 +406,7 @@ module DispatchersModule =
                     LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = fillBar.Position
+                            { Position = fillBar.Position * viewAbsolute
                               Size = fillBar.Size
                               Rotation = 0.0f
                               Sprite = fillBar.BorderSprite
@@ -411,6 +418,9 @@ module DispatchersModule =
             match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
+
+        override this.IsTransformRelative (_, _) =
+            false
 
     type BlockDispatcher () =
         inherit Entity2dDispatcher ()
@@ -443,7 +453,6 @@ module DispatchersModule =
         override this.Init (block, dispatcherContainer) =
             let block' = base.Init (block, dispatcherContainer)
             block'
-                .SetIsTransformRelative(true)
                 .SetPhysicsId(InvalidPhysicsId)
                 .SetDensity(NormalDensity)
                 .SetBodyType(BodyType.Dynamic)
@@ -472,16 +481,14 @@ module DispatchersModule =
                     .SetRotation(message.Rotation)
             set block' world <| worldEntityLens message.EntityAddress
             
-        override this.GetRenderDescriptors (view, block, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, block, world) =
             if not block.Visible then []
             else
-                let spritePosition = block.Position * view
-                let spriteSize = block.Size * Matrix3.getScaleMatrix view
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = spritePosition
-                              Size = spriteSize
+                            { Position = block.Position * viewRelative
+                              Size = block.Size * Matrix3.getScaleMatrix viewAbsolute
                               Rotation = block.Rotation
                               Sprite = block.ImageSprite
                               Color = Vector4.One }
@@ -525,7 +532,6 @@ module DispatchersModule =
         override this.Init (avatar, dispatcherContainer) =
             let avatar' = base.Init (avatar, dispatcherContainer)
             avatar'
-                .SetIsTransformRelative(true)
                 .SetPhysicsId(InvalidPhysicsId)
                 .SetDensity(NormalDensity)
                 .SetImageSprite({ SpriteAssetName = Lun.make "Image7"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -553,16 +559,14 @@ module DispatchersModule =
                     .SetRotation message.Rotation
             set avatar' world <| worldEntityLens message.EntityAddress
 
-        override this.GetRenderDescriptors (view, avatar, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, avatar, world) =
             if not avatar.Visible then []
             else
-                let spritePosition = avatar.Position * view
-                let spriteSize = avatar.Size * Matrix3.getScaleMatrix view
                 [LayerableDescriptor <|
                     LayeredSpriteDescriptor
                         { Descriptor =
-                            { Position = spritePosition
-                              Size = spriteSize
+                            { Position = avatar.Position * viewRelative
+                              Size = avatar.Size * Matrix3.getScaleMatrix viewAbsolute
                               Rotation = avatar.Rotation
                               Sprite = avatar.ImageSprite
                               Color = Vector4.One }
@@ -620,7 +624,6 @@ module DispatchersModule =
         override this.Init (tileMap, dispatcherContainer) =
             let tileMap' = base.Init (tileMap, dispatcherContainer)
             tileMap'
-                .SetIsTransformRelative(true)
                 .SetPhysicsIds([])
                 .SetDensity(NormalDensity)
                 .SetTileMapAsset({ TileMapAssetName = Lun.make "TileMap"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" })
@@ -641,7 +644,7 @@ module DispatchersModule =
             let (tileMap', world'') = registerTileMapPhysics address tileMap world'
             set tileMap' world'' <| worldEntityLens address
 
-        override this.GetRenderDescriptors (view, tileMap, world) =
+        override this.GetRenderDescriptors (viewAbsolute, viewRelative, tileMap, world) =
             if not tileMap.Visible then []
             else
                 let tileMapAsset = tileMap.TileMapAsset
@@ -649,7 +652,7 @@ module DispatchersModule =
                 | None -> []
                 | Some (_, sprites, map) ->
                     let layers = List.ofSeq map.Layers
-                    let viewScale = Matrix3.getScaleMatrix view
+                    let viewScale = Matrix3.getScaleMatrix viewAbsolute
                     let tileSourceSize = Vector2 (single map.TileWidth, single map.TileHeight)
                     let tileSize = tileSourceSize * viewScale
                     List.mapi
@@ -657,7 +660,7 @@ module DispatchersModule =
                             let layeredTileLayerDescriptor =
                                 LayeredTileLayerDescriptor
                                     { Descriptor =
-                                        { Position = tileMap.Position * view
+                                        { Position = tileMap.Position * viewRelative
                                           Size = Vector2.Zero
                                           Rotation = tileMap.Rotation
                                           MapSize = Vector2 (single map.Width, single map.Height)

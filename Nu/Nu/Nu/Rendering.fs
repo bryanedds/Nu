@@ -250,10 +250,10 @@ module Rendering =
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
-                    let mutable textureFormat = ref 0u
-                    let mutable textureAccess = ref 0
-                    let mutable textureSizeX = ref 0
-                    let mutable textureSizeY = ref 0
+                    let textureFormat = ref 0u
+                    let textureAccess = ref 0
+                    let textureSizeX = ref 0
+                    let textureSizeY = ref 0
                     ignore <| SDL.SDL_QueryTexture (texture, textureFormat, textureAccess, textureSizeX, textureSizeY)
                     let mutable sourceRect = SDL.SDL_Rect ()
                     sourceRect.x <- 0
@@ -261,8 +261,8 @@ module Rendering =
                     sourceRect.w <- !textureSizeX
                     sourceRect.h <- !textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int <| spriteDescriptor.Position.X + camera.EyeSize.X * 0.5f
-                    destRect.y <- int <| spriteDescriptor.Position.Y + camera.EyeSize.Y * 0.5f
+                    destRect.x <- int <| spriteDescriptor.Position.X
+                    destRect.y <- int <| spriteDescriptor.Position.Y
                     destRect.w <- int spriteDescriptor.Size.X
                     destRect.h <- int spriteDescriptor.Size.Y
                     let mutable rotationCenter = SDL.SDL_Point ()
@@ -316,8 +316,8 @@ module Rendering =
                             sourceRect.w <- int tileSourceSize.X
                             sourceRect.h <- int tileSourceSize.Y
                             let mutable destRect = SDL.SDL_Rect ()
-                            destRect.x <- int <| tilePosition.X + camera.EyeSize.X * 0.5f
-                            destRect.y <- int <| tilePosition.Y + camera.EyeSize.Y * 0.5f
+                            destRect.x <- int <| tilePosition.X
+                            destRect.y <- int <| tilePosition.Y
                             if renderer.IsPixelPerfect then
                                 destRect.w <- int <| tileSize.X
                                 destRect.h <- int <| tileSize.Y
@@ -368,10 +368,10 @@ module Rendering =
                     let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, textDescriptor.Text, color, uint32 textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
-                        let mutable textureFormat = ref 0u
-                        let mutable textureAccess = ref 0
-                        let mutable textureSizeX = ref 0
-                        let mutable textureSizeY = ref 0
+                        let textureFormat = ref 0u
+                        let textureAccess = ref 0
+                        let textureSizeX = ref 0
+                        let textureSizeY = ref 0
                         ignore <| SDL.SDL_QueryTexture (textTexture, textureFormat, textureAccess, textureSizeX, textureSizeY)
                         let mutable sourceRect = SDL.SDL_Rect ()
                         sourceRect.x <- 0
@@ -379,8 +379,8 @@ module Rendering =
                         sourceRect.w <- !textureSizeX
                         sourceRect.h <- !textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int <| textDescriptor.Position.X + camera.EyeSize.X * 0.5f
-                        destRect.y <- int <| textDescriptor.Position.Y + camera.EyeSize.Y * 0.5f
+                        destRect.x <- int <| textDescriptor.Position.X
+                        destRect.y <- int <| textDescriptor.Position.Y
                         destRect.w <- !textureSizeX
                         destRect.h <- !textureSizeY
                         if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)

@@ -204,8 +204,6 @@ module SimModule =
         member this.SetRotation (value : single) : Entity = this?Rotation <- value
         member this.Size with get () = this?Size () : Vector2
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
-        member this.IsTransformRelative with get () = this?IsTransformRelative () : bool
-        member this.SetIsTransformRelative (value : bool) : Entity = this?IsTransformRelative <- value
 
         (* xdispatches *)
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
@@ -214,8 +212,9 @@ module SimModule =
         member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, this, world)
         member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, this, world)
         member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, this, world)
-        member this.GetRenderDescriptors (view : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (view, this, world)
+        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, this, world)
         member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
+        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative (this, world)
 
     type Group with
         member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, this, entities, world)
