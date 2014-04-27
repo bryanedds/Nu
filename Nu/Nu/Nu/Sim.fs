@@ -214,7 +214,7 @@ module SimModule =
         member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, this, world)
         member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, this, world)
         member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, this, world)
-        member this.GetRenderDescriptors (view : Vector2, world : World) : RenderDescriptor list = this?GetRenderDescriptors (view, this, world)
+        member this.GetRenderDescriptors (view : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (view, this, world)
         member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
 
     type Group with

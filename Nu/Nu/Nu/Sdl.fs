@@ -26,6 +26,7 @@ module SdlModule =
           ViewW : int
           ViewH : int
           RendererFlags : SDL.SDL_RendererFlags
+          IsPixelPerfect : bool
           AudioChunkSize : int }
 
     type SdlDeps =
@@ -49,11 +50,12 @@ module Sdl =
         | MouseCenter -> byte SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> byte SDL.SDL_BUTTON_RIGHT
 
-    let makeSdlConfig viewConfig viewW viewH rendererFlags audioChunkSize =
+    let makeSdlConfig viewConfig viewW viewH rendererFlags isPixelPerfect audioChunkSize =
         { ViewConfig = viewConfig
           ViewW = viewW
           ViewH = viewH
           RendererFlags = rendererFlags
+          IsPixelPerfect = isPixelPerfect
           AudioChunkSize = audioChunkSize }
 
     let makeSdlDeps renderContext window config =
@@ -110,8 +112,8 @@ module Sdl =
         match ScreenClearing with
         | NoClear -> ()
         | ColorClear (r, g, b) ->
-            ignore (SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, r, g, b, 255uy))
-            ignore (SDL.SDL_RenderClear sdlDeps.RenderContext)
+            ignore <| SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, r, g, b, 255uy)
+            ignore <| SDL.SDL_RenderClear sdlDeps.RenderContext
         let world' = handleRender world
         SDL.SDL_RenderPresent sdlDeps.RenderContext
         world'
@@ -122,7 +124,7 @@ module Sdl =
     let rec runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
         if keepRunning then
             let (keepRunning', world') = advanceSdl handleEvent handleUpdate sdlDeps world
-            if not keepRunning' then ignore (handleExit world')
+            if not keepRunning' then ignore <| handleExit world'
             else
                 let world'' = renderSdl handleRender sdlDeps world'
                 let world'3 = playSdl handlePlay world''

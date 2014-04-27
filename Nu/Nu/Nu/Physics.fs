@@ -197,7 +197,7 @@ module Physics =
     let private destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
         let body = ref Unchecked.defaultof<Dynamics.Body>
         if  integrator.Bodies.TryGetValue (bodyDestroyMessage.PhysicsId, body) then
-            ignore (integrator.Bodies.Remove bodyDestroyMessage.PhysicsId)
+            ignore <| integrator.Bodies.Remove bodyDestroyMessage.PhysicsId
             integrator.PhysicsContext.RemoveBody !body
         else note <| "Could not remove non-existent body with PhysicsId = " + str bodyDestroyMessage.PhysicsId + "'."
 

@@ -44,7 +44,7 @@ module EntityModule =
         abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
         default this.HandleBodyTransformMessage (message, address, entity, world) = world
 
-        abstract member GetRenderDescriptors : Vector2 * Entity * World -> RenderDescriptor list
+        abstract member GetRenderDescriptors : Matrix3 * Entity * World -> RenderDescriptor list
         default this.GetRenderDescriptors (view, entity, world) = []
 
         abstract member GetQuickSize : Entity * World -> Vector2
@@ -109,18 +109,6 @@ module Entity =
     let entityIsTransformRelativeLens =
         { Get = fun (entity : Entity) -> entity.IsTransformRelative
           Set = fun value entity -> entity.SetIsTransformRelative value }
-
-    let getEntityTransformAbsolute (entity : Entity) =
-        { Transform.Position = entity.Position
-          Depth = entity.Depth
-          Size = entity.Size
-          Rotation = entity.Rotation }
-
-    let getEntityTransformRelative view (entity : Entity) =
-        { Transform.Position = entity.Position - view
-          Depth = entity.Depth
-          Size = entity.Size
-          Rotation = entity.Rotation }
 
     let private worldOptEntityFinder address world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
@@ -202,12 +190,28 @@ module Entity =
                     | Some entityMap -> { world with Entities = Map.add screenLun (Map.add groupLun (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
+    let getEntityTransformAbsolute (entity : Entity) =
+        { Transform.Position = entity.Position
+          Depth = entity.Depth
+          Size = entity.Size
+          Rotation = entity.Rotation }
+
+    let getEntityTransformRelative (view : Matrix3) (entity : Entity) =
+        let inverseView = Matrix3.getInverseViewMatrix view
+        { Transform.Position = entity.Position * inverseView
+          Depth = entity.Depth
+          Size = entity.Size * Matrix3.getScaleMatrix inverseView
+          Rotation = entity.Rotation }
+
     // TODO: turn into a lens
     let getEntityTransform optCamera (entity : Entity) =
         if entity.IsTransformRelative then
-            let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
+            let view =
+                match optCamera with
+                | None -> Matrix3.identity
+                | Some camera -> getViewF camera
             getEntityTransformRelative view entity
-        else getEntityTransformAbsolute entity 
+        else getEntityTransformAbsolute entity
 
     // TODO: turn into a lens
     let setEntityTransformAbsolute positionSnap rotationSnap transform (entity : Entity) =
@@ -219,14 +223,17 @@ module Entity =
             .SetRotation(transform'.Rotation)
 
     // TODO: turn into a lens
-    let setEntityTransformRelative (view : Vector2) positionSnap rotationSnap (transform : Transform) entity =
-        let transform' = { transform with Position = transform.Position + view }
+    let setEntityTransformRelative view positionSnap rotationSnap (transform : Transform) entity =
+        let transform' = { transform with Position = transform.Position * view; Size = transform.Size * Matrix3.getScaleMatrix view }
         setEntityTransformAbsolute positionSnap rotationSnap transform' entity
 
     // TODO: turn into a lens
     let setEntityTransform optCamera positionSnap rotationSnap transform dispatcherContainer (entity : Entity) =
         if entity.IsTransformRelative then
-            let view = match optCamera with None -> Vector2.Zero | Some camera -> getInverseViewF camera
+            let view =
+                match optCamera with
+                | None -> Matrix3.identity
+                | Some camera -> getViewF camera
             setEntityTransformRelative view positionSnap rotationSnap transform entity
         else setEntityTransformAbsolute positionSnap rotationSnap transform entity
 
@@ -235,9 +242,8 @@ module Entity =
         elif priority > priority2 then -1
         else 1
 
-    let getPickingPriority entity =
-        let transform = getEntityTransform None entity
-        transform.Depth
+    let getPickingPriority (entity : Entity) =
+        entity.Depth
 
     let makeTileMapData tileMapAsset world =
         match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with

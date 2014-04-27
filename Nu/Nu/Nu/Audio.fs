@@ -97,11 +97,11 @@ module Audio =
         assignTypeConverter<Song, SongTypeConverter> ()
 
     let private haltSound () =
-        ignore (SDL_mixer.Mix_HaltMusic ())
+        ignore <| SDL_mixer.Mix_HaltMusic ()
         let channelCount = ref 0
-        ignore (SDL_mixer.Mix_QuerySpec (ref 0, ref 0us, channelCount))
+        ignore <| SDL_mixer.Mix_QuerySpec (ref 0, ref 0us, channelCount)
         for i in [0 .. !channelCount - 1] do
-            ignore (SDL_mixer.Mix_HaltChannel i)
+            ignore <| SDL_mixer.Mix_HaltChannel i
 
     let private tryLoadAudioAsset2 audioContext (asset : Asset) =
         let extension = Path.GetExtension asset.FileName
@@ -150,7 +150,7 @@ module Audio =
         match optAudioAsset with
         | None -> debug <| "PlaySong failed due to unloadable assets for '" + str song + "'."
         | Some (WavAsset wavAsset) -> debug <| "Cannot play wav file as song '" + str song + "'."
-        | Some (OggAsset oggAsset) -> ignore (SDL_mixer.Mix_PlayMusic (oggAsset, -1))
+        | Some (OggAsset oggAsset) -> ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
         { audioPlayer' with OptCurrentSong = Some song }
 
     let private tryUpdateCurrentSong audioPlayer =
@@ -194,7 +194,7 @@ module Audio =
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
         match optAudioAsset with
         | None -> debug <| "PlaySound failed due to unloadable assets for '" + str sound + "'."
-        | Some (WavAsset wavAsset) -> ignore (SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0))
+        | Some (WavAsset wavAsset) -> ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
         | Some (OggAsset oggAsset) -> debug <| "Cannot play ogg file as sound '" + str sound + "'."
         audioPlayer'
 
@@ -202,18 +202,18 @@ module Audio =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             if  playSongValue.FadeOutCurrentSong &&
                 not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-                ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
+                ignore <| SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs
             { audioPlayer with OptNextSong = Some playSongValue.Song }
         else playSong playSongValue.Song audioPlayer
 
     let private handleFadeOutSong audioPlayer =
         if  SDL_mixer.Mix_PlayingMusic () = 1 &&
             not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-            ignore (SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs)
+            ignore <| SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs
         audioPlayer
 
     let private handleStopSong audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore (SDL_mixer.Mix_HaltMusic ())
+        if SDL_mixer.Mix_PlayingMusic () = 1 then ignore <| SDL_mixer.Mix_HaltMusic ()
         audioPlayer
 
     let private handleAudioMessage audioPlayer audioMessage =

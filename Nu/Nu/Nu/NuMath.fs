@@ -69,6 +69,120 @@ module NuMathModule =
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
+    /// A very shitty, poorly tested Matrix3 I hacked up when I realized OpenTK didn't have. Since I only use it for
+    /// 2D view manipulation with SDL, it doesn't have any convenient rotation features. Then there's the very hacky
+    /// getInverseViewMatrix function below...
+    type Matrix3 =
+        { M00 : single; M10 : single; M20 : single
+          M01 : single; M11 : single; M21 : single
+          M02 : single; M12 : single; M22 : single }
+
+        static member col0 m = Vector3 (m.M00, m.M01, m.M02)
+        static member col1 m = Vector3 (m.M10, m.M11, m.M12)
+        static member col2 m = Vector3 (m.M20, m.M21, m.M22)
+
+        static member row0 m = Vector3 (m.M00, m.M10, m.M20)
+        static member row1 m = Vector3 (m.M01, m.M11, m.M21)
+        static member row2 m = Vector3 (m.M02, m.M12, m.M22)
+
+        static member getTranslation m =
+            Vector2 (m.M02, m.M12)
+
+        static member setTranslation (t : Vector2) m =
+            { m with M02 = t.X; M12 = t.Y }
+
+        static member setScale s m =
+            { m with M00 = s; M11 = s }
+
+        static member translate (t : Vector2) m =
+            { m with M02 = m.M02 + t.X; M12 = m.M12 + t.Y }
+
+        static member scale s m =
+            { m with M00 = m.M00 * s; M11 = m.M11 * s }
+
+        static member identity =
+            { M00 = 1.0f; M10 = 0.0f; M20 = 0.0f
+              M01 = 0.0f; M11 = 1.0f; M21 = 0.0f
+              M02 = 0.0f; M12 = 0.0f; M22 = 1.0f }
+
+        static member make
+            m00 m10 m20
+            m01 m11 m21
+            m02 m12 m22 =
+            { M00 = m00; M10 = m10; M20 = m20
+              M01 = m01; M11 = m11; M21 = m21
+              M02 = m02; M12 = m12; M22 = m22 }
+
+        static member makeFromRows
+            (r0 : Vector3)
+            (r1 : Vector3)
+            (r2 : Vector3) =
+            Matrix3.make
+                r0.X r0.Y r0.Z
+                r1.X r1.Y r1.Z
+                r2.X r2.Y r2.Z
+
+        static member makeFromTranslation (t : Vector2) =
+            { Matrix3.identity with M02 = t.X; M12 = t.Y }
+
+        static member makeFromScale s =
+            Matrix3.identity |> Matrix3.scale s
+
+        static member makeFromTranslationAndScale t s =
+            Matrix3.makeFromTranslation t |> Matrix3.scale s
+
+        static member getTranslationMatrix m =
+            Matrix3.makeFromTranslation <| Vector2 (m.M02, m.M12)
+
+        static member getScaleMatrix m =
+            { Matrix3.identity with M00 = m.M00; M11 = m.M11; M22 = m.M22 }
+
+        static member getTranslationAndScaleMatrix m =
+            Matrix3.getScaleMatrix m |> Matrix3.setTranslation (Matrix3.getTranslation m)
+
+        static member private invertScale v =
+            Math.Abs (1.0f - v) + 1.0f // TODO - fix this
+
+        /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
+        /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
+        /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
+        static member getInverseViewMatrix m =
+            { m with
+                M02 = -m.M02; M12 = -m.M12
+                M00 = Matrix3.invertScale m.M00; M11 = Matrix3.invertScale m.M11; M22 = Matrix3.invertScale m.M22 }
+
+        static member getInverseMatrix m =
+            // borrows inversion functionality from Matrix4
+            // TODO: ensure this function actually works
+            let mutable m' = Matrix4.Identity
+            m'.M11 <- m.M00; m'.M21 <- m.M10; m'.M41 <- m.M02
+            m'.M12 <- m.M01; m'.M22 <- m.M11; m'.M42 <- m.M12
+            m'.Invert ()
+            { M00 = m'.M11; M10 = m'.M21; M20 = m'.M31
+              M01 = m'.M21; M11 = m'.M22; M21 = m'.M32
+              M02 = m'.M41; M12 = m'.M42; M22 = m'.M33 }
+
+        static member (*) (l : Matrix3, r : Matrix3) =
+            let m00 = Vector3.Dot (Matrix3.row0 l, Matrix3.col0 r)
+            let m10 = Vector3.Dot (Matrix3.row0 l, Matrix3.col1 r)
+            let m20 = Vector3.Dot (Matrix3.row0 l, Matrix3.col2 r)
+            let m01 = Vector3.Dot (Matrix3.row1 l, Matrix3.col0 r)
+            let m11 = Vector3.Dot (Matrix3.row1 l, Matrix3.col1 r)
+            let m21 = Vector3.Dot (Matrix3.row1 l, Matrix3.col2 r)
+            let m02 = Vector3.Dot (Matrix3.row2 l, Matrix3.col0 r)
+            let m12 = Vector3.Dot (Matrix3.row2 l, Matrix3.col1 r)
+            let m22 = Vector3.Dot (Matrix3.row2 l, Matrix3.col2 r)
+            Matrix3.make
+                m00 m10 m20
+                m01 m11 m21
+                m02 m12 m22
+
+        static member (*) (v : Vector2, m : Matrix3) =
+            let x = v.X * m.M00 + v.Y * m.M01 + m.M02
+            let y = v.X * m.M10 + v.Y * m.M11 + m.M12
+            let z = v.X * m.M20 + v.Y * m.M21 + m.M22
+            Vector2 (x / z, y / z)
+
 module NuMath =
 
     let initMathConverters () =
