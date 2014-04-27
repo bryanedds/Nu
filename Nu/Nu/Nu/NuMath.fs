@@ -69,9 +69,9 @@ module NuMathModule =
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
-    /// A very shitty, poorly tested Matrix3 I hacked up when I realized OpenTK didn't have. Since I only use it for
-    /// 2D view manipulation with SDL, it doesn't have any convenient rotation features. Then there's the very hacky
-    /// getInverseViewMatrix function below...
+    /// A very shitty, poorly tested Matrix3 I hacked up when I realized OpenTK didn't have one. Since I only use it
+    /// for 2D view manipulation with SDL, it doesn't have any convenient rotation features. Then there's the very
+    /// hacky getInverseViewMatrix function below...
     type Matrix3 =
         { M00 : single; M10 : single; M20 : single
           M01 : single; M11 : single; M21 : single
@@ -141,7 +141,7 @@ module NuMathModule =
             Matrix3.getScaleMatrix m |> Matrix3.setTranslation (Matrix3.getTranslation m)
 
         static member private invertScale v =
-            Math.Abs (1.0f - v) + 1.0f // TODO - fix this
+            -v + 2.0f
 
         /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
         /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
