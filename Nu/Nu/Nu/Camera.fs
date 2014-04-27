@@ -21,12 +21,10 @@ module Camera =
     /// NuMath.fs, using this function to decide on sprite coordinates is very, very bad for rendering.
     let getViewF camera =
         let translation = camera.EyePosition - camera.EyeSize * 0.5f
-        let scale = -camera.EyeZoom + 2.0f
-        Matrix3.makeFromTranslationAndScale translation scale
+        Matrix3.makeFromTranslationAndScale translation camera.EyeZoom
 
     /// The view of the camera with translation sliced on integers. Good for rendering.
     let getViewI camera =
         let translation = camera.EyePosition - camera.EyeSize * 0.5f
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
-        let scale = -camera.EyeZoom + 2.0f
-        Matrix3.makeFromTranslationAndScale translationI scale
+        Matrix3.makeFromTranslationAndScale translationI camera.EyeZoom

@@ -210,8 +210,8 @@ module Program =
                 | None -> (handleMessage message, true, world)
                 | Some entity ->
                     let entityAddress = addrstr EditorGroupAddress entity.Name
-                    let entityTransform = getEntityTransform (Some world.Camera) entity
-                    let dragState = DragEntityPosition (entityTransform.Position + world.MouseState.MousePosition, world.MouseState.MousePosition, entityAddress)
+                    let entityPosition = getEntityPositionFromView world.Camera entity
+                    let dragState = DragEntityPosition (entityPosition + world.MouseState.MousePosition, world.MouseState.MousePosition, entityAddress)
                     let editorState_ = world.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
                     let world_ = { world with ExtData = editorState_ }
@@ -241,11 +241,10 @@ module Program =
         match editorState_.DragEntityState with
         | DragEntityNone -> world
         | DragEntityPosition (pickOffset, origMousePosition, address) ->
+            let (positionSnap, _) = getSnaps form
             let entity_ = get world <| worldEntityLens address
-            let transform_ = getEntityTransform (Some world.Camera) entity_
-            let transform_ = { transform_ with Position = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition) }
-            let (positionSnap, rotationSnap) = getSnaps form
-            let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap transform_ world entity_
+            let entityPosition = (pickOffset - origMousePosition) + (world.MouseState.MousePosition - origMousePosition)
+            let entity_ = setEntityPositionFromView world.Camera positionSnap entityPosition world entity_
             let world_ = set entity_ world <| worldEntityLens address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, origMousePosition, address) }
             let world_ = { world_ with ExtData = editorState_ }
@@ -300,13 +299,14 @@ module Program =
 
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let world = !refWorld
-        let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-        let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
         let entityXTypeName = Lun.make form.createEntityComboBox.Text
         try let entity_ = makeDefaultEntity entityXTypeName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
-                let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform world_ entity_
+                let entityTransform = { Transform.Position = Vector2.Zero; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
+                let entity_ = setEntityTransform positionSnap rotationSnap entityTransform entity_
+                let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
+                let entity_ = setEntityPositionFromView world.Camera positionSnap entityPosition world_ entity_
                 let entityAddress = addrstr EditorGroupAddress entity_.Name
                 let world_ = addEntity entityAddress entity_ world_
                 let world_ = pushPastWorld world world_
@@ -427,15 +427,15 @@ module Program =
         let editorState = (!refWorld).ExtData :?> EditorState
         match !editorState.Clipboard with
         | None -> ()
-        | Some entity_ ->
+        | Some entity ->
             let changer = (fun world ->
-                let id = getNuId ()
-                let entity_ = { entity_ with Id = id; Name = str id }
-                let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
-                let entityTransform_ = getEntityTransform (Some world.Camera) entity_
-                let entityTransform_ = { entityTransform_ with Position = entityPosition; Depth = getCreationDepth form }
                 let (positionSnap, rotationSnap) = getSnaps form
-                let entity_ = setEntityTransform (Some world.Camera) positionSnap rotationSnap entityTransform_ world entity_
+                let id = getNuId ()
+                let entity_ = { entity with Id = id; Name = str id }
+                let entityPosition = if atMouse then world.MouseState.MousePosition else world.Camera.EyeSize * 0.5f
+                let entityTransform = { getEntityTransform entity with Depth = getCreationDepth form }
+                let entity_ = setEntityTransform positionSnap rotationSnap entityTransform entity_
+                let entity_ = setEntityPositionFromView world.Camera positionSnap entityPosition world entity_
                 let address = addrstr EditorGroupAddress entity_.Name
                 let world_ = pushPastWorld world world
                 addEntity address entity_ world_)
@@ -450,9 +450,7 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             let changer = (fun world ->
                 let entity_ = get world <| worldEntityLens entityTds.Address
-                let entityQuickSize = entity_?GetQuickSize (entity_, world)
-                let entityTransform = { getEntityTransform None entity_ with Size = entityQuickSize }
-                let entity_ = setEntityTransform None 0 0 entityTransform world entity_
+                let entity_ = entity_.SetSize <| entity_?GetQuickSize (entity_, world)
                 let world_ = set entity_ world <| worldEntityLens entityTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()
