@@ -62,13 +62,13 @@
     <Compile Include="NuConstants.fs" />
     <Compile Include="NuMath.fs" />
     <Compile Include="Voords.fs" />
+    <Compile Include="Camera.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Rendering.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />
-    <Compile Include="Camera.fs" />
     <Compile Include="DomainModel.fs" />
     <Compile Include="Sdl.fs" />
     <Compile Include="Sim.fs" />

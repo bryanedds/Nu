@@ -51,8 +51,8 @@ module World =
         { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
     let private getGroupRenderDescriptors camera dispatcherContainer entities =
-        let view = getViewI camera |> Matrix3.getInverseViewMatrix
         let entityValues = Map.toValueSeq entities
+        let view = getViewI camera |> Matrix3.getInverseViewMatrix
         Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (view, dispatcherContainer)) entityValues
 
     let private getTransitionRenderDescriptors camera dispatcherContainer transition =
@@ -62,7 +62,7 @@ module World =
             let progress = single transition.Ticks / single transition.Lifetime
             let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
             let color = Vector4 (Vector3.One, alpha)
-            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = Vector2.Zero; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
+            [LayerableDescriptor (LayeredSpriteDescriptor { Descriptor = { Position = -camera.EyeSize * 0.5f; Size = camera.EyeSize; Rotation = 0.0f; Sprite = dissolveSprite; Color = color }; Depth = Single.MaxValue })]
 
     let private getRenderDescriptors world =
         match get world worldOptSelectedScreenAddressLens with
@@ -86,7 +86,7 @@ module World =
         let renderMessages = world.RenderMessages
         let renderDescriptors = getRenderDescriptors world
         let renderer = world.Renderer
-        let renderer' = Nu.Rendering.render renderMessages renderDescriptors renderer
+        let renderer' = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
         { world with RenderMessages = []; Renderer = renderer' }
 
     let private handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
@@ -159,8 +159,9 @@ module World =
         let splashGroup = makeDefaultGroup ()
         let splashLabel = makeDefaultEntity (Lun.make typeof<LabelDispatcher>.Name) (Some "SplashLabel") seal world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
-        let splashLabel'' = splashLabel'.SetLabelSprite (sprite : Sprite)
-        let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel''])] world
+        let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
+        let splashLabel''' = splashLabel''.SetLabelSprite (sprite : Sprite)
+        let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel'''])] world
         let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
@@ -193,12 +194,13 @@ module World =
                       Lun.make typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                       Lun.make typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                       userGameDispatcherName, userGameDispatcher|]
+            
             let world =
                 { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some userGameDispatcherName; XFields = Map.empty; IsSealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
-                  Camera = { EyePosition = Vector2.Zero; EyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH); EyeZoom = 1.0f }
+                  Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize; EyeZoom = 1.0f }
                   Subscriptions = Map.empty
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = makeAudioPlayer ()

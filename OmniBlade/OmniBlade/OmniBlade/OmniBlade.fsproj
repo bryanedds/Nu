@@ -148,9 +148,6 @@
     <None Include="Assets\OmniBlade\Battle\Placeholder\AllyDamage.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\OmniBlade\Groups\Document.nugroup">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Assets\OmniBlade\Groups\Field.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

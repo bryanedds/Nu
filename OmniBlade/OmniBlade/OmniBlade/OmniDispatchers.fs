@@ -13,7 +13,7 @@ module OmniDispatchersModule =
         let adjustFieldCamera (groupAddress : Address) world =
             let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
             let avatar = get world <| Entity.worldEntityLens avatarAddress
-            let camera = { world.Camera with EyePosition = avatar.Position + avatar.Size * 0.5f }
+            let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
 
         let adjustFieldCameraHandler _ _ groupAddress message world =
@@ -26,9 +26,9 @@ module OmniDispatchersModule =
                 let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
                 let avatar = get world <| Entity.worldEntityLens avatarAddress
                 let view = Camera.getViewF world.Camera
-                let mousePositionWorld = world.MouseState.MousePosition * view
+                let mousePositionAvatar = Entity.mouseToEntity world.MouseState.MousePosition avatar world.Camera
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
-                let impulseVector = (mousePositionWorld - avatarCenter) * 5.0f
+                let impulseVector = (mousePositionAvatar - avatarCenter) * 5.0f
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
                 let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
                 (message, true, world')
