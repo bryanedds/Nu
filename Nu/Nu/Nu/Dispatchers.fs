@@ -95,8 +95,9 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
+                let mousePositionButton = Entity.mouseToEntity mousePosition button world.Camera
                 if button.Enabled && button.Visible then
-                    if isInBox3 mousePosition button.Position button.Size then
+                    if isInBox3 mousePositionButton button.Position button.Size then
                         let button' = button.SetIsDown true
                         let world' = set button' world <| worldEntityLens subscriber
                         let (keepRunning, world'') = publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world'
@@ -109,12 +110,13 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
+                let mousePositionButton = Entity.mouseToEntity mousePosition button world.Camera
                 if button.Enabled && button.Visible then
                     let (keepRunning, world') =
                         let button' = button.SetIsDown false
                         let world'' = set button' world <| worldEntityLens subscriber
                         publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world''
-                    if keepRunning && isInBox3 mousePosition button.Position button.Size && button.IsDown then
+                    if keepRunning && isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
                         let (keepRunning', world'') = publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
@@ -239,8 +241,9 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
+                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world.Camera
                 if toggle.Enabled && toggle.Visible then
-                    if isInBox3 mousePosition toggle.Position toggle.Size then
+                    if isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle' = toggle.SetIsPressed true
                         let world' = set toggle' world <| worldEntityLens subscriber
                         (handleMessage message, true, world')
@@ -252,9 +255,10 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
+                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world.Camera
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle' = toggle.SetIsPressed false
-                    if isInBox3 mousePosition toggle'.Position toggle'.Size then
+                    if isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
                         let toggle'' = toggle'.SetIsOn <| not toggle'.IsOn
                         let world' = set toggle'' world <| worldEntityLens subscriber
                         let messageType = if toggle''.IsOn then "On" else "Off"
@@ -316,8 +320,9 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
                 let feeler = get world <| worldEntityLens subscriber
+                let mousePositionFeeler = Entity.mouseToEntity mousePosition feeler world.Camera
                 if feeler.Enabled && feeler.Visible then
-                    if isInBox3 mousePosition feeler.Position feeler.Size then
+                    if isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler' = feeler.SetIsTouched true
                         let world' = set feeler' world <| worldEntityLens subscriber
                         let (keepRunning, world'') = publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world'

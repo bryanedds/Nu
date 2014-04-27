@@ -236,7 +236,7 @@ module Rendering =
         List.fold handleRenderMessage renderer (List.rev renderMessages)
 
     // TODO: factor out with extraction when available from the IDE
-    let private renderLayerableDescriptor renderer layerableDescriptor =
+    let private renderLayerableDescriptor camera renderer layerableDescriptor =
         match layerableDescriptor with
         | LayeredSpriteDescriptor lsd ->
             let spriteDescriptor = lsd.Descriptor
@@ -261,8 +261,8 @@ module Rendering =
                     sourceRect.w <- !textureSizeX
                     sourceRect.h <- !textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int spriteDescriptor.Position.X
-                    destRect.y <- int spriteDescriptor.Position.Y
+                    destRect.x <- int <| spriteDescriptor.Position.X + camera.EyeSize.X * 0.5f
+                    destRect.y <- int <| spriteDescriptor.Position.Y + camera.EyeSize.Y * 0.5f
                     destRect.w <- int spriteDescriptor.Size.X
                     destRect.h <- int spriteDescriptor.Size.Y
                     let mutable rotationCenter = SDL.SDL_Point ()
@@ -316,8 +316,8 @@ module Rendering =
                             sourceRect.w <- int tileSourceSize.X
                             sourceRect.h <- int tileSourceSize.Y
                             let mutable destRect = SDL.SDL_Rect ()
-                            destRect.x <- int tilePosition.X
-                            destRect.y <- int tilePosition.Y
+                            destRect.x <- int <| tilePosition.X + camera.EyeSize.X * 0.5f
+                            destRect.y <- int <| tilePosition.Y + camera.EyeSize.Y * 0.5f
                             if renderer.IsPixelPerfect then
                                 destRect.w <- int <| tileSize.X
                                 destRect.h <- int <| tileSize.Y
@@ -355,8 +355,6 @@ module Rendering =
                 match renderAsset with
                 | FontAsset (font, _) ->
                     let mutable color = SDL.SDL_Color ()
-                    let textPositionX = int textDescriptor.Position.X
-                    let textPositionY = int textDescriptor.Position.Y
                     let textSizeX = int textDescriptor.Size.X
                     let textSizeY = int textDescriptor.Size.Y
                     color.r <- byte <| textDescriptor.Color.X * 255.0f
@@ -381,8 +379,8 @@ module Rendering =
                         sourceRect.w <- !textureSizeX
                         sourceRect.h <- !textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- textPositionX
-                        destRect.y <- textPositionY
+                        destRect.x <- int <| textDescriptor.Position.X + camera.EyeSize.X * 0.5f
+                        destRect.y <- int <| textDescriptor.Position.Y + camera.EyeSize.Y * 0.5f
                         destRect.w <- !textureSizeX
                         destRect.h <- !textureSizeY
                         if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
@@ -393,7 +391,7 @@ module Rendering =
                     trace "Cannot render text with a non-font asset."
                     renderer'
 
-    let private renderDescriptors renderDescriptorsValue renderer =
+    let private renderDescriptors camera renderDescriptorsValue renderer =
         let renderContext = renderer.RenderContext
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
@@ -402,7 +400,7 @@ module Rendering =
             let layerableDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor) renderDescriptorsValue
             //let (spriteDescriptors, renderDescriptorsValue_) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptorsValue
             let sortedDescriptors = Seq.sortBy getLayerableDepth layerableDescriptors
-            Seq.fold renderLayerableDescriptor renderer sortedDescriptors
+            Seq.fold (renderLayerableDescriptor camera) renderer sortedDescriptors
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
@@ -413,9 +411,9 @@ module Rendering =
         for renderAsset in renderAssets do freeRenderAsset renderAsset
         { renderer with RenderAssetMap = Map.empty }
 
-    let render (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
+    let render camera (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
         let renderer' = handleRenderMessages renderMessages renderer
-        renderDescriptors renderDescriptorsValue renderer'
+        renderDescriptors camera renderDescriptorsValue renderer'
 
     let makeRenderer renderContext isPixelPerfect =
         { RenderContext = renderContext

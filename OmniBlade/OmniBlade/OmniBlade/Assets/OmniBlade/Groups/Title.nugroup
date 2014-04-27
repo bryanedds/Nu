@@ -12,7 +12,7 @@
         <UpSprite type="Nu.RenderingModule+Sprite">ExitButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">376;448</Position>
+        <Position type="OpenTK.Vector2">-104;176</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
@@ -28,7 +28,7 @@
         <UpSprite type="Nu.RenderingModule+Sprite">LoadGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">376;304</Position>
+        <Position type="OpenTK.Vector2">-104;32</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">LoadGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
@@ -44,7 +44,7 @@
         <UpSprite type="Nu.RenderingModule+Sprite">CreditsButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">376;376</Position>
+        <Position type="OpenTK.Vector2">-104;104</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">CreditsButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
@@ -60,7 +60,7 @@
         <UpSprite type="Nu.RenderingModule+Sprite">NewGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">376;232</Position>
+        <Position type="OpenTK.Vector2">-104;-40</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">NewGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
@@ -76,7 +76,7 @@
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <Text type="System.String">OmniBlade</Text>
         <Size type="OpenTK.Vector2">640;128</Size>
-        <Position type="OpenTK.Vector2">176;64</Position>
+        <Position type="OpenTK.Vector2">-304;-208</Position>
         <BoxSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
         <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <Rotation type="System.Single">0</Rotation>
@@ -92,7 +92,7 @@
         <IsTransformRelative type="System.Boolean">False</IsTransformRelative>
         <Depth type="System.Single">-1</Depth>
         <Size type="OpenTK.Vector2">960;544</Size>
-        <Position type="OpenTK.Vector2">0;0</Position>
+        <Position type="OpenTK.Vector2">-480;-272</Position>
         <Rotation type="System.Single">0</Rotation>
       </Xtension>
     </Entity>
