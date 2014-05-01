@@ -124,21 +124,7 @@ let doRender renderDescriptors renderer =
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
-                    (*let mutable sourceRect = SDL.SDL_Rect ()
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- int spriteDescriptor.Size.X
-                    sourceRect.h <- int spriteDescriptor.Size.Y
-                    let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int spriteDescriptor.Position.X
-                    destRect.y <- int spriteDescriptor.Position.Y
-                    destRect.w <- int spriteDescriptor.Size.X
-                    destRect.h <- int spriteDescriptor.Size.Y
-                    let renderResult = SDL.SDL_RenderCopy (renderContext, texture, ref sourceRect, ref destRect)
-                    match renderResult with
-                    | 0 -> ()
-                    | _ -> debug ("Rendering error - could not render texture for sprite '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")*)
-                    (*let top = spriteDescriptor.Position.Y
+                    let top = spriteDescriptor.Position.Y
                     let bottom = spriteDescriptor.Position.Y + spriteDescriptor.Size.Y
                     let left = spriteDescriptor.Position.X
                     let right = spriteDescriptor.Position.X + spriteDescriptor.Size.X
@@ -158,8 +144,7 @@ let doRender renderDescriptors renderer =
                     GL.TexCoord2 (0, 1)
                     GL.Vertex3 (top, left, 0.0f)
                     // fin
-                    GL.End ()*)
-                    ()
+                    GL.End ()
                 // | _ -> trace "Cannot sprite render with a non-texture asset."
 
 let render (renderMessages : RenderMessage rQueue) renderDescriptors renderer =
