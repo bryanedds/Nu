@@ -18,7 +18,7 @@ let inline singleton elem = [elem]
 let inline flipCons tail head = head :: tail
 
 /// Index into a list.
-let inline at index (list : 'a list)=
+let inline at index (list : 'a list) =
     list.[index]
 
 let rec private subpartitionPlus fnOptU list left right =

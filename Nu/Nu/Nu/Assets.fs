@@ -7,9 +7,6 @@ open Prime
 [<AutoOpen>]
 module AssetsModule =
 
-    (* WISDOM: require all abstract types, like Person, to be marked with a version number during
-    serialization. Elide versioning, however, on concrete types like Vector2. *)
-
     /// Describes a game asset, such as a texture, sound, or model in detail.
     /// A serializable value type.
     type [<StructuralEquality; NoComparison>] Asset =

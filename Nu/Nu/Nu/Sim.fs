@@ -196,7 +196,7 @@ module SimModule =
 
     type Entity with
 
-        (* xfields *)
+        (* XFields *)
         member this.Position with get () = this?Position () : Vector2
         member this.SetPosition (value : Vector2) : Entity = this?Position <- value
         member this.Depth with get () = this?Depth () : single
@@ -206,7 +206,7 @@ module SimModule =
         member this.Size with get () = this?Size () : Vector2
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
 
-        (* xdispatches *)
+        (* XDispatches *)
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
         member this.Register (address : Address, world : World) : Entity * World = this?Register (address, this, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)

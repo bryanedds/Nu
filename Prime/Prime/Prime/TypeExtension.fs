@@ -8,7 +8,7 @@ open System.Reflection
 [<AutoOpen>]
 module TypeExtension =
 
-    /// Type type extension.
+    /// Type extension for Type.
     type Type with
 
         static member GetPropertyByPreference (preference, properties) =
