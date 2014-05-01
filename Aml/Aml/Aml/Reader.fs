@@ -289,7 +289,7 @@ module Reader =
     /// HACK: readArg is arbitrarily relying on receiving expression to discriminate on what type of
     /// arg was parsed, so we hack by using a Keyword here to follow along...
     let readArgAsAbstracting =
-        betweenTriangleForms <| readName .>>
+        betweenTriangleForms readName .>>
         skipWhitespaces |>>
         fun name -> Violation (makeViolationRecord true name (makeLiteralStringValue EmptyStr) UnitValue None)
 

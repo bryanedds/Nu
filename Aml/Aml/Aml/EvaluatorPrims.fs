@@ -339,191 +339,193 @@ module EvaluatorPrims =
     let tryAppendAffirmationFunction env name doc expr optPositions =
         tryAppendDeclarationFunction env name [] 0 expr None doc UnitValue UnitValue true optPositions
 
-    (* Constraint Validation *)
+    [<AutoOpen>]
+    module ContraintValidationModule =
 
-    type ConstraintValidity =
-        | ValidConstraint
-        | WrongArgCount
-        | NonexistentTarget
+        type ConstraintValidity =
+            | ValidConstraint
+            | WrongArgCount
+            | NonexistentTarget
 
-    type ConstraintsValidity =
-        | ValidConstraints
-        | TooManyConstraints
-        | InvalidConstraints of ConstraintValidity
+        type ConstraintsValidity =
+            | ValidConstraints
+            | TooManyConstraints
+            | InvalidConstraints of ConstraintValidity
 
-    let getConstraintArgs constraints =
-        let cargss = List.map (fun constr -> constr.ConstrArgs) constraints
-        let cargsDup = List.concat cargss
-        List.distinct cargsDup
+        let getConstraintArgs constraints =
+            let cargss = List.map (fun constr -> constr.ConstrArgs) constraints
+            let cargsDup = List.concat cargss
+            List.distinct cargsDup
 
-    let getConstraintValidity env (constr : Constraint) =
-        let constrNameStr = constr.ConstrName.LunStr
-        let typeName = Lun.make (TypePrefixStr + constrNameStr)
-        let typeTarget = tryFindTypeEntry env typeName
-        match typeTarget with
-        | None ->
-            let protocolName = Lun.make (ProtocolPrefixStr + constrNameStr)
-            let protocolTarget = tryFindProtocolEntry env protocolName
-            match protocolTarget with
-            | Some (ProtocolEntry (parg, _, _, _)) -> if List.hasExactly 1 constr.ConstrArgs then ValidConstraint else WrongArgCount
-            | _ -> NonexistentTarget
-        | Some _ ->
-            match constr.ConstrArgs with
-            | [_] -> ValidConstraint
-            | _ -> WrongArgCount
+        let getConstraintValidity env (constr : Constraint) =
+            let constrNameStr = constr.ConstrName.LunStr
+            let typeName = Lun.make (TypePrefixStr + constrNameStr)
+            let typeTarget = tryFindTypeEntry env typeName
+            match typeTarget with
+            | None ->
+                let protocolName = Lun.make (ProtocolPrefixStr + constrNameStr)
+                let protocolTarget = tryFindProtocolEntry env protocolName
+                match protocolTarget with
+                | Some (ProtocolEntry (parg, _, _, _)) -> if List.hasExactly 1 constr.ConstrArgs then ValidConstraint else WrongArgCount
+                | _ -> NonexistentTarget
+            | Some _ ->
+                match constr.ConstrArgs with
+                | [_] -> ValidConstraint
+                | _ -> WrongArgCount
 
-    let getConstraintsValidity env pargs (optConstraints : Constraint list option) =
-        match optConstraints with
-        | None -> ValidConstraints
-        | Some constraints ->
-            let cargs = getConstraintArgs constraints
-            if List.isSubset pargs cargs then
-                let constraintValidities = List.map (getConstraintValidity env) constraints
-                let optConstraintInvalidity = List.tryFind (fun validity -> validity <> ValidConstraint) constraintValidities
-                match optConstraintInvalidity with
-                | None -> ValidConstraints
-                | Some (_ as invalidity) -> InvalidConstraints invalidity
-            else TooManyConstraints
+        let getConstraintsValidity env pargs (optConstraints : Constraint list option) =
+            match optConstraints with
+            | None -> ValidConstraints
+            | Some constraints ->
+                let cargs = getConstraintArgs constraints
+                if List.isSubset pargs cargs then
+                    let constraintValidities = List.map (getConstraintValidity env) constraints
+                    let optConstraintInvalidity = List.tryFind (fun validity -> validity <> ValidConstraint) constraintValidities
+                    match optConstraintInvalidity with
+                    | None -> ValidConstraints
+                    | Some (_ as invalidity) -> InvalidConstraints invalidity
+                else TooManyConstraints
 
-    let getOptConstraintsViolation env pargs (optConstraints : Constraint list option) =
-        let constraintsValidity = getConstraintsValidity env pargs optConstraints
-        match constraintsValidity with
-        | ValidConstraints -> None
-        | TooManyConstraints -> Some (makeViolationWithPositions env ":v/eval/tooManyConstraints" "Too many constraints for target.")
-        | InvalidConstraints constraintInvalidity ->
-            match constraintInvalidity with
-            | ValidConstraint -> failwith "Unexpected match failure in 'Aml.Evaluator.evalProtocol'."
-            | WrongArgCount -> Some (makeViolationWithPositions env ":v/eval/invalidConstraintArguments" "Wrong number of arguments for target's constraints.")
-            | NonexistentTarget -> Some (makeViolationWithPositions env ":v/eval/invalidConstraintTarget" "Constraint target does not exist.")
+        let getOptConstraintsViolation env pargs (optConstraints : Constraint list option) =
+            let constraintsValidity = getConstraintsValidity env pargs optConstraints
+            match constraintsValidity with
+            | ValidConstraints -> None
+            | TooManyConstraints -> Some (makeViolationWithPositions env ":v/eval/tooManyConstraints" "Too many constraints for target.")
+            | InvalidConstraints constraintInvalidity ->
+                match constraintInvalidity with
+                | ValidConstraint -> failwith "Unexpected match failure in 'Aml.Evaluator.evalProtocol'."
+                | WrongArgCount -> Some (makeViolationWithPositions env ":v/eval/invalidConstraintArguments" "Wrong number of arguments for target's constraints.")
+                | NonexistentTarget -> Some (makeViolationWithPositions env ":v/eval/invalidConstraintTarget" "Constraint target does not exist.")
 
-    (* Signature Validation *)
+    [<AutoOpen>]
+    module SignatureValidationModule =
 
-    type SignatureValidity =
-        | ValidSignature
-        | NoSignatureArgs
-        | InvalidSignatureArgs
+        type SignatureValidity =
+            | ValidSignature
+            | NoSignatureArgs
+            | InvalidSignatureArgs
 
-    type SignaturesValidity =
-        | ValidSignatures
-        | InvalidSignatures of SignatureValidity
+        type SignaturesValidity =
+            | ValidSignatures
+            | InvalidSignatures of SignatureValidity
 
-    let getSignatureValidity parg (signature : Signature) =
-        if signature.SigArgs.IsEmpty then NoSignatureArgs
-        else
-            let sargNames = List.map (fun sarg -> sarg.ArgName) signature.SigArgs
-            if not (List.contains parg sargNames) then InvalidSignatureArgs
-            else ValidSignature
+        let getSignatureValidity parg (signature : Signature) =
+            if signature.SigArgs.IsEmpty then NoSignatureArgs
+            else
+                let sargNames = List.map (fun sarg -> sarg.ArgName) signature.SigArgs
+                if not (List.contains parg sargNames) then InvalidSignatureArgs
+                else ValidSignature
 
-    let getSignaturesValidity parg (sigs : Signature list) =
-        let sigValidities = List.map (getSignatureValidity parg) sigs
-        let optSigInvalidity = List.tryFind (fun validity -> validity <> ValidSignature) sigValidities
-        match optSigInvalidity with
-        | None -> ValidSignatures
-        | Some (_ as invalidity) -> InvalidSignatures invalidity
+        let getSignaturesValidity parg (sigs : Signature list) =
+            let sigValidities = List.map (getSignatureValidity parg) sigs
+            let optSigInvalidity = List.tryFind (fun validity -> validity <> ValidSignature) sigValidities
+            match optSigInvalidity with
+            | None -> ValidSignatures
+            | Some (_ as invalidity) -> InvalidSignatures invalidity
 
-    let getSignaturesViolation env parg (sigs : Signature list) =
-        let sigsValidity = getSignaturesValidity parg sigs
-        match sigsValidity with
-        | ValidSignatures -> None
-        | InvalidSignatures sigInvalidity ->
-            match sigInvalidity with
-            | ValidSignature -> failwith "Unexpected match failure in 'Aml.Evaluator.evalProtocol'."
-            | NoSignatureArgs -> Some (makeViolationWithPositions env ":v/eval/missingProtocolSignatureArguments" "Protocol signature must have at least one argument.")
-            | InvalidSignatureArgs -> Some (makeViolationWithPositions env ":v/eval/invalidProtocolSignatureArguments" "A signature must use the protocol's argument.")
+        let getSignaturesViolation env parg (sigs : Signature list) =
+            let sigsValidity = getSignaturesValidity parg sigs
+            match sigsValidity with
+            | ValidSignatures -> None
+            | InvalidSignatures sigInvalidity ->
+                match sigInvalidity with
+                | ValidSignature -> failwith "Unexpected match failure in 'Aml.Evaluator.evalProtocol'."
+                | NoSignatureArgs -> Some (makeViolationWithPositions env ":v/eval/missingProtocolSignatureArguments" "Protocol signature must have at least one argument.")
+                | InvalidSignatureArgs -> Some (makeViolationWithPositions env ":v/eval/invalidProtocolSignatureArguments" "A signature must use the protocol's argument.")
 
-    (* Argument Unification *)
+        (* Argument Unification *)
 
-    type [<ReferenceEquality>] PartialUnifyResult =
-        { OptUnifiedArg : (Expr * Arg) option
-          RestArgs : Expr list
-          LargAdvances : int
-          LargShouldAdvance : bool }
+        type [<ReferenceEquality>] PartialUnifyResult =
+            { OptUnifiedArg : (Expr * Arg) option
+              RestArgs : Expr list
+              LargAdvances : int
+              LargShouldAdvance : bool }
 
-    let makePartialUnifyResult optUnifiedArg restArgs largAdvances largShouldAdvance = {
-        OptUnifiedArg = optUnifiedArg
-        RestArgs = restArgs
-        LargAdvances = largAdvances
-        LargShouldAdvance = largShouldAdvance }
+        let makePartialUnifyResult optUnifiedArg restArgs largAdvances largShouldAdvance = {
+            OptUnifiedArg = optUnifiedArg
+            RestArgs = restArgs
+            LargAdvances = largAdvances
+            LargShouldAdvance = largShouldAdvance }
 
-    // TODO: clean up this function with extraction
-    let tryPartialUnifyArgs (argsEvaluated : bool) (args1 : Expr list) (largs1 : Arg list) larg =
-        match larg.ArgType with
-        | Concrete
-        | Abstracting ->
-            let unifiedArg = Some (args1.Head, larg)
-            makePartialUnifyResult unifiedArg args1.Tail 0 true
-        | Labeled ->
-            match args1.Head with
-            | Package package ->
-                if package.PkgName = larg.ArgName then
-                    let unifiedArg = Some (package.PkgExpr, larg)
-                    makePartialUnifyResult unifiedArg args1.Tail 0 true
-                else
-                    let matchingLargIndex = List.findIndex (fun larg -> larg.ArgName = package.PkgName) largs1
-                    let matchingLarg = largs1.[matchingLargIndex]
-                    let unifiedArg = Some (package.PkgExpr, matchingLarg)
-                    makePartialUnifyResult unifiedArg args1.Tail matchingLargIndex true
-            | _ ->
+        // TODO: clean up this function with extraction
+        let tryPartialUnifyArgs (argsEvaluated : bool) (args1 : Expr list) (largs1 : Arg list) larg =
+            match larg.ArgType with
+            | Concrete
+            | Abstracting ->
                 let unifiedArg = Some (args1.Head, larg)
                 makePartialUnifyResult unifiedArg args1.Tail 0 true
-        | Variadic ->
-            let argList = List (makeListRecord argsEvaluated args1 None)
-            let unifiedArg = Some (argList, larg)
-            makePartialUnifyResult unifiedArg [] 0 false
+            | Labeled ->
+                match args1.Head with
+                | Package package ->
+                    if package.PkgName = larg.ArgName then
+                        let unifiedArg = Some (package.PkgExpr, larg)
+                        makePartialUnifyResult unifiedArg args1.Tail 0 true
+                    else
+                        let matchingLargIndex = List.findIndex (fun larg -> larg.ArgName = package.PkgName) largs1
+                        let matchingLarg = largs1.[matchingLargIndex]
+                        let unifiedArg = Some (package.PkgExpr, matchingLarg)
+                        makePartialUnifyResult unifiedArg args1.Tail matchingLargIndex true
+                | _ ->
+                    let unifiedArg = Some (args1.Head, larg)
+                    makePartialUnifyResult unifiedArg args1.Tail 0 true
+            | Variadic ->
+                let argList = List (makeListRecord argsEvaluated args1 None)
+                let unifiedArg = Some (argList, larg)
+                makePartialUnifyResult unifiedArg [] 0 false
 
-    let partialUnifyArgs (argsEvaluated : bool) (args : Expr list) (largs : Arg list) =
-        // OPTIMIZATION: choose a unification lazily to save time
-        if args.IsEmpty then Some (makePartialUnifyResult None [] largs.Length false)
-        else
-            let chosen = Seq.map (tryPartialUnifyArgs argsEvaluated args largs) largs
-            Seq.tryHead chosen
+        let partialUnifyArgs (argsEvaluated : bool) (args : Expr list) (largs : Arg list) =
+            // OPTIMIZATION: choose a unification lazily to save time
+            if args.IsEmpty then Some (makePartialUnifyResult None [] largs.Length false)
+            else
+                let chosen = Seq.map (tryPartialUnifyArgs argsEvaluated args largs) largs
+                Seq.tryHead chosen
 
-    let advanceArgs (argsEvaluated : bool) (largs : Arg list) count =
-        // TODO: see if a sequence can be sliced without redundant evaluation
-        let advancedLargs = List.take count largs
-        let restLargs = List.skip count largs
-        let unifiedArgs = List.map (fun larg -> (larg.ArgExpr, larg)) advancedLargs
-        (unifiedArgs, restLargs)
+        let advanceArgs (argsEvaluated : bool) (largs : Arg list) count =
+            // TODO: see if a sequence can be sliced without redundant evaluation
+            let advancedLargs = List.take count largs
+            let restLargs = List.skip count largs
+            let unifiedArgs = List.map (fun larg -> (larg.ArgExpr, larg)) advancedLargs
+            (unifiedArgs, restLargs)
 
-    let rec unifyArgs (argsEvaluated : bool)(args : Expr list) (largs : Arg list) =
-        if args.IsEmpty && List.fornone (fun larg -> larg.ArgType = Labeled) largs then []
-        else
-            let optPartialUnifyResult = partialUnifyArgs argsEvaluated args largs
-            match optPartialUnifyResult with
-            | None -> [(args.Head, makeArg MissingLun Concrete UnitValue)]
-            | Some r ->
-                let (unifiedArgs, restLargs) = advanceArgs argsEvaluated largs r.LargAdvances
-                let restLargs2 = if r.LargShouldAdvance then restLargs.Tail else restLargs
-                let unifiedRest = unifyArgs argsEvaluated r.RestArgs restLargs2
-                let unifiedRest2 = match r.OptUnifiedArg with None -> unifiedRest | Some unifiedArg -> unifiedArg :: unifiedRest
-                unifiedArgs @ unifiedRest2
+        let rec unifyArgs (argsEvaluated : bool)(args : Expr list) (largs : Arg list) =
+            if args.IsEmpty && List.fornone (fun larg -> larg.ArgType = Labeled) largs then []
+            else
+                let optPartialUnifyResult = partialUnifyArgs argsEvaluated args largs
+                match optPartialUnifyResult with
+                | None -> [(args.Head, makeArg MissingLun Concrete UnitValue)]
+                | Some r ->
+                    let (unifiedArgs, restLargs) = advanceArgs argsEvaluated largs r.LargAdvances
+                    let restLargs2 = if r.LargShouldAdvance then restLargs.Tail else restLargs
+                    let unifiedRest = unifyArgs argsEvaluated r.RestArgs restLargs2
+                    let unifiedRest2 = match r.OptUnifiedArg with None -> unifiedRest | Some unifiedArg -> unifiedArg :: unifiedRest
+                    unifiedArgs @ unifiedRest2
 
-    let tryUnifyArgs (argsEvaluated : bool) (args : Expr list) (largs : Arg list) =
-        let unifiedZipped = unifyArgs argsEvaluated args largs
-        if List.areSameLength largs unifiedZipped then Some (List.unzip unifiedZipped)
-        else None
+        let tryUnifyArgs (argsEvaluated : bool) (args : Expr list) (largs : Arg list) =
+            let unifiedZipped = unifyArgs argsEvaluated args largs
+            if List.areSameLength largs unifiedZipped then Some (List.unzip unifiedZipped)
+            else None
 
-    (* Constraint Projection *)
+        (* Constraint Projection *)
 
-    let writeConstraintFailure (_, (constr, parg)) =
-        "(" + constr.ConstrArgs.Head.LunStr + " is " + parg.LunStr + ")"
+        let writeConstraintFailure (_, (constr, parg)) =
+            "(" + constr.ConstrArgs.Head.LunStr + " is " + parg.LunStr + ")"
 
-    let writeConstraintFailures constraintProjections =
-        let constraintFailures = List.filter (fun (result, _) -> not result) constraintProjections
-        let constraintFailuresString = List.joinBy writeConstraintFailure SpaceStr constraintFailures
-        "Could not satisfy constraint(s) '" + constraintFailuresString + "'."
+        let writeConstraintFailures constraintProjections =
+            let constraintFailures = List.filter (fun (result, _) -> not result) constraintProjections
+            let constraintFailuresString = List.joinBy writeConstraintFailure SpaceStr constraintFailures
+            "Could not satisfy constraint(s) '" + constraintFailuresString + "'."
 
-    let projectConstraintToProtocolArg (instances, matches) ((constr, parg : Lun) as instance) =
-        let optPrevConstraint = Map.tryFind parg matches
-        match optPrevConstraint with
-        | None -> ((true, instance) :: instances, Map.add parg constr matches)
-        | Some prevConstraint ->
-            if prevConstraint.ConstrName = constr.ConstrName then ((true, instance) :: instances, matches)
-            else ((false, instance) :: instances, matches)
+        let projectConstraintToProtocolArg (instances, matches) ((constr, parg : Lun) as instance) =
+            let optPrevConstraint = Map.tryFind parg matches
+            match optPrevConstraint with
+            | None -> ((true, instance) :: instances, Map.add parg constr matches)
+            | Some prevConstraint ->
+                if prevConstraint.ConstrName = constr.ConstrName then ((true, instance) :: instances, matches)
+                else ((false, instance) :: instances, matches)
 
-    let projectConstraintsToProtocolArg (constraints : Constraint list) parg =
-        let paddedPargs = List.padWithLastToProportion [parg] constraints
-        let zipped = List.zip constraints paddedPargs
-        let (constraintInstances, _) = List.fold projectConstraintToProtocolArg (List.empty, Map.empty) zipped
-        let allConstraintsSuccessful = List.fornone (fun (result, _) -> not result) constraintInstances
-        (allConstraintsSuccessful, constraintInstances)
+        let projectConstraintsToProtocolArg (constraints : Constraint list) parg =
+            let paddedPargs = List.padWithLastToProportion [parg] constraints
+            let zipped = List.zip constraints paddedPargs
+            let (constraintInstances, _) = List.fold projectConstraintToProtocolArg (List.empty, Map.empty) zipped
+            let allConstraintsSuccessful = List.fornone (fun (result, _) -> not result) constraintInstances
+            (allConstraintsSuccessful, constraintInstances)

@@ -267,7 +267,7 @@ module Writer =
     and writeReloadWithSpace reload =
         if reload then SpaceStr + TrueStr else EmptyStr
 
-    /// Write an expression as a string, optionally truncating violations.
+    /// Write an expression as a string.
     and writeExpr exprToWrite =
         match exprToWrite with
         | Violation violation -> parenthesize (ViolationStr <+> writeName violation.VioCategory <+> writeStringValue violation.VioMessage <+> writeExpr violation.VioData)

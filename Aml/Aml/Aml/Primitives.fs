@@ -103,12 +103,12 @@ module Primitives =
     /// A nil value for an entry in a procedural frame.
     /// Should ever exist ONLY in an uninitialized procedural frame!
     let NilValue =
-        Violation {
-            VioEvaluated = true
-            VioCategory = Lun.make ":v/eval/nilAccess"
-            VioMessage = { SVValue = "Accessed a nil value."; SVType = LiteralString }
-            VioData = UnitValue
-            VioOptPositions = None }
+        Violation
+            { VioEvaluated = true
+              VioCategory = Lun.make ":v/eval/nilAccess"
+              VioMessage = { SVValue = "Accessed a nil value."; SVType = LiteralString }
+              VioData = UnitValue
+              VioOptPositions = None }
 
     /// A nil entry for a procedural frame.
     /// Should ever exist ONLY in an uninitialized procedural frame!
@@ -127,10 +127,10 @@ module Primitives =
     let ZeroIntValue = Int { IRValue = 0; IROptPositions = None }
 
     /// Make an argument.
-    let makeArg name argType expr = {
-        ArgName = name
-        ArgType = argType
-        ArgExpr = expr }
+    let makeArg name argType expr =
+        { ArgName = name
+          ArgType = argType
+          ArgExpr = expr }
 
     /// Make an argument from a read name.
     let makeArgFromName name =
@@ -147,49 +147,49 @@ module Primitives =
         makeArg violation.VioCategory Abstracting violation.VioData
 
     /// Make a member.
-    let makeMember name expr = {
-        MemName = name
-        MemExpr = expr }
+    let makeMember name expr =
+        { MemName = name
+          MemExpr = expr }
 
     /// Make a test branch.
-    let makeTestBranch test body = {
-        TBTest = test
-        TBBody = body }
+    let makeTestBranch test body =
+        { TBTest = test
+          TBBody = body }
 
     /// Make a signature.
-    let makeSignature name args doc = {
-        SigName = name
-        SigArgs = args
-        SigDoc = doc }
+    let makeSignature name args doc =
+        { SigName = name
+          SigArgs = args
+          SigDoc = doc }
 
     /// Make a constraint.
-    let makeConstraint name args = {
-        ConstrName = name
-        ConstrTypeName = Lun.make TypePrefixStr ++ name
-        ConstrProtocolName = Lun.make ProtocolPrefixStr ++ name
-        ConstrArgs = args }
+    let makeConstraint name args =
+        { ConstrName = name
+          ConstrTypeName = Lun.make TypePrefixStr ++ name
+          ConstrProtocolName = Lun.make ProtocolPrefixStr ++ name
+          ConstrArgs = args }
 
     /// Make an attempt branch.
-    let makeAttemptBranch category body = {
-        ABCategory = category
-        ABBody = body }
+    let makeAttemptBranch category body =
+        { ABCategory = category
+          ABBody = body }
 
     /// Make an intervention branch.
-    let makeInterventionBranch env category body hide = {
-        IBEnv = env
-        IBCategory = category
-        IBBody = body
-        IBHide = hide }
+    let makeInterventionBranch env category body hide =
+        { IBEnv = env
+          IBCategory = category
+          IBBody = body
+          IBHide = hide }
 
     /// Make a ParserPositions value.
-    let makeParserPositions start stop = {
-        ParStart = start
-        ParStop = stop }
+    let makeParserPositions start stop =
+        { ParStart = start
+          ParStop = stop }
 
     /// Make a StringValue.
-    let makeStringValue value stringType = {
-        SVValue = value
-        SVType = stringType }
+    let makeStringValue value stringType =
+        { SVValue = value
+          SVType = stringType }
 
     /// Make a literal StringValue.
     let makeLiteralStringValue value =
@@ -204,12 +204,12 @@ module Primitives =
         Some (makeLiteralStringValue value)
 
     /// Make a ViolationRecord.
-    let makeViolationRecord evaluated category message data optPositions = {
-        VioEvaluated = evaluated
-        VioCategory = category
-        VioMessage = message
-        VioData = data
-        VioOptPositions = optPositions }
+    let makeViolationRecord evaluated category message data optPositions =
+        { VioEvaluated = evaluated
+          VioCategory = category
+          VioMessage = message
+          VioData = data
+          VioOptPositions = optPositions }
 
     /// Make a violation from a category and a message.
     /// For internal use only.
@@ -229,258 +229,258 @@ module Primitives =
         makeViolationInternal category message
 
     /// Make a BooleanRecord.
-    let makeBooleanRecord value optPositions = {
-        BRValue = value
-        BROptPositions = optPositions }
+    let makeBooleanRecord value optPositions =
+        { BRValue = value
+          BROptPositions = optPositions }
 
     /// Make a CharacterRecord.
-    let makeCharacterRecord value optPositions = {
-        CRValue = value
-        CROptPositions = optPositions }
+    let makeCharacterRecord value optPositions =
+        { CRValue = value
+          CROptPositions = optPositions }
 
     /// Make a StringRecord.
-    let makeStringRecord value optPositions = {
-        SRValue = value
-        SROptPositions = optPositions }
+    let makeStringRecord value optPositions =
+        { SRValue = value
+          SROptPositions = optPositions }
 
     /// Make a IntRecord.
-    let makeIntRecord value optPositions = {
-        IRValue = value
-        IROptPositions = optPositions }
+    let makeIntRecord value optPositions =
+        { IRValue = value
+          IROptPositions = optPositions }
 
     /// Make a LongRecord.
-    let makeLongRecord value optPositions = {
-        GRValue = value
-        GROptPositions = optPositions }
+    let makeLongRecord value optPositions =
+        { GRValue = value
+          GROptPositions = optPositions }
 
     /// Make a FloatRecord.
-    let makeFloatRecord value optPositions = {
-        FRValue = value
-        FROptPositions = optPositions }
+    let makeFloatRecord value optPositions =
+        { FRValue = value
+          FROptPositions = optPositions }
 
     /// Make a DoubleRecord.
-    let makeDoubleRecord value optPositions = {
-        DRValue = value
-        DROptPositions = optPositions }
+    let makeDoubleRecord value optPositions =
+        { DRValue = value
+          DROptPositions = optPositions }
 
     /// Make a KeywordRecord.
-    let makeKeywordRecord value optPositions = {
-        KRValue = value
-        KROptPositions = optPositions }
+    let makeKeywordRecord value optPositions =
+        { KRValue = value
+          KROptPositions = optPositions }
 
     /// Make a SymbolRecord.
-    let makeSymbolRecord name cachedEntry optPositions = {
-        SymName = name
-        SymCachedEntry = cachedEntry
-        SymOptPositions = optPositions }
+    let makeSymbolRecord name cachedEntry optPositions =
+        { SymName = name
+          SymCachedEntry = cachedEntry
+          SymOptPositions = optPositions }
 
     /// Make a PackageRecord.
-    let makePackageRecord name expr optPositions = {
-        PkgName = name
-        PkgExpr = expr
-        PkgOptPositions = optPositions }
+    let makePackageRecord name expr optPositions =
+        { PkgName = name
+          PkgExpr = expr
+          PkgOptPositions = optPositions }
 
     /// Make a PrefixedRecord.
-    let makePrefixedRecord prefixType value specialId optPositions = {
-        PxdType = prefixType
-        PxdExpr = value
-        PxdSpecialId = specialId
-        PxdOptPositions = optPositions }
+    let makePrefixedRecord prefixType value specialId optPositions =
+        { PxdType = prefixType
+          PxdExpr = value
+          PxdSpecialId = specialId
+          PxdOptPositions = optPositions }
 
     /// Make a DispatchRecord.
-    let makeDispatchRecord name contingentArg optPositions = {
-        DispName = name
-        DispContingentArg = contingentArg
-        DispOptPositions = optPositions }
+    let makeDispatchRecord name contingentArg optPositions =
+        { DispName = name
+          DispContingentArg = contingentArg
+          DispOptPositions = optPositions }
 
     /// Make a SpecialValueRecord.
-    let makeSpecialValueRecord evaluated languageName expr optPositions = {
-        SVEvaluated = evaluated
-        SVLanguageName = languageName
-        SVExpr = expr
-        SVOptPositions = optPositions }
+    let makeSpecialValueRecord evaluated languageName expr optPositions =
+        { SVEvaluated = evaluated
+          SVLanguageName = languageName
+          SVExpr = expr
+          SVOptPositions = optPositions }
 
     /// Make a SpecialObjectRecord.
-    let makeSpecialObjectRecord evaluated languageGuid content optPositions = {
-        SOEvaluated = evaluated
-        SOLanguageGuid = languageGuid
-        SOContent = content
-        SOOptPositions = optPositions }
+    let makeSpecialObjectRecord evaluated languageGuid content optPositions =
+        { SOEvaluated = evaluated
+          SOLanguageGuid = languageGuid
+          SOContent = content
+          SOOptPositions = optPositions }
 
     /// Make a SeriesRecord.
-    let makeSeriesRecord exprs exprCount optPositions = {
-        SerExprs = exprs
-        SerExprCount = exprCount
-        SerOptPositions = optPositions }
+    let makeSeriesRecord exprs exprCount optPositions =
+        { SerExprs = exprs
+          SerExprCount = exprCount
+          SerOptPositions = optPositions }
 
     /// Make a LambdaRecord.
-    let makeLambdaRecord evaluated name args argCount body cpre pre post emptyUnification optPositions env = {
-        LamEvaluated = evaluated
-        LamName = name
-        LamArgs = args
-        LamArgCount = argCount
-        LamBody = body
-        LamCpre = cpre
-        LamPre = pre
-        LamPost = post
-        LamEmptyUnification = emptyUnification
-        LamOptPositions = optPositions
-        LamEnv = env }
+    let makeLambdaRecord evaluated name args argCount body cpre pre post emptyUnification optPositions env =
+        { LamEvaluated = evaluated
+          LamName = name
+          LamArgs = args
+          LamArgCount = argCount
+          LamBody = body
+          LamCpre = cpre
+          LamPre = pre
+          LamPost = post
+          LamEmptyUnification = emptyUnification
+          LamOptPositions = optPositions
+          LamEnv = env }
 
     /// Make an AttemptRecord.
-    let makeAttemptRecord body branches optPositions = {
-        AttemptBody = body
-        AttemptBranches = branches
-        AttemptOptPositions = optPositions }
+    let makeAttemptRecord body branches optPositions =
+        { AttemptBody = body
+          AttemptBranches = branches
+          AttemptOptPositions = optPositions }
 
     /// Make a LetRecord.
-    let makeLetRecord bindings bindingCount body optPositions = {
-        LetBindings = bindings
-        LetBindingCount = bindingCount
-        LetBody = body
-        LetOptPositions = optPositions }
+    let makeLetRecord bindings bindingCount body optPositions =
+        { LetBindings = bindings
+          LetBindingCount = bindingCount
+          LetBody = body
+          LetOptPositions = optPositions }
 
     /// Make an ExtendRecord.
-    let makeExtendRecord target members optPositions = {
-        ExtTarget = target
-        ExtMembers = members
-        ExtOptPositions = optPositions }
+    let makeExtendRecord target members optPositions =
+        { ExtTarget = target
+          ExtMembers = members
+          ExtOptPositions = optPositions }
 
     /// Make a CaseRecord.
-    let makeCaseRecord target branches optPositions = {
-        CaseTarget = target
-        CaseBranches = branches
-        CaseOptPositions = optPositions }
+    let makeCaseRecord target branches optPositions =
+        { CaseTarget = target
+          CaseBranches = branches
+          CaseOptPositions = optPositions }
 
     /// Make a ConditionRecord.
-    let makeConditionRecord branches optPositions = {
-        CondBranches = branches
-        CondOptPositions = optPositions }
+    let makeConditionRecord branches optPositions =
+        { CondBranches = branches
+          CondOptPositions = optPositions }
 
     /// Make an InterveneRecord.
-    let makeInterveneRecord body branches optPositions = {
-        ItvBody = body
-        ItvBranches = branches
-        ItvOptPositions = optPositions }
+    let makeInterveneRecord body branches optPositions =
+        { ItvBody = body
+          ItvBranches = branches
+          ItvOptPositions = optPositions }
 
     /// Make a RefRecord.
-    let makeRefRecord evaluated expr optPositions = {
-        RefEvaluated = evaluated
-        RefExpr = expr
-        RefOptPositions = optPositions }
+    let makeRefRecord evaluated expr optPositions =
+        { RefEvaluated = evaluated
+          RefExpr = expr
+          RefOptPositions = optPositions }
 
     /// Make a GetRecord.
-    let makeGetRecord target optPositions = {
-        GetTarget = target
-        GetOptPositions = optPositions }
+    let makeGetRecord target optPositions =
+        { GetTarget = target
+          GetOptPositions = optPositions }
 
     /// Make a SetRecord.
-    let makeSetRecord target injection optPositions = {
-        SetTarget = target
-        SetInjection = injection
-        SetOptPositions = optPositions }
+    let makeSetRecord target injection optPositions =
+        { SetTarget = target
+          SetInjection = injection
+          SetOptPositions = optPositions }
 
     /// Make a ListRecord.
-    let makeListRecord evaluated elements optPositions = {
-        ListEvaluated = evaluated
-        ListElements = elements
-        ListOptPositions = optPositions }
+    let makeListRecord evaluated elements optPositions =
+        { ListEvaluated = evaluated
+          ListElements = elements
+          ListOptPositions = optPositions }
 
     /// Make an ArrayRecord.
-    let makeArrayRecord evaluated elements optPositions = {
-        ArrEvaluated = evaluated
-        ArrElements = elements
-        ArrOptPositions = optPositions }
+    let makeArrayRecord evaluated elements optPositions =
+        { ArrEvaluated = evaluated
+          ArrElements = elements
+          ArrOptPositions = optPositions }
 
     /// Make a CompositeRecord.
-    let makeCompositeRecord evaluated name members aType sigImpls protocols optPositions = {
-        CompEvaluated = evaluated
-        CompName = name
-        CompMembers = members
-        CompType = aType
-        CompSigImpls = sigImpls
-        CompProtocols = protocols
-        CompOptPositions = optPositions }
+    let makeCompositeRecord evaluated name members aType sigImpls protocols optPositions =
+        { CompEvaluated = evaluated
+          CompName = name
+          CompMembers = members
+          CompType = aType
+          CompSigImpls = sigImpls
+          CompProtocols = protocols
+          CompOptPositions = optPositions }
 
     /// Make an SelectorRecord.
-    let makeSelectorRecord key target accType optPositions = {
-        SelKey = key
-        SelTarget = target
-        SelType = accType
-        SelOptPositions = optPositions }
+    let makeSelectorRecord key target accType optPositions =
+        { SelKey = key
+          SelTarget = target
+          SelType = accType
+          SelOptPositions = optPositions }
     
     /// Make a VariableRecord.
-    let makeVariableRecord name body doc optPositions = {
-        VarName = name
-        VarBody = body
-        VarDoc = doc
-        VarOptPositions = optPositions }
+    let makeVariableRecord name body doc optPositions =
+        { VarName = name
+          VarBody = body
+          VarDoc = doc
+          VarOptPositions = optPositions }
 
     /// Make a FunctionRecord.
-    let makeFunctionRecord name args argCount body optConstraints doc pre post emptyUnification optPositions = {
-        FnName = name
-        FnArgs = args
-        FnArgCount = argCount
-        FnBody = body
-        FnOptConstraints = optConstraints
-        FnDoc = doc
-        FnPre = pre
-        FnPost = post
-        FnEmptyUnification = emptyUnification
-        FnOptPositions = optPositions }
+    let makeFunctionRecord name args argCount body optConstraints doc pre post emptyUnification optPositions =
+        { FnName = name
+          FnArgs = args
+          FnArgCount = argCount
+          FnBody = body
+          FnOptConstraints = optConstraints
+          FnDoc = doc
+          FnPre = pre
+          FnPost = post
+          FnEmptyUnification = emptyUnification
+          FnOptPositions = optPositions }
 
     /// Make a StructureRecord.
-    let makeStructureRecord name memberNames optConstraints doc req optPositions = {
-        StructName = name
-        StructMemberNames = memberNames
-        StructOptConstraints = optConstraints
-        StructDoc = doc
-        StructReq = req
-        StructOptPositions = optPositions }
+    let makeStructureRecord name memberNames optConstraints doc req optPositions =
+        { StructName = name
+          StructMemberNames = memberNames
+          StructOptConstraints = optConstraints
+          StructDoc = doc
+          StructReq = req
+          StructOptPositions = optPositions }
 
     /// Make a ProtocolRecord.
-    let makeProtocolRecord name arg optConstraints doc sigs optPositions = {
-        ProtoName = name
-        ProtoArg = arg
-        ProtoOptConstraints = optConstraints
-        ProtoDoc = doc
-        ProtoSignatures = sigs
-        ProtoOptPositions = optPositions }
+    let makeProtocolRecord name arg optConstraints doc sigs optPositions =
+        { ProtoName = name
+          ProtoArg = arg
+          ProtoOptConstraints = optConstraints
+          ProtoDoc = doc
+          ProtoSignatures = sigs
+          ProtoOptPositions = optPositions }
 
     /// Make an InstanceRecord.
-    let makeInstanceRecord protocolName args constraints functions optPositions = {
-        InstProtocolName = protocolName
-        InstArgs = args
-        InstConstraints = constraints
-        InstFunctions = functions
-        InstOptPositions = optPositions }
+    let makeInstanceRecord protocolName args constraints functions optPositions =
+        { InstProtocolName = protocolName
+          InstArgs = args
+          InstConstraints = constraints
+          InstFunctions = functions
+          InstOptPositions = optPositions }
 
     /// Make an AffirmationRecord.
-    let makeAffirmationRecord name doc body optPositions = {
-        AffName = name
-        AffDoc = doc
-        AffBody = body
-        AffOptPositions = optPositions }
+    let makeAffirmationRecord name doc body optPositions =
+        { AffName = name
+          AffDoc = doc
+          AffBody = body
+          AffOptPositions = optPositions }
 
     /// Make a UsingFileRecord.
-    let makeUsingFileRecord path reload optPositions = {
-        UFPath = path
-        UFReload = reload
-        UFOptPositions = optPositions }
+    let makeUsingFileRecord path reload optPositions =
+        { UFPath = path
+          UFReload = reload
+          UFOptPositions = optPositions }
 
     /// Make a UsingLanguageRecord.
-    let makeUsingLanguageRecord path aType optPositions = {
-        ULPath = path
-        ULType = aType
-        ULOptPositions = optPositions }
+    let makeUsingLanguageRecord path aType optPositions =
+        { ULPath = path
+          ULType = aType
+          ULOptPositions = optPositions }
 
     /// Make a SpecialSeriesRecord.
-    let makeSpecialSeriesRecord ssType exprs exprCount specialId optPositions = {
-        SSType = ssType
-        SSExprs = exprs
-        SSExprCount = exprCount
-        SSSpecialId = specialId
-        SSOptPositions = optPositions }
+    let makeSpecialSeriesRecord ssType exprs exprCount specialId optPositions =
+        { SSType = ssType
+          SSExprs = exprs
+          SSExprCount = exprCount
+          SSSpecialId = specialId
+          SSOptPositions = optPositions }
 
     /// Make a declaration frame.
     let makeDeclarationFrame () =
