@@ -26,7 +26,6 @@ module SdlModule =
           ViewW : int
           ViewH : int
           RendererFlags : SDL.SDL_RendererFlags
-          IsPixelPerfect : bool
           AudioChunkSize : int }
 
     type SdlDeps =
@@ -50,12 +49,11 @@ module Sdl =
         | MouseCenter -> byte SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> byte SDL.SDL_BUTTON_RIGHT
 
-    let makeSdlConfig viewConfig viewW viewH rendererFlags isPixelPerfect audioChunkSize =
+    let makeSdlConfig viewConfig viewW viewH rendererFlags audioChunkSize =
         { ViewConfig = viewConfig
           ViewW = viewW
           ViewH = viewH
           RendererFlags = rendererFlags
-          IsPixelPerfect = isPixelPerfect
           AudioChunkSize = audioChunkSize }
 
     let makeSdlDeps renderContext window config =

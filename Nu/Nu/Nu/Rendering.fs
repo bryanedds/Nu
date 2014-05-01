@@ -36,10 +36,11 @@ module RenderingModule =
         { Position : Vector2
           Size : Vector2
           Rotation : single
-          MapSize : Vector2
+          MapSize : int * int // TODO: replace int * ints with Vector2I.
           Tiles : TmxLayerTile Collections.Generic.List
-          TileSourceSize : Vector2
+          TileSourceSize : int * int
           TileSize : Vector2
+          TileMapSize : Vector2
           TileSet : TmxTileset
           TileSetSprite : Sprite }
 
@@ -90,8 +91,7 @@ module RenderingModule =
 
     type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
-          RenderAssetMap : RenderAsset AssetMap
-          IsPixelPerfect : bool }
+          RenderAssetMap : RenderAsset AssetMap }
 
     type SpriteTypeConverter () =
         inherit TypeConverter ()
@@ -261,10 +261,11 @@ module Rendering =
                     sourceRect.w <- !textureSizeX
                     sourceRect.h <- !textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int <| spriteDescriptor.Position.X
-                    destRect.y <- int <| spriteDescriptor.Position.Y
+                    destRect.x <- int <| spriteDescriptor.Position.X + camera.EyeSize.X * 0.5f
+                    destRect.y <- int <| -spriteDescriptor.Position.Y + camera.EyeSize.Y * 0.5f - spriteDescriptor.Size.Y // negation for right-handedness
                     destRect.w <- int spriteDescriptor.Size.X
                     destRect.h <- int spriteDescriptor.Size.Y
+                    let rotation = double -spriteDescriptor.Rotation * RadiansToDegrees // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int <| spriteDescriptor.Size.X * 0.5f
                     rotationCenter.y <- int <| spriteDescriptor.Size.Y * 0.5f
@@ -276,7 +277,7 @@ module Rendering =
                             texture,
                             ref sourceRect,
                             ref destRect,
-                            double spriteDescriptor.Rotation * RadiansToDegrees,
+                            rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                     if renderResult <> 0 then debug <| "Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + "."
@@ -291,6 +292,7 @@ module Rendering =
             let mapSize = descriptor.MapSize
             let tileSourceSize = descriptor.TileSourceSize
             let tileSize = descriptor.TileSize
+            let tileMapSize = descriptor.TileMapSize
             let tileRotation = descriptor.Rotation
             let sprite = descriptor.TileSetSprite
             let optTileSetWidth = tileSet.Image.Width
@@ -305,26 +307,28 @@ module Rendering =
                 | TextureAsset texture ->
                     Seq.iteri
                         (fun n tile ->
-                            let (i, j) = (n % (int mapSize.X), n / (int mapSize.Y))
-                            let tilePosition = Vector2 (descriptor.Position.X + (tileSize.Y * single i), descriptor.Position.Y + (tileSize.Y * single j))
+                            let (i, j) = (n % (fst mapSize), n / (snd mapSize))
+                            let tilePosition =
+                                Vector2 (
+                                    descriptor.Position.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
+                                    -(descriptor.Position.Y - tileSize.Y * single j) + camera.EyeSize.Y * 0.5f - tileMapSize.Y - tileSize.Y) // negation for right-handedness
                             let gid = tiles.[n].Gid - tileSet.FirstGid
-                            let gidPosition = gid * int tileSourceSize.X
-                            let tileSetPosition = Vector2 (single <| gidPosition % tileSetWidth, (single <| gidPosition / tileSetWidth) * tileSourceSize.Y)
+                            let gidPosition = gid * fst tileSourceSize
+                            let tileSourcePosition =
+                                Vector2 (
+                                    single <| gidPosition % tileSetWidth,
+                                    single <| gidPosition / tileSetWidth * snd tileSourceSize)
                             let mutable sourceRect = SDL.SDL_Rect ()
-                            sourceRect.x <- int tileSetPosition.X
-                            sourceRect.y <- int tileSetPosition.Y
-                            sourceRect.w <- int tileSourceSize.X
-                            sourceRect.h <- int tileSourceSize.Y
+                            sourceRect.x <- int tileSourcePosition.X
+                            sourceRect.y <- int tileSourcePosition.Y
+                            sourceRect.w <- fst tileSourceSize
+                            sourceRect.h <- snd tileSourceSize
                             let mutable destRect = SDL.SDL_Rect ()
-                            destRect.x <- int <| tilePosition.X
-                            destRect.y <- int <| tilePosition.Y
-                            if renderer.IsPixelPerfect then
-                                destRect.w <- int <| tileSize.X
-                                destRect.h <- int <| tileSize.Y
-                            else
-                                // needed to keep lines from appearing between tiles at certain zoom levels
-                                destRect.w <- int <| tileSize.X + 1.0f
-                                destRect.h <- int <| tileSize.Y + 1.0f
+                            destRect.x <- int tilePosition.X
+                            destRect.y <- int tilePosition.Y
+                            destRect.w <- int tileSize.X
+                            destRect.h <- int tileSize.Y
+                            let rotation = double -tileRotation * RadiansToDegrees // negation for right-handedness
                             let mutable rotationCenter = SDL.SDL_Point ()
                             rotationCenter.x <- int <| tileSize.X * 0.5f
                             rotationCenter.y <- int <| tileSize.Y * 0.5f
@@ -334,7 +338,7 @@ module Rendering =
                                     texture,
                                     ref sourceRect,
                                     ref destRect,
-                                    double tileRotation * RadiansToDegrees,
+                                    rotation,
                                     ref rotationCenter,
                                     SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
                             if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
@@ -379,8 +383,8 @@ module Rendering =
                         sourceRect.w <- !textureSizeX
                         sourceRect.h <- !textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int <| textDescriptor.Position.X
-                        destRect.y <- int <| textDescriptor.Position.Y
+                        destRect.x <- int <| textDescriptor.Position.X + camera.EyeSize.X * 0.5f
+                        destRect.y <- int <| -textDescriptor.Position.Y + camera.EyeSize.Y * 0.5f - single !textureSizeY // negation for right-handedness
                         destRect.w <- !textureSizeX
                         destRect.h <- !textureSizeY
                         if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
@@ -415,7 +419,6 @@ module Rendering =
         let renderer' = handleRenderMessages renderMessages renderer
         renderDescriptors camera renderDescriptorsValue renderer'
 
-    let makeRenderer renderContext isPixelPerfect =
+    let makeRenderer renderContext =
         { RenderContext = renderContext
-          RenderAssetMap = Map.empty
-          IsPixelPerfect = isPixelPerfect }
+          RenderAssetMap = Map.empty }

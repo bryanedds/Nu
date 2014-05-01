@@ -212,8 +212,7 @@ module Physics =
         | BodyCreateMessage bodyCreateMessage -> createBody integrator bodyCreateMessage
         | BodyDestroyMessage bodyDestroyMessage -> destroyBody integrator bodyDestroyMessage
         | ApplyImpulseMessage applyImpulseMessage -> applyImpulse integrator applyImpulseMessage
-        | SetGravityMessage gravity ->
-            integrator.PhysicsContext.Gravity <- Framework.Vector2 (gravity.X, gravity.Y)
+        | SetGravityMessage gravity -> integrator.PhysicsContext.Gravity <- toPhysicsV2 gravity
         | ResetHackMessage ->
             integrator.PhysicsContext.Clear ()
             integrator.Bodies.Clear ()

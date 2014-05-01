@@ -128,9 +128,6 @@ module NuMathModule =
         static member makeFromScale s =
             Matrix3.identity |> Matrix3.scale s
 
-        static member makeFromTranslationAndScale t s =
-            Matrix3.makeFromTranslation t |> Matrix3.scale s
-
         static member getTranslationMatrix m =
             Matrix3.makeFromTranslation <| Vector2 (m.M02, m.M12)
 

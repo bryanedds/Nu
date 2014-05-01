@@ -188,9 +188,18 @@ module Entity =
                     | Some entityMap -> { world with Entities = Map.add screenLun (Map.add groupLun (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
-    let mouseToEntity (position : Vector2) (entity : Entity) world =
+    let mouseToScreen (position : Vector2) camera =
+        let positionScreen =
+            Vector2 (
+                position.X - camera.EyeSize.X * 0.5f,
+                -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
+        positionScreen
+
+    let mouseToEntity (position : Vector2) world (entity : Entity) =
+        let positionScreen = mouseToScreen position world.Camera
         let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
-        position * view
+        let positionEntity = positionScreen * view
+        positionEntity
 
     // TODO: turn into a lens
     let getEntityPosition (entity : Entity) =
@@ -232,11 +241,13 @@ module Entity =
             let mapSize = (map.Width, map.Height)
             let tileSize = (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
+            let tileMapSize = (fst mapSize * fst tileSize, fst mapSize * fst tileSize)
+            let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
             let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
             let optTileSetWidth = tileSet.Image.Width
             let optTileSetHeight = tileSet.Image.Height
             let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
-            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
     let makeTileLayerData tileMap tmd (layerIndex : int) =
         let layer = tmd.Map.Layers.[layerIndex]
@@ -249,10 +260,11 @@ module Entity =
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
-        let tilePosition = (int tileMap.Position.X + (fst tmd.TileSize * i), int tileMap.Position.Y + (snd tmd.TileSize * j))
+        let tilePosition = (
+            int tileMap.Position.X + fst tmd.TileSize * i,
+            int tileMap.Position.Y - snd tmd.TileSize * j) // subtraction for right-handedness
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
-        let tileSetPosition = (gidPosition % fst tmd.TileSetSize, gidPosition / snd tmd.TileSetSize * snd tmd.TileSize)
-        { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile; TileSetPosition = tileSetPosition }
+        { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
     let private makeDefaultEntity2 xTypeName optName =
         let id = getNuId ()
@@ -322,10 +334,8 @@ module Entity =
         let entitiesSorted = pickingSort entities
         List.tryFind
             (fun entity ->
-                let positionEntity = mouseToEntity position entity camera
+                let positionEntity = mouseToEntity position camera entity
                 let transform = getEntityTransform entity
-                positionEntity.X >= transform.Position.X &&
-                    positionEntity.X < transform.Position.X + transform.Size.X &&
-                    positionEntity.Y >= transform.Position.Y &&
-                    positionEntity.Y < transform.Position.Y + transform.Size.Y)
+                let picked = isInBox3 positionEntity transform.Position transform.Size
+                picked)
             entitiesSorted

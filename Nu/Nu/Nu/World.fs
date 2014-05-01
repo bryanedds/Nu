@@ -66,7 +66,7 @@ module World =
             [LayerableDescriptor <|
                 LayeredSpriteDescriptor
                     { Descriptor =
-                        { Position = Vector2.Zero
+                        { Position = -camera.EyeSize * 0.5f // negation for right-handedness
                           Size = camera.EyeSize
                           Rotation = 0.0f
                           Sprite = dissolveSprite
@@ -209,11 +209,11 @@ module World =
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
-                  Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize; EyeZoom = 1.0f }
+                  Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = makeAudioPlayer ()
-                  Renderer = makeRenderer sdlDeps.RenderContext sdlDeps.Config.IsPixelPerfect
+                  Renderer = makeRenderer sdlDeps.RenderContext
                   Integrator = makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
                   AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]

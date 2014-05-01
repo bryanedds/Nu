@@ -36,10 +36,9 @@ module Program =
         let sdlConfig =
             Sdl.makeSdlConfig
                 sdlViewConfig
-                Voords.VirtualResolutionX
-                Voords.VirtualResolutionY
+                NuConstants.ResolutionX
+                NuConstants.ResolutionY
                 sdlRenderFlags
-                false
                 1024
 
         // after some configuration it is time to run the game. We're off and running!

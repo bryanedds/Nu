@@ -26,6 +26,15 @@ module DomainModel =
     let setChild childAdder childRemover address parent child =
         setOptChild childAdder childRemover address parent (Some child)
 
+    let isPropertyNameWriteable (propertyName : string) =
+        not <| propertyName.EndsWith "Id" &&
+            not <| propertyName.EndsWith "Ids" &&
+            not <| propertyName.EndsWith "Ns"
+
+    let isPropertyWriteable (property : PropertyInfo) =
+        property.CanWrite && isPropertyNameWriteable property.Name
+            
+
     let trySetProperty (property : PropertyInfo) (valueNode : XmlNode) obj =
         if property.PropertyType = typeof<Xtension> then
             // TODO: move xtension serialization code out to Prime.
@@ -64,8 +73,7 @@ module DomainModel =
         let aType = obj.GetType ()
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
         for property in properties do
-            // TODO: find and remove duplication of this expression
-            if not (property.Name.EndsWith "Id" || property.Name.EndsWith "Ids" || property.Name.EndsWith "Ns") then
+            if isPropertyWriteable property then
                 let propertyValue = property.GetValue obj
                 match propertyValue with
                 | :? Xtension as xtension ->
@@ -74,17 +82,14 @@ module DomainModel =
                     writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name.LunStr)
                     for xField in xtension.XFields do
                         let xFieldName = xField.Key.LunStr
-                        // TODO: find and remove duplication of this expression
-                        if (xFieldName.EndsWith "Id" || xFieldName.EndsWith "Ids" || property.Name.EndsWith "Ns") then ()
-                        else
-                            let xValue = xField.Value
-                            let xType = xValue.GetType ()
-                            let xConverter = TypeDescriptor.GetConverter xType
-                            let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
-                            writer.WriteStartElement xField.Key.LunStr
-                            writer.WriteAttributeString ("type", xType.FullName)
-                            writer.WriteString xValueStr
-                            writer.WriteEndElement ()
+                        let xValue = xField.Value
+                        let xType = xValue.GetType ()
+                        let xConverter = TypeDescriptor.GetConverter xType
+                        let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
+                        writer.WriteStartElement xField.Key.LunStr
+                        writer.WriteAttributeString ("type", xType.FullName)
+                        writer.WriteString xValueStr
+                        writer.WriteEndElement ()
                     writer.WriteEndElement ()
                 | _ ->
                     let converter = TypeDescriptor.GetConverter property.PropertyType
