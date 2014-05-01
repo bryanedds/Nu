@@ -22,13 +22,14 @@ module Camera =
     let getViewAbsoluteI camera =
         Matrix3.identity
 
-    /// The view of the camera with original float values. Due to the problems with SDL_RenderCopyEx as described in
-    /// NuMath.fs, using this function to decide on sprite coordinates is very, very bad for rendering.
+    /// The relative view of the camera with original float values. Due to the problems with
+    /// SDL_RenderCopyEx as described in NuMath.fs, using this function to decide on sprite
+    /// coordinates is very, very bad for rendering.
     let getViewRelativeF camera =
         let translation = camera.EyeCenter
         Matrix3.makeFromTranslation translation
 
-    /// The view of the camera with translation sliced on integers. Good for rendering.
+    /// The relative view of the camera with translation sliced on integers. Good for rendering.
     let getViewRelativeI camera =
         let translation = camera.EyeCenter
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
