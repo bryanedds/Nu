@@ -35,8 +35,8 @@ module SdlModule =
 
 module Sdl =
 
-    let private SuccessReturnCode = 0
-    let private FailureReturnCode = 1
+    let [<Literal>] private SuccessReturnCode = 0
+    let [<Literal>] private FailureReturnCode = 1
 
     let makeMouseButton sdlMouseButton =
         if sdlMouseButton = byte SDL.SDL_BUTTON_LEFT then MouseLeft

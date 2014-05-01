@@ -11,25 +11,19 @@ module Implicit =
         (^a : (static member op_Implicit : ^b -> ^a) arg)
 
 /// Implicit-conversion example.
-module Example =
+module ImplicitExample =
 
-    (*
-    Example definition of an implicitly-convertible type.
-    *)
+    (* Example definition of an implicitly-convertible type. *)
     
     type T =
         { S : string }
         static member op_Implicit s = { S = s }
 
     module ImplicitT =
-
         let (!!) : string -> T =
             implicit
 
-    (*
-    Example usage of implicit type conversion.
-    *)
+    (* Example usage of implicit type conversion. *)
 
     open ImplicitT
-    
     let t = !!"Hello conversion!"

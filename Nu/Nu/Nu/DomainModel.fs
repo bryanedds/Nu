@@ -34,7 +34,6 @@ module DomainModel =
     let isPropertyWriteable (property : PropertyInfo) =
         property.CanWrite && isPropertyNameWriteable property.Name
             
-
     let trySetProperty (property : PropertyInfo) (valueNode : XmlNode) obj =
         if property.PropertyType = typeof<Xtension> then
             // TODO: move xtension serialization code out to Prime.
