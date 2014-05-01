@@ -36,10 +36,9 @@ module Program =
         let sdlConfig =
             Sdl.makeSdlConfig
                 sdlViewConfig
-                Voords.VirtualResolutionX
-                Voords.VirtualResolutionY
+                ResolutionX
+                ResolutionY
                 sdlRenderFlags
-                false
                 AudioBufferSizeDefault
 
         // this is a callback that attempts to create 'the world' in a functional programming

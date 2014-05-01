@@ -95,7 +95,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
-                let mousePositionButton = Entity.mouseToEntity mousePosition button world
+                let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     if isInBox3 mousePositionButton button.Position button.Size then
                         let button' = button.SetIsDown true
@@ -110,7 +110,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| worldEntityLens subscriber
-                let mousePositionButton = Entity.mouseToEntity mousePosition button world
+                let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     let (keepRunning, world') =
                         let button' = button.SetIsDown false
@@ -246,7 +246,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
-                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world
+                let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
                     if isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle' = toggle.SetIsPressed true
@@ -260,7 +260,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| worldEntityLens subscriber
-                let mousePositionToggle = Entity.mouseToEntity mousePosition toggle world
+                let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle' = toggle.SetIsPressed false
                     if isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
@@ -327,7 +327,7 @@ module DispatchersModule =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
                 let feeler = get world <| worldEntityLens subscriber
-                let mousePositionFeeler = Entity.mouseToEntity mousePosition feeler world
+                let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
                     if isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler' = feeler.SetIsTouched true
@@ -599,7 +599,7 @@ module DispatchersModule =
                         { EntityAddress = address
                           PhysicsId = physicsId
                           Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
-                          Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2)
+                          Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
                           Rotation = tileMap.Rotation
                           Density = tileMap.Density
                           BodyType = BodyType.Static }
@@ -652,9 +652,9 @@ module DispatchersModule =
                 | None -> []
                 | Some (_, sprites, map) ->
                     let layers = List.ofSeq map.Layers
-                    let viewScale = Matrix3.getScaleMatrix viewAbsolute
-                    let tileSourceSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                    let tileSize = tileSourceSize * viewScale
+                    let viewScale = Matrix3.getScaleMatrix viewRelative
+                    let tileSourceSize = (map.TileWidth, map.TileHeight)
+                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight) * viewScale
                     List.mapi
                         (fun i (layer : TmxLayer) ->
                             let layeredTileLayerDescriptor =
@@ -663,10 +663,11 @@ module DispatchersModule =
                                         { Position = tileMap.Position * viewRelative
                                           Size = Vector2.Zero
                                           Rotation = tileMap.Rotation
-                                          MapSize = Vector2 (single map.Width, single map.Height)
+                                          MapSize = (map.Width, map.Height)
                                           Tiles = layer.Tiles
                                           TileSourceSize = tileSourceSize
                                           TileSize = tileSize
+                                          TileMapSize = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                                           TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                           TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
                                       Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption

@@ -61,7 +61,6 @@
     <Compile Include="NuCore.fs" />
     <Compile Include="NuConstants.fs" />
     <Compile Include="NuMath.fs" />
-    <Compile Include="Voords.fs" />
     <Compile Include="Camera.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />

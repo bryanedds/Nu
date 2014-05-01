@@ -13,7 +13,7 @@
       <Xtension xType="AvatarDispatcher">
         <Depth type="System.Single">2</Depth>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <Position type="OpenTK.Vector2">-374;-262</Position>
+        <Position type="OpenTK.Vector2">600;600</Position>
         <ImageSprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</ImageSprite>
         <Rotation type="System.Single">0</Rotation>
         <Density type="System.Single">10</Density>
@@ -38,7 +38,7 @@
       <Xtension xType="TileMapDispatcher">
         <Depth type="System.Single">1</Depth>
         <Size type="OpenTK.Vector2">1200;1200</Size>
-        <Position type="OpenTK.Vector2">-960;-544</Position>
+        <Position type="OpenTK.Vector2">0;0</Position>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">TileMap;Default;AssetGraph.xml</TileMapAsset>
         <Rotation type="System.Single">0</Rotation>
         <Density type="System.Single">10</Density>
@@ -53,7 +53,7 @@
         <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">-104;176</Position>
+        <Position type="OpenTK.Vector2">-128;-224</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
