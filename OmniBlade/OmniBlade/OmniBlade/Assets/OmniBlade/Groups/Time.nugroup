@@ -11,7 +11,7 @@
         <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">-104;176</Position>
+        <Position type="OpenTK.Vector2">-128;-224</Position>
         <IsDown type="System.Boolean">False</IsDown>
         <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;OmniGui;AssetGraph.xml</DownSprite>
         <Rotation type="System.Single">0</Rotation>
@@ -26,7 +26,7 @@
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <Text type="System.String">You have died. The OmniBlade beckons you back in time.</Text>
         <Size type="OpenTK.Vector2">640;128</Size>
-        <Position type="OpenTK.Vector2">-304;-208</Position>
+        <Position type="OpenTK.Vector2">-320;96</Position>
         <BoxSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
         <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <Rotation type="System.Single">0</Rotation>

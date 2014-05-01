@@ -19,10 +19,10 @@ open Microsoft.FSharp.Reflection
 open Prime
 open Nu
 open Nu.NuCore
-open Nu.Voords
 open Nu.NuConstants
 open Nu.NuMath
 open Nu.Metadata
+open Nu.DomainModel
 open Nu.Physics
 open Nu.Sdl
 open Nu.Entity
@@ -103,8 +103,7 @@ module Program =
         override this.IsReadOnly
             // NOTE: we make ids read-only
             with get () =
-                // TODO: find and remove duplication of this expression
-                propertyName.EndsWith "Id" || propertyName.EndsWith "Ids" || propertyName.EndsWith "Ns"
+                not <| isPropertyNameWriteable propertyName
 
         override this.GetValue optSource =
             match optSource with
@@ -210,7 +209,7 @@ module Program =
                 match optPicked with
                 | None -> (handleMessage message, true, world)
                 | Some entity ->
-                    let mousePositionEntity = Entity.mouseToEntity mousePosition entity world
+                    let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                     let entityAddress = addrstr EditorGroupAddress entity.Name
                     let entityPosition = getEntityPosition entity
                     let dragState = DragEntityPosition (entityPosition + mousePositionEntity, mousePositionEntity, entityAddress)
@@ -245,7 +244,7 @@ module Program =
         | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
             let (positionSnap, _) = getSnaps form
             let entity_ = get world <| worldEntityLens address
-            let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity_ world
+            let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
             let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
             let entity_ = setEntityPosition positionSnap entityPosition entity_
             let world_ = set entity_ world <| worldEntityLens address
@@ -262,7 +261,8 @@ module Program =
             if form.interactButton.Checked then (message, true, world)
             else
                 let mousePosition = world.MouseState.MousePosition
-                let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePosition, mousePosition)
+                let mousePositionScreen = Entity.mouseToScreen mousePosition world.Camera
+                let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
                 let editorState_ = world.ExtData :?> EditorState
                 let editorState_ = { editorState_ with DragCameraState = dragState }
                 let world_ = { world with ExtData = editorState_ }
@@ -286,12 +286,13 @@ module Program =
         let editorState_ = world.ExtData :?> EditorState
         match editorState_.DragCameraState with
         | DragCameraNone -> world
-        | DragCameraPosition (pickOffset, mousePositionOrig) ->
+        | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let mousePosition = world.MouseState.MousePosition
-            let eyeCenter = (pickOffset - mousePositionOrig) + -1.0f * CameraSpeed * (mousePosition - mousePositionOrig) // TODO: clean up the -1.0f *
+            let mousePositionScreen = Entity.mouseToScreen mousePosition world.Camera
+            let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let camera = { world.Camera with EyeCenter = eyeCenter }
             let world' = { world with Camera = camera }
-            let editorState_ = { editorState_ with DragCameraState = DragCameraPosition (pickOffset, mousePositionOrig) }
+            let editorState_ = { editorState_ with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) }
             { world' with ExtData = editorState_ }
 
     /// Needed for physics system side-effects...
@@ -308,7 +309,7 @@ module Program =
         try let entity_ = makeDefaultEntity entityXTypeName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity_ world
+                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
                 let entity_ = setEntityTransform positionSnap rotationSnap entityTransform entity_
@@ -436,7 +437,7 @@ module Program =
             let changer = (fun world ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = getNuId ()
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition entity world
+                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entity_ = { entity with Id = id; Name = str id }
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { getEntityTransform entity with Position = entityPosition; Depth = getCreationDepth form }
@@ -538,7 +539,7 @@ module Program =
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
-        form.displayPanel.MaximumSize <- Drawing.Size (VirtualResolutionX, VirtualResolutionY)
+        form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
         form.positionSnapTextBox.Text <- str DefaultPositionSnap
         form.rotationSnapTextBox.Text <- str DefaultRotationSnap
         form.creationDepthTextBox.Text <- str DefaultCreationDepth
@@ -642,7 +643,7 @@ module Program =
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-        let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags false AudioBufferSizeDefault
+        let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags AudioBufferSizeDefault
         run4
             (tryCreateEditorWorld form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)

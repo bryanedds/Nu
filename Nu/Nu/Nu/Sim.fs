@@ -63,6 +63,8 @@ module SimModule =
           MapSize : int * int
           TileSize : int * int
           TileSizeF : Vector2
+          TileMapSize : int * int
+          TileMapSizeF : Vector2
           TileSet : TmxTileset
           TileSetSize : int * int }
       
@@ -78,8 +80,7 @@ module SimModule =
           GidPosition : int
           Gid2 : int * int
           OptTileSetTile : TmxTilesetTile option
-          TilePosition : int * int
-          TileSetPosition : int * int }
+          TilePosition : int * int }
 
     type [<StructuralEquality; NoComparison; CLIMutable>] Group =
         { Id : Guid
