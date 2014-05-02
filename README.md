@@ -1,5 +1,5 @@
-OmniBlade
-=========
+FP Works Repository
+===================
 
 This repository hosts several projects, including -
 
@@ -31,12 +31,12 @@ The **Nu Game Engine** is looking for sponsors! If you're interested in sponsori
 Project Vlog
 ============
 
-Keep up with the state of development and get some insight on how the project is implemented here - https://www.youtube.com/channel/UCPoDCc41MwqEwhIHp32LpSA
+Keep up with the state of development and get some insight on how the projects are implemented here - https://www.youtube.com/channel/UCPoDCc41MwqEwhIHp32LpSA
 
 License
 =======
 
-Copyright (c) 2013 Bryan Edds
+Copyright (c) 2013-2014 Bryan Edds
 
 All non-text resources in this repository are private. You may not use any of
 the non-text resources in your own project(s).
