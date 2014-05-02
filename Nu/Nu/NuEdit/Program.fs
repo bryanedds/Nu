@@ -34,6 +34,8 @@ open Nu.World
 open NuEdit.NuEditConstants
 open NuEdit.NuEditReflection
 
+// TODO: increase warning level to 5.
+
 [<AutoOpen>]
 module ProgramModule =
 
