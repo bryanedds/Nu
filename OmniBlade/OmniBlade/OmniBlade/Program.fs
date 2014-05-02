@@ -7,6 +7,8 @@ open Nu
 open OmniBlade
 module Program =
 
+    // TODO: increase warning level to 5.
+
     // this the entry point for the OmniBlade application
     let [<EntryPoint>] main _ =
     
