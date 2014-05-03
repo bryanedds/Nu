@@ -11,9 +11,9 @@ This repository hosts several projects, including -
 
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
 
-The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/OmniBlade/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
+The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
 
-The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/OmniBlade/tree/master/Aml/Documentation
+The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/FPWorks/tree/master/Aml/Documentation
 
 If you're looking at Aml, run the **AmlRepl project** from Visual Studio and follow its instructions (especially in studying the StdLib Aml code to get a real feel for the language).
 
