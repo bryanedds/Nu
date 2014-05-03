@@ -4,16 +4,16 @@ FP Works Repository
 This repository hosts several projects, including -
 
 
-- ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, 
-- the programming language **Aml**,
-- the small but potentially useful F# code library **Prime**, and
-- the game **OmniBlade** that I just barely started on.
+- ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
+- the programming language **Aml**, a common language for building DSLs on top of using F#.
+- the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
+- the game **OmniBlade** that I just barely started on (currently working to get funding for this).
 
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
 
-The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/OmniBlade/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
+The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
 
-The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/OmniBlade/tree/master/Aml/Documentation
+The current documentation for the **Aml** programming language is found here - https://github.com/bryanedds/FPWorks/tree/master/Aml/Documentation
 
 If you're looking at Aml, run the **AmlRepl project** from Visual Studio and follow its instructions (especially in studying the StdLib Aml code to get a real feel for the language).
 
