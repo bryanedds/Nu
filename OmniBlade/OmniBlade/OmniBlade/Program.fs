@@ -41,7 +41,7 @@ module Program =
                 NuConstants.ResolutionX
                 NuConstants.ResolutionY
                 sdlRenderFlags
-                1024
+                NuConstants.AudioBufferSizeDefault
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
