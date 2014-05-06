@@ -182,14 +182,14 @@ module Rendering =
                 else trace <| "Could not load font due to file name being too short: '" + asset.FileName + "'."; None
             else trace <| "Could not load font '" + asset.FileName + "'."; None
         | _ ->
-            trace <| "Could not load render asset '" + str asset + "' due to unknown extension '" + extension + "'."
+            trace <| "Could not load render asset '" + string asset + "' due to unknown extension '" + extension + "'."
             None
 
     let private tryLoadRenderPackage packageName fileName renderer =
         let optAssets = tryLoadAssets "Rendering" packageName.LunStr fileName
         match optAssets with
         | Left error ->
-            note <| "HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + str (packageName, fileName) + "'."
+            note <| "HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
             renderer
         | Right assets ->
             let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -245,7 +245,7 @@ module Rendering =
             let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
-                note <| "LayeredSpriteDescriptor failed due to unloadable assets for '" + str sprite + "'."
+                note <| "LayeredSpriteDescriptor failed due to unloadable assets for '" + string sprite + "'."
                 renderer'
             | Some renderAsset ->
                 match renderAsset with
@@ -280,7 +280,7 @@ module Rendering =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then debug <| "Rendering error - could not render texture for sprite '" + str spriteDescriptor + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then debug <| "Rendering error - could not render texture for sprite '" + string spriteDescriptor + "' due to '" + SDL.SDL_GetError () + "."
                     renderer'
                 | _ ->
                     trace "Cannot render sprite with a non-texture asset."
@@ -300,7 +300,7 @@ module Rendering =
             let (renderer', optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
-                debug <| "LayeredTileLayerDescriptor failed due to unloadable assets for '" + str sprite + "'."
+                debug <| "LayeredTileLayerDescriptor failed due to unloadable assets for '" + string sprite + "'."
                 renderer'
             | Some renderAsset ->
                 match renderAsset with
@@ -341,7 +341,7 @@ module Rendering =
                                     rotation,
                                     ref rotationCenter,
                                     SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                            if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + str descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                            if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
                     renderer'
                 | _ ->
@@ -353,7 +353,7 @@ module Rendering =
             let (renderer', optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
             match optRenderAsset with
             | None ->
-                debug <| "LayeredTextDescriptor failed due to unloadable assets for '" + str font + "'."
+                debug <| "LayeredTextDescriptor failed due to unloadable assets for '" + string font + "'."
                 renderer'
             | Some renderAsset ->
                 match renderAsset with

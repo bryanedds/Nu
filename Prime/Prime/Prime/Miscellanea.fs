@@ -24,17 +24,17 @@ module Miscellanea =
     /// The invalid Id.
     let [<Literal>] InvalidId = 0L
 
-    /// Perform a ToString operation on an object.
-    let inline str obj =
-        obj.ToString ()
+    /// Perform a ToString operation on anything.
+    let inline string any =
+        any.ToString ()
 
-    /// Perform a formatted ToString operation on an object.
-    let inline strf (obj : IFormattable) format =
-        obj.ToString (format, null)
+    /// Perform a formatted ToString operation on a formattable object.
+    let inline stringf (formattable : IFormattable) format =
+        formattable.ToString (format, null)
 
-    /// Perform a formatted ToString operation on an object.
-    let inline strfp (obj : IFormattable) format formatProvider =
-        obj.ToString (format, formatProvider)
+    /// Perform a formatted ToString operation on a formattable object.
+    let inline stringfp (formattable : IFormattable) format formatProvider =
+        formattable.ToString (format, formatProvider)
 
     /// Apply a function recursively a number of times.
     let rec doTimes fn arg times =

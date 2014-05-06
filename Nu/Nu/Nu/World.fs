@@ -134,14 +134,14 @@ module World =
                     else publish MouseMoveEvent [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = makeMouseButton event.button.button
-                    let mouseEvent = addrstr DownMouseEvent <| str mouseButton
+                    let mouseEvent = addrstr DownMouseEvent <| string mouseButton
                     let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                     publish mouseEvent [] { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
                     let mouseButton = makeMouseButton event.button.button
-                    let mouseEvent = addrstr UpMouseEvent <| str mouseButton
+                    let mouseEvent = addrstr UpMouseEvent <| string mouseButton
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                         let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
