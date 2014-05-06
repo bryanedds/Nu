@@ -34,7 +34,7 @@ module Metadata =
             document.Load assetGraphFileName
             let optRootNode = document.["root"]
             match optRootNode with
-            | null -> Left ("Root node is missing from asset graph file '" + assetGraphFileName + "'.")
+            | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFileName + "'."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| rootNode.OfType<XmlNode> ()
                 let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = "package") possiblePackageNodes
@@ -42,9 +42,9 @@ module Metadata =
                     List.fold
                         (fun assetMetadataMap' (packageNode : XmlNode) ->
                             let packageName = (packageNode.Attributes.GetNamedItem "name").InnerText
-                            let optAssets = List.map (fun assetNode -> tryLoadAsset packageName assetNode) (List.ofSeq <| packageNode.OfType<XmlNode> ())
+                            let optAssets = List.map (fun assetNode -> tryLoadAsset packageName assetNode) <| List.ofSeq (packageNode.OfType<XmlNode> ())
                             let assets = List.definitize optAssets
-                            debugIf (fun () -> assets.Count () <> optAssets.Count ()) ("Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'.")
+                            debugIf (fun () -> assets.Count () <> optAssets.Count ()) <| "Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'."
                             let subMap =
                                 Map.ofListBy
                                     (fun (asset : Asset) ->
@@ -55,7 +55,7 @@ module Metadata =
                                             | ".png" ->
                                                 try use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
                                                 with _ as e ->
-                                                    let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + str e + "'."
+                                                    let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string e + "'."
                                                     trace errorMessage
                                                     InvalidMetadata errorMessage
                                             | ".tmx" ->
@@ -71,19 +71,19 @@ module Metadata =
                                                             tileSets
                                                     TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
                                                 with _ as e ->
-                                                    let errorMessage = "Failed to TmxMap '" + asset.FileName + "' due to '" + str e + "'."
+                                                    let errorMessage = "Failed to TmxMap '" + asset.FileName + "' due to '" + string e + "'."
                                                     trace errorMessage
                                                     InvalidMetadata errorMessage
                                             | ".wav" -> SoundMetadata
                                             | ".ogg" -> SongMetadata
-                                            | _ -> InvalidMetadata ("Could not load asset metadata '" + str asset + "' due to unknown extension '" + extension + "'.")
+                                            | _ -> InvalidMetadata <| "Could not load asset metadata '" + string asset + "' due to unknown extension '" + extension + "'."
                                         (Lun.make asset.Name, metadata))
                                     assets
                             Map.add (Lun.make packageName) subMap assetMetadataMap')
                         Map.empty
                         packageNodes
                 Right assetMetadataMap
-        with exn -> Left (str exn)
+        with exn -> Left <| string exn
   
     let tryGetMetadata assetName packageName assetMetadataMap =
         let optPackage = Map.tryFind packageName assetMetadataMap
@@ -106,7 +106,7 @@ module Metadata =
         let optMetadata = tryGetTextureMetadata assetName packageName assetMetadataMap
         match optMetadata with
         | None -> None
-        | Some metadata -> Some (Vector2 (single <| fst metadata, single <| snd metadata))
+        | Some metadata -> Some <| Vector2 (single <| fst metadata, single <| snd metadata)
 
     let getTextureSizeAsVector2 assetName packageName assetMetadataMap =
         Option.get <| tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap

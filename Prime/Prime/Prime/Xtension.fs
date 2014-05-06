@@ -53,7 +53,7 @@ module XtensionModule =
                     let converter = TypeDescriptor.GetConverter defaultFieldType
                     let defaultValueType = defaultValue.GetType ()
                     if not <| converter.CanConvertFrom defaultValueType
-                    then failwith <| "Cannot convert '" + str defaultValue + "' to type '" + defaultFieldType.Name + "'."
+                    then failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
                     else converter.ConvertFrom defaultValue :?> 'r
 
         /// The dynamic XType dispatch operator.
@@ -105,7 +105,7 @@ module XtensionModule =
                             | aMethod ->
                                 try aMethod.Invoke (dispatcher, argArray) :?> 'r with
                                 | exn when exn.InnerException <> null -> raise exn.InnerException
-                                | exn -> debug <| "Unknown failure during method invocation'" + str exn + "'."; reraise ()
+                                | exn -> debug <| "Unknown failure during method invocation'" + string exn + "'."; reraise ()
 
                         | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer."
 

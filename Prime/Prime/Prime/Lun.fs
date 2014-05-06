@@ -13,17 +13,25 @@ module LunModule =
           LunHash : int
           LunOptNums : (int64 * int64) option }
 
+        static member private MaxChar = '\u007F'
+
         static member private isNonNumableChar chr =
-            chr > '\u0080'
+            chr > Lun.MaxChar
 
         static member private strToNum strStart str =
-            let mutable num = 0L;
-            let mutable shl = 0;
-            let mutable idx = strStart
             let idxMax = Math.Min (String.length str, 9 + strStart)
+            let mutable num = 0L
+            let mutable lsh = 56
+            let mutable idx = strStart
             while idx < idxMax do
-                num <- (num ||| (int64 str.[idx] <<< shl))
-                shl <- shl + 7
+#if DEBUG
+                let chr = str.[idx]
+                if int chr &&& int Lun.MaxChar <> int chr then
+                    failwith <| "Invalid character '" + string chr + "' in Lun.strToNum (must be less than Lun.MaxChar)."
+#endif
+                let bt7 = int64 str.[idx] <<< lsh
+                num <- num ||| bt7
+                lsh <- lsh - 7
                 idx <- idx + 1
             num
 
@@ -33,9 +41,9 @@ module LunModule =
                String.exists Lun.isNonNumableChar str then
                None
             else
-                let num = Lun.strToNum 0 str
-                let num2 = if strLen > 9 then Lun.strToNum 9 str else 0L
-                Some (num, num2)
+                let major = Lun.strToNum 0 str
+                let minor = if strLen > 9 then Lun.strToNum 9 str else 0L
+                Some (major, minor)
 
         static member private makeInternal str hash optNums =
             { LunStr = str; LunHash = hash; LunOptNums = optNums }
@@ -53,7 +61,7 @@ module LunModule =
             match that with
             | :? Lun as thatLun ->
                 match (this.LunOptNums, thatLun.LunOptNums) with
-                | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) -> thisNum = thatNum && thisNum2 = thatNum2
+                | (Some (thisMajor, thisMinor), Some (thatMajor, thatMinor)) -> thisMajor = thatMajor && thisMinor = thatMinor
                 | _ -> this.LunStr = thatLun.LunStr
             | _ -> false
 
@@ -65,26 +73,29 @@ module LunModule =
 
         interface System.IComparable with
             override this.CompareTo that =
-                // OPTIMIZATION: this code is highly optimized
                 match that with
                 | :? Lun as thatLun ->
                     // first try fast comparison...
                     let thisHash = this.LunHash
                     let thatHash = thatLun.LunHash
                     if thisHash = thatHash then
-                        // do speculatively fast comparison if possible, linear-time comparison otherwise
+                        // do constant-time comparison if possible, linear-time comparison otherwise
                         match (this.LunOptNums, thatLun.LunOptNums) with
-                        | (Some (thisNum, thisNum2), Some (thatNum, thatNum2)) ->
-                            // speculatively fast comparison (this has not (yet?) been emperically shown to be faster!)
-                            if thisNum2 = thatNum2 then
-                                if thisNum = thatNum then 0
-                                elif thisNum < thatNum then -1
+                        | (Some (thisMajor, thisMinor), Some (thatMajor, thatMinor)) ->
+                            // constant-time comparison
+                            if thisMajor = thatMajor then
+                                if thisMinor = thatMinor then 0
+                                elif thisMinor < thatMinor then -1
                                 else 1
-                            elif thisNum2 < thatNum2 then -1
+                            elif thisMajor < thatMajor then -1
                             else 1
                         | _ ->
-                            // linear-time comparison
-                            thatLun.LunStr.CompareTo this.LunStr
+                            // linear-time comparison. Note that String.CompareTo cannot be used as it has different
+                            // semantics than the above binary comparison
+                            let (thisStr, thatStr) = (this.LunStr, thatLun.LunStr)
+                            if thisStr = thatStr then 0
+                            elif thisStr < thatStr then -1
+                            else 1
                     elif thisHash < thatHash then -1
                     else 1
                 | _ -> invalidArg "that" "Cannot compare a Lun value to a different type of object."

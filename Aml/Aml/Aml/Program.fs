@@ -29,7 +29,7 @@ module Program =
         Console.WriteLine "NOTE: The best way to learn Aml currently is to study the *.aml files in"
         Console.WriteLine "the Stdlib folder, and to read AmlSpec.rtf in the Documentation folder."
         Console.WriteLine ()
-        Console.WriteLine ("Current version is " + strf AmlVersion "F3" + ".")
+        Console.WriteLine ("Current version is " + stringf AmlVersion "F3" + ".")
         Console.WriteLine ()
         Console.WriteLine "Loading Stdlib..."
 

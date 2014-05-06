@@ -269,7 +269,7 @@ module Entity =
     let private makeDefaultEntity2 xTypeName optName =
         let id = getNuId ()
         { Id = id
-          Name = match optName with None -> str id | Some name -> name
+          Name = match optName with None -> string id | Some name -> name
           Enabled = true
           Visible = true
           Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty; IsSealed = false }}

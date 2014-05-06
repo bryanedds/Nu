@@ -124,7 +124,7 @@ module Program =
                     match propertyName with
                     | "Name" -> // MAGIC_VALUE
                         // handle special case for an entity's Name field change
-                        let valueStr = str value
+                        let valueStr = string value
                         if Int64.TryParse (valueStr, ref 0L) then
                             trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                             world
@@ -220,7 +220,7 @@ module Program =
                     refWorld := world_ // must be set for property grid
                     form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                     (handleMessage message, true, world_)
-        | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endEntityDrag (form : NuEditForm) _ _ _ message world =
         match message.Data with
@@ -235,7 +235,7 @@ module Program =
                     let editorState_ = { editorState_ with DragEntityState = DragEntityNone }
                     form.propertyGrid.Refresh ()
                     (handleMessage message, true, { world with ExtData = editorState_ })
-        | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
         let editorState_ = world.ExtData :?> EditorState
@@ -267,7 +267,7 @@ module Program =
                 let editorState_ = { editorState_ with DragCameraState = dragState }
                 let world_ = { world with ExtData = editorState_ }
                 (handleMessage message, true, world_)
-        | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endCameraDrag (form : NuEditForm) _ _ _ message world =
         match message.Data with
@@ -280,7 +280,7 @@ module Program =
                 | DragCameraPosition _ ->
                     let editorState_ = { editorState_ with DragCameraState = DragCameraNone }
                     (handleMessage message, true, { world with ExtData = editorState_ })
-        | _ -> failwith <| "Expected MouseButtonData in message '" + str message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateCameraDrag (form : NuEditForm) world =
         let editorState_ = world.ExtData :?> EditorState
@@ -438,7 +438,7 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = getNuId ()
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
-                let entity_ = { entity with Id = id; Name = str id }
+                let entity_ = { entity with Id = id; Name = string id }
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { getEntityTransform entity with Position = entityPosition; Depth = getCreationDepth form }
                 let entity_ = setEntityTransform positionSnap rotationSnap entityTransform entity_
@@ -540,9 +540,9 @@ module Program =
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
-        form.positionSnapTextBox.Text <- str DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- str DefaultRotationSnap
-        form.creationDepthTextBox.Text <- str DefaultCreationDepth
+        form.positionSnapTextBox.Text <- string DefaultPositionSnap
+        form.rotationSnapTextBox.Text <- string DefaultRotationSnap
+        form.creationDepthTextBox.Text <- string DefaultCreationDepth
         form.exitToolStripMenuItem.Click.Add (handleExit form)
         form.createEntityButton.Click.Add (handleCreate form worldChangers refWorld false)
         form.createToolStripMenuItem.Click.Add (handleCreate form worldChangers refWorld false)
