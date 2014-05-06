@@ -18,74 +18,74 @@ module DispatchersModule =
     type Entity with
         
         (* button xfields *)
-        member this.IsDown with get () = this?IsDown () : bool
+        [<XField>] member this.IsDown with get () = this?IsDown () : bool
         member this.SetIsDown (value : bool) : Entity = this?IsDown <- value
-        member this.UpSprite with get () = this?UpSprite () : Sprite
+        [<XField>] member this.UpSprite with get () = this?UpSprite () : Sprite
         member this.SetUpSprite (value : Sprite) : Entity = this?UpSprite <- value
-        member this.DownSprite with get () = this?DownSprite () : Sprite
+        [<XField>] member this.DownSprite with get () = this?DownSprite () : Sprite
         member this.SetDownSprite (value : Sprite) : Entity = this?DownSprite <- value
-        member this.ClickSound with get () = this?ClickSound () : Sound
+        [<XField>] member this.ClickSound with get () = this?ClickSound () : Sound
         member this.SetClickSound (value : Sound) : Entity = this?ClickSound <- value
 
         (* label xfields *)
-        member this.LabelSprite with get () = this?LabelSprite () : Sprite
+        [<XField>] member this.LabelSprite with get () = this?LabelSprite () : Sprite
         member this.SetLabelSprite (value : Sprite) : Entity = this?LabelSprite <- value
 
         (* text box xfields *)
-        member this.BoxSprite with get () = this?BoxSprite () : Sprite
+        [<XField>] member this.BoxSprite with get () = this?BoxSprite () : Sprite
         member this.SetBoxSprite (value : Sprite) : Entity = this?BoxSprite <- value
-        member this.Text with get () = this?Text () : string
+        [<XField>] member this.Text with get () = this?Text () : string
         member this.SetText (value : string) : Entity = this?Text <- value
-        member this.TextFont with get () = this?TextFont () : Font
+        [<XField>] member this.TextFont with get () = this?TextFont () : Font
         member this.SetTextFont (value : Font) : Entity = this?TextFont <- value
-        member this.TextOffset with get () = this?TextOffset () : Vector2
+        [<XField>] member this.TextOffset with get () = this?TextOffset () : Vector2
         member this.SetTextOffset (value : Vector2) : Entity = this?TextOffset <- value
-        member this.TextColor with get () = this?TextColor () : Vector4
+        [<XField>] member this.TextColor with get () = this?TextColor () : Vector4
         member this.SetTextColor (value : Vector4) : Entity = this?TextColor <- value
 
         (* toggle xfields *)
-        member this.IsOn with get () = this?IsOn () : bool
+        [<XField>] member this.IsOn with get () = this?IsOn () : bool
         member this.SetIsOn (value : bool) : Entity = this?IsOn <- value
-        member this.IsPressed with get () = this?IsPressed () : bool
+        [<XField>] member this.IsPressed with get () = this?IsPressed () : bool
         member this.SetIsPressed (value : bool) : Entity = this?IsPressed <- value
-        member this.OffSprite with get () = this?OffSprite () : Sprite
+        [<XField>] member this.OffSprite with get () = this?OffSprite () : Sprite
         member this.SetOffSprite (value : Sprite) : Entity = this?OffSprite <- value
-        member this.OnSprite with get () = this?OnSprite () : Sprite
+        [<XField>] member this.OnSprite with get () = this?OnSprite () : Sprite
         member this.SetOnSprite (value : Sprite) : Entity = this?OnSprite <- value
-        member this.ToggleSound with get () = this?ToggleSound () : Sound
+        [<XField>] member this.ToggleSound with get () = this?ToggleSound () : Sound
         member this.SetToggleSound (value : Sound) : Entity = this?ToggleSound <- value
 
         (* feeler xfields *)
-        member this.IsTouched with get () = this?IsTouched () : bool
+        [<XField>] member this.IsTouched with get () = this?IsTouched () : bool
         member this.SetIsTouched (value : bool) : Entity = this?IsTouched <- value
 
         (* fill bar xfields *)
-        member this.Fill with get () = this?Fill () : single
+        [<XField>] member this.Fill with get () = this?Fill () : single
         member this.SetFill (value : single) : Entity = this?Fill <- value
-        member this.FillInset with get () = this?FillInset () : single
+        [<XField>] member this.FillInset with get () = this?FillInset () : single
         member this.SetFillInset (value : single) : Entity = this?FillInset <- value
-        member this.FillSprite with get () = this?FillSprite () : Sprite
+        [<XField>] member this.FillSprite with get () = this?FillSprite () : Sprite
         member this.SetFillSprite (value : Sprite) : Entity = this?FillSprite <- value
-        member this.BorderSprite with get () = this?BorderSprite () : Sprite
+        [<XField>] member this.BorderSprite with get () = this?BorderSprite () : Sprite
         member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
 
         (* block xfields *)
-        member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
+        [<XField>] member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
         member this.SetPhysicsId (value : PhysicsId) : Entity = this?PhysicsId <- value
-        member this.Density with get () = this?Density () : single
+        [<XField>] member this.Density with get () = this?Density () : single
         member this.SetDensity (value : single) : Entity = this?Density <- value
-        member this.BodyType with get () = this?BodyType () : BodyType
+        [<XField>] member this.BodyType with get () = this?BodyType () : BodyType
         member this.SetBodyType (value : BodyType) : Entity = this?BodyType <- value
-        member this.ImageSprite with get () = this?ImageSprite () : Sprite
+        [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
         (* avatar xfields *)
         // uses same xfields as block
 
         (* tile map xfields *)
-        member this.PhysicsIds with get () = this?PhysicsIds () : PhysicsId list
+        [<XField>] member this.PhysicsIds with get () = this?PhysicsIds () : PhysicsId list
         member this.SetPhysicsIds (value : PhysicsId list) : Entity = this?PhysicsIds <- value
-        member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
+        [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
         member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
 
     type ButtonDispatcher () =

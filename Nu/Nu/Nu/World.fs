@@ -24,8 +24,8 @@ open Nu.Rendering
 open Nu.Metadata
 open Nu.Audio
 open Nu.Sdl
-open Nu.DomainModel
 open Nu.Camera
+open Nu.Sim
 open Nu.Entity
 open Nu.Group
 open Nu.Screen

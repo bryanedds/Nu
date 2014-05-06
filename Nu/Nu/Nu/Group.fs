@@ -8,7 +8,6 @@ open FSharpx.Lens.Operators
 open Prime
 open Nu
 open Nu.NuCore
-open Nu.DomainModel
 open Nu.Sim
 open Nu.Entity
 
@@ -126,24 +125,24 @@ module Group =
 
     let writeGroupToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
-        writeModelProperties writer group
+        Xtension.writeProperties writer group
         writeGroupEntitiesToXml writer entities
 
-    let loadEntitiesFromXml (groupNode : XmlNode) seal world =
+    let readEntitiesFromXml (groupNode : XmlNode) seal world =
         let entityNodes = groupNode.SelectNodes "Entity"
         let entities =
             Seq.map
-                (fun entityNode -> loadEntityFromXml entityNode seal world)
-                (enbCast entityNodes)
+                (fun entityNode -> readEntityFromXml entityNode seal world)
+                (enumerable entityNodes)
         Seq.toList entities
 
-    let loadGroupFromXml (groupNode : XmlNode) seal world =
+    let readGroupFromXml (groupNode : XmlNode) seal world =
         let group = makeDefaultGroup ()
-        let entities = loadEntitiesFromXml (groupNode : XmlNode) seal world
-        setModelProperties groupNode group
+        let entities = readEntitiesFromXml (groupNode : XmlNode) seal world
+        Xtension.readProperties groupNode group
         (group, entities)
 
-    let writeGroupFile optGameDispatcherDescriptor group entities fileName world =
+    let saveGroupFile optGameDispatcherDescriptor group entities fileName world =
         use file = File.Open (fileName, FileMode.Create)
         let writerSettings = XmlWriterSettings ()
         writerSettings.Indent <- true
@@ -166,7 +165,7 @@ module Group =
         document.Load fileName
         let rootNode = document.["Root"]
         let (someDescriptor, world') =
-                match Seq.tryFind (fun (node : XmlNode) -> node.Name = "GameDispatcher") <| enbCast rootNode.ChildNodes with
+                match Seq.tryFind (fun (node : XmlNode) -> node.Name = "GameDispatcher") <| enumerable rootNode.ChildNodes with
                 | None -> (None, world)
                 | Some gameDispatcherNode ->
                     let assemblyFileName = gameDispatcherNode.["AssemblyFileName"].InnerText
@@ -177,5 +176,5 @@ module Group =
                         (someDescriptor, world')
                     else (someDescriptor, world)
         let groupNode = rootNode.["Group"]
-        let (group, entities) = loadGroupFromXml groupNode seal world'
+        let (group, entities) = readGroupFromXml groupNode seal world'
         (someDescriptor, group, entities, world')

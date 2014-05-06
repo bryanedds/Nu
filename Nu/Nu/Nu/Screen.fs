@@ -6,13 +6,14 @@ open Prime
 open Nu
 open Nu.NuCore
 open Nu.NuConstants
-open Nu.DomainModel
+open Nu.Sim
 open Nu.Group
 
 [<AutoOpen>]
 module ScreenModule =
 
-    type TransitionDispatcher () = class end
+    type TransitionDispatcher () =
+        class end
 
     type ScreenDispatcher () =
 

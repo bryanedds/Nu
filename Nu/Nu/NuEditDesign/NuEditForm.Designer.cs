@@ -58,7 +58,6 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.clearAllXFieldsButton = new System.Windows.Forms.Button();
             this.typeNameTextBox = new System.Windows.Forms.ComboBox();
             this.xFieldNameTextBox = new System.Windows.Forms.TextBox();
             this.removeSelectedXFieldButton = new System.Windows.Forms.Button();
@@ -87,9 +86,9 @@
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.interactButton = new System.Windows.Forms.ToolStripButton();
             this.pixelPerfectButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.interactButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -244,7 +243,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(999, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1000, 585);
             this.displayPanel.TabIndex = 1;
             // 
             // contextMenuStrip
@@ -310,7 +309,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 999;
+            this.splitContainer1.SplitterDistance = 1000;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -333,14 +332,13 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(382, 585);
+            this.splitContainer2.Size = new System.Drawing.Size(381, 585);
             this.splitContainer2.SplitterDistance = 79;
             this.splitContainer2.SplitterWidth = 3;
             this.splitContainer2.TabIndex = 0;
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.clearAllXFieldsButton);
             this.groupBox1.Controls.Add(this.typeNameTextBox);
             this.groupBox1.Controls.Add(this.xFieldNameTextBox);
             this.groupBox1.Controls.Add(this.removeSelectedXFieldButton);
@@ -350,21 +348,10 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(382, 79);
+            this.groupBox1.Size = new System.Drawing.Size(381, 79);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
-            // 
-            // clearAllXFieldsButton
-            // 
-            this.clearAllXFieldsButton.Enabled = false;
-            this.clearAllXFieldsButton.Location = new System.Drawing.Point(190, 41);
-            this.clearAllXFieldsButton.Margin = new System.Windows.Forms.Padding(2);
-            this.clearAllXFieldsButton.Name = "clearAllXFieldsButton";
-            this.clearAllXFieldsButton.Size = new System.Drawing.Size(182, 19);
-            this.clearAllXFieldsButton.TabIndex = 11;
-            this.clearAllXFieldsButton.Text = "&Clear All";
-            this.clearAllXFieldsButton.UseVisualStyleBackColor = true;
             // 
             // typeNameTextBox
             // 
@@ -381,29 +368,28 @@
             "OpenTK.Vector2",
             "OpenTK.Vector3",
             "OpenTK.Vector4"});
-            this.typeNameTextBox.Location = new System.Drawing.Point(190, 18);
+            this.typeNameTextBox.Location = new System.Drawing.Point(65, 43);
             this.typeNameTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.typeNameTextBox.Name = "typeNameTextBox";
-            this.typeNameTextBox.Size = new System.Drawing.Size(183, 21);
+            this.typeNameTextBox.Size = new System.Drawing.Size(244, 21);
             this.typeNameTextBox.TabIndex = 10;
             this.typeNameTextBox.Text = "System.String";
             // 
             // xFieldNameTextBox
             // 
-            this.xFieldNameTextBox.Location = new System.Drawing.Point(60, 18);
+            this.xFieldNameTextBox.Location = new System.Drawing.Point(65, 17);
             this.xFieldNameTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.xFieldNameTextBox.Name = "xFieldNameTextBox";
-            this.xFieldNameTextBox.Size = new System.Drawing.Size(126, 20);
+            this.xFieldNameTextBox.Size = new System.Drawing.Size(244, 20);
             this.xFieldNameTextBox.TabIndex = 9;
             this.xFieldNameTextBox.Text = "MyField";
             // 
             // removeSelectedXFieldButton
             // 
-            this.removeSelectedXFieldButton.Enabled = false;
-            this.removeSelectedXFieldButton.Location = new System.Drawing.Point(4, 41);
+            this.removeSelectedXFieldButton.Location = new System.Drawing.Point(313, 17);
             this.removeSelectedXFieldButton.Margin = new System.Windows.Forms.Padding(2);
             this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
-            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(182, 19);
+            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(57, 47);
             this.removeSelectedXFieldButton.TabIndex = 7;
             this.removeSelectedXFieldButton.Text = "&Remove Selected";
             this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
@@ -413,7 +399,7 @@
             this.addXFieldButton.Location = new System.Drawing.Point(4, 17);
             this.addXFieldButton.Margin = new System.Windows.Forms.Padding(2);
             this.addXFieldButton.Name = "addXFieldButton";
-            this.addXFieldButton.Size = new System.Drawing.Size(52, 19);
+            this.addXFieldButton.Size = new System.Drawing.Size(57, 47);
             this.addXFieldButton.TabIndex = 6;
             this.addXFieldButton.Text = "&Add";
             this.addXFieldButton.UseVisualStyleBackColor = true;
@@ -424,7 +410,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(382, 503);
+            this.propertyGrid.Size = new System.Drawing.Size(381, 503);
             this.propertyGrid.TabIndex = 3;
             // 
             // openFileDialog
@@ -468,7 +454,7 @@
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1008, 25);
+            this.toolStrip.Size = new System.Drawing.Size(977, 25);
             this.toolStrip.TabIndex = 4;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -604,16 +590,6 @@
             this.toolStripSeparator7.Name = "toolStripSeparator7";
             this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
             // 
-            // interactButton
-            // 
-            this.interactButton.CheckOnClick = true;
-            this.interactButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.interactButton.Image = ((System.Drawing.Image)(resources.GetObject("interactButton.Image")));
-            this.interactButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.interactButton.Name = "interactButton";
-            this.interactButton.Size = new System.Drawing.Size(51, 22);
-            this.interactButton.Text = "&Interact";
-            // 
             // pixelPerfectButton
             // 
             this.pixelPerfectButton.CheckOnClick = true;
@@ -628,6 +604,16 @@
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
             this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
+            // 
+            // interactButton
+            // 
+            this.interactButton.CheckOnClick = true;
+            this.interactButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.interactButton.Image = ((System.Drawing.Image)(resources.GetObject("interactButton.Image")));
+            this.interactButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.interactButton.Name = "interactButton";
+            this.interactButton.Size = new System.Drawing.Size(51, 22);
+            this.interactButton.Text = "&Interact";
             // 
             // NuEditForm
             // 
@@ -720,7 +706,6 @@
         public System.Windows.Forms.TextBox xFieldNameTextBox;
         public System.Windows.Forms.ComboBox typeNameTextBox;
         public System.Windows.Forms.Button removeSelectedXFieldButton;
-        public System.Windows.Forms.Button clearAllXFieldsButton;
         public System.Windows.Forms.ToolStripButton pixelPerfectButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
 

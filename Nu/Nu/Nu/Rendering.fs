@@ -15,7 +15,7 @@ open Nu.Assets
 [<AutoOpen>]
 module RenderingModule =
 
-    type [<StructuralEquality; NoComparison>] Sprite =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSpriteValue)>] Sprite =
         { SpriteAssetName : Lun
           PackageName : Lun
           PackageFileName : string }
@@ -27,7 +27,7 @@ module RenderingModule =
           Sprite : Sprite
           Color : Vector4 }
 
-    type [<StructuralEquality; NoComparison>] TileMapAsset =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
         { TileMapAssetName : Lun
           PackageName : Lun
           PackageFileName : string }
@@ -44,7 +44,7 @@ module RenderingModule =
           TileSet : TmxTileset
           TileSetSprite : Sprite }
 
-    type [<StructuralEquality; NoComparison>] Font =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
         { FontAssetName : Lun
           PackageName : Lun
           PackageFileName : string }
@@ -109,22 +109,6 @@ module RenderingModule =
                 let args = (obj :?> string).Split ';'
                 { SpriteAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
-    type FontTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
-            let s = obj :?> Font
-            String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Font> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Font> then obj
-            else
-                let args = (obj :?> string).Split ';'
-                { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
-
     type TileMapAssetTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -140,6 +124,22 @@ module RenderingModule =
             else
                 let args = (obj :?> string).Split ';'
                 { TileMapAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+
+    type FontTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, culture, obj : obj, _) =
+            let s = obj :?> Font
+            String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Font> || sourceType = typeof<string>
+        override this.ConvertFrom (_, culture, obj : obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<Font> then obj
+            else
+                let args = (obj :?> string).Split ';'
+                { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
 
 module Rendering =
 
