@@ -1031,7 +1031,7 @@ module Reader =
             let! start = getPosition
             do! openBracketForm
             do! instanceForm CloseBracketChar
-            let! protocolName = readName |>> fun name -> Lun.make ProtocolPrefixStr ++ name
+            let! protocolName = readName |>> fun name -> Lun.make ProtocolPrefixStr + name
             let! args = readArgNames1 openBracketForm closeBracketForm
             let! constraints = readConstraints openBracketForm closeBracketForm
             let! doc = readDoc
