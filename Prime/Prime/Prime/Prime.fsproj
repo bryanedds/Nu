@@ -78,6 +78,7 @@
     <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
+    <Compile Include="Tests.fs" />
     <None Include="Interactive.fsx" />
   </ItemGroup>
   <ItemGroup>
