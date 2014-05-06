@@ -219,7 +219,7 @@ module EvaluatorPrims =
         | Some firstSigMatchingEntry when not env.EnvAllowRedeclaration ->
             failwith ("The protocol signature '" + optFirstSigMatchingEntry.Value.SigName.LunStr + "' clashes names with an existing declaration.")
         | Some _ | None ->
-            let protocolName = Lun.make ProtocolPrefixStr ++ name
+            let protocolName = Lun.make ProtocolPrefixStr + name
             let protocol = ProtocolEntry (arg, optConstraints, doc, sigs)
             let optEnv' = tryAppendDeclarationEntry env protocolName protocol
             match optEnv' with

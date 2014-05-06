@@ -54,7 +54,7 @@ module LunModule =
         static member makeFast str =
             Lun.makeInternal str (str.GetHashCode ()) None
 
-        static member (++) (left, right) =
+        static member (+) (left, right) =
             Lun.make (left.LunStr + right.LunStr)
 
         override this.Equals that =

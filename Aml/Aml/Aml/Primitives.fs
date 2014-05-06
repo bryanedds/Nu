@@ -165,8 +165,8 @@ module Primitives =
     /// Make a constraint.
     let makeConstraint name args =
         { ConstrName = name
-          ConstrTypeName = Lun.make TypePrefixStr ++ name
-          ConstrProtocolName = Lun.make ProtocolPrefixStr ++ name
+          ConstrTypeName = Lun.make TypePrefixStr + name
+          ConstrProtocolName = Lun.make ProtocolPrefixStr + name
           ConstrArgs = args }
 
     /// Make an attempt branch.

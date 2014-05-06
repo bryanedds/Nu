@@ -22,7 +22,7 @@ module Writer =
 
     /// Wrap a string list in brackets.
     let bracketizeNames names =
-        let bracketizedNames = Lun.make OpenParenStr ++ Lun.join (Lun.make SpaceStr) names ++ Lun.make CloseParenStr
+        let bracketizedNames = Lun.make OpenParenStr + Lun.join (Lun.make SpaceStr) names + Lun.make CloseParenStr
         bracketizedNames.LunStr
 
     /// Wrap a string in parentheses.
@@ -30,7 +30,7 @@ module Writer =
 
     /// Wrap a string list in parentheses.
     let parenthesizeNames names =
-        let parenthesizedNames = Lun.make OpenParenStr ++ Lun.join (Lun.make SpaceStr) names ++ Lun.make CloseParenStr
+        let parenthesizedNames = Lun.make OpenParenStr + Lun.join (Lun.make SpaceStr) names + Lun.make CloseParenStr
         parenthesizedNames.LunStr
 
     /// Wrap a string in curlies.
@@ -38,7 +38,7 @@ module Writer =
 
     /// Wrap a string list in curlies.
     let curlizeNames names =
-        let curlizedNames = Lun.make OpenCurlyStr ++ Lun.join (Lun.make SpaceStr) names ++ Lun.make CloseCurlyStr
+        let curlizedNames = Lun.make OpenCurlyStr + Lun.join (Lun.make SpaceStr) names + Lun.make CloseCurlyStr
         curlizedNames.LunStr
 
     /// Wrap a string in triangles.
