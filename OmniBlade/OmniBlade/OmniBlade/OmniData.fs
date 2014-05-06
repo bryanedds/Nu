@@ -7,21 +7,21 @@ open Nu
 module OmniDataModule =
 
     type [<StructuralEquality; NoComparison>] OmniWeaponData =
-        { Name : Lun
+        { Name : string
           Type : OmniWeaponType
           PhysicalPower : int
           MagicalPower : int
           ElementTypes : OmniElementType Set }
 
     type [<StructuralEquality; NoComparison>] OmniArmorData =
-        { Name : Lun
+        { Name : string
           Type : OmniArmorType
           PhysicalDefense : int
           MagicalDefense : int
           ElementTypes : OmniElementType Set }
 
     type [<StructuralEquality; NoComparison>] OmniMoveData =
-        { Name : Lun
+        { Name : string
           Type : OmniMoveType
           SpecialAbilityType : OmniSpecialAbilityType
           OmniEffectType : OmniEffectType
@@ -40,12 +40,12 @@ module OmniDataModule =
           MortalityType : OmniMortalityType }
 
     type [<StructuralEquality; NoComparison>] OmniItemData =
-        { Name : Lun
+        { Name : string
           Type : OmniItemType
           OptMoveData : OmniMoveData option }
 
     type [<StructuralEquality; NoComparison>] OmniCharacterData =
-        { Name : Lun // because character names are used as keys, characters cannot be renamed in OmniBlade
+        { Name : string // because character names are used as keys, characters cannot be renamed in OmniBlade
           MoveData : OmniMoveData list // usable moves are queried
           EquipWeaponType : OmniWeaponType
           EquipArmorType : OmniArmorType
@@ -59,11 +59,11 @@ module OmniDataModule =
           GoldRewarded : int }
 
     type [<StructuralEquality; NoComparison>] OmniFieldData =
-        { Name : Lun
+        { Name : string
           GroupFileName : string }
 
     type [<StructuralEquality; NoComparison>] OmniBattleData =
-        { Name : Lun
+        { Name : string
           BossEnemy : OmniCharacterData
           BossEnemyDefeatEndsBattle : bool
           MinorEnemies : OmniCharacterData list

@@ -17,7 +17,7 @@ module Tests =
     /// Write an expr for test consumption by truncating top-level violations.
     let writeExprForTest exprToWrite =
         match exprToWrite with
-        | Violation violation -> parenthesize (ViolationStr + SpaceStr + violation.VioCategory.LunStr)
+        | Violation violation -> parenthesize (ViolationStr + SpaceStr + violation.VioCategory)
         | expr -> writeExpr expr
 
     /// Write multiple expressions as a string for test consumption.

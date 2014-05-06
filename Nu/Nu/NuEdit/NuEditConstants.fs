@@ -7,5 +7,5 @@ open Nu.NuCore
 module NuEditConstants =
 
     let EditorScreenAddress = addr "EditorScreen"
-    let EditorGroupName = Lun.make "EditorGroup"
+    let EditorGroupName = "EditorGroup"
     let EditorGroupAddress = EditorScreenAddress @ [EditorGroupName]

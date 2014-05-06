@@ -90,12 +90,10 @@ module Primitives =
         | _ -> None
 
     /// Query that a subcategory is in a category.
-    let isInCategory category value =
-        let categoryStr = category.LunStr
-        let valueStr = value.LunStr
-        categoryStr.StartsWith valueStr &&
-            let overlapIndex = valueStr.Length
-            categoryStr.Length = overlapIndex || categoryStr.[overlapIndex] = NameSeparatorChar
+    let isInCategory (category : string) (value : string)  =
+        category.StartsWith value &&
+            let overlapIndex = value.Length
+            category.Length = overlapIndex || category.[overlapIndex] = NameSeparatorChar
 
     /// An Aml unit value.
     let UnitValue = Series { SerExprs = []; SerExprCount = 0; SerOptPositions = None }
@@ -105,14 +103,14 @@ module Primitives =
     let NilValue =
         Violation
             { VioEvaluated = true
-              VioCategory = Lun.make ":v/eval/nilAccess"
+              VioCategory = ":v/eval/nilAccess"
               VioMessage = { SVValue = "Accessed a nil value."; SVType = LiteralString }
               VioData = UnitValue
               VioOptPositions = None }
 
     /// A nil entry for a procedural frame.
     /// Should ever exist ONLY in an uninitialized procedural frame!
-    let NilEntry = (Lun.empty, ValueEntry (NilValue, None))
+    let NilEntry = (String.Empty, ValueEntry (NilValue, None))
 
     /// An Aml true value.
     let TrueValue = Boolean { BRValue = true; BROptPositions = None }
@@ -134,8 +132,8 @@ module Primitives =
 
     /// Make an argument from a read name.
     let makeArgFromName name =
-        let (isVariadic, nameStr) = String.withEnd name.LunStr EllipsisStr
-        if isVariadic then makeArg (Lun.make nameStr) Variadic UnitValue
+        let (isVariadic, nameWithEnd) = String.withEnd name EllipsisStr
+        if isVariadic then makeArg nameWithEnd Variadic UnitValue
         else makeArg name Concrete UnitValue
 
     /// Make an argument from a package.
@@ -165,8 +163,8 @@ module Primitives =
     /// Make a constraint.
     let makeConstraint name args =
         { ConstrName = name
-          ConstrTypeName = Lun.make TypePrefixStr + name
-          ConstrProtocolName = Lun.make ProtocolPrefixStr + name
+          ConstrTypeName = TypePrefixStr + name
+          ConstrProtocolName = ProtocolPrefixStr + name
           ConstrArgs = args }
 
     /// Make an attempt branch.
@@ -216,7 +214,7 @@ module Primitives =
     let private makeViolationInternal (category : string) message =
         let messageValue = makeVerbatimStringValue message
         if category.StartsWith ViolationPrefixStr
-        then Violation (makeViolationRecord true (Lun.make category) messageValue UnitValue None)
+        then Violation (makeViolationRecord true category messageValue UnitValue None)
         else failwith ("Violation category must start with '" + ViolationPrefixStr + "'.")
 
     /// Make a violation from a category and a message.
@@ -542,14 +540,14 @@ module Primitives =
 
     /// Make a type value's name member.
     let makeTypeNameMember typeName optPositions =
-        let mem = makeMember NameLun (Keyword (makeKeywordRecord typeName optPositions))
-        (NameLun, mem)
+        let mem = makeMember NameStr (Keyword (makeKeywordRecord typeName optPositions))
+        (NameStr, mem)
 
     /// Make a type value.
     let makeType typeName optPositions =
         let (typeNameName, typeNameMember) = makeTypeNameMember typeName optPositions
         let members = Dictionary.singleton (typeNameName, typeNameMember)
-        Composite (makeCompositeRecord true typeName members UnitValue (Dictionary<Lun, Expr> ()) (HashSet<Lun> ()) optPositions)
+        Composite (makeCompositeRecord true typeName members UnitValue (Dictionary<string, Expr> ()) (HashSet<string> ()) optPositions)
 
     /// Make a type entry.
     let makeTypeEntry typeName doc optPositions =
@@ -795,23 +793,23 @@ module Primitives =
     let doubleLogN x y = Math.Log (x, y)
     let doubleRoot x y = let y' = 1.0 / y in Math.Pow (x, y')
 
-    let ViolationType = makeType (Lun.make ViolationTypeStr) None
-    let BooleanType = makeType (Lun.make BooleanTypeStr) None
-    let CharacterType = makeType (Lun.make CharacterTypeStr) None
-    let StringType = makeType (Lun.make StringTypeStr) None
-    let IntType = makeType (Lun.make IntTypeStr) None
-    let LongType = makeType (Lun.make LongTypeStr) None
-    let FloatType = makeType (Lun.make FloatTypeStr) None
-    let DoubleType = makeType (Lun.make DoubleTypeStr) None
-    let KeywordType = makeType (Lun.make KeywordTypeStr) None
-    let PackageType = makeType (Lun.make PackageTypeStr) None
-    let SpecialValueType = makeType (Lun.make SpecialValueTypeStr) None
-    let LambdaType = makeType (Lun.make LambdaTypeStr) None
-    let UnitType = makeType (Lun.make UnitTypeStr) None
-    let RefType = makeType (Lun.make RefTypeStr) None
-    let ListType = makeType (Lun.make ListTypeStr) None
-    let ArrayType = makeType (Lun.make ArrayTypeStr) None
-    let CompositeType = makeType (Lun.make CompositeTypeStr) None
+    let ViolationType = makeType ViolationTypeStr None
+    let BooleanType = makeType BooleanTypeStr None
+    let CharacterType = makeType CharacterTypeStr None
+    let StringType = makeType StringTypeStr None
+    let IntType = makeType IntTypeStr None
+    let LongType = makeType LongTypeStr None
+    let FloatType = makeType FloatTypeStr None
+    let DoubleType = makeType DoubleTypeStr None
+    let KeywordType = makeType KeywordTypeStr None
+    let PackageType = makeType PackageTypeStr None
+    let SpecialValueType = makeType SpecialValueTypeStr None
+    let LambdaType = makeType LambdaTypeStr None
+    let UnitType = makeType UnitTypeStr None
+    let RefType = makeType RefTypeStr None
+    let ListType = makeType ListTypeStr None
+    let ArrayType = makeType ArrayTypeStr None
+    let CompositeType = makeType CompositeTypeStr None
 
     /// Make a special content value.
     /// TODO: consider if the function name is strange.

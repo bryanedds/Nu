@@ -166,11 +166,11 @@ module World =
     let addSplashScreenFromData handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite seal world =
         let splashScreen = makeDissolveScreen incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
-        let splashLabel = makeDefaultEntity (Lun.make typeof<LabelDispatcher>.Name) (Some "SplashLabel") seal world
+        let splashLabel = makeDefaultEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") seal world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel''' = splashLabel''.SetLabelSprite (sprite : Sprite)
-        let world' = addScreen address splashScreen [(Lun.make "SplashGroup", splashGroup, [splashLabel'''])] world
+        let world' = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'''])] world
         let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
@@ -183,25 +183,25 @@ module World =
         match tryGenerateAssetMetadataMap "AssetGraph.xml" with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
-            let userGameDispatcherName = Lun.make (userGameDispatcher.GetType ()).Name
+            let userGameDispatcherName = (userGameDispatcher.GetType ()).Name
             let dispatchers =
                 Map.ofArray
                     // TODO: see if we can reflectively generate this array
-                    [|Lun.make typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
-                      Lun.make typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
-                      Lun.make typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
-                      Lun.make typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
-                      Lun.make typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
-                      Lun.make typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
-                      Lun.make typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
-                      Lun.make typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
-                      Lun.make typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
-                      Lun.make typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
-                      Lun.make typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
-                      Lun.make typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
-                      Lun.make typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
-                      Lun.make typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
-                      Lun.make typeof<GameDispatcher>.Name, GameDispatcher () :> obj
+                    [|typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
+                      typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
+                      typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
+                      typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
+                      typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
+                      typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
+                      typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
+                      typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
+                      typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
+                      typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
+                      typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
+                      typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
+                      typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
+                      typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
+                      typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                       userGameDispatcherName, userGameDispatcher|]
             
             let world =

@@ -13,12 +13,12 @@ module XtensionModule =
 
     /// Describes an XField.
     type XFieldDescriptor =
-        { FieldName : Lun
-          TypeName : Lun } // the .NET type name
+        { FieldName : string
+          TypeName : string } // the .NET type name
 
     /// An indexible collection of XFields.
     type XFields =
-        Map<Lun, obj>
+        Map<string, obj>
 
     /// An attribute to specify the default value of an XField.
     [<AttributeUsage (AttributeTargets.Class)>]
@@ -34,7 +34,7 @@ module XtensionModule =
     /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
     /// 'Entity-Component System'.
     type [<StructuralEqualityAttribute; NoComparison; Serializable>] Xtension =
-        { OptXTypeName : Lun option
+        { OptXTypeName : string option
           XFields : XFields
           IsSealed : bool }
 
@@ -64,7 +64,7 @@ module XtensionModule =
             fun args ->
 
                 // check if dynamic member is an existing field
-                match Map.tryFind (Lun.makeFast memberName) this.XFields with
+                match Map.tryFind memberName this.XFields with
                 | None ->
                 
                     // try to convert method args to an array
@@ -95,7 +95,7 @@ module XtensionModule =
                                 | Some xTypeName ->
                                     let dispatchers = context.GetDispatchers ()
                                     match Map.tryFind xTypeName dispatchers with
-                                    | None -> failwith <| "Invalid dispatcher '" + xTypeName.LunStr + "'."
+                                    | None -> failwith <| "Invalid dispatcher '" + xTypeName + "'."
                                     | Some dispatcher -> dispatcher
 
                             // attempt to dispatch method
@@ -116,23 +116,22 @@ module XtensionModule =
                     | _ -> Xtension.getDefaultValue this
 
         static member (?<-) (this : Xtension, fieldName, value) =
-            let fieldLun = Lun.makeFast fieldName
     #if DEBUG
             // nop'ed outside of debug mode for efficiency
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
             // result that the key was contained.
-            if this.IsSealed && not <| Map.containsKey fieldLun this.XFields
+            if this.IsSealed && not <| Map.containsKey fieldName this.XFields
             then failwith "Cannot add field to a sealed Xtension."
             else
     #endif
-            let xFields = Map.add fieldLun (value :> obj) this.XFields
+            let xFields = Map.add fieldName (value :> obj) this.XFields
             { this with XFields = xFields }
 
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
     /// These are just POFO types, except without any data (the data they use would be in a related
     /// value's XField).
     and IXDispatchers =
-        Map<Lun, obj>
+        Map<string, obj>
 
     /// Represents a container of XDispatchers.
     and IXDispatcherContainer =
@@ -160,7 +159,7 @@ module Xtension =
     /// Attempt to read a property from XML.
     let tryReadProperty (property : PropertyInfo) (valueNode : XmlNode) obj =
         if property.PropertyType = typeof<Xtension> then
-            let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some <| Lun.make str
+            let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some str
             let childNodes = enumerable valueNode.ChildNodes
             let xFields =
                 Seq.map
@@ -171,7 +170,7 @@ module Xtension =
                         let converter = TypeDescriptor.GetConverter aType
                         if not <| converter.CanConvertFrom typeof<string>
                         then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
-                        else (Lun.make xNode.Name, converter.ConvertFrom xValueStr))
+                        else (xNode.Name, converter.ConvertFrom xValueStr))
                     childNodes
             let xtension = { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; IsSealed = false }
             property.SetValue (obj, xtension)
@@ -203,14 +202,14 @@ module Xtension =
                 match propertyValue with
                 | :? Xtension as xtension ->
                     writer.WriteStartElement property.Name
-                    writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name.LunStr)
+                    writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name)
                     for xField in xtension.XFields do
-                        let xFieldName = xField.Key.LunStr
+                        let xFieldName = xField.Key
                         let xValue = xField.Value
                         let xType = xValue.GetType ()
                         let xConverter = TypeDescriptor.GetConverter xType
                         let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
-                        writer.WriteStartElement xField.Key.LunStr
+                        writer.WriteStartElement xFieldName
                         writer.WriteAttributeString ("type", xType.FullName)
                         writer.WriteString xValueStr
                         writer.WriteEndElement ()
