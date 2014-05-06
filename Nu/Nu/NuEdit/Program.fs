@@ -22,9 +22,9 @@ open Nu.NuCore
 open Nu.NuConstants
 open Nu.NuMath
 open Nu.Metadata
-open Nu.DomainModel
 open Nu.Physics
 open Nu.Sdl
+open Nu.Sim
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
@@ -95,6 +95,7 @@ module Program =
 
         let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName.LunStr | EntityPropertyInfo p -> p.Name
         let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName.LunStr | EntityPropertyInfo p -> p.PropertyType
+        let propertyCanWrite = match property with EntityXFieldDescriptor x -> true | EntityPropertyInfo x -> x.CanWrite
 
         override this.ComponentType with get () = propertyType.DeclaringType
         override this.PropertyType with get () = propertyType
@@ -103,9 +104,9 @@ module Program =
         override this.ShouldSerializeValue source = true
 
         override this.IsReadOnly
-            // NOTE: we make ids read-only
             with get () =
-                not <| isPropertyNameWriteable propertyName
+                not propertyCanWrite ||
+                not <| Xtension.isPropertyNameWriteable propertyName
 
         override this.GetValue optSource =
             match optSource with
@@ -125,7 +126,7 @@ module Program =
                         // handle special case for an entity's Name field change
                         let valueStr = str value
                         if Int64.TryParse (valueStr, ref 0L) then
-                            trace <| "Invalid entity model name '" + valueStr + "' (must not be a number)."
+                            trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                             world
                         else
                             // TODO: factor out a renameEntity function
@@ -148,11 +149,9 @@ module Program =
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
         static member GetPropertyDescriptors (aType : Type) optSource =
             let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
-            let propertyDescriptors =
-                Seq.map
-                    (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor)
-                    properties
-            let optProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
+            let properties' = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<XFieldAttribute> ()) properties
+            let optProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties'
+            let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor) properties'
             let propertyDescriptors' =
                 match (optProperty, optSource) with
                 | (None, _) 
@@ -167,8 +166,7 @@ module Program =
                                 let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
                                 EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
                             xtension.XFields
-                    let propertiesAppended = Seq.append xFieldDescriptors propertyDescriptors
-                    Seq.distinctBy (fun (property : PropertyDescriptor) -> property.Name) propertiesAppended
+                    Seq.append xFieldDescriptors propertyDescriptors
             List.ofSeq propertyDescriptors'
 
     and EntityTypeDescriptor (optSource : obj) =
@@ -346,7 +344,7 @@ module Program =
         | DialogResult.OK ->
             let world = !refWorld
             let editorState = world.ExtData :?> EditorState
-            writeFile editorState.OptGameDispatcherDescriptor form.saveFileDialog.FileName world
+            saveFile editorState.OptGameDispatcherDescriptor form.saveFileDialog.FileName world
         | _ -> ()
 
     let handleOpen (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
@@ -569,7 +567,6 @@ module Program =
         form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
         form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
         form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
-        form.clearAllXFieldsButton.Click.Add (handleClearAllXFields form worldChangers refWorld)
         populateEntityDispatcherComboBox form
         form.Show ()
         form
@@ -632,7 +629,7 @@ module Program =
     let selectWorkingDirectory () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
-        openDialog.Title <- "Select your game's executable file to make its assets available to the editor (or cancel for default assets)."
+        openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for default assets)."
         if openDialog.ShowDialog () = DialogResult.OK then
             let workingDirectory = Path.GetDirectoryName openDialog.FileName
             Directory.SetCurrentDirectory workingDirectory

@@ -18,8 +18,8 @@ open Nu.Physics
 open Nu.Audio
 open Nu.Rendering
 open Nu.Metadata
-open Nu.DomainModel
 open Nu.Camera
+open Nu.Sim
 
 [<AutoOpen>]
 module EntityModule =
@@ -316,12 +316,12 @@ module Entity =
 
     let writeEntityToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name
-        writeModelProperties writer entity
+        Xtension.writeProperties writer entity
         writer.WriteEndElement ()
 
-    let loadEntityFromXml (entityNode : XmlNode) seal (world : World) =
+    let readEntityFromXml (entityNode : XmlNode) seal (world : World) =
         let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None seal world
-        setModelProperties entityNode entity
+        Xtension.readProperties entityNode entity
         entity
 
     let pickingSort entities =

@@ -97,6 +97,8 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Serialization" />
     <Reference Include="xunit">
       <HintPath>..\..\xUnit\xunit.dll</HintPath>
     </Reference>
