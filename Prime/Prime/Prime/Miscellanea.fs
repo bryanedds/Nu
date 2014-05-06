@@ -65,7 +65,7 @@ module Miscellanea =
         ignore <| TypeDescriptor.AddAttributes (typeof<'t>, TypeConverterAttribute typeof<'c>)
 
     /// Short-hand for linq enumerable cast.
-    let enbCast =
+    let enumerable =
         System.Linq.Enumerable.Cast
 
     /// Try to find a type by its name from all the loaded assemblies. Time-intensive.

@@ -5,7 +5,7 @@ open FSharpx.Lens.Operators
 open Prime
 open Nu
 open Nu.NuCore
-open Nu.DomainModel
+open Nu.Sim
 open Nu.Screen
 
 [<AutoOpen>]

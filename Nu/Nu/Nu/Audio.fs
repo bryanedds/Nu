@@ -12,12 +12,12 @@ open Nu.Assets
 [<AutoOpen>]
 module AudioModule =
 
-    type [<StructuralEquality; NoComparison>] Sound =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
         { SoundAssetName : Lun
           PackageName : Lun
           PackageFileName : string }
 
-    type [<StructuralEquality; NoComparison>] Song =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
         { SongAssetName : Lun
           PackageName : Lun
           PackageFileName : string }

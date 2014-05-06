@@ -8,6 +8,11 @@ open Nu
 open Nu.NuCore
 module NuConstants =
 
+    let [<Literal>] DefaultSpriteValue = "Image;Default;AssetGraph.xml"
+    let [<Literal>] DefaultTileMapAssetValue = "TileMap;Default;AssetGraph.xml"
+    let [<Literal>] DefaultFontValue = "Font;Default;AssetGraph.xml"
+    let [<Literal>] DefaultSoundValue = "Sound;Default;AssetGraph.xml"
+    let [<Literal>] DefaultSongValue = "Song;Default;AssetGraph.xml"
     let DesiredFps = 60
     let ScreenClearing = ColorClear (255uy, 255uy, 255uy)
     let PhysicsStepRate = 1.0f / single DesiredFps

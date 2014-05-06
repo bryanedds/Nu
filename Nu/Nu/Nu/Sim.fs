@@ -197,13 +197,13 @@ module SimModule =
     type Entity with
 
         (* XFields *)
-        member this.Position with get () = this?Position () : Vector2
+        [<XField>] member this.Position with get () = this?Position () : Vector2
         member this.SetPosition (value : Vector2) : Entity = this?Position <- value
-        member this.Depth with get () = this?Depth () : single
+        [<XField>] member this.Depth with get () = this?Depth () : single
         member this.SetDepth (value : single) : Entity = this?Depth <- value
-        member this.Rotation with get () = this?Rotation () : single
+        [<XField>] member this.Rotation with get () = this?Rotation () : single
         member this.SetRotation (value : single) : Entity = this?Rotation <- value
-        member this.Size with get () = this?Size () : Vector2
+        [<XField>] member this.Size with get () = this?Size () : Vector2
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
 
         (* XDispatches *)
@@ -232,6 +232,23 @@ module SimModule =
         member this.Register (world : World) : World = this?Register (this, world)
 
 module Sim =
+
+    let getOptChild optChildFinder address parent =
+        let optChild = optChildFinder address parent
+        match optChild with
+        | None -> None
+        | Some child -> Some child
+
+    let setOptChild addChild removeChild address parent optChild =
+        match optChild with
+        | None -> removeChild address parent
+        | Some child -> addChild address parent child
+
+    let getChild optChildFinder address parent =
+        Option.get <| optChildFinder address parent
+
+    let setChild childAdder childRemover address parent child =
+        setOptChild childAdder childRemover address parent (Some child)
 
     let activateGameDispatcher assemblyFileName gameDispatcherFullName world =
         let assembly = Assembly.LoadFrom assemblyFileName
