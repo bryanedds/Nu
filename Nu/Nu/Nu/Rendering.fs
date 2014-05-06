@@ -16,8 +16,8 @@ open Nu.Assets
 module RenderingModule =
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSpriteValue)>] Sprite =
-        { SpriteAssetName : Lun
-          PackageName : Lun
+        { SpriteAssetName : string
+          PackageName : string
           PackageFileName : string }
 
     type [<StructuralEquality; NoComparison>] SpriteDescriptor =
@@ -28,8 +28,8 @@ module RenderingModule =
           Color : Vector4 }
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
-        { TileMapAssetName : Lun
-          PackageName : Lun
+        { TileMapAssetName : string
+          PackageName : string
           PackageFileName : string }
 
     type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
@@ -45,8 +45,8 @@ module RenderingModule =
           TileSetSprite : Sprite }
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
-        { FontAssetName : Lun
-          PackageName : Lun
+        { FontAssetName : string
+          PackageName : string
           PackageFileName : string }
 
     type [<StructuralEquality; NoComparison>] TextDescriptor =
@@ -107,7 +107,7 @@ module RenderingModule =
             if sourceType = typeof<Sprite> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { SpriteAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+                { SpriteAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
     type TileMapAssetTypeConverter () =
         inherit TypeConverter ()
@@ -123,7 +123,7 @@ module RenderingModule =
             if sourceType = typeof<TileMapAsset> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { TileMapAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+                { TileMapAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
     type FontTypeConverter () =
         inherit TypeConverter ()
@@ -139,7 +139,7 @@ module RenderingModule =
             if sourceType = typeof<Font> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { FontAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+                { FontAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
 module Rendering =
 
@@ -165,7 +165,7 @@ module Rendering =
         | ".bmp"
         | ".png" ->
             let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FileName)
-            if optTexture <> IntPtr.Zero then Some (Lun.make asset.Name, TextureAsset optTexture)
+            if optTexture <> IntPtr.Zero then Some (asset.Name, TextureAsset optTexture)
             else
                 trace <| "Could not load texture '" + asset.FileName + "'."
                 None
@@ -177,7 +177,7 @@ module Rendering =
                 let fontSize = ref 0
                 if Int32.TryParse (fontSizeText, fontSize) then
                     let optFont = SDL_ttf.TTF_OpenFont (asset.FileName, !fontSize)
-                    if optFont <> IntPtr.Zero then Some (Lun.make asset.Name, FontAsset (optFont, !fontSize))
+                    if optFont <> IntPtr.Zero then Some (asset.Name, FontAsset (optFont, !fontSize))
                     else trace <| "Could not load font due to unparsable font size in file name '" + asset.FileName + "'."; None
                 else trace <| "Could not load font due to file name being too short: '" + asset.FileName + "'."; None
             else trace <| "Could not load font '" + asset.FileName + "'."; None
@@ -186,7 +186,7 @@ module Rendering =
             None
 
     let private tryLoadRenderPackage packageName fileName renderer =
-        let optAssets = tryLoadAssets "Rendering" packageName.LunStr fileName
+        let optAssets = tryLoadAssets "Rendering" packageName fileName
         match optAssets with
         | Left error ->
             note <| "HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
@@ -208,23 +208,23 @@ module Rendering =
         let (renderer_, optAssetMap_) =
             match optAssetMap with
             | None ->
-                note <| "Loading render package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly."
+                note <| "Loading render package '" + packageName + "' for asset '" + assetName + "' on the fly."
                 let renderer_ = tryLoadRenderPackage packageName packageFileName renderer_
                 (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
             | Some assetMap -> (renderer_, Map.tryFind packageName renderer_.RenderAssetMap)
         (renderer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
 
     let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
-        tryLoadRenderPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName renderer
+        tryLoadRenderPackage hintPackageUse.PackageName hintPackageUse.FileName renderer
     
     let private handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuse) renderer =
-        let packageNameLun = Lun.make hintPackageDisuse.PackageName
-        let optAssets = Map.tryFind packageNameLun renderer.RenderAssetMap
+        let packageName = hintPackageDisuse.PackageName
+        let optAssets = Map.tryFind packageName renderer.RenderAssetMap
         match optAssets with
         | None -> renderer
         | Some assets ->
             for asset in Map.toValueList assets do freeRenderAsset asset
-            { renderer with RenderAssetMap = Map.remove packageNameLun renderer.RenderAssetMap }
+            { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
 
     let private handleRenderMessage renderer renderMessage =
         match renderMessage with

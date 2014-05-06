@@ -169,23 +169,23 @@ module Entity =
     let worldEntitiesLens address =
         { Get = fun world ->
             match address with
-            | [screenLun; groupLun] ->
-                match Map.tryFind screenLun world.Entities with
+            | [screenStr; groupStr] ->
+                match Map.tryFind screenStr world.Entities with
                 | None -> Map.empty
                 | Some groupMap ->
-                    match Map.tryFind groupLun groupMap with
+                    match Map.tryFind groupStr groupMap with
                     | None -> Map.empty
                     | Some entityMap -> entityMap
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
           Set = fun entities world ->
             match address with
-            | [screenLun; groupLun] ->
-                match Map.tryFind screenLun world.Entities with
-                | None -> { world with Entities = Map.add screenLun (Map.singleton groupLun entities) world.Entities }
+            | [screenStr; groupStr] ->
+                match Map.tryFind screenStr world.Entities with
+                | None -> { world with Entities = Map.add screenStr (Map.singleton groupStr entities) world.Entities }
                 | Some groupMap ->
-                    match Map.tryFind groupLun groupMap with
-                    | None -> { world with Entities = Map.add screenLun (Map.add groupLun entities groupMap) world.Entities }
-                    | Some entityMap -> { world with Entities = Map.add screenLun (Map.add groupLun (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
+                    match Map.tryFind groupStr groupMap with
+                    | None -> { world with Entities = Map.add screenStr (Map.add groupStr entities groupMap) world.Entities }
+                    | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
     let mouseToScreen (position : Vector2) camera =
@@ -276,7 +276,7 @@ module Entity =
 
     let makeDefaultEntity xTypeName optName seal (dispatcherContainer : IXDispatcherContainer) =
         match Map.tryFind xTypeName <| dispatcherContainer.GetDispatchers () with
-        | None -> failwith <| "Invalid XType name '" + xTypeName.LunStr + "'."
+        | None -> failwith <| "Invalid XType name '" + xTypeName + "'."
         | Some dispatcher ->
             let entity = makeDefaultEntity2 xTypeName optName
             let entity' = entity.Init dispatcherContainer
@@ -320,7 +320,7 @@ module Entity =
         writer.WriteEndElement ()
 
     let readEntityFromXml (entityNode : XmlNode) seal (world : World) =
-        let entity = makeDefaultEntity (Lun.make typeof<EntityDispatcher>.Name) None seal world
+        let entity = makeDefaultEntity typeof<EntityDispatcher>.Name None seal world
         Xtension.readProperties entityNode entity
         entity
 

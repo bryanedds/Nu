@@ -70,22 +70,22 @@ module Group =
     let worldGroupsLens address =
         { Get = fun world ->
             match address with
-            | [screenLun] ->
-                match Map.tryFind screenLun world.Groups with
+            | [screenStr] ->
+                match Map.tryFind screenStr world.Groups with
                 | None -> Map.empty
                 | Some groupMap -> groupMap
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
           Set = fun groups world ->
             match address with
-            | [screenLun] ->
-                match Map.tryFind screenLun world.Groups with
-                | None -> { world with Groups = Map.add screenLun groups world.Groups }
-                | Some groupMap -> { world with Groups = Map.add screenLun (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
+            | [screenStr] ->
+                match Map.tryFind screenStr world.Groups with
+                | None -> { world with Groups = Map.add screenStr groups world.Groups }
+                | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
-          Xtension = { OptXTypeName = Some <| Lun.make typeof<GroupDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
+          Xtension = { OptXTypeName = Some typeof<GroupDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
 
     let registerGroup address (group : Group) entities world =
         group.Register (address, entities, world)
@@ -119,7 +119,7 @@ module Group =
             world
             groupDescriptors
 
-    let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<Lun, Entity>) =
+    let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<string, Entity>) =
         for entityKvp in entities do
             writeEntityToXml writer entityKvp.Value
 

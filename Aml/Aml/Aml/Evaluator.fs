@@ -58,8 +58,8 @@ module Evaluator =
                     match branch.IBEnv with
                     | None -> failwith "Unexpected match failure in 'Aml.Evaluator.interveneOnViolation'."
                     | Some env -> env
-                let env'' = appendProceduralVariable env' (AppendToNewFrame 2) ProblemLun None vioExpr
-                let env'3 = appendProceduralVariable env'' (AppendToHeadFrame 1) DataLun None violation.VioData
+                let env'' = appendProceduralVariable env' (AppendToNewFrame 2) ProblemStr None vioExpr
+                let env'3 = appendProceduralVariable env'' (AppendToHeadFrame 1) DataStr None violation.VioData
                 if branch.IBHide then intervening <- false
                 currentResultValue <- evalExprDropEnv env'3 branch.IBBody
         makeEvalResult env currentResultValue
@@ -73,7 +73,7 @@ module Evaluator =
 
     /// Make a first-class violation during evaluation.
     and makeEvalFirstClassViolation env name =
-        makeEvalViolation env ":v/eval/notFirstClass" ("Not a first-class value '" + name.LunStr + "'.")
+        makeEvalViolation env ":v/eval/notFirstClass" ("Not a first-class value '" + name + "'.")
 
     /// Make a an exception violation during evaluation.
     and makeEvalExceptionViolation env (exn : Exception) =
@@ -85,18 +85,14 @@ module Evaluator =
 
     /// Declare an equatable protocol.
     and declareEquatable env =
-        let a = Lun.make AStr
-        let equatable = Lun.make EquatableStr
-        let equality = Lun.make EqualityStr
-        let inequality = Lun.make InequalityStr
         let equatableProtocol =
             makeProtocolRecord
-                equatable
-                a
+                EquatableStr
+                AStr
                 None
                 (makeDoc "Enables testing for equality and inequality.")
-                [makeSignature equality [makeArg a Concrete UnitValue; makeArg a Concrete UnitValue] (makeDoc "Query for semantic equality.")
-                 makeSignature inequality [makeArg a Concrete UnitValue; makeArg a Concrete UnitValue] (makeDoc "Query for semantic inequality.")]
+                [makeSignature EqualityStr [makeArg AStr Concrete UnitValue; makeArg AStr Concrete UnitValue] (makeDoc "Query for semantic equality.")
+                 makeSignature InequalityStr [makeArg AStr Concrete UnitValue; makeArg AStr Concrete UnitValue] (makeDoc "Query for semantic inequality.")]
                 None
         let result : EvalResult = evalProtocol env equatableProtocol
         if isViolation result.Value then failwith "Could not declare equatable protocol."
@@ -104,26 +100,19 @@ module Evaluator =
 
     /// Instantiate a type under the equatable protocol.
     and instantiateEquatable env typeName =
-        let x = Lun.make XStr
-        let y = Lun.make YStr
-        let equatableProtocol = Lun.make EquatableProtocolStr
-        let equal = Lun.make EqualStr
-        let inequal = Lun.make InequalStr
-        let equality = Lun.make EqualityStr
-        let inequality = Lun.make InequalityStr
-        let xArg = makeArg x Concrete UnitValue
-        let xSymbol = Symbol (makeSymbolRecord x (ref CEUncached) None)
-        let xConstraint = makeConstraint typeName [x]
-        let yArg = makeArg y Concrete UnitValue
-        let ySymbol = Symbol (makeSymbolRecord y (ref CEUncached) None)
-        let yConstraint = makeConstraint typeName [y]
-        let equalSymbol = Symbol (makeSymbolRecord equal (ref CEUncached) None)
+        let xArg = makeArg XStr Concrete UnitValue
+        let xSymbol = Symbol (makeSymbolRecord XStr (ref CEUncached) None)
+        let xConstraint = makeConstraint typeName [XStr]
+        let yArg = makeArg YStr Concrete UnitValue
+        let ySymbol = Symbol (makeSymbolRecord YStr (ref CEUncached) None)
+        let yConstraint = makeConstraint typeName [YStr]
+        let equalSymbol = Symbol (makeSymbolRecord EqualStr (ref CEUncached) None)
         let equalBody = Series (makeSeriesRecord [equalSymbol; xSymbol; ySymbol] 3 None)
-        let equalFunction = Function (makeFunctionRecord equality [xArg; yArg] 2 equalBody None None UnitValue UnitValue true None)
-        let inequalSymbol = Symbol (makeSymbolRecord inequal (ref CEUncached) None)
+        let equalFunction = Function (makeFunctionRecord EqualityStr [xArg; yArg] 2 equalBody None None UnitValue UnitValue true None)
+        let inequalSymbol = Symbol (makeSymbolRecord InequalStr (ref CEUncached) None)
         let inequalBody = Series (makeSeriesRecord [inequalSymbol; xSymbol; ySymbol] 3 None)
-        let inequalFunction = Function (makeFunctionRecord inequality [xArg; yArg] 2 inequalBody None None UnitValue UnitValue true None)
-        let instance = makeInstanceRecord equatableProtocol [x; y] [xConstraint; yConstraint] [equalFunction; inequalFunction] None
+        let inequalFunction = Function (makeFunctionRecord InequalityStr [xArg; yArg] 2 inequalBody None None UnitValue UnitValue true None)
+        let instance = makeInstanceRecord EquatableProtocolStr [XStr; YStr] [xConstraint; yConstraint] [equalFunction; inequalFunction] None
         let instanceExpr = Instance instance
         let result : EvalResult = evalInstance env instance instanceExpr
         if isViolation result.Value then failwith "Could not instantiate type over equatable protocol."
@@ -245,9 +234,7 @@ module Evaluator =
             match value with
             | Violation _ as v -> forwardEvalViolation env v
             | Keyword keyword ->
-                let entryNameStr = keyword.KRValue.LunStr
-                let entryNameStr' = if entryNameStr.StartsWith SimpleEntryPrefixStr then entryNameStr.Substring SimpleEntryPrefixStr.Length else entryNameStr
-                let entryName = Lun.make entryNameStr'
+                let entryName = if keyword.KRValue.StartsWith SimpleEntryPrefixStr then keyword.KRValue.Substring SimpleEntryPrefixStr.Length else keyword.KRValue
                 let optEntry = tryFindEntry env entryName
                 match optEntry with
                 | None -> makeEvalViolation env ":v/eval/invalidDocOperation" "Entry not found for doc operation."
@@ -279,7 +266,7 @@ module Evaluator =
                 let typeName = keyword.KRValue
                 let optType = tryFindType env typeName
                 match optType with
-                | None -> makeEvalViolation env ":v/eval/nonexistantType" ("Could not find type '" + typeName.LunStr + "'.")
+                | None -> makeEvalViolation env ":v/eval/nonexistantType" ("Could not find type '" + typeName + "'.")
                 | Some (_, aType, _) -> makeEvalResult env aType
             | _ -> makeEvalViolation env ":v/eval/invalidTypeOfArgumentType" "TypeOf operation requires a keyword argument."
 
@@ -642,147 +629,147 @@ module Evaluator =
         | Some lm -> lm.ApplySpecialBuiltin env name args argCount
 
     /// The appliable built-in lambdas.
-    and appliableBuiltins : (Lun * (Env -> Lun -> Expr list -> int -> EvalResult)) list =
-        [(Lun.make FloatFloorStr, applyFloatUnop floatFloor)
-         (Lun.make FloatCeilingStr, applyFloatUnop floatCeiling)
-         (Lun.make FloatTruncateStr, applyFloatUnop floatTruncate)
-         (Lun.make FloatRoundStr, applyFloatUnop floatRound)
-         (Lun.make FloatExpStr, applyFloatUnop floatExp)
-         (Lun.make FloatLogStr, applyFloatUnop floatLog)
-         (Lun.make FloatSqrtStr, applyFloatUnop floatSqrt)
-         (Lun.make FloatSinStr, applyFloatUnop floatSin)
-         (Lun.make FloatCosStr, applyFloatUnop floatCos)
-         (Lun.make FloatTanStr, applyFloatUnop floatTan)
-         (Lun.make FloatAsinStr, applyFloatUnop floatAsin)
-         (Lun.make FloatAcosStr, applyFloatUnop floatAcos)
-         (Lun.make FloatAtanStr, applyFloatUnop floatAtan)
-         (Lun.make DoubleFloorStr, applyDoubleUnop Math.Floor)
-         (Lun.make DoubleCeilingStr, applyDoubleUnop Math.Ceiling)
-         (Lun.make DoubleTruncateStr, applyDoubleUnop Math.Truncate)
-         (Lun.make DoubleRoundStr, applyDoubleUnop Math.Round)
-         (Lun.make DoubleExpStr, applyDoubleUnop Math.Exp)
-         (Lun.make DoubleLogStr, applyDoubleUnop Math.Log)
-         (Lun.make DoubleSqrtStr, applyDoubleUnop Math.Sqrt)
-         (Lun.make DoubleSinStr, applyDoubleUnop Math.Sin)
-         (Lun.make DoubleCosStr, applyDoubleUnop Math.Cos)
-         (Lun.make DoubleTanStr, applyDoubleUnop Math.Tan)
-         (Lun.make DoubleAsinStr, applyDoubleUnop Math.Asin)
-         (Lun.make DoubleAcosStr, applyDoubleUnop Math.Acos)
-         (Lun.make DoubleAtanStr, applyDoubleUnop Math.Atan)
-         (Lun.make IntPlusStr, applyIntBinop (+))
-         (Lun.make IntMinusStr, applyIntBinop (-))
-         (Lun.make IntMultiplyStr, applyIntBinop (*))
-         (Lun.make IntDivideStr, applyIntBinop (/))
-         (Lun.make IntPowStr, applyIntBinop pown)
-         (Lun.make IntRemStr, applyIntBinop (%))
-         (Lun.make IntIncStr, applyIntUnop intInc)
-         (Lun.make IntDecStr, applyIntUnop intDec)
-         (Lun.make LongPlusStr, applyLongBinop (+))
-         (Lun.make LongMinusStr, applyLongBinop (-))
-         (Lun.make LongMultiplyStr, applyLongBinop (*))
-         (Lun.make LongDivideStr, applyLongBinop (/))
-         (Lun.make LongPowStr, applyLongBinop longPow)
-         (Lun.make LongRemStr, applyLongBinop (%))
-         (Lun.make LongIncStr, applyLongUnop longInc)
-         (Lun.make LongDecStr, applyLongUnop longDec)
-         (Lun.make FloatPlusStr, applyFloatBinop (+))
-         (Lun.make FloatMinusStr, applyFloatBinop (-))
-         (Lun.make FloatMultiplyStr, applyFloatBinop (*))
-         (Lun.make FloatDivideStr, applyFloatBinop (/))
-         (Lun.make FloatPowStr, applyFloatBinop ( ** ))
-         (Lun.make FloatRemStr, applyFloatBinop (%))
-         (Lun.make FloatLogNStr, applyFloatBinop floatLogN)
-         (Lun.make FloatRootStr, applyFloatBinop floatRoot)
-         (Lun.make DoublePlusStr, applyDoubleBinop (+))
-         (Lun.make DoubleMinusStr, applyDoubleBinop (-))
-         (Lun.make DoubleMultiplyStr, applyDoubleBinop (*))
-         (Lun.make DoubleDivideStr, applyDoubleBinop (/))
-         (Lun.make DoublePowStr, applyDoubleBinop ( ** ))
-         (Lun.make DoubleRemStr, applyDoubleBinop (%))
-         (Lun.make DoubleLogNStr, applyDoubleBinop doubleLogN)
-         (Lun.make DoubleRootStr, applyDoubleBinop doubleRoot)
-         (Lun.make CharEqualStr, applyComparator (=))
-         (Lun.make CharInequalStr, applyComparator (<>))
-         (Lun.make CharLessThanStr, applyComparator (<))
-         (Lun.make CharGreaterThanStr, applyComparator (>))
-         (Lun.make CharLessThanOrEqualStr, applyComparator (<=))
-         (Lun.make CharGreaterThanOrEqualStr, applyComparator (>=))
-         (Lun.make IntEqualStr, applyComparator (=))
-         (Lun.make IntInequalStr, applyComparator (<>))
-         (Lun.make IntLessThanStr, applyComparator (<))
-         (Lun.make IntGreaterThanStr, applyComparator (>))
-         (Lun.make IntLessThanOrEqualStr, applyComparator (<=))
-         (Lun.make IntGreaterThanOrEqualStr, applyComparator (>=))
-         (Lun.make LongEqualStr, applyComparator (=))
-         (Lun.make LongInequalStr, applyComparator (<>))
-         (Lun.make LongLessThanStr, applyComparator (<))
-         (Lun.make LongGreaterThanStr, applyComparator (>))
-         (Lun.make LongLessThanOrEqualStr, applyComparator (<=))
-         (Lun.make LongGreaterThanOrEqualStr, applyComparator (>=))
-         (Lun.make FloatEqualStr, applyComparator (=))
-         (Lun.make FloatInequalStr, applyComparator (<>))
-         (Lun.make FloatLessThanStr, applyComparator (<))
-         (Lun.make FloatGreaterThanStr, applyComparator (>))
-         (Lun.make FloatLessThanOrEqualStr, applyComparator (<=))
-         (Lun.make FloatGreaterThanOrEqualStr, applyComparator (>=))
-         (Lun.make DoubleEqualStr, applyComparator (=))
-         (Lun.make DoubleInequalStr, applyComparator (<>))
-         (Lun.make DoubleLessThanStr, applyComparator (<))
-         (Lun.make DoubleGreaterThanStr, applyComparator (>))
-         (Lun.make DoubleLessThanOrEqualStr, applyComparator (<=))
-         (Lun.make DoubleGreaterThanOrEqualStr, applyComparator (>=))
-         (Lun.make AndStr, applyAnd)
-         (Lun.make OrStr, applyOr)
-         (Lun.make DocStr, applyDoc)
-         (Lun.make IfStr, applyIf)
-         (Lun.make ApplyStr, applyApply)
-         (Lun.make TypeStr, applyType)
-         (Lun.make TypeOfStr, applyTypeOf)
-         (Lun.make EqualStr, applyEqual)
-         (Lun.make InequalStr, applyInequal)
-         (Lun.make RefEqualityStr, applyRefEqual)
-         (Lun.make RefInequalityStr, applyRefInequal)
-         (Lun.make ConsStr, applyCons)
-         (Lun.make HeadStr, applyHead)
-         (Lun.make TailStr, applyTail)
-         (Lun.make StringLengthStr, applyStringLength)
-         (Lun.make StringAppendStr, applyStringAppend)
-         (Lun.make ListLengthStr, applyListLength)
-         (Lun.make ListAppendStr, applyListAppend)
-         (Lun.make ArrayLengthStr, applyArrayLength)
-         (Lun.make ArrayAppendStr, applyArrayAppend)
-         (Lun.make StepsStr, applySteps)
-         (Lun.make WhileStr, applyWhile)
-         (Lun.make IsUnitStr, applyIsUnit)
-         (Lun.make IsBooleanStr, applyIsBoolean)
-         (Lun.make IsIntStr, applyIsInt)
-         (Lun.make IsLongStr, applyIsLong)
-         (Lun.make IsFloatStr, applyIsFloat)
-         (Lun.make IsDoubleStr, applyIsDouble)
-         (Lun.make IsCharacterStr, applyIsCharacter)
-         (Lun.make IsStringStr, applyIsString)
-         (Lun.make IsKeywordStr, applyIsKeyword)
-         (Lun.make IsPackageStr, applyIsPackage)
-         (Lun.make IsLambdaStr, applyIsLambda)
-         (Lun.make IsListStr, applyIsList)
-         (Lun.make IsArrayStr, applyIsArray)
-         (Lun.make IsCompositeStr, applyIsComposite)
-         (Lun.make HasTypeStr, applyHasType)
-         (Lun.make HasProtocolStr, applyHasProtocol)
-         (Lun.make CharToIntStr, applyCharToInt)
-         (Lun.make IntToCharStr, applyIntToChar)
-         (Lun.make IntToLongStr, applyIntToLong)
-         (Lun.make LongToIntStr, applyLongToInt)
-         (Lun.make FloatToDoubleStr, applyFloatToDouble)
-         (Lun.make DoubleToFloatStr, applyDoubleToFloat)
-         (Lun.make IntToFloatStr, applyIntToFloat)
-         (Lun.make FloatToIntStr, applyFloatToInt)
-         (Lun.make LongToDoubleStr, applyLongToDouble)
-         (Lun.make DoubleToLongStr, applyDoubleToLong)
-         (Lun.make StringToArrayStr, applyStringToArray)
-         (Lun.make ArrayToStringStr, applyArrayToString)
-         (Lun.make ListToArrayStr, applyListToArray)
-         (Lun.make ArrayToListStr, applyArrayToList)]
+    and appliableBuiltins : (string * (Env -> string -> Expr list -> int -> EvalResult)) list =
+        [(FloatFloorStr, applyFloatUnop floatFloor)
+         (FloatCeilingStr, applyFloatUnop floatCeiling)
+         (FloatTruncateStr, applyFloatUnop floatTruncate)
+         (FloatRoundStr, applyFloatUnop floatRound)
+         (FloatExpStr, applyFloatUnop floatExp)
+         (FloatLogStr, applyFloatUnop floatLog)
+         (FloatSqrtStr, applyFloatUnop floatSqrt)
+         (FloatSinStr, applyFloatUnop floatSin)
+         (FloatCosStr, applyFloatUnop floatCos)
+         (FloatTanStr, applyFloatUnop floatTan)
+         (FloatAsinStr, applyFloatUnop floatAsin)
+         (FloatAcosStr, applyFloatUnop floatAcos)
+         (FloatAtanStr, applyFloatUnop floatAtan)
+         (DoubleFloorStr, applyDoubleUnop Math.Floor)
+         (DoubleCeilingStr, applyDoubleUnop Math.Ceiling)
+         (DoubleTruncateStr, applyDoubleUnop Math.Truncate)
+         (DoubleRoundStr, applyDoubleUnop Math.Round)
+         (DoubleExpStr, applyDoubleUnop Math.Exp)
+         (DoubleLogStr, applyDoubleUnop Math.Log)
+         (DoubleSqrtStr, applyDoubleUnop Math.Sqrt)
+         (DoubleSinStr, applyDoubleUnop Math.Sin)
+         (DoubleCosStr, applyDoubleUnop Math.Cos)
+         (DoubleTanStr, applyDoubleUnop Math.Tan)
+         (DoubleAsinStr, applyDoubleUnop Math.Asin)
+         (DoubleAcosStr, applyDoubleUnop Math.Acos)
+         (DoubleAtanStr, applyDoubleUnop Math.Atan)
+         (IntPlusStr, applyIntBinop (+))
+         (IntMinusStr, applyIntBinop (-))
+         (IntMultiplyStr, applyIntBinop (*))
+         (IntDivideStr, applyIntBinop (/))
+         (IntPowStr, applyIntBinop pown)
+         (IntRemStr, applyIntBinop (%))
+         (IntIncStr, applyIntUnop intInc)
+         (IntDecStr, applyIntUnop intDec)
+         (LongPlusStr, applyLongBinop (+))
+         (LongMinusStr, applyLongBinop (-))
+         (LongMultiplyStr, applyLongBinop (*))
+         (LongDivideStr, applyLongBinop (/))
+         (LongPowStr, applyLongBinop longPow)
+         (LongRemStr, applyLongBinop (%))
+         (LongIncStr, applyLongUnop longInc)
+         (LongDecStr, applyLongUnop longDec)
+         (FloatPlusStr, applyFloatBinop (+))
+         (FloatMinusStr, applyFloatBinop (-))
+         (FloatMultiplyStr, applyFloatBinop (*))
+         (FloatDivideStr, applyFloatBinop (/))
+         (FloatPowStr, applyFloatBinop ( ** ))
+         (FloatRemStr, applyFloatBinop (%))
+         (FloatLogNStr, applyFloatBinop floatLogN)
+         (FloatRootStr, applyFloatBinop floatRoot)
+         (DoublePlusStr, applyDoubleBinop (+))
+         (DoubleMinusStr, applyDoubleBinop (-))
+         (DoubleMultiplyStr, applyDoubleBinop (*))
+         (DoubleDivideStr, applyDoubleBinop (/))
+         (DoublePowStr, applyDoubleBinop ( ** ))
+         (DoubleRemStr, applyDoubleBinop (%))
+         (DoubleLogNStr, applyDoubleBinop doubleLogN)
+         (DoubleRootStr, applyDoubleBinop doubleRoot)
+         (CharEqualStr, applyComparator (=))
+         (CharInequalStr, applyComparator (<>))
+         (CharLessThanStr, applyComparator (<))
+         (CharGreaterThanStr, applyComparator (>))
+         (CharLessThanOrEqualStr, applyComparator (<=))
+         (CharGreaterThanOrEqualStr, applyComparator (>=))
+         (IntEqualStr, applyComparator (=))
+         (IntInequalStr, applyComparator (<>))
+         (IntLessThanStr, applyComparator (<))
+         (IntGreaterThanStr, applyComparator (>))
+         (IntLessThanOrEqualStr, applyComparator (<=))
+         (IntGreaterThanOrEqualStr, applyComparator (>=))
+         (LongEqualStr, applyComparator (=))
+         (LongInequalStr, applyComparator (<>))
+         (LongLessThanStr, applyComparator (<))
+         (LongGreaterThanStr, applyComparator (>))
+         (LongLessThanOrEqualStr, applyComparator (<=))
+         (LongGreaterThanOrEqualStr, applyComparator (>=))
+         (FloatEqualStr, applyComparator (=))
+         (FloatInequalStr, applyComparator (<>))
+         (FloatLessThanStr, applyComparator (<))
+         (FloatGreaterThanStr, applyComparator (>))
+         (FloatLessThanOrEqualStr, applyComparator (<=))
+         (FloatGreaterThanOrEqualStr, applyComparator (>=))
+         (DoubleEqualStr, applyComparator (=))
+         (DoubleInequalStr, applyComparator (<>))
+         (DoubleLessThanStr, applyComparator (<))
+         (DoubleGreaterThanStr, applyComparator (>))
+         (DoubleLessThanOrEqualStr, applyComparator (<=))
+         (DoubleGreaterThanOrEqualStr, applyComparator (>=))
+         (AndStr, applyAnd)
+         (OrStr, applyOr)
+         (DocStr, applyDoc)
+         (IfStr, applyIf)
+         (ApplyStr, applyApply)
+         (TypeStr, applyType)
+         (TypeOfStr, applyTypeOf)
+         (EqualStr, applyEqual)
+         (InequalStr, applyInequal)
+         (RefEqualityStr, applyRefEqual)
+         (RefInequalityStr, applyRefInequal)
+         (ConsStr, applyCons)
+         (HeadStr, applyHead)
+         (TailStr, applyTail)
+         (StringLengthStr, applyStringLength)
+         (StringAppendStr, applyStringAppend)
+         (ListLengthStr, applyListLength)
+         (ListAppendStr, applyListAppend)
+         (ArrayLengthStr, applyArrayLength)
+         (ArrayAppendStr, applyArrayAppend)
+         (StepsStr, applySteps)
+         (WhileStr, applyWhile)
+         (IsUnitStr, applyIsUnit)
+         (IsBooleanStr, applyIsBoolean)
+         (IsIntStr, applyIsInt)
+         (IsLongStr, applyIsLong)
+         (IsFloatStr, applyIsFloat)
+         (IsDoubleStr, applyIsDouble)
+         (IsCharacterStr, applyIsCharacter)
+         (IsStringStr, applyIsString)
+         (IsKeywordStr, applyIsKeyword)
+         (IsPackageStr, applyIsPackage)
+         (IsLambdaStr, applyIsLambda)
+         (IsListStr, applyIsList)
+         (IsArrayStr, applyIsArray)
+         (IsCompositeStr, applyIsComposite)
+         (HasTypeStr, applyHasType)
+         (HasProtocolStr, applyHasProtocol)
+         (CharToIntStr, applyCharToInt)
+         (IntToCharStr, applyIntToChar)
+         (IntToLongStr, applyIntToLong)
+         (LongToIntStr, applyLongToInt)
+         (FloatToDoubleStr, applyFloatToDouble)
+         (DoubleToFloatStr, applyDoubleToFloat)
+         (IntToFloatStr, applyIntToFloat)
+         (FloatToIntStr, applyFloatToInt)
+         (LongToDoubleStr, applyLongToDouble)
+         (DoubleToLongStr, applyDoubleToLong)
+         (StringToArrayStr, applyStringToArray)
+         (ArrayToStringStr, applyArrayToString)
+         (ListToArrayStr, applyListToArray)
+         (ArrayToListStr, applyArrayToList)]
 
     /// The appliable built-in lambdas in dictionary form.
     and appliableBuiltinDict = 
@@ -790,7 +777,7 @@ module Evaluator =
 
     /// Apply a built-in operator.
     and applyBuiltin env name (args : Expr list) argCount =
-        let appliableBuiltin = ref Unchecked.defaultof<Env -> Lun -> Expr list -> int -> EvalResult>
+        let appliableBuiltin = ref Unchecked.defaultof<Env -> string -> Expr list -> int -> EvalResult>
         if appliableBuiltinDict.TryGetValue (name, appliableBuiltin)
         then !appliableBuiltin env name args argCount
         else applySpecialBuiltin env name args argCount
@@ -819,7 +806,7 @@ module Evaluator =
                 else
                     let postArgs = resultValue :: args
                     let postArgCount = argCount + 1
-                    let postLargs = makeArg ResultLun Concrete UnitValue :: largs
+                    let postLargs = makeArg ResultStr Concrete UnitValue :: largs
                     let postLargCount = largCount + 1
                     let (postconditionPassed, optPostViolation) = checkContract env postArgs postArgCount postLargs postLargCount post
                     if postconditionPassed then result
@@ -850,7 +837,7 @@ module Evaluator =
     /// TODO: see if this code could be made more bullet-proof and optimized (such as for when applyDispatch recurs).
     and applyDispatch env args argCount dispatch skipArgEval =
         if not (List.hasAtLeast (dispatch.DispContingentArg + 1) args)
-        then makeEvalViolation env ":v/eval/unresolvableDynamicDispatch" ("Cannot resolve dynamic dispatch for '" + dispatch.DispName.LunStr + "' operation. It is missing the argument upon which function selection is contingent.")
+        then makeEvalViolation env ":v/eval/unresolvableDynamicDispatch" ("Cannot resolve dynamic dispatch for '" + dispatch.DispName + "' operation. It is missing the argument upon which function selection is contingent.")
         else
             let argValues = if skipArgEval then args else evalExprsDropEnv env args
             let argValueContingent = argValues.[dispatch.DispContingentArg]
@@ -859,14 +846,14 @@ module Evaluator =
             | Composite ctype ->
                 let sigImpl = ref Unchecked.defaultof<Expr>
                 if not (ctype.CompSigImpls.TryGetValue (dispatch.DispName, sigImpl))
-                then makeEvalViolation env ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName.LunStr + "' operation.")
+                then makeEvalViolation env ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' operation.")
                 else
                     match !sigImpl with
                     | Symbol symbol -> applyBuiltinSymbol env argValues argCount symbol
                     | Lambda lambda as l -> applyLambdaDispatch env argValues argCount lambda.LamArgs lambda.LamArgCount lambda l
                     | Dispatch dispatch2 -> applyDispatch env argValues argCount dispatch2 true
-                    | _ -> makeEvalViolation env ":v/eval/invalidDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName.LunStr + "' to either built-in function or lambda.")
-            | _ -> makeEvalViolation env ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName.LunStr + "' operation.")
+                    | _ -> makeEvalViolation env ":v/eval/invalidDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' to either built-in function or lambda.")
+            | _ -> makeEvalViolation env ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' operation.")
     
     /// Apply a string selector.
     and applyStringSelector env key (str : string) =
@@ -891,12 +878,11 @@ module Evaluator =
         match key' with
         | Violation _ as v -> forwardEvalViolation env v
         | Keyword keyword ->
-            let name = keyword.KRValue.LunStr
+            let name = keyword.KRValue
             if not (name.StartsWith MemberPrefixStr)
             then makeEvalViolation env ":v/contract/invalidSelectorKeyType" ("Member selectors using keywords must start with member prefix '" + MemberPrefixStr + "'.")
             else
-                let memberNameStr = name.Substring MemberPrefixStr.Length
-                let memberName = Lun.make memberNameStr
+                let memberName = name.Substring MemberPrefixStr.Length
                 let mem = getMember env memberName members
                 makeEvalResult env mem
         | Symbol symbol -> let memberName = symbol.SymName in makeEvalResult env (getMember env memberName members)
@@ -950,7 +936,7 @@ module Evaluator =
             | None ->
                 let optDeclarationEntry = tryFindDeclarationEntry env name
                 match optDeclarationEntry with
-                | None -> makeEvalViolation env ":v/eval/nonexistentSymbol" ("Non-existent symbol '" + name.LunStr + "'.")
+                | None -> makeEvalViolation env ":v/eval/nonexistentSymbol" ("Non-existent symbol '" + name + "'.")
                 | Some declarationEntry ->
                     if not env.EnvAllowRedeclaration then
                         let newCachedEntry = CEDeclaration declarationEntry
@@ -1031,7 +1017,7 @@ module Evaluator =
                         List.map2
                             (fun arg larg ->
                                 if larg.ArgType = Abstracting
-                                then Lambda (makeLambdaRecord true Lun.empty [] 0 arg tautology UnitValue UnitValue true None (Some env))
+                                then Lambda (makeLambdaRecord true String.Empty [] 0 arg tautology UnitValue UnitValue true None (Some env))
                                 else arg)
                             unifiedArgs
                             unifiedLargs
@@ -1066,7 +1052,7 @@ module Evaluator =
                 | None -> forwardEvalViolation env v
                 | Some branch ->
                     let dataValue = evalExprDropEnv env violation.VioData
-                    let env' = appendProceduralVariable env (AppendToNewFrame 1) DataLun None dataValue
+                    let env' = appendProceduralVariable env (AppendToNewFrame 1) DataStr None dataValue
                     let branchResult = evalExprDropEnv env' branch.ABBody
                     makeEvalResult env branchResult
             | _ -> makeEvalResult env bodyValue
@@ -1111,7 +1097,7 @@ module Evaluator =
                 if newCompositeMembers.Count - composite.CompMembers.Count < extend.ExtMembers.Count
                 then makeEvalViolation env ":v/eval/malformedExtendOperation" "Extend operation may not duplicate composite members."
                 else
-                    let newComposite = makeCompositeRecord composite.CompEvaluated Lun.empty newCompositeMembers composite.CompType null null extend.ExtOptPositions
+                    let newComposite = makeCompositeRecord composite.CompEvaluated String.Empty newCompositeMembers composite.CompType null null extend.ExtOptPositions
                     makeEvalResult env (Composite newComposite)
             | _ -> makeEvalViolation env ":v/eval/malformedExtendOperation" "First argument of extend must be a composite (non-struct)."
 
@@ -1235,31 +1221,31 @@ module Evaluator =
         let value = evalExprDropEnv env variable.VarBody
         let optEnv' = tryAppendDeclarationVariable env variable.VarName variable.VarDoc value
         match optEnv' with
-        | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The variable '" + variable.VarName.LunStr + "' clashes names with an existing declaration.")
+        | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The variable '" + variable.VarName + "' clashes names with an existing declaration.")
         | Some env' -> makeEvalUnit env'
     
     /// Evaluate a function expression.
     and evalFunction env fn =
         let optEnv' = tryAppendDeclarationFunction env fn.FnName fn.FnArgs fn.FnArgCount fn.FnBody fn.FnOptConstraints fn.FnDoc fn.FnPre fn.FnPost fn.FnEmptyUnification fn.FnOptPositions
         match optEnv' with
-        | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The function '" + fn.FnName.LunStr + "' clashes names with an existing declaration.")
+        | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The function '" + fn.FnName + "' clashes names with an existing declaration.")
         | Some env' -> makeEvalUnit env'
     
     /// Evaluate a structure expression.
     and evalStructure env structure =
         if not env.EnvAllowRedeclaration && hasDeclarationEntry env structure.StructName
-        then makeEvalViolation env ":v/eval/structShadows" ("The struct '" + structure.StructName.LunStr + "' shadows an existing entry.")
+        then makeEvalViolation env ":v/eval/structShadows" ("The struct '" + structure.StructName + "' shadows an existing entry.")
         else
             let symbols = List.map (fun mem -> Symbol (makeSymbolRecord mem (ref CEUncached) structure.StructOptPositions)) structure.StructMemberNames
             let optEnv' = tryAppendStructure env structure.StructName structure.StructMemberNames structure.StructOptConstraints structure.StructDoc structure.StructReq structure.StructMemberNames symbols structure.StructOptPositions
             match optEnv' with
-            | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The struct '" + structure.StructName.LunStr + "' or one of its dependents clashes names with an existing declaration.")
+            | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The struct '" + structure.StructName + "' or one of its dependents clashes names with an existing declaration.")
             | Some env' -> let env'' = instantiateEquatable env' structure.StructName in makeEvalUnit env''
 
     /// Evaluate a protocol.
     and evalProtocol env protocol =
         if not env.EnvAllowRedeclaration && hasDeclarationEntry env protocol.ProtoName
-        then makeEvalViolation env ":v/eval/protocolShadows" ("The protocol '" + protocol.ProtoName.LunStr + "' shadows an existing entry.")
+        then makeEvalViolation env ":v/eval/protocolShadows" ("The protocol '" + protocol.ProtoName + "' shadows an existing entry.")
         else
             let arg = protocol.ProtoArg
             let optConstraints = protocol.ProtoOptConstraints
@@ -1275,7 +1261,7 @@ module Evaluator =
                     let optFirstSigMatchingEntry = Seq.tryHead sigsMatchingEntry
                     match optFirstSigMatchingEntry with
                     | Some firstSigMatchingEntry when not env.EnvAllowRedeclaration ->
-                        makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The protocol signature '" + firstSigMatchingEntry.SigName.LunStr + "' clashes names with an existing declaration.")
+                        makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The protocol signature '" + firstSigMatchingEntry.SigName + "' clashes names with an existing declaration.")
                     | Some _
                     | None ->
                         let optSigsViolation = getSignaturesViolation env arg sigs
@@ -1283,7 +1269,7 @@ module Evaluator =
                         else
                             let optEnv' = tryAppendProtocol env protocol.ProtoName arg optConstraints protocol.ProtoDoc sigs
                             match optEnv' with
-                            | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The protocol '" + protocol.ProtoName.LunStr + "' clashes names with an existing declaration.")
+                            | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The protocol '" + protocol.ProtoName + "' clashes names with an existing declaration.")
                             | Some env' -> makeEvalUnit env'
             | Some constraintsViolation -> makeEvalResult env constraintsViolation
 
@@ -1295,7 +1281,6 @@ module Evaluator =
         | None -> makeEvalViolation env ":v/eval/missingProtocol" "Cannot declare an instance with a non-existent protocol."
         | Some (ProtocolEntry (parg, _, _, psigs)) ->
             let (protocolName, args, sigImpls) = (instance.InstProtocolName, instance.InstArgs, instance.InstFunctions)
-            let protocolNameStr = protocolName.LunStr
             if args.IsEmpty then makeEvalViolation env ":v/eval/malformedInstance" "Instances must have at least one argument."
             elif not (List.areSameLength (List.distinct args) args) then makeEvalViolation env ":v/eval/malformedInstance" "All arguments of an instance must be unique."
             elif sigImpls.IsEmpty then makeEvalViolation env ":v/eval/malformedInstance" "Instances must have at least one signature implementation."
@@ -1325,10 +1310,10 @@ module Evaluator =
         | Boolean b when b.BRValue ->
             let optEnv' = tryAppendAffirmationFunction env name doc body optPositions
             match optEnv' with
-            | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The affirmation '" + name.LunStr + "' clashes names with an existing declaration.")
+            | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The affirmation '" + name + "' clashes names with an existing declaration.")
             | Some env' -> makeEvalUnit env'
-        | Boolean b when not b.BRValue -> makeEvalViolation env ":v/affirmation/affirmationFailure" ("The affirmation '" + name.LunStr + "' was determined to be false.")
-        | _ -> makeEvalViolation env ":v/affirmation/invalidResultType" ("Expression for affirmation '" + name.LunStr + "' must return a boolean value.")
+        | Boolean b when not b.BRValue -> makeEvalViolation env ":v/affirmation/affirmationFailure" ("The affirmation '" + name + "' was determined to be false.")
+        | _ -> makeEvalViolation env ":v/affirmation/invalidResultType" ("Expression for affirmation '" + name + "' must return a boolean value.")
 
     /// Evaluate an Aml file.
     and evalUsingFile env usingFile =

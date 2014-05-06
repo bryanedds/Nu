@@ -187,7 +187,7 @@ module EvaluatorPrims =
     let getMember env memberName (members : MemberDict) =
         let mem = ref Unchecked.defaultof<Member>
         if members.TryGetValue (memberName, mem) then (!mem).MemExpr
-        else makeViolationWithPositions env ":v/eval/missingMember" ("Member '" + memberName.LunStr + "' does not exist.")
+        else makeViolationWithPositions env ":v/eval/missingMember" ("Member '" + memberName + "' does not exist.")
 
     /// Get a value's type (not from the environment).
     let getType env value =
@@ -217,9 +217,9 @@ module EvaluatorPrims =
         let optFirstSigMatchingEntry = Seq.tryHead sigsMatchingEntry
         match optFirstSigMatchingEntry with
         | Some firstSigMatchingEntry when not env.EnvAllowRedeclaration ->
-            failwith ("The protocol signature '" + optFirstSigMatchingEntry.Value.SigName.LunStr + "' clashes names with an existing declaration.")
+            failwith ("The protocol signature '" + optFirstSigMatchingEntry.Value.SigName + "' clashes names with an existing declaration.")
         | Some _ | None ->
-            let protocolName = Lun.make ProtocolPrefixStr + name
+            let protocolName = ProtocolPrefixStr + name
             let protocol = ProtocolEntry (arg, optConstraints, doc, sigs)
             let optEnv' = tryAppendDeclarationEntry env protocolName protocol
             match optEnv' with
@@ -256,7 +256,7 @@ module EvaluatorPrims =
         | _ -> false
 
     /// Make a constraint predicate.
-    let makeConstraintPredicate env args1 (constraints1 : Dictionary<Lun, Constraint>) =
+    let makeConstraintPredicate env args1 (constraints1 : Dictionary<string, Constraint>) =
         fun argValues1 ->
             List.forall2Plus
                 (fun arg argValue ->
@@ -293,9 +293,7 @@ module EvaluatorPrims =
     let tryAppendStructure env name memberNames optConstraints doc req argNames symbols optPositions =
 
         // append type
-        let nameStr = name.LunStr
-        let typeNameStr = TypePrefixStr + nameStr
-        let typeName = Lun.make typeNameStr
+        let typeName = TypePrefixStr + name
         let typeValue = makeType typeName optPositions
         let optEnv' = tryAppendType env typeName typeValue doc
         match optEnv' with
@@ -303,9 +301,9 @@ module EvaluatorPrims =
         | Some env' ->
 
             // append type indicator
-            let typeIndicatorName = Lun.make (String.surround nameStr TypeIndicatorStr)
+            let typeIndicatorName = String.surround name TypeIndicatorStr
             let typeIndicatorMembers = List.toDictionaryBy (fun memName -> memName, (makeMember memName (makeViolationWithoutBreakpoint ":v/eval/typeIndicatorMemberAccess" "Cannot access the members of a type indicator."))) memberNames
-            let typeIndicatorDoc = makeDoc ("A type indicator for a(n) '" + nameStr + "' type.")
+            let typeIndicatorDoc = makeDoc ("A type indicator for a(n) '" + name + "' type.")
             let typeIndicatorValue = Composite (makeCompositeRecord false name typeIndicatorMembers typeValue null null optPositions)
             let optEnv'' = tryAppendDeclarationVariable env' typeIndicatorName typeIndicatorDoc typeIndicatorValue
             match optEnv'' with
@@ -313,13 +311,10 @@ module EvaluatorPrims =
             | Some env'' ->
 
                 // append type query
-                let x = Lun.make XStr
-                let hasType = Lun.make HasTypeStr
-                let isStructureArgs = [makeArg x Concrete UnitValue]
-                let isStructureNameStr = IsStr + (String.capitalize nameStr)
-                let isStructureName = Lun.make isStructureNameStr
-                let hasTypeSymbol = Symbol (makeSymbolRecord hasType (ref CEUncached) optPositions)
-                let selfSymbol = Symbol (makeSymbolRecord x (ref CEUncached) optPositions)
+                let isStructureArgs = [makeArg XStr Concrete UnitValue]
+                let isStructureName = IsStr + (String.capitalize name)
+                let hasTypeSymbol = Symbol (makeSymbolRecord HasTypeStr (ref CEUncached) optPositions)
+                let selfSymbol = Symbol (makeSymbolRecord XStr (ref CEUncached) optPositions)
                 let keywordTypeName = Keyword (makeKeywordRecord typeName optPositions)
                 let isStructureBody = Series (makeSeriesRecord [hasTypeSymbol; keywordTypeName; selfSymbol] 3 optPositions)
                 let optEnv'3 = tryAppendDeclarationFunction env'' isStructureName isStructureArgs 1 isStructureBody None doc UnitValue UnitValue true optPositions
@@ -357,13 +352,12 @@ module EvaluatorPrims =
             let cargsDup = List.concat cargss
             List.distinct cargsDup
 
-        let getConstraintValidity env (constr : Constraint) =
-            let constrNameStr = constr.ConstrName.LunStr
-            let typeName = Lun.make (TypePrefixStr + constrNameStr)
+        let getConstraintValidity env constr =
+            let typeName = TypePrefixStr + constr.ConstrName
             let typeTarget = tryFindTypeEntry env typeName
             match typeTarget with
             | None ->
-                let protocolName = Lun.make (ProtocolPrefixStr + constrNameStr)
+                let protocolName = ProtocolPrefixStr + constr.ConstrName
                 let protocolTarget = tryFindProtocolEntry env protocolName
                 match protocolTarget with
                 | Some (ProtocolEntry (parg, _, _, _)) -> if List.hasExactly 1 constr.ConstrArgs then ValidConstraint else WrongArgCount
@@ -492,7 +486,7 @@ module EvaluatorPrims =
             else
                 let optPartialUnifyResult = partialUnifyArgs argsEvaluated args largs
                 match optPartialUnifyResult with
-                | None -> [(args.Head, makeArg MissingLun Concrete UnitValue)]
+                | None -> [(args.Head, makeArg MissingStr Concrete UnitValue)]
                 | Some r ->
                     let (unifiedArgs, restLargs) = advanceArgs argsEvaluated largs r.LargAdvances
                     let restLargs2 = if r.LargShouldAdvance then restLargs.Tail else restLargs
@@ -508,14 +502,14 @@ module EvaluatorPrims =
         (* Constraint Projection *)
 
         let writeConstraintFailure (_, (constr, parg)) =
-            "(" + constr.ConstrArgs.Head.LunStr + " is " + parg.LunStr + ")"
+            "(" + constr.ConstrArgs.Head + " is " + parg + ")"
 
         let writeConstraintFailures constraintProjections =
             let constraintFailures = List.filter (fun (result, _) -> not result) constraintProjections
             let constraintFailuresString = List.joinBy writeConstraintFailure SpaceStr constraintFailures
             "Could not satisfy constraint(s) '" + constraintFailuresString + "'."
 
-        let projectConstraintToProtocolArg (instances, matches) ((constr, parg : Lun) as instance) =
+        let projectConstraintToProtocolArg (instances, matches) ((constr, parg : string) as instance) =
             let optPrevConstraint = Map.tryFind parg matches
             match optPrevConstraint with
             | None -> ((true, instance) :: instances, Map.add parg constr matches)

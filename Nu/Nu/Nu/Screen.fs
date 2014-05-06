@@ -104,7 +104,7 @@ module Screen =
     let worldScreenOutgoingLens address = worldScreenLens address >>| screenOutgoingLens
     
     let makeDissolveSprite () =
-        { SpriteAssetName = Lun.make "Image8"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+        { SpriteAssetName = "Image8"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" }
 
     let makeDefaultTransition transitionType =
         { Id = getNuId ()
@@ -112,14 +112,14 @@ module Screen =
           Ticks = 0
           Type = transitionType
           OptDissolveSprite = None
-          Xtension = { OptXTypeName = Some <| Lun.make typeof<TransitionDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
+          Xtension = { OptXTypeName = Some typeof<TransitionDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
 
     let makeDefaultScreen () =
         { Id = getNuId ()
           State = IdlingState
           Incoming = makeDefaultTransition Incoming
           Outgoing = makeDefaultTransition Outgoing
-          Xtension = { OptXTypeName = Some <| Lun.make typeof<ScreenDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
+          Xtension = { OptXTypeName = Some typeof<ScreenDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
 
     let makeDissolveScreen incomingTime outgoingTime =
         let optDissolveSprite = Some <| makeDissolveSprite ()

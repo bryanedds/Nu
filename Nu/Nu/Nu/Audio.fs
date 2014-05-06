@@ -13,13 +13,13 @@ open Nu.Assets
 module AudioModule =
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
-        { SoundAssetName : Lun
-          PackageName : Lun
+        { SoundAssetName : string
+          PackageName : string
           PackageFileName : string }
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
-        { SongAssetName : Lun
-          PackageName : Lun
+        { SongAssetName : string
+          PackageName : string
           PackageFileName : string }
 
     type [<StructuralEquality; NoComparison>] PlaySong =
@@ -72,7 +72,7 @@ module AudioModule =
             if sourceType = typeof<Sound> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { SoundAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+                { SoundAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
     type SongTypeConverter () =
         inherit TypeConverter ()
@@ -88,7 +88,7 @@ module AudioModule =
             if sourceType = typeof<Song> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { SongAssetName = Lun.make args.[0]; PackageName = Lun.make args.[1]; PackageFileName = args.[2] } :> obj
+                { SongAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
 module Audio = 
 
@@ -108,16 +108,16 @@ module Audio =
         match extension with
         | ".wav" ->
             let optWav = SDL_mixer.Mix_LoadWAV asset.FileName
-            if optWav <> IntPtr.Zero then Some (Lun.make asset.Name, WavAsset optWav)
+            if optWav <> IntPtr.Zero then Some (asset.Name, WavAsset optWav)
             else trace <| "Could not load wav '" + asset.FileName + "'."; None
         | ".ogg" ->
             let optOgg = SDL_mixer.Mix_LoadMUS asset.FileName
-            if optOgg <> IntPtr.Zero then Some (Lun.make asset.Name, OggAsset optOgg)
+            if optOgg <> IntPtr.Zero then Some (asset.Name, OggAsset optOgg)
             else trace <| "Could not load ogg '" + asset.FileName + "'."; None
         | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
     let private tryLoadAudioPackage packageName fileName audioPlayer =
-        let optAssets = tryLoadAssets "Audio" packageName.LunStr fileName
+        let optAssets = tryLoadAssets "Audio" packageName fileName
         match optAssets with
         | Left error ->
             trace <| "HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
@@ -139,7 +139,7 @@ module Audio =
         let (audioPlayer_, optAssetMap_) =
             match optAssetMap with
             | None ->
-                note <| "Loading audio package '" + packageName.LunStr + "' for asset '" + assetName.LunStr + "' on the fly."
+                note <| "Loading audio package '" + packageName + "' for asset '" + assetName + "' on the fly."
                 let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer_
                 (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
             | Some assetMap -> (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
@@ -172,11 +172,11 @@ module Audio =
             tryUpdateNextSong
 
     let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer =
-        tryLoadAudioPackage (Lun.make hintPackageUse.PackageName) hintPackageUse.FileName audioPlayer
+        tryLoadAudioPackage hintPackageUse.PackageName hintPackageUse.FileName audioPlayer
 
     let private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) audioPlayer =
-        let packageNameLun = Lun.make hintPackageDisuse.PackageName
-        let optAssets = Map.tryFind packageNameLun audioPlayer.AudioAssetMap
+        let packageName = hintPackageDisuse.PackageName
+        let optAssets = Map.tryFind packageName audioPlayer.AudioAssetMap
         match optAssets with
         | None -> audioPlayer
         | Some assets ->
@@ -187,7 +187,7 @@ module Audio =
                 match asset with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
-            { audioPlayer with AudioAssetMap = Map.remove packageNameLun audioPlayer.AudioAssetMap }
+            { audioPlayer with AudioAssetMap = Map.remove packageName audioPlayer.AudioAssetMap }
 
     let private handlePlaySound playSound audioPlayer =
         let sound = playSound.Sound

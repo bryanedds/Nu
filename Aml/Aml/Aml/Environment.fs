@@ -21,7 +21,7 @@ module Environment =
     /// Make an empty environment.
     let makeEmptyEnv () =
         makeEnv
-            (Dictionary<Lun, EnvEntry> ())
+            (Dictionary<string, EnvEntry> ())
             []
             (Generic.List<CachedEntry ref> ())
             false
@@ -60,9 +60,8 @@ module Environment =
         let env'' =
             List.fold
                 (fun env initialType ->
-                    let typeNameStr = (a__ initialType).LunStr
-                    let rawTypeNameStr = typeNameStr.Substring TypePrefixStr.Length
-                    let rawTypeName = Lun.make rawTypeNameStr
+                    let (typeName : string) = a__ initialType
+                    let rawTypeName = typeName.Substring TypePrefixStr.Length
                     instantiateEquatable env rawTypeName)
                 env'
                 InitialTypes

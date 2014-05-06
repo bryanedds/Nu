@@ -35,10 +35,10 @@ module AssetsModule =
           AssetNames : string list }
 
     type [<StructuralEquality; NoComparison>] AssetKey =
-        { Name : Lun
-          PackageName : Lun }
+        { Name : string
+          PackageName : string }
 
-    type 'a AssetMap = Map<Lun, Map<Lun, 'a>>
+    type 'a AssetMap = Map<string, Map<string, 'a>>
 
 module Assets =
 
