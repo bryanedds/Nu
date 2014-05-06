@@ -71,33 +71,27 @@ module LunModule =
         override this.GetHashCode () =
             this.LunHash
 
-        interface System.IComparable with
+        interface IComparable with
             override this.CompareTo that =
                 match that with
                 | :? Lun as thatLun ->
-                    // first try fast comparison...
-                    let thisHash = this.LunHash
-                    let thatHash = thatLun.LunHash
-                    if thisHash = thatHash then
-                        // do constant-time comparison if possible, linear-time comparison otherwise
-                        match (this.LunOptNums, thatLun.LunOptNums) with
-                        | (Some (thisMajor, thisMinor), Some (thatMajor, thatMinor)) ->
-                            // constant-time comparison
-                            if thisMajor = thatMajor then
-                                if thisMinor = thatMinor then 0
-                                elif thisMinor < thatMinor then -1
-                                else 1
-                            elif thisMajor < thatMajor then -1
+                    // do constant-time comparison if possible, linear-time comparison otherwise
+                    match (this.LunOptNums, thatLun.LunOptNums) with
+                    | (Some (thisMajor, thisMinor), Some (thatMajor, thatMinor)) ->
+                        // constant-time comparison
+                        if thisMajor = thatMajor then
+                            if thisMinor = thatMinor then 0
+                            elif thisMinor < thatMinor then -1
                             else 1
-                        | _ ->
-                            // linear-time comparison. Note that String.CompareTo cannot be used as it has different
-                            // semantics than the above binary comparison
-                            let (thisStr, thatStr) = (this.LunStr, thatLun.LunStr)
-                            if thisStr = thatStr then 0
-                            elif thisStr < thatStr then -1
-                            else 1
-                    elif thisHash < thatHash then -1
-                    else 1
+                        elif thisMajor < thatMajor then -1
+                        else 1
+                    | _ ->
+                        // linear-time comparison. Note that String.CompareTo cannot be used as it has different
+                        // semantics than the above binary comparison
+                        let (thisStr, thatStr) = (this.LunStr, thatLun.LunStr)
+                        if thisStr = thatStr then 0
+                        elif thisStr < thatStr then -1
+                        else 1
                 | _ -> invalidArg "that" "Cannot compare a Lun value to a different type of object."
 
 [<RequireQualifiedAccess>]

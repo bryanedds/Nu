@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xunit>
+  <assemblies>
+    <assembly filename="Prime\bin\Debug\Prime.dll" shadow-copy="true" />
+    <assembly filename="Prime\bin\Release\Prime.dll" shadow-copy="true" />
+  </assemblies>
+</xunit>
