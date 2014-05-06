@@ -61,7 +61,7 @@ module OmniDispatchersModule =
         override this.Register (omniGame, world) =
             let dispatchers =
                 Map.addMany
-                    [|Lun.make typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
-                      Lun.make typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj|]
+                    [|typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
+                      typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj|]
                     world.Dispatchers
             { world with Dispatchers = dispatchers }

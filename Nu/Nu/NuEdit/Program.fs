@@ -91,10 +91,10 @@ module Program =
           RefWorld : World ref }
 
     and EntityPropertyDescriptor (property) =
-        inherit PropertyDescriptor ((match property with EntityXFieldDescriptor x -> x.FieldName.LunStr | EntityPropertyInfo p -> p.Name), Array.empty)
+        inherit PropertyDescriptor ((match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name), Array.empty)
 
-        let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName.LunStr | EntityPropertyInfo p -> p.Name
-        let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName.LunStr | EntityPropertyInfo p -> p.PropertyType
+        let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name
+        let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName | EntityPropertyInfo p -> p.PropertyType
         let propertyCanWrite = match property with EntityXFieldDescriptor x -> true | EntityPropertyInfo x -> x.CanWrite
 
         override this.ComponentType with get () = propertyType.DeclaringType
@@ -160,9 +160,9 @@ module Program =
                     let xtension = property.GetValue entity :?> Xtension
                     let xFieldDescriptors =
                         Seq.map
-                            (fun (xField : KeyValuePair<Lun, obj>) ->
+                            (fun (xField : KeyValuePair<string, obj>) ->
                                 let fieldName = xField.Key
-                                let typeName = Lun.make (xField.Value.GetType ()).FullName
+                                let typeName = (xField.Value.GetType ()).FullName
                                 let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
                                 EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
                             xtension.XFields
@@ -305,7 +305,7 @@ module Program =
 
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let world = !refWorld
-        let entityXTypeName = Lun.make form.createEntityComboBox.Text
+        let entityXTypeName = form.createEntityComboBox.Text
         try let entity_ = makeDefaultEntity entityXTypeName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
@@ -322,7 +322,7 @@ module Program =
             refWorld := changer !refWorld
             worldChangers.Add changer
         with exn ->
-            ignore <| MessageBox.Show ("Invalid entity XType name '" + entityXTypeName.LunStr + "'.")
+            ignore <| MessageBox.Show ("Invalid entity XType name '" + entityXTypeName + "'.")
 
     let handleDelete (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let selectedObject = form.propertyGrid.SelectedObject
@@ -486,8 +486,7 @@ module Program =
                     let changer = (fun world ->
                         let entity = get world <| worldEntityLens entityTds.Address
                         let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
-                        let xFieldLun = Lun.make xFieldName
-                        let xFields = Map.add xFieldLun xFieldValue entity.Xtension.XFields
+                        let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
                         let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
                         let world' = set entity' world <| worldEntityLens entityTds.Address
                         let world'' = pushPastWorld world world'
@@ -509,8 +508,7 @@ module Program =
             | xFieldName ->
                 let changer = (fun world ->
                     let entity = get world <| worldEntityLens entityTds.Address
-                    let xFieldLun = Lun.make xFieldName
-                    let xFields = Map.remove xFieldLun entity.Xtension.XFields
+                    let xFields = Map.remove xFieldName entity.Xtension.XFields
                     let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
                     let world' = set entity' world <| worldEntityLens entityTds.Address
                     let world'' = pushPastWorld world world'

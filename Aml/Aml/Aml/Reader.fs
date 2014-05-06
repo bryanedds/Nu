@@ -244,14 +244,14 @@ module Reader =
     let readCapitalizedNameStr =
         upper .>>.
         nameChars |>>
-        fun (nameHead, nameTail) -> Lun.make (String.implode (nameHead :: nameTail))
+        fun (nameHead, nameTail) -> String.implode (nameHead :: nameTail)
 
     /// Read a name string with reserved characters in it.
     let readReservedNameStr =
         nameChars .>>.
         reservedChar .>>.
         remainingReservedChars |>>
-        fun ((nonReservedPart, firstReservedChar), remainingPart) -> Lun.make (String.implode (nonReservedPart @ firstReservedChar :: remainingPart))
+        fun ((nonReservedPart, firstReservedChar), remainingPart) -> String.implode (nonReservedPart @ firstReservedChar :: remainingPart)
 
     /// Read a keyword string with trailing whitespace.
     let readKeywordValueWithWhitespace =
@@ -259,7 +259,7 @@ module Reader =
         firstNameChar .>>.
         nameChars .>>
         skipWhitespaces |>>
-        fun (first, rest) -> Lun.make (String.implode (ColonChar :: first :: rest))
+        fun (first, rest) -> String.implode (ColonChar :: first :: rest)
 
     /// Read an F# string.
     let readStr str =
@@ -280,7 +280,7 @@ module Reader =
         firstNameChar .>>.
         nameChars .>>
         skipWhitespaces |>>
-        fun (head, tail) -> Lun.make (String.implode (head :: tail))
+        fun (head, tail) -> String.implode (head :: tail)
     
     /// Read multiple names.
     let readNames formOpen formClose = between formOpen formClose (many readName)
@@ -296,7 +296,7 @@ module Reader =
     /// Read an concrete arg as a string.
     let readConcreteArgAsString =
         readName |>>
-        fun name -> String (makeStringRecord (makeStringValue name.LunStr LiteralString) None)
+        fun name -> String (makeStringRecord (makeStringValue name LiteralString) None)
 
     /// Read an arg as a string.
     let readArgAsString =
@@ -304,7 +304,7 @@ module Reader =
         opt (pstring EllipsisStr) |>>
         fun (name, optEllipsis) ->
             let suffix = match optEllipsis with None -> EmptyStr | Some ellipsis -> ellipsis
-            String (makeStringRecord (makeStringValue (name.LunStr + suffix) LiteralString) None)
+            String (makeStringRecord (makeStringValue (name + suffix) LiteralString) None)
 
     /// Forward-reference the expr reader.
     let (readExpr : Parser<Expr, unit>, readExprRef : Parser<Expr, unit> ref) = createParserForwardedToRef ()
@@ -362,7 +362,7 @@ module Reader =
     let readArg =
         (attempt readArgAsAbstracting <|> attempt readPackageArg <|> readArgAsString) |>>
         function
-        | String string -> makeArgFromName (Lun.make string.SRValue.SVValue)
+        | String string -> makeArgFromName string.SRValue.SVValue
         | Package package -> makeArgFromPackage package
         | Violation violation -> makeArgFromViolation violation
         | _ -> failwith "Unexpected argument read error in 'Aml.Reader.readArg'."
@@ -377,7 +377,7 @@ module Reader =
     let readConcreteArg =
         readConcreteArgAsString |>>
         function
-        | String string -> makeArgFromName (Lun.make string.SRValue.SVValue)
+        | String string -> makeArgFromName string.SRValue.SVValue
         | _ -> failwith "Unexpected argument read error in 'Aml.Reader.readArg'."
 
     /// Read multiple concrete arguments.
@@ -458,7 +458,7 @@ module Reader =
     let readReservedName =
         (attempt readCapitalizedNameStr <|> readReservedNameStr) .>>
         skipWhitespaces |>>
-        fun reservedName -> makeViolationWithoutBreakpoint ":v/reader/reservedChars" ("Reserved character(s) in '" + reservedName.LunStr + "'.")
+        fun reservedName -> makeViolationWithoutBreakpoint ":v/reader/reservedChars" ("Reserved character(s) in '" + reservedName + "'.")
 
     /// Read a boolean.
     let readBoolean =
@@ -653,7 +653,7 @@ module Reader =
             do! closeParenForm
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
-            return Lambda (makeLambdaRecord false Lun.empty args argCount expr tautology pre post emptyUnification optPositions None) }
+            return Lambda (makeLambdaRecord false String.Empty args argCount expr tautology pre post emptyUnification optPositions None) }
 
     /// Read an attempt branch.
     let readAttemptBranch =
@@ -876,7 +876,7 @@ module Reader =
             do! closeParenForm
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
-            return Composite (makeCompositeRecord false Lun.empty members CompositeType null null optPositions) }
+            return Composite (makeCompositeRecord false String.Empty members CompositeType null null optPositions) }
 
     /// Read a functional selector.
     let readFunctionalSelector =
@@ -1031,7 +1031,7 @@ module Reader =
             let! start = getPosition
             do! openBracketForm
             do! instanceForm CloseBracketChar
-            let! protocolName = readName |>> fun name -> Lun.make ProtocolPrefixStr + name
+            let! protocolName = readName |>> fun name -> ProtocolPrefixStr + name
             let! args = readArgNames1 openBracketForm closeBracketForm
             let! constraints = readConstraints openBracketForm closeBracketForm
             let! doc = readDoc

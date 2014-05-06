@@ -95,7 +95,7 @@ module SimModule =
             { this with Xtension = xtension }
 
     type GroupDescriptor =
-        Lun * Group * Entity list
+        string * Group * Entity list
 
     type [<StructuralEquality; NoComparison>] TransitionType =
         | Incoming
@@ -174,9 +174,9 @@ module SimModule =
     /// A reference type with some value semantics.
     and [<ReferenceEquality>] World =
         { Game : Game
-          Screens : Map<Lun, Screen>
-          Groups : Map<Lun, Map<Lun, Group>>
-          Entities : Map<Lun, Map<Lun, Map<Lun, Entity>>>
+          Screens : Map<string, Screen>
+          Groups : Map<string, Map<string, Group>>
+          Entities : Map<string, Map<string, Map<string, Entity>>>
           Camera : Camera
           Subscriptions : Subscriptions
           MouseState : MouseState
@@ -255,7 +255,7 @@ module Sim =
         let gameDispatcherType = assembly.GetType gameDispatcherFullName
         let gameDispatcherShortName = gameDispatcherType.Name
         let gameDispatcher = Activator.CreateInstance gameDispatcherType
-        let dispatchers = Map.add (Lun.make gameDispatcherShortName) gameDispatcher world.Dispatchers
+        let dispatchers = Map.add gameDispatcherShortName gameDispatcher world.Dispatchers
         let world' = { world with Dispatchers = dispatchers }
-        let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXTypeName = Some <| Lun.make gameDispatcherShortName }}}
+        let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXTypeName = Some gameDispatcherShortName }}}
         world''.Game.Register world''

@@ -25,7 +25,7 @@ module MetadataModule =
         | InvalidMetadata of string
 
     type AssetMetadataMap =
-        Map<Lun, Map<Lun, AssetMetadata>>
+        Map<string, Map<string, AssetMetadata>>
 
 module Metadata =
 
@@ -65,8 +65,8 @@ module Metadata =
                                                         List.map
                                                             (fun (tileSet : TmxTileset) ->
                                                                 let tileSetProperties = tileSet.Properties
-                                                                { SpriteAssetName = Lun.make tileSetProperties.["SpriteAssetName"]
-                                                                  PackageName = Lun.make tileSetProperties.["PackageName"]
+                                                                { SpriteAssetName = tileSetProperties.["SpriteAssetName"]
+                                                                  PackageName = tileSetProperties.["PackageName"]
                                                                   PackageFileName = tileSetProperties.["PackageFileName"] })
                                                             tileSets
                                                     TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
@@ -77,9 +77,9 @@ module Metadata =
                                             | ".wav" -> SoundMetadata
                                             | ".ogg" -> SongMetadata
                                             | _ -> InvalidMetadata <| "Could not load asset metadata '" + string asset + "' due to unknown extension '" + extension + "'."
-                                        (Lun.make asset.Name, metadata))
+                                        (asset.Name, metadata))
                                     assets
-                            Map.add (Lun.make packageName) subMap assetMetadataMap')
+                            Map.add packageName subMap assetMetadataMap')
                         Map.empty
                         packageNodes
                 Right assetMetadataMap

@@ -20,7 +20,7 @@ module OmniFlow =
 
     // title constants
     let TitleAddress = NuCore.addr "Title"
-    let TitleGroupName = Lun.make "Group"
+    let TitleGroupName = "Group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
     let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
     let ClickTitleNewGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "NewGame"
@@ -30,21 +30,21 @@ module OmniFlow =
 
     // load game constants
     let LoadGameAddress = NuCore.addr "LoadGame"
-    let LoadGameGroupName = Lun.make "Group"
+    let LoadGameGroupName = "Group"
     let LoadGameGroupAddress = LoadGameAddress @ [LoadGameGroupName]
     let LoadGameGroupFileName = "Assets/OmniBlade/Groups/LoadGame.nugroup"
     let ClickLoadGameBackEvent = NuCore.straddrstr "Click" LoadGameGroupAddress "Back"
 
     // credits constants
     let CreditsAddress = NuCore.addr "Credits"
-    let CreditsGroupName = Lun.make "Group"
+    let CreditsGroupName = "Group"
     let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
     let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
     let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
 
     // field constants
     let FieldAddress = NuCore.addr "Field"
-    let FieldGroupName = Lun.make "Group"
+    let FieldGroupName = "Group"
     let FieldGroupAddress = FieldAddress @ [FieldGroupName]
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
     let ClickFieldBackEvent = NuCore.straddrstr "Click" FieldGroupAddress "Back"
@@ -105,12 +105,12 @@ module OmniFlow =
         | Right world ->
             
             // specify a song to play for the duration of the game via the audio message system
-            let gameSong = { SongAssetName = Lun.make "Song"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            let gameSong = { SongAssetName = "Song"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" }
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world_ = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             
             // add to the world a splash screen that automatically transitions to the Title screen
-            let splashScreenSprite = { SpriteAssetName = Lun.make "Image5"; PackageName = Lun.make "Default"; PackageFileName = "AssetGraph.xml" }
+            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" }
             let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite true world_
 
             // add our UI screens to the world

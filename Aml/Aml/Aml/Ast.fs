@@ -53,14 +53,14 @@ module AstModule =
 
     /// A function or lambda argument.
     type [<NoEquality; NoComparison>] Arg =
-        { ArgName : Lun
+        { ArgName : string
           ArgType : ArgType
           ArgExpr : Expr }
 
     /// A composite member.
     /// Hacked with IComparable to make Dictionary equality work...
     and [<StructuralEquality; CustomComparison>] Member =
-        { MemName : Lun
+        { MemName : string
           MemExpr : Expr }
         interface IComparable with
             member this.CompareTo other =
@@ -70,26 +70,26 @@ module AstModule =
 
     /// A function or lambda signature.
     and [<NoEquality; NoComparison>] Signature =
-        { SigName : Lun
+        { SigName : string
           SigArgs : Arg list
           SigDoc : StringValue option }
 
     /// A type constraint.
     and [<NoEquality; NoComparison>] Constraint =
-        { ConstrName : Lun
-          ConstrTypeName : Lun
-          ConstrProtocolName : Lun
-          ConstrArgs : Lun list }
+        { ConstrName : string
+          ConstrTypeName : string
+          ConstrProtocolName : string
+          ConstrArgs : string list }
 
     /// An attempt branch.
     and [<NoEquality; NoComparison>] AttemptBranch = {
-        ABCategory : Lun
+        ABCategory : string
         ABBody : Expr }
 
     /// An intervention branch.
     and [<NoEquality; NoComparison>] InterveneBranch = {
         IBEnv : Env option
-        IBCategory : Lun
+        IBCategory : string
         IBBody : Expr
         IBHide : bool }
 
@@ -100,16 +100,16 @@ module AstModule =
 
     /// A let binding.
     and [<NoEquality; NoComparison>] LetBinding =
-        | LetVariable of Lun * Expr
-        | LetFunction of Lun * Arg list * int * Expr * Constraint list option * Expr * Expr * bool
+        | LetVariable of string * Expr
+        | LetFunction of string * Arg list * int * Expr * Constraint list option * Expr * Expr * bool
     
     /// A dictionary of composite members by name.
-    and MemberDict = Dictionary<Lun, Member>
+    and MemberDict = Dictionary<string, Member>
 
     /// Record for a Violation expression.
     and [<NoEquality; NoComparison>] ViolationRecord =
         { VioEvaluated : bool
-          VioCategory : Lun
+          VioCategory : string
           VioMessage : StringValue
           VioData : Expr
           VioOptPositions : ParserPositions option }
@@ -151,18 +151,18 @@ module AstModule =
 
     /// Record for a Keyword expression.
     and [<NoEquality; NoComparison>] KeywordRecord =
-        { KRValue : Lun
+        { KRValue : string
           KROptPositions : ParserPositions option }
 
     /// Record for a Symbol expression.
     and [<NoEquality; NoComparison>] SymbolRecord =
-        { SymName : Lun
+        { SymName : string
           SymCachedEntry : CachedEntry ref
           SymOptPositions : ParserPositions option }
 
     /// Record for a Package expression.
     and [<NoEquality; NoComparison>] PackageRecord =
-        { PkgName : Lun
+        { PkgName : string
           PkgExpr : Expr
           PkgOptPositions : ParserPositions option }
 
@@ -175,14 +175,14 @@ module AstModule =
 
     /// Record for a Dispatch expression.
     and [<NoEquality; NoComparison>] DispatchRecord =
-        { DispName : Lun
+        { DispName : string
           DispContingentArg : int
           DispOptPositions : ParserPositions option }
 
     /// Record for a SpecialValue expression.
     and [<NoEquality; NoComparison>] SpecialValueRecord =
         { SVEvaluated : bool
-          SVLanguageName : Lun
+          SVLanguageName : string
           SVExpr : Expr
           SVOptPositions : ParserPositions option }
 
@@ -202,7 +202,7 @@ module AstModule =
     /// Record for a Lambda expression.
     and [<NoEquality; NoComparison>] LambdaRecord =
         { LamEvaluated : bool
-          LamName : Lun
+          LamName : string
           LamArgs : Arg list
           LamArgCount : int
           LamBody : Expr
@@ -282,11 +282,11 @@ module AstModule =
     /// TODO: combine CompSigImpls and CompProtocols as CompTypeData or something.
     and [<NoEquality; NoComparison>] CompositeRecord =
         { CompEvaluated : bool
-          CompName : Lun
+          CompName : string
           CompMembers : MemberDict
           CompType : Expr
-          CompSigImpls : Dictionary<Lun, Expr>
-          CompProtocols : HashSet<Lun>
+          CompSigImpls : Dictionary<string, Expr>
+          CompProtocols : HashSet<string>
           CompOptPositions : ParserPositions option }
 
     /// Record for a Selector expression.
@@ -298,14 +298,14 @@ module AstModule =
 
     /// Record for a Variable expression.
     and [<NoEquality; NoComparison>] VariableRecord =
-        { VarName : Lun
+        { VarName : string
           VarBody : Expr
           VarDoc : StringValue option
           VarOptPositions : ParserPositions option }
 
     /// Record for a Function expression.
     and [<NoEquality; NoComparison>] FunctionRecord =
-        { FnName : Lun
+        { FnName : string
           FnArgs : Arg list
           FnArgCount : int
           FnBody : Expr
@@ -318,8 +318,8 @@ module AstModule =
 
     /// Record for a Structure expression.
     and [<NoEquality; NoComparison>] StructureRecord =
-        { StructName : Lun
-          StructMemberNames : Lun list
+        { StructName : string
+          StructMemberNames : string list
           StructOptConstraints : Constraint list option
           StructDoc : StringValue option
           StructReq : Expr
@@ -327,8 +327,8 @@ module AstModule =
 
     /// Record for a Protocol expression.
     and [<NoEquality; NoComparison>] ProtocolRecord =
-        { ProtoName : Lun
-          ProtoArg : Lun
+        { ProtoName : string
+          ProtoArg : string
           ProtoOptConstraints : Constraint list option
           ProtoDoc : StringValue option
           ProtoSignatures : Signature list
@@ -336,15 +336,15 @@ module AstModule =
 
     /// Record for an Instance expression.
     and [<NoEquality; NoComparison>] InstanceRecord =
-        { InstProtocolName : Lun
-          InstArgs : Lun list
+        { InstProtocolName : string
+          InstArgs : string list
           InstConstraints : Constraint list
           InstFunctions : Expr list
           InstOptPositions : ParserPositions option }
 
     /// Record for an Affirmation expression.
     and [<NoEquality; NoComparison>] AffirmationRecord =
-        { AffName : Lun
+        { AffName : string
           AffDoc : StringValue option
           AffBody : Expr
           AffOptPositions : ParserPositions option }
@@ -373,8 +373,8 @@ module AstModule =
     and [<NoEquality; NoComparison>] EnvEntry =
         | ValueEntry of Expr * StringValue option
         | DynamicEntry of int * StringValue option
-        | TypeEntry of Lun * Expr * StringValue option
-        | ProtocolEntry of Lun * Constraint list option * StringValue option * Signature list
+        | TypeEntry of string * Expr * StringValue option
+        | ProtocolEntry of string * Constraint list option * StringValue option * Signature list
 
     /// Describes the caching of an environment entry.
     and [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue); NoEquality; NoComparison>] CachedEntry =
@@ -383,10 +383,10 @@ module AstModule =
         | CEProcedural of int * int
 
     /// An environment frame for declaration entries.
-    and DeclarationFrame = Dictionary<Lun, EnvEntry>
+    and DeclarationFrame = Dictionary<string, EnvEntry>
 
     /// An environment frame for procedural entries.
-    and ProceduralFrame = (Lun * EnvEntry) array
+    and ProceduralFrame = (string * EnvEntry) array
 
     /// The environment's debug information.
     and [<NoEquality; NoComparison>] DebugInfo =
@@ -420,11 +420,11 @@ module AstModule =
         /// Convert a special value to a special object.
         abstract SpecialValueToSpecialObject : Env -> Expr -> Expr
         /// Query that a symbol name represents a special built-in operator.
-        abstract IsSpecialBuiltin : Env -> Lun -> bool
+        abstract IsSpecialBuiltin : Env -> string -> bool
         /// Get the type of a special object.
         abstract GetSpecialType : Env -> Expr -> Expr
         /// Apply a special built-in operator.
-        abstract ApplySpecialBuiltin : Env -> Lun -> Expr list -> int -> EvalResult
+        abstract ApplySpecialBuiltin : Env -> string -> Expr list -> int -> EvalResult
         /// Apply a selector to a special object.
         abstract ApplySpecialSelector : Env -> Expr -> Expr -> EvalResult
         /// Evaluate a prefixed expression.
@@ -434,7 +434,7 @@ module AstModule =
         /// Evaluate a special series expression.
         abstract EvalSpecialSeries : Env -> Expr -> EvalResult
         /// The name of the language.
-        abstract Name : Lun
+        abstract Name : string
         /// The unique identifier for the language.
         abstract Guid : Guid
 
