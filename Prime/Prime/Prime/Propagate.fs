@@ -13,7 +13,7 @@ module PropagateModule =
         | Propagation of 's * 'r list
         override this.ToString () =
             match this with
-            | Propagation (state, recordings) -> "State: " + str state + " Recordings: " + List.joinBy str " " recordings
+            | Propagation (state, recordings) -> "State: " + string state + " Recordings: " + List.joinBy string " " recordings
 
 module Propagate =
 

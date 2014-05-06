@@ -327,7 +327,7 @@ module Writer =
                 let firstFileLineTrimmed = if trimStartOfFirstLine then firstFileLine.Trim () else firstFileLine
                 let start = positions.ParStart
                 let startFile = if start.StreamName.Length <> 0 then start.StreamName else "[N/A]"
-                let startStr = "[Ln: " + str start.Line + ", Col: " + str start.Column + ", In: " + startFile + "]"
+                let startStr = "[Ln: " + string start.Line + ", Col: " + string start.Column + ", In: " + startFile + "]"
                 let stop = positions.ParStop
                 let result = firstFileLineTrimmed + "\n  " + startStr
                 Some result
@@ -376,13 +376,13 @@ module Writer =
                     "\n" +
                     underline +
                     "\n  Start Pos: [Ln: " +
-                    str start.Line +
+                    string start.Line +
                     ", Col: " +
-                    str start.Column +
+                    string start.Column +
                     "]\n  Stop Pos:  [Ln: " +
-                    str stop.Line +
+                    string stop.Line +
                     ", Col: " +
-                    str stop.Column +
+                    string stop.Column +
                     "]\n  In:        " +
                     fileStr +
                     "\n\nStack trace:\n\n" +

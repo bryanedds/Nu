@@ -78,4 +78,4 @@ module Assets =
                     let associatedAssets = Seq.filter (fun asset -> asset.Associations.Contains association) assets
                     let associatedAssetList = List.ofSeq associatedAssets
                     Right associatedAssetList
-        with exn -> Left (str exn)
+        with exn -> Left (string exn)
