@@ -244,7 +244,7 @@
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
             this.displayPanel.Size = new System.Drawing.Size(1000, 585);
-            this.displayPanel.TabIndex = 1;
+            this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
             // 
@@ -372,7 +372,7 @@
             this.typeNameTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.typeNameTextBox.Name = "typeNameTextBox";
             this.typeNameTextBox.Size = new System.Drawing.Size(244, 21);
-            this.typeNameTextBox.TabIndex = 10;
+            this.typeNameTextBox.TabIndex = 2;
             this.typeNameTextBox.Text = "System.String";
             // 
             // xFieldNameTextBox
@@ -381,7 +381,7 @@
             this.xFieldNameTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.xFieldNameTextBox.Name = "xFieldNameTextBox";
             this.xFieldNameTextBox.Size = new System.Drawing.Size(244, 20);
-            this.xFieldNameTextBox.TabIndex = 9;
+            this.xFieldNameTextBox.TabIndex = 1;
             this.xFieldNameTextBox.Text = "MyField";
             // 
             // removeSelectedXFieldButton
@@ -390,7 +390,7 @@
             this.removeSelectedXFieldButton.Margin = new System.Windows.Forms.Padding(2);
             this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
             this.removeSelectedXFieldButton.Size = new System.Drawing.Size(57, 47);
-            this.removeSelectedXFieldButton.TabIndex = 7;
+            this.removeSelectedXFieldButton.TabIndex = 3;
             this.removeSelectedXFieldButton.Text = "&Remove Selected";
             this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
             // 
@@ -400,7 +400,7 @@
             this.addXFieldButton.Margin = new System.Windows.Forms.Padding(2);
             this.addXFieldButton.Name = "addXFieldButton";
             this.addXFieldButton.Size = new System.Drawing.Size(57, 47);
-            this.addXFieldButton.TabIndex = 6;
+            this.addXFieldButton.TabIndex = 0;
             this.addXFieldButton.Text = "&Add";
             this.addXFieldButton.UseVisualStyleBackColor = true;
             // 
@@ -411,7 +411,7 @@
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
             this.propertyGrid.Size = new System.Drawing.Size(381, 503);
-            this.propertyGrid.TabIndex = 3;
+            this.propertyGrid.TabIndex = 0;
             // 
             // openFileDialog
             // 
@@ -455,7 +455,7 @@
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
             this.toolStrip.Size = new System.Drawing.Size(977, 25);
-            this.toolStrip.TabIndex = 4;
+            this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
             // undoButton
