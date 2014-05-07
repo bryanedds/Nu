@@ -125,7 +125,7 @@ module Group =
 
     let writeGroupToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
-        Xtension.writeProperties writer group
+        Xtension.writePropertiesToXmlWriter writer group
         writeGroupEntitiesToXml writer entities
 
     let readEntitiesFromXml (groupNode : XmlNode) seal world =
