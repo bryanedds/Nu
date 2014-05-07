@@ -10,7 +10,8 @@ open Prime
 module Tests =
 
     type TestDispatcher () =
-        member this.TestDispatch (_ : IXDispatcherContainer) = 0
+        member dispatcher.Init (xtension : Xtension, _ : IXDispatcherContainer) = xtension?InittedField <- 5
+        member dispatcher.Dispatch (xtension : Xtension, _ : IXDispatcherContainer) = xtension?InittedField () * 5
 
     type TestDispatcherContainer () =
         let testDispatcher = (TestDispatcher ()) :> obj
@@ -18,33 +19,33 @@ module Tests =
         interface IXDispatcherContainer with
             member this.GetDispatchers () = testDispatchers
 
-    type [<CLIMutable; NoComparison>] XtendedType =
+    type [<CLIMutable; NoComparison>] TestXtendedRecord =
         { Xtension : Xtension }
 
-        static member (?) (this : XtendedType, memberName) =
+        static member (?) (this : TestXtendedRecord, memberName) =
             fun args ->
                 (?) this.Xtension memberName args
 
-        static member (?<-) (this : XtendedType, memberName, value) =
+        static member (?<-) (this : TestXtendedRecord, memberName, value) =
             let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
             { this with Xtension = xtension }
-            
-    let writeToStream writeFn source =
+
+    let writeToStream write source =
         let memoryStream = new MemoryStream ()
         let xmlWriterSettings = XmlWriterSettings ()
         let xmlWriter = XmlWriter.Create (memoryStream, xmlWriterSettings)
         xmlWriter.WriteStartDocument ()
         xmlWriter.WriteStartElement "Root"
-        writeFn xmlWriter source
+        write xmlWriter source
         xmlWriter.WriteEndElement ()
         xmlWriter.WriteEndDocument ()
         xmlWriter.Flush ()
         memoryStream :> Stream
 
-    let readFromStream readFn (stream : Stream) target =
+    let readFromStream read (stream : Stream) target =
         let xmlReader = XmlReader.Create stream
         let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
-        let result' = readFn (xmlDocument.SelectSingleNode "Root") target
+        let result' = read (xmlDocument.SelectSingleNode "Root") target
         result'
 
     // globalization is fine since this object is stateless.
@@ -63,8 +64,10 @@ module Tests =
         Assert.Equal (0, xtn?MissingField ())
 
     let [<Fact>] dispatchingWorks () =
-        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = true }
-        Assert.Equal (xtn?TestDispatch tdc, 0)
+        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = false }
+        let xtn' = xtn?Init (xtn, tdc)
+        let dispatchResult = xtn?Dispatch (xtn', tdc)
+        Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
         let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = true }
