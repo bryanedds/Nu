@@ -316,7 +316,7 @@ module Entity =
 
     let writeEntityToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name
-        Xtension.writeProperties writer entity
+        Xtension.writePropertiesToXmlWriter writer entity
         writer.WriteEndElement ()
 
     let readEntityFromXml (entityNode : XmlNode) seal (world : World) =
