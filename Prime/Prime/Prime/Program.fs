@@ -2,4 +2,4 @@
 open System
 module Program =
 
-    Tests.containedXtensionSerializationWorks ()
+    Tests.dispatchingWorks ()

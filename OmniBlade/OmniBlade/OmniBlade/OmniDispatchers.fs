@@ -33,14 +33,14 @@ module OmniDispatchersModule =
                 (message, true, world')
             else (message, true, world)
         
-        override this.Register (address, omniBattleGroup, entities, world) =
+        override dispatcher.Register (address, omniBattleGroup, entities, world) =
             let world_ = World.subscribe NuConstants.TickEvent address (CustomSub moveFieldAvatarHandler) world
             let world_ = World.subscribe NuConstants.TickEvent address (CustomSub adjustFieldCameraHandler) world_
             let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
             let world_ = base.Register (address, omniBattleGroup, entities, world_)
             adjustFieldCamera address world_
 
-        override this.Unregister (address, omniFieldGroup, world) =
+        override dispatcher.Unregister (address, omniFieldGroup, world) =
             let world_ = World.unsubscribe NuConstants.TickEvent address world
             let world_ = World.unsubscribe NuConstants.TickEvent address world_
             base.Unregister (address, omniFieldGroup, world_)
@@ -48,17 +48,17 @@ module OmniDispatchersModule =
     type OmniBattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        override this.Register (address, omniBattleGroup, entities, world) =
+        override dispatcher.Register (address, omniBattleGroup, entities, world) =
             let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
             base.Register (address, omniBattleGroup, entities, world')
 
-        override this.Unregister (address, omniBattleGroup, world) =
+        override dispatcher.Unregister (address, omniBattleGroup, world) =
             base.Unregister (address, omniBattleGroup, world)
 
     type OmniGameDispatcher () =
         inherit GameDispatcher ()
         
-        override this.Register (omniGame, world) =
+        override dispatcher.Register (omniGame, world) =
             let dispatchers =
                 Map.addMany
                     [|typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
