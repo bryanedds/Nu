@@ -10,7 +10,8 @@ module Lensx =
     // Here, Lens operations are globalized for convenience, except for Lens creation, composition, and
     // conversion operations.
 
-    (*/// Creates a lens that maps the given lens in an array
+#if FULLY_GLOBAL_LENS
+    /// Creates a lens that maps the given lens in an array
     let arrayMap = Lens.arrayMap
 
     /// Composes two lenses through a sum in the source
@@ -27,7 +28,8 @@ module Lensx =
     /// If true, <paramref name="lensTrue"/> is selected.
     /// If false, <paramref name="lensFalse"/> is selected.
     /// </summary>
-    let cond = Lens.cond*)
+    let cond = Lens.cond
+#endif
 
     /// Lens for a particular position in an array
     let forArray = Lens.forArray
@@ -56,7 +58,8 @@ module Lensx =
     /// Identity lens
     let idL = Lens.id
 
-    (*/// Undocumented
+#if FULLY_GLOBAL_LENS
+    /// Undocumented
     let ignore = Lens.ignore
 
     /// Creates a lens that maps the given lens in a list
@@ -64,15 +67,18 @@ module Lensx =
 
     /// Converts a lens that views a list into a lens that views an array
     let listToArray = Lens.listToArray*)
+#endif
 
     /// Modifies the state in a state monad and returns the modified value.
     let modifyAndGetState = Lens.modifyAndGetState
 
-    (*/// Pair two lenses
+#if FULLY_GLOBAL_LENS
+    /// Pair two lenses
     let pair = Lens.pair
 
     /// Creates a lens that maps the given lens in a sequence
-    let seqMap = Lens.seqMap*)
+    let seqMap = Lens.seqMap
+#endif
 
     /// Set a value through a lens
     let set = Lens.set

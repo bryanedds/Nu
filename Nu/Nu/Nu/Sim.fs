@@ -41,7 +41,7 @@ module SimModule =
         { Handled : bool
           Data : MessageData }
 
-    type [<StructuralEquality; NoComparison; CLIMutable>] Entity =
+    type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
           Enabled : bool
@@ -82,7 +82,7 @@ module SimModule =
           OptTileSetTile : TmxTilesetTile option
           TilePosition : int * int }
 
-    type [<StructuralEquality; NoComparison; CLIMutable>] Group =
+    type [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
           Xtension : Xtension }
 
@@ -101,7 +101,7 @@ module SimModule =
         | Incoming
         | Outgoing
 
-    type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
+    type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { Id : Guid
           Lifetime : int
           Ticks : int
@@ -122,7 +122,7 @@ module SimModule =
         | OutgoingState
         | IdlingState
 
-    type [<StructuralEquality; NoComparison; CLIMutable>] Screen =
+    type [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
           State : ScreenState
           Incoming : Transition
@@ -137,7 +137,7 @@ module SimModule =
             let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-    type [<StructuralEquality; NoComparison; CLIMutable>] Game =
+    type [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           OptSelectedScreenAddress : Address option
           Xtension : Xtension }

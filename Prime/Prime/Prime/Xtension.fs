@@ -11,15 +11,6 @@ open Microsoft.FSharp.Reflection
 [<AutoOpen>]
 module XtensionModule =
 
-    /// Describes an XField.
-    type XFieldDescriptor =
-        { FieldName : string
-          TypeName : string } // the .NET type name
-
-    /// An indexible collection of XFields.
-    type XFields =
-        Map<string, obj>
-
     /// An attribute to specify the default value of an XField.
     [<AttributeUsage (AttributeTargets.Class)>]
     type XDefaultValueAttribute (defaultValue : obj) =
@@ -28,7 +19,17 @@ module XtensionModule =
 
     /// An attribute to specify a property extension as an XField.
     [<AttributeUsage (AttributeTargets.Property)>]
-    type XFieldAttribute () = inherit Attribute ()
+    type XFieldAttribute () =
+        inherit Attribute ()
+
+    /// Describes an XField.
+    type XFieldDescriptor =
+        { FieldName : string
+          TypeName : string } // the .NET type name
+
+    /// An indexible collection of XFields.
+    type XFields =
+        Map<string, obj>
 
     /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
     /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
@@ -119,7 +120,7 @@ module XtensionModule =
     #if DEBUG
             // nop'ed outside of debug mode for efficiency
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
-            // result that the key was contained.
+            // result that the key was already contained.
             if this.IsSealed && not <| Map.containsKey fieldName this.XFields
             then failwith "Cannot add field to a sealed Xtension."
             else
@@ -155,64 +156,74 @@ module Xtension =
     let isPropertyWriteable (property : PropertyInfo) =
         property.CanWrite &&
         isPropertyNameWriteable property.Name
-            
-    /// Attempt to read a property from XML.
-    let tryReadProperty (property : PropertyInfo) (valueNode : XmlNode) obj =
+
+    /// Read an Xtension from Xml.
+    let read (valueNode : XmlNode) =
+        let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some str
+        let childNodes = enumerable valueNode.ChildNodes
+        let xFields =
+            Seq.map
+                (fun (xNode : XmlNode) ->
+                    let typeName = xNode.Attributes.["type"].InnerText
+                    let aType = findType typeName
+                    let xValueStr = xNode.InnerText
+                    let converter = TypeDescriptor.GetConverter aType
+                    if not <| converter.CanConvertFrom typeof<string>
+                    then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
+                    else (xNode.Name, converter.ConvertFrom xValueStr))
+                childNodes
+        { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; IsSealed = false }
+
+    /// Attempt to read a property from Xml.
+    let tryReadProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
         if property.PropertyType = typeof<Xtension> then
-            let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some str
-            let childNodes = enumerable valueNode.ChildNodes
-            let xFields =
-                Seq.map
-                    (fun (xNode : XmlNode) ->
-                        let typeName = xNode.Attributes.["type"].InnerText
-                        let aType = findType typeName
-                        let xValueStr = xNode.InnerText
-                        let converter = TypeDescriptor.GetConverter aType
-                        if not <| converter.CanConvertFrom typeof<string>
-                        then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
-                        else (xNode.Name, converter.ConvertFrom xValueStr))
-                    childNodes
-            let xtension = { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; IsSealed = false }
-            property.SetValue (obj, xtension)
+            let xtension = read valueNode
+            property.SetValue (target, xtension)
         else
             let valueStr = valueNode.InnerText
             let converter = TypeDescriptor.GetConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
                 let value = converter.ConvertFrom valueStr
-                property.SetValue (obj, value)
+                property.SetValue (target, value)
 
-    /// Read a property from XML if possible.
-    let readProperty<'a> (fieldNode : XmlNode) (obj : 'a) =
+    /// Read a property from Xml if possible.
+    let readProperty<'a> (fieldNode : XmlNode) (target : 'a) =
         match typeof<'a>.GetPropertyWritable (fieldNode.Name, BindingFlags.Public ||| BindingFlags.Instance) with
         | None -> ()
-        | Some property -> tryReadProperty property fieldNode <| obj
+        | Some property -> tryReadProperty property fieldNode target
 
-    /// Read all properties from XML.
-    let readProperties<'a> (modelNode : XmlNode) (obj : 'a) =
+    /// Read all properties from Xml.
+    let readProperties<'a> (modelNode : XmlNode) (target : 'a) =
         for node in modelNode.ChildNodes do
-            readProperty<'a> node obj
+            readProperty<'a> node target
 
-    /// Write all properties to XML.
-    let writeProperties (writer : XmlWriter) (obj : obj) =
-        let aType = obj.GetType ()
+    /// Write an Xtension to Xml.
+    /// TODO: need a vanilla write function that writes to an XmlDocument rather than directly to an XmlWriter stream.
+    let writeToXmlWriter (writer : XmlWriter) xtension =
+        writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name)
+        for xField in xtension.XFields do
+            let xFieldName = xField.Key
+            let xValue = xField.Value
+            let xType = xValue.GetType ()
+            let xConverter = TypeDescriptor.GetConverter xType
+            let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
+            writer.WriteStartElement xFieldName
+            writer.WriteAttributeString ("type", xType.FullName)
+            writer.WriteString xValueStr
+            writer.WriteEndElement ()
+
+    /// Write all properties to Xml.
+    /// TODO: need a vanilla writeProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
+    let writePropertiesToXmlWriter (writer : XmlWriter) (source : 'a) =
+        let aType = source.GetType ()
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
         for property in properties do
             if isPropertyWriteable property then
-                let propertyValue = property.GetValue obj
+                let propertyValue = property.GetValue source
                 match propertyValue with
                 | :? Xtension as xtension ->
                     writer.WriteStartElement property.Name
-                    writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name)
-                    for xField in xtension.XFields do
-                        let xFieldName = xField.Key
-                        let xValue = xField.Value
-                        let xType = xValue.GetType ()
-                        let xConverter = TypeDescriptor.GetConverter xType
-                        let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
-                        writer.WriteStartElement xFieldName
-                        writer.WriteAttributeString ("type", xType.FullName)
-                        writer.WriteString xValueStr
-                        writer.WriteEndElement ()
+                    writeToXmlWriter writer xtension
                     writer.WriteEndElement ()
                 | _ ->
                     let converter = TypeDescriptor.GetConverter property.PropertyType
