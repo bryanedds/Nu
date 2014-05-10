@@ -16,7 +16,7 @@ module XtensionModule =
     type XDefaultValueAttribute (defaultValue : obj) =
         inherit Attribute ()
         member this.DefaultValue = defaultValue
-
+        
     /// An attribute to specify a property extension as an XField.
     [<AttributeUsage (AttributeTargets.Property)>]
     type XFieldAttribute () =
@@ -34,9 +34,10 @@ module XtensionModule =
     /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
     /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
     /// 'Entity-Component System'.
-    type [<StructuralEqualityAttribute; NoComparison; Serializable>] Xtension =
+    type [<StructuralEqualityAttribute; NoComparison>] Xtension =
         { OptXTypeName : string option
           XFields : XFields
+          CanDefault : bool
           IsSealed : bool }
 
         // NOTE: this could instead be a special class with a MethodMissing method
@@ -56,6 +57,11 @@ module XtensionModule =
                     if not <| converter.CanConvertFrom defaultValueType
                     then failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
                     else converter.ConvertFrom defaultValue :?> 'r
+
+        static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
+            if not this.CanDefault
+            then failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
+            else Xtension.getDefaultValue this
 
         /// The dynamic XType dispatch operator.
         static member (?) (this : Xtension, memberName) : 'a -> 'r =
@@ -79,8 +85,8 @@ module XtensionModule =
                     match optArgArray with
                     | null ->
                     
-                        // presume we're looking for a field that doesn't exist, so get the default value
-                        Xtension.getDefaultValue this
+                        // presume we're looking for a field that doesn't exist, so try to get the default value
+                        Xtension.tryGetDefaultValue this memberName
 
                     | argArray ->
 
@@ -114,7 +120,7 @@ module XtensionModule =
                 | Some field ->
                     match field with
                     | :? 'r as fieldValue -> fieldValue
-                    | _ -> Xtension.getDefaultValue this
+                    | _ -> Xtension.tryGetDefaultValue this memberName
 
         static member (?<-) (this : Xtension, fieldName, value) =
     #if DEBUG
@@ -144,16 +150,16 @@ module XtensionModule =
 module Xtension =
 
     /// The empty Xtension.
-    let empty = { OptXTypeName = None; XFields = Map.empty; IsSealed = false }
+    let empty = { OptXTypeName = None; XFields = Map.empty; CanDefault = true; IsSealed = false }
 
     /// Is a property with the give name writable?
-    let isPropertyNameWriteable (propertyName : string) =
+    let private isPropertyNameWriteable (propertyName : string) =
         not <| propertyName.EndsWith "Id" && // don't write an Id
         not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
         not <| propertyName.EndsWith "Ns" // 'Ns' stands for 'Not serializable'.
 
     /// Is the given property writable?
-    let isPropertyWriteable (property : PropertyInfo) =
+    let private isPropertyWriteable (property : PropertyInfo) =
         property.CanWrite &&
         isPropertyNameWriteable property.Name
 
@@ -172,7 +178,7 @@ module Xtension =
                     then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
                     else (xNode.Name, converter.ConvertFrom xValueStr))
                 childNodes
-        { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; IsSealed = false }
+        { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; CanDefault = true; IsSealed = false }
 
     /// Attempt to read a property from Xml.
     let tryReadProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =

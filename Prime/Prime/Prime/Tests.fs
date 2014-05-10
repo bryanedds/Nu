@@ -19,14 +19,14 @@ module Tests =
         interface IXDispatcherContainer with
             member this.GetDispatchers () = testDispatchers
 
-    type [<CLIMutable; NoComparison>] TestXtendedRecord =
+    type [<CLIMutable; NoComparison>] TestXtended =
         { Xtension : Xtension }
 
-        static member (?) (this : TestXtendedRecord, memberName) =
+        static member (?) (this : TestXtended, memberName) =
             fun args ->
                 (?) this.Xtension memberName args
 
-        static member (?<-) (this : TestXtendedRecord, memberName, value) =
+        static member (?<-) (this : TestXtended, memberName, value) =
             let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
@@ -52,29 +52,44 @@ module Tests =
     let tdc = TestDispatcherContainer ()
 
     let [<Fact>] canAddField () =
-        let xtn = Xtension.empty?TestField <- 5
-        Assert.Equal (5, xtn?TestField ())
+        let xtn = Xtension.empty
+        let xtn' = xtn?TestField <- 5
+        let fieldValue = xtn'?TestField ()
+        Assert.Equal (5, fieldValue)
 
     let [<Fact>] cantAddFieldWhenSealed () =
-        let xtn = { OptXTypeName = None; XFields = Map.empty; IsSealed = true }
+        let xtn = { OptXTypeName = None; XFields = Map.empty; CanDefault = true; IsSealed = true }
         Assert.Throws<Exception> (fun () -> ignore <| xtn?TestField <- 0)
 
+    let [<Fact>] cantAccessNonexistentField () =
+        let xtn = { OptXTypeName = None; XFields = Map.empty; CanDefault = false; IsSealed = true }
+        let xtn' = xtn?TestField <- 5
+        Assert.Throws<Exception> (fun () -> ignore <| xtn'?TetField ())
+
+    let [<Fact>] canAddFieldViaContainingType () =
+        let xtd = { Xtension = Xtension.empty }
+        let xtd' = xtd?TestField <- 5
+        let fieldValue = xtd'?TestField ()
+        Assert.Equal (5, fieldValue)
+
     let [<Fact>] missingFieldReturnsDefault () =
-        let xtn = Xtension.empty?TestField <- 0
-        Assert.Equal (0, xtn?MissingField ())
+        let xtn = Xtension.empty
+        let xtn' = xtn?TestField <- 0
+        let fieldValue = xtn'?MissingField ()
+        Assert.Equal (0, fieldValue)
 
     let [<Fact>] dispatchingWorks () =
-        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = false }
+        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; CanDefault = true; IsSealed = false }
         let xtn' = xtn?Init (xtn, tdc)
         let dispatchResult = xtn?Dispatch (xtn', tdc)
         Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
-        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = true }
+        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; CanDefault = true; IsSealed = true }
         Assert.Throws<Exception> (fun () -> ignore <| xtn?MissingDispatch tdc)
 
     let [<Fact>] xtensionSerializationWorks () =
-        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = false }
+        let xtn = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; CanDefault = true; IsSealed = false }
         let xtn' = xtn?TestField <- 5
         use stream = writeToStream Xtension.writeToXmlWriter xtn'
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
@@ -82,7 +97,7 @@ module Tests =
         Assert.Equal (xtn', xtn'')
 
     let [<Fact>] containedXtensionSerializationWorks () =
-        let xtd = { Xtension = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; IsSealed = false }}
+        let xtd = { Xtension = { OptXTypeName = Some typeof<TestDispatcher>.Name; XFields = Map.empty; CanDefault = true; IsSealed = false }}
         let xtd' = xtd?TestField <- 5
         use stream = writeToStream Xtension.writePropertiesToXmlWriter xtd'
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
