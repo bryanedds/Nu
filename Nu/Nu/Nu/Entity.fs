@@ -272,7 +272,7 @@ module Entity =
           Name = match optName with None -> string id | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = { OptXTypeName = Some xTypeName; XFields = Map.empty; CanDefault = true; IsSealed = false }}
+          Xtension = { XFields = Map.empty; OptXTypeName = Some xTypeName; CanDefault = true; IsSealed = false }}
 
     let makeDefaultEntity xTypeName optName seal (dispatcherContainer : IXDispatcherContainer) =
         match Map.tryFind xTypeName <| dispatcherContainer.GetDispatchers () with

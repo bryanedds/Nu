@@ -85,7 +85,7 @@ module Group =
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
-          Xtension = { OptXTypeName = Some typeof<GroupDispatcher>.Name; XFields = Map.empty; CanDefault = true; IsSealed = false }}
+          Xtension = { XFields = Map.empty; OptXTypeName = Some typeof<GroupDispatcher>.Name; CanDefault = true; IsSealed = false }}
 
     let registerGroup address (group : Group) entities world =
         group.Register (address, entities, world)
