@@ -35,8 +35,8 @@ module XtensionModule =
     /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
     /// 'Entity-Component System'.
     type [<StructuralEqualityAttribute; NoComparison>] Xtension =
-        { OptXTypeName : string option
-          XFields : XFields
+        { XFields : XFields
+          OptXTypeName : string option
           CanDefault : bool
           IsSealed : bool }
 
@@ -137,23 +137,23 @@ module XtensionModule =
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
     /// These are just POFO types, except without any data (the data they use would be in a related
     /// value's XField).
-    and IXDispatchers =
+    and XDispatchers =
         Map<string, obj>
 
     /// Represents a container of XDispatchers.
     and IXDispatcherContainer =
         interface
-            abstract GetDispatchers : unit -> IXDispatchers
+            abstract GetDispatchers : unit -> XDispatchers
             end
 
 [<RequireQualifiedAccess>]
 module Xtension =
 
     /// The empty Xtension.
-    let empty = { OptXTypeName = None; XFields = Map.empty; CanDefault = true; IsSealed = false }
+    let empty = { XFields = Map.empty; OptXTypeName = None; CanDefault = true; IsSealed = false }
 
     /// Is a property with the give name writable?
-    let private isPropertyNameWriteable (propertyName : string) =
+    let isPropertyNameWriteable (propertyName : string) =
         not <| propertyName.EndsWith "Id" && // don't write an Id
         not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
         not <| propertyName.EndsWith "Ns" // 'Ns' stands for 'Not serializable'.
@@ -178,7 +178,7 @@ module Xtension =
                     then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
                     else (xNode.Name, converter.ConvertFrom xValueStr))
                 childNodes
-        { OptXTypeName = optXTypeName; XFields = Map.ofSeq xFields; CanDefault = true; IsSealed = false }
+        { XFields = Map.ofSeq xFields; OptXTypeName = optXTypeName; CanDefault = true; IsSealed = false }
 
     /// Attempt to read a property from Xml.
     let tryReadProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =

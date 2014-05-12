@@ -205,7 +205,7 @@ module World =
                       userGameDispatcherName, userGameDispatcher|]
             
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { OptXTypeName = Some userGameDispatcherName; XFields = Map.empty; CanDefault = true; IsSealed = false }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXTypeName = Some userGameDispatcherName; CanDefault = true; IsSealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
