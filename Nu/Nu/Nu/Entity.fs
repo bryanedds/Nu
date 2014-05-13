@@ -29,23 +29,23 @@ module EntityModule =
         abstract member Init : Entity * IXDispatcherContainer -> Entity
         default this.Init (entity, dispatcherContainer) = entity
 
-        abstract member Register : Address * Entity * World -> Entity * World
-        default this.Register (address, entity, world) = (entity, world)
+        abstract member Register : Entity * Address * World -> Entity * World
+        default this.Register (entity, address, world) = (entity, world)
 
-        abstract member Unregister : Address * Entity * World -> World
-        default this.Unregister (address, entity, world) = world
+        abstract member Unregister : Entity * Address * World -> World
+        default this.Unregister (entity, address, world) = world
 
-        abstract member PropagatePhysics : Address * Entity * World -> World
-        default this.PropagatePhysics (address, entity, world) = world
+        abstract member PropagatePhysics : Entity * Address * World -> World
+        default this.PropagatePhysics (entity, address, world) = world
 
-        abstract member ReregisterPhysicsHack : Address * Entity * World -> World
-        default this.ReregisterPhysicsHack (groupAddress, entity, world) = world
+        abstract member ReregisterPhysicsHack : Entity * Address * World -> World
+        default this.ReregisterPhysicsHack (entity, groupAddress, world) = world
 
-        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> World
-        default this.HandleBodyTransformMessage (message, address, entity, world) = world
+        abstract member HandleBodyTransformMessage : Entity * BodyTransformMessage * Address * World -> World
+        default this.HandleBodyTransformMessage (entity, message, address, world) = world
 
-        abstract member GetRenderDescriptors : Matrix3 * Matrix3 * Entity * World -> RenderDescriptor list
-        default this.GetRenderDescriptors (viewAbsolute, viewRelative, entity, world) = []
+        abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
+        default this.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) = []
 
         abstract member GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (entity, world) = DefaultEntitySize

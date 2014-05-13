@@ -64,14 +64,14 @@ module XtensionModule =
             else Xtension.getDefaultValue this
 
         /// The dynamic XType dispatch operator.
-        static member (?) (this : Xtension, memberName) : 'a -> 'r =
+        static member (?) ((target, xtension), memberName) : 'a -> 'r =
 
             // NOTE: I think the explicit args abstraction is required here to satisfy the signature
             // for op_Dynamic... maybe.
             fun args ->
 
                 // check if dynamic member is an existing field
-                match Map.tryFind memberName this.XFields with
+                match Map.tryFind memberName xtension.XFields with
                 | None ->
                 
                     // try to convert method args to an array
@@ -86,16 +86,22 @@ module XtensionModule =
                     | null ->
                     
                         // presume we're looking for a field that doesn't exist, so try to get the default value
-                        Xtension.tryGetDefaultValue this memberName
+                        Xtension.tryGetDefaultValue xtension memberName
 
                     | argArray ->
 
-                        // presume we're looking for a dispatch, so ensure last arg is a dispatcher container
+                        // presume we're looking for a dispatch, so ensure the last arg is a dispatcher container
+                        // NOTE: Array.last is a linear-time operation.
                         match Array.last argArray with
                         | :? IXDispatcherContainer as context ->
 
+                            // include 'target' context as first arg
+                            // NOTE: array appending is a linear-time operation, but is currently required to satisfy
+                            // the MethodInfo.Invoke interface.
+                            let args = Array.append [|target :> obj|] argArray
+
                             // find dispatcher, or use the empty dispatcher
-                            let optXTypeName = this.OptXTypeName
+                            let optXTypeName = xtension.OptXTypeName
                             let dispatcher =
                                 match optXTypeName with
                                 | None -> Xtension.emptyDispatcher
@@ -110,7 +116,7 @@ module XtensionModule =
                             match dispatcherType.GetMethod memberName with
                             | null -> failwith <| "Could not find method '" + memberName + "' on dispatcher '" + dispatcherType.Name + "'."
                             | aMethod ->
-                                try aMethod.Invoke (dispatcher, argArray) :?> 'r with
+                                try aMethod.Invoke (dispatcher, args) :?> 'r with
                                 | exn when exn.InnerException <> null -> raise exn.InnerException
                                 | exn -> debug <| "Unknown failure during method invocation'" + string exn + "'."; reraise ()
 
@@ -120,19 +126,19 @@ module XtensionModule =
                 | Some field ->
                     match field with
                     | :? 'r as fieldValue -> fieldValue
-                    | _ -> Xtension.tryGetDefaultValue this memberName
+                    | _ -> Xtension.tryGetDefaultValue xtension memberName
 
-        static member (?<-) (this : Xtension, fieldName, value) =
+        static member (?<-) (xtension, fieldName, value) =
     #if DEBUG
             // nop'ed outside of debug mode for efficiency
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
             // result that the key was already contained.
-            if this.IsSealed && not <| Map.containsKey fieldName this.XFields
+            if xtension.IsSealed && not <| Map.containsKey fieldName xtension.XFields
             then failwith "Cannot add field to a sealed Xtension."
             else
     #endif
-            let xFields = Map.add fieldName (value :> obj) this.XFields
-            { this with XFields = xFields }
+            let xFields = Map.add fieldName (value :> obj) xtension.XFields
+            { xtension with XFields = xFields }
 
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
     /// These are just POFO types, except without any data (the data they use would be in a related
@@ -159,7 +165,7 @@ module Xtension =
         not <| propertyName.EndsWith "Ns" // 'Ns' stands for 'Not serializable'.
 
     /// Is the given property writable?
-    let private isPropertyWriteable (property : PropertyInfo) =
+    let isPropertyWriteable (property : PropertyInfo) =
         property.CanWrite &&
         isPropertyNameWriteable property.Name
 
