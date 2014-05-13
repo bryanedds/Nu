@@ -33,27 +33,27 @@ module OmniDispatchersModule =
                 (message, true, world')
             else (message, true, world)
         
-        override dispatcher.Register (address, omniBattleGroup, entities, world) =
+        override dispatcher.Register (omniFieldGroup, address, entities, world) =
             let world_ = World.subscribe NuConstants.TickEvent address (CustomSub moveFieldAvatarHandler) world
             let world_ = World.subscribe NuConstants.TickEvent address (CustomSub adjustFieldCameraHandler) world_
             let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-            let world_ = base.Register (address, omniBattleGroup, entities, world_)
+            let world_ = base.Register (omniFieldGroup, address, entities, world_)
             adjustFieldCamera address world_
 
-        override dispatcher.Unregister (address, omniFieldGroup, world) =
+        override dispatcher.Unregister (omniFieldGroup, address, world) =
             let world_ = World.unsubscribe NuConstants.TickEvent address world
             let world_ = World.unsubscribe NuConstants.TickEvent address world_
-            base.Unregister (address, omniFieldGroup, world_)
+            base.Unregister (omniFieldGroup, address, world_)
 
     type OmniBattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        override dispatcher.Register (address, omniBattleGroup, entities, world) =
+        override dispatcher.Register (omniBattleGroup, address, entities, world) =
             let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-            base.Register (address, omniBattleGroup, entities, world')
+            base.Register (omniBattleGroup, address, entities, world')
 
-        override dispatcher.Unregister (address, omniBattleGroup, world) =
-            base.Unregister (address, omniBattleGroup, world)
+        override dispatcher.Unregister (omniBattleGroup, address, world) =
+            base.Unregister (omniBattleGroup, address, world)
 
     type OmniGameDispatcher () =
         inherit GameDispatcher ()

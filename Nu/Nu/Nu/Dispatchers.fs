@@ -133,19 +133,19 @@ module DispatchersModule =
                 .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetClickSound({ SoundAssetName = "Sound"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.Register (address, button, world) =
+        override dispatcher.Register (button, address, world) =
             let world' =
                 world |>
                     subscribe DownMouseLeftEvent address (CustomSub handleButtonEventDownMouseLeft) |>
                     subscribe UpMouseLeftEvent address (CustomSub handleButtonEventUpMouseLeft)
             (button, world')
 
-        override dispatcher.Unregister (address, button, world) =
+        override dispatcher.Unregister (button, address, world) =
             world |>
                 unsubscribe DownMouseLeftEvent address |>
                 unsubscribe UpMouseLeftEvent address
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, button, world) =
+        override dispatcher.GetRenderDescriptors (button, viewAbsolute, viewRelative, world) =
             if not button.Visible then []
             else
                 [LayerableDescriptor <|
@@ -174,7 +174,7 @@ module DispatchersModule =
             let label' = base.Init (label, dispatcherContainer)
             label'.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, label, world) =
+        override dispatcher.GetRenderDescriptors (label, viewAbsolute, viewRelative, world) =
             if not label.Visible then []
             else
                 [LayerableDescriptor <|
@@ -208,7 +208,7 @@ module DispatchersModule =
                 .SetTextOffset(Vector2.Zero)
                 .SetTextColor(Vector4.One)
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, textBox, world) =
+        override dispatcher.GetRenderDescriptors (textBox, viewAbsolute, viewRelative, world) =
             if not textBox.Visible then []
             else
                 [LayerableDescriptor <|
@@ -286,19 +286,19 @@ module DispatchersModule =
                 .SetOnSprite({ SpriteAssetName = "Image2"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetToggleSound({ SoundAssetName = "Sound"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.Register (address, label, world) =
+        override dispatcher.Register (toggle, address, world) =
             let world' =
                 world |>
                     subscribe DownMouseLeftEvent address (CustomSub handleToggleEventDownMouseLeft) |>
                     subscribe UpMouseLeftEvent address (CustomSub handleToggleEventUpMouseLeft)
-            (label, world')
+            (toggle, world')
 
-        override dispatcher.Unregister (address, label, world) =
+        override dispatcher.Unregister (toggle, address, world) =
             world |>
                 unsubscribe DownMouseLeftEvent address |>
                 unsubscribe UpMouseLeftEvent address
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, toggle, world) =
+        override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, viewRelative, world) =
             if not toggle.Visible then []
             else
                 [LayerableDescriptor <|
@@ -354,14 +354,14 @@ module DispatchersModule =
             let feeler' = base.Init (feeler, dispatcherContainer)
             feeler'.SetIsTouched(false)
 
-        override dispatcher.Register (address, feeler, world) =
+        override dispatcher.Register (feeler, address, world) =
             let world' =
                 world |>
                     subscribe DownMouseLeftEvent address (CustomSub handleFeelerEventDownMouseLeft) |>
                     subscribe UpMouseLeftEvent address (CustomSub handleFeelerEventUpMouseLeft)
             (feeler, world')
 
-        override dispatcher.Unregister (address, feeler, world) =
+        override dispatcher.Unregister (feeler, address, world) =
             world |>
                 unsubscribe UpMouseLeftEvent address |>
                 unsubscribe DownMouseLeftEvent address
@@ -390,7 +390,7 @@ module DispatchersModule =
                 .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
                 .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, fillBar, world) =
+        override dispatcher.GetRenderDescriptors (fillBar, viewAbsolute, viewRelative, world) =
             if not fillBar.Visible then []
             else
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
@@ -458,30 +458,30 @@ module DispatchersModule =
                 .SetBodyType(BodyType.Dynamic)
                 .SetImageSprite({ SpriteAssetName = "Image3"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.Register (address, block, world) =
+        override dispatcher.Register (block, address, world) =
             registerBlockPhysics address block world
 
-        override dispatcher.Unregister (address, block, world) =
+        override dispatcher.Unregister (block, address, world) =
             unregisterBlockPhysics address block world
             
-        override dispatcher.PropagatePhysics (address, block, world) =
+        override dispatcher.PropagatePhysics (block, address, world) =
             let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
             set block' world' <| worldEntityLens address
 
-        override dispatcher.ReregisterPhysicsHack (groupAddress, block, world) =
+        override dispatcher.ReregisterPhysicsHack (block, groupAddress, world) =
             let address = addrstr groupAddress block.Name
             let world' = unregisterBlockPhysics address block world
             let (block', world'') = registerBlockPhysics address block world'
             set block' world'' <| worldEntityLens address
 
-        override dispatcher.HandleBodyTransformMessage (message, address, block, world) =
+        override dispatcher.HandleBodyTransformMessage (block, message, address, world) =
             let block' =
                 block
                     .SetPosition(message.Position - block.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation(message.Rotation)
             set block' world <| worldEntityLens message.EntityAddress
             
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, block, world) =
+        override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, world) =
             if not block.Visible then []
             else
                 [LayerableDescriptor <|
@@ -536,30 +536,30 @@ module DispatchersModule =
                 .SetDensity(NormalDensity)
                 .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.Register (address, avatar, world) =
+        override dispatcher.Register (avatar, address, world) =
             registerAvatarPhysics address avatar world
 
-        override dispatcher.Unregister (address, avatar, world) =
+        override dispatcher.Unregister (avatar, address, world) =
             unregisterAvatarPhysics address avatar world
             
-        override dispatcher.PropagatePhysics (address, avatar, world) =
+        override dispatcher.PropagatePhysics (avatar, address, world) =
             let (avatar', world') = world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
             set avatar' world' <| worldEntityLens address
 
-        override dispatcher.ReregisterPhysicsHack (groupAddress, avatar, world) =
+        override dispatcher.ReregisterPhysicsHack (avatar, groupAddress, world) =
             let address = addrstr groupAddress avatar.Name
             let world' = unregisterAvatarPhysics address avatar world
             let (avatar', world'') = registerAvatarPhysics address avatar world'
             set avatar' world'' <| worldEntityLens address
 
-        override dispatcher.HandleBodyTransformMessage (message, address, avatar, world) =
+        override dispatcher.HandleBodyTransformMessage (avatar, message, address, world) =
             let avatar' =
                 (avatar
                     .SetPosition <| message.Position - avatar.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation message.Rotation
             set avatar' world <| worldEntityLens message.EntityAddress
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, avatar, world) =
+        override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, world) =
             if not avatar.Visible then []
             else
                 [LayerableDescriptor <|
@@ -628,23 +628,23 @@ module DispatchersModule =
                 .SetDensity(NormalDensity)
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
 
-        override dispatcher.Register (address, tileMap, world) =
+        override dispatcher.Register (tileMap, address, world) =
             registerTileMapPhysics address tileMap world
 
-        override dispatcher.Unregister (address, tileMap, world) =
+        override dispatcher.Unregister (tileMap, address, world) =
             unregisterTileMapPhysics address tileMap world
             
-        override dispatcher.PropagatePhysics (address, tileMap, world) =
+        override dispatcher.PropagatePhysics (tileMap, address, world) =
             let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
             set tileMap' world' <| worldEntityLens address
 
-        override dispatcher.ReregisterPhysicsHack (groupAddress, tileMap, world) =
+        override dispatcher.ReregisterPhysicsHack (tileMap, groupAddress, world) =
             let address = addrstr groupAddress tileMap.Name
             let world' = unregisterTileMapPhysics address tileMap world
             let (tileMap', world'') = registerTileMapPhysics address tileMap world'
             set tileMap' world'' <| worldEntityLens address
 
-        override dispatcher.GetRenderDescriptors (viewAbsolute, viewRelative, tileMap, world) =
+        override dispatcher.GetRenderDescriptors (tileMap, viewAbsolute, viewRelative, world) =
             if not tileMap.Visible then []
             else
                 let tileMapAsset = tileMap.TileMapAsset

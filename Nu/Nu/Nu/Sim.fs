@@ -50,10 +50,10 @@ module SimModule =
 
         static member (?) (this : Entity, memberName) =
             fun args ->
-                (?) this.Xtension memberName args
+                Xtension.(?) (((this, this.Xtension)), memberName) args
 
         static member (?<-) (this : Entity, memberName, value) =
-            let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
     // TODO: move this tile map stuff elsewhere
@@ -88,10 +88,10 @@ module SimModule =
 
         static member (?) (this : Group, memberName) =
             fun args ->
-                (?) this.Xtension memberName args
+                Xtension.(?) (((this, this.Xtension)), memberName) args
 
         static member (?<-) (this : Group, memberName, value) =
-            let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
     type GroupDescriptor =
@@ -111,10 +111,10 @@ module SimModule =
 
         static member (?) (this : Transition, memberName) =
             fun args ->
-                (?) this.Xtension memberName args
+                Xtension.(?) (((this, this.Xtension)), memberName) args
 
         static member (?<-) (this : Transition, memberName, value) =
-            let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
     type [<StructuralEquality; NoComparison>] ScreenState =
@@ -131,10 +131,10 @@ module SimModule =
 
         static member (?) (this : Screen, memberName) =
             fun args ->
-                (?) this.Xtension memberName args
+                Xtension.(?) (((this, this.Xtension)), memberName) args
 
         static member (?<-) (this : Screen, memberName, value) =
-            let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Game =
@@ -144,10 +144,10 @@ module SimModule =
 
         static member (?) (this : Game, memberName) =
             fun args ->
-                (?) this.Xtension memberName args
+                Xtension.(?) (((this, this.Xtension)), memberName) args
 
         static member (?<-) (this : Game, memberName, value) =
-            let xtension = Xtension.op_DynamicAssignment (this.Xtension, memberName, value)
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
     type [<StructuralEquality; NoComparison>] Simulant =
@@ -207,29 +207,29 @@ module SimModule =
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
 
         (* XDispatches *)
-        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
-        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, this, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
-        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, this, world)
-        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, this, world)
-        member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, this, world)
-        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, this, world)
-        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
-        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative (this, world)
+        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
+        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
+        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
+        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, world)
+        member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, world)
+        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, world)
+        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world
+        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative world
 
     type Group with
-        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, this, entities, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
     type Transition with
         end
 
     type Screen with
-        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, this, groupDescriptors, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, this, world)
+        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, groupDescriptors, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
     type Game with
-        member this.Register (world : World) : World = this?Register (this, world)
+        member this.Register (world : World) : World = this?Register world
 
 module Sim =
 

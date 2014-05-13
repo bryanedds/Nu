@@ -17,11 +17,11 @@ module ScreenModule =
 
     type ScreenDispatcher () =
 
-        abstract member Register : Address * Screen * GroupDescriptor list * World -> World
-        default this.Register (address, _, groupDescriptors, world) = addGroups address groupDescriptors world
+        abstract member Register : Screen * Address * GroupDescriptor list * World -> World
+        default this.Register (_, address, groupDescriptors, world) = addGroups address groupDescriptors world
 
-        abstract member Unregister : Address * Screen * World -> World
-        default this.Unregister (address, _, world) = removeGroups address world
+        abstract member Unregister : Screen * Address * World -> World
+        default this.Unregister (_, address, world) = removeGroups address world
 
 module Screen =
 
