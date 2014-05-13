@@ -16,11 +16,11 @@ module GroupModule =
 
     type GroupDispatcher () =
         
-        abstract member Register : Address * Group * Entity list * World -> World
-        default this.Register (address, _, entities, world) = addEntities address entities world
+        abstract member Register : Group * Address * Entity list * World -> World
+        default this.Register (_, address, entities, world) = addEntities address entities world
 
-        abstract member Unregister : Address * Group * World -> World
-        default this.Unregister (address, _, world) = removeEntities address world
+        abstract member Unregister : Group * Address * World -> World
+        default this.Unregister (_, address, world) = removeEntities address world
 
 module Group =
 
@@ -87,7 +87,7 @@ module Group =
         { Group.Id = getNuId ()
           Xtension = { XFields = Map.empty; OptXTypeName = Some typeof<GroupDispatcher>.Name; CanDefault = true; IsSealed = false }}
 
-    let registerGroup address (group : Group) entities world =
+    let registerGroup address entities (group : Group) world =
         group.Register (address, entities, world)
 
     let unregisterGroup address world =
@@ -110,7 +110,7 @@ module Group =
             match get world <| worldOptGroupLens address with
             | None -> world
             | Some _ -> removeGroup address world
-        let world'' = registerGroup address group entities world'
+        let world'' = registerGroup address entities group world'
         set group world'' <| worldGroupLens address
 
     let addGroups address groupDescriptors world =
