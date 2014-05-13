@@ -50,7 +50,7 @@ module SimModule =
 
         static member (?) (this : Entity, memberName) =
             fun args ->
-                Xtension.(?) (((this, this.Xtension)), memberName) args
+                Xtension.(?) (this, this.Xtension, memberName) args
 
         static member (?<-) (this : Entity, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
@@ -88,7 +88,7 @@ module SimModule =
 
         static member (?) (this : Group, memberName) =
             fun args ->
-                Xtension.(?) (((this, this.Xtension)), memberName) args
+                Xtension.(?) (this, this.Xtension, memberName) args
 
         static member (?<-) (this : Group, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
@@ -111,7 +111,7 @@ module SimModule =
 
         static member (?) (this : Transition, memberName) =
             fun args ->
-                Xtension.(?) (((this, this.Xtension)), memberName) args
+                Xtension.(?) (this, this.Xtension, memberName) args
 
         static member (?<-) (this : Transition, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
@@ -131,7 +131,7 @@ module SimModule =
 
         static member (?) (this : Screen, memberName) =
             fun args ->
-                Xtension.(?) (((this, this.Xtension)), memberName) args
+                Xtension.(?) (this, this.Xtension, memberName) args
 
         static member (?<-) (this : Screen, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
@@ -144,7 +144,7 @@ module SimModule =
 
         static member (?) (this : Game, memberName) =
             fun args ->
-                Xtension.(?) (((this, this.Xtension)), memberName) args
+                Xtension.(?) (this, this.Xtension, memberName) args
 
         static member (?<-) (this : Game, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)

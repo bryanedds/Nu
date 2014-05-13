@@ -64,7 +64,7 @@ module XtensionModule =
             else Xtension.getDefaultValue this
 
         /// The dynamic XType dispatch operator.
-        static member (?) ((target, xtension), memberName) : 'a -> 'r =
+        static member (?) (target, xtension, memberName) : 'a -> 'r =
 
             // NOTE: I think the explicit args abstraction is required here to satisfy the signature
             // for op_Dynamic... maybe.
