@@ -128,6 +128,10 @@ module XtensionModule =
                     | :? 'r as fieldValue -> fieldValue
                     | _ -> Xtension.tryGetDefaultValue xtension memberName
 
+        /// The dynamic XType dispatch operator for use on raw Xtension values.
+        static member (?) (xtension, memberName) : 'a -> 'r =
+            Xtension.(?) (xtension, xtension, memberName)
+
         static member (?<-) (xtension, fieldName, value) =
     #if DEBUG
             // nop'ed outside of debug mode for efficiency
