@@ -21,10 +21,10 @@ module Tests =
             { this with Xtension = xtension }
 
     type TestDispatcher () =
-        member dispatcher.Init (xtd : TestXtended, _ : IXDispatcherContainer) =
-            xtd?InittedField <- 5
-        member dispatcher.Dispatch (xtd : TestXtended, _ : IXDispatcherContainer) =
-            xtd?InittedField () * 5
+        member dispatcher.Init (xtn : Xtension, _ : IXDispatcherContainer) =
+            xtn?InittedField <- 5
+        member dispatcher.Dispatch (xtn : Xtension, _ : IXDispatcherContainer) =
+            xtn?InittedField () * 5
 
     type TestDispatcherContainer () =
         let testDispatcher = (TestDispatcher ()) :> obj
@@ -81,14 +81,14 @@ module Tests =
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] dispatchingWorks () =
-        let xtd = { Xtension = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }}
-        let xtd' = xtd?Init tdc : TestXtended
-        let dispatchResult = xtd'?Dispatch tdc
+        let xtn = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }
+        let xtn' = xtn?Init tdc : Xtension
+        let dispatchResult = xtn'?Dispatch tdc
         Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
-        let xtd = { Xtension = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }}
-        Assert.Throws<Exception> (fun () -> ignore <| xtd?MissingDispatch tdc)
+        let xtn = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }
+        Assert.Throws<Exception> (fun () -> ignore <| xtn?MissingDispatch tdc)
 
     let [<Fact>] xtensionSerializationWorks () =
         let xtn = Xtension.empty
