@@ -23,7 +23,7 @@ module Tests =
     type TestDispatcher () =
         member dispatcher.Init (xtn : Xtension, _ : IXDispatcherContainer) =
             xtn?InittedField <- 5
-        member dispatcher.Dispatch (xtn : Xtension, _ : IXDispatcherContainer) =
+        member dispatcher.Test (xtn : Xtension, _ : IXDispatcherContainer) =
             xtn?InittedField () * 5
 
     type TestDispatcherContainer () =
@@ -60,7 +60,7 @@ module Tests =
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] cantAddFieldWhenSealed () =
-        let xtn = { Xtension.empty with IsSealed = true }
+        let xtn = { Xtension.empty with Sealed = true }
         Assert.Throws<Exception> (fun () -> ignore <| xtn?TestField <- 0)
 
     let [<Fact>] cantAccessNonexistentField () =
@@ -81,13 +81,13 @@ module Tests =
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] dispatchingWorks () =
-        let xtn = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }
+        let xtn = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
         let xtn' = xtn?Init tdc : Xtension
-        let dispatchResult = xtn'?Dispatch tdc
+        let dispatchResult = xtn'?Test tdc
         Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
-        let xtn = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }
+        let xtn = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
         Assert.Throws<Exception> (fun () -> ignore <| xtn?MissingDispatch tdc)
 
     let [<Fact>] xtensionSerializationWorks () =
@@ -99,7 +99,7 @@ module Tests =
         Assert.Equal (xtn', xtn'')
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
-        let xtd = { Xtension = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }}
+        let xtd = { Xtension = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }}
         let xtd' = xtd?TestField <- 5
         use stream = writeToStream Xtension.writePropertiesToXmlWriter xtd'
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
