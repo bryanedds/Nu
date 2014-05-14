@@ -305,8 +305,8 @@ module Program =
 
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let world = !refWorld
-        let entityXTypeName = form.createEntityComboBox.Text
-        try let entity_ = makeDefaultEntity entityXTypeName None false world
+        let entityXDispatcherName = form.createEntityComboBox.Text
+        try let entity_ = makeDefaultEntity entityXDispatcherName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
@@ -322,7 +322,7 @@ module Program =
             refWorld := changer !refWorld
             worldChangers.Add changer
         with exn ->
-            ignore <| MessageBox.Show ("Invalid entity XType name '" + entityXTypeName + "'.")
+            ignore <| MessageBox.Show ("Invalid entity XDispatcher name '" + entityXDispatcherName + "'.")
 
     let handleDelete (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let selectedObject = form.propertyGrid.SelectedObject

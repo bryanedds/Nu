@@ -36,9 +36,9 @@ module XtensionModule =
     /// 'Entity-Component System'.
     type [<StructuralEqualityAttribute; NoComparison>] Xtension =
         { XFields : XFields
-          OptXTypeName : string option
+          OptXDispatcherName : string option
           CanDefault : bool
-          IsSealed : bool }
+          Sealed : bool }
 
         // NOTE: this could instead be a special class with a MethodMissing method
         static member private emptyDispatcher = new obj ()
@@ -63,7 +63,7 @@ module XtensionModule =
             then failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
             else Xtension.getDefaultValue this
 
-        /// The dynamic XType dispatch operator.
+        /// The dynamic dispatch operator.
         static member (?) (target, xtension, memberName) : 'a -> 'r =
 
             // NOTE: I think the explicit args abstraction is required here to satisfy the signature
@@ -101,26 +101,26 @@ module XtensionModule =
                             let args = Array.append [|target :> obj|] argArray
 
                             // find dispatcher, or use the empty dispatcher
-                            let optXTypeName = xtension.OptXTypeName
+                            let optXDispatcherName = xtension.OptXDispatcherName
                             let dispatcher =
-                                match optXTypeName with
+                                match optXDispatcherName with
                                 | None -> Xtension.emptyDispatcher
-                                | Some xTypeName ->
+                                | Some xDispatcherName ->
                                     let dispatchers = context.GetDispatchers ()
-                                    match Map.tryFind xTypeName dispatchers with
-                                    | None -> failwith <| "Invalid dispatcher '" + xTypeName + "'."
+                                    match Map.tryFind xDispatcherName dispatchers with
+                                    | None -> failwith <| "Invalid XDispatcher '" + xDispatcherName + "'."
                                     | Some dispatcher -> dispatcher
 
                             // attempt to dispatch method
                             let dispatcherType = dispatcher.GetType ()
                             match dispatcherType.GetMethod memberName with
-                            | null -> failwith <| "Could not find method '" + memberName + "' on dispatcher '" + dispatcherType.Name + "'."
+                            | null -> failwith <| "Could not find method '" + memberName + "' on XDispatcher '" + dispatcherType.Name + "'."
                             | aMethod ->
                                 try aMethod.Invoke (dispatcher, args) :?> 'r with
                                 | exn when exn.InnerException <> null -> raise exn.InnerException
-                                | exn -> debug <| "Unknown failure during method invocation'" + string exn + "'."; reraise ()
+                                | exn -> debug <| "Unknown failure during XDispatch invocation'" + string exn + "'."; reraise ()
 
-                        | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer."
+                        | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer or sub-type."
 
                 // return field directly if the return type matches, otherwise the default value for that type
                 | Some field ->
@@ -128,7 +128,7 @@ module XtensionModule =
                     | :? 'r as fieldValue -> fieldValue
                     | _ -> Xtension.tryGetDefaultValue xtension memberName
 
-        /// The dynamic XType dispatch operator for use on raw Xtension values.
+        /// The dynamic dispatch operator for use on raw Xtension values.
         static member (?) (xtension, memberName) : 'a -> 'r =
             Xtension.(?) (xtension, xtension, memberName)
 
@@ -137,7 +137,7 @@ module XtensionModule =
             // nop'ed outside of debug mode for efficiency
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
             // result that the key was already contained.
-            if xtension.IsSealed && not <| Map.containsKey fieldName xtension.XFields
+            if xtension.Sealed && not <| Map.containsKey fieldName xtension.XFields
             then failwith "Cannot add field to a sealed Xtension."
             else
     #endif
@@ -160,7 +160,7 @@ module XtensionModule =
 module Xtension =
 
     /// The empty Xtension.
-    let empty = { XFields = Map.empty; OptXTypeName = None; CanDefault = true; IsSealed = false }
+    let empty = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
 
     /// Is a property with the give name writable?
     let isPropertyNameWriteable (propertyName : string) =
@@ -175,7 +175,7 @@ module Xtension =
 
     /// Read an Xtension from Xml.
     let read (valueNode : XmlNode) =
-        let optXTypeName = match valueNode.Attributes.["xType"].InnerText with "" -> None | str -> Some str
+        let optXDispatcherName = match valueNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
         let childNodes = enumerable valueNode.ChildNodes
         let xFields =
             Seq.map
@@ -188,7 +188,7 @@ module Xtension =
                     then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
                     else (xNode.Name, converter.ConvertFrom xValueStr))
                 childNodes
-        { XFields = Map.ofSeq xFields; OptXTypeName = optXTypeName; CanDefault = true; IsSealed = false }
+        { XFields = Map.ofSeq xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
 
     /// Attempt to read a property from Xml.
     let tryReadProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
@@ -216,15 +216,15 @@ module Xtension =
     /// Write an Xtension to Xml.
     /// TODO: need a vanilla write function that writes to an XmlDocument rather than directly to an XmlWriter stream.
     let writeToXmlWriter (writer : XmlWriter) xtension =
-        writer.WriteAttributeString ("xType", match xtension.OptXTypeName with None -> String.Empty | Some name -> name)
+        writer.WriteAttributeString ("xDispatcher", match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
             let xValue = xField.Value
-            let xType = xValue.GetType ()
-            let xConverter = TypeDescriptor.GetConverter xType
+            let xDispatcher = xValue.GetType ()
+            let xConverter = TypeDescriptor.GetConverter xDispatcher
             let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
             writer.WriteStartElement xFieldName
-            writer.WriteAttributeString ("type", xType.FullName)
+            writer.WriteAttributeString ("type", xDispatcher.FullName)
             writer.WriteString xValueStr
             writer.WriteEndElement ()
 

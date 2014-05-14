@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Xtension xType="GroupDispatcher" />
+    <Xtension xDispatcher="GroupDispatcher" />
     <Entity>
       <Name>bc8f4d0f-66cb-4523-abb1-fca6564b9d1d</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension xType="TextBoxDispatcher">
+      <Xtension xDispatcher="TextBoxDispatcher">
         <Depth type="System.Single">0</Depth>
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <Text type="System.String">Code: Bryan Edds</Text>
@@ -22,7 +22,7 @@
       <Name>fee813fa-620b-4f74-843e-bcc9e6e96193</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension xType="TextBoxDispatcher">
+      <Xtension xDispatcher="TextBoxDispatcher">
         <Depth type="System.Single">0</Depth>
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <Text type="System.String">Art: Dan Rivera</Text>
@@ -38,7 +38,7 @@
       <Name>Back</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension xType="ButtonDispatcher">
+      <Xtension xDispatcher="ButtonDispatcher">
         <Depth type="System.Single">0</Depth>
         <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
@@ -53,7 +53,7 @@
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension xType="TextBoxDispatcher">
+      <Xtension xDispatcher="TextBoxDispatcher">
         <Depth type="System.Single">0</Depth>
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <Text type="System.String">Credits</Text>
@@ -69,7 +69,7 @@
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension xType="LabelDispatcher">
+      <Xtension xDispatcher="LabelDispatcher">
         <LabelSprite type="Nu.RenderingModule+Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
         <Depth type="System.Single">-1</Depth>
         <Size type="OpenTK.Vector2">960;544</Size>
