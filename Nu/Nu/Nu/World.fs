@@ -52,7 +52,7 @@ module World =
         let gameDispatcher = Activator.CreateInstance gameDispatcherType
         let dispatchers = Map.add gameDispatcherShortName gameDispatcher world.Dispatchers
         let world' = { world with Dispatchers = dispatchers }
-        let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXTypeName = Some gameDispatcherShortName }}}
+        let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
         world''.Game.Register world''
 
     let saveGroupFile optGameDispatcherDescriptor group entities fileName world =
@@ -252,7 +252,7 @@ module World =
                       userGameDispatcherName, userGameDispatcher|]
             
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXTypeName = Some userGameDispatcherName; CanDefault = true; IsSealed = false }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some userGameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty

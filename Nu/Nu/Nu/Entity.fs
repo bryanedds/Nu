@@ -26,7 +26,6 @@ module EntityModule =
 
     type Entity with
 
-        (* XFields *)
         [<XField>] member this.Position with get () = this?Position () : Vector2
         member this.SetPosition (value : Vector2) : Entity = this?Position <- value
         [<XField>] member this.Depth with get () = this?Depth () : single
@@ -36,7 +35,6 @@ module EntityModule =
         [<XField>] member this.Size with get () = this?Size () : Vector2
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
 
-        (* XDispatches *)
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
         member this.Register (address : Address, world : World) : Entity * World = this?Register (address, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
@@ -58,6 +56,19 @@ module EntityModule =
         abstract member Unregister : Entity * Address * World -> World
         default this.Unregister (entity, address, world) = world
 
+    type Entity2dDispatcher () =
+        inherit EntityDispatcher ()
+            
+        override this.Init (entity2d, dispatcherContainer) =
+            let entity2d' = base.Init (entity2d, dispatcherContainer)
+            // perhaps a nice 'with' syntax macro would work better here -
+            // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
+            entity2d'
+                .SetPosition(Vector2.Zero)
+                .SetDepth(0.0f)
+                .SetSize(DefaultEntitySize)
+                .SetRotation(0.0f)
+
         abstract member PropagatePhysics : Entity * Address * World -> World
         default this.PropagatePhysics (entity, address, world) = world
 
@@ -75,19 +86,6 @@ module EntityModule =
 
         abstract member IsTransformRelative : Entity * World -> bool
         default this.IsTransformRelative (entity, world) = true
-
-    type Entity2dDispatcher () =
-        inherit EntityDispatcher ()
-            
-        override this.Init (entity2d, dispatcherContainer) =
-            let entity2d' = base.Init (entity2d, dispatcherContainer)
-            // perhaps a nice 'with' syntax macro would work better here -
-            // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
-            entity2d'
-                .SetPosition(Vector2.Zero)
-                .SetDepth(0.0f)
-                .SetSize(DefaultEntitySize)
-                .SetRotation(0.0f)
 
 module Entity =
 
@@ -289,21 +287,21 @@ module Entity =
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
-    let private makeDefaultEntity2 xTypeName optName =
+    let private makeDefaultEntity2 dispatcherName optName =
         let id = getNuId ()
         { Id = id
           Name = match optName with None -> string id | Some name -> name
           Enabled = true
           Visible = true
-          Xtension = { XFields = Map.empty; OptXTypeName = Some xTypeName; CanDefault = true; IsSealed = false }}
+          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDefaultEntity xTypeName optName seal (dispatcherContainer : IXDispatcherContainer) =
-        match Map.tryFind xTypeName <| dispatcherContainer.GetDispatchers () with
-        | None -> failwith <| "Invalid XType name '" + xTypeName + "'."
+    let makeDefaultEntity dispatcherName optName seal (dispatcherContainer : IXDispatcherContainer) =
+        match Map.tryFind dispatcherName <| dispatcherContainer.GetDispatchers () with
+        | None -> failwith <| "Invalid XDispatcher name '" + dispatcherName + "'."
         | Some dispatcher ->
-            let entity = makeDefaultEntity2 xTypeName optName
+            let entity = makeDefaultEntity2 dispatcherName optName
             let entity' = entity.Init dispatcherContainer
-            { entity' with Xtension = { entity'.Xtension with IsSealed = seal }}
+            { entity' with Xtension = { entity'.Xtension with Sealed = seal }}
 
     let registerEntity address (entity : Entity) world =
         entity.Register (address, world)
