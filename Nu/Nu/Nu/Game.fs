@@ -11,6 +11,9 @@ open Nu.Screen
 [<AutoOpen>]
 module GameModule =
 
+    type Game with
+        member this.Register (world : World) : World = this?Register world
+
     type GameDispatcher () =
         abstract member Register : Game * World -> World
         default this.Register (_, world) = world
