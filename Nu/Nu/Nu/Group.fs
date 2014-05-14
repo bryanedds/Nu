@@ -14,6 +14,10 @@ open Nu.Entity
 [<AutoOpen>]
 module GroupModule =
 
+    type Group with
+        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
+
     type GroupDispatcher () =
         
         abstract member Register : Group * Address * Entity list * World -> World
@@ -141,40 +145,3 @@ module Group =
         let entities = readEntitiesFromXml (groupNode : XmlNode) seal world
         Xtension.readProperties groupNode group
         (group, entities)
-
-    let saveGroupFile optGameDispatcherDescriptor group entities fileName world =
-        use file = File.Open (fileName, FileMode.Create)
-        let writerSettings = XmlWriterSettings ()
-        writerSettings.Indent <- true
-        use writer = XmlWriter.Create (file, writerSettings)
-        writer.WriteStartDocument ()
-        writer.WriteStartElement "Root"
-        match optGameDispatcherDescriptor with
-        | None -> ()
-        | Some node ->
-            writer.WriteStartElement "GameDispatcher"
-            writer.WriteElementString ("AssemblyFileName", fst node)
-            writer.WriteElementString ("FullName", snd node)
-            writer.WriteEndElement ()
-        writeGroupToXml writer group entities
-        writer.WriteEndElement ()
-        writer.WriteEndDocument ()
-
-    let loadGroupFile (fileName : string) world seal activatesGameDispatcher =
-        let document = XmlDocument ()
-        document.Load fileName
-        let rootNode = document.["Root"]
-        let (someDescriptor, world') =
-                match Seq.tryFind (fun (node : XmlNode) -> node.Name = "GameDispatcher") <| enumerable rootNode.ChildNodes with
-                | None -> (None, world)
-                | Some gameDispatcherNode ->
-                    let assemblyFileName = gameDispatcherNode.["AssemblyFileName"].InnerText
-                    let gameDispatcherFullName = gameDispatcherNode.["FullName"].InnerText
-                    let someDescriptor = Some (assemblyFileName, gameDispatcherFullName)
-                    if activatesGameDispatcher then
-                        let world' = activateGameDispatcher assemblyFileName gameDispatcherFullName world
-                        (someDescriptor, world')
-                    else (someDescriptor, world)
-        let groupNode = rootNode.["Group"]
-        let (group, entities) = readGroupFromXml groupNode seal world'
-        (someDescriptor, group, entities, world')
