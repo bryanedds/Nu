@@ -54,25 +54,31 @@ module Tests =
     let tdc = TestDispatcherContainer ()
 
     let [<Fact>] canAddField () =
+        let xtn = Xtension.empty
+        let xtn' = xtn?TestField <- 5
+        let fieldValue = xtn'?TestField ()
+        Assert.Equal (5, fieldValue)
+
+    let [<Fact>] cantAddFieldWhenSealed () =
+        let xtn = { Xtension.empty with IsSealed = true }
+        Assert.Throws<Exception> (fun () -> ignore <| xtn?TestField <- 0)
+
+    let [<Fact>] cantAccessNonexistentField () =
+        let xtn = { Xtension.empty with CanDefault = false }
+        let xtn' = xtn?TestField <- 5
+        Assert.Throws<Exception> (fun () -> ignore <| xtn'?TetField ())
+
+    let [<Fact>] missingFieldReturnsDefault () =
+        let xtn = Xtension.empty
+        let xtn' = xtn?TestField <- 0
+        let fieldValue = xtn'?MissingField ()
+        Assert.Equal (0, fieldValue)
+
+    let [<Fact>] canAddFieldViaContainingType () =
         let xtd = { Xtension = Xtension.empty }
         let xtd' = xtd?TestField <- 5
         let fieldValue = xtd'?TestField ()
         Assert.Equal (5, fieldValue)
-
-    let [<Fact>] cantAddFieldWhenSealed () =
-        let xtd = { Xtension = { Xtension.empty with IsSealed = true }}
-        Assert.Throws<Exception> (fun () -> ignore <| xtd?TestField <- 0)
-
-    let [<Fact>] cantAccessNonexistentField () =
-        let xtd = { Xtension = { Xtension.empty with CanDefault = false }}
-        let xtd' = xtd?TestField <- 5
-        Assert.Throws<Exception> (fun () -> ignore <| xtd'?TetField ())
-
-    let [<Fact>] missingFieldReturnsDefault () =
-        let xtd = { Xtension = Xtension.empty }
-        let xtd' = xtd?TestField <- 0
-        let fieldValue = xtd'?MissingField ()
-        Assert.Equal (0, fieldValue)
 
     let [<Fact>] dispatchingWorks () =
         let xtd = { Xtension = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }}
@@ -84,7 +90,7 @@ module Tests =
         let xtd = { Xtension = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }}
         Assert.Throws<Exception> (fun () -> ignore <| xtd?MissingDispatch tdc)
 
-    let [<Fact>] directXtensionSerializationWorks () =
+    let [<Fact>] xtensionSerializationWorks () =
         let xtn = Xtension.empty
         let xtn' = xtn?TestField <- 5
         use stream = writeToStream Xtension.writeToXmlWriter xtn'
@@ -92,7 +98,7 @@ module Tests =
         let xtn'' = readFromStream (fun node _ -> Xtension.read node) stream xtn'
         Assert.Equal (xtn', xtn'')
 
-    let [<Fact>] containedXtensionSerializationWorks () =
+    let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = { Xtension.empty with OptXTypeName = Some typeof<TestDispatcher>.Name }}
         let xtd' = xtd?TestField <- 5
         use stream = writeToStream Xtension.writePropertiesToXmlWriter xtd'
