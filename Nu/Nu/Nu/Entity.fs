@@ -24,6 +24,29 @@ open Nu.Sim
 [<AutoOpen>]
 module EntityModule =
 
+    type Entity with
+
+        (* XFields *)
+        [<XField>] member this.Position with get () = this?Position () : Vector2
+        member this.SetPosition (value : Vector2) : Entity = this?Position <- value
+        [<XField>] member this.Depth with get () = this?Depth () : single
+        member this.SetDepth (value : single) : Entity = this?Depth <- value
+        [<XField>] member this.Rotation with get () = this?Rotation () : single
+        member this.SetRotation (value : single) : Entity = this?Rotation <- value
+        [<XField>] member this.Size with get () = this?Size () : Vector2
+        member this.SetSize (value : Vector2) : Entity = this?Size <- value
+
+        (* XDispatches *)
+        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
+        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, world)
+        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
+        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
+        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, world)
+        member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, world)
+        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, world)
+        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world
+        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative world
+
     type EntityDispatcher () =
 
         abstract member Init : Entity * IXDispatcherContainer -> Entity
