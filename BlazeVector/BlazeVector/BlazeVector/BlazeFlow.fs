@@ -42,12 +42,12 @@ module BlazeFlow =
     let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
     let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
 
-    // field constants
-    let FieldAddress = NuCore.addr "Field"
-    let FieldGroupName = "Group"
-    let FieldGroupAddress = FieldAddress @ [FieldGroupName]
-    let FieldGroupFileName = "Assets/BlazeVector/Groups/Field.nugroup"
-    let ClickFieldBackEvent = NuCore.straddrstr "Click" FieldGroupAddress "Back"
+    // stage constants
+    let StageAddress = NuCore.addr "Stage"
+    let StageGroupName = "Group"
+    let StageGroupAddress = StageAddress @ [StageGroupName]
+    let StageGroupFileName = "Assets/BlazeVector/Groups/Stage.nugroup"
+    let ClickStageBackEvent = NuCore.straddrstr "Click" StageGroupAddress "Back"
 
     // now we have something worth explaining. This function adds the BlazeVector title screen to
     // the world.
@@ -58,8 +58,8 @@ module BlazeFlow =
         let world_ = World.addDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress true world
         
         // this subscribes to the event that is raised when the Title screen's NewGame button is
-        // clicked, and handles the event by transitioning to the Field screen
-        let world_ = World.subscribe ClickTitleNewGameEvent [] (ScreenTransitionSub FieldAddress) world_
+        // clicked, and handles the event by transitioning to the Stage screen
+        let world_ = World.subscribe ClickTitleNewGameEvent [] (ScreenTransitionSub StageAddress) world_
         
         // subscribes to the event that is raised when the Title screen's LoadGame button is
         // clicked, and handles the event by transitioning to the LoadGame screen
@@ -84,9 +84,9 @@ module BlazeFlow =
         World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // and so on.
-    let addFieldScreen world =
-        let world' = World.addDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress true world
-        World.subscribe ClickFieldBackEvent [] (ScreenTransitionSub TitleAddress) world'
+    let addStageScreen world =
+        let world' = World.addDissolveScreenFromFile StageGroupFileName StageGroupName IncomingTime OutgoingTime StageAddress true world
+        World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // here we create the BlazeVector world in a callback from the World.run function.
     let tryCreateBlazeVectorWorld sdlDeps extData =
@@ -118,7 +118,7 @@ module BlazeFlow =
             let world_ = addTitleScreen world_
             let world_ = addLoadGameScreen world_
             let world_ = addCreditsScreen world_
-            let world_ = addFieldScreen world_
+            let world_ = addStageScreen world_
             
             // transition the world to splash screen
             let world_ = World.transitionScreen SplashAddress world_

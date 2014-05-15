@@ -61,9 +61,6 @@
     <Compile Include="BlazeFlow.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <None Include="Assets\BlazeVector\Groups\Field.nugroup">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Assets\BlazeVector\Groups\LoadGame.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -71,6 +68,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\BlazeVector\Groups\Credits.nugroup">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\BlazeVector\Groups\Stage.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\BlazeVector\Gui\BackButtonUp.png">
