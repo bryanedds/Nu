@@ -141,7 +141,7 @@ module Program =
                     | _ ->
                         let world_ = setEntityPropertyValue entityTds.Address property value world
                         let entity_ = get world_ <| worldEntityLens entityTds.Address
-                        entity_?PropagatePhysics (entityTds.Address, entity_, world_)
+                        entity_.PropagatePhysics (entityTds.Address, world_)
                 pushPastWorld world world_)
             entityTds.RefWorld := changer !entityTds.RefWorld
             entityTds.WorldChangers.Add changer
@@ -250,7 +250,7 @@ module Program =
             let world_ = set entity_ world <| worldEntityLens address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
             let world_ = { world_ with ExtData = editorState_ }
-            let world_ = entity_?PropagatePhysics (address, entity_, world_)
+            let world_ = entity_.PropagatePhysics (address, world_)
             form.propertyGrid.Refresh ()
             world_
         | DragEntityRotation (pickOffset, origPosition, address) -> world
@@ -456,7 +456,7 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             let changer = (fun world ->
                 let entity_ = get world <| worldEntityLens entityTds.Address
-                let entity_ = entity_.SetSize <| entity_?GetQuickSize (entity_, world)
+                let entity_ = entity_.SetSize <| entity_.GetQuickSize world
                 let world_ = set entity_ world <| worldEntityLens entityTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()

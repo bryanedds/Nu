@@ -1,11 +1,11 @@
-﻿namespace OmniBlade
+﻿namespace BlazeVector
 open System
 open SDL2
 open OpenTK
 open TiledSharp
 open Prime
 open Nu
-module OmniFlow =
+module BlazeFlow =
 
     // transition constants. These, and the following constants, will be explained in depth later.
     // Just scan over them for now, or look at them in the debugger on your own.
@@ -22,7 +22,7 @@ module OmniFlow =
     let TitleAddress = NuCore.addr "Title"
     let TitleGroupName = "Group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
-    let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
+    let TitleGroupFileName = "Assets/BlazeVector/Groups/Title.nugroup"
     let ClickTitleNewGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "NewGame"
     let ClickTitleLoadGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "LoadGame"
     let ClickTitleCreditsEvent = NuCore.straddrstr "Click" TitleGroupAddress "Credits"
@@ -32,27 +32,24 @@ module OmniFlow =
     let LoadGameAddress = NuCore.addr "LoadGame"
     let LoadGameGroupName = "Group"
     let LoadGameGroupAddress = LoadGameAddress @ [LoadGameGroupName]
-    let LoadGameGroupFileName = "Assets/OmniBlade/Groups/LoadGame.nugroup"
+    let LoadGameGroupFileName = "Assets/BlazeVector/Groups/LoadGame.nugroup"
     let ClickLoadGameBackEvent = NuCore.straddrstr "Click" LoadGameGroupAddress "Back"
 
     // credits constants
     let CreditsAddress = NuCore.addr "Credits"
     let CreditsGroupName = "Group"
     let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
-    let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
+    let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
     let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
 
     // field constants
     let FieldAddress = NuCore.addr "Field"
     let FieldGroupName = "Group"
     let FieldGroupAddress = FieldAddress @ [FieldGroupName]
-    let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
+    let FieldGroupFileName = "Assets/BlazeVector/Groups/Field.nugroup"
     let ClickFieldBackEvent = NuCore.straddrstr "Click" FieldGroupAddress "Back"
 
-    // time constants
-    let TimeAddress = NuCore.addr "Time"
-
-    // now we have something worth explaining. This function adds the OmniBlade title screen to
+    // now we have something worth explaining. This function adds the BlazeVector title screen to
     // the world.
     let addTitleScreen world =
         
@@ -91,28 +88,28 @@ module OmniFlow =
         let world' = World.addDissolveScreenFromFile FieldGroupFileName FieldGroupName IncomingTime OutgoingTime FieldAddress true world
         World.subscribe ClickFieldBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
-    // here we create the OmniBlade world in a callback from the World.run function.
-    let tryCreateOmniBladeWorld sdlDeps extData =
+    // here we create the BlazeVector world in a callback from the World.run function.
+    let tryCreateBlazeVectorWorld sdlDeps extData =
 
-        // our custom game dispatcher here is OmniGameDispatcher
-        let gameDispatcher = OmniGameDispatcher () :> obj
+        // our game dispatcher
+        let gameDispatcher = GameDispatcher () :> obj
 
         // we use the World.tryCreateEmptyWorld as a convenience function to create an empty world
-        // that we will transform to create the OmniBlade world.
+        // that we will transform to create the BlazeVector world.
         let optWorld = World.tryCreateEmptyWorld sdlDeps gameDispatcher extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->
 
-            // hint to the renderer that the OmniGui package should be loaded up front
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "OmniGui"; HRPU = () } 
+            // hint to the renderer that the BlazeGui package should be loaded up front
+            let hintRenderPackageUse = HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "BlazeGui"; HRPU = () } 
             let world_ = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
             
             // specify a song to play for the duration of the game via the audio message system
             let gameSong = { SongAssetName = "Song"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" }
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world_ = { world_ with AudioMessages = playSongMessage :: world_.AudioMessages }
-            
+
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" }
             let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite true world_
