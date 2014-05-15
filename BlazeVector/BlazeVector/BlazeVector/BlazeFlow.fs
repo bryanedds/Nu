@@ -91,8 +91,8 @@ module BlazeFlow =
     // here we create the BlazeVector world in a callback from the World.run function.
     let tryCreateBlazeVectorWorld sdlDeps extData =
 
-        // our game dispatcher
-        let gameDispatcher = GameDispatcher () :> obj
+        // our custom game dispatcher here is OmniGameDispatcher
+        let gameDispatcher = BlazeGameDispatcher () :> obj
 
         // we use the World.tryCreateEmptyWorld as a convenience function to create an empty world
         // that we will transform to create the BlazeVector world.
