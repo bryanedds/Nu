@@ -7,6 +7,7 @@ This repository hosts several projects, including -
 - ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
 - the programming language **Aml**, a common language for building DSLs on top of using F#.
 - the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
+- the sample game **BlazeVector**.
 - the game **OmniBlade** that I just barely started on (currently working to get funding for this).
 
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
