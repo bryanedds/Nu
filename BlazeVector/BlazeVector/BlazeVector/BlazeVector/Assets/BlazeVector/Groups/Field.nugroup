@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+  <Group>
+    <Xtension xDispatcher="GroupDispatcher" />
+    <Entity>
+      <Name>Back</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xDispatcher="ButtonDispatcher">
+        <Depth type="System.Single">10</Depth>
+        <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
+        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
+        <Size type="OpenTK.Vector2">256;64</Size>
+        <Position type="OpenTK.Vector2">-128;-224</Position>
+        <IsDown type="System.Boolean">False</IsDown>
+        <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <Rotation type="System.Single">0</Rotation>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xDispatcher="LabelDispatcher">
+        <LabelSprite type="Nu.RenderingModule+Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
+        <Depth type="System.Single">-1</Depth>
+        <Size type="OpenTK.Vector2">960;544</Size>
+        <Position type="OpenTK.Vector2">-480;-272</Position>
+        <Rotation type="System.Single">0</Rotation>
+      </Xtension>
+    </Entity>
+  </Group>
+</Root>

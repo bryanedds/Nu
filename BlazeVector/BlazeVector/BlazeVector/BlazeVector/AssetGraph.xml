@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <package name="Default">
+    <asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
+    <asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
+    <asset name="Image3" fileName="Assets/Default/Image3.png" associations="Rendering"/>
+    <asset name="Image4" fileName="Assets/Default/Image4.png" associations="Rendering"/>
+    <asset name="Image5" fileName="Assets/Default/Image5.png" associations="Rendering"/>
+    <asset name="Image6" fileName="Assets/Default/Image6.png" associations="Rendering"/>
+    <asset name="Image7" fileName="Assets/Default/Image7.png" associations="Rendering"/>
+    <asset name="Image8" fileName="Assets/Default/Image8.png" associations="Rendering"/>
+    <asset name="Image9" fileName="Assets/Default/Image9.png" associations="Rendering"/>
+    <asset name="Image10" fileName="Assets/Default/Image10.png" associations="Rendering"/>
+    <asset name="Font" fileName="Assets/Default/FreeMonoBold.032.ttf" associations="Rendering"/>
+    <asset name="TileSet" fileName="Assets/Default/TileSet.png" associations="Rendering"/>
+    <asset name="Sound" fileName="Assets/Default/Sound.wav" associations="Audio"/>
+    <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
+    <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
+  </package>
+  <package name="BlazeGui">
+    <asset name="BackButtonUp" fileName="Assets/BlazeVector/Gui/BackButtonUp.png" associations="Rendering"/>
+    <asset name="BackButtonDown" fileName="Assets/BlazeVector/Gui/BackButtonDown.png" associations="Rendering"/>
+    <asset name="ExitButtonUp" fileName="Assets/BlazeVector/Gui/ExitButtonUp.png" associations="Rendering"/>
+    <asset name="ExitButtonDown" fileName="Assets/BlazeVector/Gui/ExitButtonDown.png" associations="Rendering"/>
+    <asset name="NewGameButtonUp" fileName="Assets/BlazeVector/Gui/NewGameButtonUp.png" associations="Rendering"/>
+    <asset name="NewGameButtonDown" fileName="Assets/BlazeVector/Gui/NewGameButtonDown.png" associations="Rendering"/>
+    <asset name="CreditsButtonUp" fileName="Assets/BlazeVector/Gui/CreditsButtonUp.png" associations="Rendering"/>
+    <asset name="CreditsButtonDown" fileName="Assets/BlazeVector/Gui/CreditsButtonDown.png" associations="Rendering"/>
+  </package>
+</root>
