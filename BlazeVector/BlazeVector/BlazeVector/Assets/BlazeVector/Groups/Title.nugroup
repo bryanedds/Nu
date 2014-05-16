@@ -33,18 +33,18 @@
       </Xtension>
     </Entity>
     <Entity>
-      <Name>NewGame</Name>
+      <Name>Play</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">NewGameButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">PlayButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-96</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">NewGameButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">PlayButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
