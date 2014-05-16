@@ -13,9 +13,9 @@ module BlazeFlow =
         // the 'seal' parameter is set to true as no XFields will be added to the title screen
         let world_ = World.addDissolveScreenFromFile TitleGroupFileName TitleGroupName IncomingTime OutgoingTime TitleAddress true world
         
-        // this subscribes to the event that is raised when the Title screen's NewGame button is
+        // this subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
-        let world_ = World.subscribe ClickTitleNewGameEvent [] (ScreenTransitionSub StageAddress) world_
+        let world_ = World.subscribe ClickTitlePlayEvent [] (ScreenTransitionSub StageAddress) world_
         
         // subscribes to the event that is raised when the Title screen's Credits button is
         // clicked, and handles the event by transitioning to the Credits screen
@@ -25,7 +25,7 @@ module BlazeFlow =
         // and handles the event by exiting the game
         World.subscribe ClickTitleExitEvent [] ExitSub world_
 
-    // pretty much the same as above, but for the NewGame screen
+    // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
         let world' = World.addDissolveScreenFromFile CreditsGroupFileName CreditsGroupName IncomingTime OutgoingTime CreditsAddress true world
         World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world'
