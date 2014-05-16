@@ -22,35 +22,31 @@ module OmniConstants =
     let SplashAddress = NuCore.addr "Splash"
 
     // title constants
-    let TitleAddress = NuCore.addr "Title"
-    let TitleGroupName = "Group"
-    let TitleGroupAddress = TitleAddress @ [TitleGroupName]
     let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
-    let ClickTitleNewGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "NewGame"
-    let ClickTitleLoadGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "LoadGame"
-    let ClickTitleCreditsEvent = NuCore.straddrstr "Click" TitleGroupAddress "Credits"
-    let ClickTitleExitEvent = NuCore.straddrstr "Click" TitleGroupAddress "Exit"
+    let TitleAddress = NuCore.addr "Title"
+    let TitleGroupAddress = NuCore.addr "Title/Group"
+    let ClickTitleNewGameEvent = NuCore.addr "Click/Title/Group/NewGame"
+    let ClickTitleLoadGameEvent = NuCore.addr "Click/Title/Group/LoadGame"
+    let ClickTitleCreditsEvent = NuCore.addr "Click/Title/Group/Credits"
+    let ClickTitleExitEvent = NuCore.addr "Click/Title/Group/Exit"
 
     // load game constants
-    let LoadGameAddress = NuCore.addr "LoadGame"
-    let LoadGameGroupName = "Group"
-    let LoadGameGroupAddress = LoadGameAddress @ [LoadGameGroupName]
     let LoadGameGroupFileName = "Assets/OmniBlade/Groups/LoadGame.nugroup"
-    let ClickLoadGameBackEvent = NuCore.straddrstr "Click" LoadGameGroupAddress "Back"
+    let LoadGameAddress = NuCore.addr "LoadGame"
+    let LoadGameGroupAddress = NuCore.addr "LoadGame/Group"
+    let ClickLoadGameBackEvent = NuCore.addr "Click/LoadGame/Group/Back"
 
     // credits constants
-    let CreditsAddress = NuCore.addr "Credits"
-    let CreditsGroupName = "Group"
-    let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
     let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
-    let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
+    let CreditsAddress = NuCore.addr "Credits"
+    let CreditsGroupAddress = NuCore.addr "Credits/Group"
+    let ClickCreditsBackEvent = NuCore.addr "Click/Credits/Group/Back"
 
     // field constants
-    let FieldAddress = NuCore.addr "Field"
-    let FieldGroupName = "Group"
-    let FieldGroupAddress = FieldAddress @ [FieldGroupName]
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
-    let ClickFieldBackEvent = NuCore.straddrstr "Click" FieldGroupAddress "Back"
+    let FieldAddress = NuCore.addr "Field"
+    let FieldGroupAddress = NuCore.addr "Field/Group"
+    let ClickFieldBackEvent = NuCore.addr "Click/Field/Group/Back"
 
     // time constants
     let TimeAddress = NuCore.addr "Time"
