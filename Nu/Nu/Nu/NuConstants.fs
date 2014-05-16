@@ -8,6 +8,8 @@ open Nu
 open Nu.NuCore
 module NuConstants =
 
+    let [<Literal>] AssetGraphFileName = "AssetGraph.xml"
+    let [<Literal>] DefaultPackageName = "Default"
     let [<Literal>] DefaultSpriteValue = "Image;Default;AssetGraph.xml"
     let [<Literal>] DefaultTileMapAssetValue = "TileMap;Default;AssetGraph.xml"
     let [<Literal>] DefaultFontValue = "Font;Default;AssetGraph.xml"

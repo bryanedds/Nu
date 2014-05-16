@@ -111,7 +111,7 @@ module Screen =
     let worldScreenOutgoingLens address = worldScreenLens address >>| screenOutgoingLens
     
     let makeDissolveSprite () =
-        { SpriteAssetName = "Image8"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" }
+        { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
     let makeDefaultTransition transitionType =
         { Id = getNuId ()
