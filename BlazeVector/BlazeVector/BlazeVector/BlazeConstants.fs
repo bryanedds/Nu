@@ -25,13 +25,13 @@ module BlazeConstants =
     let ClickTitleExitEvent = NuCore.addr "Click/Title/Group/Exit"
 
     // stage constants
-    let StageAddress = NuCore.addr "Stage"
     let StageGroupFileName = "Assets/BlazeVector/Groups/Stage.nugroup"
+    let StageAddress = NuCore.addr "Stage"
     let StageGroupAddress = NuCore.addr "Stage/Group"
     let ClickStageBackEvent = NuCore.addr "Click/Stage/Group/Back"
 
     // credits constants
-    let CreditsAddress = NuCore.addr "Credits"
     let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
+    let CreditsAddress = NuCore.addr "Credits"
     let CreditsGroupAddress = NuCore.addr "Credits/Group"
     let ClickCreditsBackEvent = NuCore.addr "Click/Credits/Group/Back"
