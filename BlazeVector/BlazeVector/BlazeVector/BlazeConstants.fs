@@ -21,23 +21,9 @@ module BlazeConstants =
     let TitleGroupName = "Group"
     let TitleGroupAddress = TitleAddress @ [TitleGroupName]
     let TitleGroupFileName = "Assets/BlazeVector/Groups/Title.nugroup"
-    let ClickTitleNewGameEvent = NuCore.straddrstr "Click" TitleGroupAddress "NewGame"
+    let ClickTitlePlayEvent = NuCore.straddrstr "Click" TitleGroupAddress "Play"
     let ClickTitleCreditsEvent = NuCore.straddrstr "Click" TitleGroupAddress "Credits"
     let ClickTitleExitEvent = NuCore.straddrstr "Click" TitleGroupAddress "Exit"
-
-    // new game constants
-    let NewGameAddress = NuCore.addr "NewGame"
-    let NewGameGroupName = "Group"
-    let NewGameGroupAddress = NewGameAddress @ [NewGameGroupName]
-    let NewGameGroupFileName = "Assets/BlazeVector/Groups/NewGame.nugroup"
-    let ClickNewGameBackEvent = NuCore.straddrstr "Click" NewGameGroupAddress "Back"
-
-    // credits constants
-    let CreditsAddress = NuCore.addr "Credits"
-    let CreditsGroupName = "Group"
-    let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
-    let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
-    let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"
 
     // stage constants
     let StageAddress = NuCore.addr "Stage"
@@ -45,3 +31,10 @@ module BlazeConstants =
     let StageGroupAddress = StageAddress @ [StageGroupName]
     let StageGroupFileName = "Assets/BlazeVector/Groups/Stage.nugroup"
     let ClickStageBackEvent = NuCore.straddrstr "Click" StageGroupAddress "Back"
+
+    // credits constants
+    let CreditsAddress = NuCore.addr "Credits"
+    let CreditsGroupName = "Group"
+    let CreditsGroupAddress = CreditsAddress @ [CreditsGroupName]
+    let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
+    let ClickCreditsBackEvent = NuCore.straddrstr "Click" CreditsGroupAddress "Back"

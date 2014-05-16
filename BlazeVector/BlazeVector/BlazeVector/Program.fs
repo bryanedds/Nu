@@ -1,8 +1,6 @@
 ﻿namespace BlazeVector
 open System
 open SDL2
-open OpenTK
-open TiledSharp
 open Nu
 open BlazeVector
 module Program =
