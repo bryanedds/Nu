@@ -227,7 +227,7 @@ module World =
         addScreen screenAddress screen [(groupName, group, entities)] world'
 
     let tryCreateEmptyWorld sdlDeps userGameDispatcher (extData : obj) =
-        match tryGenerateAssetMetadataMap "AssetGraph.xml" with
+        match tryGenerateAssetMetadataMap AssetGraphFileName with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
             let userGameDispatcherName = (userGameDispatcher.GetType ()).Name
@@ -263,8 +263,8 @@ module World =
                   Renderer = makeRenderer sdlDeps.RenderContext
                   Integrator = makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
-                  AudioMessages = [HintAudioPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HAPU = () }]
-                  RenderMessages = [HintRenderingPackageUse { FileName = "AssetGraph.xml"; PackageName = "Default"; HRPU = () }]
+                  AudioMessages = [HintAudioPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName; HAPU = () }]
+                  RenderMessages = [HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName; HRPU = () }]
                   PhysicsMessages = []
                   Dispatchers = dispatchers
                   ExtData = extData }

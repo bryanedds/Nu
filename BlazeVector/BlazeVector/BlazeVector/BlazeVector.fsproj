@@ -58,13 +58,11 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Compile Include="BlazeConstants.fs" />
     <Compile Include="BlazeDispatchers.fs" />
     <Compile Include="BlazeFlow.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <None Include="Assets\BlazeVector\Groups\LoadGame.nugroup">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Assets\BlazeVector\Groups\Title.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -129,9 +129,9 @@ module DispatchersModule =
             let button' = base.Init (button, dispatcherContainer)
             button'
                 .SetIsDown(false)
-                .SetUpSprite({ SpriteAssetName = "Image"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
-                .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
-                .SetClickSound({ SoundAssetName = "Sound"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetUpSprite({ SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetClickSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (button, address, world) =
             let world' =
@@ -172,7 +172,7 @@ module DispatchersModule =
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label' = base.Init (label, dispatcherContainer)
-            label'.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+            label'.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.GetRenderDescriptors (label, viewAbsolute, viewRelative, world) =
             if not label.Visible then []
@@ -202,9 +202,9 @@ module DispatchersModule =
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox' = base.Init (textBox, dispatcherContainer)
             textBox'
-                .SetBoxSprite({ SpriteAssetName = "Image4"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetBoxSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetText(String.Empty)
-                .SetTextFont({ FontAssetName = "Font"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetTextFont({ FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetTextOffset(Vector2.Zero)
                 .SetTextColor(Vector4.One)
 
@@ -282,9 +282,9 @@ module DispatchersModule =
             toggle'
                 .SetIsOn(false)
                 .SetIsPressed(false)
-                .SetOffSprite({ SpriteAssetName = "Image"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
-                .SetOnSprite({ SpriteAssetName = "Image2"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
-                .SetToggleSound({ SoundAssetName = "Sound"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetOffSprite({ SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetOnSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetToggleSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (toggle, address, world) =
             let world' =
@@ -387,8 +387,8 @@ module DispatchersModule =
             fillBar'
                 .SetFill(0.0f)
                 .SetFillInset(0.0f)
-                .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
-                .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.GetRenderDescriptors (fillBar, viewAbsolute, viewRelative, world) =
             if not fillBar.Visible then []
@@ -456,7 +456,7 @@ module DispatchersModule =
                 .SetPhysicsId(InvalidPhysicsId)
                 .SetDensity(NormalDensity)
                 .SetBodyType(BodyType.Dynamic)
-                .SetImageSprite({ SpriteAssetName = "Image3"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetImageSprite({ SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (block, address, world) =
             registerBlockPhysics address block world
@@ -534,7 +534,7 @@ module DispatchersModule =
             avatar'
                 .SetPhysicsId(InvalidPhysicsId)
                 .SetDensity(NormalDensity)
-                .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (avatar, address, world) =
             registerAvatarPhysics address avatar world
@@ -626,7 +626,7 @@ module DispatchersModule =
             tileMap'
                 .SetPhysicsIds([])
                 .SetDensity(NormalDensity)
-                .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = "Default"; PackageFileName = "AssetGraph.xml" })
+                .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (tileMap, address, world) =
             registerTileMapPhysics address tileMap world
