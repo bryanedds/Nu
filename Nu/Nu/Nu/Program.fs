@@ -14,8 +14,8 @@ module Program =
         World.initTypeConverters ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
-        // window is created with a title of "OmniBlade" and is placed at (32, 32) pixels from the
-        // top left of the screen.
+        // window is created with a title of "Nu Game Engine" and is placed at (32, 32) pixels from
+        // the top left of the screen.
         let sdlViewConfig =
             NewWindow
                 { WindowTitle = "Nu Game Engine"
