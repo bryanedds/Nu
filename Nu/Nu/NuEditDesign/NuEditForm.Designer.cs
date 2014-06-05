@@ -86,8 +86,6 @@
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.pixelPerfectButton = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.interactButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
@@ -243,7 +241,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1000, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1001, 585);
             this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
@@ -309,7 +307,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1000;
+            this.splitContainer1.SplitterDistance = 1001;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -332,7 +330,7 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(381, 585);
+            this.splitContainer2.Size = new System.Drawing.Size(380, 585);
             this.splitContainer2.SplitterDistance = 79;
             this.splitContainer2.SplitterWidth = 3;
             this.splitContainer2.TabIndex = 0;
@@ -348,7 +346,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(381, 79);
+            this.groupBox1.Size = new System.Drawing.Size(380, 79);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -410,7 +408,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(381, 503);
+            this.propertyGrid.Size = new System.Drawing.Size(380, 503);
             this.propertyGrid.TabIndex = 0;
             // 
             // openFileDialog
@@ -449,12 +447,10 @@
             this.toolStripSeparator5,
             this.resetCameraButton,
             this.toolStripSeparator7,
-            this.pixelPerfectButton,
-            this.toolStripSeparator8,
             this.interactButton});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(977, 25);
+            this.toolStrip.Size = new System.Drawing.Size(927, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -590,21 +586,6 @@
             this.toolStripSeparator7.Name = "toolStripSeparator7";
             this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
             // 
-            // pixelPerfectButton
-            // 
-            this.pixelPerfectButton.CheckOnClick = true;
-            this.pixelPerfectButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.pixelPerfectButton.Image = ((System.Drawing.Image)(resources.GetObject("pixelPerfectButton.Image")));
-            this.pixelPerfectButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.pixelPerfectButton.Name = "pixelPerfectButton";
-            this.pixelPerfectButton.Size = new System.Drawing.Size(75, 22);
-            this.pixelPerfectButton.Text = "&Pixel Perfect";
-            // 
-            // toolStripSeparator8
-            // 
-            this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
-            // 
             // interactButton
             // 
             this.interactButton.CheckOnClick = true;
@@ -706,8 +687,6 @@
         public System.Windows.Forms.TextBox xFieldNameTextBox;
         public System.Windows.Forms.ComboBox typeNameTextBox;
         public System.Windows.Forms.Button removeSelectedXFieldButton;
-        public System.Windows.Forms.ToolStripButton pixelPerfectButton;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
 
     }
 }
