@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="32" height="8" tilewidth="64" tileheight="64">
+ <tileset firstgid="1" name="RoadTileSet" tilewidth="64" tileheight="64">
+  <properties>
+   <property name="PackageFileName" value="AssetGraph.xml"/>
+   <property name="PackageName" value="BlazeStages"/>
+   <property name="SpriteAssetName" value="RoadTileSet"/>
+  </properties>
+  <image source="RoadTileSet.png" width="1024" height="1024"/>
+ </tileset>
+ <layer name="Road" width="32" height="8">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DHBhktjMQewBxIBS7o+lFl3MBYiM8fsFmjyMOjGw2MkYGEWhyIUDsxIA9rJxx2AMAH1cO+A==
+  </data>
+ </layer>
+ <layer name="Grass" width="32" height="8">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2BwgzQozkQTz0KSS6eBvcVAXAHEZVBcieQGkN1VSHLlQFxChh2FODDI3kYsuBKqrwqLXAsQFzFAwgMdlOKwBwB6nRTn
+  </data>
+ </layer>
+ <layer name="Chains" width="32" height="8">
+  <data encoding="base64" compression="zlib">
+   eJxjYEAAZijNgkSzIInjU4cMWJAwsnpmNDXoYDDaj64Pmzp0gG6/MhpNrP0qWPRhcw86UEHCuAA2+2H24NMHApwE5IkBhOwYBfQBAAczAgc=
+  </data>
+ </layer>
+ <layer name="Platforms" width="32" height="8">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFpAJJEtWLArEYEIsPU33kAFLDcBTQBgAAxlIBOw==
+  </data>
+ </layer>
+</map>

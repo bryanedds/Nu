@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open System.ComponentModel
+open System.Collections.Generic
 open System.Drawing // TODO: see if this dependency can be elegantly removed or replaced with something lighter
 open System.IO
 open System.Linq
@@ -27,7 +28,18 @@ module MetadataModule =
     type AssetMetadataMap =
         Map<string, Map<string, AssetMetadata>>
 
+    exception TileSetPropertyNotFoundException of string
+
 module Metadata =
+
+    let getTileSetProperties (tileSet : TmxTileset) =
+        let properties = tileSet.Properties
+        try { SpriteAssetName = properties.["SpriteAssetName"]
+              PackageName = properties.["PackageName"]
+              PackageFileName = properties.["PackageFileName"] }
+        with :? KeyNotFoundException as e ->
+            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (SpriteAssetName, PackageName, and / or PackageFileName)."
+            raise <| TileSetPropertyNotFoundException errorMessage
 
     let tryGenerateAssetMetadataMap (assetGraphFileName : string) =
         try let document = XmlDocument ()
@@ -61,17 +73,10 @@ module Metadata =
                                             | ".tmx" ->
                                                 try let tmxMap = TmxMap asset.FileName
                                                     let tileSets = List.ofSeq tmxMap.Tilesets
-                                                    let tileSetSprites =
-                                                        List.map
-                                                            (fun (tileSet : TmxTileset) ->
-                                                                let tileSetProperties = tileSet.Properties
-                                                                { SpriteAssetName = tileSetProperties.["SpriteAssetName"]
-                                                                  PackageName = tileSetProperties.["PackageName"]
-                                                                  PackageFileName = tileSetProperties.["PackageFileName"] })
-                                                            tileSets
+                                                    let tileSetSprites = List.map getTileSetProperties tileSets
                                                     TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
                                                 with _ as e ->
-                                                    let errorMessage = "Failed to TmxMap '" + asset.FileName + "' due to '" + string e + "'."
+                                                    let errorMessage = "Failed to load TmxMap '" + asset.FileName + "' due to '" + string e + "'."
                                                     trace errorMessage
                                                     InvalidMetadata errorMessage
                                             | ".wav" -> SoundMetadata
