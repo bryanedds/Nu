@@ -276,14 +276,15 @@ module Entity =
         { Layer = layer; Tiles = tiles }
 
     let makeTileData (tileMap : Entity) tmd tld n =
-        let (i, j) = (n % fst tmd.MapSize, n / snd tmd.MapSize)
+        let mapRun = fst tmd.MapSize
+        let (i, j) = (n % mapRun, n / mapRun)
         let tile = tld.Tiles.[n]
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
         let tilePosition = (
             int tileMap.Position.X + fst tmd.TileSize * i,
-            int tileMap.Position.Y - snd tmd.TileSize * j) // subtraction for right-handedness
+            int tileMap.Position.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 

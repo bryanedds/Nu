@@ -307,11 +307,12 @@ module Rendering =
                 | TextureAsset texture ->
                     Seq.iteri
                         (fun n tile ->
-                            let (i, j) = (n % (fst mapSize), n / (snd mapSize))
+                            let mapRun = fst mapSize
+                            let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
                                 Vector2 (
                                     descriptor.Position.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
-                                    -(descriptor.Position.Y - tileSize.Y * single j) + camera.EyeSize.Y * 0.5f - tileMapSize.Y - tileSize.Y) // negation for right-handedness
+                                    -(descriptor.Position.Y - tileSize.Y * single j + tileMapSize.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
                             let gid = tiles.[n].Gid - tileSet.FirstGid
                             let gidPosition = gid * fst tileSourceSize
                             let tileSourcePosition =
