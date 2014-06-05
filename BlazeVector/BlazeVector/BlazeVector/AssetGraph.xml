@@ -28,9 +28,8 @@
     <asset name="PlayButtonDown" fileName="Assets/BlazeVector/Gui/PlayButtonDown.png" associations="Rendering"/>
   </package>
   <package name="BlazeStages">
-    <asset name="BuildingTileSet" fileName="Assets/BlazeVector/Stages/BuildingTileSet.png" associations="Rendering"/>
     <asset name="RoadTileSet" fileName="Assets/BlazeVector/Stages/RoadTileSet.png" associations="Rendering"/>
-    <asset name="SkyBackground" fileName="Assets/BlazeVector/Stages/SkyBackground.png" associations="Rendering"/>
+    <asset name="SkylineTileSet" fileName="Assets/BlazeVector/Stages/SkylineTileSet.png" associations="Rendering"/>
     <asset name="Section0" fileName="Assets/BlazeVector/Stages/Section0.tmx" associations=""/>
     <asset name="BackgroundA" fileName="Assets/BlazeVector/Stages/BackgroundA.tmx" associations=""/>
     <asset name="BackgroundB" fileName="Assets/BlazeVector/Stages/BackgroundB.tmx" associations=""/>
