@@ -24,6 +24,7 @@ module NuConstants =
     let AudioBufferSizeDefault = 1024
     let NormalDensity = 10.0f // NOTE: this seems to be a stable density for Farseer
     let Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
+    let CollisionProperty = "C"
     let TimeToFadeOutSongMs = 5000
     let RadiansToDegrees = 57.2957795
     let DegreesToRadians = 1.0 / RadiansToDegrees

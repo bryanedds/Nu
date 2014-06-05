@@ -65,11 +65,16 @@ module Metadata =
                                             match extension with
                                             | ".bmp"
                                             | ".png" ->
-                                                try use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
-                                                with _ as e ->
-                                                    let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string e + "'."
+                                                if not <| File.Exists asset.FileName then
+                                                    let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FileName + "'."
                                                     trace errorMessage
                                                     InvalidMetadata errorMessage
+                                                else
+                                                    try use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
+                                                    with _ as e ->
+                                                        let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string e + "'."
+                                                        trace errorMessage
+                                                        InvalidMetadata errorMessage
                                             | ".tmx" ->
                                                 try let tmxMap = TmxMap asset.FileName
                                                     let tileSets = List.ofSeq tmxMap.Tilesets

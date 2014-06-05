@@ -581,13 +581,13 @@ module DispatchersModule =
     type TileMapDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let registerTilePhysics tileMap tmd tld address n (world, physicsIds) (_ : TmxLayerTile) =
-            let td = makeTileData tileMap tmd tld n
+        let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) (_ : TmxLayerTile) =
+            let td = makeTileData tm tmd tld tileIndex
             match td.OptTileSetTile with
             | None -> (world, physicsIds)
-            | Some tileSetTile when not <| tileSetTile.Properties.ContainsKey "c" -> (world, physicsIds)
+            | Some tileSetTile when not <| tileSetTile.Properties.ContainsKey NuConstants.CollisionProperty -> (world, physicsIds)
             | Some tileSetTile ->
-                let physicsId = getPhysicsId tileMap.Id
+                let physicsId = getPhysicsId tm.Id
                 let boxShapeProperties =
                     { Center = Vector2.Zero
                       Restitution = 0.0f
@@ -599,18 +599,34 @@ module DispatchersModule =
                         { EntityAddress = address
                           PhysicsId = physicsId
                           Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
-                          Position = Vector2 (single <| fst td.TilePosition + fst tmd.TileSize / 2, single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
-                          Rotation = tileMap.Rotation
-                          Density = tileMap.Density
+                          Position =
+                            Vector2 (
+                                single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                                single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                          Rotation = tm.Rotation
+                          Density = tm.Density
                           BodyType = BodyType.Static }
                 let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
                 (world', physicsId :: physicsIds)
 
+        let registerTileLayerPhysics address tileMap tileMapData collisionLayer world =
+            let tileLayerData = makeTileLayerData tileMap tileMapData collisionLayer
+            if not <| tileLayerData.Layer.Properties.ContainsKey NuConstants.CollisionProperty then (world, [])
+            else
+                Seq.foldi
+                    (registerTilePhysics tileMap tileMapData tileLayerData address)
+                    (world, [])
+                    tileLayerData.Tiles
+
         let registerTileMapPhysics address (tileMap : Entity) world =
-            let collisionLayer = 0 // MAGIC_VALUE: assumption
-            let tmd = makeTileMapData tileMap.TileMapAsset world
-            let tld = makeTileLayerData tileMap tmd collisionLayer
-            let (world', physicsIds) = Seq.foldi (registerTilePhysics tileMap tmd tld address) (world, []) tld.Tiles
+            let tileMapData = makeTileMapData tileMap.TileMapAsset world
+            let (world', physicsIds) =
+                List.fold
+                    (fun (world'', physicsIds) tileLayer ->
+                        let (world'3, physicsIds') = registerTileLayerPhysics address tileMap tileMapData tileLayer world''
+                        (world'3, physicsIds @ physicsIds'))
+                    (world, [])
+                    (List.ofSeq tileMapData.Map.Layers)
             let tileMap' = tileMap.SetPhysicsIds physicsIds
             (tileMap', world')
 
