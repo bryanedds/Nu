@@ -9,98 +9,101 @@
   <image source="TileSet.png" trans="ff00ff" width="192" height="217"/>
   <tile id="0">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="1">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="2">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="8">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="9">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="10">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="11">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="12">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="13">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="16">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="17">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="18">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="19">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="20">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="21">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="38">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="39">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
   <tile id="44">
    <properties>
-    <property name="c" value=""/>
+    <property name="C" value=""/>
    </properties>
   </tile>
  </tileset>
  <layer name="Bottom" width="50" height="50">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
   <data encoding="base64" compression="zlib">
-   eJztmclOAzEMhke9USgSi5CgXLqwznv0/R8JVxpLJsriLZMU5vBJzaTN5HfsxE43wzDcAvuJG2BDnh2A14ld0E/7Yt+RQuch4RD5/X/UcQS+gbeJ8+f3TnQ8Aivg6cLX4wpYA9cGHWgLKWg7Dx13wD3wYNCBtojxkelD26G/chkZ66nRgbagfEaehcRsx8Vbx5fQlin7WnVY991WeOt4Bl6AbaKtgTNmjXOQ/i5sa+CM6a0D42NMtDVwxgz37dI5SPt7ig+6b3POQdrfU3zQfZtzDp77T1N/T/Eh2cvDsyHm863iY8GGJh+MsejwwatOkbwT9zmK1W4tdOwG//X3qn/n9oFe1gPzkVo6VgJoHiXVgflILR3a+leqA/OVWjrmqH8xD9D4AvpATgfWAHPUv7F3p9Y95gMcHZo5eegorT/1gTDPrqWDk+OH794n1pueG7TNrS1Lc8nVNJwcn2tDqonG18gcqzSXXE3DyfE9fSE3Vmku1vqDq0Pjoy3jI/Vuq4/2Eh9WH50jPrzufXJjzREfpXufFmNp4qN07yPR4TWWND5y9z7cemrLGMuC1Qe5Onq6S02tZ6m+6+0/k7+uo/Q/bW939CkdnFrkEnRgzXEaftcg2PbcX2tRuxZdWGiB5l6yR34ArJgCNQ==
+   eJztmcluAyEMhke5dUmlLqrUJpdOus975P0fqY40llzEYmMzOO0cPqmEBviNDTbZDsNwA4wz18CWfHYA9jMvQT/ti/2PFLoOCYfI9/+jjlfgG3ibOf397kTHA7ABHs98Py6AS+BKoQNtIQVtZ6HjFrgD7hU60BYxPjJ9aDv0Vy4TYz9rdKAtKJ+Rz0JituNireNLaMuUfbU6tOduL6x1PAHPwC7RroEzZot7kH4vbNfAGdNaB8bHlGjXwBkzPLdL9yDt9xQf9Nzm3IO031N80HObcw+e+o9zv6f4kJzl4d0Q8/le8bGiA31Dy6rDTodFnSKZE885itZuPXRY+IAXHdo5vejAfKSVjo0AmkdJdWA+0kpHbf0r1YH5SisdS9S/mAeMg9wX0AdyOrAGWKL+jc2d2veYD3B01KzJQkdp/6kPhHl2Kx2cHD+ce0zsN703aJtbW5bWkqtpODk+14ZUE42viTlWaS25moaT41v6Qm6s0lq09QdXR42P9oyP1NxaH/USH1ofXSI+rN59cmMtER+ld58eY9XER+ndR6LDaixpfOTefbi11o4xlgatD3J1eHpLTeko1XfefjP56zpKv9N6e6NP6eDUIuegA2uO4/C7BsG25fnaita16MpKD2reJT3yAwz8Ai0=
   </data>
  </layer>
  <layer name="Top" width="50" height="50" opacity="0.49">

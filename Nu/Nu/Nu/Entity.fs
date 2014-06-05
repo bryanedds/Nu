@@ -262,7 +262,7 @@ module Entity =
             let mapSize = (map.Width, map.Height)
             let tileSize = (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
-            let tileMapSize = (fst mapSize * fst tileSize, fst mapSize * fst tileSize)
+            let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
             let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
             let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
             let optTileSetWidth = tileSet.Image.Width
@@ -270,18 +270,18 @@ module Entity =
             let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
             { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
-    let makeTileLayerData tileMap tmd (layerIndex : int) =
-        let layer = tmd.Map.Layers.[layerIndex]
+    let makeTileLayerData tileMap tmd (layer : TmxLayer) =
         let tiles = layer.Tiles
         { Layer = layer; Tiles = tiles }
 
-    let makeTileData (tileMap : Entity) tmd tld n =
+    let makeTileData (tileMap : Entity) tmd tld tileIndex =
         let mapRun = fst tmd.MapSize
-        let (i, j) = (n % mapRun, n / mapRun)
-        let tile = tld.Tiles.[n]
+        let tileSetRun = fst tmd.TileSetSize
+        let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+        let tile = tld.Tiles.[tileIndex]
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
-        let gid2 = (gid % fst tmd.TileSetSize, gid / snd tmd.TileSetSize)
+        let gid2 = (gid % tileSetRun, gid / tileSetRun)
         let tilePosition = (
             int tileMap.Position.X + fst tmd.TileSize * i,
             int tileMap.Position.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness

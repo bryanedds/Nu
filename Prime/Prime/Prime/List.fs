@@ -153,7 +153,7 @@ let rec fornone pred list =
     | head :: tail -> not (pred head) && fornone pred tail
     
 /// Foldi for lists.
-let foldi folder state list =
+let foldi folder state (list : 'a list)=
     let seq' = Seq.foldi folder state list
     List.ofSeq seq'
 
