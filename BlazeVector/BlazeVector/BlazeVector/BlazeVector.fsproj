@@ -72,6 +72,9 @@
     <None Include="Assets\BlazeVector\Groups\Stage.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Assets\BlazeVector\Groups\Section0.nugroup">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Assets\BlazeVector\Gui\BackButtonUp.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

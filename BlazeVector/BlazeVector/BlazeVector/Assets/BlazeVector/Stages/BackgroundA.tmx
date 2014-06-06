@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="32" height="8" tilewidth="64" tileheight="64">
+<map version="1.0" orientation="orthogonal" width="32" height="9" tilewidth="64" tileheight="64">
  <tileset firstgid="1" name="SkylineTileSet" tilewidth="64" tileheight="64">
   <properties>
    <property name="PackageFileName" value="AssetGraph.xml"/>
@@ -8,14 +8,14 @@
   </properties>
   <image source="SkylineTileSet.png" width="1024" height="1024"/>
  </tileset>
- <layer name="Scenery" width="32" height="8">
+ <layer name="Scenery" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJyty0VCVQEAAMDP0elGShpEWkG6W7rbAJTuDqVr7sBbzHLCQ6FQBJFEEU0MscQRTwKJJJFMCh9IJfydP410MsjkI1lkk0MueeRTQCFFfKI4gP+ZEkopo5wKKqniC1+ppoZv1FJHfQC/gUaaaKaFVtpop4NOuuimh1766A/gf2eAQYYYZoRRxhhngkmmmGaGWeYC+PMssMgSP/jJL36zzAqr/OEva6yzEcDfZIttdthlj30OOOSIY0445YxzLgL4l1xxzT/+c8Mtd9zzwCNPPPPCK6Gw9/83/F++gw==
+   eJyty9cilgEAANDfI8ueJRlFmzIjyWwKmUWZKRVCNgkZieyMzjv4Ls7lCQ+FQheIIJIoookhljjiSSCRJJK5yCXCz/lTuEwqV0gjnQwyuco1ssjmOje4ya0A/m3ucJcccrnHffLIp4BCiijmASWUBvAfUsYjynlMBZVUUU0NtTzhKc94zosA/kvqeEU9DTTymiaaaaGVNtp5w1s6AvidvOM9XXTTQy999POBAT7yiUE+8yWA/5UhhhnhG6OMMc53JphkimlmmGUugD/PAj9Y5CdLLLPCL1ZZY50NfrPJnwD+Ftv8ZYdd9tjngEOO+McxJ5xyRijs/P8/GC7Nkw==
   </data>
  </layer>
- <layer name="Buildings" width="32" height="8">
+ <layer name="Buildings" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJztjV0KgCAQhO0PCgpKvUDmBVLvf7ZWWGESHySIXvpg2J2ddRXiTkfqRR0Nqa18k3af/PM2G0lyr0ljYZ58zBV4ZOAqYQfvqCzX7HeS4d6S5sI8+Zgf4JGJq4EdvHNkuWV/khz3gbQW5snH3INHFq4OdvCOz/Igfr7mAi25BzA=
+   eJztjV0KgCAQhO0PCgpKvUDmBVLvf7ZWWGESHyToqT4YdmdnXYW405F6UUdDaivfpN0n/7zNRpLca9JYmCcfcwUeGbhK2ME7Kss1+51kuLekuTBPPuYHeGTiamAH7xxZbtmfJMd9IK2FefIx9+CRhauDHbzjszyIn69zAcXmBzA=
   </data>
  </layer>
 </map>
