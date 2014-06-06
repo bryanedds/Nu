@@ -37,7 +37,7 @@
         <Depth type="System.Single">-10</Depth>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">2048;576</Size>
+        <Size type="OpenTK.Vector2">64;64</Size>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;BlazeStages;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
