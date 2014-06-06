@@ -1,9 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <GameDispatcher>
-    <AssemblyFileName>../../../../../OmniBlade/OmniBlade/OmniBlade/bin/Debug/OmniBlade.exe</AssemblyFileName>
-    <FullName>OmniBlade.OmniDispatchersModule+OmniGameDispatcher</FullName>
-  </GameDispatcher>
   <Group>
     <Xtension xDispatcher="OmniFieldGroupDispatcher" />
     <Entity>
