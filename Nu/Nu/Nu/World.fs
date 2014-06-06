@@ -178,13 +178,13 @@ module World =
                 | _ -> (true, world))
             (fun world ->
                 let (keepRunning, world') = integrate world
-                if not keepRunning then (keepRunning, world')
+                if not keepRunning then (false, world')
                 else
                     let (keepRunning', world'') = publish TickEvent [] { Handled = false; Data = NoData } world'
-                    if not keepRunning' then (keepRunning', world'')
+                    if not keepRunning' then (false, world'')
                     else updateTransition handleUpdate world'')
             (fun world -> let world' = render world in handleRender world')
-            (fun world -> play world)
+            (fun world -> let world' = play world in { world' with Ticks = world'.Ticks + 1UL })
             (fun world -> { world with Renderer = handleRenderExit world.Renderer })
             sdlConfig
 
@@ -237,6 +237,7 @@ module World =
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
+                  Ticks = 0UL
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }

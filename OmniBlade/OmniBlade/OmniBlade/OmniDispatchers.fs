@@ -10,7 +10,7 @@ module OmniDispatchersModule =
     type OmniFieldGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let adjustFieldCamera (groupAddress : Address) world =
+        let adjustFieldCamera groupAddress world =
             let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
             let avatar = get world <| Entity.worldEntityLens avatarAddress
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
@@ -19,7 +19,7 @@ module OmniDispatchersModule =
         let adjustFieldCameraHandler _ _ groupAddress message world =
             (message, true, adjustFieldCamera groupAddress world)
 
-        let moveFieldAvatarHandler _ _ (groupAddress : Address) message world =
+        let moveFieldAvatarHandler _ _ groupAddress message world =
             let feelerAddress = groupAddress @ [OmniConstants.FieldFeelerName]
             let feeler = get world <| Entity.worldEntityLens feelerAddress
             if feeler.IsTouched then

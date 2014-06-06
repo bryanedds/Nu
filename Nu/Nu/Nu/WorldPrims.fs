@@ -141,7 +141,7 @@ module WorldPrims =
         let world' = setScreenState destination IncomingState world
         set (Some destination) world' worldOptSelectedScreenAddressLens
 
-    and private updateTransition1 transition =
+    and private updateTransition1 (transition : Transition) =
         if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
         else ({ transition with Ticks = transition.Ticks + 1 }, false)
 
