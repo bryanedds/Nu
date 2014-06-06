@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="32" height="8" tilewidth="64" tileheight="64">
+<map version="1.0" orientation="orthogonal" width="32" height="9" tilewidth="64" tileheight="64">
  <tileset firstgid="1" name="RoadTileSet" tilewidth="64" tileheight="64">
   <properties>
    <property name="PackageFileName" value="AssetGraph.xml"/>
@@ -173,30 +173,30 @@
    </properties>
   </tile>
  </tileset>
- <layer name="Road" width="32" height="8">
+ <layer name="Road" width="32" height="9">
   <properties>
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DKDaC2gfjg8x2BmIPIA6EYnc0vehyLlBzcPnFEAt2hGInqH0wPrLZyBgZRKDJhUDNwRZWyGYjYwAjlw7+
+   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DKDaC2gfjg8x2BmIPIA6EYnc0vehyLlBzcPnFEAt2hGInqH0wPrLZyBgZRKDJhUDNwRZWyGYjY2x24MPIAJ869LDCpQ4A10oXLg==
   </data>
  </layer>
- <layer name="Grass" width="32" height="8">
+ <layer name="Grass" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BwgzQozkQTz0KSS6eBvcVAXAHEZVBcieQGkN1VSHLlQFxChh2FODDI3kYsuBKqrwqLXAsQFzFAwgMdlOKwBwB6nRTn
+   eJxjYBgFo2BwgzQozkQTz0KSS6eBvcVAXAHEZVBcieQGkN1VSHLlQFxChh2FODDI3kYsuBKqrwqLXAsQFzFgD6tSHPZgs4MQZiAgDwsrZLtbcagFAA+CI9I=
   </data>
  </layer>
- <layer name="Chains" width="32" height="8">
+ <layer name="Chains" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYEAAZijNgkSzIInjU4cMWJAwsnpmNDXoYDDaj64Pmzp0gG6/MhpNrP0qWPRhcw85AJv9MHtUsMhRG9DDjlFAGAAADhgBkg==
+   eJxjYEAAZijNgkSzIInjU4cMWJAwsnpmNDXoYDDaj64Pmzp0gG6/MhpNrP0qWPRhcw85AJv9MHtUsMhRG9DDjlEw+AEA1xgBkg==
   </data>
  </layer>
- <layer name="Platforms" width="32" height="8">
+ <layer name="Platforms" width="32" height="9">
   <properties>
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFpAJJEtWLArEYEIvTSR8rELMBMTuN7OMk0VxsgNQwHAW0AQBu/gEU
+   eJxjYBgFpAJJEtWLArEYEIvTSR8rELMBMTuN7OMk0VxsgNQwHAXDEwAA+P4BFA==
   </data>
  </layer>
 </map>
