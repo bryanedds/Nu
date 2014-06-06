@@ -6,6 +6,10 @@ module BlazeConstants =
     // scan over them for now, or look at them in the debugger on your own.
     let BlazeGuiPackageName = "BlazeGui"
     let StageAvatarName = "Avatar"
+    let StagePlayName = "StagePlay"
+    let StagePlayFileName = "Assets/BlazeVector/Groups/StagePlay.nugroup"
+    let Section0Name = "Section0"
+    let Section0FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
     
     // transition constants
     let IncomingTimeSplash = 60

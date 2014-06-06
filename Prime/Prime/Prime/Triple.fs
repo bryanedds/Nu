@@ -35,3 +35,15 @@ module Triple =
     let inline _bc triple =
         match triple with
         | (_, b, c) -> (b, c)
+
+    /// Prepend a pair to build a triple.
+    let inline prepend a (b, c) =
+        (a, b, c)
+
+    /// Insert in a pair to build a triple.
+    let inline insert b (a, c) =
+        (a, b, c)
+
+    /// Append a pair to build a triple.
+    let inline append c (a, b) =
+        (a, b, c)

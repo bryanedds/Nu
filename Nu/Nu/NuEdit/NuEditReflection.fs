@@ -53,6 +53,5 @@ module NuEditReflection =
 
     let loadFile fileName world =
         let world' = removeGroup EditorGroupAddress world
-        let (group, entities, world'') = loadGroupFile fileName false world'
-        let world'3 = addGroup EditorGroupAddress group entities world''
-        world'3
+        let (group, entities) = loadGroupFile fileName false world'
+        addGroup EditorGroupAddress group entities world'

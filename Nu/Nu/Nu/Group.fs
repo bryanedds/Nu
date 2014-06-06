@@ -117,9 +117,9 @@ module Group =
         let world'' = registerGroup address entities group world'
         set group world'' <| worldGroupLens address
 
-    let addGroups address groupDescriptors world =
+    let addGroups screenAddress groupDescriptors world =
         List.fold
-            (fun world' (groupName, group, entities) -> addGroup (address @ [groupName]) group entities world')
+            (fun world' (groupName, group, entities) -> addGroup (screenAddress @ [groupName]) group entities world')
             world
             groupDescriptors
 

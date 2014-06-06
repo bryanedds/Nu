@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+  <Group>
+    <Xtension xDispatcher="BlazeStageGroupDispatcher" />
+    <Entity>
+      <Name>Avatar</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xDispatcher="AvatarDispatcher">
+        <Density type="System.Single">10</Density>
+        <Depth type="System.Single">1</Depth>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</ImageSprite>
+        <Position type="OpenTK.Vector2">-456;-175.6805</Position>
+        <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">64;64</Size>
+      </Xtension>
+    </Entity>
+  </Group>
+</Root>
