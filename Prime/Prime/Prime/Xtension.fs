@@ -219,14 +219,15 @@ module Xtension =
         writer.WriteAttributeString ("xDispatcher", match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
-            let xValue = xField.Value
-            let xDispatcher = xValue.GetType ()
-            let xConverter = TypeDescriptor.GetConverter xDispatcher
-            let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
-            writer.WriteStartElement xFieldName
-            writer.WriteAttributeString ("type", xDispatcher.FullName)
-            writer.WriteString xValueStr
-            writer.WriteEndElement ()
+            if isPropertyNameWriteable xFieldName then
+                let xValue = xField.Value
+                let xDispatcher = xValue.GetType ()
+                let xConverter = TypeDescriptor.GetConverter xDispatcher
+                let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
+                writer.WriteStartElement xFieldName
+                writer.WriteAttributeString ("type", xDispatcher.FullName)
+                writer.WriteString xValueStr
+                writer.WriteEndElement ()
 
     /// Write all properties to Xml.
     /// TODO: need a vanilla writeProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
