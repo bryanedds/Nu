@@ -3,6 +3,7 @@ open System
 open System.ComponentModel
 open System.Collections.Generic
 open FarseerPhysics
+open FarseerPhysics.Dynamics
 open OpenTK
 open Microsoft.Xna
 open Prime
@@ -14,6 +15,8 @@ open Nu.NuConstants
 module PhysicsModule =
 
     type PhysicsId = Guid * Guid
+
+    type Vertices = Vector2 list
 
     type [<StructuralEquality; NoComparison>] CommonShapeProperties =
         { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
@@ -30,9 +33,14 @@ module PhysicsModule =
         { Radius : single
           Properties : CommonShapeProperties }
 
+    type [<StructuralEquality; NoComparison>] PolygonShape =
+        { Vertices : Vertices
+          Properties : CommonShapeProperties }
+
     type [<StructuralEquality; NoComparison>] BodyShape =
         | BoxShape of BoxShape
         | CircleShape of CircleShape
+        | PolygonShape of PolygonShape
 
     type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] BodyType =
         | Static
@@ -147,52 +155,65 @@ module Physics =
         integrator.IntegrationMessages.Add integrationMessage
         true
 
+    let private configureBodyProperties integrator bodyPosition bodyRotation commonShapeProperties (body : Body) =
+        body.Position <- toPhysicsV2 bodyPosition
+        body.Rotation <- bodyRotation
+        body.Restitution <- commonShapeProperties.Restitution
+        body.FixedRotation <- commonShapeProperties.FixedRotation
+        body.LinearDamping <- commonShapeProperties.LinearDamping
+        body.AngularDamping <- commonShapeProperties.AngularDamping
+        body.SleepingAllowed <- true
+
+    let private createBoxBody integrator bodyCreateMessage boxShape =
+        let body =
+            Factories.BodyFactory.CreateRectangle (
+                integrator.PhysicsContext,
+                toPhysics <| boxShape.Extent.X * 2.0f,
+                toPhysics <| boxShape.Extent.Y * 2.0f,
+                bodyCreateMessage.Density,
+                toPhysicsV2 boxShape.Properties.Center,
+                0.0f,
+                toPhysicsBodyType bodyCreateMessage.BodyType,
+                bodyCreateMessage.EntityAddress)
+        configureBodyProperties integrator bodyCreateMessage.Position bodyCreateMessage.Rotation boxShape.Properties body
+        body
+
+    let private createCircleBody integrator bodyCreateMessage circleShape =
+        let body =
+            Factories.BodyFactory.CreateCircle (
+                integrator.PhysicsContext,
+                toPhysics circleShape.Radius,
+                bodyCreateMessage.Density,
+                toPhysicsV2 circleShape.Properties.Center,
+                toPhysicsBodyType bodyCreateMessage.BodyType,
+                bodyCreateMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        configureBodyProperties integrator bodyCreateMessage.Position bodyCreateMessage.Rotation circleShape.Properties body
+        body.UserData <- bodyCreateMessage.EntityAddress // BUG: ...so I set it again here :/
+        body
+
+    let private createPolygonBody integrator bodyCreateMessage polygonShape =
+        let body =
+            Factories.BodyFactory.CreatePolygon (
+                integrator.PhysicsContext,
+                FarseerPhysics.Common.Vertices (List.map toPhysicsV2 polygonShape.Vertices),
+                bodyCreateMessage.Density,
+                toPhysicsV2 polygonShape.Properties.Center,
+                0.0f,
+                toPhysicsBodyType bodyCreateMessage.BodyType,
+                bodyCreateMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        configureBodyProperties integrator bodyCreateMessage.Position bodyCreateMessage.Rotation polygonShape.Properties body
+        body.UserData <- bodyCreateMessage.EntityAddress // BUG: ...so I set it again here :/
+        body
+
     // TODO: remove code duplication here
     let private createBody integrator bodyCreateMessage =
-        match bodyCreateMessage.Shape with
-        | BoxShape boxShape ->
-            let physicsShapeCenter = toPhysicsV2 boxShape.Properties.Center
-            let physicsShapeSize = toPhysicsV2 (boxShape.Extent * 2.0f)
-            let body =
-                Factories.BodyFactory.CreateRectangle (
-                    integrator.PhysicsContext,
-                    physicsShapeSize.X,
-                    physicsShapeSize.Y,
-                    bodyCreateMessage.Density,
-                    physicsShapeCenter,
-                    0.0f,
-                    toPhysicsBodyType bodyCreateMessage.BodyType,
-                    bodyCreateMessage.EntityAddress)
-            body.Position <- toPhysicsV2 bodyCreateMessage.Position
-            body.Rotation <- bodyCreateMessage.Rotation
-            body.Restitution <- boxShape.Properties.Restitution
-            body.FixedRotation <- boxShape.Properties.FixedRotation
-            body.LinearDamping <- boxShape.Properties.LinearDamping
-            body.AngularDamping <- boxShape.Properties.AngularDamping
-            body.SleepingAllowed <- true
-            body.add_OnCollision (fun fn fn2 collision -> handlePhysicsCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
-            integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
-        | CircleShape circleShape ->
-            let physicsShapeCenter = toPhysicsV2 circleShape.Properties.Center
-            let physicsShapeRadius = toPhysics circleShape.Radius
-            let body =
-                Factories.BodyFactory.CreateCircle (
-                    integrator.PhysicsContext,
-                    physicsShapeRadius,
-                    bodyCreateMessage.Density,
-                    physicsShapeCenter,
-                    toPhysicsBodyType bodyCreateMessage.BodyType, // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-                    bodyCreateMessage.EntityAddress)
-            body.UserData <- bodyCreateMessage.EntityAddress // BUG: ...so I set it again here :/
-            body.Position <- toPhysicsV2 bodyCreateMessage.Position
-            body.Rotation <- bodyCreateMessage.Rotation
-            body.Restitution <- circleShape.Properties.Restitution
-            body.FixedRotation <- circleShape.Properties.FixedRotation
-            body.LinearDamping <- circleShape.Properties.LinearDamping
-            body.AngularDamping <- circleShape.Properties.AngularDamping
-            body.SleepingAllowed <- true
-            body.add_OnCollision (fun fn fn2 collision -> handlePhysicsCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
-            integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
+        let body =
+            match bodyCreateMessage.Shape with
+            | BoxShape boxShape -> createBoxBody integrator bodyCreateMessage boxShape
+            | CircleShape circleShape -> createCircleBody integrator bodyCreateMessage circleShape
+            | PolygonShape polygonShape -> createPolygonBody integrator bodyCreateMessage polygonShape
+        body.add_OnCollision (fun fn fn2 collision -> handlePhysicsCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
+        integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
     let private destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =
         let body = ref Unchecked.defaultof<Dynamics.Body>

@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open System.ComponentModel
 open OpenTK
 open Prime
 open TiledSharp
@@ -581,33 +582,81 @@ module DispatchersModule =
     type TileMapDispatcher () =
         inherit Entity2dDispatcher ()
 
+        let registerTilePhysicsBox address (tm : Entity) tmd td world =
+            let physicsId = getPhysicsId tm.Id
+            let shapeProperties =
+                { Center = Vector2.Zero
+                  Restitution = 0.0f
+                  FixedRotation = true
+                  LinearDamping = 0.0f
+                  AngularDamping = 0.0f }
+            let bodyCreateMessage =
+                BodyCreateMessage
+                    { EntityAddress = address
+                      PhysicsId = physicsId
+                      Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = shapeProperties }
+                      Position =
+                        Vector2 (
+                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                      Rotation = tm.Rotation
+                      Density = tm.Density
+                      BodyType = BodyType.Static }
+            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            (world', physicsId)
+
+        let registerTilePhysicsPolygon address (tm : Entity) tmd td vertices world =
+            let physicsId = getPhysicsId tm.Id
+            let shapeProperties =
+                { Center = Vector2.Zero
+                  Restitution = 0.0f
+                  FixedRotation = true
+                  LinearDamping = 0.0f
+                  AngularDamping = 0.0f }
+            let bodyCreateMessage =
+                BodyCreateMessage
+                    { EntityAddress = address
+                      PhysicsId = physicsId
+                      Shape = PolygonShape { Vertices = vertices; Properties = shapeProperties }
+                      Position =
+                        Vector2 (
+                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                      Rotation = tm.Rotation
+                      Density = tm.Density
+                      BodyType = BodyType.Static }
+            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            (world', physicsId)
+
         let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) (_ : TmxLayerTile) =
             let td = makeTileData tm tmd tld tileIndex
             match td.OptTileSetTile with
             | None -> (world, physicsIds)
-            | Some tileSetTile when not <| tileSetTile.Properties.ContainsKey NuConstants.CollisionProperty -> (world, physicsIds)
             | Some tileSetTile ->
-                let physicsId = getPhysicsId tm.Id
-                let boxShapeProperties =
-                    { Center = Vector2.Zero
-                      Restitution = 0.0f
-                      FixedRotation = true
-                      LinearDamping = 0.0f
-                      AngularDamping = 0.0f }
-                let bodyCreateMessage =
-                    BodyCreateMessage
-                        { EntityAddress = address
-                          PhysicsId = physicsId
-                          Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = boxShapeProperties }
-                          Position =
-                            Vector2 (
-                                single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                                single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
-                          Rotation = tm.Rotation
-                          Density = tm.Density
-                          BodyType = BodyType.Static }
-                let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
-                (world', physicsId :: physicsIds)
+                let collisionProperty = ref Unchecked.defaultof<string>
+                if not <| tileSetTile.Properties.TryGetValue (NuConstants.CollisionProperty, collisionProperty) then (world, physicsIds)
+                else
+                    let collisionExpr = string collisionProperty.Value
+                    let collisionTerms = List.ofArray <| collisionExpr.Split '?'
+                    let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
+                    match collisionTermsTrimmed with
+                    | [""]
+                    | ["Box"] ->
+                        let (world', physicsId) = registerTilePhysicsBox address tm tmd td world
+                        (world', physicsId :: physicsIds)
+                    | ["Polygon"; verticesStr] ->
+                        let vertexStrs = List.ofArray <| verticesStr.Split '|'
+                        try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
+                            let verticesOffset = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
+                            let verticesScaled = List.map (fun vertex -> Vector2.Multiply (vertex, tmd.TileSizeF)) verticesOffset
+                            let (world', physicsId) = registerTilePhysicsPolygon address tm tmd td verticesScaled world
+                            (world', physicsId :: physicsIds)
+                        with :? NotSupportedException as e ->
+                            trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
+                            (world, physicsIds)
+                    | _ ->
+                        trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
+                        (world, physicsIds)
 
         let registerTileLayerPhysics address tileMap tileMapData collisionLayer world =
             let tileLayerData = makeTileLayerData tileMap tileMapData collisionLayer
