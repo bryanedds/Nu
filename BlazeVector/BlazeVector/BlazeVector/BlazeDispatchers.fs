@@ -22,28 +22,44 @@ module BlazeDispatchersModule =
         let moveStageAvatarHandler _ _ (groupAddress : Address) message world =
             let avatarAddress = groupAddress @ [BlazeConstants.StageAvatarName]
             let avatar = get world <| Entity.worldEntityLens avatarAddress
-            let impulseVector = Vector2 (1.0f, 0.0f)
-            let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = impulseVector }
+            let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (100.0f, 0.0f) }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
             (message, true, world')
         
-        override dispatcher.Register (omniFieldGroup, address, entities, world) =
-            let world_ = World.subscribe NuConstants.TickEvent address (CustomSub moveStageAvatarHandler) world
-            let world_ = World.subscribe NuConstants.TickEvent address (CustomSub adjustStageCameraHandler) world_
-            let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-            let world_ = base.Register (omniFieldGroup, address, entities, world_)
-            adjustStageCamera address world_
+        override dispatcher.Register (blazeStageGroup, address, entities, world) =
+            let world' = World.subscribe NuConstants.TickEvent address (CustomSub moveStageAvatarHandler) world
+            let world'' = World.subscribe NuConstants.TickEvent address (CustomSub adjustStageCameraHandler) world'
+            let world'3 = base.Register (blazeStageGroup, address, entities, world'')
+            adjustStageCamera address world'3
 
-        override dispatcher.Unregister (omniFieldGroup, address, world) =
-            let world_ = World.unsubscribe NuConstants.TickEvent address world
-            let world_ = World.unsubscribe NuConstants.TickEvent address world_
-            base.Unregister (omniFieldGroup, address, world_)
+        override dispatcher.Unregister (blazeStageGroup, address, world) =
+            let world' = World.unsubscribe NuConstants.TickEvent address world
+            let world'' = World.unsubscribe NuConstants.TickEvent address world'
+            base.Unregister (blazeStageGroup, address, world'')
+
+    type BlazeStageScreenDispatcher () =
+        inherit ScreenDispatcher ()
+
+        override dispatcher.Register (screen, address, groupDescriptors, world) =
+            let world' = base.Register (screen, address, groupDescriptors, world)
+            let stagePlay = Triple.prepend BlazeConstants.StagePlayName <| World.loadGroupFile BlazeConstants.StagePlayFileName true world'
+            let section0 = Triple.prepend BlazeConstants.Section0Name <| World.loadGroupFile BlazeConstants.Section0FileName true world'
+            Group.addGroups address [stagePlay; section0] world'
+
+        override dispatcher.Unregister (screen, address, world) =
+            let world' = base.Unregister (screen, address, world)
+            world'
 
     /// The custom type for BlazeVector's game dispatcher.
-    /// Currently just a placeholder as it doesn't yet have any special implementation.
     type BlazeGameDispatcher () =
         inherit GameDispatcher ()
         
         override dispatcher.Register (blazeGame, world) =
+
             // add the BlazeVector-specific dispatchers to the world
-            { world with Dispatchers = Map.add typeof<BlazeStageGroupDispatcher>.Name (BlazeStageGroupDispatcher () :> obj) world.Dispatchers }
+            let dispatchers =
+                Map.addMany
+                    [|typeof<BlazeStageGroupDispatcher>.Name, BlazeStageGroupDispatcher () :> obj
+                      typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj|]
+                    world.Dispatchers
+            { world with Dispatchers = dispatchers }

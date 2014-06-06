@@ -11,7 +11,7 @@ module BlazeFlow =
         
         // this adds a dissolve screen from the specified file with the given parameters. Note that
         // the 'seal' parameter is set to true as no XFields will be added to the title screen
-        let world_ = World.addDissolveScreenFromFile TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress true world
+        let world_ = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress true world
         
         // this subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
@@ -27,12 +27,12 @@ module BlazeFlow =
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
-        let world' = World.addDissolveScreenFromFile CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress true world
+        let world' = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress true world
         World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // and so on.
     let addStageScreen world =
-        let world' = World.addDissolveScreenFromFile StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress true world
+        let world' = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress true world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
     // here we create the BlazeVector world in a callback from the World.run function.
@@ -59,7 +59,7 @@ module BlazeFlow =
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
-            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite true world_
+            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite true world_
 
             // add our UI screens to the world
             let world_ = addTitleScreen world_
