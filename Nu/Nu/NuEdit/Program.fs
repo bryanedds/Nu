@@ -54,7 +54,6 @@ module ProgramModule =
     type EditorState =
         { DragEntityState : DragEntityState
           DragCameraState : DragCameraState
-          OptGameDispatcherDescriptor : (string * string) option
           PastWorlds : World list
           FutureWorlds : World list
           Clipboard : (Entity option) ref }
@@ -116,7 +115,6 @@ module Program =
                 let entity = get !entityTds.RefWorld <| worldEntityLens entityTds.Address
                 getEntityPropertyValue property entity
 
-        // NOTE: the hard-coded special casing going on in this function is really bad :(
         override this.SetValue (source, value) =
             let entityTds = source :?> EntityTypeDescriptorSource
             let changer = (fun world ->
@@ -344,7 +342,7 @@ module Program =
         | DialogResult.OK ->
             let world = !refWorld
             let editorState = world.ExtData :?> EditorState
-            saveFile editorState.OptGameDispatcherDescriptor form.saveFileDialog.FileName world
+            saveFile form.saveFileDialog.FileName world
         | _ -> ()
 
     let handleOpen (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
@@ -352,9 +350,7 @@ module Program =
         match openFileResult with
         | DialogResult.OK ->
             let changer = (fun world ->
-                let (optGameDispatcherDescriptor, world_) = loadFile form.openFileDialog.FileName world
-                let editorState = { (world.ExtData :?> EditorState) with OptGameDispatcherDescriptor = optGameDispatcherDescriptor }
-                let world_ = { world_ with ExtData = editorState }
+                let world_ = loadFile form.openFileDialog.FileName world
                 let world_ = clearOtherWorlds world_
                 populateEntityDispatcherComboBox form
                 form.propertyGrid.SelectedObject <- null
@@ -569,17 +565,15 @@ module Program =
         form.Show ()
         form
 
-    let tryCreateEditorWorld form worldChangers refWorld sdlDeps =
+    let tryCreateEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
         let screen = makeDissolveScreen 100 100
         let group = makeDefaultGroup ()
         let editorState =
             { DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
-              OptGameDispatcherDescriptor = None
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let gameDispatcher = GameDispatcher () :> obj
         let optWorld = tryCreateEmptyWorld sdlDeps gameDispatcher editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
@@ -624,25 +618,30 @@ module Program =
         updateRedo form !refWorld
         (not form.IsDisposed, !refWorld)
 
-    let selectWorkingDirectory () =
+    let selectWorkingDirectoryAndCreateGameDispatcher () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
-        openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for default assets)."
-        if openDialog.ShowDialog () = DialogResult.OK then
-            let workingDirectory = Path.GetDirectoryName openDialog.FileName
-            Directory.SetCurrentDirectory workingDirectory
+        openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for defaults)."
+        if openDialog.ShowDialog () <> DialogResult.OK then GameDispatcher ()
+        else
+            Directory.SetCurrentDirectory <| Path.GetDirectoryName openDialog.FileName
+            let assembly = Assembly.LoadFrom openDialog.FileName
+            let optDispatcherType = assembly.GetTypes () |> Array.tryFind (fun aType -> aType.IsSubclassOf typeof<GameDispatcher>)
+            match optDispatcherType with
+            | None -> GameDispatcher ()
+            | Some aType -> Activator.CreateInstance aType :?> GameDispatcher
 
     let [<EntryPoint; STAThread>] main _ =
         initTypeConverters ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        selectWorkingDirectory ()
+        let gameDispatcher = selectWorkingDirectoryAndCreateGameDispatcher ()
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
         let sdlConfig = makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags AudioBufferSizeDefault
         run4
-            (tryCreateEditorWorld form worldChangers refWorld)
+            (tryCreateEditorWorld gameDispatcher form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)
             (fun world -> form.displayPanel.Invalidate (); world)
             sdlConfig

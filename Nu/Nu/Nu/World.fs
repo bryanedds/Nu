@@ -55,42 +55,24 @@ module World =
         let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
         world''.Game.Register world''
 
-    let saveGroupFile optGameDispatcherDescriptor group entities fileName world =
+    let saveGroupFile group entities fileName world =
         use file = File.Open (fileName, FileMode.Create)
         let writerSettings = XmlWriterSettings ()
         writerSettings.Indent <- true
         use writer = XmlWriter.Create (file, writerSettings)
         writer.WriteStartDocument ()
         writer.WriteStartElement "Root"
-        match optGameDispatcherDescriptor with
-        | None -> ()
-        | Some node ->
-            writer.WriteStartElement "GameDispatcher"
-            writer.WriteElementString ("AssemblyFileName", fst node)
-            writer.WriteElementString ("FullName", snd node)
-            writer.WriteEndElement ()
         writeGroupToXml writer group entities
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
-    let loadGroupFile (fileName : string) world seal activatesGameDispatcher =
+    let loadGroupFile (fileName : string) seal world =
         let document = XmlDocument ()
         document.Load fileName
         let rootNode = document.["Root"]
-        let (someDescriptor, world') =
-                match Seq.tryFind (fun (node : XmlNode) -> node.Name = "GameDispatcher") <| enumerable rootNode.ChildNodes with
-                | None -> (None, world)
-                | Some gameDispatcherNode ->
-                    let assemblyFileName = gameDispatcherNode.["AssemblyFileName"].InnerText
-                    let gameDispatcherFullName = gameDispatcherNode.["FullName"].InnerText
-                    let someDescriptor = Some (assemblyFileName, gameDispatcherFullName)
-                    if activatesGameDispatcher then
-                        let world' = activateGameDispatcher assemblyFileName gameDispatcherFullName world
-                        (someDescriptor, world')
-                    else (someDescriptor, world)
         let groupNode = rootNode.["Group"]
-        let (group, entities) = readGroupFromXml groupNode seal world'
-        (someDescriptor, group, entities, world')
+        let (group, entities) = readGroupFromXml groupNode seal world
+        (group, entities, world)
 
     let private play world =
         let audioMessages = world.AudioMessages
@@ -223,14 +205,14 @@ module World =
 
     let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress seal world =
         let screen = makeDissolveScreen incomingTime outgoingTime
-        let (_, group, entities, world') = loadGroupFile groupFileName world seal false
+        let (group, entities, world') = loadGroupFile groupFileName seal world
         addScreen screenAddress screen [(groupName, group, entities)] world'
 
-    let tryCreateEmptyWorld sdlDeps userGameDispatcher (extData : obj) =
+    let tryCreateEmptyWorld sdlDeps gameDispatcher (extData : obj) =
         match tryGenerateAssetMetadataMap AssetGraphFileName with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
-            let userGameDispatcherName = (userGameDispatcher.GetType ()).Name
+            let gameDispatcherName = (gameDispatcher.GetType ()).Name
             let dispatchers =
                 Map.ofArray
                     // TODO: see if we can reflectively generate this array
@@ -249,10 +231,10 @@ module World =
                       typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
                       typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                       typeof<GameDispatcher>.Name, GameDispatcher () :> obj
-                      userGameDispatcherName, userGameDispatcher|]
+                      gameDispatcherName, gameDispatcher|]
             
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some userGameDispatcherName; CanDefault = true; Sealed = false }}
+                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty

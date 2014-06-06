@@ -10,7 +10,7 @@
  </tileset>
  <layer name="Ground" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFAwkYBxgLDjBWHMUjGgMAyzsSwQ==
+   eJxjYBgFIxkwDjAWHMUjGgMA3jgIoQ==
   </data>
  </layer>
 </map>
