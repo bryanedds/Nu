@@ -40,13 +40,13 @@ module Group =
         { Get = fun (group : Group) -> (?) group memberName
           Set = fun value group -> (?<-) group memberName value }
 
-    let private worldOptGroupFinder address world =
+    let private worldOptGroupFinder (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> None
         | Some groupMap -> Map.tryFind (List.at 1 address) groupMap
 
-    let private worldGroupAdder address world child =
+    let private worldGroupAdder (address : Address) world child =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None ->
@@ -55,7 +55,7 @@ module Group =
             let groupMap' = Map.add (List.at 1 address) child groupMap
             { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
 
-    let private worldGroupRemover address world =
+    let private worldGroupRemover (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> world

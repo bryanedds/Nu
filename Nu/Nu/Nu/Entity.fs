@@ -129,7 +129,7 @@ module Entity =
         { Get = fun (entity : Entity) -> entity.Size
           Set = fun value entity -> entity.SetSize value }
 
-    let private worldOptEntityFinder address world =
+    let private worldOptEntityFinder (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None -> None
@@ -139,7 +139,7 @@ module Entity =
             | None -> None
             | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
 
-    let private worldEntityAdder address world (child : Entity) =
+    let private worldEntityAdder (address : Address) world (child : Entity) =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None ->
@@ -158,7 +158,7 @@ module Entity =
                 let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
                 { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
 
-    let private worldEntityRemover address world =
+    let private worldEntityRemover (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None -> world
