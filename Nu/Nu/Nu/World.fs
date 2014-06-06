@@ -71,8 +71,7 @@ module World =
         document.Load fileName
         let rootNode = document.["Root"]
         let groupNode = rootNode.["Group"]
-        let (group, entities) = readGroupFromXml groupNode seal world
-        (group, entities, world)
+        readGroupFromXml groupNode seal world
 
     let private play world =
         let audioMessages = world.AudioMessages
@@ -192,21 +191,21 @@ module World =
     let run tryCreateWorld handleUpdate sdlConfig =
         run4 tryCreateWorld handleUpdate id sdlConfig
 
-    let addSplashScreenFromData handleFinishedOutgoing address incomingTime idlingTime outgoingTime sprite seal world =
-        let splashScreen = makeDissolveScreen incomingTime outgoingTime
+    let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite seal world =
+        let splashScreen = makeDissolveScreen screenDispatcherName incomingTime outgoingTime
         let splashGroup = makeDefaultGroup ()
         let splashLabel = makeDefaultEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") seal world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
-        let splashLabel''' = splashLabel''.SetLabelSprite (sprite : Sprite)
-        let world' = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'''])] world
+        let splashLabel'3 = splashLabel''.SetLabelSprite (sprite : Sprite)
+        let world' = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'3])] world
         let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
-    let addDissolveScreenFromFile groupFileName groupName incomingTime outgoingTime screenAddress seal world =
-        let screen = makeDissolveScreen incomingTime outgoingTime
-        let (group, entities, world') = loadGroupFile groupFileName seal world
-        addScreen screenAddress screen [(groupName, group, entities)] world'
+    let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
+        let screen = makeDissolveScreen screenDispatcherName incomingTime outgoingTime
+        let (group, entities) = loadGroupFile groupFileName seal world
+        addScreen screenAddress screen [(groupName, group, entities)] world
 
     let tryCreateEmptyWorld sdlDeps gameDispatcher (extData : obj) =
         match tryGenerateAssetMetadataMap AssetGraphFileName with

@@ -128,11 +128,15 @@ module Screen =
           Outgoing = makeDefaultTransition Outgoing
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some typeof<ScreenDispatcher>.Name; CanDefault = true; Sealed = false }}
 
-    let makeDissolveScreen incomingTime outgoingTime =
+    let makeDissolveScreen screenDispatcherName incomingTime outgoingTime =
         let optDissolveSprite = Some <| makeDissolveSprite ()
         let incomingDissolve = { makeDefaultTransition Incoming with Lifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
-        let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite  }
-        { makeDefaultScreen () with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+        let outgoingDissolve = { makeDefaultTransition Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite }
+        let screen = makeDefaultScreen () 
+        { screen with
+            Incoming = incomingDissolve
+            Outgoing = outgoingDissolve
+            Xtension = { screen.Xtension with OptXDispatcherName = Some screenDispatcherName }}
 
     let registerScreen address (screen : Screen) groupDescriptors world =
         screen.Register (address, groupDescriptors, world)

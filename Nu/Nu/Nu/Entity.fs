@@ -330,9 +330,9 @@ module Entity =
         let (entity', world'') = registerEntity address entity world'
         set entity' world'' <| worldEntityLens address
 
-    let addEntities address entities world =
+    let addEntities groupAddress entities world =
         List.fold
-            (fun world' entity -> addEntity (addrstr address entity.Name) entity world')
+            (fun world' entity -> addEntity (addrstr groupAddress entity.Name) entity world')
             world
             entities
 
