@@ -118,7 +118,9 @@ module XtensionModule =
                             | aMethod ->
                                 try aMethod.Invoke (dispatcher, args) :?> 'r with
                                 | exn when exn.InnerException <> null -> raise exn.InnerException
-                                | exn -> debug <| "Unknown failure during XDispatch invocation'" + string exn + "'."; reraise ()
+                                | exn ->
+                                    debug <| "Unknown failure during XDispatch invocation'" + string exn + "'."
+                                    reraise ()
 
                         | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer or sub-type."
 
