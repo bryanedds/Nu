@@ -209,6 +209,10 @@ module Entity =
                     | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
+    let withWorldEntity fn address world = withWorldSimulant worldEntityLens
+    let withWorldOptEntity fn address world = withWorldOptSimulant worldOptEntityLens
+    let tryWithWorldEntity fn address world = tryWithWorldSimulant worldOptEntityLens worldEntityLens
+
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =
             Vector2 (
