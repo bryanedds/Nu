@@ -86,6 +86,10 @@ module Group =
                 | None -> { world with Groups = Map.add screenStr groups world.Groups }
                 | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
+            
+    let withWorldGroup fn address world = withWorldSimulant worldGroupLens
+    let withWorldOptGroup fn address world = withWorldOptSimulant worldOptGroupLens
+    let tryWithWorldGroup fn address world = tryWithWorldSimulant worldOptGroupLens worldGroupLens
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
