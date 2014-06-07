@@ -28,17 +28,17 @@ module GroupModule =
 
 module Group =
 
-    let groupIdLens =
+    let groupId =
         { Get = fun group -> group.Id
           Set = fun value group -> { group with Id = value }}
 
-    let groupXtensionLens =
+    let groupXtension =
         { Get = fun group -> group.Xtension
           Set = fun value group -> { group with Xtension = value }}
 
-    let groupDynamicLens memberName =
-        { Get = fun (group : Group) -> (?) group memberName
-          Set = fun value group -> (?<-) group memberName value }
+    let groupXField fieldName =
+        { Get = fun (group : Group) -> (?) group fieldName
+          Set = fun value group -> (?<-) group fieldName value }
 
     let private worldOptGroupFinder (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
@@ -63,15 +63,15 @@ module Group =
             let groupMap' = Map.remove (List.at 1 address) groupMap
             { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
 
-    let worldGroupLens address =
+    let worldGroup address =
         { Get = fun world -> Option.get <| worldOptGroupFinder address world
           Set = fun group world -> worldGroupAdder address world group }
 
-    let worldOptGroupLens address =
+    let worldOptGroup address =
         { Get = fun world -> worldOptGroupFinder address world
           Set = fun optGroup world -> match optGroup with None -> worldGroupRemover address world | Some group -> worldGroupAdder address world group }
 
-    let worldGroupsLens address =
+    let worldGroups address =
         { Get = fun world ->
             match address with
             | [screenStr] ->
@@ -87,9 +87,9 @@ module Group =
                 | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
             
-    let withWorldGroup fn address world = withWorldSimulant worldGroupLens
-    let withWorldOptGroup fn address world = withWorldOptSimulant worldOptGroupLens
-    let tryWithWorldGroup fn address world = tryWithWorldSimulant worldOptGroupLens worldGroupLens
+    let withWorldGroup fn address world = withWorldSimulant worldGroup
+    let withWorldOptGroup fn address world = withWorldOptSimulant worldOptGroup
+    let tryWithWorldGroup fn address world = tryWithWorldSimulant worldOptGroup worldGroup
 
     let makeDefaultGroup () =
         { Group.Id = getNuId ()
@@ -99,15 +99,15 @@ module Group =
         group.Register (address, entities, world)
 
     let unregisterGroup address world =
-        let group = get world <| worldGroupLens address
+        let group = get world <| worldGroup address
         group.Unregister (address, world)
 
     let removeGroup address world =
         let world' = unregisterGroup address world
-        set None world' (worldOptGroupLens address)
+        set None world' <| worldOptGroup address
 
     let removeGroups address world =
-        let groups = get world <| worldGroupsLens address
+        let groups = get world <| worldGroups address
         Map.fold
             (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
             world
@@ -115,11 +115,11 @@ module Group =
 
     let addGroup address (group : Group) entities world =
         let world' =
-            match get world <| worldOptGroupLens address with
+            match get world <| worldOptGroup address with
             | None -> world
             | Some _ -> removeGroup address world
         let world'' = registerGroup address entities group world'
-        set group world'' <| worldGroupLens address
+        set group world'' <| worldGroup address
 
     let addGroups screenAddress groupDescriptors world =
         List.fold

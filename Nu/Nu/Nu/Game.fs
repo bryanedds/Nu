@@ -28,30 +28,30 @@ module Game =
     // NOTE: for simulation types, value semantics are preferred over open semantics as it eases
     // serialization and other forms of automation. However, perhaps there is a way to get both...
 
-    let gameIdLens =
+    let gameId =
         { Get = fun (game : Game) -> game.Id
           Set = fun value game -> { game with Id = value }}
 
-    let gameXtensionLens =
+    let gameXtension =
         { Get = fun (game : Game) -> game.Xtension
           Set = fun value game -> { game with Xtension = value }}
 
-    let gameDynamicLens memberName =
-        { Get = fun (game : Game) -> (?) game memberName
-          Set = fun value game -> (?<-) game memberName value }
+    let gameXField fieldName =
+        { Get = fun (game : Game) -> (?) game fieldName
+          Set = fun value game -> (?<-) game fieldName value }
 
-    let worldOptSelectedScreenAddressLens =
+    let worldOptSelectedScreenAddress =
         { Get = fun world -> world.Game.OptSelectedScreenAddress
           Set = fun value world -> { world with Game = { world.Game with OptSelectedScreenAddress = value }}}
 
-    let worldOptSelectedScreenLens =
+    let worldOptSelectedScreen =
         { Get = fun world ->
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None -> None
-            | Some selectedScreenAddress -> get world <| worldOptScreenLens selectedScreenAddress
+            | Some selectedScreenAddress -> get world <| worldOptScreen selectedScreenAddress
           Set = fun screen world ->
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None -> failwith "Cannot set a non-existent screen."
-            | Some selectedScreenAddress -> set screen.Value world <| worldScreenLens selectedScreenAddress }
+            | Some selectedScreenAddress -> set screen.Value world <| worldScreen selectedScreenAddress }

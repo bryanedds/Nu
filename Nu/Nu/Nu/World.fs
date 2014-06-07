@@ -102,7 +102,7 @@ module World =
                       Depth = Single.MaxValue }]
 
     let private getRenderDescriptors world =
-        match get world worldOptSelectedScreenAddressLens with
+        match get world worldOptSelectedScreenAddress with
         | None -> []
         | Some activeScreenAddress ->
             let optGroupMap = Map.tryFind activeScreenAddress.[0] world.Entities
@@ -113,7 +113,7 @@ module World =
                 let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
-                let activeScreen = get world (worldScreenLens activeScreenAddress)
+                let activeScreen = get world <| worldScreen activeScreenAddress
                 match activeScreen.State with
                 | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Incoming
                 | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Outgoing
@@ -132,7 +132,7 @@ module World =
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage -> 
                 let entityAddress = bodyTransformMessage.EntityAddress
-                let entity = get world <| worldEntityLens entityAddress
+                let entity = get world <| worldEntity entityAddress
                 (keepRunning, entity.HandleBodyTransformMessage (bodyTransformMessage, entityAddress, world))
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
@@ -254,5 +254,5 @@ module World =
             Right world'
 
     let reregisterPhysicsHack groupAddress world =
-        let entities = get world <| worldEntitiesLens groupAddress
+        let entities = get world <| worldEntities groupAddress
         Map.fold (fun world _ (entity : Entity) -> entity.ReregisterPhysicsHack (groupAddress, world)) world entities

@@ -112,7 +112,7 @@ module Program =
             | null -> null
             | source ->
                 let entityTds = source :?> EntityTypeDescriptorSource
-                let entity = get !entityTds.RefWorld <| worldEntityLens entityTds.Address
+                let entity = get !entityTds.RefWorld <| worldEntity entityTds.Address
                 getEntityPropertyValue property entity
 
         override this.SetValue (source, value) =
@@ -128,7 +128,7 @@ module Program =
                             world
                         else
                             // TODO: factor out a renameEntity function
-                            let entity_ = get world <| worldEntityLens entityTds.Address
+                            let entity_ = get world <| worldEntity entityTds.Address
                             let world_ = removeEntity entityTds.Address world
                             let entity_ = { entity_ with Name = valueStr }
                             let entityAddress = addrstr EditorGroupAddress valueStr
@@ -138,7 +138,7 @@ module Program =
                             world_
                     | _ ->
                         let world_ = setEntityPropertyValue entityTds.Address property value world
-                        let entity_ = get world_ <| worldEntityLens entityTds.Address
+                        let entity_ = get world_ <| worldEntity entityTds.Address
                         entity_.PropagatePhysics (entityTds.Address, world_)
                 pushPastWorld world world_)
             entityTds.RefWorld := changer !entityTds.RefWorld
@@ -173,7 +173,7 @@ module Program =
             let propertyDescriptors =
                 match optSource with
                 | :? EntityTypeDescriptorSource as source ->
-                    let entity = get !source.RefWorld <| worldEntityLens source.Address
+                    let entity = get !source.RefWorld <| worldEntity source.Address
                     EntityPropertyDescriptor.GetPropertyDescriptors typeof<Entity> <| Some entity
                 | _ -> EntityPropertyDescriptor.GetPropertyDescriptors typeof<Entity> None
             PropertyDescriptorCollection (Array.ofList propertyDescriptors)
@@ -200,8 +200,8 @@ module Program =
         | MouseButtonData (mousePosition, _) ->
             if form.interactButton.Checked then (message, true, world)
             else
-                let group = get world (worldGroupLens EditorGroupAddress)
-                let entities = Map.toValueList (get world <| worldEntitiesLens EditorGroupAddress)
+                let group = get world <| worldGroup EditorGroupAddress
+                let entities = Map.toValueList <| get world (worldEntities EditorGroupAddress)
                 let mousePosition = world.MouseState.MousePosition
                 let optPicked = tryPickEntity mousePosition entities world
                 match optPicked with
@@ -241,11 +241,11 @@ module Program =
         | DragEntityNone -> world
         | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
             let (positionSnap, _) = getSnaps form
-            let entity_ = get world <| worldEntityLens address
+            let entity_ = get world <| worldEntity address
             let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
             let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
             let entity_ = setEntityPosition positionSnap entityPosition entity_
-            let world_ = set entity_ world <| worldEntityLens address
+            let world_ = set entity_ world <| worldEntity address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
             let world_ = { world_ with ExtData = editorState_ }
             let world_ = entity_.PropagatePhysics (address, world_)
@@ -406,7 +406,7 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             let changer = (fun world ->
                 let editorState = world.ExtData :?> EditorState
-                let entity = get world <| worldEntityLens entityTds.Address
+                let entity = get world <| worldEntity entityTds.Address
                 let world' = removeEntity entityTds.Address world
                 editorState.Clipboard := Some entity
                 form.propertyGrid.SelectedObject <- null
@@ -420,7 +420,7 @@ module Program =
         match optEntityTds with
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
-            let entity = get !refWorld <| worldEntityLens entityTds.Address
+            let entity = get !refWorld <| worldEntity entityTds.Address
             let editorState = (!refWorld).ExtData :?> EditorState
             editorState.Clipboard := Some entity
         | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."
@@ -451,9 +451,9 @@ module Program =
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
             let changer = (fun world ->
-                let entity_ = get world <| worldEntityLens entityTds.Address
+                let entity_ = get world <| worldEntity entityTds.Address
                 let entity_ = entity_.SetSize <| entity_.GetQuickSize world
-                let world_ = set entity_ world <| worldEntityLens entityTds.Address
+                let world_ = set entity_ world <| worldEntity entityTds.Address
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world_)
@@ -480,11 +480,11 @@ module Program =
                 match selectedObject with
                 | :? EntityTypeDescriptorSource as entityTds ->
                     let changer = (fun world ->
-                        let entity = get world <| worldEntityLens entityTds.Address
+                        let entity = get world <| worldEntity entityTds.Address
                         let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
                         let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
                         let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                        let world' = set entity' world <| worldEntityLens entityTds.Address
+                        let world' = set entity' world <| worldEntity entityTds.Address
                         let world'' = pushPastWorld world world'
                         refWorld := world'' // must be set for property grid
                         form.propertyGrid.Refresh ()
@@ -503,10 +503,10 @@ module Program =
             | "" -> ignore <| MessageBox.Show "Select an XField."
             | xFieldName ->
                 let changer = (fun world ->
-                    let entity = get world <| worldEntityLens entityTds.Address
+                    let entity = get world <| worldEntity entityTds.Address
                     let xFields = Map.remove xFieldName entity.Xtension.XFields
                     let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                    let world' = set entity' world <| worldEntityLens entityTds.Address
+                    let world' = set entity' world <| worldEntity entityTds.Address
                     let world'' = pushPastWorld world world'
                     refWorld := world'' // must be set for property grid
                     form.propertyGrid.Refresh ()
@@ -520,9 +520,9 @@ module Program =
         match selectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             let changer = (fun world ->
-                let entity = get world <| worldEntityLens entityTds.Address
+                let entity = get world <| worldEntity entityTds.Address
                 let entity' = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
-                let world' = set entity' world <| worldEntityLens entityTds.Address
+                let world' = set entity' world <| worldEntity entityTds.Address
                 let world'' = pushPastWorld world world'
                 refWorld := world'' // must be set for property grid
                 form.propertyGrid.Refresh ()
@@ -580,7 +580,7 @@ module Program =
         | Right world ->
             refWorld := world
             refWorld := addScreen EditorScreenAddress screen [(EditorGroupName, group, [])] !refWorld
-            refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenAddressLens
+            refWorld := set (Some EditorScreenAddress) !refWorld worldOptSelectedScreenAddress
             refWorld := subscribe DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := subscribe UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
             refWorld := subscribe DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form worldChangers refWorld) !refWorld

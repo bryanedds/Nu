@@ -89,43 +89,43 @@ module EntityModule =
 
 module Entity =
 
-    let entityIdLens =
+    let entityId =
         { Get = fun entity -> entity.Id
           Set = fun value entity -> { entity with Id = value }}
 
-    let entityNameLens =
+    let entityName =
         { Get = fun entity -> entity.Name
           Set = fun value entity -> { entity with Name = value }}
 
-    let entityEnabledLens =
+    let entityEnabled =
         { Get = fun entity -> entity.Enabled
           Set = fun value entity -> { entity with Enabled = value }}
 
-    let entityVisibleLens =
+    let entityVisible =
         { Get = fun entity -> entity.Visible
           Set = fun value entity -> { entity with Visible = value }}
 
-    let entityXtensionLens =
+    let entityXtension =
         { Get = fun entity -> entity.Xtension
           Set = fun value entity -> { entity with Xtension = value }}
 
-    let entityDynamicLens memberName =
-        { Get = fun entity -> (?) (entity : Entity) memberName
-          Set = fun value entity -> (?<-) entity memberName value }
+    let entityXField fieldName =
+        { Get = fun entity -> (?) (entity : Entity) fieldName
+          Set = fun value entity -> (?<-) entity fieldName value }
 
-    let entityPositionLens =
+    let entityPosition =
         { Get = fun (entity : Entity) -> entity.Position
           Set = fun value entity -> entity.SetPosition value }
 
-    let entityDepthLens =
+    let entityDepth =
         { Get = fun (entity : Entity) -> entity.Depth
           Set = fun value entity -> entity.SetDepth value }
 
-    let entityRotationLens =
+    let entityRotation =
         { Get = fun (entity : Entity) -> entity.Rotation
           Set = fun value entity -> entity.SetRotation value }
 
-    let entitySizeLens =
+    let entitySize =
         { Get = fun (entity : Entity) -> entity.Size
           Set = fun value entity -> entity.SetSize value }
 
@@ -171,23 +171,23 @@ module Entity =
                 let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
                 { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
 
-    let private getWorldEntityWithLens address world lens =
+    let private getWorldEntityWith address world lens =
         get (getChild worldOptEntityFinder address world) lens
 
-    let private setWorldEntityWithLens child address world lens =
+    let private setWorldEntityWith child address world lens =
         let entity = getChild worldOptEntityFinder address world
         let entity' = set child entity lens
         setChild worldEntityAdder worldEntityRemover address world entity'
 
-    let worldEntityLens address =
+    let worldEntity address =
         { Get = fun world -> Option.get <| worldOptEntityFinder address world
           Set = fun entity world -> worldEntityAdder address world entity }
 
-    let worldOptEntityLens address =
+    let worldOptEntity address =
         { Get = fun world -> worldOptEntityFinder address world
           Set = fun optEntity world -> match optEntity with None -> worldEntityRemover address world | Some entity -> worldEntityAdder address world entity }
 
-    let worldEntitiesLens address =
+    let worldEntities address =
         { Get = fun world ->
             match address with
             | [screenStr; groupStr] ->
@@ -209,9 +209,9 @@ module Entity =
                     | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
-    let withWorldEntity fn address world = withWorldSimulant worldEntityLens
-    let withWorldOptEntity fn address world = withWorldOptSimulant worldOptEntityLens
-    let tryWithWorldEntity fn address world = tryWithWorldSimulant worldOptEntityLens worldEntityLens
+    let withWorldEntity fn address world = withWorldSimulant worldEntity
+    let withWorldOptEntity fn address world = withWorldOptSimulant worldOptEntity
+    let tryWithWorldEntity fn address world = tryWithWorldSimulant worldOptEntity worldEntity
 
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =
@@ -312,15 +312,15 @@ module Entity =
         entity.Register (address, world)
 
     let unregisterEntity address world =
-        let entity = get world <| worldEntityLens address
+        let entity = get world <| worldEntity address
         entity.Unregister (address, world)
 
     let removeEntity address world =
         let world' = unregisterEntity address world
-        set None world' <| worldOptEntityLens address
+        set None world' <| worldOptEntity address
 
     let removeEntities address world =
-        let entities = get world <| worldEntitiesLens address
+        let entities = get world <| worldEntities address
         Map.fold
             (fun world' entityName _ -> removeEntity (address @ [entityName]) world')
             world
@@ -328,11 +328,11 @@ module Entity =
 
     let addEntity address entity world =
         let world' =
-            match get world <| worldOptEntityLens address with
+            match get world <| worldOptEntity address with
             | None -> world
             | Some _ -> removeEntity address world
         let (entity', world'') = registerEntity address entity world'
-        set entity' world'' <| worldEntityLens address
+        set entity' world'' <| worldEntity address
 
     let addEntities groupAddress entities world =
         List.fold
