@@ -151,7 +151,7 @@ module Screen =
 
     let removeScreen address world =
         let world' = unregisterScreen address world
-        set None world' (worldOptScreenLens address)
+        set None world' <| worldOptScreenLens address
 
     let addScreen address screen groupDescriptors world =
         let world' =
@@ -159,4 +159,4 @@ module Screen =
             | None -> world
             | Some _ -> removeScreen address world
         let world'' = registerScreen address screen groupDescriptors world'
-        set screen world'' (worldScreenLens address)
+        set screen world'' <| worldScreenLens address
