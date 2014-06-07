@@ -15,27 +15,6 @@ module BlazeDispatchersModule =
     type BlazeStageGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let getContacts (body : Body) =
-            let contacts = Generic.List<Contacts.Contact> ()
-            let mutable current = body.ContactList
-            while current <> null do
-                contacts.Add current.Contact
-                current <- current.Next
-            List.ofSeq contacts
-
-        let isOnGround (entity : Entity) world =
-            let body = world.Integrator.Bodies.[entity.PhysicsId]
-            let normal = ref <| Framework.Vector2 ()
-            let manifold = ref <| Common.FixedArray2<Framework.Vector2> ()
-            let contacts = getContacts body
-            List.exists
-                (fun (contact : Contacts.Contact) ->
-                    contact.GetWorldManifold (normal, manifold)
-                    let upVector = Framework.Vector2 (0.0f, 1.0f)
-                    let theta = Framework.Vector2.Dot (!normal, upVector) |> double |> Math.Acos |> Math.Abs
-                    theta < Math.PI * 0.5)
-                contacts
-
         let adjustCamera groupAddress world =
             let avatarAddress = groupAddress @ [BlazeConstants.StageAvatarName]
             let avatar = get world <| Entity.worldEntityLens avatarAddress
@@ -55,7 +34,7 @@ module BlazeDispatchersModule =
         let jumpAvatarHandler _ _ groupAddress message world =
             let avatarAddress = groupAddress @ [BlazeConstants.StageAvatarName]
             let avatar = get world <| Entity.worldEntityLens avatarAddress
-            if not <| isOnGround avatar world then (message, true, world)
+            if not <| Physics.isBodyOnGround avatar.PhysicsId world.Integrator then (message, true, world)
             else
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (0.0f, 10000.0f) }
                 let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
