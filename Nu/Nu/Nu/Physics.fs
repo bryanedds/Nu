@@ -3,7 +3,9 @@ open System
 open System.ComponentModel
 open System.Collections.Generic
 open FarseerPhysics
+open FarseerPhysics.Common
 open FarseerPhysics.Dynamics
+open FarseerPhysics.Dynamics.Contacts
 open OpenTK
 open Microsoft.Xna
 open Prime
@@ -154,6 +156,27 @@ module Physics =
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         integrator.IntegrationMessages.Add integrationMessage
         true
+
+    let getBodyContacts physicsId integrator =
+        let body = integrator.Bodies.[physicsId]
+        let contacts = List<Contact> ()
+        let mutable current = body.ContactList
+        while current <> null do
+            contacts.Add current.Contact
+            current <- current.Next
+        List.ofSeq contacts
+
+    let isBodyOnGround physicsId integrator =
+        let normal = ref <| Framework.Vector2 ()
+        let manifold = ref <| FixedArray2<Framework.Vector2> ()
+        let contacts = getBodyContacts physicsId integrator
+        List.exists
+            (fun (contact : Contact) ->
+                contact.GetWorldManifold (normal, manifold)
+                let upVector = Framework.Vector2 (0.0f, 1.0f)
+                let theta = Framework.Vector2.Dot (!normal, upVector) |> double |> Math.Acos |> Math.Abs
+                theta < Math.PI * 0.5)
+            contacts
 
     let private configureBodyProperties integrator bodyPosition bodyRotation commonShapeProperties (body : Body) =
         body.Position <- toPhysicsV2 bodyPosition
