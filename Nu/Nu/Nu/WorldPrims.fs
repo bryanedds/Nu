@@ -31,16 +31,16 @@ module WorldPrims =
     let private getSimulant address world =
         match address with
         | [] -> Game <| world.Game
-        | [_] as screenAddress -> Screen <| get world (worldScreenLens screenAddress)
-        | [_; _] as groupAddress -> Group <| get world (worldGroupLens groupAddress)
-        | [_; _; _] as entityAddress -> Entity <| get world (worldEntityLens entityAddress)
+        | [_] as screenAddress -> Screen <| get world (worldScreen screenAddress)
+        | [_; _] as groupAddress -> Group <| get world (worldGroup groupAddress)
+        | [_; _; _] as entityAddress -> Entity <| get world (worldEntity entityAddress)
         | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
     let private getSubscribedSimulants subscriptions world =
         List.map (fun (address, _) -> getSimulant address world) subscriptions
 
     let private isAddressSelected address world =
-        let optScreenAddress = get world worldOptSelectedScreenAddressLens
+        let optScreenAddress = get world worldOptSelectedScreenAddress
         match (address, optScreenAddress) with
         | ([], _) -> true
         | (_, None) -> false
@@ -118,15 +118,15 @@ module WorldPrims =
     and handleEventAsExit message (world : World) =
         (handleMessage message, false, world)
 
-    // TODO: consider turning this into a lens, and removing the screenStateLens
+    // TODO: consider turning this into a lens, and removing the screenState
     and private getScreenState address world =
-        let screen = get world <| worldScreenLens address
-        get screen screenStateLens
+        let screen = get world <| worldScreen address
+        get screen screenState
 
-    // TODO: consider turning this into a lens, and removing the screenStateLens
+    // TODO: consider turning this into a lens, and removing the screenState
     and private setScreenState address state world =
-        let screen = set state (get world <| worldScreenLens address) screenStateLens
-        let world' = set screen world <| worldScreenLens address
+        let screen = set state (get world <| worldScreen address) screenState
+        let world' = set screen world <| worldScreen address
         match state with
         | IdlingState ->
             world' |>
@@ -139,7 +139,7 @@ module WorldPrims =
 
     and transitionScreen destination world =
         let world' = setScreenState destination IncomingState world
-        set (Some destination) world' worldOptSelectedScreenAddressLens
+        set (Some destination) world' worldOptSelectedScreenAddress
 
     and private updateTransition1 (transition : Transition) =
         if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
@@ -147,7 +147,7 @@ module WorldPrims =
 
     and updateTransition update world =
         let (keepRunning, world') =
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddressLens
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None -> (true, world)
             | Some selectedScreenAddress ->
@@ -155,11 +155,11 @@ module WorldPrims =
                 match screenState with
                 | IncomingState ->
                     // TODO: remove duplication with below
-                    let selectedScreen = get world <| worldScreenLens selectedScreenAddress
-                    let incoming = get selectedScreen screenIncomingLens
+                    let selectedScreen = get world <| worldScreen selectedScreenAddress
+                    let incoming = get selectedScreen screenIncoming
                     let (incoming', finished) = updateTransition1 incoming
-                    let selectedScreen' = set incoming' selectedScreen screenIncomingLens
-                    let world'' = set selectedScreen' world <| worldScreenLens selectedScreenAddress
+                    let selectedScreen' = set incoming' selectedScreen screenIncoming
+                    let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
                     if finished then
                         publish
@@ -169,11 +169,11 @@ module WorldPrims =
                             world'3
                     else (true, world'3)
                 | OutgoingState ->
-                    let selectedScreen = get world <| worldScreenLens selectedScreenAddress
-                    let outgoing = get selectedScreen screenOutgoingLens
+                    let selectedScreen = get world <| worldScreen selectedScreenAddress
+                    let outgoing = get selectedScreen screenOutgoing
                     let (outgoing', finished) = updateTransition1 outgoing
-                    let selectedScreen' = set outgoing' selectedScreen screenOutgoingLens
-                    let world'' = set selectedScreen' world <| worldScreenLens selectedScreenAddress
+                    let selectedScreen' = set outgoing' selectedScreen screenOutgoing
+                    let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
                     if finished then
                         publish
@@ -193,7 +193,7 @@ module WorldPrims =
             let world'' = subscribe event subscriber subscription world'
             (message, true, world'')
         else
-            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddressLens
+            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None ->
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."

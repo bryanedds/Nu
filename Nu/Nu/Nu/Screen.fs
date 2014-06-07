@@ -32,53 +32,53 @@ module ScreenModule =
 
 module Screen =
 
-    let transitionIdLens =
+    let transitionId =
         { Get = fun (transition : Transition) -> transition.Id
           Set = fun value transition -> { transition with Id = value }}
 
-    let transitionLifetimeLens =
+    let transitionLifetime =
         { Get = fun transition -> transition.Lifetime
           Set = fun value transition -> { transition with Lifetime = value }}
 
-    let transitionTicksLens =
+    let transitionTicks =
         { Get = fun transition -> transition.Ticks
           Set = fun value transition -> { transition with Ticks = value }}
 
-    let transitionTypeLens =
+    let transitionType =
         { Get = fun transition -> transition.Type
           Set = fun value transition -> { transition with Type = value }}
 
-    let transitionXtensionLens =
+    let transitionXtension =
         { Get = fun (transition : Transition) -> transition.Xtension
           Set = fun value transition -> { transition with Xtension = value }}
 
-    let transitionDynamicLens memberName =
-        { Get = fun (transition : Transition) -> (?) transition memberName
-          Set = fun value transition -> (?<-) transition memberName value }
+    let transitionXField fieldName =
+        { Get = fun (transition : Transition) -> (?) transition fieldName
+          Set = fun value transition -> (?<-) transition fieldName value }
 
-    let screenIdLens =
+    let screenId =
         { Get = fun (screen : Screen) -> screen.Id
           Set = fun value screen -> { screen with Id = value }}
 
-    let screenStateLens =
+    let screenState =
         { Get = fun screen -> screen.State
           Set = fun value screen -> { screen with State = value }}
 
-    let screenIncomingLens =
+    let screenIncoming =
         { Get = fun screen -> screen.Incoming
           Set = fun value screen -> { screen with Incoming = value }}
 
-    let screenOutgoingLens =
+    let screenOutgoing =
         { Get = fun screen -> screen.Outgoing
           Set = fun value screen -> { screen with Outgoing = value }}
 
-    let screenXtensionLens =
+    let screenXtension =
         { Get = fun (screen : Screen) -> screen.Xtension
           Set = fun value screen -> { screen with Xtension = value }}
 
-    let screenDynamicLens memberName =
-        { Get = fun (screen : Screen) -> (?) screen memberName
-          Set = fun value screen -> (?<-) screen memberName value }
+    let screenXField fieldName =
+        { Get = fun (screen : Screen) -> (?) screen fieldName
+          Set = fun value screen -> (?<-) screen fieldName value }
 
     let private worldOptScreenFinder (address : Address) world =
         Map.tryFind (List.at 0 address) world.Screens
@@ -89,15 +89,15 @@ module Screen =
     let private worldScreenRemover (address : Address) world =
         { world with Screens = Map.remove (List.at 0 address) world.Screens }
 
-    let worldScreenLens address =
+    let worldScreen address =
         { Get = fun world -> Option.get <| worldOptScreenFinder address world
           Set = fun screen world -> worldScreenAdder address world screen }
 
-    let worldOptScreenLens address =
+    let worldOptScreen address =
         { Get = fun world -> worldOptScreenFinder address world
           Set = fun optScreen world -> match optScreen with None -> worldScreenRemover address world | Some screen -> worldScreenAdder address world screen }
 
-    let worldScreensLens address =
+    let worldScreens address =
         { Get = fun world ->
             match address with
             | [] -> world.Screens
@@ -107,12 +107,12 @@ module Screen =
             | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
             | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'." }
 
-    let worldScreenIncomingLens address = worldScreenLens address >>| screenIncomingLens
-    let worldScreenOutgoingLens address = worldScreenLens address >>| screenOutgoingLens
+    let worldScreenIncoming address = worldScreen address >>| screenIncoming
+    let worldScreenOutgoing address = worldScreen address >>| screenOutgoing
 
-    let withWorldScreen fn address world = withWorldSimulant worldScreenLens
-    let withWorldOptScreen fn address world = withWorldOptSimulant worldOptScreenLens
-    let tryWithWorldScreen fn address world = tryWithWorldSimulant worldOptScreenLens worldScreenLens
+    let withWorldScreen fn address world = withWorldSimulant worldScreen
+    let withWorldOptScreen fn address world = withWorldOptSimulant worldOptScreen
+    let tryWithWorldScreen fn address world = tryWithWorldSimulant worldOptScreen worldScreen
     
     let makeDissolveSprite () =
         { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
@@ -146,17 +146,17 @@ module Screen =
         screen.Register (address, groupDescriptors, world)
 
     let unregisterScreen address world =
-        let screen = get world <| worldScreenLens address
+        let screen = get world <| worldScreen address
         screen.Unregister (address, world)
 
     let removeScreen address world =
         let world' = unregisterScreen address world
-        set None world' <| worldOptScreenLens address
+        set None world' <| worldOptScreen address
 
     let addScreen address screen groupDescriptors world =
         let world' =
-            match get world <| worldOptScreenLens address with
+            match get world <| worldOptScreen address with
             | None -> world
             | Some _ -> removeScreen address world
         let world'' = registerScreen address screen groupDescriptors world'
-        set screen world'' <| worldScreenLens address
+        set screen world'' <| worldScreen address
