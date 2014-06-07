@@ -15,25 +15,22 @@ module BlazeDispatchersModule =
     type BlazeStageGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let adjustCamera groupAddress world =
-            let avatarAddress = groupAddress @ [BlazeConstants.StageAvatarName]
-            let avatar = get world <| Entity.worldEntityLens avatarAddress
+        let adjustCamera address world =
+            let avatar = get world <| Entity.worldEntityLens (address @ [BlazeConstants.StageAvatarName])
             let camera = { world.Camera with EyeCenter = Vector2 (avatar.Position.X + avatar.Size.X * 0.5f, world.Camera.EyeCenter.Y) }
             { world with Camera = camera }
 
-        let adjustCameraHandler _ _ groupAddress message world =
-            (message, true, adjustCamera groupAddress world)
+        let adjustCameraHandler _ _ address message world =
+            (message, true, adjustCamera address world)
 
-        let moveAvatarHandler _ _ groupAddress message world =
-            let avatarAddress = groupAddress @ [BlazeConstants.StageAvatarName]
-            let avatar = get world <| Entity.worldEntityLens avatarAddress
+        let moveAvatarHandler _ _ address message world =
+            let avatar = get world <| Entity.worldEntityLens (address @ [BlazeConstants.StageAvatarName])
             let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (100.0f, 0.0f) }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
             (message, true, world')
         
-        let jumpAvatarHandler _ _ groupAddress message world =
-            let avatarAddress = groupAddress @ [BlazeConstants.StageAvatarName]
-            let avatar = get world <| Entity.worldEntityLens avatarAddress
+        let jumpAvatarHandler _ _ address message world =
+            let avatar = get world <| Entity.worldEntityLens (address @ [BlazeConstants.StageAvatarName])
             if not <| Physics.isBodyOnGround avatar.PhysicsId world.Integrator then (message, true, world)
             else
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (0.0f, 10000.0f) }

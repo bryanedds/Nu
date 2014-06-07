@@ -109,6 +109,10 @@ module Screen =
 
     let worldScreenIncomingLens address = worldScreenLens address >>| screenIncomingLens
     let worldScreenOutgoingLens address = worldScreenLens address >>| screenOutgoingLens
+
+    let withWorldScreen fn address world = withWorldSimulant worldScreenLens
+    let withWorldOptScreen fn address world = withWorldOptSimulant worldOptScreenLens
+    let tryWithWorldScreen fn address world = tryWithWorldSimulant worldOptScreenLens worldScreenLens
     
     let makeDissolveSprite () =
         { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
