@@ -95,12 +95,12 @@ module DispatchersModule =
         let handleButtonEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| worldEntityLens subscriber
+                let button = get world <| worldEntity subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     if isInBox3 mousePositionButton button.Position button.Size then
                         let button' = button.SetIsDown true
-                        let world' = set button' world <| worldEntityLens subscriber
+                        let world' = set button' world <| worldEntity subscriber
                         let (keepRunning, world'') = publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world'
                         (handleMessage message, keepRunning, world'')
                     else (message, true, world)
@@ -110,12 +110,12 @@ module DispatchersModule =
         let handleButtonEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| worldEntityLens subscriber
+                let button = get world <| worldEntity subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     let (keepRunning, world') =
                         let button' = button.SetIsDown false
-                        let world'' = set button' world <| worldEntityLens subscriber
+                        let world'' = set button' world <| worldEntity subscriber
                         publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world''
                     if keepRunning && isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
                         let (keepRunning', world'') = publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world'
@@ -246,12 +246,12 @@ module DispatchersModule =
         let handleToggleEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| worldEntityLens subscriber
+                let toggle = get world <| worldEntity subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
                     if isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle' = toggle.SetIsPressed true
-                        let world' = set toggle' world <| worldEntityLens subscriber
+                        let world' = set toggle' world <| worldEntity subscriber
                         (handleMessage message, true, world')
                     else (message, true, world)
                 else (message, true, world)
@@ -260,20 +260,20 @@ module DispatchersModule =
         let handleToggleEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| worldEntityLens subscriber
+                let toggle = get world <| worldEntity subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle' = toggle.SetIsPressed false
                     if isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
                         let toggle'' = toggle'.SetIsOn <| not toggle'.IsOn
-                        let world' = set toggle'' world <| worldEntityLens subscriber
+                        let world' = set toggle'' world <| worldEntity subscriber
                         let messageType = if toggle''.IsOn then "On" else "Off"
                         let (keepRunning, world'') = publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
                         (handleMessage message, keepRunning, world'3)
                     else
-                        let world' = set toggle' world <| worldEntityLens subscriber
+                        let world' = set toggle' world <| worldEntity subscriber
                         (message, true, world')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -327,12 +327,12 @@ module DispatchersModule =
         let handleFeelerEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
-                let feeler = get world <| worldEntityLens subscriber
+                let feeler = get world <| worldEntity subscriber
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
                     if isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler' = feeler.SetIsTouched true
-                        let world' = set feeler' world <| worldEntityLens subscriber
+                        let world' = set feeler' world <| worldEntity subscriber
                         let (keepRunning, world'') = publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world'
                         (handleMessage message, keepRunning, world'')
                     else (message, true, world)
@@ -342,10 +342,10 @@ module DispatchersModule =
         let handleFeelerEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData _ ->
-                let feeler = get world <| worldEntityLens subscriber
+                let feeler = get world <| worldEntity subscriber
                 if feeler.Enabled && feeler.Visible then
                     let feeler' = feeler.SetIsTouched false
-                    let world' = set feeler' world <| worldEntityLens subscriber
+                    let world' = set feeler' world <| worldEntity subscriber
                     let (keepRunning, world'') = publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world'
                     (handleMessage message, keepRunning, world'')
                 else (message, true, world)
@@ -467,20 +467,20 @@ module DispatchersModule =
             
         override dispatcher.PropagatePhysics (block, address, world) =
             let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
-            set block' world' <| worldEntityLens address
+            set block' world' <| worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (block, groupAddress, world) =
             let address = addrstr groupAddress block.Name
             let world' = unregisterBlockPhysics address block world
             let (block', world'') = registerBlockPhysics address block world'
-            set block' world'' <| worldEntityLens address
+            set block' world'' <| worldEntity address
 
         override dispatcher.HandleBodyTransformMessage (block, message, address, world) =
             let block' =
                 block
                     .SetPosition(message.Position - block.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation(message.Rotation)
-            set block' world <| worldEntityLens message.EntityAddress
+            set block' world <| worldEntity message.EntityAddress
             
         override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, world) =
             if not block.Visible then []
@@ -545,20 +545,20 @@ module DispatchersModule =
             
         override dispatcher.PropagatePhysics (avatar, address, world) =
             let (avatar', world') = world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
-            set avatar' world' <| worldEntityLens address
+            set avatar' world' <| worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (avatar, groupAddress, world) =
             let address = addrstr groupAddress avatar.Name
             let world' = unregisterAvatarPhysics address avatar world
             let (avatar', world'') = registerAvatarPhysics address avatar world'
-            set avatar' world'' <| worldEntityLens address
+            set avatar' world'' <| worldEntity address
 
         override dispatcher.HandleBodyTransformMessage (avatar, message, address, world) =
             let avatar' =
                 (avatar
                     .SetPosition <| message.Position - avatar.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation message.Rotation
-            set avatar' world <| worldEntityLens message.EntityAddress
+            set avatar' world <| worldEntity message.EntityAddress
 
         override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, world) =
             if not avatar.Visible then []
@@ -701,13 +701,13 @@ module DispatchersModule =
             
         override dispatcher.PropagatePhysics (tileMap, address, world) =
             let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
-            set tileMap' world' <| worldEntityLens address
+            set tileMap' world' <| worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (tileMap, groupAddress, world) =
             let address = addrstr groupAddress tileMap.Name
             let world' = unregisterTileMapPhysics address tileMap world
             let (tileMap', world'') = registerTileMapPhysics address tileMap world'
-            set tileMap' world'' <| worldEntityLens address
+            set tileMap' world'' <| worldEntity address
 
         override dispatcher.GetRenderDescriptors (tileMap, viewAbsolute, viewRelative, world) =
             if not tileMap.Visible then []
