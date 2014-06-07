@@ -37,22 +37,22 @@ module BlazeDispatchersModule =
                 let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
                 (message, true, world')
         
-        override dispatcher.Register (blazeStageGroup, address, entities, world) =
+        override dispatcher.Register (group, address, entities, world) =
             let world' =
                 world |>
                     World.subscribe NuConstants.TickEvent address (CustomSub moveAvatarHandler) |>
                     World.subscribe NuConstants.TickEvent address (CustomSub adjustCameraHandler) |>
                     World.subscribe NuConstants.DownMouseLeftEvent address (CustomSub jumpAvatarHandler)
-            let world'' = base.Register (blazeStageGroup, address, entities, world')
+            let world'' = base.Register (group, address, entities, world')
             adjustCamera address world''
 
-        override dispatcher.Unregister (blazeStageGroup, address, world) =
+        override dispatcher.Unregister (group, address, world) =
             let world' =
                 world |>
                     World.unsubscribe NuConstants.TickEvent address |>
                     World.unsubscribe NuConstants.TickEvent address |>
                     World.unsubscribe NuConstants.DownMouseLeftEvent address
-            base.Unregister (blazeStageGroup, address, world')
+            base.Unregister (group, address, world')
 
     type BlazeStageScreenDispatcher () =
         inherit ScreenDispatcher ()
