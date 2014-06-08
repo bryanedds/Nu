@@ -47,3 +47,7 @@ module Triple =
     /// Append a pair to build a triple.
     let inline append c (a, b) =
         (a, b, c)
+
+    /// Make a triple.
+    let make a b c =
+        (a, b, c)

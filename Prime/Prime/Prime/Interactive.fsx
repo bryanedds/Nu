@@ -10,6 +10,7 @@
 #load "Sectioning.fs"
 #load "Option.fs"
 #load "Either.fs"
+#load "Pair.fs"
 #load "Triple.fs"
 #load "Seq.fs"
 #load "Array.fs"
