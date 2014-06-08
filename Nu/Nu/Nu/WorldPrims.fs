@@ -1,5 +1,8 @@
 ﻿namespace Nu
 open System
+open FSharpx
+open FSharpx.Lens.Operators
+open OpenTK
 open Prime
 open Nu
 open Nu.NuCore
@@ -7,6 +10,7 @@ open Nu.NuConstants
 open Nu.NuMath
 open Nu.Audio
 open Nu.Rendering
+open Nu.Sim
 open Nu.Entity
 open Nu.Group
 open Nu.Screen
@@ -17,13 +21,291 @@ open Nu.Game
 
 module WorldPrims =
 
+    (* Entity functions. *)
+
+    let private worldOptEntityFinder (address : Address) world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
+        match optGroupMap with
+        | None -> None
+        | Some groupMap ->
+            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
+            match optEntityMap with
+            | None -> None
+            | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
+
+    let private worldEntityAdder (address : Address) world (child : Entity) =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
+        match optGroupMap with
+        | None ->
+            let entityMap = Map.singleton (List.at 2 address) child
+            let groupMap = Map.singleton (List.at 1 address) entityMap
+            { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
+        | Some groupMap ->
+            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
+            match optEntityMap with
+            | None ->
+                let entityMap = Map.singleton (List.at 2 address) child
+                let groupMap' = Map.add (List.at 1 address) entityMap groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
+            | Some entityMap ->
+                let entityMap' = Map.add (List.at 2 address) child entityMap
+                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
+
+    let private worldEntityRemover (address : Address) world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
+        match optGroupMap with
+        | None -> world
+        | Some groupMap ->
+            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
+            match optEntityMap with
+            | None -> world
+            | Some entityMap ->
+                let entityMap' = Map.remove (List.at 2 address) entityMap
+                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
+
+    let private getWorldEntityWith address world lens =
+        get (getChild worldOptEntityFinder address world) lens
+
+    let private setWorldEntityWith child address world lens =
+        let entity = getChild worldOptEntityFinder address world
+        let entity' = set child entity lens
+        setChild worldEntityAdder worldEntityRemover address world entity'
+
+    let worldEntity address =
+        { Get = fun world -> Option.get <| worldOptEntityFinder address world
+          Set = fun entity world -> worldEntityAdder address world entity }
+
+    let worldOptEntity address =
+        { Get = fun world -> worldOptEntityFinder address world
+          Set = fun optEntity world -> match optEntity with None -> worldEntityRemover address world | Some entity -> worldEntityAdder address world entity }
+
+    let worldEntities address =
+        { Get = fun world ->
+            match address with
+            | [screenStr; groupStr] ->
+                match Map.tryFind screenStr world.Entities with
+                | None -> Map.empty
+                | Some groupMap ->
+                    match Map.tryFind groupStr groupMap with
+                    | None -> Map.empty
+                    | Some entityMap -> entityMap
+            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
+          Set = fun entities world ->
+            match address with
+            | [screenStr; groupStr] ->
+                match Map.tryFind screenStr world.Entities with
+                | None -> { world with Entities = Map.add screenStr (Map.singleton groupStr entities) world.Entities }
+                | Some groupMap ->
+                    match Map.tryFind groupStr groupMap with
+                    | None -> { world with Entities = Map.add screenStr (Map.add groupStr entities groupMap) world.Entities }
+                    | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
+            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
+
+    let withEntity fn address world = withSimulant worldEntity
+    let withOptEntity fn address world = withOptSimulant worldOptEntity
+    let tryWithEntity fn address world = tryWithSimulant worldOptEntity worldEntity
+
+    let registerEntity address (entity : Entity) world =
+        entity.Register (address, world)
+
+    let unregisterEntity address world =
+        let entity = get world <| worldEntity address
+        entity.Unregister (address, world)
+
+    let removeEntity address world =
+        let world' = unregisterEntity address world
+        set None world' <| worldOptEntity address
+
+    let removeEntities address world =
+        let entities = get world <| worldEntities address
+        Map.fold
+            (fun world' entityName _ -> removeEntity (address @ [entityName]) world')
+            world
+            entities
+
+    let addEntity address entity world =
+        let world' =
+            match get world <| worldOptEntity address with
+            | None -> world
+            | Some _ -> removeEntity address world
+        let (entity', world'') = registerEntity address entity world'
+        set entity' world'' <| worldEntity address
+
+    let addEntities groupAddress entities world =
+        List.fold
+            (fun world' entity -> addEntity (addrstr groupAddress entity.Name) entity world')
+            world
+            entities
+
+    (* Group functions. *)
+
+    let private worldOptGroupFinder (address : Address) world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
+        match optGroupMap with
+        | None -> None
+        | Some groupMap -> Map.tryFind (List.at 1 address) groupMap
+
+    let private worldGroupAdder (address : Address) world child =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
+        match optGroupMap with
+        | None ->
+            { world with Groups = Map.singleton (List.at 0 address) <| Map.singleton (List.at 1 address) child }
+        | Some groupMap ->
+            let groupMap' = Map.add (List.at 1 address) child groupMap
+            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
+
+    let private worldGroupRemover (address : Address) world =
+        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
+        match optGroupMap with
+        | None -> world
+        | Some groupMap ->
+            let groupMap' = Map.remove (List.at 1 address) groupMap
+            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
+
+    let worldGroup address =
+        { Get = fun world -> Option.get <| worldOptGroupFinder address world
+          Set = fun group world -> worldGroupAdder address world group }
+
+    let worldOptGroup address =
+        { Get = fun world -> worldOptGroupFinder address world
+          Set = fun optGroup world -> match optGroup with None -> worldGroupRemover address world | Some group -> worldGroupAdder address world group }
+
+    let worldGroups address =
+        { Get = fun world ->
+            match address with
+            | [screenStr] ->
+                match Map.tryFind screenStr world.Groups with
+                | None -> Map.empty
+                | Some groupMap -> groupMap
+            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
+          Set = fun groups world ->
+            match address with
+            | [screenStr] ->
+                match Map.tryFind screenStr world.Groups with
+                | None -> { world with Groups = Map.add screenStr groups world.Groups }
+                | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
+            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
+            
+    let withGroup fn address world = withSimulant worldGroup
+    let withOptGroup fn address world = withOptSimulant worldOptGroup
+    let tryWithGroup fn address world = tryWithSimulant worldOptGroup worldGroup
+
+    let registerGroup address entities (group : Group) world =
+        group.Register (address, entities, world)
+
+    let unregisterGroup address world =
+        let group = get world <| worldGroup address
+        group.Unregister (address, world)
+
+    let removeGroup address world =
+        let world' = unregisterGroup address world
+        set None world' <| worldOptGroup address
+
+    let removeGroups address world =
+        let groups = get world <| worldGroups address
+        Map.fold
+            (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
+            world
+            groups
+
+    let addGroup address (group : Group) entities world =
+        let world' =
+            match get world <| worldOptGroup address with
+            | None -> world
+            | Some _ -> removeGroup address world
+        let world'' = registerGroup address entities group world'
+        set group world'' <| worldGroup address
+
+    let addGroups screenAddress groupDescriptors world =
+        List.fold
+            (fun world' (groupName, group, entities) -> addGroup (screenAddress @ [groupName]) group entities world')
+            world
+            groupDescriptors
+
+    (* Screen functions. *)
+    
+    let private worldOptScreenFinder (address : Address) world =
+        Map.tryFind (List.at 0 address) world.Screens
+
+    let private worldScreenAdder (address : Address) world child =
+        { world with Screens = Map.add (List.at 0 address) child world.Screens }
+
+    let private worldScreenRemover (address : Address) world =
+        { world with Screens = Map.remove (List.at 0 address) world.Screens }
+
+    let worldScreen address =
+        { Get = fun world -> Option.get <| worldOptScreenFinder address world
+          Set = fun screen world -> worldScreenAdder address world screen }
+
+    let worldOptScreen address =
+        { Get = fun world -> worldOptScreenFinder address world
+          Set = fun optScreen world -> match optScreen with None -> worldScreenRemover address world | Some screen -> worldScreenAdder address world screen }
+
+    let worldScreens address =
+        { Get = fun world ->
+            match address with
+            | [] -> world.Screens
+            | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'."
+          Set = fun screens world ->
+            match address with
+            | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
+            | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'." }
+
+    let worldScreenIncoming address = worldScreen address >>| Screen.screenIncoming
+    let worldScreenOutgoing address = worldScreen address >>| Screen.screenOutgoing
+
+    let withScreen fn address world = withSimulant worldScreen
+    let withOptScreen fn address world = withOptSimulant worldOptScreen
+    let tryWithScreen fn address world = tryWithSimulant worldOptScreen worldScreen
+
+    let registerScreen address (screen : Screen) groupDescriptors world =
+        screen.Register (address, groupDescriptors, world)
+
+    let unregisterScreen address world =
+        let screen = get world <| worldScreen address
+        screen.Unregister (address, world)
+
+    let removeScreen address world =
+        let world' = unregisterScreen address world
+        set None world' <| worldOptScreen address
+
+    let addScreen address screen groupDescriptors world =
+        let world' =
+            match get world <| worldOptScreen address with
+            | None -> world
+            | Some _ -> removeScreen address world
+        let world'' = registerScreen address screen groupDescriptors world'
+        set screen world'' <| worldScreen address
+
+    (* Game functions. *)
+
+    let worldOptSelectedScreenAddress =
+        { Get = fun world -> world.Game.OptSelectedScreenAddress
+          Set = fun value world -> { world with Game = { world.Game with OptSelectedScreenAddress = value }}}
+
+    let worldOptSelectedScreen =
+        { Get = fun world ->
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
+            match optSelectedScreenAddress with
+            | None -> None
+            | Some selectedScreenAddress -> get world <| worldOptScreen selectedScreenAddress
+          Set = fun screen world ->
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
+            match optSelectedScreenAddress with
+            | None -> failwith "Cannot set a non-existent screen."
+            | Some selectedScreenAddress -> set screen.Value world <| worldScreen selectedScreenAddress }
+
+    (* Normal functions. *)
+
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
     let initTypeConverters () =
         initMathConverters ()
         initAudioConverters ()
         initRenderConverters ()
-    
+
     /// Mark a message as handled.
     let handleMessage message =
         { Handled = true; Data = message.Data }
