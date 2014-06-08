@@ -46,13 +46,13 @@ module Sectioning =
     let inline cons head tail = head :: tail
 
     /// Sectioned addition.
-    let plus = (+)
+    let inline plus x y = x + y
 
     /// Sectioned subtraction.
-    let minus = (-)
+    let inline minus x y = x - y
 
     /// Sectioned multiplication.
-    let mul = ( * )
+    let inline mul x y = x * y
 
     /// Sectioned division.
-    let div = (/)
+    let inline div x y = x / y
