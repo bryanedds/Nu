@@ -458,13 +458,13 @@ module WorldPrims =
                     let selectedScreen' = set incoming' selectedScreen screenIncoming
                     let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
-                    if finished then
+                    if not finished then (true, world'3)
+                    else
                         publish
                             (FinishedIncomingEvent @ selectedScreenAddress)
                             selectedScreenAddress
                             { Handled = false; Data = NoData }
                             world'3
-                    else (true, world'3)
                 | OutgoingState ->
                     let selectedScreen = get world <| worldScreen selectedScreenAddress
                     let outgoing = get selectedScreen screenOutgoing
@@ -472,13 +472,13 @@ module WorldPrims =
                     let selectedScreen' = set outgoing' selectedScreen screenOutgoing
                     let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
-                    if finished then
+                    if not finished then (true, world'3)
+                    else
                         publish
                             (FinishedOutgoingEvent @ selectedScreenAddress)
                             selectedScreenAddress
                             { Handled = false; Data = NoData }
                             world'3
-                    else (true, world'3)
                 | IdlingState -> (true, world)
         if keepRunning then update world'
             else (keepRunning, world')
