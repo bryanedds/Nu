@@ -20,18 +20,6 @@ module GroupModule =
 
 module Group =
 
-    let groupId =
-        { Get = fun group -> group.Id
-          Set = fun value group -> { group with Id = value }}
-
-    let groupXtension =
-        { Get = fun group -> group.Xtension
-          Set = fun value group -> { group with Xtension = value }}
-
-    let groupXField fieldName =
-        { Get = fun (group : Group) -> (?) group fieldName
-          Set = fun value group -> (?<-) group fieldName value }
-
     let makeDefaultGroup dispatcherName =
         { Group.Id = getNuId ()
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
