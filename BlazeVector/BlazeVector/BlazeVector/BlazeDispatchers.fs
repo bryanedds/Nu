@@ -20,11 +20,11 @@ module BlazeDispatchersModule =
 
         let getAvatar groupAddress world =
             let avatarAddress = getAvatarAddress groupAddress
-            get world <| Entity.worldEntity avatarAddress
+            get world <| World.worldEntity avatarAddress
 
         let withAvatar fn groupAddress world =
             let avatarAddress = getAvatarAddress groupAddress
-            Entity.withWorldEntity fn avatarAddress world
+            World.withEntity fn avatarAddress world
 
         let adjustCamera groupAddress world =
             let avatar = getAvatar groupAddress world

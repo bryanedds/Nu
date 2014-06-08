@@ -14,10 +14,6 @@ module GameModule =
     type Game with
         member this.Register (world : World) : World = this?Register world
 
-    type GameDispatcher () =
-        abstract member Register : Game * World -> World
-        default this.Register (_, world) = world
-
 module Game =
 
     // WISDOM:
@@ -39,19 +35,3 @@ module Game =
     let gameXField fieldName =
         { Get = fun (game : Game) -> (?) game fieldName
           Set = fun value game -> (?<-) game fieldName value }
-
-    let worldOptSelectedScreenAddress =
-        { Get = fun world -> world.Game.OptSelectedScreenAddress
-          Set = fun value world -> { world with Game = { world.Game with OptSelectedScreenAddress = value }}}
-
-    let worldOptSelectedScreen =
-        { Get = fun world ->
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
-            match optSelectedScreenAddress with
-            | None -> None
-            | Some selectedScreenAddress -> get world <| worldOptScreen selectedScreenAddress
-          Set = fun screen world ->
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
-            match optSelectedScreenAddress with
-            | None -> failwith "Cannot set a non-existent screen."
-            | Some selectedScreenAddress -> set screen.Value world <| worldScreen selectedScreenAddress }

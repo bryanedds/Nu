@@ -34,6 +34,48 @@ open Nu.WorldPrims
 module World =
 
     (* Function forwarding for WorldPrims in lieu of an F# export feature. *)
+
+    // Entity forwarders.
+    let worldEntity = worldEntity
+    let worldOptEntity = worldOptEntity
+    let worldEntities = worldEntities
+    let withEntity = withEntity
+    let withOptEntity = withOptEntity
+    let tryWithEntity = tryWithEntity
+    let registerEntity = registerEntity
+    let unregisterEntity = unregisterEntity
+    let removeEntity = removeEntity
+    let removeEntities = removeEntities
+    let addEntity = addEntity
+    let addEntities = addEntities
+    
+    // Group forwarders.
+    let worldGroup = worldGroup
+    let worldOptGroup = worldOptGroup
+    let worldGroups = worldGroups
+    let withGroup = withGroup
+    let withOptGroup = withOptGroup
+    let tryWithGroup = tryWithGroup
+    let registerGroup = registerGroup
+    let unregisterGroup = unregisterGroup
+    let removeGroup = removeGroup
+    let removeGroups = removeGroups
+    let addGroup = addGroup
+    let addGroups = addGroups
+    
+    // Screen forwarders.
+    let worldScreen = worldScreen
+    let worldOptScreen = worldOptScreen
+    let worldScreens = worldScreens
+    let withScreen = withScreen
+    let withOptScreen = withOptScreen
+    let tryWithScreen = tryWithScreen
+    let registerScreen = registerScreen
+    let unregisterScreen = unregisterScreen
+    let removeScreen = removeScreen
+    let addScreen = addScreen
+    
+    // Other forwarders.
     let handleEventAsExit = handleEventAsExit
     let handleEventAsScreenTransition = handleEventAsScreenTransition
     let handleEventAsSwallow = handleEventAsSwallow
@@ -44,6 +86,8 @@ module World =
     let transitionScreen = transitionScreen
     let unsubscribe = unsubscribe
     let withSubscription = withSubscription
+
+    (* Normal functions. *)
 
     let activateGameDispatcher assemblyFileName gameDispatcherFullName world =
         let assembly = Assembly.LoadFrom assemblyFileName
@@ -71,7 +115,7 @@ module World =
         document.Load fileName
         let rootNode = document.["Root"]
         let groupNode = rootNode.["Group"]
-        readGroupFromXml groupNode seal world
+        readGroupFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name seal world
 
     let private play world =
         let audioMessages = world.AudioMessages
@@ -192,8 +236,8 @@ module World =
         run4 tryCreateWorld handleUpdate id sdlConfig
 
     let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite seal world =
-        let splashScreen = makeDissolveScreen screenDispatcherName incomingTime outgoingTime
-        let splashGroup = makeDefaultGroup ()
+        let splashScreen = makeDissolveScreen screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
+        let splashGroup = makeDefaultGroup typeof<GroupDispatcher>.Name
         let splashLabel = makeDefaultEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") seal world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
@@ -203,7 +247,7 @@ module World =
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
-        let screen = makeDissolveScreen screenDispatcherName incomingTime outgoingTime
+        let screen = makeDissolveScreen screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let (group, entities) = loadGroupFile groupFileName seal world
         addScreen screenAddress screen [(groupName, group, entities)] world
 

@@ -45,48 +45,6 @@ module EntityModule =
         member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world
         member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative world
 
-    type EntityDispatcher () =
-
-        abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default this.Init (entity, dispatcherContainer) = entity
-
-        abstract member Register : Entity * Address * World -> Entity * World
-        default this.Register (entity, address, world) = (entity, world)
-
-        abstract member Unregister : Entity * Address * World -> World
-        default this.Unregister (entity, address, world) = world
-
-    type Entity2dDispatcher () =
-        inherit EntityDispatcher ()
-            
-        override this.Init (entity2d, dispatcherContainer) =
-            let entity2d' = base.Init (entity2d, dispatcherContainer)
-            // perhaps a nice 'with' syntax macro would work better here -
-            // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
-            entity2d'
-                .SetPosition(Vector2.Zero)
-                .SetDepth(0.0f)
-                .SetSize(DefaultEntitySize)
-                .SetRotation(0.0f)
-
-        abstract member PropagatePhysics : Entity * Address * World -> World
-        default this.PropagatePhysics (entity, address, world) = world
-
-        abstract member ReregisterPhysicsHack : Entity * Address * World -> World
-        default this.ReregisterPhysicsHack (entity, groupAddress, world) = world
-
-        abstract member HandleBodyTransformMessage : Entity * BodyTransformMessage * Address * World -> World
-        default this.HandleBodyTransformMessage (entity, message, address, world) = world
-
-        abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
-        default this.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) = []
-
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (entity, world) = DefaultEntitySize
-
-        abstract member IsTransformRelative : Entity * World -> bool
-        default this.IsTransformRelative (entity, world) = true
-
 module Entity =
 
     let entityId =
@@ -128,90 +86,6 @@ module Entity =
     let entitySize =
         { Get = fun (entity : Entity) -> entity.Size
           Set = fun value entity -> entity.SetSize value }
-
-    let private worldOptEntityFinder (address : Address) world =
-        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
-        match optGroupMap with
-        | None -> None
-        | Some groupMap ->
-            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
-            match optEntityMap with
-            | None -> None
-            | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
-
-    let private worldEntityAdder (address : Address) world (child : Entity) =
-        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
-        match optGroupMap with
-        | None ->
-            let entityMap = Map.singleton (List.at 2 address) child
-            let groupMap = Map.singleton (List.at 1 address) entityMap
-            { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
-        | Some groupMap ->
-            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
-            match optEntityMap with
-            | None ->
-                let entityMap = Map.singleton (List.at 2 address) child
-                let groupMap' = Map.add (List.at 1 address) entityMap groupMap
-                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
-            | Some entityMap ->
-                let entityMap' = Map.add (List.at 2 address) child entityMap
-                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
-                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
-
-    let private worldEntityRemover (address : Address) world =
-        let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
-        match optGroupMap with
-        | None -> world
-        | Some groupMap ->
-            let optEntityMap = Map.tryFind (List.at 1 address) groupMap
-            match optEntityMap with
-            | None -> world
-            | Some entityMap ->
-                let entityMap' = Map.remove (List.at 2 address) entityMap
-                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
-                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
-
-    let private getWorldEntityWith address world lens =
-        get (getChild worldOptEntityFinder address world) lens
-
-    let private setWorldEntityWith child address world lens =
-        let entity = getChild worldOptEntityFinder address world
-        let entity' = set child entity lens
-        setChild worldEntityAdder worldEntityRemover address world entity'
-
-    let worldEntity address =
-        { Get = fun world -> Option.get <| worldOptEntityFinder address world
-          Set = fun entity world -> worldEntityAdder address world entity }
-
-    let worldOptEntity address =
-        { Get = fun world -> worldOptEntityFinder address world
-          Set = fun optEntity world -> match optEntity with None -> worldEntityRemover address world | Some entity -> worldEntityAdder address world entity }
-
-    let worldEntities address =
-        { Get = fun world ->
-            match address with
-            | [screenStr; groupStr] ->
-                match Map.tryFind screenStr world.Entities with
-                | None -> Map.empty
-                | Some groupMap ->
-                    match Map.tryFind groupStr groupMap with
-                    | None -> Map.empty
-                    | Some entityMap -> entityMap
-            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
-          Set = fun entities world ->
-            match address with
-            | [screenStr; groupStr] ->
-                match Map.tryFind screenStr world.Entities with
-                | None -> { world with Entities = Map.add screenStr (Map.singleton groupStr entities) world.Entities }
-                | Some groupMap ->
-                    match Map.tryFind groupStr groupMap with
-                    | None -> { world with Entities = Map.add screenStr (Map.add groupStr entities groupMap) world.Entities }
-                    | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
-            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
-
-    let withWorldEntity fn address world = withWorldSimulant worldEntity
-    let withWorldOptEntity fn address world = withWorldOptSimulant worldOptEntity
-    let tryWithWorldEntity fn address world = tryWithWorldSimulant worldOptEntity worldEntity
 
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =
@@ -308,45 +182,13 @@ module Entity =
             let entity' = entity.Init dispatcherContainer
             { entity' with Xtension = { entity'.Xtension with Sealed = seal }}
 
-    let registerEntity address (entity : Entity) world =
-        entity.Register (address, world)
-
-    let unregisterEntity address world =
-        let entity = get world <| worldEntity address
-        entity.Unregister (address, world)
-
-    let removeEntity address world =
-        let world' = unregisterEntity address world
-        set None world' <| worldOptEntity address
-
-    let removeEntities address world =
-        let entities = get world <| worldEntities address
-        Map.fold
-            (fun world' entityName _ -> removeEntity (address @ [entityName]) world')
-            world
-            entities
-
-    let addEntity address entity world =
-        let world' =
-            match get world <| worldOptEntity address with
-            | None -> world
-            | Some _ -> removeEntity address world
-        let (entity', world'') = registerEntity address entity world'
-        set entity' world'' <| worldEntity address
-
-    let addEntities groupAddress entities world =
-        List.fold
-            (fun world' entity -> addEntity (addrstr groupAddress entity.Name) entity world')
-            world
-            entities
-
     let writeEntityToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name
         Xtension.writePropertiesToXmlWriter writer entity
         writer.WriteEndElement ()
 
-    let readEntityFromXml (entityNode : XmlNode) seal (world : World) =
-        let entity = makeDefaultEntity typeof<EntityDispatcher>.Name None seal world
+    let readEntityFromXml (entityNode : XmlNode) defaultDispatcherName seal (world : World) =
+        let entity = makeDefaultEntity defaultDispatcherName None seal world
         Xtension.readProperties entityNode entity
         entity
 

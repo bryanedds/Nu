@@ -89,6 +89,48 @@ module DispatchersModule =
         [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
         member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
 
+    type EntityDispatcher () =
+
+        abstract member Init : Entity * IXDispatcherContainer -> Entity
+        default this.Init (entity, dispatcherContainer) = entity
+
+        abstract member Register : Entity * Address * World -> Entity * World
+        default this.Register (entity, address, world) = (entity, world)
+
+        abstract member Unregister : Entity * Address * World -> World
+        default this.Unregister (entity, address, world) = world
+
+    type Entity2dDispatcher () =
+        inherit EntityDispatcher ()
+            
+        override this.Init (entity2d, dispatcherContainer) =
+            let entity2d' = base.Init (entity2d, dispatcherContainer)
+            // perhaps a nice 'with' syntax macro would work better here -
+            // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
+            entity2d'
+                .SetPosition(Vector2.Zero)
+                .SetDepth(0.0f)
+                .SetSize(DefaultEntitySize)
+                .SetRotation(0.0f)
+
+        abstract member PropagatePhysics : Entity * Address * World -> World
+        default this.PropagatePhysics (entity, address, world) = world
+
+        abstract member ReregisterPhysicsHack : Entity * Address * World -> World
+        default this.ReregisterPhysicsHack (entity, groupAddress, world) = world
+
+        abstract member HandleBodyTransformMessage : Entity * BodyTransformMessage * Address * World -> World
+        default this.HandleBodyTransformMessage (entity, message, address, world) = world
+
+        abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
+        default this.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) = []
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default this.GetQuickSize (entity, world) = DefaultEntitySize
+
+        abstract member IsTransformRelative : Entity * World -> bool
+        default this.IsTransformRelative (entity, world) = true
+
     type ButtonDispatcher () =
         inherit Entity2dDispatcher ()
 
@@ -744,3 +786,26 @@ module DispatchersModule =
             match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
             | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
+
+    type GroupDispatcher () =
+        
+        abstract member Register : Group * Address * Entity list * World -> World
+        default this.Register (_, address, entities, world) = addEntities address entities world
+
+        abstract member Unregister : Group * Address * World -> World
+        default this.Unregister (_, address, world) = removeEntities address world
+
+    type TransitionDispatcher () =
+        class end
+
+    type ScreenDispatcher () =
+
+        abstract member Register : Screen * Address * GroupDescriptor list * World -> World
+        default this.Register (_, address, groupDescriptors, world) = addGroups address groupDescriptors world
+
+        abstract member Unregister : Screen * Address * World -> World
+        default this.Unregister (_, address, world) = removeGroups address world
+
+    type GameDispatcher () =
+        abstract member Register : Game * World -> World
+        default this.Register (_, world) = world
