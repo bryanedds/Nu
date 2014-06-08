@@ -103,9 +103,14 @@ module WorldPrims =
                     | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
-    let withEntity fn address world = withSimulant worldEntity
-    let withOptEntity fn address world = withOptSimulant worldOptEntity
-    let tryWithEntity fn address world = tryWithSimulant worldOptEntity worldEntity
+    let withEntity fn address world = withSimulant worldEntity fn address world
+    let withEntityAndWorld fn address world = withSimulantAndWorld worldEntity fn address world
+
+    let withOptEntity fn address world = withOptSimulant worldOptEntity fn address world
+    let withOptEntityAndWorld fn address world = withOptSimulantAndWorld worldOptEntity fn address world
+
+    let tryWithEntity fn address world = tryWithSimulant worldOptEntity worldEntity fn address world
+    let tryWithEntityAndWorld fn address world = tryWithSimulantAndWorld worldOptEntity worldEntity fn address world
 
     let registerEntity address (entity : Entity) world =
         entity.Register (address, world)
@@ -187,10 +192,15 @@ module WorldPrims =
                 | None -> { world with Groups = Map.add screenStr groups world.Groups }
                 | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
-            
-    let withGroup fn address world = withSimulant worldGroup
-    let withOptGroup fn address world = withOptSimulant worldOptGroup
-    let tryWithGroup fn address world = tryWithSimulant worldOptGroup worldGroup
+
+    let withGroup fn address world = withSimulant worldGroup fn address world
+    let withGroupAndWorld fn address world = withSimulantAndWorld worldGroup fn address world
+
+    let withOptGroup fn address world = withOptSimulant worldOptGroup fn address world
+    let withOptGroupAndWorld fn address world = withOptSimulantAndWorld worldOptGroup fn address world
+
+    let tryWithGroup fn address world = tryWithSimulant worldOptGroup worldGroup fn address world
+    let tryWithGroupAndWorld fn address world = tryWithSimulantAndWorld worldOptGroup worldGroup fn address world
 
     let registerGroup address entities (group : Group) world =
         group.Register (address, entities, world)
@@ -256,9 +266,14 @@ module WorldPrims =
     let worldScreenIncoming address = worldScreen address >>| Screen.screenIncoming
     let worldScreenOutgoing address = worldScreen address >>| Screen.screenOutgoing
 
-    let withScreen fn address world = withSimulant worldScreen
-    let withOptScreen fn address world = withOptSimulant worldOptScreen
-    let tryWithScreen fn address world = tryWithSimulant worldOptScreen worldScreen
+    let withScreen fn address world = withSimulant worldScreen fn address world
+    let withScreenAndWorld fn address world = withSimulantAndWorld worldScreen fn address world
+
+    let withOptScreen fn address world = withOptSimulant worldOptScreen fn address world
+    let withOptScreenAndWorld fn address world = withOptSimulantAndWorld worldOptScreen fn address world
+
+    let tryWithScreen fn address world = tryWithSimulant worldOptScreen worldScreen fn address world
+    let tryWithScreenAndWorld fn address world = tryWithSimulantAndWorld worldOptScreen worldScreen fn address world
 
     let registerScreen address (screen : Screen) groupDescriptors world =
         screen.Register (address, groupDescriptors, world)
@@ -400,15 +415,12 @@ module WorldPrims =
     and handleEventAsExit message (world : World) =
         (handleMessage message, false, world)
 
-    // TODO: consider turning this into a lens, and removing the screenState
     and private getScreenState address world =
         let screen = get world <| worldScreen address
-        get screen screenState
+        screen.State
 
-    // TODO: consider turning this into a lens, and removing the screenState
     and private setScreenState address state world =
-        let screen = set state (get world <| worldScreen address) screenState
-        let world' = set screen world <| worldScreen address
+        let world' = withScreen (fun screen -> { screen with State = state }) address world
         match state with
         | IdlingState ->
             world' |>
