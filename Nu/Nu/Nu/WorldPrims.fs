@@ -31,9 +31,9 @@ module WorldPrims =
     let private getSimulant address world =
         match address with
         | [] -> Game <| world.Game
-        | [_] as screenAddress -> Screen <| get world (worldScreen screenAddress)
-        | [_; _] as groupAddress -> Group <| get world (worldGroup groupAddress)
-        | [_; _; _] as entityAddress -> Entity <| get world (worldEntity entityAddress)
+        | [_] as screenAddress -> Screen <| get world -<| worldScreen screenAddress
+        | [_; _] as groupAddress -> Group <| get world -<| worldGroup groupAddress
+        | [_; _; _] as entityAddress -> Entity <| get world -<| worldEntity entityAddress
         | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
     let private getSubscribedSimulants subscriptions world =
@@ -189,7 +189,7 @@ module WorldPrims =
     and private handleSplashScreenIdleTick idlingTime ticks event publisher subscriber message world =
         let world' = unsubscribe event subscriber world
         if ticks < idlingTime then
-            let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime (ticks + 1)
+            let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incI ticks
             let world'' = subscribe event subscriber subscription world'
             (message, true, world'')
         else

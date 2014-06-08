@@ -15,22 +15,33 @@ module BlazeDispatchersModule =
     type BlazeStageGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let adjustCamera address world =
-            let avatar = get world <| Entity.worldEntity (address @ [BlazeConstants.StageAvatarName])
-            let camera = { world.Camera with EyeCenter = Vector2 (avatar.Position.X + avatar.Size.X * 0.5f, world.Camera.EyeCenter.Y) }
-            { world with Camera = camera }
+        let getAvatarAddress groupAddress =
+            groupAddress @ [BlazeConstants.StageAvatarName]
+            
+        let getAvatar groupAddress world =
+            let avatarAddress = getAvatarAddress groupAddress
+            get world <| Entity.worldEntity avatarAddress
 
-        let adjustCameraHandler _ _ address message world =
-            (message, true, adjustCamera address world)
+        let withAvatar fn groupAddress world =
+            let avatarAddress = getAvatarAddress groupAddress
+            Entity.withWorldEntity fn avatarAddress world
 
-        let moveAvatarHandler _ _ address message world =
-            let avatar = get world <| Entity.worldEntity (address @ [BlazeConstants.StageAvatarName])
+        let adjustCamera groupAddress world =
+            let avatar = getAvatar groupAddress world
+            let eyeCenter = Vector2 (avatar.Position.X + avatar.Size.X * 0.5f, world.Camera.EyeCenter.Y)
+            { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
+
+        let adjustCameraHandler _ _ groupAddress message world =
+            (message, true, adjustCamera groupAddress world)
+
+        let moveAvatarHandler _ _ groupAddress message world =
+            let avatar = getAvatar groupAddress world
             let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (100.0f, 0.0f) }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
             (message, true, world')
         
-        let jumpAvatarHandler _ _ address message world =
-            let avatar = get world <| Entity.worldEntity (address @ [BlazeConstants.StageAvatarName])
+        let jumpAvatarHandler _ _ groupAddress message world =
+            let avatar = getAvatar groupAddress world
             if not <| Physics.isBodyOnGround avatar.PhysicsId world.Integrator then (message, true, world)
             else
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (0.0f, 10000.0f) }
@@ -40,9 +51,9 @@ module BlazeDispatchersModule =
         override dispatcher.Register (group, address, entities, world) =
             let world' =
                 world |>
-                    World.subscribe NuConstants.TickEvent address (CustomSub moveAvatarHandler) |>
-                    World.subscribe NuConstants.TickEvent address (CustomSub adjustCameraHandler) |>
-                    World.subscribe NuConstants.DownMouseLeftEvent address (CustomSub jumpAvatarHandler)
+                    World.subscribe NuConstants.TickEvent address -<| CustomSub moveAvatarHandler |>
+                    World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler |>
+                    World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub jumpAvatarHandler
             let world'' = base.Register (group, address, entities, world')
             adjustCamera address world''
 

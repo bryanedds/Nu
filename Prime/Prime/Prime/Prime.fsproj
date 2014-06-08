@@ -60,6 +60,7 @@
     <Compile Include="Sectioning.fs" />
     <Compile Include="Option.fs" />
     <Compile Include="Either.fs" />
+    <Compile Include="Pair.fs" />
     <Compile Include="Triple.fs" />
     <Compile Include="Seq.fs" />
     <Compile Include="Array.fs" />

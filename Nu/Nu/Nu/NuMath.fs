@@ -135,7 +135,7 @@ module NuMathModule =
             { Matrix3.identity with M00 = m.M00; M11 = m.M11; M22 = m.M22 }
 
         static member getTranslationAndScaleMatrix m =
-            Matrix3.getScaleMatrix m |> Matrix3.setTranslation (Matrix3.getTranslation m)
+            Matrix3.setTranslation <| Matrix3.getTranslation m <| Matrix3.getScaleMatrix m
 
         /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
         /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
@@ -199,10 +199,15 @@ module NuMath =
             div * offset + rem'
 
     let snapR offset value =
-        DegreesToRadiansF * single (snap offset (int <| value * RadiansToDegreesF))
+        value |>
+            mul RadiansToDegreesF |>
+            int |>
+            snap offset |>
+            single |>
+            mul DegreesToRadiansF
 
     let snapF offset (value : single) =
-        single <| snap offset (int value)
+        single <| snap offset -<| int value
 
     let snap2F offset (v2 : Vector2) =
         Vector2 (snapF offset v2.X, snapF offset v2.Y)
