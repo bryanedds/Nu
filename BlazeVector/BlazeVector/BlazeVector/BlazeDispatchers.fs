@@ -17,7 +17,7 @@ module BlazeDispatchersModule =
 
         let getAvatarAddress groupAddress =
             groupAddress @ [BlazeConstants.StageAvatarName]
-            
+
         let getAvatar groupAddress world =
             let avatarAddress = getAvatarAddress groupAddress
             get world <| Entity.worldEntity avatarAddress
@@ -39,7 +39,7 @@ module BlazeDispatchersModule =
             let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (100.0f, 0.0f) }
             let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
             (message, true, world')
-        
+
         let jumpAvatarHandler _ _ groupAddress message world =
             let avatar = getAvatar groupAddress world
             if not <| Physics.isBodyOnGround avatar.PhysicsId world.Integrator then (message, true, world)
@@ -47,13 +47,13 @@ module BlazeDispatchersModule =
                 let applyImpulseMessage = { PhysicsId = avatar.PhysicsId; Impulse = Vector2 (0.0f, 10000.0f) }
                 let world' = { world with PhysicsMessages = ApplyImpulseMessage applyImpulseMessage :: world.PhysicsMessages }
                 (message, true, world')
-        
+
         override dispatcher.Register (group, address, entities, world) =
             let world' =
                 world |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub moveAvatarHandler |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler |>
-                World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub jumpAvatarHandler
+                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpAvatarHandler
             let world'' = base.Register (group, address, entities, world')
             adjustCamera address world''
 
@@ -82,7 +82,7 @@ module BlazeDispatchersModule =
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeGameDispatcher () =
         inherit GameDispatcher ()
-        
+
         override dispatcher.Register (blazeGame, world) =
 
             // add the BlazeVector-specific dispatchers to the world
