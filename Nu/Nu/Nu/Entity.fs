@@ -47,46 +47,6 @@ module EntityModule =
 
 module Entity =
 
-    let entityId =
-        { Get = fun entity -> entity.Id
-          Set = fun value entity -> { entity with Id = value }}
-
-    let entityName =
-        { Get = fun entity -> entity.Name
-          Set = fun value entity -> { entity with Name = value }}
-
-    let entityEnabled =
-        { Get = fun entity -> entity.Enabled
-          Set = fun value entity -> { entity with Enabled = value }}
-
-    let entityVisible =
-        { Get = fun entity -> entity.Visible
-          Set = fun value entity -> { entity with Visible = value }}
-
-    let entityXtension =
-        { Get = fun entity -> entity.Xtension
-          Set = fun value entity -> { entity with Xtension = value }}
-
-    let entityXField fieldName =
-        { Get = fun entity -> (?) (entity : Entity) fieldName
-          Set = fun value entity -> (?<-) entity fieldName value }
-
-    let entityPosition =
-        { Get = fun (entity : Entity) -> entity.Position
-          Set = fun value entity -> entity.SetPosition value }
-
-    let entityDepth =
-        { Get = fun (entity : Entity) -> entity.Depth
-          Set = fun value entity -> entity.SetDepth value }
-
-    let entityRotation =
-        { Get = fun (entity : Entity) -> entity.Rotation
-          Set = fun value entity -> entity.SetRotation value }
-
-    let entitySize =
-        { Get = fun (entity : Entity) -> entity.Size
-          Set = fun value entity -> entity.SetSize value }
-
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =
             Vector2 (
@@ -100,23 +60,19 @@ module Entity =
         let positionEntity = positionScreen * view
         positionEntity
 
-    // TODO: turn into a lens
     let getEntityPosition (entity : Entity) =
         entity.Position
 
-    // TODO: turn into a lens
     let setEntityPosition snap position (entity : Entity) =
         let position' = snap2F snap position
         entity.SetPosition position'
 
-    // TODO: turn into a lens
     let getEntityTransform (entity : Entity) =
         { Transform.Position = entity.Position
           Depth = entity.Depth
           Size = entity.Size
           Rotation = entity.Rotation }
 
-    // TODO: turn into a lens
     let setEntityTransform positionSnap rotationSnap transform (entity : Entity) =
         let transform' = snapTransform positionSnap rotationSnap transform
         entity
