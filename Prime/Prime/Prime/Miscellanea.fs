@@ -10,6 +10,9 @@ open System.Reflection
 [<AutoOpen>]
 module Miscellanea =
 
+    /// Right-associative <| operator.
+    let (-<|) a b = a b
+
     /// The tautology function.
     /// No matter what you pass it, it returns true.
     let inline tautology _ = true
