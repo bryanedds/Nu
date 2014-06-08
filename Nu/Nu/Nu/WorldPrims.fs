@@ -296,9 +296,12 @@ module WorldPrims =
 
     (* Game functions. *)
 
+    let worldGame =
+        { Get = fun world -> world.Game
+          Set = fun game world -> { world with Game = game }}
+
     let worldOptSelectedScreenAddress =
-        { Get = fun world -> world.Game.OptSelectedScreenAddress
-          Set = fun value world -> { world with Game = { world.Game with OptSelectedScreenAddress = value }}}
+        worldGame >>| Game.gameOptSelectedScreenAddress
 
     let worldOptSelectedScreen =
         { Get = fun world ->

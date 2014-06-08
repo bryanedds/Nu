@@ -16,4 +16,6 @@ module GameModule =
 
 module Game =
 
-    let _ = () // nothing in this module
+    let gameOptSelectedScreenAddress =
+        { Get = fun game -> game.OptSelectedScreenAddress
+          Set = fun value game -> { game with OptSelectedScreenAddress = value }}

@@ -275,7 +275,6 @@ module World =
                       typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                       typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                       gameDispatcherName, gameDispatcher|]
-            
             let world =
                 { Game = { Id = getNuId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty
