@@ -18,14 +18,6 @@ module GroupModule =
         member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
-    type GroupDispatcher () =
-        
-        abstract member Register : Group * Address * Entity list * World -> World
-        default this.Register (_, address, entities, world) = addEntities address entities world
-
-        abstract member Unregister : Group * Address * World -> World
-        default this.Unregister (_, address, world) = removeEntities address world
-
 module Group =
 
     let groupId =
@@ -40,92 +32,9 @@ module Group =
         { Get = fun (group : Group) -> (?) group fieldName
           Set = fun value group -> (?<-) group fieldName value }
 
-    let private worldOptGroupFinder (address : Address) world =
-        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
-        match optGroupMap with
-        | None -> None
-        | Some groupMap -> Map.tryFind (List.at 1 address) groupMap
-
-    let private worldGroupAdder (address : Address) world child =
-        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
-        match optGroupMap with
-        | None ->
-            { world with Groups = Map.singleton (List.at 0 address) <| Map.singleton (List.at 1 address) child }
-        | Some groupMap ->
-            let groupMap' = Map.add (List.at 1 address) child groupMap
-            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
-
-    let private worldGroupRemover (address : Address) world =
-        let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
-        match optGroupMap with
-        | None -> world
-        | Some groupMap ->
-            let groupMap' = Map.remove (List.at 1 address) groupMap
-            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
-
-    let worldGroup address =
-        { Get = fun world -> Option.get <| worldOptGroupFinder address world
-          Set = fun group world -> worldGroupAdder address world group }
-
-    let worldOptGroup address =
-        { Get = fun world -> worldOptGroupFinder address world
-          Set = fun optGroup world -> match optGroup with None -> worldGroupRemover address world | Some group -> worldGroupAdder address world group }
-
-    let worldGroups address =
-        { Get = fun world ->
-            match address with
-            | [screenStr] ->
-                match Map.tryFind screenStr world.Groups with
-                | None -> Map.empty
-                | Some groupMap -> groupMap
-            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
-          Set = fun groups world ->
-            match address with
-            | [screenStr] ->
-                match Map.tryFind screenStr world.Groups with
-                | None -> { world with Groups = Map.add screenStr groups world.Groups }
-                | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
-            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
-            
-    let withWorldGroup fn address world = withWorldSimulant worldGroup
-    let withWorldOptGroup fn address world = withWorldOptSimulant worldOptGroup
-    let tryWithWorldGroup fn address world = tryWithWorldSimulant worldOptGroup worldGroup
-
-    let makeDefaultGroup () =
+    let makeDefaultGroup dispatcherName =
         { Group.Id = getNuId ()
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some typeof<GroupDispatcher>.Name; CanDefault = true; Sealed = false }}
-
-    let registerGroup address entities (group : Group) world =
-        group.Register (address, entities, world)
-
-    let unregisterGroup address world =
-        let group = get world <| worldGroup address
-        group.Unregister (address, world)
-
-    let removeGroup address world =
-        let world' = unregisterGroup address world
-        set None world' <| worldOptGroup address
-
-    let removeGroups address world =
-        let groups = get world <| worldGroups address
-        Map.fold
-            (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
-            world
-            groups
-
-    let addGroup address (group : Group) entities world =
-        let world' =
-            match get world <| worldOptGroup address with
-            | None -> world
-            | Some _ -> removeGroup address world
-        let world'' = registerGroup address entities group world'
-        set group world'' <| worldGroup address
-
-    let addGroups screenAddress groupDescriptors world =
-        List.fold
-            (fun world' (groupName, group, entities) -> addGroup (screenAddress @ [groupName]) group entities world')
-            world
-            groupDescriptors
+          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<string, Entity>) =
         for entityKvp in entities do
@@ -136,16 +45,16 @@ module Group =
         Xtension.writePropertiesToXmlWriter writer group
         writeGroupEntitiesToXml writer entities
 
-    let readEntitiesFromXml (groupNode : XmlNode) seal world =
+    let readEntitiesFromXml (groupNode : XmlNode) defaultDispatcherName seal world =
         let entityNodes = groupNode.SelectNodes "Entity"
         let entities =
             Seq.map
-                (fun entityNode -> readEntityFromXml entityNode seal world)
+                (fun entityNode -> readEntityFromXml entityNode defaultDispatcherName seal world)
                 (enumerable entityNodes)
         Seq.toList entities
 
-    let readGroupFromXml (groupNode : XmlNode) seal world =
-        let group = makeDefaultGroup ()
-        let entities = readEntitiesFromXml (groupNode : XmlNode) seal world
+    let readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName seal world =
+        let group = makeDefaultGroup defaultDispatcherName
+        let entities = readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName seal world
         Xtension.readProperties groupNode group
         (group, entities)

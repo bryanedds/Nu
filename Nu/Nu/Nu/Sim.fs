@@ -214,17 +214,17 @@ module Sim =
     let setChild childAdder childRemover address parent child =
         setOptChild childAdder childRemover address parent (Some child)
 
-    let withWorldSimulant worldSimulantLens fn address (world : World) =
+    let withSimulant worldSimulantLens fn address (world : World) =
         let simulant = get world <| worldSimulantLens address
         let (simulant', world') = fn address simulant world
         set simulant' world' <| worldSimulantLens address
 
-    let withWorldOptSimulant worldOptSimulantLens fn address (world : World) =
+    let withOptSimulant worldOptSimulantLens fn address (world : World) =
         let optSimulant = get world <| worldOptSimulantLens address
         let (optSimulant', world') = fn address optSimulant world
         set optSimulant' world' <| worldOptSimulantLens address
 
-    let tryWithWorldSimulant worldOptSimulantLens worldSimulantLens fn address (world : World) =
+    let tryWithSimulant worldOptSimulantLens worldSimulantLens fn address (world : World) =
         let optSimulant = get world <| worldOptSimulantLens address
         match optSimulant with
         | None -> world
