@@ -51,27 +51,29 @@ module BlazeDispatchersModule =
         override dispatcher.Register (group, address, entities, world) =
             let world' =
                 world |>
-                    World.subscribe NuConstants.TickEvent address -<| CustomSub moveAvatarHandler |>
-                    World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler |>
-                    World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub jumpAvatarHandler
+                World.subscribe NuConstants.TickEvent address -<| CustomSub moveAvatarHandler |>
+                World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler |>
+                World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub jumpAvatarHandler
             let world'' = base.Register (group, address, entities, world')
             adjustCamera address world''
 
         override dispatcher.Unregister (group, address, world) =
             let world' =
                 world |>
-                    World.unsubscribe NuConstants.TickEvent address |>
-                    World.unsubscribe NuConstants.TickEvent address |>
-                    World.unsubscribe NuConstants.DownMouseLeftEvent address
+                World.unsubscribe NuConstants.TickEvent address |>
+                World.unsubscribe NuConstants.TickEvent address |>
+                World.unsubscribe NuConstants.DownMouseLeftEvent address
             base.Unregister (group, address, world')
 
     type BlazeStageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
         override dispatcher.Register (screen, address, groupDescriptors, world) =
-            let stagePlay = Triple.prepend BlazeConstants.StagePlayName <| World.loadGroupFile BlazeConstants.StagePlayFileName true world
-            let section0 = Triple.prepend BlazeConstants.Section0Name <| World.loadGroupFile BlazeConstants.Section0FileName true world
-            let groupDescriptors' = stagePlay :: section0 :: groupDescriptors
+            let stagePlayGroup = World.loadGroupFile BlazeConstants.StagePlayFileName true world
+            let section0Group = World.loadGroupFile BlazeConstants.Section0FileName true world
+            let stagePlayGroupDescriptor = Triple.prepend BlazeConstants.StagePlayName stagePlayGroup
+            let section0GroupDescriptor = Triple.prepend BlazeConstants.Section0Name section0Group
+            let groupDescriptors' = stagePlayGroupDescriptor :: section0GroupDescriptor :: groupDescriptors
             base.Register (screen, address, groupDescriptors', world)
 
         override dispatcher.Unregister (screen, address, world) =
