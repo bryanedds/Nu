@@ -28,7 +28,7 @@ module Screen =
     let screenOutgoing =
         { Get = fun screen -> screen.Outgoing
           Set = fun value screen -> { screen with Outgoing = value }}
-    
+
     let makeDissolveSprite () =
         { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
