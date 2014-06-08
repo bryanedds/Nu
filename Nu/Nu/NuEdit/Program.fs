@@ -201,7 +201,7 @@ module Program =
             if form.interactButton.Checked then (message, true, world)
             else
                 let group = get world <| worldGroup EditorGroupAddress
-                let entities = Map.toValueList <| get world (worldEntities EditorGroupAddress)
+                let entities = Map.toValueList <| get world -<| worldEntities EditorGroupAddress
                 let mousePosition = world.MouseState.MousePosition
                 let optPicked = tryPickEntity mousePosition entities world
                 match optPicked with

@@ -137,8 +137,8 @@ module DispatchersModule =
         override dispatcher.Register (button, address, world) =
             let world' =
                 world |>
-                    subscribe DownMouseLeftEvent address (CustomSub handleButtonEventDownMouseLeft) |>
-                    subscribe UpMouseLeftEvent address (CustomSub handleButtonEventUpMouseLeft)
+                    subscribe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
+                    subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
             (button, world')
 
         override dispatcher.Unregister (button, address, world) =
@@ -290,8 +290,8 @@ module DispatchersModule =
         override dispatcher.Register (toggle, address, world) =
             let world' =
                 world |>
-                    subscribe DownMouseLeftEvent address (CustomSub handleToggleEventDownMouseLeft) |>
-                    subscribe UpMouseLeftEvent address (CustomSub handleToggleEventUpMouseLeft)
+                    subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
+                    subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
             (toggle, world')
 
         override dispatcher.Unregister (toggle, address, world) =
@@ -358,8 +358,8 @@ module DispatchersModule =
         override dispatcher.Register (feeler, address, world) =
             let world' =
                 world |>
-                    subscribe DownMouseLeftEvent address (CustomSub handleFeelerEventDownMouseLeft) |>
-                    subscribe UpMouseLeftEvent address (CustomSub handleFeelerEventUpMouseLeft)
+                    subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
+                    subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
             (feeler, world')
 
         override dispatcher.Unregister (feeler, address, world) =
