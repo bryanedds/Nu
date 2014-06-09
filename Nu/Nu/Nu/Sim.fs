@@ -202,6 +202,10 @@ module SimModule =
 
 module Sim =
 
+    /// Mark a message as handled.
+    let handleMessage message =
+        { Handled = true; Data = message.Data }
+
     let getOptChild optChildFinder address parent =
         let optChild = optChildFinder address parent
         match optChild with

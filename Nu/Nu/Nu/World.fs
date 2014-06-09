@@ -48,6 +48,7 @@ module World =
     let removeEntities = removeEntities
     let addEntity = addEntity
     let addEntities = addEntities
+    let tryPickEntity = tryPickEntity
     
     // Group forwarders.
     let worldGroup = worldGroup
@@ -74,6 +75,10 @@ module World =
     let unregisterScreen = unregisterScreen
     let removeScreen = removeScreen
     let addScreen = addScreen
+
+    // Game forwarders.
+    let worldOptSelectedScreenAddress = worldOptSelectedScreenAddress
+    let worldOptSelectedScreen = worldOptSelectedScreen
     
     // Other forwarders.
     let handleEventAsExit = handleEventAsExit
