@@ -23,7 +23,7 @@ module WorldPrims =
 
     (* Entity functions. *)
 
-    let private worldOptEntityFinder (address : Address) world =
+    let private optEntityFinder (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None -> None
@@ -33,7 +33,7 @@ module WorldPrims =
             | None -> None
             | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
 
-    let private worldEntityAdder (address : Address) world (child : Entity) =
+    let private entityFinder (address : Address) world (child : Entity) =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None ->
@@ -52,7 +52,7 @@ module WorldPrims =
                 let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
                 { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
 
-    let private worldEntityRemover (address : Address) world =
+    let private entityRemover (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None -> world
@@ -65,21 +65,13 @@ module WorldPrims =
                 let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
                 { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
 
-    let private getWorldEntityWith address world lens =
-        get (getChild worldOptEntityFinder address world) lens
-
-    let private setWorldEntityWith child address world lens =
-        let entity = getChild worldOptEntityFinder address world
-        let entity' = set child entity lens
-        setChild worldEntityAdder worldEntityRemover address world entity'
-
     let worldEntity address =
-        { Get = fun world -> Option.get <| worldOptEntityFinder address world
-          Set = fun entity world -> worldEntityAdder address world entity }
+        { Get = fun world -> Option.get <| optEntityFinder address world
+          Set = fun entity world -> entityFinder address world entity }
 
     let worldOptEntity address =
-        { Get = fun world -> worldOptEntityFinder address world
-          Set = fun optEntity world -> match optEntity with None -> worldEntityRemover address world | Some entity -> worldEntityAdder address world entity }
+        { Get = fun world -> optEntityFinder address world
+          Set = fun optEntity world -> match optEntity with None -> entityRemover address world | Some entity -> entityFinder address world entity }
 
     let worldEntities address =
         { Get = fun world ->
@@ -144,7 +136,7 @@ module WorldPrims =
             world
             entities
 
-    let sortFstAsc (priority, _) (priority2, _) =
+    let private sortFstAsc (priority, _) (priority2, _) =
         if priority = priority2 then 0
         elif priority > priority2 then -1
         else 1
@@ -167,13 +159,13 @@ module WorldPrims =
 
     (* Group functions. *)
 
-    let private worldOptGroupFinder (address : Address) world =
+    let private optGroupFinder (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> None
         | Some groupMap -> Map.tryFind (List.at 1 address) groupMap
 
-    let private worldGroupAdder (address : Address) world child =
+    let private groupAdder (address : Address) world child =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None ->
@@ -182,7 +174,7 @@ module WorldPrims =
             let groupMap' = Map.add (List.at 1 address) child groupMap
             { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
 
-    let private worldGroupRemover (address : Address) world =
+    let private groupRemover (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> world
@@ -191,12 +183,12 @@ module WorldPrims =
             { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
 
     let worldGroup address =
-        { Get = fun world -> Option.get <| worldOptGroupFinder address world
-          Set = fun group world -> worldGroupAdder address world group }
+        { Get = fun world -> Option.get <| optGroupFinder address world
+          Set = fun group world -> groupAdder address world group }
 
     let worldOptGroup address =
-        { Get = fun world -> worldOptGroupFinder address world
-          Set = fun optGroup world -> match optGroup with None -> worldGroupRemover address world | Some group -> worldGroupAdder address world group }
+        { Get = fun world -> optGroupFinder address world
+          Set = fun optGroup world -> match optGroup with None -> groupRemover address world | Some group -> groupAdder address world group }
 
     let worldGroups address =
         { Get = fun world ->
@@ -257,22 +249,22 @@ module WorldPrims =
 
     (* Screen functions. *)
     
-    let private worldOptScreenFinder (address : Address) world =
+    let private optScreenFinder (address : Address) world =
         Map.tryFind (List.at 0 address) world.Screens
 
-    let private worldScreenAdder (address : Address) world child =
+    let private screenAdder (address : Address) world child =
         { world with Screens = Map.add (List.at 0 address) child world.Screens }
 
-    let private worldScreenRemover (address : Address) world =
+    let private screenRemover (address : Address) world =
         { world with Screens = Map.remove (List.at 0 address) world.Screens }
 
     let worldScreen address =
-        { Get = fun world -> Option.get <| worldOptScreenFinder address world
-          Set = fun screen world -> worldScreenAdder address world screen }
+        { Get = fun world -> Option.get <| optScreenFinder address world
+          Set = fun screen world -> screenAdder address world screen }
 
     let worldOptScreen address =
-        { Get = fun world -> worldOptScreenFinder address world
-          Set = fun optScreen world -> match optScreen with None -> worldScreenRemover address world | Some screen -> worldScreenAdder address world screen }
+        { Get = fun world -> optScreenFinder address world
+          Set = fun optScreen world -> match optScreen with None -> screenRemover address world | Some screen -> screenAdder address world screen }
 
     let worldScreens address =
         { Get = fun world ->

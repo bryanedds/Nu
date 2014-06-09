@@ -47,23 +47,13 @@ module EntityModule =
 
 module Entity =
 
-    let mouseToScreen (position : Vector2) camera =
-        let positionScreen =
-            Vector2 (
-                position.X - camera.EyeSize.X * 0.5f,
-                -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
-        positionScreen
-
     let mouseToEntity (position : Vector2) world (entity : Entity) =
         let positionScreen = mouseToScreen position world.Camera
         let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
         let positionEntity = positionScreen * view
         positionEntity
 
-    let getEntityPosition (entity : Entity) =
-        entity.Position
-
-    let setEntityPosition snap position (entity : Entity) =
+    let setEntityPositionSnapped snap position (entity : Entity) =
         let position' = snap2F snap position
         entity.SetPosition position'
 
