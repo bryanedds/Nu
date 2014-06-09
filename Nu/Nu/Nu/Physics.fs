@@ -143,7 +143,7 @@ module Physics =
         | Kinematic -> Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
 
-    let private handlePhysicsCollision
+    let private handleCollision
         integrator
         (fixture : Dynamics.Fixture)
         (fixture2 : Dynamics.Fixture)
@@ -235,7 +235,7 @@ module Physics =
             | BoxShape boxShape -> createBoxBody integrator bodyCreateMessage boxShape
             | CircleShape circleShape -> createCircleBody integrator bodyCreateMessage circleShape
             | PolygonShape polygonShape -> createPolygonBody integrator bodyCreateMessage polygonShape
-        body.add_OnCollision (fun fn fn2 collision -> handlePhysicsCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
+        body.add_OnCollision (fun fn fn2 collision -> handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
         integrator.Bodies.Add (bodyCreateMessage.PhysicsId, body)
 
     let private destroyBody integrator (bodyDestroyMessage : BodyDestroyMessage) =

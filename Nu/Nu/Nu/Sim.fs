@@ -202,9 +202,15 @@ module SimModule =
 
 module Sim =
 
-    /// Mark a message as handled.
     let handleMessage message =
         { Handled = true; Data = message.Data }
+
+    let mouseToScreen (position : Vector2) camera =
+        let positionScreen =
+            Vector2 (
+                position.X - camera.EyeSize.X * 0.5f,
+                -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
+        positionScreen
 
     let getOptChild optChildFinder address parent =
         let optChild = optChildFinder address parent

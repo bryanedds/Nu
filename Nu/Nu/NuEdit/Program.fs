@@ -196,8 +196,7 @@ module Program =
                 | Some entity ->
                     let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                     let entityAddress = NuCore.addrstr EditorGroupAddress entity.Name
-                    let entityPosition = Entity.getEntityPosition entity
-                    let dragState = DragEntityPosition (entityPosition + mousePositionEntity, mousePositionEntity, entityAddress)
+                    let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
                     let editorState_ = world.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
                     let world_ = { world with ExtData = editorState_ }
@@ -231,7 +230,7 @@ module Program =
             let entity_ = get world <| World.worldEntity address
             let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
             let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
-            let entity_ = Entity.setEntityPosition positionSnap entityPosition entity_
+            let entity_ = Entity.setEntityPositionSnapped positionSnap entityPosition entity_
             let world_ = set entity_ world <| World.worldEntity address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
             let world_ = { world_ with ExtData = editorState_ }
@@ -246,7 +245,7 @@ module Program =
             if form.interactButton.Checked then (message, true, world)
             else
                 let mousePosition = world.MouseState.MousePosition
-                let mousePositionScreen = Entity.mouseToScreen mousePosition world.Camera
+                let mousePositionScreen = Sim.mouseToScreen mousePosition world.Camera
                 let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
                 let editorState_ = world.ExtData :?> EditorState
                 let editorState_ = { editorState_ with DragCameraState = dragState }
@@ -273,7 +272,7 @@ module Program =
         | DragCameraNone -> world
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let mousePosition = world.MouseState.MousePosition
-            let mousePositionScreen = Entity.mouseToScreen mousePosition world.Camera
+            let mousePositionScreen = Sim.mouseToScreen mousePosition world.Camera
             let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let camera = { world.Camera with EyeCenter = eyeCenter }
             let world' = { world with Camera = camera }
