@@ -38,6 +38,7 @@ module Screen =
           Ticks = 0
           Type = transitionType
           OptDissolveSprite = None
+          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
 
     let makeDefaultScreen defaultDispatcherName defaultTransitionDispatcherName =
@@ -45,6 +46,7 @@ module Screen =
           State = IdlingState
           Incoming = makeDefaultTransition defaultTransitionDispatcherName Incoming
           Outgoing = makeDefaultTransition defaultTransitionDispatcherName Outgoing
+          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
 
     let makeDissolveScreen dispatcherName defaultTransitionDispatcherName incomingTime outgoingTime =

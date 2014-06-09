@@ -128,6 +128,7 @@ module Entity =
           Name = match optName with None -> string id | Some name -> name
           Enabled = true
           Visible = true
+          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     let makeDefaultEntity dispatcherName optName seal (dispatcherContainer : IXDispatcherContainer) =
