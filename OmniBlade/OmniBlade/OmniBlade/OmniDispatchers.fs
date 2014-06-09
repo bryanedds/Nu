@@ -2,7 +2,6 @@
 open OpenTK
 open Prime
 open Nu
-open Nu.World
 
 [<AutoOpen>]
 module OmniDispatchersModule =
