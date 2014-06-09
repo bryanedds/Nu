@@ -22,6 +22,7 @@ module Group =
 
     let makeDefaultGroup dispatcherName =
         { Group.Id = getNuId ()
+          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<string, Entity>) =
