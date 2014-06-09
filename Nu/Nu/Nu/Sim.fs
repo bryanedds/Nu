@@ -46,6 +46,7 @@ module SimModule =
           Name : string
           Enabled : bool
           Visible : bool
+          FacetNamesNs : string list // Marked with 'Ns' (Non-serializable) for now as I've yet to make F# lists serializable.
           Xtension : Xtension }
 
         static member (?) (this : Entity, memberName) =
@@ -84,6 +85,7 @@ module SimModule =
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
+          FacetNamesNs : string list
           Xtension : Xtension }
 
         static member (?) (this : Group, memberName) =
@@ -107,6 +109,7 @@ module SimModule =
           Ticks : int
           Type : TransitionType
           OptDissolveSprite : Sprite option
+          FacetNamesNs : string list
           Xtension : Xtension }
 
         static member (?) (this : Transition, memberName) =
@@ -127,6 +130,7 @@ module SimModule =
           State : ScreenState
           Incoming : Transition
           Outgoing : Transition
+          FacetNamesNs : string list
           Xtension : Xtension }
 
         static member (?) (this : Screen, memberName) =
@@ -140,6 +144,7 @@ module SimModule =
     type [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           OptSelectedScreenAddress : Address option
+          FacetNamesNs : string list
           Xtension : Xtension }
 
         static member (?) (this : Game, memberName) =
