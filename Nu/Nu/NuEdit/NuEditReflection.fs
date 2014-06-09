@@ -6,11 +6,7 @@ open System
 open System.Reflection
 open Prime
 open Nu
-open Nu.NuCore
-open Nu.Entity
-open Nu.Group
-open Nu.World
-open NuEdit.NuEditConstants
+open NuEdit
 
 [<AutoOpen>]
 module NuEditReflectionModule =
@@ -35,23 +31,23 @@ module NuEditReflection =
             else p.GetValue entity
 
     let setEntityPropertyValue address property value world =
-        let entity = get world <| worldEntity address
+        let entity = get world <| World.worldEntity address
         match property with
         | EntityXFieldDescriptor x ->
             let xFields = Map.add x.FieldName value entity.Xtension.XFields
             let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-            set entity' world <| worldEntity address
+            set entity' world <| World.worldEntity address
         | EntityPropertyInfo p ->
             let entity' = { entity with Id = entity.Id } // NOTE: hacky copy
             p.SetValue (entity', value)
-            set entity' world <| worldEntity address
+            set entity' world <| World.worldEntity address
 
     let saveFile fileName world =
-        let editorGroup = get world <| worldGroup EditorGroupAddress
-        let editorEntities = get world <| worldEntities EditorGroupAddress
-        saveGroupFile editorGroup editorEntities fileName world
+        let editorGroup = get world <| World.worldGroup NuEditConstants.EditorGroupAddress
+        let editorEntities = get world <| World.worldEntities NuEditConstants.EditorGroupAddress
+        World.saveGroupFile editorGroup editorEntities fileName world
 
     let loadFile fileName world =
-        let world' = removeGroup EditorGroupAddress world
-        let (group, entities) = loadGroupFile fileName false world'
-        addGroup EditorGroupAddress group entities world'
+        let world' = World.removeGroup NuEditConstants.EditorGroupAddress world
+        let (group, entities) = World.loadGroupFile fileName false world'
+        World.addGroup NuEditConstants.EditorGroupAddress group entities world'

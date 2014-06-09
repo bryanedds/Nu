@@ -144,6 +144,27 @@ module WorldPrims =
             world
             entities
 
+    let sortFstAsc (priority, _) (priority2, _) =
+        if priority = priority2 then 0
+        elif priority > priority2 then -1
+        else 1
+
+    let pickingSort entities =
+        let priorities = List.map getEntityPickingPriority entities
+        let prioritiesAndEntities = List.zip priorities entities
+        let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
+        List.map snd prioritiesAndEntitiesSorted
+
+    let tryPickEntity position entities camera =
+        let entitiesSorted = pickingSort entities
+        List.tryFind
+            (fun entity ->
+                let positionEntity = mouseToEntity position camera entity
+                let transform = getEntityTransform entity
+                let picked = isInBox3 positionEntity transform.Position transform.Size
+                picked)
+            entitiesSorted
+
     (* Group functions. *)
 
     let private worldOptGroupFinder (address : Address) world =
@@ -324,10 +345,6 @@ module WorldPrims =
         initAudioConverters ()
         initRenderConverters ()
 
-    /// Mark a message as handled.
-    let handleMessage message =
-        { Handled = true; Data = message.Data }
-
     let private getSimulant address world =
         match address with
         | [] -> Game <| world.Game
@@ -352,7 +369,7 @@ module WorldPrims =
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | Entity entity -> getPickingPriority entity
+        | Entity entity -> getEntityPickingPriority entity
 
     let private subscriptionSort subscriptions world =
         let simulants = getSubscribedSimulants subscriptions world

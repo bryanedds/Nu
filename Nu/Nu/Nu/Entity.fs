@@ -81,12 +81,7 @@ module Entity =
             .SetSize(transform'.Size)
             .SetRotation(transform'.Rotation)
 
-    let sortFstAsc (priority, _) (priority2, _) =
-        if priority = priority2 then 0
-        elif priority > priority2 then -1
-        else 1
-
-    let getPickingPriority (entity : Entity) =
+    let getEntityPickingPriority (entity : Entity) =
         entity.Depth
 
     let makeTileMapData tileMapAsset world =
@@ -148,19 +143,3 @@ module Entity =
         let entity = makeDefaultEntity defaultDispatcherName None seal world
         Xtension.readProperties entityNode entity
         entity
-
-    let pickingSort entities =
-        let priorities = List.map getPickingPriority entities
-        let prioritiesAndEntities = List.zip priorities entities
-        let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
-        List.map snd prioritiesAndEntitiesSorted
-
-    let tryPickEntity position entities camera =
-        let entitiesSorted = pickingSort entities
-        List.tryFind
-            (fun entity ->
-                let positionEntity = mouseToEntity position camera entity
-                let transform = getEntityTransform entity
-                let picked = isInBox3 positionEntity transform.Position transform.Size
-                picked)
-            entitiesSorted

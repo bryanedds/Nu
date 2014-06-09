@@ -10,6 +10,7 @@ open Nu.NuConstants
 open Nu.NuMath
 open Nu.Physics
 open Nu.Metadata
+open Nu.Sim
 open Nu.Entity
 open Nu.WorldPrims
 

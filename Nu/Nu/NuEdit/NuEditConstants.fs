@@ -3,9 +3,9 @@
 
 namespace NuEdit
 open Prime
-open Nu.NuCore
+open Nu
 module NuEditConstants =
 
-    let EditorScreenAddress = addr "EditorScreen"
+    let EditorScreenAddress = NuCore.addr "EditorScreen"
     let EditorGroupName = "EditorGroup"
     let EditorGroupAddress = EditorScreenAddress @ [EditorGroupName]
