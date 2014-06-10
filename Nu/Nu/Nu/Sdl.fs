@@ -33,12 +33,13 @@ module SdlModule =
           Window : nativeint
           Config : SdlConfig }
 
+[<RequireQualifiedAccess>]
 module Sdl =
 
     let [<Literal>] private SuccessReturnCode = 0
     let [<Literal>] private FailureReturnCode = 1
 
-    let makeMouseButton sdlMouseButton =
+    let makeNuMouseButton sdlMouseButton =
         if sdlMouseButton = byte SDL.SDL_BUTTON_LEFT then MouseLeft
         elif sdlMouseButton = byte SDL.SDL_BUTTON_MIDDLE then MouseCenter
         else MouseRight
@@ -48,18 +49,6 @@ module Sdl =
         | MouseLeft -> byte SDL.SDL_BUTTON_LEFT
         | MouseCenter -> byte SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> byte SDL.SDL_BUTTON_RIGHT
-
-    let makeSdlConfig viewConfig viewW viewH rendererFlags audioChunkSize =
-        { ViewConfig = viewConfig
-          ViewW = viewW
-          ViewH = viewH
-          RendererFlags = rendererFlags
-          AudioChunkSize = audioChunkSize }
-
-    let makeSdlDeps renderContext window config =
-        { RenderContext = renderContext
-          Window = window
-          Config  = config }
 
     let resourceNop (_ : nativeint) = ()
 
@@ -96,7 +85,7 @@ module Sdl =
             destroy ()
             result
 
-    let advanceSdl handleEvent handleUpdate sdlDeps world =
+    let advance handleEvent handleUpdate sdlDeps world =
         let mutable result = (true, world)
         let polledEvent = ref (SDL.SDL_Event ())
         while SDL.SDL_PollEvent polledEvent <> 0 do
@@ -106,7 +95,7 @@ module Sdl =
             result <- handleUpdate (snd result)
         result
 
-    let renderSdl handleRender sdlDeps world =
+    let render handleRender sdlDeps world =
         match ScreenClearing with
         | NoClear -> ()
         | ColorClear (r, g, b) ->
@@ -116,19 +105,19 @@ module Sdl =
         SDL.SDL_RenderPresent sdlDeps.RenderContext
         world'
 
-    let playSdl handlePlay world =
+    let play handlePlay world =
         handlePlay world
 
-    let rec runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
+    let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
         if keepRunning then
-            let (keepRunning', world') = advanceSdl handleEvent handleUpdate sdlDeps world
+            let (keepRunning', world') = advance handleEvent handleUpdate sdlDeps world
             if not keepRunning' then ignore <| handleExit world'
             else
-                let world'' = renderSdl handleRender sdlDeps world'
-                let world'3 = playSdl handlePlay world''
-                runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'3
+                let world'' = render handleRender sdlDeps world'
+                let world'3 = play handlePlay world''
+                run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'3
 
-    let runSdl tryCreateWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
+    let run tryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
         withSdlInit
             (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
             (fun () -> SDL.SDL_Quit ())
@@ -160,12 +149,12 @@ module Sdl =
                                 (fun () -> SDL_mixer.Mix_OpenAudio (AudioFrequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
                                 (fun () -> SDL_mixer.Mix_CloseAudio ())
                                 (fun () ->
-                                    let sdlDeps = makeSdlDeps renderContext window sdlConfig
-                                    let optWorld = tryCreateWorld sdlDeps
+                                    let sdlDeps = { RenderContext = renderContext; Window = window; Config = sdlConfig }
+                                    let optWorld = tryMakeWorld sdlDeps
                                     match optWorld with
                                     | Left errorMsg ->
                                         trace errorMsg
                                         FailureReturnCode
                                     | Right world ->
-                                        runSdl8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps true world
+                                        run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps true world
                                         SuccessReturnCode))))))

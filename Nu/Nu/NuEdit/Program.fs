@@ -118,7 +118,7 @@ module Program =
                             let entity_ = get world <| World.worldEntity entityTds.Address
                             let world_ = World.removeEntity entityTds.Address world
                             let entity_ = { entity_ with Name = valueStr }
-                            let entityAddress = NuCore.addrstr EditorGroupAddress valueStr
+                            let entityAddress = addrstr EditorGroupAddress valueStr
                             let world_ = World.addEntity entityAddress entity_ world_
                             entityTds.RefWorld := world_ // must be set for property grid
                             entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
@@ -192,10 +192,10 @@ module Program =
                 let mousePosition = world.MouseState.MousePosition
                 let optPicked = World.tryPickEntity mousePosition entities world
                 match optPicked with
-                | None -> (World.handleMessage message, true, world)
+                | None -> (Message.handle message, true, world)
                 | Some entity ->
                     let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                    let entityAddress = NuCore.addrstr EditorGroupAddress entity.Name
+                    let entityAddress = addrstr EditorGroupAddress entity.Name
                     let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
                     let editorState_ = world.ExtData :?> EditorState
                     let editorState_ = { editorState_ with DragEntityState = dragState }
@@ -203,7 +203,7 @@ module Program =
                     let world_ = pushPastWorld world world_
                     refWorld := world_ // must be set for property grid
                     form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                    (World.handleMessage message, true, world_)
+                    (Message.handle message, true, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endEntityDrag (form : NuEditForm) _ _ _ message world =
@@ -213,12 +213,12 @@ module Program =
             else
                 let editorState_ = world.ExtData :?> EditorState
                 match editorState_.DragEntityState with
-                | DragEntityNone -> (Sim.handleMessage message, true, world)
+                | DragEntityNone -> (Message.handle message, true, world)
                 | DragEntityPosition _
                 | DragEntityRotation _ ->
                     let editorState_ = { editorState_ with DragEntityState = DragEntityNone }
                     form.propertyGrid.Refresh ()
-                    (Sim.handleMessage message, true, { world with ExtData = editorState_ })
+                    (Message.handle message, true, { world with ExtData = editorState_ })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
@@ -230,7 +230,7 @@ module Program =
             let entity_ = get world <| World.worldEntity address
             let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
             let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
-            let entity_ = Entity.setEntityPositionSnapped positionSnap entityPosition entity_
+            let entity_ = Entity.setPositionSnapped positionSnap entityPosition entity_
             let world_ = set entity_ world <| World.worldEntity address
             let editorState_ = { editorState_ with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
             let world_ = { world_ with ExtData = editorState_ }
@@ -245,12 +245,12 @@ module Program =
             if form.interactButton.Checked then (message, true, world)
             else
                 let mousePosition = world.MouseState.MousePosition
-                let mousePositionScreen = Sim.mouseToScreen mousePosition world.Camera
+                let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
                 let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
                 let editorState_ = world.ExtData :?> EditorState
                 let editorState_ = { editorState_ with DragCameraState = dragState }
                 let world_ = { world with ExtData = editorState_ }
-                (Sim.handleMessage message, true, world_)
+                (Message.handle message, true, world_)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endCameraDrag (form : NuEditForm) _ _ _ message world =
@@ -260,10 +260,10 @@ module Program =
             else
                 let editorState_ = world.ExtData :?> EditorState
                 match editorState_.DragCameraState with
-                | DragCameraNone -> (Sim.handleMessage message, true, world)
+                | DragCameraNone -> (Message.handle message, true, world)
                 | DragCameraPosition _ ->
                     let editorState_ = { editorState_ with DragCameraState = DragCameraNone }
-                    (Sim.handleMessage message, true, { world with ExtData = editorState_ })
+                    (Message.handle message, true, { world with ExtData = editorState_ })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateCameraDrag (form : NuEditForm) world =
@@ -272,7 +272,7 @@ module Program =
         | DragCameraNone -> world
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let mousePosition = world.MouseState.MousePosition
-            let mousePositionScreen = Sim.mouseToScreen mousePosition world.Camera
+            let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
             let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let camera = { world.Camera with EyeCenter = eyeCenter }
             let world' = { world with Camera = camera }
@@ -290,14 +290,14 @@ module Program =
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let world = !refWorld
         let entityXDispatcherName = form.createEntityComboBox.Text
-        try let entity_ = Entity.makeDefaultEntity entityXDispatcherName None false world
+        try let entity_ = Entity.makeDefault entityXDispatcherName None false world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = NuConstants.DefaultEntitySize; Rotation = NuConstants.DefaultEntityRotation }
-                let entity_ = Entity.setEntityTransform positionSnap rotationSnap entityTransform entity_
-                let entityAddress = NuCore.addrstr EditorGroupAddress entity_.Name
+                let entity_ = Entity.setTransform positionSnap rotationSnap entityTransform entity_
+                let entityAddress = addrstr EditorGroupAddress entity_.Name
                 let world_ = World.addEntity entityAddress entity_ world_
                 let world_ = pushPastWorld world world_
                 refWorld := world_ // must be set for property grid
@@ -418,13 +418,13 @@ module Program =
         | Some entity ->
             let changer = (fun world ->
                 let (positionSnap, rotationSnap) = getSnaps form
-                let id = NuCore.getNuId ()
+                let id = NuCore.getId ()
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entity_ = { entity with Id = id; Name = string id }
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
-                let entityTransform = { Entity.getEntityTransform entity with Position = entityPosition; Depth = getCreationDepth form }
-                let entity_ = Entity.setEntityTransform positionSnap rotationSnap entityTransform entity_
-                let address = NuCore.addrstr EditorGroupAddress entity_.Name
+                let entityTransform = { Entity.getTransform entity with Position = entityPosition; Depth = getCreationDepth form }
+                let entity_ = Entity.setTransform positionSnap rotationSnap entityTransform entity_
+                let address = addrstr EditorGroupAddress entity_.Name
                 let world_ = pushPastWorld world world
                 World.addEntity address entity_ world_)
             refWorld := changer !refWorld
@@ -551,16 +551,16 @@ module Program =
         form.Show ()
         form
 
-    let tryCreateEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
-        let screen = Screen.makeDissolveScreen typeof<ScreenDispatcher>.Name typeof<TransitionDispatcher>.Name 100 100
-        let group = Group.makeDefaultGroup typeof<GroupDispatcher>.Name
+    let tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
+        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name typeof<TransitionDispatcher>.Name 100 100
+        let group = Group.makeDefault typeof<GroupDispatcher>.Name
         let editorState =
             { DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryCreateEmptyWorld sdlDeps gameDispatcher editorState
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->
@@ -604,7 +604,7 @@ module Program =
         updateRedo form !refWorld
         (not form.IsDisposed, !refWorld)
 
-    let selectWorkingDirectoryAndCreateGameDispatcher () =
+    let selectWorkingDirectoryAndMakeGameDispatcher () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for defaults)."
@@ -621,13 +621,18 @@ module Program =
         World.initTypeConverters ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let gameDispatcher = selectWorkingDirectoryAndCreateGameDispatcher ()
+        let gameDispatcher = selectWorkingDirectoryAndMakeGameDispatcher ()
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
-        let sdlRenderFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-        let sdlConfig = Sdl.makeSdlConfig sdlViewConfig form.displayPanel.MaximumSize.Width form.displayPanel.MaximumSize.Height sdlRenderFlags NuConstants.AudioBufferSizeDefault
+        let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
+        let sdlConfig =
+            { ViewConfig = sdlViewConfig
+              ViewW = form.displayPanel.MaximumSize.Width
+              ViewH = form.displayPanel.MaximumSize.Height
+              RendererFlags = sdlRendererFlags
+              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
         World.run4
-            (tryCreateEditorWorld gameDispatcher form worldChangers refWorld)
+            (tryMakeEditorWorld gameDispatcher form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)
             (fun world -> form.displayPanel.Invalidate (); world)
             sdlConfig

@@ -40,6 +40,7 @@ module AssetsModule =
 
     type 'a AssetMap = Map<string, Map<string, 'a>>
 
+[<RequireQualifiedAccess>]
 module Assets =
 
     let tryLoadAsset packageName (xmlNode : XmlNode) =

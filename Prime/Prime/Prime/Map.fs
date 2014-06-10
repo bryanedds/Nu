@@ -4,7 +4,7 @@
 [<RequireQualifiedAccess>]
 module Map
 
-/// Create a singleton map.
+/// Make a singleton map.
 let singleton key value =
     Map.add key value Map.empty
 
@@ -15,7 +15,7 @@ let addMany kvps map =
         map
         kvps
 
-/// Create a map from a seq by a function.
+/// Make a map from a seq by a function.
 /// TODO: Optimize by program fusion.
 let ofSeqBy by seq =
     let pairs = Seq.map by seq
@@ -43,7 +43,7 @@ let toValueSeq map =
 let toValueSeqBy by map =
     toSeqBy (by << snd) map
 
-/// Create a map from a list by a function.
+/// Make a map from a list by a function.
 /// TODO: Optimize by program fusion.
 let ofListBy by list =
     let pairs = List.map by list

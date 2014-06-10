@@ -3,7 +3,6 @@
 
 namespace Prime
 
-[<AutoOpen>]
 module Pair =
     
     /// Make a pair.

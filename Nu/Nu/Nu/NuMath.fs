@@ -6,7 +6,6 @@ open System
 open System.ComponentModel
 open OpenTK
 open Prime
-open Nu.NuCore
 open Nu.NuConstants
 
 [<AutoOpen>]
@@ -177,9 +176,10 @@ module NuMathModule =
             let z = v.X * m.M20 + v.Y * m.M21 + m.M22
             Vector2 (x / z, y / z)
 
+[<RequireQualifiedAccess>]
 module NuMath =
 
-    let initMathConverters () =
+    let initTypeConverters () =
         assignTypeConverter<Vector2, Vector2TypeConverter> ()
         assignTypeConverter<Vector3, Vector3TypeConverter> ()
         assignTypeConverter<Vector4, Vector4TypeConverter> ()

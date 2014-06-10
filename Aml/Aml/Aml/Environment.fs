@@ -23,7 +23,7 @@ module Environment =
         makeEnv
             (Dictionary<string, EnvEntry> ())
             []
-            (Generic.List<CachedEntry ref> ())
+            (List<CachedEntry ref> ())
             false
             (makeEmptyDebugInfo ())
             Set.empty
@@ -37,12 +37,12 @@ module Environment =
     /// Make an initial global environment.
     let makeInitialEnv () =
 
-        // create the core envrionment
+        // make the core envrionment
         let env =
             makeEnv
                 (List.toDictionary InitialEntriesList)
                 []
-                (Generic.List<CachedEntry ref> ())
+                (List<CachedEntry ref> ())
                 false
                 (makeEmptyDebugInfo ())
                 Set.empty

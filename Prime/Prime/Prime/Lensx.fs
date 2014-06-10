@@ -11,7 +11,7 @@ module Lensx =
     // conversion operations.
 
 #if FULLY_GLOBAL_LENS
-    /// Creates a lens that maps the given lens in an array
+    /// Makes a lens that maps the given lens in an array
     let arrayMap = Lens.arrayMap
 
     /// Composes two lenses through a sum in the source
@@ -62,7 +62,7 @@ module Lensx =
     /// Undocumented
     let ignore = Lens.ignore
 
-    /// Creates a lens that maps the given lens in a list
+    /// Makes a lens that maps the given lens in a list
     let listMap = Lens.listMap
 
     /// Converts a lens that views a list into a lens that views an array
@@ -76,7 +76,7 @@ module Lensx =
     /// Pair two lenses
     let pair = Lens.pair
 
-    /// Creates a lens that maps the given lens in a sequence
+    /// Makes a lens that maps the given lens in a sequence
     let seqMap = Lens.seqMap
 #endif
 

@@ -1,25 +1,81 @@
 ﻿namespace Nu
 open System
+open System.Collections.Generic
 open FSharpx
 open FSharpx.Lens.Operators
 open OpenTK
+open TiledSharp
 open Prime
 open Nu
-open Nu.NuCore
 open Nu.NuConstants
-open Nu.NuMath
-open Nu.Audio
-open Nu.Rendering
-open Nu.Sim
-open Nu.Entity
-open Nu.Group
-open Nu.Screen
-open Nu.Game
 
 // TODO: when module exportation is implemented in F# - http://fslang.uservoice.com/forums/245727-f-language/suggestions/5688199-allow-re-exporting-from-modules
 // make this module exported from World and rename to WorldPrimsModule.
 
+[<AutoOpen>]
+module WorldPrimsModule =
+
+    type [<StructuralEquality; NoComparison>] TileMapData =
+        { Map : TmxMap
+          MapSize : int * int
+          TileSize : int * int
+          TileSizeF : Vector2
+          TileMapSize : int * int
+          TileMapSizeF : Vector2
+          TileSet : TmxTileset
+          TileSetSize : int * int }
+      
+    type [<StructuralEquality; NoComparison>] TileLayerData =
+        { Layer : TmxLayer
+          Tiles : TmxLayerTile List }
+      
+    type [<StructuralEquality; NoComparison>] TileData =
+        { Tile : TmxLayerTile
+          I : int
+          J : int
+          Gid : int
+          GidPosition : int
+          Gid2 : int * int
+          OptTileSetTile : TmxTilesetTile option
+          TilePosition : int * int }
+
+[<RequireQualifiedAccess>]
 module WorldPrims =
+
+    (* Tiling functions. *)
+
+    let makeTileMapData tileMapAsset world =
+        match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+        | None -> failwith "Unexpected match failure in Nu.Entity.makeTileMapData."
+        | Some (_, _, map) ->
+            let mapSize = (map.Width, map.Height)
+            let tileSize = (map.TileWidth, map.TileHeight)
+            let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
+            let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
+            let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
+            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+            let optTileSetWidth = tileSet.Image.Width
+            let optTileSetHeight = tileSet.Image.Height
+            let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
+            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+
+    let makeTileLayerData tileMap tmd (layer : TmxLayer) =
+        let tiles = layer.Tiles
+        { Layer = layer; Tiles = tiles }
+
+    let makeTileData (tileMap : Entity) tmd tld tileIndex =
+        let mapRun = fst tmd.MapSize
+        let tileSetRun = fst tmd.TileSetSize
+        let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+        let tile = tld.Tiles.[tileIndex]
+        let gid = tile.Gid - tmd.TileSet.FirstGid
+        let gidPosition = gid * fst tmd.TileSize
+        let gid2 = (gid % tileSetRun, gid / tileSetRun)
+        let tilePosition = (
+            int tileMap.Position.X + fst tmd.TileSize * i,
+            int tileMap.Position.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
+        let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
+        { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
     (* Entity functions. *)
 
@@ -95,14 +151,14 @@ module WorldPrims =
                     | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
-    let withEntity fn address world = withSimulant worldEntity fn address world
-    let withEntityAndWorld fn address world = withSimulantAndWorld worldEntity fn address world
+    let withEntity fn address world = Sim.withSimulant worldEntity fn address world
+    let withEntityAndWorld fn address world = Sim.withSimulantAndWorld worldEntity fn address world
 
-    let withOptEntity fn address world = withOptSimulant worldOptEntity fn address world
-    let withOptEntityAndWorld fn address world = withOptSimulantAndWorld worldOptEntity fn address world
+    let withOptEntity fn address world = Sim.withOptSimulant worldOptEntity fn address world
+    let withOptEntityAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptEntity fn address world
 
-    let tryWithEntity fn address world = tryWithSimulant worldOptEntity worldEntity fn address world
-    let tryWithEntityAndWorld fn address world = tryWithSimulantAndWorld worldOptEntity worldEntity fn address world
+    let tryWithEntity fn address world = Sim.tryWithSimulant worldOptEntity worldEntity fn address world
+    let tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptEntity worldEntity fn address world
 
     let registerEntity address (entity : Entity) world =
         entity.Register (address, world)
@@ -142,7 +198,7 @@ module WorldPrims =
         else 1
 
     let pickingSort entities =
-        let priorities = List.map getEntityPickingPriority entities
+        let priorities = List.map Entity.getPickingPriority entities
         let prioritiesAndEntities = List.zip priorities entities
         let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
         List.map snd prioritiesAndEntitiesSorted
@@ -151,9 +207,9 @@ module WorldPrims =
         let entitiesSorted = pickingSort entities
         List.tryFind
             (fun entity ->
-                let positionEntity = mouseToEntity position camera entity
-                let transform = getEntityTransform entity
-                let picked = isInBox3 positionEntity transform.Position transform.Size
+                let positionEntity = Entity.mouseToEntity position camera entity
+                let transform = Entity.getTransform entity
+                let picked = NuMath.isInBox3 positionEntity transform.Position transform.Size
                 picked)
             entitiesSorted
 
@@ -206,14 +262,14 @@ module WorldPrims =
                 | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
 
-    let withGroup fn address world = withSimulant worldGroup fn address world
-    let withGroupAndWorld fn address world = withSimulantAndWorld worldGroup fn address world
+    let withGroup fn address world = Sim.withSimulant worldGroup fn address world
+    let withGroupAndWorld fn address world = Sim.withSimulantAndWorld worldGroup fn address world
 
-    let withOptGroup fn address world = withOptSimulant worldOptGroup fn address world
-    let withOptGroupAndWorld fn address world = withOptSimulantAndWorld worldOptGroup fn address world
+    let withOptGroup fn address world = Sim.withOptSimulant worldOptGroup fn address world
+    let withOptGroupAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptGroup fn address world
 
-    let tryWithGroup fn address world = tryWithSimulant worldOptGroup worldGroup fn address world
-    let tryWithGroupAndWorld fn address world = tryWithSimulantAndWorld worldOptGroup worldGroup fn address world
+    let tryWithGroup fn address world = Sim.tryWithSimulant worldOptGroup worldGroup fn address world
+    let tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptGroup worldGroup fn address world
 
     let registerGroup address entities (group : Group) world =
         group.Register (address, entities, world)
@@ -279,14 +335,14 @@ module WorldPrims =
     let worldScreenIncoming address = worldScreen address >>| Screen.screenIncoming
     let worldScreenOutgoing address = worldScreen address >>| Screen.screenOutgoing
 
-    let withScreen fn address world = withSimulant worldScreen fn address world
-    let withScreenAndWorld fn address world = withSimulantAndWorld worldScreen fn address world
+    let withScreen fn address world = Sim.withSimulant worldScreen fn address world
+    let withScreenAndWorld fn address world = Sim.withSimulantAndWorld worldScreen fn address world
 
-    let withOptScreen fn address world = withOptSimulant worldOptScreen fn address world
-    let withOptScreenAndWorld fn address world = withOptSimulantAndWorld worldOptScreen fn address world
+    let withOptScreen fn address world = Sim.withOptSimulant worldOptScreen fn address world
+    let withOptScreenAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptScreen fn address world
 
-    let tryWithScreen fn address world = tryWithSimulant worldOptScreen worldScreen fn address world
-    let tryWithScreenAndWorld fn address world = tryWithSimulantAndWorld worldOptScreen worldScreen fn address world
+    let tryWithScreen fn address world = Sim.tryWithSimulant worldOptScreen worldScreen fn address world
+    let tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptScreen worldScreen fn address world
 
     let registerScreen address (screen : Screen) groupDescriptors world =
         screen.Register (address, groupDescriptors, world)
@@ -333,9 +389,9 @@ module WorldPrims =
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
     let initTypeConverters () =
-        initMathConverters ()
-        initAudioConverters ()
-        initRenderConverters ()
+        NuMath.initTypeConverters ()
+        Audio.initTypeConverters ()
+        Rendering.initTypeConverters ()
 
     let private getSimulant address world =
         match address with
@@ -361,7 +417,7 @@ module WorldPrims =
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | Entity entity -> getEntityPickingPriority entity
+        | Entity entity -> Entity.getPickingPriority entity
 
     let private subscriptionSort subscriptions world =
         let simulants = getSubscribedSimulants subscriptions world
@@ -422,10 +478,10 @@ module WorldPrims =
         unsubscribe event subscriber world''
     
     and handleEventAsSwallow message (world : World) =
-        (handleMessage message, true, world)
+        (Message.handle message, true, world)
 
     and handleEventAsExit message (world : World) =
-        (handleMessage message, false, world)
+        (Message.handle message, false, world)
 
     and private getScreenState address world =
         let screen = get world <| worldScreen address
@@ -451,7 +507,7 @@ module WorldPrims =
         if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
         else ({ transition with Ticks = transition.Ticks + 1 }, false)
 
-    and updateTransition update world =
+    and internal updateTransition update world =
         let (keepRunning, world') =
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
@@ -462,9 +518,9 @@ module WorldPrims =
                 | IncomingState ->
                     // TODO: remove duplication with below
                     let selectedScreen = get world <| worldScreen selectedScreenAddress
-                    let incoming = get selectedScreen screenIncoming
+                    let incoming = get selectedScreen Screen.screenIncoming
                     let (incoming', finished) = updateTransition1 incoming
-                    let selectedScreen' = set incoming' selectedScreen screenIncoming
+                    let selectedScreen' = set incoming' selectedScreen Screen.screenIncoming
                     let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
                     if not finished then (true, world'3)
@@ -476,9 +532,9 @@ module WorldPrims =
                             world'3
                 | OutgoingState ->
                     let selectedScreen = get world <| worldScreen selectedScreenAddress
-                    let outgoing = get selectedScreen screenOutgoing
+                    let outgoing = get selectedScreen Screen.screenOutgoing
                     let (outgoing', finished) = updateTransition1 outgoing
-                    let selectedScreen' = set outgoing' selectedScreen screenOutgoing
+                    let selectedScreen' = set outgoing' selectedScreen Screen.screenOutgoing
                     let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
                     let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
                     if not finished then (true, world'3)
@@ -508,16 +564,16 @@ module WorldPrims =
                 let world'' = setScreenState selectedScreenAddress OutgoingState world'
                 (message, true, world'')
 
-    and handleSplashScreenIdle idlingTime event publisher subscriber message world =
+    and internal handleSplashScreenIdle idlingTime event publisher subscriber message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
         let world' = subscribe TickEvent subscriber subscription world
-        (handleMessage message, true, world')
+        (Message.handle message, true, world')
 
     and private handleFinishedScreenOutgoing destination event publisher subscriber message world =
         let world' = unsubscribe event subscriber world
         let world'' = transitionScreen destination world'
-        (handleMessage message, true, world'')
+        (Message.handle message, true, world'')
 
     and handleEventAsScreenTransition destination message world =
         let world' = transitionScreen destination world
-        (handleMessage message, true, world')
+        (Message.handle message, true, world')

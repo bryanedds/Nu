@@ -11,7 +11,7 @@ open System.Collections.Generic
 /// The missing cons function.
 let cons = Prime.Sectioning.cons
 
-/// Create a singleton list.
+/// Make a singleton list.
 let inline singleton elem = [elem]
 
 /// Cons with flipped arguments.

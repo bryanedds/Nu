@@ -5,14 +5,8 @@ open OpenTK
 open Prime
 open TiledSharp
 open Nu
-open Nu.NuCore
 open Nu.NuConstants
-open Nu.NuMath
-open Nu.Physics
-open Nu.Metadata
-open Nu.Sim
-open Nu.Entity
-open Nu.WorldPrims
+module World = WorldPrims
 
 [<AutoOpen>]
 module DispatchersModule =
@@ -138,14 +132,14 @@ module DispatchersModule =
         let handleButtonEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| worldEntity subscriber
+                let button = get world <| World.worldEntity subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
-                    if isInBox3 mousePositionButton button.Position button.Size then
+                    if NuMath.isInBox3 mousePositionButton button.Position button.Size then
                         let button' = button.SetIsDown true
-                        let world' = set button' world <| worldEntity subscriber
-                        let (keepRunning, world'') = publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world'
-                        (handleMessage message, keepRunning, world'')
+                        let world' = set button' world <| World.worldEntity subscriber
+                        let (keepRunning, world'') = World.publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world'
+                        (Message.handle message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -153,18 +147,18 @@ module DispatchersModule =
         let handleButtonEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| worldEntity subscriber
+                let button = get world <| World.worldEntity subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     let (keepRunning, world') =
                         let button' = button.SetIsDown false
-                        let world'' = set button' world <| worldEntity subscriber
-                        publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world''
-                    if keepRunning && isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
-                        let (keepRunning', world'') = publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world'
+                        let world'' = set button' world <| World.worldEntity subscriber
+                        World.publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world''
+                    if keepRunning && NuMath.isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
+                        let (keepRunning', world'') = World.publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
-                        (handleMessage message, keepRunning', world'3)
+                        (Message.handle message, keepRunning', world'3)
                     else (message, keepRunning, world')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -180,14 +174,14 @@ module DispatchersModule =
         override dispatcher.Register (button, address, world) =
             let world' =
                 world |>
-                    subscribe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
-                    subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
+                    World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
+                    World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
             (button, world')
 
         override dispatcher.Unregister (button, address, world) =
             world |>
-                unsubscribe DownMouseLeftEvent address |>
-                unsubscribe UpMouseLeftEvent address
+                World.unsubscribe DownMouseLeftEvent address |>
+                World.unsubscribe UpMouseLeftEvent address
 
         override dispatcher.GetRenderDescriptors (button, viewAbsolute, viewRelative, world) =
             if not button.Visible then []
@@ -204,7 +198,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (button, world) =
             let sprite = button.UpSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -233,7 +227,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (label, world) =
             let sprite = label.LabelSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -276,7 +270,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (textBox, world) =
             let sprite = textBox.BoxSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -289,13 +283,13 @@ module DispatchersModule =
         let handleToggleEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| worldEntity subscriber
+                let toggle = get world <| World.worldEntity subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
-                    if isInBox3 mousePositionToggle toggle.Position toggle.Size then
+                    if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle' = toggle.SetIsPressed true
-                        let world' = set toggle' world <| worldEntity subscriber
-                        (handleMessage message, true, world')
+                        let world' = set toggle' world <| World.worldEntity subscriber
+                        (Message.handle message, true, world')
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -303,20 +297,20 @@ module DispatchersModule =
         let handleToggleEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| worldEntity subscriber
+                let toggle = get world <| World.worldEntity subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle' = toggle.SetIsPressed false
-                    if isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
+                    if NuMath.isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
                         let toggle'' = toggle'.SetIsOn <| not toggle'.IsOn
-                        let world' = set toggle'' world <| worldEntity subscriber
+                        let world' = set toggle'' world <| World.worldEntity subscriber
                         let messageType = if toggle''.IsOn then "On" else "Off"
-                        let (keepRunning, world'') = publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world'
+                        let (keepRunning, world'') = World.publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world'
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
                         let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
-                        (handleMessage message, keepRunning, world'3)
+                        (Message.handle message, keepRunning, world'3)
                     else
-                        let world' = set toggle' world <| worldEntity subscriber
+                        let world' = set toggle' world <| World.worldEntity subscriber
                         (message, true, world')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -333,14 +327,14 @@ module DispatchersModule =
         override dispatcher.Register (toggle, address, world) =
             let world' =
                 world |>
-                    subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
-                    subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
+                    World.subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
+                    World.subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
             (toggle, world')
 
         override dispatcher.Unregister (toggle, address, world) =
             world |>
-                unsubscribe DownMouseLeftEvent address |>
-                unsubscribe UpMouseLeftEvent address
+                World.unsubscribe DownMouseLeftEvent address |>
+                World.unsubscribe UpMouseLeftEvent address
 
         override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, viewRelative, world) =
             if not toggle.Visible then []
@@ -357,7 +351,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (toggle, world) =
             let sprite = toggle.OffSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -370,14 +364,14 @@ module DispatchersModule =
         let handleFeelerEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
-                let feeler = get world <| worldEntity subscriber
+                let feeler = get world <| World.worldEntity subscriber
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
-                    if isInBox3 mousePositionFeeler feeler.Position feeler.Size then
+                    if NuMath.isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler' = feeler.SetIsTouched true
-                        let world' = set feeler' world <| worldEntity subscriber
-                        let (keepRunning, world'') = publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world'
-                        (handleMessage message, keepRunning, world'')
+                        let world' = set feeler' world <| World.worldEntity subscriber
+                        let (keepRunning, world'') = World.publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world'
+                        (Message.handle message, keepRunning, world'')
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -385,12 +379,12 @@ module DispatchersModule =
         let handleFeelerEventUpMouseLeft event publisher subscriber message world =
             match message.Data with
             | MouseButtonData _ ->
-                let feeler = get world <| worldEntity subscriber
+                let feeler = get world <| World.worldEntity subscriber
                 if feeler.Enabled && feeler.Visible then
                     let feeler' = feeler.SetIsTouched false
-                    let world' = set feeler' world <| worldEntity subscriber
-                    let (keepRunning, world'') = publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world'
-                    (handleMessage message, keepRunning, world'')
+                    let world' = set feeler' world <| World.worldEntity subscriber
+                    let (keepRunning, world'') = World.publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world'
+                    (Message.handle message, keepRunning, world'')
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
@@ -401,14 +395,14 @@ module DispatchersModule =
         override dispatcher.Register (feeler, address, world) =
             let world' =
                 world |>
-                    subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
-                    subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
+                    World.subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
+                    World.subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
             (feeler, world')
 
         override dispatcher.Unregister (feeler, address, world) =
             world |>
-                unsubscribe UpMouseLeftEvent address |>
-                unsubscribe DownMouseLeftEvent address
+                World.unsubscribe UpMouseLeftEvent address |>
+                World.unsubscribe DownMouseLeftEvent address
 
         override dispatcher.GetQuickSize (feeler, world) =
             Vector2 64.0f
@@ -459,7 +453,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (fillBar, world) =
             let sprite = fillBar.BorderSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -470,34 +464,34 @@ module DispatchersModule =
         inherit Entity2dDispatcher ()
 
         let registerBlockPhysics address (block : Entity) world =
-            let block' = block.SetPhysicsId <| getPhysicsId block.Id
-            let bodyCreateMessage =
-                BodyCreateMessage
-                    { EntityAddress = address
-                      PhysicsId = block'.PhysicsId
-                      Shape = BoxShape
-                        { Extent = block'.Size * 0.5f
-                          Properties =
-                            { Center = Vector2.Zero
-                              Restitution = 0.0f
-                              FixedRotation = false
-                              LinearDamping = 5.0f
-                              AngularDamping = 5.0f }}
-                      Position = block'.Position + block'.Size * 0.5f
-                      Rotation = block'.Rotation
-                      Density = block'.Density
-                      BodyType = block'.BodyType }
-            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            let block' = block.SetPhysicsId <| Physics.getId block.Id
+            let createBodyMessage =
+                
+                { EntityAddress = address
+                  PhysicsId = block'.PhysicsId
+                  Shape = BoxShape
+                    { Extent = block'.Size * 0.5f
+                      Properties =
+                        { Center = Vector2.Zero
+                          Restitution = 0.0f
+                          FixedRotation = false
+                          LinearDamping = 5.0f
+                          AngularDamping = 5.0f }}
+                  Position = block'.Position + block'.Size * 0.5f
+                  Rotation = block'.Rotation
+                  Density = block'.Density
+                  BodyType = block'.BodyType }
+            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (block', world')
 
         let unregisterBlockPhysics (_ : Address) (block : Entity) world =
-            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = block.PhysicsId }
-            { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = block.PhysicsId }
+            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
 
         override dispatcher.Init (block, dispatcherContainer) =
             let block' = base.Init (block, dispatcherContainer)
             block'
-                .SetPhysicsId(InvalidPhysicsId)
+                .SetPhysicsId(Physics.InvalidId)
                 .SetDensity(NormalDensity)
                 .SetBodyType(BodyType.Dynamic)
                 .SetImageSprite({ SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
@@ -510,20 +504,20 @@ module DispatchersModule =
             
         override dispatcher.PropagatePhysics (block, address, world) =
             let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
-            set block' world' <| worldEntity address
+            set block' world' <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (block, groupAddress, world) =
             let address = addrstr groupAddress block.Name
             let world' = unregisterBlockPhysics address block world
             let (block', world'') = registerBlockPhysics address block world'
-            set block' world'' <| worldEntity address
+            set block' world'' <| World.worldEntity address
 
         override dispatcher.HandleBodyTransformMessage (block, message, address, world) =
             let block' =
                 block
                     .SetPosition(message.Position - block.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation(message.Rotation)
-            set block' world <| worldEntity message.EntityAddress
+            set block' world <| World.worldEntity message.EntityAddress
             
         override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, world) =
             if not block.Visible then []
@@ -540,7 +534,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (block, world) =
             let sprite = block.ImageSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
     
@@ -548,35 +542,35 @@ module DispatchersModule =
         inherit Entity2dDispatcher ()
 
         let registerAvatarPhysics address (avatar : Entity) world =
-            let avatar' = avatar.SetPhysicsId <| getPhysicsId avatar.Id
-            let bodyCreateMessage =
-                BodyCreateMessage
-                    { EntityAddress = address
-                      PhysicsId = avatar'.PhysicsId
-                      Shape =
-                        CircleShape
-                            { Radius = avatar'.Size.X * 0.5f
-                              Properties =
-                                { Center = Vector2.Zero
-                                  Restitution = 0.0f
-                                  FixedRotation = true
-                                  LinearDamping = 10.0f
-                                  AngularDamping = 0.0f }}
-                      Position = avatar'.Position + avatar'.Size * 0.5f
-                      Rotation = avatar'.Rotation
-                      Density = avatar'.Density
-                      BodyType = BodyType.Dynamic }
-            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            let avatar' = avatar.SetPhysicsId <| Physics.getId avatar.Id
+            let createBodyMessage =
+                
+                { EntityAddress = address
+                  PhysicsId = avatar'.PhysicsId
+                  Shape =
+                    CircleShape
+                        { Radius = avatar'.Size.X * 0.5f
+                          Properties =
+                            { Center = Vector2.Zero
+                              Restitution = 0.0f
+                              FixedRotation = true
+                              LinearDamping = 10.0f
+                              AngularDamping = 0.0f }}
+                  Position = avatar'.Position + avatar'.Size * 0.5f
+                  Rotation = avatar'.Rotation
+                  Density = avatar'.Density
+                  BodyType = BodyType.Dynamic }
+            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (avatar', world')
 
         let unregisterAvatarPhysics (_ : Address) (avatar : Entity) world =
-            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = avatar.PhysicsId }
-            { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = avatar.PhysicsId }
+            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar' = base.Init (avatar, dispatcherContainer)
             avatar'
-                .SetPhysicsId(InvalidPhysicsId)
+                .SetPhysicsId(Physics.InvalidId)
                 .SetDensity(NormalDensity)
                 .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
@@ -588,20 +582,20 @@ module DispatchersModule =
             
         override dispatcher.PropagatePhysics (avatar, address, world) =
             let (avatar', world') = world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
-            set avatar' world' <| worldEntity address
+            set avatar' world' <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (avatar, groupAddress, world) =
             let address = addrstr groupAddress avatar.Name
             let world' = unregisterAvatarPhysics address avatar world
             let (avatar', world'') = registerAvatarPhysics address avatar world'
-            set avatar' world'' <| worldEntity address
+            set avatar' world'' <| World.worldEntity address
 
         override dispatcher.HandleBodyTransformMessage (avatar, message, address, world) =
             let avatar' =
                 (avatar
                     .SetPosition <| message.Position - avatar.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation message.Rotation
-            set avatar' world <| worldEntity message.EntityAddress
+            set avatar' world <| World.worldEntity message.EntityAddress
 
         override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, world) =
             if not avatar.Visible then []
@@ -618,7 +612,7 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (avatar, world) =
             let sprite = avatar.ImageSprite
-            match tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -626,53 +620,51 @@ module DispatchersModule =
         inherit Entity2dDispatcher ()
 
         let registerTilePhysicsBox address (tm : Entity) tmd td world =
-            let physicsId = getPhysicsId tm.Id
+            let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
                   AngularDamping = 0.0f }
-            let bodyCreateMessage =
-                BodyCreateMessage
-                    { EntityAddress = address
-                      PhysicsId = physicsId
-                      Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = shapeProperties }
-                      Position =
-                        Vector2 (
-                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
-                      Rotation = tm.Rotation
-                      Density = tm.Density
-                      BodyType = BodyType.Static }
-            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            let createBodyMessage =
+                { EntityAddress = address
+                  PhysicsId = physicsId
+                  Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = shapeProperties }
+                  Position =
+                    Vector2 (
+                        single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                        single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                  Rotation = tm.Rotation
+                  Density = tm.Density
+                  BodyType = BodyType.Static }
+            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 
         let registerTilePhysicsPolygon address (tm : Entity) tmd td vertices world =
-            let physicsId = getPhysicsId tm.Id
+            let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
                   AngularDamping = 0.0f }
-            let bodyCreateMessage =
-                BodyCreateMessage
-                    { EntityAddress = address
-                      PhysicsId = physicsId
-                      Shape = PolygonShape { Vertices = vertices; Properties = shapeProperties }
-                      Position =
-                        Vector2 (
-                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
-                      Rotation = tm.Rotation
-                      Density = tm.Density
-                      BodyType = BodyType.Static }
-            let world' = { world with PhysicsMessages = bodyCreateMessage :: world.PhysicsMessages }
+            let createBodyMessage =
+                { EntityAddress = address
+                  PhysicsId = physicsId
+                  Shape = PolygonShape { Vertices = vertices; Properties = shapeProperties }
+                  Position =
+                    Vector2 (
+                        single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                        single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                  Rotation = tm.Rotation
+                  Density = tm.Density
+                  BodyType = BodyType.Static }
+            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 
         let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) (_ : TmxLayerTile) =
-            let td = makeTileData tm tmd tld tileIndex
+            let td = World.makeTileData tm tmd tld tileIndex
             match td.OptTileSetTile with
             | None -> (world, physicsIds)
             | Some tileSetTile ->
@@ -702,7 +694,7 @@ module DispatchersModule =
                         (world, physicsIds)
 
         let registerTileLayerPhysics address tileMap tileMapData collisionLayer world =
-            let tileLayerData = makeTileLayerData tileMap tileMapData collisionLayer
+            let tileLayerData = World.makeTileLayerData tileMap tileMapData collisionLayer
             if not <| tileLayerData.Layer.Properties.ContainsKey NuConstants.CollisionProperty then (world, [])
             else
                 Seq.foldi
@@ -711,7 +703,7 @@ module DispatchersModule =
                     tileLayerData.Tiles
 
         let registerTileMapPhysics address (tileMap : Entity) world =
-            let tileMapData = makeTileMapData tileMap.TileMapAsset world
+            let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
             let (world', physicsIds) =
                 List.fold
                     (fun (world'', physicsIds) tileLayer ->
@@ -723,8 +715,8 @@ module DispatchersModule =
             (tileMap', world')
 
         let unregisterTilePhysics world physicsId =
-            let bodyDestroyMessage = BodyDestroyMessage { PhysicsId = physicsId }
-            { world with PhysicsMessages = bodyDestroyMessage :: world.PhysicsMessages }
+            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
+            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
         let unregisterTileMapPhysics (_ : Address) (tileMap : Entity) world =
             List.fold unregisterTilePhysics world <| tileMap.PhysicsIds
@@ -744,19 +736,19 @@ module DispatchersModule =
             
         override dispatcher.PropagatePhysics (tileMap, address, world) =
             let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
-            set tileMap' world' <| worldEntity address
+            set tileMap' world' <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (tileMap, groupAddress, world) =
             let address = addrstr groupAddress tileMap.Name
             let world' = unregisterTileMapPhysics address tileMap world
             let (tileMap', world'') = registerTileMapPhysics address tileMap world'
-            set tileMap' world'' <| worldEntity address
+            set tileMap' world'' <| World.worldEntity address
 
         override dispatcher.GetRenderDescriptors (tileMap, viewAbsolute, viewRelative, world) =
             if not tileMap.Visible then []
             else
                 let tileMapAsset = tileMap.TileMapAsset
-                match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+                match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
                 | None -> []
                 | Some (_, sprites, map) ->
                     let layers = List.ofSeq map.Layers
@@ -784,17 +776,17 @@ module DispatchersModule =
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset
-            match tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
             | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
     type GroupDispatcher () =
         
         abstract member Register : Group * Address * Entity list * World -> World
-        default this.Register (_, address, entities, world) = addEntities address entities world
+        default this.Register (_, address, entities, world) = World.addEntities address entities world
 
         abstract member Unregister : Group * Address * World -> World
-        default this.Unregister (_, address, world) = removeEntities address world
+        default this.Unregister (_, address, world) = World.removeEntities address world
 
     type TransitionDispatcher () =
         class end
@@ -802,10 +794,10 @@ module DispatchersModule =
     type ScreenDispatcher () =
 
         abstract member Register : Screen * Address * GroupDescriptor list * World -> World
-        default this.Register (_, address, groupDescriptors, world) = addGroups address groupDescriptors world
+        default this.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
         abstract member Unregister : Screen * Address * World -> World
-        default this.Unregister (_, address, world) = removeGroups address world
+        default this.Unregister (_, address, world) = World.removeGroups address world
 
     type GameDispatcher () =
         abstract member Register : Game * World -> World

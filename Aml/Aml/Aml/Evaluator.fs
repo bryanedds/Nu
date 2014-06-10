@@ -1352,13 +1352,13 @@ module Evaluator =
         | None ->
             try let assembly = Reflection.Assembly.LoadFrom usingLanguage.ULPath
                 let instance = assembly.CreateInstance usingLanguage.ULType
-                if instance = null then makeEvalViolation env ":v/languageModule/creationFailure" ("Could not create language module '" + usingLanguage.ULType + "'.")
+                if instance = null then makeEvalViolation env ":v/languageModule/creationFailure" ("Could not make language module '" + usingLanguage.ULType + "'.")
                 else
                     let languageModule = instance :?> ILanguageModule
                     let env' = { env with EnvOptLanguageModule = Some languageModule }
                     let optEnv'' = languageModule.TryInitialize env'
                     match optEnv'' with
-                    | None -> makeEvalViolation env ":v/languageModule/creationFailure" ("Could not create language module '" + usingLanguage.ULType + "' due to duplicate declaration names.")
+                    | None -> makeEvalViolation env ":v/languageModule/creationFailure" ("Could not make language module '" + usingLanguage.ULType + "' due to duplicate declaration names.")
                     | Some env'' -> makeEvalUnit env''
             with exn -> makeEvalExceptionViolation env exn
         // TODO: consider making a violation if a different LM than a current one is loaded

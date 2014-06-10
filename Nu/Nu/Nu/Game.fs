@@ -4,9 +4,6 @@ open FSharpx
 open FSharpx.Lens.Operators
 open Prime
 open Nu
-open Nu.NuCore
-open Nu.Sim
-open Nu.Screen
 
 [<AutoOpen>]
 module GameModule =
@@ -14,6 +11,7 @@ module GameModule =
     type Game with
         member this.Register (world : World) : World = this?Register world
 
+[<RequireQualifiedAccess>]
 module Game =
 
     // WISDOM:

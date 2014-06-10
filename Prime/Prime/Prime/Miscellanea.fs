@@ -51,10 +51,10 @@ module Miscellanea =
             op ()
             doUntil op pred
 
-    /// Creates a function that creates a unique number.
+    /// Make a function that gets a unique number.
     /// TODO: place a mutex lock in this
     /// TODO: see if returned function can be optimized by minimizing dereferences
-    let createGetNextId () =
+    let makeGetNextId () =
         let nextId = ref InvalidId
         let getNextId =
             (fun () ->

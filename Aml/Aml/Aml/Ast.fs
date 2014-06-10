@@ -514,5 +514,5 @@ module AstModule =
 
 module Ast =
 
-    /// Creates Special Ids.
-    let getNextSpecialId = createGetNextId ()
+    /// Make Special Ids.
+    let getNextSpecialId = makeGetNextId ()
