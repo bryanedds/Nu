@@ -261,6 +261,7 @@ module World =
                       typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
                       typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
                       typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
+                      typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
                       typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
                       typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
                       typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
