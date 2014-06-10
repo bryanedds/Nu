@@ -91,7 +91,7 @@ module World =
         let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
         world''.Game.Register world''
 
-    let saveGroupFile group entities fileName world =
+    let saveGroupToFile group entities fileName world =
         use file = File.Open (fileName, FileMode.Create)
         let writerSettings = XmlWriterSettings ()
         writerSettings.Indent <- true
@@ -102,7 +102,7 @@ module World =
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
-    let loadGroupFile (fileName : string) seal world =
+    let loadGroupFromFile (fileName : string) seal world =
         let document = XmlDocument ()
         document.Load fileName
         let rootNode = document.["Root"]
@@ -240,7 +240,7 @@ module World =
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
         let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
-        let (group, entities) = loadGroupFile groupFileName seal world
+        let (group, entities) = loadGroupFromFile groupFileName seal world
         addScreen screenAddress screen [(groupName, group, entities)] world
 
     let tryMakeEmpty sdlDeps gameDispatcher (extData : obj) =

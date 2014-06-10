@@ -471,7 +471,6 @@ module DispatchersModule =
         let registerBlockPhysics address (block : Entity) world =
             let block' = block.SetPhysicsId <| Physics.getId block.Id
             let createBodyMessage =
-                
                 { EntityAddress = address
                   PhysicsId = block'.PhysicsId
                   Shape = BoxShape
@@ -549,7 +548,6 @@ module DispatchersModule =
         let registerAvatarPhysics address (avatar : Entity) world =
             let avatar' = avatar.SetPhysicsId <| Physics.getId avatar.Id
             let createBodyMessage =
-                
                 { EntityAddress = address
                   PhysicsId = avatar'.PhysicsId
                   Shape =

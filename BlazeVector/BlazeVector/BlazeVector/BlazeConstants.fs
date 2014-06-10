@@ -5,11 +5,17 @@ module BlazeConstants =
     // misc constants. These, and the following constants, will be explained in depth later. Just
     // scan over them for now, or look at them in the debugger on your own.
     let BlazeGuiPackageName = "BlazeGui"
-    let StageAvatarName = "Avatar"
+    let StageCharacterName = "Character"
     let StagePlayName = "StagePlay"
     let StagePlayFileName = "Assets/BlazeVector/Groups/StagePlay.nugroup"
     let Section0Name = "Section0"
     let Section0FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
+    let Section1Name = "Section1"
+    let Section1FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
+    let Section2Name = "Section3"
+    let Section2FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
+    let Section3Name = "Section3"
+    let Section3FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
     
     // transition constants
     let IncomingTimeSplash = 60
