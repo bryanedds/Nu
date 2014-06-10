@@ -3,14 +3,15 @@
   <Group>
     <Xtension xDispatcher="BlazeStageGroupDispatcher" />
     <Entity>
-      <Name>Avatar</Name>
+      <Name>Character</Name>
       <Enabled>True</Enabled>
       <Visible>True</Visible>
-      <Xtension xDispatcher="AvatarDispatcher">
+      <Xtension xDispatcher="CharacterDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">1</Depth>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image7;Default;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
         <Position type="OpenTK.Vector2">-456;-175.6805</Position>
+        <Radius type="System.Single">16</Radius>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
       </Xtension>
