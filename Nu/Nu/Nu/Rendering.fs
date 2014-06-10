@@ -8,9 +8,7 @@ open SDL2
 open TiledSharp
 open Prime
 open Nu
-open Nu.NuCore
 open Nu.NuConstants
-open Nu.Assets
 
 [<AutoOpen>]
 module RenderingModule =
@@ -37,7 +35,7 @@ module RenderingModule =
           Size : Vector2
           Rotation : single
           MapSize : int * int // TODO: replace int * ints with Vector2I.
-          Tiles : TmxLayerTile Collections.Generic.List
+          Tiles : TmxLayerTile List
           TileSourceSize : int * int
           TileSize : Vector2
           TileMapSize : Vector2
@@ -141,9 +139,10 @@ module RenderingModule =
                 let args = (obj :?> string).Split ';'
                 { FontAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
+[<RequireQualifiedAccess>]
 module Rendering =
 
-    let initRenderConverters () =
+    let initTypeConverters () =
         assignTypeConverter<Sprite, SpriteTypeConverter> ()
         assignTypeConverter<Font, FontTypeConverter> ()
         assignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
@@ -186,7 +185,7 @@ module Rendering =
             None
 
     let private tryLoadRenderPackage packageName fileName renderer =
-        let optAssets = tryLoadAssets "Rendering" packageName fileName
+        let optAssets = Assets.tryLoadAssets "Rendering" packageName fileName
         match optAssets with
         | Left error ->
             note <| "HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."

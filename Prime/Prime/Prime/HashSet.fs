@@ -5,7 +5,7 @@
 module HashSet
 open System.Collections.Generic
 
-/// Create a hash set with a single element.
+/// Make a hash set with a single element.
 let singleton elem =
     List.toHashSet [elem]
 

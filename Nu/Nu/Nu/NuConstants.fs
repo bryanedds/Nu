@@ -5,7 +5,7 @@ namespace Nu
 open System
 open OpenTK
 open Nu
-open Nu.NuCore
+
 module NuConstants =
 
     let [<Literal>] AssetGraphFileName = "AssetGraph.xml"
@@ -51,5 +51,5 @@ module NuConstants =
     let GamePublishingPriority = Single.MaxValue
     let ScreenPublishingPriority = GamePublishingPriority * 0.5f
     let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
-    let ResolutionX = getResolutionOrDefault true 960
-    let ResolutionY = getResolutionOrDefault false 544
+    let ResolutionX = NuCore.getResolutionOrDefault true 960
+    let ResolutionY = NuCore.getResolutionOrDefault false 544

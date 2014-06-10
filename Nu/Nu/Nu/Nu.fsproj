@@ -72,6 +72,7 @@
     <Compile Include="Sim.fs" />
     <Compile Include="Entity.fs" />
     <Compile Include="Group.fs" />
+    <Compile Include="Transition.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Game.fs" />
     <Compile Include="WorldPrims.fs" />

@@ -10,9 +10,6 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.Assets
-open Nu.Audio
-open Nu.Rendering
 
 [<AutoOpen>]
 module MetadataModule =
@@ -30,6 +27,7 @@ module MetadataModule =
 
     exception TileSetPropertyNotFoundException of string
 
+[<RequireQualifiedAccess>]
 module Metadata =
 
     let getTileSetProperties (tileSet : TmxTileset) =
@@ -56,7 +54,7 @@ module Metadata =
                             let packageName = (packageNode.Attributes.GetNamedItem "name").InnerText
                             let optAssets =
                                 List.map
-                                    (fun assetNode -> tryLoadAsset packageName assetNode)
+                                    (fun assetNode -> Assets.tryLoadAsset packageName assetNode)
                                     (List.ofSeq <| packageNode.OfType<XmlNode> ())
                             let assets = List.definitize optAssets
                             debugIf (fun () -> assets.Count () <> optAssets.Count ()) <| "Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'."

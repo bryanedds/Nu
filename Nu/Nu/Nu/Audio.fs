@@ -5,9 +5,7 @@ open System.ComponentModel
 open SDL2
 open Prime
 open Nu
-open Nu.NuCore
 open Nu.NuConstants
-open Nu.Assets
 
 [<AutoOpen>]
 module AudioModule =
@@ -90,9 +88,10 @@ module AudioModule =
                 let args = (obj :?> string).Split ';'
                 { SongAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
+[<RequireQualifiedAccess>]
 module Audio = 
 
-    let initAudioConverters () =
+    let initTypeConverters () =
         assignTypeConverter<Sound, SoundTypeConverter> ()
         assignTypeConverter<Song, SongTypeConverter> ()
 
@@ -117,7 +116,7 @@ module Audio =
         | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
     let private tryLoadAudioPackage packageName fileName audioPlayer =
-        let optAssets = tryLoadAssets "Audio" packageName fileName
+        let optAssets = Assets.tryLoadAssets "Audio" packageName fileName
         match optAssets with
         | Left error ->
             trace <| "HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."

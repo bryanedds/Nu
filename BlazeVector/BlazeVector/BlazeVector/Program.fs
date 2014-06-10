@@ -25,22 +25,21 @@ module Program =
         // this specifies the manner in which the game's rendering takes place. With this
         // configuration, rendering is hardware-accelerated and synchronized with the system's
         // vertical re-trace, making for fast and smooth rendering.
-        let sdlRenderFlags =
+        let sdlRendererFlags =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
                  int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
 
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
-            Sdl.makeSdlConfig
-                sdlViewConfig
-                NuConstants.ResolutionX
-                NuConstants.ResolutionY
-                sdlRenderFlags
-                NuConstants.AudioBufferSizeDefault
+            { ViewConfig = sdlViewConfig
+              ViewW = NuConstants.ResolutionX
+              ViewH = NuConstants.ResolutionY
+              RendererFlags = sdlRendererFlags
+              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
-            (fun sdlDeps -> BlazeFlow.tryCreateBlazeVectorWorld sdlDeps ())
+            (fun sdlDeps -> BlazeFlow.tryMakeBlazeVectorWorld sdlDeps ())
             (fun world -> (true, world))
             sdlConfig

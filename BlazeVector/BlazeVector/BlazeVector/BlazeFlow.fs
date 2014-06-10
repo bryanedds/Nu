@@ -35,15 +35,15 @@ module BlazeFlow =
         let world' = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress true world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world'
 
-    // here we create the BlazeVector world in a callback from the World.run function.
-    let tryCreateBlazeVectorWorld sdlDeps extData =
+    // here we make the BlazeVector world in a callback from the World.run function.
+    let tryMakeBlazeVectorWorld sdlDeps extData =
 
         // our custom game dispatcher here is OmniGameDispatcher
         let gameDispatcher = BlazeGameDispatcher () :> obj
 
-        // we use the World.tryCreateEmptyWorld as a convenience function to create an empty world
-        // that we will transform to create the BlazeVector world.
-        let optWorld = World.tryCreateEmptyWorld sdlDeps gameDispatcher extData
+        // we use World.tryMakeEmpty to create an empty world that we will transform to create the
+        // BlazeVector world
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->

@@ -4,21 +4,16 @@ open FSharpx
 open FSharpx.Lens.Operators
 open Prime
 open Nu
-open Nu.NuCore
 open Nu.NuConstants
-open Nu.Sim
-open Nu.Group
 
 [<AutoOpen>]
 module ScreenModule =
-
-    type Transition with
-        end
 
     type Screen with
         member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, groupDescriptors, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
+[<RequireQualifiedAccess>]
 module Screen =
 
     let screenIncoming =
@@ -29,29 +24,17 @@ module Screen =
         { Get = fun screen -> screen.Outgoing
           Set = fun value screen -> { screen with Outgoing = value }}
 
-    let makeDissolveSprite () =
-        { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-
-    let makeDefaultTransition defaultDispatcherName transitionType =
-        { Id = getNuId ()
-          Lifetime = 0
-          Ticks = 0
-          Type = transitionType
-          OptDissolveSprite = None
-          FacetNamesNs = []
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
-
-    let makeDefaultScreen defaultDispatcherName defaultTransitionDispatcherName =
-        { Id = getNuId ()
+    let makeDefault defaultDispatcherName defaultTransitionDispatcherName =
+        { Id = NuCore.getId ()
           State = IdlingState
-          Incoming = makeDefaultTransition defaultTransitionDispatcherName Incoming
-          Outgoing = makeDefaultTransition defaultTransitionDispatcherName Outgoing
+          Incoming = Transition.makeDefault defaultTransitionDispatcherName Incoming
+          Outgoing = Transition.makeDefault defaultTransitionDispatcherName Outgoing
           FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDissolveScreen dispatcherName defaultTransitionDispatcherName incomingTime outgoingTime =
-        let optDissolveSprite = Some <| makeDissolveSprite ()
-        let incomingDissolve = { makeDefaultTransition defaultTransitionDispatcherName Incoming with Lifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
-        let outgoingDissolve = { makeDefaultTransition defaultTransitionDispatcherName Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite }
-        let screen = makeDefaultScreen dispatcherName defaultTransitionDispatcherName
+    let makeDissolve dispatcherName defaultTransitionDispatcherName incomingTime outgoingTime =
+        let optDissolveSprite = Some <| { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+        let incomingDissolve = { Transition.makeDefault defaultTransitionDispatcherName Incoming with Lifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
+        let outgoingDissolve = { Transition.makeDefault defaultTransitionDispatcherName Outgoing with Lifetime = outgoingTime; OptDissolveSprite = optDissolveSprite }
+        let screen = makeDefault dispatcherName defaultTransitionDispatcherName
         { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

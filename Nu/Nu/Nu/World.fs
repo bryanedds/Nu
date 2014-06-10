@@ -16,81 +16,68 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.NuCore
 open Nu.NuConstants
-open Nu.NuMath
-open Nu.Physics
-open Nu.Rendering
-open Nu.Metadata
-open Nu.Audio
-open Nu.Sdl
-open Nu.Camera
-open Nu.Sim
-open Nu.Entity
-open Nu.Group
-open Nu.Screen
-open Nu.Game
-open Nu.WorldPrims
+
+[<RequireQualifiedAccess>]
 module World =
 
     (* Function forwarding for WorldPrims in lieu of an F# export feature. *)
 
     // Entity forwarders.
-    let worldEntity = worldEntity
-    let worldOptEntity = worldOptEntity
-    let worldEntities = worldEntities
-    let withEntity = withEntity
-    let withOptEntity = withOptEntity
-    let tryWithEntity = tryWithEntity
-    let registerEntity = registerEntity
-    let unregisterEntity = unregisterEntity
-    let removeEntity = removeEntity
-    let removeEntities = removeEntities
-    let addEntity = addEntity
-    let addEntities = addEntities
-    let tryPickEntity = tryPickEntity
+    let worldEntity = WorldPrims.worldEntity
+    let worldOptEntity = WorldPrims.worldOptEntity
+    let worldEntities = WorldPrims.worldEntities
+    let withEntity = WorldPrims.withEntity
+    let withOptEntity = WorldPrims.withOptEntity
+    let tryWithEntity = WorldPrims.tryWithEntity
+    let registerEntity = WorldPrims.registerEntity
+    let unregisterEntity = WorldPrims.unregisterEntity
+    let removeEntity = WorldPrims.removeEntity
+    let removeEntities = WorldPrims.removeEntities
+    let addEntity = WorldPrims.addEntity
+    let addEntities = WorldPrims.addEntities
+    let tryPickEntity = WorldPrims.tryPickEntity
     
     // Group forwarders.
-    let worldGroup = worldGroup
-    let worldOptGroup = worldOptGroup
-    let worldGroups = worldGroups
-    let withGroup = withGroup
-    let withOptGroup = withOptGroup
-    let tryWithGroup = tryWithGroup
-    let registerGroup = registerGroup
-    let unregisterGroup = unregisterGroup
-    let removeGroup = removeGroup
-    let removeGroups = removeGroups
-    let addGroup = addGroup
-    let addGroups = addGroups
+    let worldGroup = WorldPrims.worldGroup
+    let worldOptGroup = WorldPrims.worldOptGroup
+    let worldGroups = WorldPrims.worldGroups
+    let withGroup = WorldPrims.withGroup
+    let withOptGroup = WorldPrims.withOptGroup
+    let tryWithGroup = WorldPrims.tryWithGroup
+    let registerGroup = WorldPrims.registerGroup
+    let unregisterGroup = WorldPrims.unregisterGroup
+    let removeGroup = WorldPrims.removeGroup
+    let removeGroups = WorldPrims.removeGroups
+    let addGroup = WorldPrims.addGroup
+    let addGroups = WorldPrims.addGroups
     
     // Screen forwarders.
-    let worldScreen = worldScreen
-    let worldOptScreen = worldOptScreen
-    let worldScreens = worldScreens
-    let withScreen = withScreen
-    let withOptScreen = withOptScreen
-    let tryWithScreen = tryWithScreen
-    let registerScreen = registerScreen
-    let unregisterScreen = unregisterScreen
-    let removeScreen = removeScreen
-    let addScreen = addScreen
+    let worldScreen = WorldPrims.worldScreen
+    let worldOptScreen = WorldPrims.worldOptScreen
+    let worldScreens = WorldPrims.worldScreens
+    let withScreen = WorldPrims.withScreen
+    let withOptScreen = WorldPrims.withOptScreen
+    let tryWithScreen = WorldPrims.tryWithScreen
+    let registerScreen = WorldPrims.registerScreen
+    let unregisterScreen = WorldPrims.unregisterScreen
+    let removeScreen = WorldPrims.removeScreen
+    let addScreen = WorldPrims.addScreen
 
     // Game forwarders.
-    let worldOptSelectedScreenAddress = worldOptSelectedScreenAddress
-    let worldOptSelectedScreen = worldOptSelectedScreen
+    let worldOptSelectedScreenAddress = WorldPrims.worldOptSelectedScreenAddress
+    let worldOptSelectedScreen = WorldPrims.worldOptSelectedScreen
     
     // Other forwarders.
-    let handleEventAsExit = handleEventAsExit
-    let handleEventAsScreenTransition = handleEventAsScreenTransition
-    let handleEventAsSwallow = handleEventAsSwallow
-    let handleMessage = handleMessage
-    let initTypeConverters = initTypeConverters
-    let publish = publish
-    let subscribe = subscribe
-    let transitionScreen = transitionScreen
-    let unsubscribe = unsubscribe
-    let withSubscription = withSubscription
+    let handleEventAsExit = WorldPrims.handleEventAsExit
+    let handleEventAsScreenTransition = WorldPrims.handleEventAsScreenTransition
+    let handleEventAsSwallow = WorldPrims.handleEventAsSwallow
+    let initTypeConverters = WorldPrims.initTypeConverters
+    let publish = WorldPrims.publish
+    let subscribe = WorldPrims.subscribe
+    let transitionScreen = WorldPrims.transitionScreen
+    let unsubscribe = WorldPrims.unsubscribe
+    let withSubscription = WorldPrims.withSubscription
 
     (* Normal functions. *)
 
@@ -111,7 +98,7 @@ module World =
         use writer = XmlWriter.Create (file, writerSettings)
         writer.WriteStartDocument ()
         writer.WriteStartElement "Root"
-        writeGroupToXml writer group entities
+        Group.writeToXml writer group entities
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
@@ -120,7 +107,7 @@ module World =
         document.Load fileName
         let rootNode = document.["Root"]
         let groupNode = rootNode.["Group"]
-        readGroupFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name seal world
+        Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name seal world
 
     let private play world =
         let audioMessages = world.AudioMessages
@@ -129,8 +116,8 @@ module World =
 
     let private getGroupRenderDescriptors camera dispatcherContainer entities =
         let entityValues = Map.toValueSeq entities
-        let viewAbsolute = getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
-        let viewRelative = getViewRelativeI camera |> Matrix3.getInverseViewMatrix
+        let viewAbsolute = Camera.getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
+        let viewRelative = Camera.getViewRelativeI camera |> Matrix3.getInverseViewMatrix
         Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (viewAbsolute, viewRelative, dispatcherContainer)) entityValues
 
     let private getTransitionRenderDescriptors camera dispatcherContainer transition =
@@ -197,9 +184,9 @@ module World =
         let world' = { world with PhysicsMessages = [] }
         handleIntegrationMessages integrationMessages world'
 
-    let run4 tryCreateWorld handleUpdate handleRender sdlConfig =
-        runSdl
-            (fun sdlDeps -> tryCreateWorld sdlDeps)
+    let run4 tryMakeWorld handleUpdate handleRender sdlConfig =
+        Sdl.run
+            (fun sdlDeps -> tryMakeWorld sdlDeps)
             (fun refEvent world ->
                 let event = !refEvent
                 match event.``type`` with
@@ -210,14 +197,14 @@ module World =
                     if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragEvent [] { Handled = false; Data = MouseMoveData mousePosition } world'
                     else publish MouseMoveEvent [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mouseButton = makeMouseButton event.button.button
+                    let mouseButton = Sdl.makeNuMouseButton event.button.button
                     let mouseEvent = addrstr DownMouseEvent <| string mouseButton
                     let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                     let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
                     publish mouseEvent [] { Handled = false; Data = messageData } world'
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
-                    let mouseButton = makeMouseButton event.button.button
+                    let mouseButton = Sdl.makeNuMouseButton event.button.button
                     let mouseEvent = addrstr UpMouseEvent <| string mouseButton
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
@@ -231,33 +218,33 @@ module World =
                 else
                     let (keepRunning', world'') = publish TickEvent [] { Handled = false; Data = NoData } world'
                     if not keepRunning' then (false, world'')
-                    else updateTransition handleUpdate world'')
+                    else WorldPrims.updateTransition handleUpdate world'')
             (fun world -> let world' = render world in handleRender world')
             (fun world -> let world' = play world in { world' with Ticks = world'.Ticks + 1UL })
-            (fun world -> { world with Renderer = handleRenderExit world.Renderer })
+            (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
             sdlConfig
 
-    let run tryCreateWorld handleUpdate sdlConfig =
-        run4 tryCreateWorld handleUpdate id sdlConfig
+    let run tryMakeWorld handleUpdate sdlConfig =
+        run4 tryMakeWorld handleUpdate id sdlConfig
 
     let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite seal world =
-        let splashScreen = makeDissolveScreen screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
-        let splashGroup = makeDefaultGroup typeof<GroupDispatcher>.Name
-        let splashLabel = makeDefaultEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") seal world
+        let splashScreen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
+        let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name
+        let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") seal world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel'3 = splashLabel''.SetLabelSprite (sprite : Sprite)
         let world' = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'3])] world
-        let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| handleSplashScreenIdle idlingTime) world'
+        let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
-        let screen = makeDissolveScreen screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
+        let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let (group, entities) = loadGroupFile groupFileName seal world
         addScreen screenAddress screen [(groupName, group, entities)] world
 
-    let tryCreateEmptyWorld sdlDeps gameDispatcher (extData : obj) =
-        match tryGenerateAssetMetadataMap AssetGraphFileName with
+    let tryMakeEmpty sdlDeps gameDispatcher (extData : obj) =
+        match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
             let gameDispatcherName = (gameDispatcher.GetType ()).Name
@@ -281,7 +268,7 @@ module World =
                       typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                       gameDispatcherName, gameDispatcher|]
             let world =
-                { Game = { Id = getNuId (); OptSelectedScreenAddress = None; FacetNamesNs = []; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                { Game = { Id = NuCore.getId (); OptSelectedScreenAddress = None; FacetNamesNs = []; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
@@ -289,9 +276,9 @@ module World =
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
-                  AudioPlayer = makeAudioPlayer ()
-                  Renderer = makeRenderer sdlDeps.RenderContext
-                  Integrator = makeIntegrator Gravity
+                  AudioPlayer = Audio.makeAudioPlayer ()
+                  Renderer = Rendering.makeRenderer sdlDeps.RenderContext
+                  Integrator = Physics.makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
                   AudioMessages = [HintAudioPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName; HAPU = () }]
                   RenderMessages = [HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName; HRPU = () }]
