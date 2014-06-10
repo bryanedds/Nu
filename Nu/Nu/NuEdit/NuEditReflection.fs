@@ -45,9 +45,9 @@ module NuEditReflection =
     let saveFile fileName world =
         let editorGroup = get world <| World.worldGroup NuEditConstants.EditorGroupAddress
         let editorEntities = get world <| World.worldEntities NuEditConstants.EditorGroupAddress
-        World.saveGroupFile editorGroup editorEntities fileName world
+        World.saveGroupToFile editorGroup editorEntities fileName world
 
     let loadFile fileName world =
         let world' = World.removeGroup NuEditConstants.EditorGroupAddress world
-        let (group, entities) = World.loadGroupFile fileName false world'
+        let (group, entities) = World.loadGroupFromFile fileName false world'
         World.addGroup NuEditConstants.EditorGroupAddress group entities world'

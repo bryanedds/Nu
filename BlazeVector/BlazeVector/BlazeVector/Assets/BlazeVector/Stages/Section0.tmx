@@ -178,7 +178,7 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DKDaC2gfjg8x2BmIPIA6EYnc0vehyLlBzcPnFEAt2hGInqH0wPrLZyBgZRKDJhUDNwRZWyGYjY2x24MPIAJ869LDCpQ4A10oXLg==
+   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DKDaC2gfjg8x2BmIPIA6EYnc0vehyLlBzcPnFEAt2hGInqH0wPrLZyBgZRKDJhUDNQQ8rMzSzkTE2O/BhZIBPHXJYueFRBwD/2heq
   </data>
  </layer>
  <layer name="Grass" width="32" height="9">
@@ -188,7 +188,7 @@
  </layer>
  <layer name="Chains" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYEAAZijNgkSzIInjU4cMWJAwsnpmNDXoYDDaj64Pmzp0gG6/MhpNrP0qWPRhcw85AJv9MHtUsMhRG9DDjlEw+AEA1xgBkg==
+   eJxjYEAAZijNgkSzIInjU8eAxEbGyOqZ0dShg8FoP7o+bOqQAcxeFSR5ZTSaWPtVsOjD5h5koIJHDhlgsx9mD7FmUALoYccoGPwAAMknAeI=
   </data>
  </layer>
  <layer name="Platforms" width="32" height="9">
@@ -196,7 +196,7 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFpAJJEtWLArEYEIvTSR8rELMBMTuN7OMk0VxsgNQwHAXDEwAA+P4BFA==
+   eJxjYBgFpAJJEtWIArEYEIuTaA85+ohxG6X2cVJgBwxQ4s5RMHwAAFtdATQ=
   </data>
  </layer>
 </map>

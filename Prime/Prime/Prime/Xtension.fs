@@ -63,6 +63,31 @@ module XtensionModule =
             then failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
             else Xtension.getDefaultValue this
 
+        static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
+                let dispatchers = dispatcherContainer.GetDispatchers ()
+                match Map.tryFind dispatcherName dispatchers with
+                | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
+                | Some dispatcher -> dispatcher
+
+        static member getDispatcher xtension (dispatcherContainer : IXDispatcherContainer) =
+            let optXDispatcherName = xtension.OptXDispatcherName
+            match optXDispatcherName with
+            | None -> Xtension.emptyDispatcher
+            | Some dispatcherName -> Xtension.getDispatcherByName dispatcherName dispatcherContainer
+
+        static member derivesFrom dispatcherTarget xtension dispatcherContainer =
+            let dispatcher = Xtension.getDispatcher xtension dispatcherContainer
+            let dispatcherType = dispatcherTarget.GetType ()
+            let dispatcherTargetType = dispatcherTarget.GetType ()
+            dispatcherType.IsSubclassOf dispatcherTargetType
+
+        static member derivesFromByName dispatcherTargetName xtension dispatcherContainer =
+            let dispatcher = Xtension.getDispatcher xtension dispatcherContainer
+            let dispatcherTarget = Xtension.getDispatcherByName dispatcherTargetName dispatcherContainer
+            let dispatcherType = dispatcher.GetType ()
+            let dispatcherTargetType = dispatcherTarget.GetType ()
+            dispatcherType.IsSubclassOf dispatcherTargetType
+
         /// The dynamic dispatch operator.
         static member (?) (target, xtension, memberName) : 'a -> 'r =
 
@@ -101,17 +126,10 @@ module XtensionModule =
                             let args = Array.append [|target :> obj|] argArray
 
                             // find dispatcher, or use the empty dispatcher
-                            let optXDispatcherName = xtension.OptXDispatcherName
-                            let dispatcher =
-                                match optXDispatcherName with
-                                | None -> Xtension.emptyDispatcher
-                                | Some xDispatcherName ->
-                                    let dispatchers = context.GetDispatchers ()
-                                    match Map.tryFind xDispatcherName dispatchers with
-                                    | None -> failwith <| "Invalid XDispatcher '" + xDispatcherName + "'."
-                                    | Some dispatcher -> dispatcher
+                            
 
                             // attempt to dispatch method
+                            let dispatcher = Xtension.getDispatcher xtension context
                             let dispatcherType = dispatcher.GetType ()
                             match dispatcherType.GetMethod memberName with
                             | null -> failwith <| "Could not find method '" + memberName + "' on XDispatcher '" + dispatcherType.Name + "'."
