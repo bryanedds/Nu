@@ -14,6 +14,7 @@ module CameraModule =
         { EyeCenter : Vector2
           EyeSize : Vector2 }
 
+[<RequireQualifiedAccess>]
 module Camera =
 
     let getViewAbsoluteF camera =
@@ -34,3 +35,10 @@ module Camera =
         let translation = camera.EyeCenter
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
         Matrix3.makeFromTranslation translationI
+
+    let mouseToScreen (position : Vector2) camera =
+        let positionScreen =
+            Vector2 (
+                position.X - camera.EyeSize.X * 0.5f,
+                -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
+        positionScreen

@@ -1,7 +1,6 @@
 ﻿namespace Nu
 open OpenTK
 open Nu
-open Nu.NuCore
 
 [<AutoOpen>]
 module InputModule =

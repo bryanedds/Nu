@@ -17,20 +17,19 @@ module Program =
                   WindowY = 32
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
                   
-        let sdlRenderFlags =
+        let sdlRendererFlags =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
                  int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
 
         let sdlConfig =
-            Sdl.makeSdlConfig
-                sdlViewConfig
-                NuConstants.ResolutionX
-                NuConstants.ResolutionY
-                sdlRenderFlags
-                NuConstants.AudioBufferSizeDefault
+            { ViewConfig = sdlViewConfig
+              ViewW = NuConstants.ResolutionX
+              ViewH = NuConstants.ResolutionY
+              RendererFlags = sdlRendererFlags
+              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
 
         World.run
-            (fun sdlDeps -> OmniFlow.tryCreateOmniBladeWorld sdlDeps ())
+            (fun sdlDeps -> OmniFlow.tryMakeOmniBladeWorld sdlDeps ())
             (fun world -> (true, world))
             sdlConfig

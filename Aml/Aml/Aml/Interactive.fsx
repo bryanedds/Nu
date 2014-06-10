@@ -6,7 +6,7 @@
 #r "C:/Development/FPWorks/Aml/Aml/Aml/bin/Debug/FParsecCS.dll"
 #r "C:/Development/FPWorks/Aml/Aml/Aml/bin/Debug/FParsec.dll"
 #r "C:/Development/FPWorks/Aml/xUnit/xunit.dll"
-#r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.dll"
+#r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.exe"
 
 #load "Ast.fs"
 #load "AmlConstants.fs"

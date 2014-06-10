@@ -26,34 +26,32 @@ module Program =
         // this specifies the manner in which the game's rendering takes place. With this
         // configuration, rendering is hardware-accelerated and synchronized with the system's
         // vertical re-trace, making for fast and smooth rendering.
-        let sdlRenderFlags =
+        let sdlRendererFlags =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
                  int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-                 
-        // this makes a configuration record with the specifications we set out above.
-        let sdlConfig =
-            Sdl.makeSdlConfig
-                sdlViewConfig
-                NuConstants.ResolutionX
-                NuConstants.ResolutionY
-                sdlRenderFlags
-                NuConstants.AudioBufferSizeDefault
 
-        // this is a callback that attempts to create 'the world' in a functional programming
+        let sdlConfig =
+            { ViewConfig = sdlViewConfig
+              ViewW = NuConstants.ResolutionX
+              ViewH = NuConstants.ResolutionY
+              RendererFlags = sdlRendererFlags
+              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
+
+        // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as a complex record type named World.
-        let tryCreateWorld sdlDeps =
+        let tryMakeWorld sdlDeps =
             
             // Game dispatchers specify some unique, high-level behavior and data for your game.
             // Since this particular program has no unique behavior, the vanilla base class
             // GameDispatcher is used.            
             let gameDispatcher = GameDispatcher () :> obj
             
-            // here is an attempt to create the world using SDL dependencies that will be created
+            // here is an attempt to make the world using SDL dependencies that will be created
             // from the invoking function using the SDL configuration that we defined above, the
             // gameDispatcher immediately above, and a value that could have been used to
             // user-defined data to the world had we needed it (we don't, so we pass unit).
-            World.tryCreateEmptyWorld sdlDeps gameDispatcher ()
+            World.tryMakeEmpty sdlDeps gameDispatcher ()
             
         // this is a callback that specifies your game's unique behavior when updating the world
         // every tick. Its return type is a (bool * World). The bool value is whether the program
@@ -67,7 +65,7 @@ module Program =
             (true, world)
 
         // after some configuration it is time to run Nu. We're off and running!
-        World.run tryCreateWorld updateWorld sdlConfig
+        World.run tryMakeWorld updateWorld sdlConfig
 
     (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
 

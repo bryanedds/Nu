@@ -7,11 +7,8 @@ open System.Reflection
 open System.Xml
 open SDL2
 open OpenTK
-open TiledSharp
 open Prime
 open Nu
-open Nu.NuCore
-open Nu.NuMath
 
 // WISDOM: On avoiding threads where possible...
 //
@@ -25,7 +22,7 @@ open Nu.NuMath
 // need for complex intermediate states (albeit against a physics state that is one frame old).
 
 [<AutoOpen>]
-module SimModule =
+module MessageDataModule =
 
     /// Describes data relevant to specific event messages.
     type [<ReferenceEquality>] MessageData =
@@ -35,11 +32,17 @@ module SimModule =
         | OtherData of obj
         | NoData
 
+[<AutoOpen>]
+module MessageModule =
+
     /// A generic message for the Nu game engine.
     /// A reference type.
     type [<ReferenceEquality>] Message =
         { Handled : bool
           Data : MessageData }
+
+[<AutoOpen>]
+module SimModule =
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
@@ -56,32 +59,6 @@ module SimModule =
         static member (?<-) (this : Entity, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
-
-    // TODO: move this tile map stuff elsewhere
-
-    type [<StructuralEquality; NoComparison>] TileMapData =
-        { Map : TmxMap
-          MapSize : int * int
-          TileSize : int * int
-          TileSizeF : Vector2
-          TileMapSize : int * int
-          TileMapSizeF : Vector2
-          TileSet : TmxTileset
-          TileSetSize : int * int }
-      
-    type [<StructuralEquality; NoComparison>] TileLayerData =
-        { Layer : TmxLayer
-          Tiles : TmxLayerTile List }
-      
-    type [<StructuralEquality; NoComparison>] TileData =
-        { Tile : TmxLayerTile
-          I : int
-          J : int
-          Gid : int
-          GidPosition : int
-          Gid2 : int * int
-          OptTileSetTile : TmxTilesetTile option
-          TilePosition : int * int }
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
@@ -200,17 +177,14 @@ module SimModule =
             member this.GetDispatchers () = this.Dispatchers
             end
 
-module Sim =
+[<RequireQualifiedAccess>]
+module Message =
 
-    let handleMessage message =
+    let handle message =
         { Handled = true; Data = message.Data }
 
-    let mouseToScreen (position : Vector2) camera =
-        let positionScreen =
-            Vector2 (
-                position.X - camera.EyeSize.X * 0.5f,
-                -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
-        positionScreen
+[<RequireQualifiedAccess>]
+module Sim =
 
     let getOptChild optChildFinder address parent =
         let optChild = optChildFinder address parent

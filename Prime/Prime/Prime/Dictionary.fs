@@ -5,7 +5,7 @@
 module Dictionary
 open System.Collections.Generic
 
-/// Create a dictionary with a single element.
+/// Make a dictionary with a single element.
 let singleton elem =
     List.toDictionary [elem] // TODO: change implementation to accommodate 2 separate params (1 for key, 1 for value)
 

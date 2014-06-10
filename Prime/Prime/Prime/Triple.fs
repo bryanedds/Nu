@@ -4,7 +4,7 @@
 namespace Prime
 
 [<AutoOpen>]
-module Triple =
+module TripleModule =
 
     /// The first item in a triple.
     let inline a__ triple =
@@ -35,6 +35,8 @@ module Triple =
     let inline _bc triple =
         match triple with
         | (_, b, c) -> (b, c)
+
+module Triple =
 
     /// Prepend a pair to build a triple.
     let inline prepend a (b, c) =

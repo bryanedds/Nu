@@ -7,9 +7,6 @@ open FSharpx
 open FSharpx.Lens.Operators
 open Prime
 open Nu
-open Nu.NuCore
-open Nu.Sim
-open Nu.Entity
 
 [<AutoOpen>]
 module GroupModule =
@@ -18,32 +15,21 @@ module GroupModule =
         member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
+[<RequireQualifiedAccess>]
 module Group =
 
-    let makeDefaultGroup dispatcherName =
-        { Group.Id = getNuId ()
+    let makeDefault defaultDispatcherName =
+        { Group.Id = NuCore.getId ()
           FacetNamesNs = []
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+          Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
 
-    let writeGroupEntitiesToXml (writer : XmlWriter) (entities : Map<string, Entity>) =
-        for entityKvp in entities do
-            writeEntityToXml writer entityKvp.Value
-
-    let writeGroupToXml (writer : XmlWriter) group entities =
+    let writeToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
         Xtension.writePropertiesToXmlWriter writer group
-        writeGroupEntitiesToXml writer entities
+        Entity.writeManyToXml writer entities
 
-    let readEntitiesFromXml (groupNode : XmlNode) defaultDispatcherName seal world =
-        let entityNodes = groupNode.SelectNodes "Entity"
-        let entities =
-            Seq.map
-                (fun entityNode -> readEntityFromXml entityNode defaultDispatcherName seal world)
-                (enumerable entityNodes)
-        Seq.toList entities
-
-    let readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName seal world =
-        let group = makeDefaultGroup defaultDispatcherName
-        let entities = readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName seal world
+    let readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName seal world =
+        let group = makeDefault defaultDispatcherName
+        let entities = Entity.readManyFromXml (groupNode : XmlNode) defaultEntityDispatcherName seal world
         Xtension.readProperties groupNode group
         (group, entities)
