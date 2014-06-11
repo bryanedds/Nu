@@ -6,17 +6,17 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DKDaC2gfjg8x2BmIPIA6EYnc0vehyLlBzcPnFEAt2hGInqH0wPrLZyBgZRKDJhUDNQQ8rMzSzkTE2O/BhZIBPHXJYueFRBwD/2heq
+   eJxjYBgFo2DkAkMqYyMc9hjjUO9IZewExGZYsDMO9YEkYjckTIwaQmoBNykW4w==
   </data>
  </layer>
  <layer name="Grass" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BwgzQozkQTz0KSS6eBvcVAXAHEZVBcieQGkN1VSHLlQFxChh2FODDI3kYsuBKqrwqLXAsQFzFgD6tSHPZgs4MQZiAgDwsrZLtbcagFAA+CI9I=
+   eJxjYBgFo2BwgzQozkQTz0KSS6eBvcVAXAHEZVBcieQGkN1VSHLlQFxChh2FODDI3kYsuBKqrwqLXAsQF0HdDTMHxAeFTSkOe7DZQQgzkKgeFDatOOQAEZUmSA==
   </data>
  </layer>
  <layer name="Chains" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYEAAZijNgkSzIInjU8eAxEbGyOqZ0dShg8FoP7o+bOqQAcxeFSR5ZTSaWPtVsOjD5h5koIJHDhlgsx9mD7FmUALoYccoGPwAAMknAeI=
+   eJxjYEAAZijNgkYzM6ACXOpwiTGj0ejyQ9V+FTQaWQ+ymDIaTaz9MDOUcajDBlTwyCEDbPbD7CHWDEoAPewYBYMfAAAtZgIG
   </data>
  </layer>
  <layer name="Platforms" width="32" height="9">
@@ -24,7 +24,7 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFpAJJEtWIArEYEIuTaA85+ohxG6X2cVJgBwxQ4s5RMHwAAFtdATQ=
+   eJxjYBgF5AJRIBaDYnE0OUks6tDVEGs+KfokCSuh2D5OCuyAAUrcOQqGDwAAJkQBcw==
   </data>
  </layer>
 </map>

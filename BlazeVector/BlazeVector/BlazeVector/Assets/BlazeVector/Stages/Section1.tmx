@@ -6,7 +6,7 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BwAmMgtgBiMyg2R5NHlzMhww5DKDaC2gfjg8x2BmIPIA6EYnc0vehyLlBzcPnFEAt2hGInqH0wPrLZyBgZRKDJhUDNQQ8rMzSzkTE2O/BhZIBPHXJYueFRBwD/2heq
+   eJxjYBgFo2BwAmMgtgBiMyKwORCbkGGHIQ4MstcZiD2AOBCK3dH0osu5ALERHr9gs8cRB0Y2Gxkjgwg0uRAgdmLAHj7OOOzBZgc+jAzwqUMOK1x+AWEAWlwYsA==
   </data>
  </layer>
  <layer name="Grass" width="32" height="9">
@@ -24,7 +24,7 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFpAJJEtWIArEYEIuTaA85+ohxG6X2cVJgBwxQ4s5RMHwAAFtdATQ=
+   eJxjYBgFo2AUjIKBAQAEgAAB
   </data>
  </layer>
 </map>
