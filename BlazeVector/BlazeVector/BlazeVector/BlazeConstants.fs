@@ -11,11 +11,11 @@ module BlazeConstants =
     let Section0Name = "Section0"
     let Section0FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
     let Section1Name = "Section1"
-    let Section1FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
-    let Section2Name = "Section3"
-    let Section2FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
+    let Section1FileName = "Assets/BlazeVector/Groups/Section1.nugroup"
+    let Section2Name = "Section2"
+    let Section2FileName = "Assets/BlazeVector/Groups/Section2.nugroup"
     let Section3Name = "Section3"
-    let Section3FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
+    let Section3FileName = "Assets/BlazeVector/Groups/Section3.nugroup"
     
     // transition constants
     let IncomingTimeSplash = 60

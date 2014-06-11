@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+  <Group>
+    <Xtension xDispatcher="GroupDispatcher" />
+    <Entity>
+      <Name>a9e25f40-7ef2-4274-a9b8-4ca4a2364b1a</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xDispatcher="TileMapDispatcher">
+        <Density type="System.Single">10</Density>
+        <Depth type="System.Single">0</Depth>
+        <Position type="OpenTK.Vector2">-480;-304</Position>
+        <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">64;64</Size>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section1;BlazeStages;AssetGraph.xml</TileMapAsset>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>65b20232-1a34-4cd1-8c53-f9cafbaec819</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xDispatcher="TileMapDispatcher">
+        <Density type="System.Single">10</Density>
+        <Depth type="System.Single">-20</Depth>
+        <Position type="OpenTK.Vector2">-480;-304</Position>
+        <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">64;64</Size>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;BlazeStages;AssetGraph.xml</TileMapAsset>
+      </Xtension>
+    </Entity>
+    <Entity>
+      <Name>548b070b-1304-4697-8b8f-cd2dd30de8e2</Name>
+      <Enabled>True</Enabled>
+      <Visible>True</Visible>
+      <Xtension xDispatcher="TileMapDispatcher">
+        <Density type="System.Single">10</Density>
+        <Depth type="System.Single">-10</Depth>
+        <Position type="OpenTK.Vector2">-480;-304</Position>
+        <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">64;64</Size>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;BlazeStages;AssetGraph.xml</TileMapAsset>
+      </Xtension>
+    </Entity>
+  </Group>
+</Root>
