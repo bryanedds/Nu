@@ -10,6 +10,7 @@
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">1</Depth>
         <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <LinearDamping type="System.Single">4</LinearDamping>
         <Position type="OpenTK.Vector2">-456;-175.6805</Position>
         <Radius type="System.Single">16</Radius>
         <Rotation type="System.Single">0</Rotation>
