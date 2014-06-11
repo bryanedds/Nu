@@ -31,6 +31,9 @@
     <asset name="RoadTileSet" fileName="Assets/BlazeVector/Stages/RoadTileSet.png" associations="Rendering"/>
     <asset name="SkylineTileSet" fileName="Assets/BlazeVector/Stages/SkylineTileSet.png" associations="Rendering"/>
     <asset name="Section0" fileName="Assets/BlazeVector/Stages/Section0.tmx" associations=""/>
+    <asset name="Section1" fileName="Assets/BlazeVector/Stages/Section1.tmx" associations=""/>
+    <asset name="Section2" fileName="Assets/BlazeVector/Stages/Section2.tmx" associations=""/>
+    <asset name="Section3" fileName="Assets/BlazeVector/Stages/Section3.tmx" associations=""/>
     <asset name="BackgroundA" fileName="Assets/BlazeVector/Stages/BackgroundA.tmx" associations=""/>
     <asset name="BackgroundB" fileName="Assets/BlazeVector/Stages/BackgroundB.tmx" associations=""/>
   </package>
