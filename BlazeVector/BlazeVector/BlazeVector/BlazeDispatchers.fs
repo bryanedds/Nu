@@ -36,10 +36,8 @@ module BlazeDispatchersModule =
 
         let moveCharacterHandler _ _ groupAddress message world =
             let character = getCharacter groupAddress world
-            let linearVelocity = Physics.getLinearVelocity character.PhysicsId world.Integrator
-            let linearVelocityDesired = Vector2 (100.0f, linearVelocity.Y)
-            let setLinearVelocityMessage = { PhysicsId = character.PhysicsId; LinearVelocity = linearVelocityDesired }
-            let world' = { world with PhysicsMessages = SetLinearVelocityMessage setLinearVelocityMessage :: world.PhysicsMessages }
+            let applyForceMessage = { PhysicsId = character.PhysicsId; Force = Vector2 (5000.0f, 0.0f) }
+            let world' = { world with PhysicsMessages = ApplyForceMessage applyForceMessage :: world.PhysicsMessages }
             (message, true, world')
 
         let jumpCharacterHandler _ _ groupAddress message world =
