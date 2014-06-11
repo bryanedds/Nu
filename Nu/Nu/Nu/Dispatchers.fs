@@ -477,6 +477,7 @@ module DispatchersModule =
                     { Extent = block'.Size * 0.5f
                       Properties =
                         { Center = Vector2.Zero
+                          Friction = 0.0f
                           Restitution = 0.0f
                           FixedRotation = false
                           LinearDamping = 5.0f
@@ -555,6 +556,7 @@ module DispatchersModule =
                         { Radius = avatar'.Size.X * 0.5f
                           Properties =
                             { Center = Vector2.Zero
+                              Friction = 0.0f
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = avatar'.LinearDamping
@@ -634,9 +636,10 @@ module DispatchersModule =
                           Radius = character'.Radius
                           Properties =
                             { Center = Vector2.Zero
+                              Friction = 0.0f
                               Restitution = 0.0f
                               FixedRotation = true
-                              LinearDamping = 0.0f
+                              LinearDamping = character'.LinearDamping
                               AngularDamping = 0.0f }}
                   Position = character'.Position + character'.Size * 0.5f
                   Rotation = character'.Rotation
@@ -654,6 +657,7 @@ module DispatchersModule =
             character'
                 .SetPhysicsId(Physics.InvalidId)
                 .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
+                .SetLinearDamping(1000.0f)
                 .SetDensity(NuConstants.NormalDensity)
                 .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName })
 
@@ -706,6 +710,7 @@ module DispatchersModule =
             let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
+                  Friction = 0.0f
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
@@ -728,6 +733,7 @@ module DispatchersModule =
             let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
+                  Friction = 0.0f
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f

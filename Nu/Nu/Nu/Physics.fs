@@ -21,6 +21,7 @@ module PhysicsModule =
 
     type [<StructuralEquality; NoComparison>] CommonShapeProperties =
         { Center : Vector2 // NOTE: I guess this is like a center offset for the shape?
+          Friction : single
           Restitution : single
           FixedRotation : bool
           LinearDamping : single
@@ -208,6 +209,7 @@ module Physics =
     let private configureBodyProperties integrator bodyPosition bodyRotation commonShapeProperties (body : Body) =
         body.Position <- toPhysicsV2 bodyPosition
         body.Rotation <- bodyRotation
+        body.Friction <- commonShapeProperties.Friction
         body.Restitution <- commonShapeProperties.Restitution
         body.FixedRotation <- commonShapeProperties.FixedRotation
         body.LinearDamping <- commonShapeProperties.LinearDamping
@@ -252,6 +254,11 @@ module Physics =
                 0.0f,
                 toPhysicsBodyType createBodyMessage.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        
+        // scale in the capsule's box to stop sticking
+        let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
+        ignore <| capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
+
         configureBodyProperties integrator createBodyMessage.Position createBodyMessage.Rotation capsuleShape.Properties body
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
         body
