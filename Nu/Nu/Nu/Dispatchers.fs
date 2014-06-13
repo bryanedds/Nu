@@ -66,18 +66,11 @@ module DispatchersModule =
         member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
 
         (* block xfields *)
-        [<XField>] member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
-        member this.SetPhysicsId (value : PhysicsId) : Entity = this?PhysicsId <- value
-        [<XField>] member this.Density with get () = this?Density () : single
-        member this.SetDensity (value : single) : Entity = this?Density <- value
-        [<XField>] member this.BodyType with get () = this?BodyType () : BodyType
-        member this.SetBodyType (value : BodyType) : Entity = this?BodyType <- value
         [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
         (* avatar xfields *)
-        [<XField>] member this.LinearDamping with get () = this?LinearDamping () : single
-        member this.SetLinearDamping (value : single) : Entity = this?LinearDamping <- value
+        // all xfields already declared
 
         (* character xfields *)
         [<XField>] member this.Radius with get () = this?Radius () : single
@@ -132,6 +125,89 @@ module DispatchersModule =
 
         abstract member IsTransformRelative : Entity * World -> bool
         default this.IsTransformRelative (entity, world) = true
+
+    type [<AbstractClass>] Entity2dWithSimplePhysicsDispatcher () =
+        inherit Entity2dDispatcher ()
+
+        abstract member MakeCreateBodyMessage : Entity * Address * World -> CreateBodyMessage
+
+        member dispatcher.RegisterCharacterPhysics (entity : Entity, address, world) =
+            let entity' = entity.SetPhysicsId <| Physics.getId entity.Id
+            let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity', address, world)
+            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
+            (entity', world')
+
+        member dispatcher.UnregisterCharacterPhysics (entity : Entity, world) =
+            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = entity.PhysicsId }
+            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity' = base.Init (entity, dispatcherContainer)
+            entity'
+                .SetPhysicsId(Physics.InvalidId)
+                .SetBodyType(BodyType.Dynamic)
+                .SetDensity(NuConstants.NormalDensity)
+                .SetFriction(0.0f)
+                .SetRestitution(0.0f)
+                .SetFixedRotation(false)
+                .SetLinearDamping(0.0f)
+                .SetAngularDamping(0.0f)
+                .SetGravityScale(1.0f)
+
+        override dispatcher.Register (entity, address, world) =
+            dispatcher.RegisterCharacterPhysics (entity, address, world)
+
+        override dispatcher.Unregister (entity, address, world) =
+            dispatcher.UnregisterCharacterPhysics (entity, world)
+            
+        override dispatcher.PropagatePhysics (entity, address, world) =
+            let (entity', world') =
+                world |>
+                (fun world -> dispatcher.UnregisterCharacterPhysics (entity, world)) |>
+                (fun world -> dispatcher.RegisterCharacterPhysics (entity, address, world))
+            set entity' world' <| World.worldEntity address
+
+        override dispatcher.ReregisterPhysicsHack (entity, groupAddress, world) =
+            let address = addrstr groupAddress entity.Name
+            let world' = dispatcher.UnregisterCharacterPhysics (entity, world)
+            let (entity', world'') = dispatcher.RegisterCharacterPhysics (entity, address, world')
+            set entity' world'' <| World.worldEntity address
+
+        override dispatcher.HandleBodyTransformMessage (entity, message, address, world) =
+            let entity' =
+                entity
+                    .SetPosition(message.Position - entity.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
+                    .SetRotation(message.Rotation)
+            set entity' world <| World.worldEntity message.EntityAddress
+
+    type [<AbstractClass>] Entity2dWithSimplePhysicsAndRenderingDispatcher () =
+        inherit Entity2dWithSimplePhysicsDispatcher ()
+
+        abstract GetImageSpriteAssetName : unit -> string
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity' = base.Init (entity, dispatcherContainer)
+            let spriteAssetName = dispatcher.GetImageSpriteAssetName ()
+            entity'.SetImageSprite({ SpriteAssetName = spriteAssetName; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+
+        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) =
+            if not entity.Visible then []
+            else
+                [LayerableDescriptor <|
+                    LayeredSpriteDescriptor
+                        { Descriptor =
+                            { Position = entity.Position * viewRelative
+                              Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
+                              Rotation = entity.Rotation
+                              Sprite = entity.ImageSprite
+                              Color = Vector4.One }
+                          Depth = entity.Depth }]
+
+        override dispatcher.GetQuickSize (entity, world) =
+            let sprite = entity.ImageSprite
+            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
     type ButtonDispatcher () =
         inherit Entity2dDispatcher ()
@@ -468,245 +544,90 @@ module DispatchersModule =
             false
 
     type BlockDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
-        let registerBlockPhysics address (block : Entity) world =
-            let block' = block.SetPhysicsId <| Physics.getId block.Id
-            let createBodyMessage =
-                { EntityAddress = address
-                  PhysicsId = block'.PhysicsId
-                  Shape = BoxShape
-                    { Extent = block'.Size * 0.5f
-                      Properties =
-                        { Center = Vector2.Zero
-                          Friction = 0.0f
-                          Restitution = 0.0f
-                          FixedRotation = false
-                          LinearDamping = 5.0f
-                          AngularDamping = 5.0f
-                          GravityScale = 1.0f }}
-                  Position = block'.Position + block'.Size * 0.5f
-                  Rotation = block'.Rotation
-                  Density = block'.Density
-                  BodyType = block'.BodyType }
-            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (block', world')
+        override this.GetImageSpriteAssetName () = "Image3"
 
-        let unregisterBlockPhysics (_ : Address) (block : Entity) world =
-            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = block.PhysicsId }
-            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
-
-        override dispatcher.Init (block, dispatcherContainer) =
-            let block' = base.Init (block, dispatcherContainer)
-            block'
-                .SetPhysicsId(Physics.InvalidId)
-                .SetDensity(NormalDensity)
-                .SetBodyType(BodyType.Dynamic)
-                .SetImageSprite({ SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-
-        override dispatcher.Register (block, address, world) =
-            registerBlockPhysics address block world
-
-        override dispatcher.Unregister (block, address, world) =
-            unregisterBlockPhysics address block world
-            
-        override dispatcher.PropagatePhysics (block, address, world) =
-            let (block', world') = world |> unregisterBlockPhysics address block |> registerBlockPhysics address block
-            set block' world' <| World.worldEntity address
-
-        override dispatcher.ReregisterPhysicsHack (block, groupAddress, world) =
-            let address = addrstr groupAddress block.Name
-            let world' = unregisterBlockPhysics address block world
-            let (block', world'') = registerBlockPhysics address block world'
-            set block' world'' <| World.worldEntity address
-
-        override dispatcher.HandleBodyTransformMessage (block, message, address, world) =
-            let block' =
-                block
-                    .SetPosition(message.Position - block.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                    .SetRotation(message.Rotation)
-            set block' world <| World.worldEntity message.EntityAddress
-            
-        override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, world) =
-            if not block.Visible then []
-            else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
-                            { Position = block.Position * viewRelative
-                              Size = block.Size * Matrix3.getScaleMatrix viewAbsolute
-                              Rotation = block.Rotation
-                              Sprite = block.ImageSprite
-                              Color = Vector4.One }
-                          Depth = block.Depth }]
-
-        override dispatcher.GetQuickSize (block, world) =
-            let sprite = block.ImageSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
-            | Some size -> size
+        override this.MakeCreateBodyMessage (block : Entity, address : Address, world : World) =
+            { EntityAddress = address
+              PhysicsId = block.PhysicsId
+              Shape = BoxShape
+                { Extent = block.Size * 0.5f
+                  Properties =
+                    { Center = Vector2.Zero
+                      Friction = block.Friction
+                      Restitution = block.Restitution
+                      FixedRotation = block.FixedRotation
+                      LinearDamping = block.LinearDamping
+                      AngularDamping = block.AngularDamping
+                      GravityScale = block.GravityScale }}
+              Position = block.Position + block.Size * 0.5f
+              Rotation = block.Rotation
+              Density = block.Density
+              BodyType = block.BodyType }
     
     type AvatarDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
-        let registerAvatarPhysics address (avatar : Entity) world =
-            let avatar' = avatar.SetPhysicsId <| Physics.getId avatar.Id
-            let createBodyMessage =
-                { EntityAddress = address
-                  PhysicsId = avatar'.PhysicsId
-                  Shape =
-                    CircleShape
-                        { Radius = avatar'.Size.X * 0.5f
-                          Properties =
-                            { Center = Vector2.Zero
-                              Friction = 0.0f
-                              Restitution = 0.0f
-                              FixedRotation = true
-                              LinearDamping = avatar'.LinearDamping
-                              AngularDamping = 0.0f
-                              GravityScale = 1.0f }}
-                  Position = avatar'.Position + avatar'.Size * 0.5f
-                  Rotation = avatar'.Rotation
-                  Density = avatar'.Density
-                  BodyType = BodyType.Dynamic }
-            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (avatar', world')
+        override this.GetImageSpriteAssetName () = "Image7"
 
-        let unregisterAvatarPhysics (avatar : Entity) world =
-            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = avatar.PhysicsId }
-            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
+        override this.MakeCreateBodyMessage (avatar : Entity, address : Address, world : World) =
+            { EntityAddress = address
+              PhysicsId = avatar.PhysicsId
+              Shape =
+                CircleShape
+                    { Radius = avatar.Size.X * 0.5f
+                      Properties =
+                        { Center = Vector2.Zero
+                          Friction = avatar.Friction
+                          Restitution = avatar.Restitution
+                          FixedRotation = avatar.FixedRotation
+                          LinearDamping = avatar.LinearDamping
+                          AngularDamping = avatar.AngularDamping
+                          GravityScale = avatar.GravityScale }}
+              Position = avatar.Position + avatar.Size * 0.5f
+              Rotation = avatar.Rotation
+              Density = avatar.Density
+              BodyType = BodyType.Dynamic }
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar' = base.Init (avatar, dispatcherContainer)
             avatar'
-                .SetPhysicsId(Physics.InvalidId)
+                .SetFixedRotation(true)
                 .SetLinearDamping(10.0f)
-                .SetDensity(NormalDensity)
-                .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-
-        override dispatcher.Register (avatar, address, world) =
-            registerAvatarPhysics address avatar world
-
-        override dispatcher.Unregister (avatar, address, world) =
-            unregisterAvatarPhysics avatar world
-            
-        override dispatcher.PropagatePhysics (avatar, address, world) =
-            let (avatar', world') = world |> unregisterAvatarPhysics avatar |> registerAvatarPhysics address avatar
-            set avatar' world' <| World.worldEntity address
-
-        override dispatcher.ReregisterPhysicsHack (avatar, groupAddress, world) =
-            let address = addrstr groupAddress avatar.Name
-            let world' = unregisterAvatarPhysics avatar world
-            let (avatar', world'') = registerAvatarPhysics address avatar world'
-            set avatar' world'' <| World.worldEntity address
-
-        override dispatcher.HandleBodyTransformMessage (avatar, message, address, world) =
-            let avatar' =
-                avatar
-                    .SetPosition(message.Position - avatar.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                    .SetRotation(message.Rotation)
-            set avatar' world <| World.worldEntity message.EntityAddress
-
-        override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, world) =
-            if not avatar.Visible then []
-            else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
-                            { Position = avatar.Position * viewRelative
-                              Size = avatar.Size * Matrix3.getScaleMatrix viewAbsolute
-                              Rotation = avatar.Rotation
-                              Sprite = avatar.ImageSprite
-                              Color = Vector4.One }
-                          Depth = avatar.Depth }]
-
-        override dispatcher.GetQuickSize (avatar, world) =
-            let sprite = avatar.ImageSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
-            | Some size -> size
+                .SetGravityScale(0.0f)
 
     type CharacterDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
-        let registerCharacterPhysics address (character : Entity) world =
-            let character' = character.SetPhysicsId <| Physics.getId character.Id
-            let createBodyMessage =
-                { EntityAddress = address
-                  PhysicsId = character'.PhysicsId
-                  Shape =
-                    CapsuleShape
-                        { Height = character'.Size.Y * 0.5f
-                          Radius = character'.Radius
-                          Properties =
-                            { Center = Vector2.Zero
-                              Friction = 0.0f
-                              Restitution = 0.0f
-                              FixedRotation = true
-                              LinearDamping = character'.LinearDamping
-                              AngularDamping = 0.0f
-                              GravityScale = 1.0f }}
-                  Position = character'.Position + character'.Size * 0.5f
-                  Rotation = character'.Rotation
-                  Density = character'.Density
-                  BodyType = BodyType.Dynamic }
-            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (character', world')
+        override this.GetImageSpriteAssetName () = "Image6"
 
-        let unregisterCharacterPhysics (character : Entity) world =
-            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = character.PhysicsId }
-            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
+        override this.MakeCreateBodyMessage (character : Entity, address : Address, world : World) =
+            { EntityAddress = address
+              PhysicsId = character.PhysicsId
+              Shape =
+                CapsuleShape
+                    { Height = character.Size.Y * 0.5f
+                      Radius = character.Radius
+                      Properties =
+                        { Center = Vector2.Zero
+                          Friction = character.Friction
+                          Restitution = character.Restitution
+                          FixedRotation = character.FixedRotation
+                          LinearDamping = character.LinearDamping
+                          AngularDamping = character.AngularDamping
+                          GravityScale = character.GravityScale }}
+              Position = character.Position + character.Size * 0.5f
+              Rotation = character.Rotation
+              Density = character.Density
+              BodyType = BodyType.Dynamic }
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character' = base.Init (character, dispatcherContainer)
             character'
-                .SetPhysicsId(Physics.InvalidId)
-                .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
+                .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
-                .SetDensity(NuConstants.NormalDensity)
-                .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName })
-
-        override dispatcher.Register (character, address, world) =
-            registerCharacterPhysics address character world
-
-        override dispatcher.Unregister (character, address, world) =
-            unregisterCharacterPhysics character world
-            
-        override dispatcher.PropagatePhysics (character, address, world) =
-            let (character', world') = world |> unregisterCharacterPhysics character |> registerCharacterPhysics address character
-            set character' world' <| World.worldEntity address
-
-        override dispatcher.ReregisterPhysicsHack (character, groupAddress, world) =
-            let address = addrstr groupAddress character.Name
-            let world' = unregisterCharacterPhysics character world
-            let (character', world'') = registerCharacterPhysics address character world'
-            set character' world'' <| World.worldEntity address
-
-        override dispatcher.HandleBodyTransformMessage (character, message, address, world) =
-            let character' =
-                character
-                    .SetPosition(message.Position - character.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                    .SetRotation(message.Rotation)
-            set character' world <| World.worldEntity message.EntityAddress
-
-        override dispatcher.GetRenderDescriptors (character, viewAbsolute, viewRelative, world) =
-            if not character.Visible then []
-            else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
-                            { Position = character.Position * viewRelative
-                              Size = character.Size * Matrix3.getScaleMatrix viewAbsolute
-                              Rotation = character.Rotation
-                              Sprite = character.ImageSprite
-                              Color = Vector4.One }
-                          Depth = character.Depth }]
-
-        override dispatcher.GetQuickSize (character, world) =
-            let sprite = character.ImageSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
-            | None -> NuConstants.DefaultEntitySize
-            | Some size -> size
+                .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
 
     type TileMapDispatcher () =
         inherit Entity2dDispatcher ()
@@ -715,12 +636,12 @@ module DispatchersModule =
             let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
-                  Friction = 0.0f
-                  Restitution = 0.0f
+                  Friction = tm.Friction
+                  Restitution = tm.Restitution
                   FixedRotation = true
                   LinearDamping = 0.0f
                   AngularDamping = 0.0f
-                  GravityScale = 1.0f }
+                  GravityScale = 0.0f }
             let createBodyMessage =
                 { EntityAddress = address
                   PhysicsId = physicsId
@@ -739,12 +660,12 @@ module DispatchersModule =
             let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
-                  Friction = 0.0f
-                  Restitution = 0.0f
+                  Friction = tm.Friction
+                  Restitution = tm.Restitution
                   FixedRotation = true
                   LinearDamping = 0.0f
                   AngularDamping = 0.0f
-                  GravityScale = 1.0f }
+                  GravityScale = 0.0f }
             let createBodyMessage =
                 { EntityAddress = address
                   PhysicsId = physicsId
@@ -821,7 +742,9 @@ module DispatchersModule =
             let tileMap' = base.Init (tileMap, dispatcherContainer)
             tileMap'
                 .SetPhysicsIds([])
-                .SetDensity(NormalDensity)
+                .SetDensity(NuConstants.NormalDensity)
+                .SetFriction(0.0f)
+                .SetRestitution(0.0f)
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetParallax(0.0f)
 

@@ -11,6 +11,11 @@ open Nu
 [<AutoOpen>]
 module BlazeDispatchersModule =
 
+    type BlazeBulletDispatcher () =
+        inherit Entity2dDispatcher ()
+
+
+
     /// TODO document.
     type BlazeStageGroupDispatcher () =
         inherit GroupDispatcher ()
@@ -53,11 +58,16 @@ module BlazeDispatchersModule =
                 let world' = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
                 (message, true, world')
 
+        let spawnBulletHandler _ _ groupAddress message world =
+            (message, true, world) // if world.Ticks % 10 = 0 then
+                
+
         override dispatcher.Register (group, address, entities, world) =
             let world' =
                 world |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub moveCharacterHandler |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler |>
+                World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
                 World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpCharacterHandler
             let world'' = base.Register (group, address, entities, world')
             adjustCamera address world''
@@ -65,6 +75,7 @@ module BlazeDispatchersModule =
         override dispatcher.Unregister (group, address, world) =
             let world' =
                 world |>
+                World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.DownMouseLeftEvent address
