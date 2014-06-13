@@ -349,7 +349,7 @@ module Physics =
 
     let private createTransformMessages integrator =
         for body in integrator.Bodies.Values do
-            if body.Awake then
+            if body.Awake && not body.IsStatic then
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { EntityAddress = body.UserData :?> Address
@@ -357,7 +357,7 @@ module Physics =
                           Rotation = body.Rotation }
                 integrator.IntegrationMessages.Add bodyTransformMessage
 
-    let integrate (physicsMessages : PhysicsMessage rQueue) integrator : IntegrationMessage list =
+    let integrate (physicsMessages : PhysicsMessage rQueue) integrator =
         handlePhysicsMessages integrator physicsMessages
         integrator.PhysicsContext.Step PhysicsStepRate
         createTransformMessages integrator

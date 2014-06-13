@@ -30,7 +30,8 @@ module Program =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
                  int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-
+                 
+        // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             { ViewConfig = sdlViewConfig
               ViewW = NuConstants.ResolutionX
