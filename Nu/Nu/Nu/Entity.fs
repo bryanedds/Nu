@@ -44,6 +44,10 @@ module EntityModule =
         member this.SetAngularDamping (value : single) : Entity = this?AngularDamping <- value
         [<XField>] member this.GravityScale with get () = this?GravityScale () : single
         member this.SetGravityScale (value : single) : Entity = this?GravityScale <- value
+        [<XField>] member this.IsBullet with get () = this?IsBullet () : bool
+        member this.SetIsBullet (value : bool) : Entity = this?IsBullet <- value
+        [<XField>] member this.IsSensor with get () = this?IsSensor () : bool
+        member this.SetIsSensor (value : bool) : Entity = this?IsSensor <- value
         [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
