@@ -40,7 +40,7 @@ module BlazeDispatchersModule =
             let force =
                 match optGroundTangent with
                 | None -> Vector2 (1.0f, -2.5f) * 3000.0f
-                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, 6000.0f))
+                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
             let applyForceMessage = { PhysicsId = character.PhysicsId; Force = force }
             let world' = { world with PhysicsMessages = ApplyForceMessage applyForceMessage :: world.PhysicsMessages }
             (message, true, world')

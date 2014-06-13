@@ -96,21 +96,6 @@
    <property name="C" value="Polygon ? 0.0;0.0 | 1.0;1.0 | 1.0;0.0"/>
   </properties>
  </tile>
- <tile id="69">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="70">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="71">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
  <tile id="72">
   <properties>
    <property name="C" value="Polygon ? 0.0;0.0 | 0.0;1.0 | 0.5;1.0 | 1.0;0.5 | 1.0;0.0"/>
@@ -119,56 +104,6 @@
  <tile id="73">
   <properties>
    <property name="C" value="Polygon ? 0.0;0.0 | 0.0;0.5 | 0.5;1.0 | 1.0;1.0 | 1.0;0.0"/>
-  </properties>
- </tile>
- <tile id="80">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="81">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="82">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="83">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="84">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="85">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="86">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="87">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="88">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
- </tile>
- <tile id="89">
-  <properties>
-   <property name="C" value=""/>
   </properties>
  </tile>
 </tileset>
