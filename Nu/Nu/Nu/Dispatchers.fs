@@ -128,7 +128,25 @@ module DispatchersModule =
     type [<AbstractClass>] Entity2dWithSimplePhysicsDispatcher () =
         inherit Entity2dDispatcher ()
 
-        abstract member MakeCreateBodyMessage : Entity * Address * World -> CreateBodyMessage
+        abstract member MakeBodyShape : Entity -> BodyShape
+
+        member this.MakeCreateBodyMessage (entity : Entity, address : Address, world : World) =
+            { EntityAddress = address
+              PhysicsId = entity.PhysicsId
+              Position = entity.Position + entity.Size * 0.5f
+              Rotation = entity.Rotation
+              BodyProperties =
+                { Shape = this.MakeBodyShape entity
+                  BodyType = entity.BodyType
+                  Density = entity.Density
+                  Friction = entity.Friction
+                  Restitution = entity.Restitution
+                  FixedRotation = entity.FixedRotation
+                  LinearDamping = entity.LinearDamping
+                  AngularDamping = entity.AngularDamping
+                  GravityScale = entity.GravityScale
+                  IsBullet = entity.IsBullet
+                  IsSensor = entity.IsSensor }}
 
         member dispatcher.RegisterCharacterPhysics (entity : Entity, address, world) =
             let entity' = entity.SetPhysicsId <| Physics.getId entity.Id
@@ -152,6 +170,8 @@ module DispatchersModule =
                 .SetLinearDamping(1.0f)
                 .SetAngularDamping(1.0f)
                 .SetGravityScale(1.0f)
+                .SetIsBullet(false)
+                .SetIsSensor(false)
 
         override dispatcher.Register (entity, address, world) =
             dispatcher.RegisterCharacterPhysics (entity, address, world)
@@ -545,44 +565,20 @@ module DispatchersModule =
     type BlockDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
-        override this.GetImageSpriteAssetName () = "Image3"
+        override this.MakeBodyShape (block : Entity) =
+            BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
 
-        override this.MakeCreateBodyMessage (block : Entity, address : Address, world : World) =
-            { EntityAddress = address
-              PhysicsId = block.PhysicsId
-              Position = block.Position + block.Size * 0.5f
-              Rotation = block.Rotation
-              BodyProperties =
-                { Shape = BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
-                  BodyType = block.BodyType
-                  Density = block.Density
-                  Friction = block.Friction
-                  Restitution = block.Restitution
-                  FixedRotation = block.FixedRotation
-                  LinearDamping = block.LinearDamping
-                  AngularDamping = block.AngularDamping
-                  GravityScale = block.GravityScale }}
+        override this.GetImageSpriteAssetName () =
+            "Image3"
     
     type AvatarDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
+        
+        override this.MakeBodyShape (avatar : Entity) =
+            CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () = "Image7"
-
-        override this.MakeCreateBodyMessage (avatar : Entity, address : Address, world : World) =
-            { EntityAddress = address
-              PhysicsId = avatar.PhysicsId
-              Position = avatar.Position + avatar.Size * 0.5f
-              Rotation = avatar.Rotation
-              BodyProperties =
-                { Shape = CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
-                  BodyType = avatar.BodyType
-                  Density = avatar.Density
-                  Friction = avatar.Friction
-                  Restitution = avatar.Restitution
-                  FixedRotation = avatar.FixedRotation
-                  LinearDamping = avatar.LinearDamping
-                  AngularDamping = avatar.AngularDamping
-                  GravityScale = avatar.GravityScale }}
+        override this.GetImageSpriteAssetName () =
+            "Image7"
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar' = base.Init (avatar, dispatcherContainer)
@@ -593,24 +589,12 @@ module DispatchersModule =
 
     type CharacterDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
+        
+        override this.MakeBodyShape (character : Entity) =
+            CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Radius; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () = "Image6"
-
-        override this.MakeCreateBodyMessage (character : Entity, address : Address, world : World) =
-            { EntityAddress = address
-              PhysicsId = character.PhysicsId
-              Position = character.Position + character.Size * 0.5f
-              Rotation = character.Rotation
-              BodyProperties =
-                { Shape = CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Radius; Center = Vector2.Zero }
-                  BodyType = character.BodyType
-                  Density = character.Density
-                  Friction = character.Friction
-                  Restitution = character.Restitution
-                  FixedRotation = character.FixedRotation
-                  LinearDamping = character.LinearDamping
-                  AngularDamping = character.AngularDamping
-                  GravityScale = character.GravityScale }}
+        override this.GetImageSpriteAssetName () =
+            "Image6"
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character' = base.Init (character, dispatcherContainer)
@@ -641,7 +625,9 @@ module DispatchersModule =
                       FixedRotation = true
                       LinearDamping = 0.0f
                       AngularDamping = 0.0f
-                      GravityScale = 0.0f }}
+                      GravityScale = 0.0f
+                      IsBullet = false
+                      IsSensor = false }}
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 
@@ -664,7 +650,9 @@ module DispatchersModule =
                       FixedRotation = true
                       LinearDamping = 0.0f
                       AngularDamping = 0.0f
-                      GravityScale = 0.0f }}
+                      GravityScale = 0.0f
+                      IsBullet = false
+                      IsSensor = false }}
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 
