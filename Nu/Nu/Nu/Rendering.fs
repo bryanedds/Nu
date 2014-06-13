@@ -10,6 +10,8 @@ open Prime
 open Nu
 open Nu.NuConstants
 
+// TODO: profiler seem to reveal a need for render culling generally.
+
 [<AutoOpen>]
 module RenderingModule =
 
