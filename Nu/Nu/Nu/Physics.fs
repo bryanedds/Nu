@@ -25,7 +25,8 @@ module PhysicsModule =
           Restitution : single
           FixedRotation : bool
           LinearDamping : single
-          AngularDamping : single }
+          AngularDamping : single
+          GravityScale : single }
 
     type [<StructuralEquality; NoComparison>] BoxShape =
         { Extent : Vector2
@@ -197,14 +198,29 @@ module Physics =
         let body = integrator.Bodies.[physicsId]
         toPixelV2 body.LinearVelocity
 
-    let isBodyOnGround physicsId integrator =
+    let getGroundContactNormals physicsId integrator =
         let normals = getBodyContactNormals physicsId integrator
-        List.exists
+        List.filter
             (fun normal ->
-                let upVector = Vector2 (0.0f, 1.0f)
-                let theta = Vector2.Dot (normal, upVector) |> double |> Math.Acos |> Math.Abs
+                let theta = Vector2.Dot (normal, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
                 theta < Math.PI * 0.25)
             normals
+
+    let getOptGroundContactNormal physicsId integrator =
+        let groundNormals = getGroundContactNormals physicsId integrator
+        if List.isEmpty groundNormals then None
+        else
+            let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
+            Some averageNormal
+
+    let getOptGroundContactTangent physicsId integrator =
+        match getOptGroundContactNormal physicsId integrator with
+        | None -> None
+        | Some normal -> Some <| Vector2 (normal.Y, -normal.X) 
+
+    let isBodyOnGround physicsId integrator =
+        let groundNormals = getGroundContactNormals physicsId integrator
+        not <| List.isEmpty groundNormals
 
     let private configureBodyProperties integrator bodyPosition bodyRotation commonShapeProperties (body : Body) =
         body.Position <- toPhysicsV2 bodyPosition
@@ -214,6 +230,7 @@ module Physics =
         body.FixedRotation <- commonShapeProperties.FixedRotation
         body.LinearDamping <- commonShapeProperties.LinearDamping
         body.AngularDamping <- commonShapeProperties.AngularDamping
+        body.GravityScale <- commonShapeProperties.GravityScale
         body.SleepingAllowed <- true
 
     let private makeBoxBody integrator createBodyMessage boxShape =
