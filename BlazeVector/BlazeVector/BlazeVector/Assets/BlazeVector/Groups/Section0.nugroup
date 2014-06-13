@@ -9,6 +9,7 @@
       <Xtension xDispatcher="TileMapDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">0</Depth>
+        <Parallax type="System.Single">0</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -21,7 +22,8 @@
       <Visible>True</Visible>
       <Xtension xDispatcher="TileMapDispatcher">
         <Density type="System.Single">10</Density>
-        <Depth type="System.Single">-20</Depth>
+        <Depth type="System.Single">-8</Depth>
+        <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -34,7 +36,8 @@
       <Visible>True</Visible>
       <Xtension xDispatcher="TileMapDispatcher">
         <Density type="System.Single">10</Density>
-        <Depth type="System.Single">-10</Depth>
+        <Depth type="System.Single">-4</Depth>
+        <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>

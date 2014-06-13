@@ -290,7 +290,7 @@ module Program =
     let handleCreate (form : NuEditForm) (worldChangers : WorldChanger List) refWorld atMouse _ =
         let world = !refWorld
         let entityXDispatcherName = form.createEntityComboBox.Text
-        try let entity_ = Entity.makeDefault entityXDispatcherName None
+        try let entity_ = Entity.makeDefault entityXDispatcherName None world
             let changer = (fun world_ ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity_
@@ -553,7 +553,6 @@ module Program =
 
     let tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
         let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name typeof<TransitionDispatcher>.Name 100 100
-        let group = Group.makeDefault typeof<GroupDispatcher>.Name
         let editorState =
             { DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
@@ -565,7 +564,7 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, group, [])] !refWorld
+            refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld World.worldOptSelectedScreenAddress
             refWorld := World.subscribe NuConstants.DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := World.subscribe NuConstants.UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld

@@ -19,10 +19,14 @@ module GroupModule =
 [<RequireQualifiedAccess>]
 module Group =
 
-    let makeDefault defaultDispatcherName =
+    let makeDefaultUninitialized defaultDispatcherName =
         { Group.Id = NuCore.getId ()
           FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
+
+    let makeDefault defaultDispatcherName dispatcherContainer =
+        let group = makeDefaultUninitialized defaultDispatcherName
+        group.Init dispatcherContainer
 
     let writeToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
@@ -30,7 +34,7 @@ module Group =
         Entity.writeManyToXml writer entities
 
     let readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
-        let group = makeDefault defaultDispatcherName
+        let group = makeDefaultUninitialized defaultDispatcherName
         Xtension.readTargetXDispatcher groupNode group
         let group' = group.Init dispatcherContainer
         Xtension.readTargetProperties groupNode group'
