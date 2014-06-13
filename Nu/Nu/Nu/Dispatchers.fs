@@ -88,6 +88,8 @@ module DispatchersModule =
         member this.SetPhysicsIds (value : PhysicsId list) : Entity = this?PhysicsIds <- value
         [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
         member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
+        [<XField>] member this.Parallax with get () = this?Parallax () : single
+        member this.SetParallax (value : single) : Entity = this?Parallax <- value
 
     type EntityDispatcher () =
 
@@ -477,7 +479,7 @@ module DispatchersModule =
                     { Extent = block'.Size * 0.5f
                       Properties =
                         { Center = Vector2.Zero
-                          Friction = 0.2f
+                          Friction = 0.0f
                           Restitution = 0.0f
                           FixedRotation = false
                           LinearDamping = 5.0f
@@ -557,7 +559,7 @@ module DispatchersModule =
                         { Radius = avatar'.Size.X * 0.5f
                           Properties =
                             { Center = Vector2.Zero
-                              Friction = 0.2f
+                              Friction = 0.0f
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = avatar'.LinearDamping
@@ -638,7 +640,7 @@ module DispatchersModule =
                           Radius = character'.Radius
                           Properties =
                             { Center = Vector2.Zero
-                              Friction = 0.2f
+                              Friction = 0.0f
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = character'.LinearDamping
@@ -713,7 +715,7 @@ module DispatchersModule =
             let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
-                  Friction = 0.2f
+                  Friction = 0.0f
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
@@ -737,7 +739,7 @@ module DispatchersModule =
             let physicsId = Physics.getId tm.Id
             let shapeProperties =
                 { Center = Vector2.Zero
-                  Friction = 0.2f
+                  Friction = 0.0f
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
@@ -821,6 +823,7 @@ module DispatchersModule =
                 .SetPhysicsIds([])
                 .SetDensity(NormalDensity)
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetParallax(0.0f)
 
         override dispatcher.Register (tileMap, address, world) =
             registerTileMapPhysics address tileMap world
@@ -851,10 +854,12 @@ module DispatchersModule =
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight) * viewScale
                     List.mapi
                         (fun i (layer : TmxLayer) ->
+                            let depth = tileMap.Depth + single i * 2.0f
+                            let parallaxTranslation = tileMap.Parallax * depth * Matrix3.getTranslation viewRelative
                             let layeredTileLayerDescriptor =
                                 LayeredTileLayerDescriptor
                                     { Descriptor =
-                                        { Position = tileMap.Position * viewRelative
+                                        { Position = (tileMap.Position + parallaxTranslation) * viewRelative
                                           Size = Vector2.Zero
                                           Rotation = tileMap.Rotation
                                           MapSize = (map.Width, map.Height)
@@ -864,7 +869,7 @@ module DispatchersModule =
                                           TileMapSize = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                                           TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                           TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
-                                      Depth = tileMap.Depth + single i * 2.0f } // MAGIC_VALUE: assumption
+                                      Depth = depth } // MAGIC_VALUE: assumption
                             LayerableDescriptor layeredTileLayerDescriptor)
                         layers
 

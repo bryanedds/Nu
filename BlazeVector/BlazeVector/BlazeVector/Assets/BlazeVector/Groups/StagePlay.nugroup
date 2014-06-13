@@ -8,7 +8,7 @@
       <Visible>True</Visible>
       <Xtension xDispatcher="CharacterDispatcher">
         <Density type="System.Single">10</Density>
-        <Depth type="System.Single">1</Depth>
+        <Depth type="System.Single">4</Depth>
         <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">-456;-175.6805</Position>

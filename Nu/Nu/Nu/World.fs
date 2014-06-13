@@ -229,8 +229,8 @@ module World =
 
     let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
-        let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name
-        let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel")
+        let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
+        let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel'3 = splashLabel''.SetLabelSprite (sprite : Sprite)
