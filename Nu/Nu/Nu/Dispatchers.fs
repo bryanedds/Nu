@@ -481,7 +481,8 @@ module DispatchersModule =
                           Restitution = 0.0f
                           FixedRotation = false
                           LinearDamping = 5.0f
-                          AngularDamping = 5.0f }}
+                          AngularDamping = 5.0f
+                          GravityScale = 1.0f }}
                   Position = block'.Position + block'.Size * 0.5f
                   Rotation = block'.Rotation
                   Density = block'.Density
@@ -560,7 +561,8 @@ module DispatchersModule =
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = avatar'.LinearDamping
-                              AngularDamping = 0.0f }}
+                              AngularDamping = 0.0f
+                              GravityScale = 1.0f }}
                   Position = avatar'.Position + avatar'.Size * 0.5f
                   Rotation = avatar'.Rotation
                   Density = avatar'.Density
@@ -640,7 +642,8 @@ module DispatchersModule =
                               Restitution = 0.0f
                               FixedRotation = true
                               LinearDamping = character'.LinearDamping
-                              AngularDamping = 0.0f }}
+                              AngularDamping = 0.0f
+                              GravityScale = 1.0f }}
                   Position = character'.Position + character'.Size * 0.5f
                   Rotation = character'.Rotation
                   Density = character'.Density
@@ -657,7 +660,7 @@ module DispatchersModule =
             character'
                 .SetPhysicsId(Physics.InvalidId)
                 .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
-                .SetLinearDamping(4.0f)
+                .SetLinearDamping(3.0f)
                 .SetDensity(NuConstants.NormalDensity)
                 .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName })
 
@@ -714,7 +717,8 @@ module DispatchersModule =
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
-                  AngularDamping = 0.0f }
+                  AngularDamping = 0.0f
+                  GravityScale = 1.0f }
             let createBodyMessage =
                 { EntityAddress = address
                   PhysicsId = physicsId
@@ -737,7 +741,8 @@ module DispatchersModule =
                   Restitution = 0.0f
                   FixedRotation = true
                   LinearDamping = 0.0f
-                  AngularDamping = 0.0f }
+                  AngularDamping = 0.0f
+                  GravityScale = 1.0f }
             let createBodyMessage =
                 { EntityAddress = address
                   PhysicsId = physicsId
