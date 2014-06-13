@@ -66,8 +66,7 @@ module DispatchersModule =
         member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
 
         (* block xfields *)
-        [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
-        member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
+        // all xfields already declared
 
         (* avatar xfields *)
         // all xfields already declared
@@ -150,8 +149,8 @@ module DispatchersModule =
                 .SetFriction(0.0f)
                 .SetRestitution(0.0f)
                 .SetFixedRotation(false)
-                .SetLinearDamping(0.0f)
-                .SetAngularDamping(0.0f)
+                .SetLinearDamping(1.0f)
+                .SetAngularDamping(1.0f)
                 .SetGravityScale(1.0f)
 
         override dispatcher.Register (entity, address, world) =
@@ -551,20 +550,18 @@ module DispatchersModule =
         override this.MakeCreateBodyMessage (block : Entity, address : Address, world : World) =
             { EntityAddress = address
               PhysicsId = block.PhysicsId
-              Shape = BoxShape
-                { Extent = block.Size * 0.5f
-                  Properties =
-                    { Center = Vector2.Zero
-                      Friction = block.Friction
-                      Restitution = block.Restitution
-                      FixedRotation = block.FixedRotation
-                      LinearDamping = block.LinearDamping
-                      AngularDamping = block.AngularDamping
-                      GravityScale = block.GravityScale }}
               Position = block.Position + block.Size * 0.5f
               Rotation = block.Rotation
-              Density = block.Density
-              BodyType = block.BodyType }
+              BodyProperties =
+                { Shape = BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
+                  BodyType = block.BodyType
+                  Density = block.Density
+                  Friction = block.Friction
+                  Restitution = block.Restitution
+                  FixedRotation = block.FixedRotation
+                  LinearDamping = block.LinearDamping
+                  AngularDamping = block.AngularDamping
+                  GravityScale = block.GravityScale }}
     
     type AvatarDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
@@ -574,21 +571,18 @@ module DispatchersModule =
         override this.MakeCreateBodyMessage (avatar : Entity, address : Address, world : World) =
             { EntityAddress = address
               PhysicsId = avatar.PhysicsId
-              Shape =
-                CircleShape
-                    { Radius = avatar.Size.X * 0.5f
-                      Properties =
-                        { Center = Vector2.Zero
-                          Friction = avatar.Friction
-                          Restitution = avatar.Restitution
-                          FixedRotation = avatar.FixedRotation
-                          LinearDamping = avatar.LinearDamping
-                          AngularDamping = avatar.AngularDamping
-                          GravityScale = avatar.GravityScale }}
               Position = avatar.Position + avatar.Size * 0.5f
               Rotation = avatar.Rotation
-              Density = avatar.Density
-              BodyType = BodyType.Dynamic }
+              BodyProperties =
+                { Shape = CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
+                  BodyType = avatar.BodyType
+                  Density = avatar.Density
+                  Friction = avatar.Friction
+                  Restitution = avatar.Restitution
+                  FixedRotation = avatar.FixedRotation
+                  LinearDamping = avatar.LinearDamping
+                  AngularDamping = avatar.AngularDamping
+                  GravityScale = avatar.GravityScale }}
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar' = base.Init (avatar, dispatcherContainer)
@@ -605,22 +599,18 @@ module DispatchersModule =
         override this.MakeCreateBodyMessage (character : Entity, address : Address, world : World) =
             { EntityAddress = address
               PhysicsId = character.PhysicsId
-              Shape =
-                CapsuleShape
-                    { Height = character.Size.Y * 0.5f
-                      Radius = character.Radius
-                      Properties =
-                        { Center = Vector2.Zero
-                          Friction = character.Friction
-                          Restitution = character.Restitution
-                          FixedRotation = character.FixedRotation
-                          LinearDamping = character.LinearDamping
-                          AngularDamping = character.AngularDamping
-                          GravityScale = character.GravityScale }}
               Position = character.Position + character.Size * 0.5f
               Rotation = character.Rotation
-              Density = character.Density
-              BodyType = BodyType.Dynamic }
+              BodyProperties =
+                { Shape = CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Radius; Center = Vector2.Zero }
+                  BodyType = character.BodyType
+                  Density = character.Density
+                  Friction = character.Friction
+                  Restitution = character.Restitution
+                  FixedRotation = character.FixedRotation
+                  LinearDamping = character.LinearDamping
+                  AngularDamping = character.AngularDamping
+                  GravityScale = character.GravityScale }}
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character' = base.Init (character, dispatcherContainer)
@@ -634,49 +624,47 @@ module DispatchersModule =
 
         let registerTilePhysicsBox address (tm : Entity) tmd td world =
             let physicsId = Physics.getId tm.Id
-            let shapeProperties =
-                { Center = Vector2.Zero
-                  Friction = tm.Friction
-                  Restitution = tm.Restitution
-                  FixedRotation = true
-                  LinearDamping = 0.0f
-                  AngularDamping = 0.0f
-                  GravityScale = 0.0f }
             let createBodyMessage =
                 { EntityAddress = address
                   PhysicsId = physicsId
-                  Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Properties = shapeProperties }
                   Position =
                     Vector2 (
                         single <| fst td.TilePosition + fst tmd.TileSize / 2,
                         single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
                   Rotation = tm.Rotation
-                  Density = tm.Density
-                  BodyType = BodyType.Static }
+                  BodyProperties =
+                    { Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Center = Vector2.Zero }
+                      BodyType = BodyType.Static
+                      Density = tm.Density
+                      Friction = tm.Friction
+                      Restitution = tm.Restitution
+                      FixedRotation = true
+                      LinearDamping = 0.0f
+                      AngularDamping = 0.0f
+                      GravityScale = 0.0f }}
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 
         let registerTilePhysicsPolygon address (tm : Entity) tmd td vertices world =
             let physicsId = Physics.getId tm.Id
-            let shapeProperties =
-                { Center = Vector2.Zero
-                  Friction = tm.Friction
-                  Restitution = tm.Restitution
-                  FixedRotation = true
-                  LinearDamping = 0.0f
-                  AngularDamping = 0.0f
-                  GravityScale = 0.0f }
             let createBodyMessage =
                 { EntityAddress = address
                   PhysicsId = physicsId
-                  Shape = PolygonShape { Vertices = vertices; Properties = shapeProperties }
                   Position =
                     Vector2 (
                         single <| fst td.TilePosition + fst tmd.TileSize / 2,
                         single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
                   Rotation = tm.Rotation
-                  Density = tm.Density
-                  BodyType = BodyType.Static }
+                  BodyProperties =
+                    { Shape = PolygonShape { Vertices = vertices; Center = Vector2.Zero }
+                      BodyType = BodyType.Static
+                      Density = tm.Density
+                      Friction = tm.Friction
+                      Restitution = tm.Restitution
+                      FixedRotation = true
+                      LinearDamping = 0.0f
+                      AngularDamping = 0.0f
+                      GravityScale = 0.0f }}
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 

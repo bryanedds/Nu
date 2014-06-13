@@ -44,6 +44,8 @@ module EntityModule =
         member this.SetAngularDamping (value : single) : Entity = this?AngularDamping <- value
         [<XField>] member this.GravityScale with get () = this?GravityScale () : single
         member this.SetGravityScale (value : single) : Entity = this?GravityScale <- value
+        [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
+        member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
         member this.Register (address : Address, world : World) : Entity * World = this?Register (address, world)
