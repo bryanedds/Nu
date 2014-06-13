@@ -70,13 +70,11 @@ module RenderingModule =
 
     type [<StructuralEquality; NoComparison>] HintRenderingPackageUse =
         { FileName : string
-          PackageName : string
-          HRPU : unit }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuse =
         { FileName : string
-          PackageName : string
-          HRPD : unit }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] RenderMessage =
         | HintRenderingPackageUse of HintRenderingPackageUse
@@ -95,12 +93,12 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Sprite
             String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sprite> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Sprite> then obj
             else
@@ -111,12 +109,12 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> TileMapAsset
             String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sprite> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<TileMapAsset> then obj
             else
@@ -127,12 +125,12 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Font
             String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Font> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Font> then obj
             else

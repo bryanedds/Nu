@@ -117,7 +117,7 @@ module Sdl =
                 let world'3 = play handlePlay world''
                 run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'3
 
-    let run tryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig : int =
+    let run tryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
         withSdlInit
             (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
             (fun () -> SDL.SDL_Quit ())

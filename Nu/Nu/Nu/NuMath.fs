@@ -21,12 +21,12 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let v2 = obj :?> Vector2
             String.Format (culture, "{0};{1}", v2.X, v2.Y) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Vector2> then obj
             else
@@ -38,12 +38,12 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let v3 = obj :?> Vector3
             String.Format (culture, "{0};{1};{2}", v3.X, v3.Y, v3.Z) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector3> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Vector3> then obj
             else
@@ -55,12 +55,12 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let v4 = obj :?> Vector4
             String.Format (culture, "{0};{1};{2};{3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector4> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Vector4> then obj
             else
@@ -206,8 +206,8 @@ module NuMath =
             single |>
             mul DegreesToRadiansF
 
-    let snapF offset (value : single) =
-        single <| snap offset -<| int value
+    let snapF offset value =
+        single <| snap offset -<| int (value : single)
 
     let snap2F offset (v2 : Vector2) =
         Vector2 (snapF offset v2.X, snapF offset v2.Y)

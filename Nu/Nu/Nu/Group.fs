@@ -12,6 +12,7 @@ open Nu
 module GroupModule =
 
     type Group with
+        member this.Init (dispatcherContainer : IXDispatcherContainer) : Group = this?Init dispatcherContainer
         member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
@@ -25,11 +26,13 @@ module Group =
 
     let writeToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
-        Xtension.writePropertiesToXmlWriter writer group
+        Xtension.writeTargetProperties writer group
         Entity.writeManyToXml writer entities
 
-    let readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName seal world =
+    let readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
         let group = makeDefault defaultDispatcherName
-        let entities = Entity.readManyFromXml (groupNode : XmlNode) defaultEntityDispatcherName seal world
-        Xtension.readProperties groupNode group
-        (group, entities)
+        Xtension.readTargetXDispatcher groupNode group
+        let group' = group.Init dispatcherContainer
+        Xtension.readTargetProperties groupNode group'
+        let entities = Entity.readManyFromXml (groupNode : XmlNode) defaultEntityDispatcherName dispatcherContainer
+        (group', entities)

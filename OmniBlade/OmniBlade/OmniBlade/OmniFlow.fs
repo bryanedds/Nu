@@ -31,13 +31,13 @@ module OmniFlow =
         match optWorld with
         | Left _ as left -> left
         | Right world ->
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = NuConstants.AssetGraphFileName; PackageName = OmniGuiPackageName; HRPU = () } 
+            let hintRenderPackageUse = HintRenderingPackageUse { FileName = NuConstants.AssetGraphFileName; PackageName = OmniGuiPackageName } 
             let world_ = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
             let gameSong = { SongAssetName = "Song"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world_ = { world_ with AudioMessages = playSongMessage :: world_.AudioMessages }
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
-            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite true world_
+            let world_ = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world_
             let world_ = addTitleScreen world_
             let world_ = addLoadGameScreen world_
             let world_ = addCreditsScreen world_

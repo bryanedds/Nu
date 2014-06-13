@@ -39,9 +39,9 @@ module Metadata =
             let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (SpriteAssetName, PackageName, and / or PackageFileName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 
-    let tryGenerateAssetMetadataMap (assetGraphFileName : string) =
+    let tryGenerateAssetMetadataMap assetGraphFileName =
         try let document = XmlDocument ()
-            document.Load assetGraphFileName
+            document.Load (assetGraphFileName : string) 
             let optRootNode = document.["root"]
             match optRootNode with
             | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFileName + "'."

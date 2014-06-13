@@ -102,12 +102,12 @@ module World =
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
-    let loadGroupFromFile (fileName : string) seal world =
+    let loadGroupFromFile fileName seal world =
         let document = XmlDocument ()
-        document.Load fileName
+        document.Load (fileName : string)
         let rootNode = document.["Root"]
         let groupNode = rootNode.["Group"]
-        Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name seal world
+        Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
     let private play world =
         let audioMessages = world.AudioMessages
@@ -162,7 +162,7 @@ module World =
         let renderer' = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
         { world with RenderMessages = []; Renderer = renderer' }
 
-    let private handleIntegrationMessage (keepRunning, world) integrationMessage : bool * World =
+    let private handleIntegrationMessage (keepRunning, world) integrationMessage =
         if not keepRunning then (keepRunning, world)
         else
             match integrationMessage with
@@ -176,7 +176,7 @@ module World =
                 let collisionMessage = { Handled = false; Data = collisionData }
                 publish collisionAddress [] collisionMessage world
 
-    let private handleIntegrationMessages integrationMessages world : bool * World =
+    let private handleIntegrationMessages integrationMessages world =
         List.fold handleIntegrationMessage (true, world) integrationMessages
 
     let private integrate world =
@@ -227,10 +227,10 @@ module World =
     let run tryMakeWorld handleUpdate sdlConfig =
         run4 tryMakeWorld handleUpdate id sdlConfig
 
-    let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite seal world =
+    let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name
-        let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") seal world
+        let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel")
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel'3 = splashLabel''.SetLabelSprite (sprite : Sprite)
@@ -243,7 +243,7 @@ module World =
         let (group, entities) = loadGroupFromFile groupFileName seal world
         addScreen screenAddress screen [(groupName, group, entities)] world
 
-    let tryMakeEmpty sdlDeps gameDispatcher (extData : obj) =
+    let tryMakeEmpty sdlDeps gameDispatcher extData =
         match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
@@ -281,8 +281,8 @@ module World =
                   Renderer = Rendering.makeRenderer sdlDeps.RenderContext
                   Integrator = Physics.makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
-                  AudioMessages = [HintAudioPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName; HAPU = () }]
-                  RenderMessages = [HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName; HRPU = () }]
+                  AudioMessages = [HintAudioPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
+                  RenderMessages = [HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
                   PhysicsMessages = []
                   Dispatchers = dispatchers
                   ExtData = extData }

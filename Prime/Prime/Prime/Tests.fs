@@ -93,7 +93,7 @@ module Tests =
     let [<Fact>] xtensionSerializationWorks () =
         let xtn = Xtension.empty
         let xtn' = xtn?TestField <- 5
-        use stream = writeToStream Xtension.writeToXmlWriter xtn'
+        use stream = writeToStream Xtension.write xtn'
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
         let xtn'' = readFromStream (fun node _ -> Xtension.read node) stream xtn'
         Assert.Equal (xtn', xtn'')
@@ -101,7 +101,7 @@ module Tests =
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }}
         let xtd' = xtd?TestField <- 5
-        use stream = writeToStream Xtension.writePropertiesToXmlWriter xtd'
+        use stream = writeToStream Xtension.writeTargetProperties xtd'
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
-        let xtd'' = readFromStream (fun node target -> Xtension.readProperties node target; target) stream xtd
+        let xtd'' = readFromStream (fun node target -> Xtension.readTargetProperties node target; target) stream xtd
         Assert.Equal (xtd', xtd'')

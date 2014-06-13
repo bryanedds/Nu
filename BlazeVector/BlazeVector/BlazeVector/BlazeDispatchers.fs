@@ -36,7 +36,7 @@ module BlazeDispatchersModule =
 
         let moveCharacterHandler _ _ groupAddress message world =
             let character = getCharacter groupAddress world
-            let applyForceMessage = { PhysicsId = character.PhysicsId; Force = Vector2 (5000.0f, 0.0f) }
+            let applyForceMessage = { PhysicsId = character.PhysicsId; Force = Vector2 (3000.0f, 0.0f) }
             let world' = { world with PhysicsMessages = ApplyForceMessage applyForceMessage :: world.PhysicsMessages }
             (message, true, world')
 
@@ -44,7 +44,7 @@ module BlazeDispatchersModule =
             let character = getCharacter groupAddress world
             if not <| Physics.isBodyOnGround character.PhysicsId world.Integrator then (message, true, world)
             else
-                let applyLinearImpulseMessage = { PhysicsId = character.PhysicsId; LinearImpulse = Vector2 (0.0f, 3000.0f) }
+                let applyLinearImpulseMessage = { PhysicsId = character.PhysicsId; LinearImpulse = Vector2 (0.0f, 7000.0f) }
                 let world' = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
                 (message, true, world')
 

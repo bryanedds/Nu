@@ -30,13 +30,11 @@ module AudioModule =
 
     type [<StructuralEquality; NoComparison>] HintAudioPackageUse =
         { FileName : string
-          PackageName : string
-          HAPU : unit }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] HintAudioPackageDisuse =
         { FileName : string
-          PackageName : string
-          HAPD : unit }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] AudioMessage =
         | HintAudioPackageUse of HintAudioPackageUse
@@ -60,12 +58,12 @@ module AudioModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Sound
             String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sound> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Sound> then obj
             else
@@ -76,12 +74,12 @@ module AudioModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Song
             String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Song> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Song> then obj
             else

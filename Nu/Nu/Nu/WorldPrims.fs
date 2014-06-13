@@ -71,9 +71,10 @@ module WorldPrims =
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % tileSetRun, gid / tileSetRun)
+        let tileMapPosition = tileMap.Position
         let tilePosition = (
-            int tileMap.Position.X + fst tmd.TileSize * i,
-            int tileMap.Position.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
+            int tileMapPosition.X + fst tmd.TileSize * i,
+            int tileMapPosition.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
         let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
@@ -427,7 +428,7 @@ module WorldPrims =
         List.map snd prioritiesAndSubscriptionsSorted
 
     /// Publish a message for the given event.
-    let rec publish event publisher message world : bool * World =
+    let rec publish event publisher message world =
         let optSubList = Map.tryFind event world.Subscriptions
         match optSubList with
         | None -> (true, world)
