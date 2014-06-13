@@ -203,27 +203,27 @@ module Sim =
     let setChild childAdder childRemover address parent child =
         setOptChild childAdder childRemover address parent (Some child)
 
-    let withSimulant worldSimulantLens fn address (world : World) =
+    let withSimulant worldSimulantLens fn address world =
         let simulant = get world <| worldSimulantLens address
         let simulant' = fn simulant
         set simulant' world <| worldSimulantLens address
 
-    let withSimulantAndWorld worldSimulantLens fn address (world : World) =
+    let withSimulantAndWorld worldSimulantLens fn address world =
         let simulant = get world <| worldSimulantLens address
         let (simulant', world') = fn simulant
         set simulant' world' <| worldSimulantLens address
 
-    let withOptSimulant worldOptSimulantLens fn address (world : World) =
+    let withOptSimulant worldOptSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         let optSimulant' = fn optSimulant
         set optSimulant' world <| worldOptSimulantLens address
 
-    let withOptSimulantAndWorld worldOptSimulantLens fn address (world : World) =
+    let withOptSimulantAndWorld worldOptSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         let (optSimulant', world') = fn optSimulant
         set optSimulant' world' <| worldOptSimulantLens address
 
-    let tryWithSimulant worldOptSimulantLens worldSimulantLens fn address (world : World) =
+    let tryWithSimulant worldOptSimulantLens worldSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         match optSimulant with
         | None -> world
@@ -231,7 +231,7 @@ module Sim =
             let simulant' = fn simulant
             set simulant' world <| worldSimulantLens address
 
-    let tryWithSimulantAndWorld worldOptSimulantLens worldSimulantLens fn address (world : World) =
+    let tryWithSimulantAndWorld worldOptSimulantLens worldSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         match optSimulant with
         | None -> world

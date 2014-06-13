@@ -40,7 +40,7 @@ module EntityModule =
 [<RequireQualifiedAccess>]
 module Entity =
 
-    let mouseToEntity (position : Vector2) world (entity : Entity) =
+    let mouseToEntity position world (entity : Entity) =
         let positionScreen = Camera.mouseToScreen position world.Camera
         let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
         let positionEntity = positionScreen * view
@@ -67,7 +67,7 @@ module Entity =
     let getPickingPriority (entity : Entity) =
         entity.Depth
 
-    let private makeDefault2 defaultDispatcherName optName =
+    let makeDefault defaultDispatcherName optName =
         let id = NuCore.getId ()
         { Id = id
           Name = match optName with None -> string id | Some name -> name
@@ -76,32 +76,26 @@ module Entity =
           FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDefault defaultDispatcherName optName seal (dispatcherContainer : IXDispatcherContainer) =
-        match Map.tryFind defaultDispatcherName <| dispatcherContainer.GetDispatchers () with
-        | None -> failwith <| "Invalid XDispatcher name '" + defaultDispatcherName + "'."
-        | Some dispatcher ->
-            let entity = makeDefault2 defaultDispatcherName optName
-            let entity' = entity.Init dispatcherContainer
-            { entity' with Xtension = { entity'.Xtension with Sealed = seal }}
-
     let writeToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name
-        Xtension.writePropertiesToXmlWriter writer entity
+        Xtension.writeTargetProperties writer entity
         writer.WriteEndElement ()
 
-    let writeManyToXml (writer : XmlWriter) (entities : Map<string, Entity>) =
+    let writeManyToXml (writer : XmlWriter) (entities : Map<_, _>) =
         for entityKvp in entities do
             writeToXml writer entityKvp.Value
 
-    let readFromXml (entityNode : XmlNode) defaultDispatcherName seal (world : World) =
-        let entity = makeDefault defaultDispatcherName None seal world
-        Xtension.readProperties entityNode entity
-        entity
+    let readFromXml (entityNode : XmlNode) defaultDispatcherName dispatcherContainer =
+        let entity = makeDefault defaultDispatcherName None
+        Xtension.readTargetXDispatcher entityNode entity
+        let entity' = entity.Init dispatcherContainer
+        Xtension.readTargetProperties entityNode entity'
+        entity'
 
-    let readManyFromXml (parentNode : XmlNode) defaultDispatcherName seal world =
+    let readManyFromXml (parentNode : XmlNode) defaultDispatcherName dispatcherContainer =
         let entityNodes = parentNode.SelectNodes "Entity"
         let entities =
             Seq.map
-                (fun entityNode -> readFromXml entityNode defaultDispatcherName seal world)
+                (fun entityNode -> readFromXml entityNode defaultDispatcherName dispatcherContainer)
                 (enumerable entityNodes)
         Seq.toList entities

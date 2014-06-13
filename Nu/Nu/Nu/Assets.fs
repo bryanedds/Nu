@@ -60,9 +60,9 @@ module Assets =
                     let associationList = List.ofArray (associations.InnerText.Split ',')
                     Some { Name = name.InnerText; FileName = fileName.InnerText; Associations = associationList; PackageName = packageName }
 
-    let tryLoadAssets association packageName (assetGraphFileName : string) =
+    let tryLoadAssets association packageName assetGraphFileName =
         try let document = XmlDocument ()
-            document.Load assetGraphFileName
+            document.Load (assetGraphFileName : string)
             let optRootNode = document.["root"]
             match optRootNode with
             | null -> Left ("Root node is missing from asset graph file '" + assetGraphFileName + "'.")

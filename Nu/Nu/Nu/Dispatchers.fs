@@ -568,7 +568,7 @@ module DispatchersModule =
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (avatar', world')
 
-        let unregisterAvatarPhysics (_ : Address) (avatar : Entity) world =
+        let unregisterAvatarPhysics (avatar : Entity) world =
             let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = avatar.PhysicsId }
             { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
 
@@ -584,15 +584,15 @@ module DispatchersModule =
             registerAvatarPhysics address avatar world
 
         override dispatcher.Unregister (avatar, address, world) =
-            unregisterAvatarPhysics address avatar world
+            unregisterAvatarPhysics avatar world
             
         override dispatcher.PropagatePhysics (avatar, address, world) =
-            let (avatar', world') = world |> unregisterAvatarPhysics address avatar |> registerAvatarPhysics address avatar
+            let (avatar', world') = world |> unregisterAvatarPhysics avatar |> registerAvatarPhysics address avatar
             set avatar' world' <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (avatar, groupAddress, world) =
             let address = addrstr groupAddress avatar.Name
-            let world' = unregisterAvatarPhysics address avatar world
+            let world' = unregisterAvatarPhysics avatar world
             let (avatar', world'') = registerAvatarPhysics address avatar world'
             set avatar' world'' <| World.worldEntity address
 
@@ -648,7 +648,7 @@ module DispatchersModule =
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (character', world')
 
-        let unregisterCharacterPhysics (_ : Address) (character : Entity) world =
+        let unregisterCharacterPhysics (character : Entity) world =
             let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = character.PhysicsId }
             { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
 
@@ -657,7 +657,7 @@ module DispatchersModule =
             character'
                 .SetPhysicsId(Physics.InvalidId)
                 .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
-                .SetLinearDamping(1000.0f)
+                .SetLinearDamping(4.0f)
                 .SetDensity(NuConstants.NormalDensity)
                 .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName })
 
@@ -665,15 +665,15 @@ module DispatchersModule =
             registerCharacterPhysics address character world
 
         override dispatcher.Unregister (character, address, world) =
-            unregisterCharacterPhysics address character world
+            unregisterCharacterPhysics character world
             
         override dispatcher.PropagatePhysics (character, address, world) =
-            let (character', world') = world |> unregisterCharacterPhysics address character |> registerCharacterPhysics address character
+            let (character', world') = world |> unregisterCharacterPhysics character |> registerCharacterPhysics address character
             set character' world' <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (character, groupAddress, world) =
             let address = addrstr groupAddress character.Name
-            let world' = unregisterCharacterPhysics address character world
+            let world' = unregisterCharacterPhysics character world
             let (character', world'') = registerCharacterPhysics address character world'
             set character' world'' <| World.worldEntity address
 
@@ -752,7 +752,7 @@ module DispatchersModule =
             let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
             (world', physicsId)
 
-        let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) (_ : TmxLayerTile) =
+        let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) _ =
             let td = World.makeTileData tm tmd tld tileIndex
             match td.OptTileSetTile with
             | None -> (world, physicsIds)
@@ -870,6 +870,9 @@ module DispatchersModule =
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
 
     type GroupDispatcher () =
+
+        abstract member Init : Group * IXDispatcherContainer -> Group
+        default this.Init (group, dispatcherContainer) = group
         
         abstract member Register : Group * Address * Entity list * World -> World
         default this.Register (_, address, entities, world) = World.addEntities address entities world
