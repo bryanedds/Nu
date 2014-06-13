@@ -13,24 +13,20 @@ module BlazeDispatchersModule =
 
     type BlazeBulletDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
+        
+        override this.MakeBodyShape (bullet : Entity) =
+            CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () = "Image7"
+        override this.GetImageSpriteAssetName () =
+            "Image7"
 
-        override this.MakeCreateBodyMessage (character : Entity, address : Address, world : World) =
-            { EntityAddress = address
-              PhysicsId = character.PhysicsId
-              Position = character.Position + character.Size * 0.5f
-              Rotation = character.Rotation
-              BodyProperties =
-                { Shape = CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Radius; Center = Vector2.Zero }
-                  BodyType = character.BodyType
-                  Density = character.Density
-                  Friction = character.Friction
-                  Restitution = character.Restitution
-                  FixedRotation = character.FixedRotation
-                  LinearDamping = character.LinearDamping
-                  AngularDamping = character.AngularDamping
-                  GravityScale = character.GravityScale }}
+        override dispatcher.Init (bullet, dispatcherContainer) =
+            let bullet' = base.Init (bullet, dispatcherContainer)
+            bullet'
+                .SetLinearDamping(0.0f)
+                .SetGravityScale(0.0f)
+                .SetIsBullet(true)
+                .SetIsSensor(true)
 
     /// TODO document.
     type BlazeStageGroupDispatcher () =

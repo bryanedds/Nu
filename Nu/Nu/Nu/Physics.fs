@@ -78,7 +78,9 @@ module PhysicsModule =
           FixedRotation : bool
           LinearDamping : single
           AngularDamping : single
-          GravityScale : single }
+          GravityScale : single
+          IsBullet : bool
+          IsSensor : bool }
 
     type [<StructuralEquality; NoComparison>] CreateBodyMessage =
         { EntityAddress : Address
