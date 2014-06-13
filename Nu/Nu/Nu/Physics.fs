@@ -59,7 +59,7 @@ module PhysicsModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj : obj, _) =
+        override this.ConvertTo (_, culture, obj, _) =
             let bodyType = obj :?> BodyType
             match bodyType with
             | Static -> "Static" :> obj
@@ -67,7 +67,7 @@ module PhysicsModule =
             | Dynamic -> "Dynamic" :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj : obj) =
+        override this.ConvertFrom (_, culture, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<BodyType> then obj
             else
@@ -200,10 +200,10 @@ module Physics =
     let isBodyOnGround physicsId integrator =
         let normals = getBodyContactNormals physicsId integrator
         List.exists
-            (fun (normal : Vector2) ->
+            (fun normal ->
                 let upVector = Vector2 (0.0f, 1.0f)
                 let theta = Vector2.Dot (normal, upVector) |> double |> Math.Acos |> Math.Abs
-                theta < Math.PI * 0.5)
+                theta < Math.PI * 0.25)
             normals
 
     let private configureBodyProperties integrator bodyPosition bodyRotation commonShapeProperties (body : Body) =
@@ -239,8 +239,8 @@ module Physics =
                 toPhysicsV2 circleShape.Properties.Center,
                 toPhysicsBodyType createBodyMessage.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        configureBodyProperties integrator createBodyMessage.Position createBodyMessage.Rotation circleShape.Properties body
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
+        configureBodyProperties integrator createBodyMessage.Position createBodyMessage.Rotation circleShape.Properties body
         body
 
     let private makeCapsuleBody integrator createBodyMessage capsuleShape =
@@ -254,13 +254,13 @@ module Physics =
                 0.0f,
                 toPhysicsBodyType createBodyMessage.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
         
         // scale in the capsule's box to stop sticking
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
         ignore <| capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
 
         configureBodyProperties integrator createBodyMessage.Position createBodyMessage.Rotation capsuleShape.Properties body
-        body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
         body
 
     let private makePolygonBody integrator createBodyMessage polygonShape =
@@ -273,8 +273,8 @@ module Physics =
                 0.0f,
                 toPhysicsBodyType createBodyMessage.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-        configureBodyProperties integrator createBodyMessage.Position createBodyMessage.Rotation polygonShape.Properties body
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
+        configureBodyProperties integrator createBodyMessage.Position createBodyMessage.Rotation polygonShape.Properties body
         body
 
     // TODO: remove code duplication here
@@ -299,7 +299,7 @@ module Physics =
         let body = ref Unchecked.defaultof<Dynamics.Body>
         if  integrator.Bodies.TryGetValue (setLinearVelocityMessage.PhysicsId, body) then
             (!body).LinearVelocity <- toPhysicsV2 setLinearVelocityMessage.LinearVelocity
-        else debug <| "Could not apply force to non-existent body with PhysicsId = " + string setLinearVelocityMessage.PhysicsId + "'."
+        else debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + string setLinearVelocityMessage.PhysicsId + "'."
 
     let private applyLinearImpulse integrator (applyLinearImpulseMessage : ApplyLinearImpulseMessage) =
         let body = ref Unchecked.defaultof<Dynamics.Body>
@@ -325,7 +325,7 @@ module Physics =
             integrator.PhysicsContext.Clear ()
             integrator.Bodies.Clear ()
             integrator.IntegrationMessages.Clear ()
-    
+
     let private handlePhysicsMessages integrator (physicsMessages : PhysicsMessage rQueue) =
         for physicsMessage in List.rev physicsMessages do
             handlePhysicsMessage integrator physicsMessage
