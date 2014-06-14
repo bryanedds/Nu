@@ -185,12 +185,15 @@ module WorldPrims =
             | None -> world
             | Some _ -> removeEntity address world
         let (entity', world'') = registerEntity address entity world'
-        set entity' world'' <| worldEntity address
+        let world'3 = set entity' world'' <| worldEntity address
+        (entity', world'3)
 
     let addEntities groupAddress entities world =
         List.fold
-            (fun world' entity -> addEntity (addrstr groupAddress entity.Name) entity world')
-            world
+            (fun (entities, world') entity ->
+                let (entity', world'') = addEntity (addrstr groupAddress entity.Name) entity world'
+                (entity' :: entities, world''))
+            ([], world)
             entities
 
     let private sortFstAsc (priority, _) (priority2, _) =
@@ -295,13 +298,16 @@ module WorldPrims =
             match get world <| worldOptGroup address with
             | None -> world
             | Some _ -> removeGroup address world
-        let world'' = registerGroup address entities group world'
-        set group world'' <| worldGroup address
+        let (entities, world'') = registerGroup address entities group world'
+        let world'3 = set group world'' <| worldGroup address
+        (entities, world'3)
 
     let addGroups screenAddress groupDescriptors world =
         List.fold
-            (fun world' (groupName, group, entities) -> addGroup (screenAddress @ [groupName]) group entities world')
-            world
+            (fun (entitiesAcc, world') (groupName, group, entities) ->
+                let (entities', world'') = addGroup (screenAddress @ [groupName]) group entities world'
+                (entitiesAcc @ entities, world''))
+            ([], world)
             groupDescriptors
 
     (* Screen functions. *)
@@ -361,8 +367,9 @@ module WorldPrims =
             match get world <| worldOptScreen address with
             | None -> world
             | Some _ -> removeScreen address world
-        let world'' = registerScreen address screen groupDescriptors world'
-        set screen world'' <| worldScreen address
+        let (entities, world'') = registerScreen address screen groupDescriptors world'
+        let world'3 = set screen world'' <| worldScreen address
+        (entities, world'3)
 
     (* Game functions. *)
 
@@ -505,8 +512,8 @@ module WorldPrims =
         set (Some destination) world' worldOptSelectedScreenAddress
 
     and private updateTransition1 (transition : Transition) =
-        if transition.Ticks = transition.Lifetime then ({ transition with Ticks = 0 }, true)
-        else ({ transition with Ticks = transition.Ticks + 1 }, false)
+        if transition.TransitionTicks = transition.TransitionLifetime then ({ transition with TransitionTicks = 0 }, true)
+        else ({ transition with TransitionTicks = transition.TransitionTicks + 1 }, false)
 
     and internal updateTransition update world =
         let (keepRunning, world') =

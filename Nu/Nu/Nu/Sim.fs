@@ -1,5 +1,6 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2014.
+
 namespace Nu
 open System
 open System.Collections.Generic
@@ -82,9 +83,9 @@ module SimModule =
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { Id : Guid
-          Lifetime : int
-          Ticks : int
-          Type : TransitionType
+          TransitionLifetime : int
+          TransitionTicks : int
+          TransitionType : TransitionType
           OptDissolveSprite : Sprite option
           FacetNamesNs : string list
           Xtension : Xtension }

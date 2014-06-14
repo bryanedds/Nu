@@ -783,7 +783,7 @@ module DispatchersModule =
         abstract member Init : Group * IXDispatcherContainer -> Group
         default this.Init (group, dispatcherContainer) = group
         
-        abstract member Register : Group * Address * Entity list * World -> World
+        abstract member Register : Group * Address * Entity list * World -> Entity list * World
         default this.Register (_, address, entities, world) = World.addEntities address entities world
 
         abstract member Unregister : Group * Address * World -> World
@@ -794,7 +794,7 @@ module DispatchersModule =
 
     type ScreenDispatcher () =
 
-        abstract member Register : Screen * Address * GroupDescriptor list * World -> World
+        abstract member Register : Screen * Address * GroupDescriptor list * World -> Entity list * World
         default this.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
         abstract member Unregister : Screen * Address * World -> World
