@@ -13,19 +13,19 @@ module GroupModule =
 
     type Group with
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Group = this?Init dispatcherContainer
-        member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
+        member this.Register (address : Address, entities : Entity list, world : World) : Entity list * World = this?Register (address, entities, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
 [<RequireQualifiedAccess>]
 module Group =
 
-    let makeDefaultUninitialized defaultDispatcherName =
+    let makeDefaultUninitialized dispatcherName =
         { Group.Id = NuCore.getId ()
           FacetNamesNs = []
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
+          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDefault defaultDispatcherName dispatcherContainer =
-        let group = makeDefaultUninitialized defaultDispatcherName
+    let makeDefault dispatcherName dispatcherContainer =
+        let group = makeDefaultUninitialized dispatcherName
         group.Init dispatcherContainer
 
     let writeToXml (writer : XmlWriter) group entities =

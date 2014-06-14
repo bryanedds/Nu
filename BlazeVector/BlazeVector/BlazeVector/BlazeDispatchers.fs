@@ -11,9 +11,22 @@ open Nu
 [<AutoOpen>]
 module BlazeDispatchersModule =
 
+    type Entity with
+
+        (* bullet xfields *)
+        [<XField>] member this.BirthTime with get () = this?BirthTime () : uint64
+        member this.SetBirthTime (value : uint64) : Entity = this?BirthTime <- value
+
     type BlazeBulletDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
-        
+
+        let tickHandler _ _ address message world =
+            let bullet = get world <| World.worldEntity address
+            if bullet.BirthTime + 30UL > world.Ticks then (message, true, world)
+            else
+                let world' = World.removeEntity address world
+                (message, true, world')
+
         override this.MakeBodyShape (bullet : Entity) =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
@@ -27,21 +40,89 @@ module BlazeDispatchersModule =
                 .SetGravityScale(0.0f)
                 .SetIsBullet(true)
                 .SetIsSensor(true)
+                .SetBirthTime(0UL)
+                .SetSize(Vector2 (12.0f, 12.0f))
+
+        override dispatcher.Register (bullet, address, world) =
+            let (bullet', world') = base.Register (bullet, address, world)
+            let bullet'' = bullet'.SetBirthTime world.Ticks
+            let world'' =
+                world' |>
+                World.subscribe NuConstants.TickEvent address -<| CustomSub tickHandler
+            (bullet'', world'')
+
+        override dispatcher.Unregister (bullet, address, world) =
+            let world' = base.Unregister (bullet, address, world)
+            world' |>
+                World.unsubscribe NuConstants.TickEvent address
+
+    type BlazeCharacterDispatcher () =
+        inherit CharacterDispatcher ()
+
+        let createBullet (character : Entity) characterAddress world =
+            let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
+            let bullet' =
+                bullet
+                    .SetPosition(character.Position + character.Size * 0.75f)
+                    .SetDepth(character.Depth + 1.0f)
+            let bulletAddress = List.allButLast characterAddress @ [bullet'.Name]
+            World.addEntity bulletAddress bullet' world
+
+        let launchBullet (bullet : Entity) world =
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
+            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+
+        let spawnBulletHandler _ _ address message world =
+            let character = get world <| World.worldEntity address
+            if world.Ticks % 5UL = 0UL then
+                let (bullet, world') = createBullet character address world
+                let world'' = launchBullet bullet world'
+                (message, true, world'')
+            else (message, true, world)
+
+        let moveCharacterHandler _ _ address message world =
+            let character = get world <| World.worldEntity address
+            let optGroundTangent = Physics.getOptGroundContactTangent character.PhysicsId world.Integrator
+            let force =
+                match optGroundTangent with
+                | None -> Vector2 (1.0f, -2.5f) * 3000.0f
+                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
+            let applyForceMessage = ApplyForceMessage { PhysicsId = character.PhysicsId; Force = force }
+            let world' = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+            (message, true, world')
+
+        let jumpCharacterHandler _ _ address message world =
+            let character = get world <| World.worldEntity address
+            if not <| Physics.isBodyOnGround character.PhysicsId world.Integrator
+            then (message, true, world)
+            else
+                let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = character.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
+                let world' = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+                (message, true, world')
+
+        override dispatcher.Register (character, address, world) =
+            let (character', world') = base.Register (character, address, world)
+            let world'' =
+                world' |>
+                World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
+                World.subscribe NuConstants.TickEvent address -<| CustomSub moveCharacterHandler |>
+                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpCharacterHandler
+            (character', world'')
+
+        override dispatcher.Unregister (character, address, world) =
+            let world' = base.Unregister (character, address, world)
+            world' |>
+                World.unsubscribe NuConstants.TickEvent address |>
+                World.unsubscribe NuConstants.TickEvent address |>
+                World.unsubscribe NuConstants.DownMouseLeftEvent address
 
     /// TODO document.
     type BlazeStageGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let getCharacterAddress groupAddress =
-            groupAddress @ [BlazeConstants.StageCharacterName]
-
         let getCharacter groupAddress world =
-            let characterAddress = getCharacterAddress groupAddress
+            let characterAddress = groupAddress @ [BlazeConstants.StageCharacterName]
             get world <| World.worldEntity characterAddress
-
-        let withCharacter fn groupAddress world =
-            let characterAddress = getCharacterAddress groupAddress
-            World.withEntity fn characterAddress world
 
         let adjustCamera groupAddress world =
             let character = getCharacter groupAddress world
@@ -51,47 +132,18 @@ module BlazeDispatchersModule =
         let adjustCameraHandler _ _ groupAddress message world =
             (message, true, adjustCamera groupAddress world)
 
-        let moveCharacterHandler _ _ groupAddress message world =
-            let character = getCharacter groupAddress world
-            let optGroundTangent = Physics.getOptGroundContactTangent character.PhysicsId world.Integrator
-            let force =
-                match optGroundTangent with
-                | None -> Vector2 (1.0f, -2.5f) * 3000.0f
-                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
-            let applyForceMessage = { PhysicsId = character.PhysicsId; Force = force }
-            let world' = { world with PhysicsMessages = ApplyForceMessage applyForceMessage :: world.PhysicsMessages }
-            (message, true, world')
-
-        let jumpCharacterHandler _ _ groupAddress message world =
-            let character = getCharacter groupAddress world
-            if not <| Physics.isBodyOnGround character.PhysicsId world.Integrator then (message, true, world)
-            else
-                let applyLinearImpulseMessage = { PhysicsId = character.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
-                let world' = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
-                (message, true, world')
-
-        let spawnBulletHandler _ _ groupAddress message world =
-            (message, true, world) // if world.Ticks % 10 = 0 then
-                
-
         override dispatcher.Register (group, address, entities, world) =
-            let world' =
-                world |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub moveCharacterHandler |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
-                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpCharacterHandler
-            let world'' = base.Register (group, address, entities, world')
-            adjustCamera address world''
-
+            let (entities, world') = base.Register (group, address, entities, world)
+            let world'' =
+                world' |>
+                World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler
+            let world'3 = adjustCamera address world''
+            (entities, world'3)
+            
         override dispatcher.Unregister (group, address, world) =
-            let world' =
-                world |>
-                World.unsubscribe NuConstants.TickEvent address |>
-                World.unsubscribe NuConstants.TickEvent address |>
-                World.unsubscribe NuConstants.TickEvent address |>
-                World.unsubscribe NuConstants.DownMouseLeftEvent address
-            base.Unregister (group, address, world')
+            let world' = base.Unregister (group, address, world)
+            world' |>
+                World.unsubscribe NuConstants.TickEvent address
 
     type BlazeStageScreenDispatcher () =
         inherit ScreenDispatcher ()
@@ -127,11 +179,12 @@ module BlazeDispatchersModule =
         inherit GameDispatcher ()
 
         override dispatcher.Register (blazeGame, world) =
-
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany
-                    [|typeof<BlazeStageGroupDispatcher>.Name, BlazeStageGroupDispatcher () :> obj
+                    [|typeof<BlazeBulletDispatcher>.Name, BlazeBulletDispatcher () :> obj
+                      typeof<BlazeCharacterDispatcher>.Name, BlazeCharacterDispatcher () :> obj
+                      typeof<BlazeStageGroupDispatcher>.Name, BlazeStageGroupDispatcher () :> obj
                       typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj|]
                     world.Dispatchers
             { world with Dispatchers = dispatchers }

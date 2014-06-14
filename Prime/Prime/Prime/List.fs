@@ -307,9 +307,9 @@ let foldWhile fn initial input =
 /// Remove all elements from a list that satisfy a predicate.
 /// TODO: see if List.rev can be removed.
 let rec remove pred list =
-    let list' =
+    let listRev =
         List.fold
-            (fun list'' elem -> if pred elem then list'' else elem :: remove pred list'')
+            (fun listAcc elem -> if pred elem then listAcc else elem :: listAcc)
             []
             list
-    List.rev list'
+    List.rev listRev

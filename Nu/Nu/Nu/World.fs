@@ -124,8 +124,8 @@ module World =
         match transition.OptDissolveSprite with
         | None -> []
         | Some dissolveSprite ->
-            let progress = single transition.Ticks / single transition.Lifetime
-            let alpha = match transition.Type with Incoming -> 1.0f - progress | Outgoing -> progress
+            let progress = single transition.TransitionTicks / single transition.TransitionLifetime
+            let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
             let color = Vector4 (Vector3.One, alpha)
             [LayerableDescriptor <|
                 LayeredSpriteDescriptor
@@ -166,7 +166,7 @@ module World =
         if not keepRunning then (keepRunning, world)
         else
             match integrationMessage with
-            | BodyTransformMessage bodyTransformMessage -> 
+            | BodyTransformMessage bodyTransformMessage ->
                 let entityAddress = bodyTransformMessage.EntityAddress
                 let entity = get world <| worldEntity entityAddress
                 (keepRunning, entity.HandleBodyTransformMessage (bodyTransformMessage, entityAddress, world))
@@ -234,14 +234,15 @@ module World =
         let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel'3 = splashLabel''.SetLabelSprite (sprite : Sprite)
-        let world' = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'3])] world
+        let (_, world') = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'3])] world
         let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world'
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
         let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let (group, entities) = loadGroupFromFile groupFileName seal world
-        addScreen screenAddress screen [(groupName, group, entities)] world
+        let (_, world') = addScreen screenAddress screen [(groupName, group, entities)] world
+        world'
 
     let tryMakeEmpty sdlDeps gameDispatcher extData =
         match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
