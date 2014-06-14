@@ -15,11 +15,11 @@ module TransitionModule =
 [<RequireQualifiedAccess>]
 module Transition =
 
-    let makeDefault defaultDispatcherName transitionType =
+    let makeDefault dispatcherName transitionType =
         { Id = NuCore.getId ()
-          Lifetime = 0
-          Ticks = 0
-          Type = transitionType
+          TransitionLifetime = 0
+          TransitionTicks = 0
+          TransitionType = transitionType
           OptDissolveSprite = None
           FacetNamesNs = []
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
+          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}

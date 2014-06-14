@@ -91,17 +91,17 @@ module Entity =
     let getPickingPriority (entity : Entity) =
         entity.Depth
 
-    let makeDefaultUninitialized defaultDispatcherName optName =
+    let makeDefaultUninitialized dispatcherName optName =
         let id = NuCore.getId ()
         { Id = id
           Name = match optName with None -> string id | Some name -> name
           Enabled = true
           Visible = true
           FacetNamesNs = []
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some defaultDispatcherName; CanDefault = true; Sealed = false }}
+          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDefault defaultDispatcherName optName dispatcherContainer =
-        let entity = makeDefaultUninitialized defaultDispatcherName optName
+    let makeDefault dispatcherName optName dispatcherContainer =
+        let entity = makeDefaultUninitialized dispatcherName optName
         entity.Init dispatcherContainer
 
     let writeToXml (writer : XmlWriter) entity =

@@ -119,7 +119,7 @@ module Program =
                             let world_ = World.removeEntity entityTds.Address world
                             let entity_ = { entity_ with Name = valueStr }
                             let entityAddress = addrstr EditorGroupAddress valueStr
-                            let world_ = World.addEntity entityAddress entity_ world_
+                            let (_, world_) = World.addEntity entityAddress entity_ world_
                             entityTds.RefWorld := world_ // must be set for property grid
                             entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                             world_
@@ -298,7 +298,7 @@ module Program =
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = NuConstants.DefaultEntitySize; Rotation = NuConstants.DefaultEntityRotation }
                 let entity_ = Entity.setTransform positionSnap rotationSnap entityTransform entity_
                 let entityAddress = addrstr EditorGroupAddress entity_.Name
-                let world_ = World.addEntity entityAddress entity_ world_
+                let (_, world_) = World.addEntity entityAddress entity_ world_
                 let world_ = pushPastWorld world world_
                 refWorld := world_ // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -426,7 +426,8 @@ module Program =
                 let entity_ = Entity.setTransform positionSnap rotationSnap entityTransform entity_
                 let address = addrstr EditorGroupAddress entity_.Name
                 let world_ = pushPastWorld world world
-                World.addEntity address entity_ world_)
+                let (_, world_) = World.addEntity address entity_ world_
+                world_)
             refWorld := changer !refWorld
             worldChangers.Add changer
 
@@ -564,7 +565,7 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
+            refWorld := snd <| World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld World.worldOptSelectedScreenAddress
             refWorld := World.subscribe NuConstants.DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := World.subscribe NuConstants.UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
