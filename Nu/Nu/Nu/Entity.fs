@@ -26,6 +26,8 @@ module EntityModule =
         member this.SetRotation (value : single) : Entity = this?Rotation <- value
         [<XField>] member this.Size with get () = this?Size () : Vector2
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
+        [<XField>] member this.Enabled with get () = this?Enabled () : bool
+        member this.SetEnabled (value : bool) : Entity = this?Enabled <- value
         [<XField>] member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
         member this.SetPhysicsId (value : PhysicsId) : Entity = this?PhysicsId <- value
         [<XField>] member this.BodyType with get () = this?BodyType () : BodyType
@@ -95,7 +97,6 @@ module Entity =
         let id = NuCore.getId ()
         { Id = id
           Name = match optName with None -> string id | Some name -> name
-          Enabled = true
           Visible = true
           FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}

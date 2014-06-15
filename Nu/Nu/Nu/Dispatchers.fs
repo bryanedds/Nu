@@ -125,6 +125,13 @@ module DispatchersModule =
         abstract member IsTransformRelative : Entity * World -> bool
         default this.IsTransformRelative (entity, world) = true
 
+    type EntityUiDispatcher () =
+        inherit Entity2dDispatcher ()
+            
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity' = base.Init (entity, dispatcherContainer)
+            entity'.SetEnabled(true)
+
     type [<AbstractClass>] Entity2dWithSimplePhysicsDispatcher () =
         inherit Entity2dDispatcher ()
 
@@ -229,7 +236,7 @@ module DispatchersModule =
             | Some size -> size
 
     type ButtonDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit EntityUiDispatcher ()
 
         let handleButtonEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
@@ -308,7 +315,7 @@ module DispatchersModule =
             false
 
     type LabelDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit EntityUiDispatcher ()
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label' = base.Init (label, dispatcherContainer)
@@ -337,7 +344,7 @@ module DispatchersModule =
             false
 
     type TextBoxDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit EntityUiDispatcher ()
             
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox' = base.Init (textBox, dispatcherContainer)
@@ -380,7 +387,7 @@ module DispatchersModule =
             false
 
     type ToggleDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit EntityUiDispatcher ()
 
         let handleToggleEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
@@ -461,7 +468,7 @@ module DispatchersModule =
             false
 
     type FeelerDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit EntityUiDispatcher ()
 
         let handleFeelerEventDownMouseLeft event publisher subscriber message world =
             match message.Data with
@@ -513,7 +520,7 @@ module DispatchersModule =
             false
 
     type FillBarDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit EntityUiDispatcher ()
 
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f

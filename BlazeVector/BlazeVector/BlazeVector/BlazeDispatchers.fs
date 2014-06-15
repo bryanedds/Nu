@@ -20,6 +20,10 @@ module BlazeDispatchersModule =
     type BlazeBulletDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
+        let launch (bullet : Entity) world =
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
+            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+
         let tickHandler _ _ address message world =
             let bullet = get world <| World.worldEntity address
             if bullet.BirthTime + 30UL > world.Ticks then (message, true, world)
@@ -47,83 +51,110 @@ module BlazeDispatchersModule =
             let (bullet, world) = base.Register (bullet, address, world)
             let bullet = bullet.SetBirthTime world.Ticks
             let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
+            let world = launch bullet world
             (bullet, world)
 
         override dispatcher.Unregister (bullet, address, world) =
             let world = base.Unregister (bullet, address, world)
             World.unsubscribe NuConstants.TickEvent address world
 
-    type BlazeCharacterDispatcher () =
+    type BlazePlayerDispatcher () =
         inherit CharacterDispatcher ()
 
-        let createBullet (character : Entity) characterAddress world =
+        let createBullet (player : Entity) playerAddress world =
             let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
             let bullet =
                 bullet
-                    .SetPosition(character.Position + character.Size * 0.75f)
-                    .SetDepth(character.Depth + 1.0f)
-            let bulletAddress = List.allButLast characterAddress @ [bullet.Name]
+                    .SetPosition(player.Position + player.Size * 0.75f)
+                    .SetDepth(player.Depth + 1.0f)
+            let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
-        let launchBullet (bullet : Entity) world =
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
-            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
-
         let spawnBulletHandler _ _ address message world =
-            let character = get world <| World.worldEntity address
-            if world.Ticks % 5UL = 0UL then
-                let (bullet, world) = createBullet character address world
-                let world = launchBullet bullet world
-                (message, true, world)
-            else (message, true, world)
-
-        let moveCharacterHandler _ _ address message world =
-            let character = get world <| World.worldEntity address
-            let optGroundTangent = Physics.getOptGroundContactTangent character.PhysicsId world.Integrator
-            let force =
-                match optGroundTangent with
-                | None -> Vector2 (1.0f, -2.5f) * 3000.0f
-                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
-            let applyForceMessage = ApplyForceMessage { PhysicsId = character.PhysicsId; Force = force }
-            let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-            (message, true, world)
-
-        let jumpCharacterHandler _ _ address message world =
-            let character = get world <| World.worldEntity address
-            if not <| Physics.isBodyOnGround character.PhysicsId world.Integrator
-            then (message, true, world)
+            if not world.Interactive then (message, true, world)
             else
-                let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = character.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
-                let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+                let player = get world <| World.worldEntity address
+                if world.Ticks % 5UL <> 0UL then (message, true, world)
+                else
+                    let (_, world) = createBullet player address world
+                    (message, true, world)
+
+        let movePlayerHandler _ _ address message world =
+            if not world.Interactive then (message, true, world)
+            else
+                let player = get world <| World.worldEntity address
+                let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
+                let force =
+                    match optGroundTangent with
+                    | None -> Vector2 (1.0f, -2.5f) * 3000.0f
+                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
+                let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
+                let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (message, true, world)
 
-        override dispatcher.Register (character, address, world) =
-            let (character, world) = base.Register (character, address, world)
+        let jumpPlayerHandler _ _ address message world =
+            if not world.Interactive then (message, true, world)
+            else
+                let player = get world <| World.worldEntity address
+                if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
+                then (message, true, world)
+                else
+                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
+                    let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+                    (message, true, world)
+
+        override dispatcher.Register (player, address, world) =
+            let (player, world) = base.Register (player, address, world)
             let world =
                 world |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub moveCharacterHandler |>
-                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpCharacterHandler
-            (character, world)
+                World.subscribe NuConstants.TickEvent address -<| CustomSub movePlayerHandler |>
+                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpPlayerHandler
+            (player, world)
 
-        override dispatcher.Unregister (character, address, world) =
-            let world = base.Unregister (character, address, world)
+        override dispatcher.Unregister (player, address, world) =
+            let world = base.Unregister (player, address, world)
             world |>
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.TickEvent address |>
-                World.unsubscribe NuConstants.DownMouseLeftEvent address
+                World.unsubscribe NuConstants.DownMouseRightEvent address
+
+    type BlazeEnemyDispatcher () =
+        inherit CharacterDispatcher ()
+
+        let moveEnemyHandler _ _ address message world =
+            if not world.Interactive then (message, true, world)
+            else
+                let enemy = get world <| World.worldEntity address
+                let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
+                let force =
+                    match optGroundTangent with
+                    | None -> Vector2 (-1.0f, -2.5f) * 800.0f
+                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-800.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
+                let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
+                let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+                (message, true, world)
+
+        override dispatcher.Register (enemy, address, world) =
+            let (enemy, world) = base.Register (enemy, address, world)
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub moveEnemyHandler) world
+            (enemy, world)
+
+        override dispatcher.Unregister (enemy, address, world) =
+            let world = base.Unregister (enemy, address, world)
+            World.unsubscribe NuConstants.TickEvent address world
 
     /// TODO document.
     type BlazeStageGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        let getCharacter groupAddress world =
-            let characterAddress = groupAddress @ [BlazeConstants.StageCharacterName]
-            get world <| World.worldEntity characterAddress
+        let getPlayer groupAddress world =
+            let playerAddress = groupAddress @ [BlazeConstants.StagePlayerName]
+            get world <| World.worldEntity playerAddress
 
         let adjustCamera groupAddress world =
-            let character = getCharacter groupAddress world
-            let eyeCenter = Vector2 (character.Position.X + character.Size.X * 0.5f, world.Camera.EyeCenter.Y)
+            let player = getPlayer groupAddress world
+            let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f, world.Camera.EyeCenter.Y)
             { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
 
         let adjustCameraHandler _ _ groupAddress message world =
@@ -177,7 +208,8 @@ module BlazeDispatchersModule =
             let dispatchers =
                 Map.addMany
                     [|typeof<BlazeBulletDispatcher>.Name, BlazeBulletDispatcher () :> obj
-                      typeof<BlazeCharacterDispatcher>.Name, BlazeCharacterDispatcher () :> obj
+                      typeof<BlazePlayerDispatcher>.Name, BlazePlayerDispatcher () :> obj
+                      typeof<BlazeEnemyDispatcher>.Name, BlazeEnemyDispatcher () :> obj
                       typeof<BlazeStageGroupDispatcher>.Name, BlazeStageGroupDispatcher () :> obj
                       typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj|]
                     world.Dispatchers

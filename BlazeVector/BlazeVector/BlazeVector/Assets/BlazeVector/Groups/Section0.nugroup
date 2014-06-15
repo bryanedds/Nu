@@ -4,13 +4,14 @@
     <Xtension xDispatcher="GroupDispatcher" />
     <Entity>
       <Name>0066be26-b4ad-4fda-ad1f-13aba92657c1</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="TileMapDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">0</Depth>
+        <Friction type="System.Single">0</Friction>
         <Parallax type="System.Single">0</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
+        <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section0;BlazeStages;AssetGraph.xml</TileMapAsset>
@@ -18,13 +19,14 @@
     </Entity>
     <Entity>
       <Name>35d5898e-32ef-4026-995b-a81cfbe7dfd2</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="TileMapDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">-8</Depth>
+        <Friction type="System.Single">0</Friction>
         <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
+        <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;BlazeStages;AssetGraph.xml</TileMapAsset>
@@ -32,13 +34,14 @@
     </Entity>
     <Entity>
       <Name>f63bf3c3-bb2e-4b09-8c64-1cb9b14aab12</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="TileMapDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">-4</Depth>
+        <Friction type="System.Single">0</Friction>
         <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
+        <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;BlazeStages;AssetGraph.xml</TileMapAsset>
