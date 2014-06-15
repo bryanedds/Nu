@@ -54,10 +54,9 @@ module EntityModule =
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
-        member this.Register (address : Address, world : World) : Entity * World = this?Register (address, world)
+        member this.Register (address : Address, world : World) : World = this?Register (address, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
         member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
-        member this.ReregisterPhysicsHack (address : Address, world : World) : World = this?ReregisterPhysicsHack (address, world)
         member this.HandleBodyTransformMessage (message : BodyTransformMessage, address : Address, world : World) : World = this?HandleBodyTransformMessage (message, address, world)
         member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, world)
         member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world

@@ -76,8 +76,6 @@ module DispatchersModule =
         member this.SetRadius (value : single) : Entity = this?Radius <- value
 
         (* tile map xfields *)
-        [<XField>] member this.PhysicsIds with get () = this?PhysicsIds () : PhysicsId list
-        member this.SetPhysicsIds (value : PhysicsId list) : Entity = this?PhysicsIds <- value
         [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
         member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
         [<XField>] member this.Parallax with get () = this?Parallax () : single
@@ -88,8 +86,8 @@ module DispatchersModule =
         abstract member Init : Entity * IXDispatcherContainer -> Entity
         default this.Init (entity, dispatcherContainer) = entity
 
-        abstract member Register : Entity * Address * World -> Entity * World
-        default this.Register (entity, address, world) = (entity, world)
+        abstract member Register : Entity * Address * World -> World
+        default this.Register (entity, address, world) = world
 
         abstract member Unregister : Entity * Address * World -> World
         default this.Unregister (entity, address, world) = world
@@ -109,9 +107,6 @@ module DispatchersModule =
 
         abstract member PropagatePhysics : Entity * Address * World -> World
         default this.PropagatePhysics (entity, address, world) = world
-
-        abstract member ReregisterPhysicsHack : Entity * Address * World -> World
-        default this.ReregisterPhysicsHack (entity, groupAddress, world) = world
 
         abstract member HandleBodyTransformMessage : Entity * BodyTransformMessage * Address * World -> World
         default this.HandleBodyTransformMessage (entity, message, address, world) = world
@@ -156,19 +151,17 @@ module DispatchersModule =
                   IsSensor = entity.IsSensor }}
 
         member dispatcher.RegisterCharacterPhysics (entity : Entity, address, world) =
-            let entity = entity.SetPhysicsId <| Physics.getId entity.Id
             let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity, address, world)
-            let world = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (entity, world)
+            { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
 
         member dispatcher.UnregisterCharacterPhysics (entity : Entity, world) =
-            let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = entity.PhysicsId }
-            { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
+            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = entity.PhysicsId }
+            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
             entity
-                .SetPhysicsId(Physics.InvalidId)
+                .SetPhysicsId(Physics.getId entity.Id)
                 .SetBodyType(BodyType.Dynamic)
                 .SetDensity(NuConstants.NormalDensity)
                 .SetFriction(0.0f)
@@ -187,17 +180,8 @@ module DispatchersModule =
             dispatcher.UnregisterCharacterPhysics (entity, world)
             
         override dispatcher.PropagatePhysics (entity, address, world) =
-            let (entity, world) =
-                world |>
-                (fun world -> dispatcher.UnregisterCharacterPhysics (entity, world)) |>
-                (fun world -> dispatcher.RegisterCharacterPhysics (entity, address, world))
-            set entity world <| World.worldEntity address
-
-        override dispatcher.ReregisterPhysicsHack (entity, groupAddress, world) =
-            let address = addrstr groupAddress entity.Name
             let world = dispatcher.UnregisterCharacterPhysics (entity, world)
-            let (entity, world) = dispatcher.RegisterCharacterPhysics (entity, address, world)
-            set entity world <| World.worldEntity address
+            dispatcher.RegisterCharacterPhysics (entity, address, world)
 
         override dispatcher.HandleBodyTransformMessage (entity, message, address, world) =
             let entity =
@@ -281,11 +265,9 @@ module DispatchersModule =
                 .SetClickSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (button, address, world) =
-            let world =
-                world |>
-                    World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
-                    World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
-            (button, world)
+            world |>
+                World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
+                World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
 
         override dispatcher.Unregister (button, address, world) =
             world |>
@@ -434,11 +416,9 @@ module DispatchersModule =
                 .SetToggleSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (toggle, address, world) =
-            let world =
-                world |>
-                    World.subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
-                    World.subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
-            (toggle, world)
+            world |>
+                World.subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
+                World.subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
 
         override dispatcher.Unregister (toggle, address, world) =
             world |>
@@ -502,11 +482,9 @@ module DispatchersModule =
             feeler.SetIsTouched(false)
 
         override dispatcher.Register (feeler, address, world) =
-            let world =
-                world |>
-                    World.subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
-                    World.subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
-            (feeler, world)
+            world |>
+                World.subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
+                World.subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
 
         override dispatcher.Unregister (feeler, address, world) =
             world |>
@@ -613,118 +591,128 @@ module DispatchersModule =
     type TileMapDispatcher () =
         inherit Entity2dDispatcher ()
 
-        let registerTilePhysicsBox address (tm : Entity) tmd td world =
-            let physicsId = Physics.getId tm.Id
-            let createBodyMessage =
-                { EntityAddress = address
-                  PhysicsId = physicsId
-                  Position =
-                    Vector2 (
-                        single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                        single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
-                  Rotation = tm.Rotation
-                  BodyProperties =
-                    { Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Center = Vector2.Zero }
-                      BodyType = BodyType.Static
-                      Density = tm.Density
-                      Friction = tm.Friction
-                      Restitution = tm.Restitution
-                      FixedRotation = true
-                      LinearDamping = 0.0f
-                      AngularDamping = 0.0f
-                      GravityScale = 0.0f
-                      IsBullet = false
-                      IsSensor = false }}
-            let world = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (world, physicsId)
+        let getTilePhysicsId tmid (tli : int) (ti : int) =
+            let bytes = Array.create<byte> 8 <| byte 0
+            BitConverter.GetBytes(ti : int).CopyTo(bytes, 0)
+            PhysicsId (tmid, Guid (tli, int16 0, int16 0, bytes))
 
-        let registerTilePhysicsPolygon address (tm : Entity) tmd td vertices world =
-            let physicsId = Physics.getId tm.Id
+        let registerTilePhysicsBox address (tm : Entity) tmd tli td ti world =
+            let physicsId = getTilePhysicsId tm.Id tli ti
             let createBodyMessage =
-                { EntityAddress = address
-                  PhysicsId = physicsId
-                  Position =
-                    Vector2 (
-                        single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                        single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
-                  Rotation = tm.Rotation
-                  BodyProperties =
-                    { Shape = PolygonShape { Vertices = vertices; Center = Vector2.Zero }
-                      BodyType = BodyType.Static
-                      Density = tm.Density
-                      Friction = tm.Friction
-                      Restitution = tm.Restitution
-                      FixedRotation = true
-                      LinearDamping = 0.0f
-                      AngularDamping = 0.0f
-                      GravityScale = 0.0f
-                      IsBullet = false
-                      IsSensor = false }}
-            let world = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (world, physicsId)
+                CreateBodyMessage
+                    { EntityAddress = address
+                      PhysicsId = physicsId
+                      Position =
+                        Vector2 (
+                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                      Rotation = tm.Rotation
+                      BodyProperties =
+                        { Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Center = Vector2.Zero }
+                          BodyType = BodyType.Static
+                          Density = tm.Density
+                          Friction = tm.Friction
+                          Restitution = tm.Restitution
+                          FixedRotation = true
+                          LinearDamping = 0.0f
+                          AngularDamping = 0.0f
+                          GravityScale = 0.0f
+                          IsBullet = false
+                          IsSensor = false }}
+            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
 
-        let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) _ =
-            let td = World.makeTileData tm tmd tld tileIndex
+        let registerTilePhysicsPolygon address (tm : Entity) tmd tli td ti vertices world =
+            let physicsId = getTilePhysicsId tm.Id tli ti
+            let createBodyMessage =
+                CreateBodyMessage
+                    { EntityAddress = address
+                      PhysicsId = physicsId
+                      Position =
+                        Vector2 (
+                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
+                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                      Rotation = tm.Rotation
+                      BodyProperties =
+                        { Shape = PolygonShape { Vertices = vertices; Center = Vector2.Zero }
+                          BodyType = BodyType.Static
+                          Density = tm.Density
+                          Friction = tm.Friction
+                          Restitution = tm.Restitution
+                          FixedRotation = true
+                          LinearDamping = 0.0f
+                          AngularDamping = 0.0f
+                          GravityScale = 0.0f
+                          IsBullet = false
+                          IsSensor = false }}
+            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
+
+        let registerTilePhysics tm tmd (tl : TmxLayer) tli address ti world _ =
+            let td = World.makeTileData tm tmd tl ti
             match td.OptTileSetTile with
-            | None -> (world, physicsIds)
+            | None -> world
             | Some tileSetTile ->
                 let collisionProperty = ref Unchecked.defaultof<string>
-                if not <| tileSetTile.Properties.TryGetValue (NuConstants.CollisionProperty, collisionProperty) then (world, physicsIds)
+                if not <| tileSetTile.Properties.TryGetValue (NuConstants.CollisionProperty, collisionProperty) then world
                 else
                     let collisionExpr = string collisionProperty.Value
                     let collisionTerms = List.ofArray <| collisionExpr.Split '?'
                     let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
                     match collisionTermsTrimmed with
                     | [""]
-                    | ["Box"] ->
-                        let (world, physicsId) = registerTilePhysicsBox address tm tmd td world
-                        (world, physicsId :: physicsIds)
+                    | ["Box"] -> registerTilePhysicsBox address tm tmd tli td ti world
                     | ["Polygon"; verticesStr] ->
                         let vertexStrs = List.ofArray <| verticesStr.Split '|'
                         try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
                             let verticesOffset = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                             let verticesScaled = List.map (fun vertex -> Vector2.Multiply (vertex, tmd.TileSizeF)) verticesOffset
-                            let (world, physicsId) = registerTilePhysicsPolygon address tm tmd td verticesScaled world
-                            (world, physicsId :: physicsIds)
+                            registerTilePhysicsPolygon address tm tmd tli td ti verticesScaled world
                         with :? NotSupportedException as e ->
                             trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
-                            (world, physicsIds)
+                            world
                     | _ ->
                         trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
-                        (world, physicsIds)
+                        world
 
-        let registerTileLayerPhysics address tileMap tileMapData collisionLayer world =
-            let tileLayerData = World.makeTileLayerData tileMap tileMapData collisionLayer
-            if not <| tileLayerData.Layer.Properties.ContainsKey NuConstants.CollisionProperty then (world, [])
+        let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world (tileLayer : TmxLayer) =
+            if not <| tileLayer.Properties.ContainsKey NuConstants.CollisionProperty then world
             else
                 Seq.foldi
-                    (registerTilePhysics tileMap tileMapData tileLayerData address)
-                    (world, [])
-                    tileLayerData.Tiles
+                    (registerTilePhysics tileMap tileMapData tileLayer tileLayerIndex address)
+                    world
+                    tileLayer.Tiles
 
         let registerTileMapPhysics address (tileMap : Entity) world =
             let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
-            let (world, physicsIds) =
-                List.fold
-                    (fun (world, physicsIds) tileLayer ->
-                        let (world, physicsIds) = registerTileLayerPhysics address tileMap tileMapData tileLayer world
-                        (world, physicsIds @ physicsIds))
-                    (world, [])
-                    (List.ofSeq tileMapData.Map.Layers)
-            let tileMap = tileMap.SetPhysicsIds physicsIds
-            (tileMap, world)
-
-        let unregisterTilePhysics world physicsId =
-            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+            Seq.foldi
+                (registerTileLayerPhysics address tileMap tileMapData)
+                world
+                tileMapData.Map.Layers
 
         let unregisterTileMapPhysics (_ : Address) (tileMap : Entity) world =
-            List.fold unregisterTilePhysics world <| tileMap.PhysicsIds
+            let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
+            Seq.foldi
+                (fun tileLayerIndex world (tileLayer : TmxLayer) ->
+                    if not <| tileLayer.Properties.ContainsKey NuConstants.CollisionProperty then world
+                    else
+                        Seq.foldi
+                            (fun tileIndex world _ ->
+                                let tileData = World.makeTileData tileMap tileMapData tileLayer tileIndex
+                                match tileData.OptTileSetTile with
+                                | None -> world
+                                | Some tileSetTile ->
+                                    if not <| tileSetTile.Properties.ContainsKey NuConstants.CollisionProperty then world
+                                    else
+                                        let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
+                                        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
+                                        { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages })
+                            world
+                            tileLayer.Tiles)
+                world
+                tileMapData.Map.Layers
         
         override dispatcher.Init (tileMap, dispatcherContainer) =
             let tileMap = base.Init (tileMap, dispatcherContainer)
             tileMap
-                .SetPhysicsIds([])
                 .SetDensity(NuConstants.NormalDensity)
                 .SetFriction(0.0f)
                 .SetRestitution(0.0f)
@@ -738,14 +726,9 @@ module DispatchersModule =
             unregisterTileMapPhysics address tileMap world
             
         override dispatcher.PropagatePhysics (tileMap, address, world) =
-            let (tileMap, world) = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
-            set tileMap world <| World.worldEntity address
-
-        override dispatcher.ReregisterPhysicsHack (tileMap, groupAddress, world) =
-            let address = addrstr groupAddress tileMap.Name
-            let world = unregisterTileMapPhysics address tileMap world
-            let (tileMap, world) = registerTileMapPhysics address tileMap world
-            set tileMap world <| World.worldEntity address
+            world |>
+                unregisterTileMapPhysics address tileMap |>
+                registerTileMapPhysics address tileMap
 
         override dispatcher.GetRenderDescriptors (tileMap, viewAbsolute, viewRelative, world) =
             if not tileMap.Visible then []
@@ -790,7 +773,7 @@ module DispatchersModule =
         abstract member Init : Group * IXDispatcherContainer -> Group
         default this.Init (group, dispatcherContainer) = group
         
-        abstract member Register : Group * Address * Entity list * World -> Entity list * World
+        abstract member Register : Group * Address * Entity list * World -> World
         default this.Register (_, address, entities, world) = World.addEntities address entities world
 
         abstract member Unregister : Group * Address * World -> World
@@ -801,7 +784,7 @@ module DispatchersModule =
 
     type ScreenDispatcher () =
 
-        abstract member Register : Screen * Address * GroupDescriptor list * World -> Entity list * World
+        abstract member Register : Screen * Address * GroupDescriptor list * World -> World
         default this.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
         abstract member Unregister : Screen * Address * World -> World

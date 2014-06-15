@@ -10,7 +10,7 @@ open Nu.NuConstants
 module ScreenModule =
 
     type Screen with
-        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : Entity list * World = this?Register (address, groupDescriptors, world)
+        member this.Register (address : Address, groupDescriptors : GroupDescriptor list, world : World) : World = this?Register (address, groupDescriptors, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
 [<RequireQualifiedAccess>]

@@ -50,5 +50,4 @@ module NuEditReflection =
     let loadFile fileName world =
         let world = World.removeGroup NuEditConstants.EditorGroupAddress world
         let (group, entities) = World.loadGroupFromFile fileName false world
-        let (_, world) = World.addGroup NuEditConstants.EditorGroupAddress group entities world
-        world
+        World.addGroup NuEditConstants.EditorGroupAddress group entities world
