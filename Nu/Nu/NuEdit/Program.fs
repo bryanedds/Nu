@@ -352,13 +352,12 @@ module Program =
 
     let handleUndo (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let changer = (fun world ->
-            let futureWorld = world
             let editorState = world.ExtData :?> EditorState
             match editorState.PastWorlds with
             | [] -> world
             | pastWorld :: pastWorlds ->
-                let world = pastWorld
-                let world = physicsHack world
+                let futureWorld = world
+                let world = physicsHack pastWorld
                 let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
                 let world = { world with ExtData = editorState }
                 if form.interactButton.Checked then form.interactButton.Checked <- false
@@ -373,9 +372,9 @@ module Program =
             match editorState.FutureWorlds with
             | [] -> world
             | futureWorld :: futureWorlds ->
-                let world = futureWorld
-                let world = physicsHack world
-                let editorState = { editorState with PastWorlds = world :: editorState.PastWorlds; FutureWorlds = futureWorlds }
+                let pastWorld = world
+                let world = physicsHack futureWorld
+                let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
                 let world = { world with ExtData = editorState }
                 if form.interactButton.Checked then form.interactButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
