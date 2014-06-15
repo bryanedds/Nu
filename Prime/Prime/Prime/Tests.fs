@@ -47,16 +47,16 @@ module Tests =
     let readFromStream read (stream : Stream) target =
         let xmlReader = XmlReader.Create stream
         let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
-        let result' = read (xmlDocument.SelectSingleNode "Root") target
-        result'
+        let result = read (xmlDocument.SelectSingleNode "Root") target
+        result
 
     // globalization is fine since this object is stateless.
     let tdc = TestDispatcherContainer ()
 
     let [<Fact>] canAddField () =
         let xtn = Xtension.empty
-        let xtn' = xtn?TestField <- 5
-        let fieldValue = xtn'?TestField ()
+        let xtn = xtn?TestField <- 5
+        let fieldValue = xtn?TestField ()
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] cantAddFieldWhenSealed () =
@@ -65,25 +65,25 @@ module Tests =
 
     let [<Fact>] cantAccessNonexistentField () =
         let xtn = { Xtension.empty with CanDefault = false }
-        let xtn' = xtn?TestField <- 5
-        Assert.Throws<Exception> (fun () -> ignore <| xtn'?TetField ())
+        let xtn = xtn?TestField <- 5
+        Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField ())
 
     let [<Fact>] missingFieldReturnsDefault () =
         let xtn = Xtension.empty
-        let xtn' = xtn?TestField <- 0
-        let fieldValue = xtn'?MissingField ()
+        let xtn = xtn?TestField <- 0
+        let fieldValue = xtn?MissingField ()
         Assert.Equal (0, fieldValue)
 
     let [<Fact>] canAddFieldViaContainingType () =
         let xtd = { Xtension = Xtension.empty }
-        let xtd' = xtd?TestField <- 5
-        let fieldValue = xtd'?TestField ()
+        let xtd = xtd?TestField <- 5
+        let fieldValue = xtd?TestField ()
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] dispatchingWorks () =
         let xtn = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
-        let xtn' = xtn?Init tdc : Xtension
-        let dispatchResult = xtn'?Test tdc
+        let xtn = xtn?Init tdc : Xtension
+        let dispatchResult = xtn?Test tdc
         Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
@@ -92,16 +92,16 @@ module Tests =
 
     let [<Fact>] xtensionSerializationWorks () =
         let xtn = Xtension.empty
-        let xtn' = xtn?TestField <- 5
-        use stream = writeToStream Xtension.write xtn'
+        let xtn = xtn?TestField <- 5
+        use stream = writeToStream Xtension.write xtn
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
-        let xtn'' = readFromStream (fun node _ -> Xtension.read node) stream xtn'
-        Assert.Equal (xtn', xtn'')
+        let xtnRead = readFromStream (fun node _ -> Xtension.read node) stream Xtension.empty
+        Assert.Equal (xtn, xtnRead)
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }}
-        let xtd' = xtd?TestField <- 5
-        use stream = writeToStream Xtension.writeTargetProperties xtd'
+        let xtd = xtd?TestField <- 5
+        use stream = writeToStream Xtension.writeTargetProperties xtd
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
-        let xtd'' = readFromStream (fun node target -> Xtension.readTargetProperties node target; target) stream xtd
-        Assert.Equal (xtd', xtd'')
+        let xtdRead = readFromStream (fun node target -> Xtension.readTargetProperties node target; target) stream { Xtension = Xtension.empty }
+        Assert.Equal (xtd, xtdRead)

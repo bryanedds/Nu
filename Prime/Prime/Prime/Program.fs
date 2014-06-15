@@ -1,5 +1,3 @@
 ﻿namespace Prime
 open System
-module Program =
-
-    Tests.dispatchingWorks ()
+module Program = ignore ignore
