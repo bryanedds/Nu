@@ -73,8 +73,8 @@ module Entity =
         positionEntity
 
     let setPositionSnapped snap position (entity : Entity) =
-        let position' = NuMath.snap2F snap position
-        entity.SetPosition position'
+        let snapped = NuMath.snap2F snap position
+        entity.SetPosition snapped
 
     let getTransform (entity : Entity) =
         { Transform.Position = entity.Position
@@ -83,12 +83,12 @@ module Entity =
           Rotation = entity.Rotation }
 
     let setTransform positionSnap rotationSnap transform (entity : Entity) =
-        let transform' = NuMath.snapTransform positionSnap rotationSnap transform
+        let transform = NuMath.snapTransform positionSnap rotationSnap transform
         entity
-            .SetPosition(transform'.Position)
-            .SetDepth(transform'.Depth)
-            .SetSize(transform'.Size)
-            .SetRotation(transform'.Rotation)
+            .SetPosition(transform.Position)
+            .SetDepth(transform.Depth)
+            .SetSize(transform.Size)
+            .SetRotation(transform.Rotation)
 
     let getPickingPriority (entity : Entity) =
         entity.Depth
@@ -117,9 +117,9 @@ module Entity =
     let readFromXml (entityNode : XmlNode) defaultDispatcherName dispatcherContainer =
         let entity = makeDefaultUninitialized defaultDispatcherName None
         Xtension.readTargetXDispatcher entityNode entity
-        let entity' = entity.Init dispatcherContainer
-        Xtension.readTargetProperties entityNode entity'
-        entity'
+        let entity = entity.Init dispatcherContainer
+        Xtension.readTargetProperties entityNode entity
+        entity
 
     let readManyFromXml (parentNode : XmlNode) defaultDispatcherName dispatcherContainer =
         let entityNodes = parentNode.SelectNodes "Entity"

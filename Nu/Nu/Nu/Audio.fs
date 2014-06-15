@@ -131,16 +131,16 @@ module Audio =
                 let audioAssetMap' = Map.addMany audioAssets audioAssetMap
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap' audioPlayer.AudioAssetMap }
 
-    let private tryLoadAudioAsset packageName packageFileName assetName audioPlayer_ =
-        let optAssetMap = Map.tryFind packageName audioPlayer_.AudioAssetMap
-        let (audioPlayer_, optAssetMap_) =
+    let private tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
+        let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
+        let (audioPlayer, optAssetMap) =
             match optAssetMap with
             | None ->
                 note <| "Loading audio package '" + packageName + "' for asset '" + assetName + "' on the fly."
-                let audioPlayer_ = tryLoadAudioPackage packageName packageFileName audioPlayer_
-                (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
-            | Some assetMap -> (audioPlayer_, Map.tryFind packageName audioPlayer_.AudioAssetMap)
-        (audioPlayer_, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap_)
+                let audioPlayer = tryLoadAudioPackage packageName packageFileName audioPlayer
+                (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
+            | Some assetMap -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
+        (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private playSong (song : Song) audioPlayer =
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
@@ -160,8 +160,8 @@ module Audio =
         | Some nextSong ->
             if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
             else
-                let audioPlayer' = playSong nextSong audioPlayer
-                { audioPlayer' with OptNextSong = None }
+                let audioPlayer = playSong nextSong audioPlayer
+                { audioPlayer with OptNextSong = None }
 
     let private updateAudioPlayer audioPlayer =
         audioPlayer |>
@@ -188,12 +188,12 @@ module Audio =
 
     let private handlePlaySound playSound audioPlayer =
         let sound = playSound.Sound
-        let (audioPlayer', optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
+        let (audioPlayer, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
         match optAudioAsset with
         | None -> debug <| "PlaySound failed due to unloadable assets for '" + string sound + "'."
         | Some (WavAsset wavAsset) -> ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
         | Some (OggAsset oggAsset) -> debug <| "Cannot play ogg file as sound '" + string sound + "'."
-        audioPlayer'
+        audioPlayer
 
     let private handlePlaySong playSongValue audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
@@ -226,8 +226,8 @@ module Audio =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)
 
     let play audioMessages audioPlayer =
-        let audioPlayer' = handleAudioMessages audioMessages audioPlayer
-        updateAudioPlayer audioPlayer'
+        let audioPlayer = handleAudioMessages audioMessages audioPlayer
+        updateAudioPlayer audioPlayer
 
     let makeAudioPlayer () =
         { AudioContext = ()

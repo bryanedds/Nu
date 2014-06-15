@@ -101,21 +101,21 @@ module Sdl =
         | ColorClear (r, g, b) ->
             ignore <| SDL.SDL_SetRenderDrawColor (sdlDeps.RenderContext, r, g, b, 255uy)
             ignore <| SDL.SDL_RenderClear sdlDeps.RenderContext
-        let world' = handleRender world
+        let world = handleRender world
         SDL.SDL_RenderPresent sdlDeps.RenderContext
-        world'
+        world
 
     let play handlePlay world =
         handlePlay world
 
     let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
         if keepRunning then
-            let (keepRunning', world') = advance handleEvent handleUpdate sdlDeps world
-            if not keepRunning' then ignore <| handleExit world'
+            let (keepRunning, world) = advance handleEvent handleUpdate sdlDeps world
+            if not keepRunning then ignore <| handleExit world
             else
-                let world'' = render handleRender sdlDeps world'
-                let world'3 = play handlePlay world''
-                run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning' world'3
+                let world = render handleRender sdlDeps world
+                let world = play handlePlay world
+                run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world
 
     let run tryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
         withSdlInit

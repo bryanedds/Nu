@@ -147,13 +147,13 @@ module NuMathModule =
         static member getInverseMatrix m =
             // borrows inversion functionality from Matrix4
             // TODO: ensure this function actually works
-            let mutable m' = Matrix4.Identity
-            m'.M11 <- m.M00; m'.M21 <- m.M10; m'.M41 <- m.M02
-            m'.M12 <- m.M01; m'.M22 <- m.M11; m'.M42 <- m.M12
-            m'.Invert ()
-            { M00 = m'.M11; M10 = m'.M21; M20 = m'.M31
-              M01 = m'.M21; M11 = m'.M22; M21 = m'.M32
-              M02 = m'.M41; M12 = m'.M42; M22 = m'.M33 }
+            let mutable n = Matrix4.Identity
+            n.M11 <- m.M00; n.M21 <- m.M10; n.M41 <- m.M02
+            n.M12 <- m.M01; n.M22 <- m.M11; n.M42 <- m.M12
+            n.Invert ()
+            { M00 = n.M11; M10 = n.M21; M20 = n.M31
+              M01 = n.M21; M11 = n.M22; M21 = n.M32
+              M02 = n.M41; M12 = n.M42; M22 = n.M33 }
 
         static member (*) (l : Matrix3, r : Matrix3) =
             let m00 = Vector3.Dot (Matrix3.row0 l, Matrix3.col0 r)
@@ -195,8 +195,8 @@ module NuMath =
         else
             let rem = ref 0
             let div = Math.DivRem (value, offset, rem)
-            let rem' = if !rem < offset / 2 then 0 else offset
-            div * offset + rem'
+            let rem = if !rem < offset / 2 then 0 else offset
+            div * offset + rem
 
     let snapR offset value =
         value |>
@@ -213,8 +213,8 @@ module NuMath =
         Vector2 (snapF offset v2.X, snapF offset v2.Y)
 
     let snapTransform positionSnap rotationSnap (transform : Transform) =
-        let transform' = { transform with Position = snap2F positionSnap transform.Position }
-        { transform' with Rotation = snapR rotationSnap transform'.Rotation }
+        let transform = { transform with Position = snap2F positionSnap transform.Position }
+        { transform with Rotation = snapR rotationSnap transform.Rotation }
 
     let isInBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
         point.X >= boxPos.X &&
