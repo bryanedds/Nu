@@ -91,7 +91,7 @@ module World =
         let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
         world.Game.Register world
 
-    let saveGroupToFile group entities fileName world =
+    let saveGroupToFile group entities fileName (_ : World) =
         use file = File.Open (fileName, FileMode.Create)
         let writerSettings = XmlWriterSettings ()
         writerSettings.Indent <- true
@@ -102,7 +102,7 @@ module World =
         writer.WriteEndElement ()
         writer.WriteEndDocument ()
 
-    let loadGroupFromFile fileName seal world =
+    let loadGroupFromFile fileName world =
         let document = XmlDocument ()
         document.Load (fileName : string)
         let rootNode = document.["Root"]
@@ -120,7 +120,7 @@ module World =
         let viewRelative = Camera.getViewRelativeI camera |> Matrix3.getInverseViewMatrix
         Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (viewAbsolute, viewRelative, dispatcherContainer)) entityValues
 
-    let private getTransitionRenderDescriptors camera dispatcherContainer transition =
+    let private getTransitionRenderDescriptors camera transition =
         match transition.OptDissolveSprite with
         | None -> []
         | Some dissolveSprite ->
@@ -151,8 +151,8 @@ module World =
                 let descriptors = List.concat descriptorSeq
                 let activeScreen = get world <| worldScreen activeScreenAddress
                 match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera world activeScreen.Outgoing
+                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera activeScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera activeScreen.Outgoing
                 | IdlingState -> descriptors
 
     let private render world =
@@ -169,7 +169,7 @@ module World =
             | BodyTransformMessage bodyTransformMessage ->
                 let entityAddress = bodyTransformMessage.EntityAddress
                 let entity = get world <| worldEntity entityAddress
-                (keepRunning, entity.HandleBodyTransformMessage (bodyTransformMessage, entityAddress, world))
+                (keepRunning, entity.HandleBodyTransformMessage (entityAddress, bodyTransformMessage, world))
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
@@ -238,9 +238,9 @@ module World =
         let world = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world
 
-    let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
+    let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
-        let (group, entities) = loadGroupFromFile groupFileName seal world
+        let (group, entities) = loadGroupFromFile groupFileName world
         let world = addScreen screenAddress screen [(groupName, group, entities)] world
         world
 

@@ -13,7 +13,7 @@ module Conversions =
 
     /// Convert from a string to an array representation.
     /// TODO: consider optimizing this.
-    let stringToArray env str =
+    let stringToArray (_ : Env) str =
         let array = Array.map (fun c -> Character (makeCharacterRecord c None)) (String.toArray str)
         Array (makeArrayRecord true array None)
 
@@ -31,10 +31,10 @@ module Conversions =
             String (makeStringRecord (makeStringValue imploded LiteralString) None)
 
     /// Convert from a list to an array representation.
-    let listToArray env list = Array (makeArrayRecord list.ListEvaluated (Array.ofList list.ListElements) None)
+    let listToArray (_ : Env) list = Array (makeArrayRecord list.ListEvaluated (Array.ofList list.ListElements) None)
 
     /// Convert from an array to a list representation.
-    let arrayToList env array = List (makeListRecord array.ArrEvaluated (List.ofArray array.ArrElements) None)
+    let arrayToList (_ : Env) array = List (makeListRecord array.ArrEvaluated (List.ofArray array.ArrElements) None)
 
     /// Convert an expr to an optional violation.
     let exprToOptViolation = function | Violation _ as v -> Some v | _ -> None

@@ -84,13 +84,13 @@ module DispatchersModule =
     type EntityDispatcher () =
 
         abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default this.Init (entity, dispatcherContainer) = entity
+        default this.Init (entity, _) = entity
 
         abstract member Register : Entity * Address * World -> World
-        default this.Register (entity, address, world) = world
+        default this.Register (_, _, world) = world
 
         abstract member Unregister : Entity * Address * World -> World
-        default this.Unregister (entity, address, world) = world
+        default this.Unregister (_, _, world) = world
 
     type Entity2dDispatcher () =
         inherit EntityDispatcher ()
@@ -106,19 +106,19 @@ module DispatchersModule =
                 .SetRotation(0.0f)
 
         abstract member PropagatePhysics : Entity * Address * World -> World
-        default this.PropagatePhysics (entity, address, world) = world
+        default this.PropagatePhysics (_, _, world) = world
 
-        abstract member HandleBodyTransformMessage : Entity * BodyTransformMessage * Address * World -> World
-        default this.HandleBodyTransformMessage (entity, message, address, world) = world
+        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
+        default this.HandleBodyTransformMessage (_, _, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
-        default this.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) = []
+        default this.GetRenderDescriptors (_, _, _, _) = []
 
         abstract member GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (entity, world) = DefaultEntitySize
+        default this.GetQuickSize (_, _) = DefaultEntitySize
 
         abstract member IsTransformRelative : Entity * World -> bool
-        default this.IsTransformRelative (entity, world) = true
+        default this.IsTransformRelative (_, _) = true
 
     type EntityUiDispatcher () =
         inherit Entity2dDispatcher ()
@@ -132,7 +132,7 @@ module DispatchersModule =
 
         abstract member MakeBodyShape : Entity -> BodyShape
 
-        member this.MakeCreateBodyMessage (entity : Entity, address : Address, world : World) =
+        member this.MakeCreateBodyMessage (entity : Entity, address : Address) =
             { EntityAddress = address
               PhysicsId = entity.PhysicsId
               Position = entity.Position + entity.Size * 0.5f
@@ -151,7 +151,7 @@ module DispatchersModule =
                   IsSensor = entity.IsSensor }}
 
         member dispatcher.RegisterCharacterPhysics (entity : Entity, address, world) =
-            let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity, address, world)
+            let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity, address)
             { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
 
         member dispatcher.UnregisterCharacterPhysics (entity : Entity, world) =
@@ -176,14 +176,14 @@ module DispatchersModule =
         override dispatcher.Register (entity, address, world) =
             dispatcher.RegisterCharacterPhysics (entity, address, world)
 
-        override dispatcher.Unregister (entity, address, world) =
+        override dispatcher.Unregister (entity, _, world) =
             dispatcher.UnregisterCharacterPhysics (entity, world)
             
         override dispatcher.PropagatePhysics (entity, address, world) =
             let world = dispatcher.UnregisterCharacterPhysics (entity, world)
             dispatcher.RegisterCharacterPhysics (entity, address, world)
 
-        override dispatcher.HandleBodyTransformMessage (entity, message, address, world) =
+        override dispatcher.HandleBodyTransformMessage (entity, _, message, world) =
             let entity =
                 entity
                     .SetPosition(message.Position - entity.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
@@ -200,7 +200,7 @@ module DispatchersModule =
             let spriteAssetName = dispatcher.GetImageSpriteAssetName ()
             entity.SetImageSprite({ SpriteAssetName = spriteAssetName; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, _) =
             if not entity.Visible then []
             else
                 [LayerableDescriptor <|
@@ -222,7 +222,7 @@ module DispatchersModule =
     type ButtonDispatcher () =
         inherit EntityUiDispatcher ()
 
-        let handleButtonEventDownMouseLeft event publisher subscriber message world =
+        let handleButtonEventDownMouseLeft event _ subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| World.worldEntity subscriber
@@ -237,7 +237,7 @@ module DispatchersModule =
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
 
-        let handleButtonEventUpMouseLeft event publisher subscriber message world =
+        let handleButtonEventUpMouseLeft event _ subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let button = get world <| World.worldEntity subscriber
@@ -264,17 +264,17 @@ module DispatchersModule =
                 .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetClickSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.Register (button, address, world) =
+        override dispatcher.Register (_, address, world) =
             world |>
                 World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
                 World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
 
-        override dispatcher.Unregister (button, address, world) =
+        override dispatcher.Unregister (_, address, world) =
             world |>
                 World.unsubscribe DownMouseLeftEvent address |>
                 World.unsubscribe UpMouseLeftEvent address
 
-        override dispatcher.GetRenderDescriptors (button, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (button, viewAbsolute, _, _) =
             if not button.Visible then []
             else
                 [LayerableDescriptor <|
@@ -303,7 +303,7 @@ module DispatchersModule =
             let label = base.Init (label, dispatcherContainer)
             label.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (label, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (label, viewAbsolute, _, _) =
             if not label.Visible then []
             else
                 [LayerableDescriptor <|
@@ -337,7 +337,7 @@ module DispatchersModule =
                 .SetTextOffset(Vector2.Zero)
                 .SetTextColor(Vector4.One)
 
-        override dispatcher.GetRenderDescriptors (textBox, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (textBox, viewAbsolute, _, _) =
             if not textBox.Visible then []
             else
                 [LayerableDescriptor <|
@@ -371,7 +371,7 @@ module DispatchersModule =
     type ToggleDispatcher () =
         inherit EntityUiDispatcher ()
 
-        let handleToggleEventDownMouseLeft event publisher subscriber message world =
+        let handleToggleEventDownMouseLeft event _ subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| World.worldEntity subscriber
@@ -385,7 +385,7 @@ module DispatchersModule =
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
-        let handleToggleEventUpMouseLeft event publisher subscriber message world =
+        let handleToggleEventUpMouseLeft event _ subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
                 let toggle = get world <| World.worldEntity subscriber
@@ -415,17 +415,17 @@ module DispatchersModule =
                 .SetOnSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetToggleSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.Register (toggle, address, world) =
+        override dispatcher.Register (_, address, world) =
             world |>
                 World.subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
                 World.subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
 
-        override dispatcher.Unregister (toggle, address, world) =
+        override dispatcher.Unregister (_, address, world) =
             world |>
                 World.unsubscribe DownMouseLeftEvent address |>
                 World.unsubscribe UpMouseLeftEvent address
 
-        override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, _, _) =
             if not toggle.Visible then []
             else
                 [LayerableDescriptor <|
@@ -450,7 +450,7 @@ module DispatchersModule =
     type FeelerDispatcher () =
         inherit EntityUiDispatcher ()
 
-        let handleFeelerEventDownMouseLeft event publisher subscriber message world =
+        let handleFeelerEventDownMouseLeft event _ subscriber message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
                 let feeler = get world <| World.worldEntity subscriber
@@ -465,7 +465,7 @@ module DispatchersModule =
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
-        let handleFeelerEventUpMouseLeft event publisher subscriber message world =
+        let handleFeelerEventUpMouseLeft event _ subscriber message world =
             match message.Data with
             | MouseButtonData _ ->
                 let feeler = get world <| World.worldEntity subscriber
@@ -481,17 +481,17 @@ module DispatchersModule =
             let feeler = base.Init (feeler, dispatcherContainer)
             feeler.SetIsTouched(false)
 
-        override dispatcher.Register (feeler, address, world) =
+        override dispatcher.Register (_, address, world) =
             world |>
                 World.subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
                 World.subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
 
-        override dispatcher.Unregister (feeler, address, world) =
+        override dispatcher.Unregister (_, address, world) =
             world |>
                 World.unsubscribe UpMouseLeftEvent address |>
                 World.unsubscribe DownMouseLeftEvent address
 
-        override dispatcher.GetQuickSize (feeler, world) =
+        override dispatcher.GetQuickSize (_, _) =
             Vector2 64.0f
 
         override dispatcher.IsTransformRelative (_, _) =
@@ -515,7 +515,7 @@ module DispatchersModule =
                 .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (fillBar, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (fillBar, viewAbsolute, _, _) =
             if not fillBar.Visible then []
             else
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
@@ -666,7 +666,7 @@ module DispatchersModule =
                             let verticesOffset = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                             let verticesScaled = List.map (fun vertex -> Vector2.Multiply (vertex, tmd.TileSizeF)) verticesOffset
                             registerTilePhysicsPolygon address tm tmd tli td ti verticesScaled world
-                        with :? NotSupportedException as e ->
+                        with :? NotSupportedException ->
                             trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
                             world
                     | _ ->
@@ -730,7 +730,7 @@ module DispatchersModule =
                 unregisterTileMapPhysics address tileMap |>
                 registerTileMapPhysics address tileMap
 
-        override dispatcher.GetRenderDescriptors (tileMap, viewAbsolute, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (tileMap, _, viewRelative, world) =
             if not tileMap.Visible then []
             else
                 let tileMapAsset = tileMap.TileMapAsset
@@ -771,7 +771,7 @@ module DispatchersModule =
     type GroupDispatcher () =
 
         abstract member Init : Group * IXDispatcherContainer -> Group
-        default this.Init (group, dispatcherContainer) = group
+        default this.Init (group, _) = group
         
         abstract member Register : Group * Address * Entity list * World -> World
         default this.Register (_, address, entities, world) = World.addEntities address entities world

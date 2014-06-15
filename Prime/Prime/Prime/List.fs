@@ -12,7 +12,7 @@ open System.Collections.Generic
 let cons = Prime.Sectioning.cons
 
 /// Make a singleton list.
-let inline singleton elem = [elem]
+let inline singleton item = [item]
 
 /// Cons with flipped arguments.
 let inline flipCons tail head = head :: tail
@@ -78,14 +78,14 @@ let rec tryFindAt n list =
     | [] -> None
     | head :: tail ->
         if n = 0 then Some head
-        else tryFindAt (n - 1) list
+        else tryFindAt (n - 1) tail
 
 /// Pair up a list.
 let pairUp list =
     let even = ref false
     let (evens, odds) =
         List.partition
-            (fun elem ->
+            (fun _ ->
                 let result = not !even
                 even := result
                 result)
@@ -211,16 +211,16 @@ let allOrEmpty (opts : 'a option list) =
 /// Make a transformed list of options an all or nothing proposition.
 /// TODO: optimize with program fusion.
 let allOrEmptyBy by list =
-    let definites = List.choose (fun elem -> by elem) list
+    let definites = List.choose (fun item -> by item) list
     if areSameLength definites list then definites else []
 
-/// Pad a list with count instances of its last elem.
+/// Pad a list with count instances of its last item.
 let padWithLast count list =
     let lastElem = last list
     let padding = List.init count (fun _ -> lastElem)
     list @ padding
 
-/// Pad a list with instances of its last elem so that it is proportion to another list.
+/// Pad a list with instances of its last item so that it is proportion to another list.
 let padWithLastToProportion list list2 =
     let deficit = List.length list2 - List.length list
     padWithLast deficit list
@@ -228,7 +228,7 @@ let padWithLastToProportion list list2 =
 /// Join a list into a string separated by sep.
 let join sep list =
     if List.isEmpty list then String.Empty
-    else List.reduce (fun acc elem -> acc + sep + elem) list
+    else List.reduce (fun acc item -> acc + sep + item) list
 
 /// Join a list into a string separated by sep.
 /// TODO: consider optimizing with a StringBuilder.
@@ -236,8 +236,8 @@ let joinBy by sep list =
     if List.isEmpty list then String.Empty
     else
         List.fold 
-            (fun acc elem ->
-                let elemStr = by elem
+            (fun acc item ->
+                let elemStr = by item
                 if String.length acc = 0 then elemStr
                 else acc + sep + elemStr)
             String.Empty
@@ -246,7 +246,7 @@ let joinBy by sep list =
 /// Join a list of lists into a list separated by sep.
 let joinList sep list =
     if List.isEmpty list then []
-    else List.reduce (fun acc elem -> acc @ sep @ elem) list
+    else List.reduce (fun acc item -> acc @ sep @ item) list
 
 /// Take elements until an element satisfies a predicate, taking also that element.
 let takeTillInclusive pred list =
@@ -296,7 +296,7 @@ let toDictionaryBy by list =
 /// Convert a list to a HashSet.
 let toHashSet list =
     let hashSet = HashSet ()
-    List.iter (fun elem -> ignore <| hashSet.Add elem) list
+    List.iter (fun item -> ignore <| hashSet.Add item) list
     hashSet
 
 /// Implement a fold while predicate f passes.
@@ -308,7 +308,7 @@ let foldWhile fn initial input =
 let rec remove pred list =
     let listRev =
         List.fold
-            (fun listAcc elem -> if pred elem then listAcc else elem :: listAcc)
+            (fun listAcc item -> if pred item then listAcc else item :: listAcc)
             []
             list
     List.rev listRev

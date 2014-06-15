@@ -100,7 +100,7 @@ module RenderingModule =
             String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sprite> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Sprite> then obj
             else
@@ -116,7 +116,7 @@ module RenderingModule =
             String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sprite> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<TileMapAsset> then obj
             else
@@ -132,7 +132,7 @@ module RenderingModule =
             String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Font> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Font> then obj
             else
@@ -210,7 +210,7 @@ module Rendering =
                 note <| "Loading render package '" + packageName + "' for asset '" + assetName + "' on the fly."
                 let renderer = tryLoadRenderPackage packageName packageFileName renderer
                 (renderer, Map.tryFind packageName renderer.RenderAssetMap)
-            | Some assetMap -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
+            | Some _ -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
         (renderer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
@@ -305,7 +305,7 @@ module Rendering =
                 match renderAsset with
                 | TextureAsset texture ->
                     Seq.iteri
-                        (fun n tile ->
+                        (fun n _ ->
                             let mapRun = fst mapSize
                             let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
@@ -360,7 +360,6 @@ module Rendering =
                 | FontAsset (font, _) ->
                     let mutable color = SDL.SDL_Color ()
                     let textSizeX = int textDescriptor.Size.X
-                    let textSizeY = int textDescriptor.Size.Y
                     color.r <- byte <| textDescriptor.Color.X * 255.0f
                     color.g <- byte <| textDescriptor.Color.Y * 255.0f
                     color.b <- byte <| textDescriptor.Color.Z * 255.0f

@@ -6,12 +6,12 @@ module HashSet
 open System.Collections.Generic
 
 /// Make a hash set with a single element.
-let singleton elem =
-    List.toHashSet [elem]
+let singleton item =
+    List.toHashSet [item]
 
 type HashSet<'a> with
     /// Force the addition of an element, removing the existing one if necessary.
-    member this.ForceAdd elem =
-        let forced = this.Remove elem
-        ignore <| this.Add elem
+    member this.ForceAdd item =
+        let forced = this.Remove item
+        ignore <| this.Add item
         forced

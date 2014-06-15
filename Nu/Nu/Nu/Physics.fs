@@ -57,7 +57,7 @@ module PhysicsModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
+        override this.ConvertTo (_, _, obj, _) =
             let bodyType = obj :?> BodyType
             match bodyType with
             | Static -> "Static" :> obj
@@ -65,7 +65,7 @@ module PhysicsModule =
             | Dynamic -> "Dynamic" :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<BodyType> then obj
             else
@@ -231,7 +231,7 @@ module Physics =
         let groundNormals = getGroundContactNormals physicsId integrator
         not <| List.isEmpty groundNormals
 
-    let private configureBodyProperties bodyPosition bodyRotation bodyProperties (body : Body) integrator =
+    let private configureBodyProperties bodyPosition bodyRotation bodyProperties (body : Body) =
         body.Position <- toPhysicsV2 bodyPosition
         body.Rotation <- bodyRotation
         body.Friction <- bodyProperties.Friction
@@ -255,7 +255,7 @@ module Physics =
                 0.0f,
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
                 createBodyMessage.EntityAddress)
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body integrator
+        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
     let private makeCircleBody (createBodyMessage : CreateBodyMessage) (circleShape : CircleShape) integrator =
@@ -268,7 +268,7 @@ module Physics =
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body integrator
+        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
     let private makeCapsuleBody (createBodyMessage : CreateBodyMessage) capsuleShape integrator =
@@ -288,7 +288,7 @@ module Physics =
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
         ignore <| capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
 
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body integrator
+        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
     let private makePolygonBody (createBodyMessage : CreateBodyMessage) polygonShape integrator =
@@ -302,7 +302,7 @@ module Physics =
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body integrator
+        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
     // TODO: remove code duplication here
@@ -381,7 +381,7 @@ module Physics =
         messages
 
     let makeIntegrator gravity =
-         { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 Gravity)
+         { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 gravity)
            Bodies = BodyDictionary ()
            IntegrationMessages = List<IntegrationMessage> ()
            RebuildingHack = false }

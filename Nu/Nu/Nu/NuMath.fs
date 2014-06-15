@@ -26,7 +26,7 @@ module NuMathModule =
             String.Format (culture, "{0};{1}", v2.X, v2.Y) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Vector2> then obj
             else
@@ -43,7 +43,7 @@ module NuMathModule =
             String.Format (culture, "{0};{1};{2}", v3.X, v3.Y, v3.Z) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector3> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Vector3> then obj
             else
@@ -60,7 +60,7 @@ module NuMathModule =
             String.Format (culture, "{0};{1};{2};{3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector4> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Vector4> then obj
             else

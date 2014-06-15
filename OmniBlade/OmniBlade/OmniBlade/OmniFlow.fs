@@ -7,22 +7,22 @@ open OmniBlade.OmniConstants
 module OmniFlow =
 
     let addTitleScreen world =
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress true world
+        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
         let world = World.subscribe ClickTitleNewGameEvent [] (ScreenTransitionSub FieldAddress) world
         let world = World.subscribe ClickTitleLoadGameEvent [] (ScreenTransitionSub LoadGameAddress) world
         let world = World.subscribe ClickTitleCreditsEvent [] (ScreenTransitionSub CreditsAddress) world
         World.subscribe ClickTitleExitEvent [] ExitSub world
 
     let addLoadGameScreen world =
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name LoadGameGroupFileName (List.last LoadGameGroupAddress) IncomingTime OutgoingTime LoadGameAddress true world
+        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name LoadGameGroupFileName (List.last LoadGameGroupAddress) IncomingTime OutgoingTime LoadGameAddress world
         World.subscribe ClickLoadGameBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     let addCreditsScreen world =
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress true world
+        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress world
         World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     let addFieldScreen world =
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name FieldGroupFileName (List.last FieldGroupAddress) IncomingTime OutgoingTime FieldAddress true world
+        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name FieldGroupFileName (List.last FieldGroupAddress) IncomingTime OutgoingTime FieldAddress world
         World.subscribe ClickFieldBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     let tryMakeOmniBladeWorld sdlDeps extData =

@@ -29,6 +29,7 @@
     <WarningsAsErrors />
     <PlatformTarget>x86</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
+    <OtherFlags>--warnon:1182</OtherFlags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -42,8 +43,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <PlatformTarget>x86</PlatformTarget>
-    <OtherFlags>
-    </OtherFlags>
+    <OtherFlags>--warnon:1182</OtherFlags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Optimized|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -57,7 +57,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <PlatformTarget>x86</PlatformTarget>
-    <OtherFlags>--checked- --debug- --nointerfacedata</OtherFlags>
+    <OtherFlags>--warnon:1182</OtherFlags>
     <OutputPath>bin\Optimized\</OutputPath>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>

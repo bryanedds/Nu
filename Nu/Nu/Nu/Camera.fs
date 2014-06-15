@@ -17,10 +17,10 @@ module CameraModule =
 [<RequireQualifiedAccess>]
 module Camera =
 
-    let getViewAbsoluteF camera =
+    let getViewAbsoluteF (_ : Camera) =
         Matrix3.identity
         
-    let getViewAbsoluteI camera =
+    let getViewAbsoluteI (_ : Camera) =
         Matrix3.identity
 
     /// The relative view of the camera with original float values. Due to the problems with
