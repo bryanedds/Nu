@@ -19,7 +19,7 @@ module NuEditReflection =
 
     let containsProperty<'t> (property : PropertyInfo) =
         let properties = typeof<'t>.GetProperties (property.Name, BindingFlags.Instance ||| BindingFlags.Public)
-        Seq.exists (fun property' -> property' = property) properties
+        Seq.exists (fun item -> item = property) properties
 
     let getEntityPropertyValue property (entity : Entity) =
         match property with
@@ -35,12 +35,12 @@ module NuEditReflection =
         match property with
         | EntityXFieldDescriptor x ->
             let xFields = Map.add x.FieldName value entity.Xtension.XFields
-            let entity' = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-            set entity' world <| World.worldEntity address
+            let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+            set entity world <| World.worldEntity address
         | EntityPropertyInfo p ->
-            let entity' = { entity with Id = entity.Id } // NOTE: hacky copy
-            p.SetValue (entity', value)
-            set entity' world <| World.worldEntity address
+            let entity = { entity with Id = entity.Id } // NOTE: hacky copy
+            p.SetValue (entity, value)
+            set entity world <| World.worldEntity address
 
     let saveFile fileName world =
         let editorGroup = get world <| World.worldGroup NuEditConstants.EditorGroupAddress
@@ -48,7 +48,7 @@ module NuEditReflection =
         World.saveGroupToFile editorGroup editorEntities fileName world
 
     let loadFile fileName world =
-        let world' = World.removeGroup NuEditConstants.EditorGroupAddress world
-        let (group, entities) = World.loadGroupFromFile fileName false world'
-        let (_, world'') = World.addGroup NuEditConstants.EditorGroupAddress group entities world'
-        world''
+        let world = World.removeGroup NuEditConstants.EditorGroupAddress world
+        let (group, entities) = World.loadGroupFromFile fileName false world
+        let (_, world) = World.addGroup NuEditConstants.EditorGroupAddress group entities world
+        world

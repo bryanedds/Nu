@@ -24,8 +24,8 @@ module BlazeDispatchersModule =
             let bullet = get world <| World.worldEntity address
             if bullet.BirthTime + 30UL > world.Ticks then (message, true, world)
             else
-                let world' = World.removeEntity address world
-                (message, true, world')
+                let world = World.removeEntity address world
+                (message, true, world)
 
         override this.MakeBodyShape (bullet : Entity) =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
@@ -34,8 +34,8 @@ module BlazeDispatchersModule =
             "Image7"
 
         override dispatcher.Init (bullet, dispatcherContainer) =
-            let bullet' = base.Init (bullet, dispatcherContainer)
-            bullet'
+            let bullet = base.Init (bullet, dispatcherContainer)
+            bullet
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
                 .SetIsBullet(true)
@@ -44,29 +44,26 @@ module BlazeDispatchersModule =
                 .SetSize(Vector2 (12.0f, 12.0f))
 
         override dispatcher.Register (bullet, address, world) =
-            let (bullet', world') = base.Register (bullet, address, world)
-            let bullet'' = bullet'.SetBirthTime world.Ticks
-            let world'' =
-                world' |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub tickHandler
-            (bullet'', world'')
+            let (bullet, world) = base.Register (bullet, address, world)
+            let bullet = bullet.SetBirthTime world.Ticks
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
+            (bullet, world)
 
         override dispatcher.Unregister (bullet, address, world) =
-            let world' = base.Unregister (bullet, address, world)
-            world' |>
-                World.unsubscribe NuConstants.TickEvent address
+            let world = base.Unregister (bullet, address, world)
+            World.unsubscribe NuConstants.TickEvent address world
 
     type BlazeCharacterDispatcher () =
         inherit CharacterDispatcher ()
 
         let createBullet (character : Entity) characterAddress world =
             let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
-            let bullet' =
+            let bullet =
                 bullet
                     .SetPosition(character.Position + character.Size * 0.75f)
                     .SetDepth(character.Depth + 1.0f)
-            let bulletAddress = List.allButLast characterAddress @ [bullet'.Name]
-            World.addEntity bulletAddress bullet' world
+            let bulletAddress = List.allButLast characterAddress @ [bullet.Name]
+            World.addEntity bulletAddress bullet world
 
         let launchBullet (bullet : Entity) world =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
@@ -75,9 +72,9 @@ module BlazeDispatchersModule =
         let spawnBulletHandler _ _ address message world =
             let character = get world <| World.worldEntity address
             if world.Ticks % 5UL = 0UL then
-                let (bullet, world') = createBullet character address world
-                let world'' = launchBullet bullet world'
-                (message, true, world'')
+                let (bullet, world) = createBullet character address world
+                let world = launchBullet bullet world
+                (message, true, world)
             else (message, true, world)
 
         let moveCharacterHandler _ _ address message world =
@@ -88,8 +85,8 @@ module BlazeDispatchersModule =
                 | None -> Vector2 (1.0f, -2.5f) * 3000.0f
                 | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
             let applyForceMessage = ApplyForceMessage { PhysicsId = character.PhysicsId; Force = force }
-            let world' = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-            (message, true, world')
+            let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+            (message, true, world)
 
         let jumpCharacterHandler _ _ address message world =
             let character = get world <| World.worldEntity address
@@ -97,21 +94,21 @@ module BlazeDispatchersModule =
             then (message, true, world)
             else
                 let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = character.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
-                let world' = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
-                (message, true, world')
+                let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+                (message, true, world)
 
         override dispatcher.Register (character, address, world) =
-            let (character', world') = base.Register (character, address, world)
-            let world'' =
-                world' |>
+            let (character, world) = base.Register (character, address, world)
+            let world =
+                world |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub moveCharacterHandler |>
                 World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpCharacterHandler
-            (character', world'')
+            (character, world)
 
         override dispatcher.Unregister (character, address, world) =
-            let world' = base.Unregister (character, address, world)
-            world' |>
+            let world = base.Unregister (character, address, world)
+            world |>
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.DownMouseLeftEvent address
@@ -133,17 +130,14 @@ module BlazeDispatchersModule =
             (message, true, adjustCamera groupAddress world)
 
         override dispatcher.Register (group, address, entities, world) =
-            let (entities, world') = base.Register (group, address, entities, world)
-            let world'' =
-                world' |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub adjustCameraHandler
-            let world'3 = adjustCamera address world''
-            (entities, world'3)
+            let (entities, world) = base.Register (group, address, entities, world)
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub adjustCameraHandler) world
+            let world = adjustCamera address world
+            (entities, world)
             
         override dispatcher.Unregister (group, address, world) =
-            let world' = base.Unregister (group, address, world)
-            world' |>
-                World.unsubscribe NuConstants.TickEvent address
+            let world = base.Unregister (group, address, world)
+            World.unsubscribe NuConstants.TickEvent address world
 
     type BlazeStageScreenDispatcher () =
         inherit ScreenDispatcher ()
@@ -157,8 +151,8 @@ module BlazeDispatchersModule =
 
         let makeSectionFromFile fileName sectionName xShift world =
             let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName true world
-            let sectionEntities' = shiftEntities xShift sectionEntities world
-            (sectionName, sectionGroup, sectionEntities')
+            let sectionEntities = shiftEntities xShift sectionEntities world
+            (sectionName, sectionGroup, sectionEntities)
 
         override dispatcher.Register (screen, address, groupDescriptors, world) =
             let stagePlay = World.loadGroupFromFile BlazeConstants.StagePlayFileName true world
@@ -168,8 +162,8 @@ module BlazeDispatchersModule =
             let sectionDescriptor2 = makeSectionFromFile BlazeConstants.Section2FileName BlazeConstants.Section2Name 4096.0f world
             let sectionDescriptor3 = makeSectionFromFile BlazeConstants.Section3FileName BlazeConstants.Section3Name 6144.0f world
             let sectionDescriptors = [sectionDescriptor0; sectionDescriptor1; sectionDescriptor2; sectionDescriptor3]
-            let groupDescriptors' = stagePlayDescriptor :: sectionDescriptors @ groupDescriptors
-            base.Register (screen, address, groupDescriptors', world)
+            let groupDescriptors = stagePlayDescriptor :: sectionDescriptors @ groupDescriptors
+            base.Register (screen, address, groupDescriptors, world)
 
         override dispatcher.Unregister (screen, address, world) =
             base.Unregister (screen, address, world)

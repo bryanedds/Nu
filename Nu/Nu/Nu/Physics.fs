@@ -15,7 +15,12 @@ open Nu.NuConstants
 [<AutoOpen>]
 module PhysicsModule =
 
-    type PhysicsId = Guid * Guid
+    type PhysicsId =
+        struct
+            val Major : Guid
+            val Minor : Guid
+            new (major, minor) = { Major = major; PhysicsId.Minor = minor }
+            end
 
     type Vertices = Vector2 list
 
@@ -140,10 +145,10 @@ module PhysicsModule =
 module Physics =
 
     let InvalidId =
-        (NuCore.InvalidId, NuCore.InvalidId)
+        PhysicsId (NuCore.InvalidId, NuCore.InvalidId)
 
     let getId (entityId : Guid) =
-        (entityId, Guid.NewGuid ())
+        PhysicsId (entityId, Guid.NewGuid ())
 
     let private toPixel value =
         value * Nu.NuConstants.PhysicsToPixelRatio

@@ -28,29 +28,29 @@ module OmniDispatchersModule =
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
                 let applyLinearImpulseMessage = { PhysicsId = avatar.PhysicsId; LinearImpulse = impulseVector }
-                let world' = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
-                (message, true, world')
+                let world = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
+                (message, true, world)
             else (message, true, world)
         
         override dispatcher.Register (omniFieldGroup, address, entities, world) =
-            let world_ = World.subscribe NuConstants.TickEvent address (CustomSub moveFieldAvatarHandler) world
-            let world_ = World.subscribe NuConstants.TickEvent address (CustomSub adjustFieldCameraHandler) world_
-            let world_ = { world_ with PhysicsMessages = SetGravityMessage Vector2.Zero :: world_.PhysicsMessages }
-            let (entities, world_) = base.Register (omniFieldGroup, address, entities, world_)
-            let world_ = adjustFieldCamera address world_
-            (entities, world_)
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub moveFieldAvatarHandler) world
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub adjustFieldCameraHandler) world
+            let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+            let (entities, world) = base.Register (omniFieldGroup, address, entities, world)
+            let world = adjustFieldCamera address world
+            (entities, world)
 
         override dispatcher.Unregister (omniFieldGroup, address, world) =
-            let world_ = World.unsubscribe NuConstants.TickEvent address world
-            let world_ = World.unsubscribe NuConstants.TickEvent address world_
-            base.Unregister (omniFieldGroup, address, world_)
+            let world = World.unsubscribe NuConstants.TickEvent address world
+            let world = World.unsubscribe NuConstants.TickEvent address world
+            base.Unregister (omniFieldGroup, address, world)
 
     type OmniBattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
         override dispatcher.Register (omniBattleGroup, address, entities, world) =
-            let world' = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-            base.Register (omniBattleGroup, address, entities, world')
+            let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+            base.Register (omniBattleGroup, address, entities, world)
 
         override dispatcher.Unregister (omniBattleGroup, address, world) =
             base.Unregister (omniBattleGroup, address, world)
