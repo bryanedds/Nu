@@ -4,12 +4,12 @@
     <Xtension xDispatcher="GroupDispatcher" />
     <Entity>
       <Name>Credits</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
         <DownSprite type="Nu.RenderingModule+Sprite">CreditsButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-160</Position>
         <Rotation type="System.Single">0</Rotation>
@@ -19,12 +19,12 @@
     </Entity>
     <Entity>
       <Name>Exit</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
         <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-224</Position>
         <Rotation type="System.Single">0</Rotation>
@@ -34,12 +34,12 @@
     </Entity>
     <Entity>
       <Name>Play</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
         <DownSprite type="Nu.RenderingModule+Sprite">PlayButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-96</Position>
         <Rotation type="System.Single">0</Rotation>
@@ -49,11 +49,11 @@
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="TextBoxDispatcher">
         <BoxSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
         <Depth type="System.Single">0</Depth>
+        <Enabled type="System.Boolean">True</Enabled>
         <Position type="OpenTK.Vector2">-320;96</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">640;128</Size>
@@ -65,10 +65,10 @@
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="LabelDispatcher">
         <Depth type="System.Single">-1</Depth>
+        <Enabled type="System.Boolean">True</Enabled>
         <LabelSprite type="Nu.RenderingModule+Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
         <Position type="OpenTK.Vector2">-480;-272</Position>
         <Rotation type="System.Single">0</Rotation>

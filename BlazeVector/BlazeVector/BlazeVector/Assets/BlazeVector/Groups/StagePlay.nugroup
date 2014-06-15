@@ -3,10 +3,9 @@
   <Group>
     <Xtension xDispatcher="BlazeStageGroupDispatcher" />
     <Entity>
-      <Name>Character</Name>
-      <Enabled>True</Enabled>
+      <Name>Player</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeCharacterDispatcher">
+      <Xtension xDispatcher="BlazePlayerDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">4</Depth>
         <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>

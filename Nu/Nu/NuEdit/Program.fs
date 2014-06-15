@@ -384,10 +384,13 @@ module Program =
         worldChangers.Add changer
 
     let handleInteractChanged (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
-        if form.interactButton.Checked then
-            let changer = (fun world -> pushPastWorld world world)
-            refWorld := changer !refWorld
-            worldChangers.Add changer
+        let interactive = form.interactButton.Checked
+        let changer = (fun world ->
+            let pastWorld = world
+            let world = { world with Interactive = interactive }
+            if interactive then pushPastWorld pastWorld world else world)
+        refWorld := changer !refWorld
+        worldChangers.Add changer
 
     let handleCut (form : NuEditForm) (worldChangers : WorldChanger List) refWorld _ =
         let optEntityTds = form.propertyGrid.SelectedObject
@@ -567,7 +570,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher editorState
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher false editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->

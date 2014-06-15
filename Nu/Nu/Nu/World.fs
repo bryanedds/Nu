@@ -244,7 +244,7 @@ module World =
         let (_, world') = addScreen screenAddress screen [(groupName, group, entities)] world
         world'
 
-    let tryMakeEmpty sdlDeps gameDispatcher extData =
+    let tryMakeEmpty sdlDeps gameDispatcher interactive extData =
         match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
@@ -254,6 +254,7 @@ module World =
                     // TODO: see if we can reflectively generate this array
                     [|typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                       typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
+                      typeof<EntityUiDispatcher>.Name, EntityUiDispatcher () :> obj
                       typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
                       typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
                       typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
@@ -275,6 +276,7 @@ module World =
                   Groups = Map.empty
                   Entities = Map.empty
                   Ticks = 0UL
+                  Interactive = interactive
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
