@@ -43,8 +43,8 @@ module MapPlus =
         else
             let kvpHead = Seq.head kvps
             let kvpTail = Seq.skip 1 kvps
-            let map' = add (fst kvpHead) (snd kvpHead) mapPlus
-            addMany kvpTail map'
+            let map = add (fst kvpHead) (snd kvpHead) mapPlus
+            addMany kvpTail map
 
     let remove (versionKey, mapKey) mapPlus =
         let optMap = Map.tryFind versionKey mapPlus
@@ -57,8 +57,8 @@ module MapPlus =
         else
             let keyHead = Seq.head keys
             let keyTail = Seq.skip 1 keys
-            let map' = remove keyHead map
-            removeMany keyTail map'
+            let map = remove keyHead map
+            removeMany keyTail map
 
     let ofList kvps =
         addMany kvps empty

@@ -219,8 +219,8 @@ module Xtension =
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
             let optXDispatcherName = match valueNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
-            let xtension' = { xtension with XFields = Map.addMany xFields xtension.XFields; OptXDispatcherName = optXDispatcherName }
-            property.SetValue (target, xtension')
+            let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields; OptXDispatcherName = optXDispatcherName }
+            property.SetValue (target, xtension)
         else
             let valueStr = valueNode.InnerText
             let converter = TypeDescriptor.GetConverter property.PropertyType
@@ -247,8 +247,8 @@ module Xtension =
         let xtensionNode = targetNode.[xtensionProperty.Name]
         let optXDispatcherName = match xtensionNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
         let xtension = xtensionProperty.GetValue target :?> Xtension
-        let xtension' = { xtension with OptXDispatcherName = optXDispatcherName }
-        xtensionProperty.SetValue (target, xtension')
+        let xtension = { xtension with OptXDispatcherName = optXDispatcherName }
+        xtensionProperty.SetValue (target, xtension)
 
     /// Write an Xtension to Xml.
     /// TODO: need a vanilla write function that writes to an XmlDocument rather than directly to an XmlWriter stream.

@@ -21,8 +21,8 @@ module Propagate =
     let inline (>>.) (propagation : Propagation<'s, 'r>) ((setter : ('s -> 't)), (recorder : 't -> 'r)) =
         match propagation with
         | Propagation (state, recordings) ->
-            let state' = setter state
-            Propagation (state', recorder state' :: recordings)
+            let state = setter state
+            Propagation (state, recorder state :: recordings)
 
     /// Propagate a value change without recording.
     let inline (>.) (propagation : Propagation<'s, 's>) (setter : ('s -> 's)) : Propagation<'s, 's> =

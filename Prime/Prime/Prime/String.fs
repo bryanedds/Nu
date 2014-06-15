@@ -11,8 +11,8 @@ let explode (str : string) =
     let rec loop n acc =
         if n = 0 then acc
         else
-            let n' = n - 1
-            loop n' <| str.[n'] :: acc
+            let n = n - 1
+            loop n <| str.[n] :: acc
     loop (String.length str) []
 
 /// Converts a list of characters into a string.
