@@ -20,6 +20,7 @@ module PhysicsModule =
             val Major : Guid
             val Minor : Guid
             new (major, minor) = { Major = major; PhysicsId.Minor = minor }
+            override this.ToString () = "{ Major = " + string this.Major + "; Minor = " + string this.Minor + " }"
             end
 
     type Vertices = Vector2 list
@@ -130,7 +131,7 @@ module PhysicsModule =
         | ApplyLinearImpulseMessage of ApplyLinearImpulseMessage
         | ApplyForceMessage of ApplyForceMessage
         | SetGravityMessage of Vector2
-        | ResetHackMessage
+        | RebuildPhysicsHackMessage
 
     type [<StructuralEquality; NoComparison>] IntegrationMessage =
         | BodyCollisionMessage of BodyCollisionMessage
@@ -139,8 +140,9 @@ module PhysicsModule =
     type [<ReferenceEquality>] Integrator =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
-          IntegrationMessages : IntegrationMessage List }
-
+          IntegrationMessages : IntegrationMessage List
+          mutable RebuildingHack : bool }
+          
 [<RequireQualifiedAccess>]
 module Physics =
 
@@ -319,7 +321,8 @@ module Physics =
         if  integrator.Bodies.TryGetValue (destroyBodyMessage.PhysicsId, body) then
             ignore <| integrator.Bodies.Remove destroyBodyMessage.PhysicsId
             integrator.PhysicsContext.RemoveBody !body
-        else note <| "Could not destroy non-existent body with PhysicsId = " + string destroyBodyMessage.PhysicsId + "'."
+        elif not integrator.RebuildingHack then
+             debug <| "Could not destroy non-existent body with PhysicsId = " + string destroyBodyMessage.PhysicsId + "'."
 
     let private setLinearVelocity (setLinearVelocityMessage : SetLinearVelocityMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
@@ -347,14 +350,17 @@ module Physics =
         | ApplyLinearImpulseMessage applyLinearImpulseMessage -> applyLinearImpulse applyLinearImpulseMessage integrator
         | ApplyForceMessage applyForceMessage -> applyForce applyForceMessage integrator
         | SetGravityMessage gravity -> integrator.PhysicsContext.Gravity <- toPhysicsV2 gravity
-        | ResetHackMessage ->
+        | RebuildPhysicsHackMessage ->
+            integrator.RebuildingHack <- true
             integrator.PhysicsContext.Clear ()
             integrator.Bodies.Clear ()
             integrator.IntegrationMessages.Clear ()
 
     let private handlePhysicsMessages (physicsMessages : PhysicsMessage rQueue) integrator =
-        for physicsMessage in List.rev physicsMessages do
+        let physicsMessagesRev = List.rev physicsMessages
+        for physicsMessage in physicsMessagesRev do
             handlePhysicsMessage integrator physicsMessage
+        integrator.RebuildingHack <- false
 
     let private createTransformMessages integrator =
         for body in integrator.Bodies.Values do
@@ -377,4 +383,5 @@ module Physics =
     let makeIntegrator gravity =
          { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 Gravity)
            Bodies = BodyDictionary ()
-           IntegrationMessages = List<IntegrationMessage> () }
+           IntegrationMessages = List<IntegrationMessage> ()
+           RebuildingHack = false }

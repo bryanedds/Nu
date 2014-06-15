@@ -153,10 +153,9 @@ let rec fornone pred list =
     | head :: tail -> not (pred head) && fornone pred tail
     
 /// Foldi for lists.
-let foldi folder state (list : 'a list)=
-    let seq = Seq.foldi folder state list
-    List.ofSeq seq
-
+let foldi folder state (list : 'a list) =
+    Seq.foldi folder state list
+    
 /// Take for lists.
 /// TODO: make this tail-recursive.
 let rec take number (list : 'a list) =

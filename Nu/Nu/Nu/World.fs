@@ -234,14 +234,14 @@ module World =
         let splashLabel = splashLabel.SetSize world.Camera.EyeSize
         let splashLabel = splashLabel.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel = splashLabel.SetLabelSprite (sprite : Sprite)
-        let (_, world) = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
+        let world = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
         let world = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
         subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
         let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let (group, entities) = loadGroupFromFile groupFileName seal world
-        let (_, world) = addScreen screenAddress screen [(groupName, group, entities)] world
+        let world = addScreen screenAddress screen [(groupName, group, entities)] world
         world
 
     let tryMakeEmpty sdlDeps gameDispatcher interactive extData =
@@ -292,6 +292,13 @@ module World =
             let world = world.Game.Register world
             Right world
 
-    let reregisterPhysicsHack groupAddress world =
+    let rebuildPhysicsHack groupAddress world =
+        let outstandingMessages = world.PhysicsMessages
+        let world = { world with PhysicsMessages = [] }
         let entities = get world <| worldEntities groupAddress
-        Map.fold (fun world _ (entity : Entity) -> entity.ReregisterPhysicsHack (groupAddress, world)) world entities
+        let world =
+            Map.fold
+                (fun world _ (entity : Entity) -> entity.PropagatePhysics (groupAddress @ [entity.Name], world))
+                world
+                entities
+        { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages @ [RebuildPhysicsHackMessage]}
