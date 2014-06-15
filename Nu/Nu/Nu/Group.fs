@@ -36,7 +36,7 @@ module Group =
     let readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
         let group = makeDefaultUninitialized defaultDispatcherName
         Xtension.readTargetXDispatcher groupNode group
-        let group' = group.Init dispatcherContainer
-        Xtension.readTargetProperties groupNode group'
+        let group = group.Init dispatcherContainer
+        Xtension.readTargetProperties groupNode group
         let entities = Entity.readManyFromXml (groupNode : XmlNode) defaultEntityDispatcherName dispatcherContainer
-        (group', entities)
+        (group, entities)
