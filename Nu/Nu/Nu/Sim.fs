@@ -48,7 +48,6 @@ module SimModule =
     type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
-          Enabled : bool
           Visible : bool
           FacetNamesNs : string list // Marked with 'Ns' (Non-serializable) for now as I've yet to make F# lists serializable.
           Xtension : Xtension }
@@ -161,6 +160,7 @@ module SimModule =
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
           Ticks : uint64
+          Interactive : bool
           Camera : Camera
           Subscriptions : Subscriptions
           MouseState : MouseState

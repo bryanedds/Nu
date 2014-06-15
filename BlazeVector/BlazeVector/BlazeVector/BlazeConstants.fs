@@ -5,7 +5,7 @@ module BlazeConstants =
     // misc constants. These, and the following constants, will be explained in depth later. Just
     // scan over them for now, or look at them in the debugger on your own.
     let BlazeGuiPackageName = "BlazeGui"
-    let StageCharacterName = "Character"
+    let StagePlayerName = "Player"
     let StagePlayName = "StagePlay"
     let StagePlayFileName = "Assets/BlazeVector/Groups/StagePlay.nugroup"
     let Section0Name = "Section0"

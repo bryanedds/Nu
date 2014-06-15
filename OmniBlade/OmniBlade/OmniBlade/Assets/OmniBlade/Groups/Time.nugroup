@@ -4,45 +4,45 @@
     <Xtension xDispatcher="GroupDispatcher" />
     <Entity>
       <Name>Back</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="ButtonDispatcher">
-        <Depth type="System.Single">0</Depth>
-        <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
-        <Size type="OpenTK.Vector2">256;64</Size>
-        <Position type="OpenTK.Vector2">-128;-224</Position>
-        <IsDown type="System.Boolean">False</IsDown>
+        <Depth type="System.Single">0</Depth>
         <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <Enabled type="System.Boolean">True</Enabled>
+        <IsDown type="System.Boolean">False</IsDown>
+        <Position type="OpenTK.Vector2">-128;-224</Position>
         <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">256;64</Size>
+        <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;OmniGui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="TextBoxDispatcher">
-        <Depth type="System.Single">0</Depth>
-        <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
-        <Text type="System.String">You have died. The OmniBlade beckons you back in time.</Text>
-        <Size type="OpenTK.Vector2">640;128</Size>
-        <Position type="OpenTK.Vector2">-320;96</Position>
         <BoxSprite type="Nu.RenderingModule+Sprite">Image4;Default;AssetGraph.xml</BoxSprite>
-        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
+        <Depth type="System.Single">0</Depth>
+        <Enabled type="System.Boolean">True</Enabled>
+        <Position type="OpenTK.Vector2">-320;96</Position>
         <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">640;128</Size>
+        <Text type="System.String">You have died. The OmniBlade beckons you back in time.</Text>
+        <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
+        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Enabled>True</Enabled>
       <Visible>True</Visible>
       <Xtension xDispatcher="LabelDispatcher">
-        <LabelSprite type="Nu.RenderingModule+Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
         <Depth type="System.Single">-1</Depth>
-        <Size type="OpenTK.Vector2">960;544</Size>
+        <Enabled type="System.Boolean">True</Enabled>
+        <LabelSprite type="Nu.RenderingModule+Sprite">Image8;Default;AssetGraph.xml</LabelSprite>
         <Position type="OpenTK.Vector2">-480;-272</Position>
         <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">960;544</Size>
       </Xtension>
     </Entity>
   </Group>
