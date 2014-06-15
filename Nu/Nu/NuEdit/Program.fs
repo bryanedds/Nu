@@ -120,7 +120,7 @@ module Program =
                             let world = World.removeEntity entityTds.Address world
                             let entity = { entity with Name = valueStr }
                             let entityAddress = addrstr EditorGroupAddress valueStr
-                            let (_, world) = World.addEntity entityAddress entity world
+                            let world = World.addEntity entityAddress entity world
                             entityTds.RefWorld := world // must be set for property grid
                             entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                             world
@@ -281,11 +281,6 @@ module Program =
             let editorState = { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) }
             { world with ExtData = editorState }
 
-    /// Needed for physics system side-effects...
-    let physicsHack world =
-        let world = { world with PhysicsMessages = [ResetHackMessage] }
-        World.reregisterPhysicsHack EditorGroupAddress world
-
     let handleExit (form : NuEditForm) _ =
         form.Close ()
 
@@ -301,7 +296,7 @@ module Program =
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = NuConstants.DefaultEntitySize; Rotation = NuConstants.DefaultEntityRotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = addrstr EditorGroupAddress entity.Name
-                let (_, world) = World.addEntity entityAddress entity world
+                let world = World.addEntity entityAddress entity world
                 let world = pushPastWorld pastWorld world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -357,7 +352,7 @@ module Program =
             | [] -> world
             | pastWorld :: pastWorlds ->
                 let futureWorld = world
-                let world = physicsHack pastWorld
+                let world = World.rebuildPhysicsHack EditorGroupAddress pastWorld
                 let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
                 let world = { world with ExtData = editorState }
                 if form.interactButton.Checked then form.interactButton.Checked <- false
@@ -373,7 +368,7 @@ module Program =
             | [] -> world
             | futureWorld :: futureWorlds ->
                 let pastWorld = world
-                let world = physicsHack futureWorld
+                let world = World.rebuildPhysicsHack EditorGroupAddress futureWorld
                 let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
                 let world = { world with ExtData = editorState }
                 if form.interactButton.Checked then form.interactButton.Checked <- false
@@ -432,8 +427,7 @@ module Program =
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let address = addrstr EditorGroupAddress entity.Name
                 let world = pushPastWorld world world
-                let (_, world) = World.addEntity address entity world
-                world)
+                World.addEntity address entity world)
             refWorld := changer !refWorld
             worldChangers.Add changer
 
@@ -574,7 +568,7 @@ module Program =
         | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
-            refWorld := snd <| World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
+            refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := set (Some EditorScreenAddress) !refWorld World.worldOptSelectedScreenAddress
             refWorld := World.subscribe NuConstants.DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := World.subscribe NuConstants.UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld

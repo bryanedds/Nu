@@ -24,11 +24,7 @@ module WorldPrimsModule =
           TileMapSizeF : Vector2
           TileSet : TmxTileset
           TileSetSize : int * int }
-      
-    type [<StructuralEquality; NoComparison>] TileLayerData =
-        { Layer : TmxLayer
-          Tiles : TmxLayerTile List }
-      
+
     type [<StructuralEquality; NoComparison>] TileData =
         { Tile : TmxLayerTile
           I : int
@@ -45,29 +41,23 @@ module WorldPrims =
     (* Tiling functions. *)
 
     let makeTileMapData tileMapAsset world =
-        match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
-        | None -> failwith "Unexpected match failure in Nu.Entity.makeTileMapData."
-        | Some (_, _, map) ->
-            let mapSize = (map.Width, map.Height)
-            let tileSize = (map.TileWidth, map.TileHeight)
-            let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
-            let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
-            let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
-            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-            let optTileSetWidth = tileSet.Image.Width
-            let optTileSetHeight = tileSet.Image.Height
-            let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
-            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+        let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
+        let mapSize = (map.Width, map.Height)
+        let tileSize = (map.TileWidth, map.TileHeight)
+        let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
+        let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
+        let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
+        let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+        let optTileSetWidth = tileSet.Image.Width
+        let optTileSetHeight = tileSet.Image.Height
+        let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
+        { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
-    let makeTileLayerData tileMap tmd (layer : TmxLayer) =
-        let tiles = layer.Tiles
-        { Layer = layer; Tiles = tiles }
-
-    let makeTileData (tileMap : Entity) tmd tld tileIndex =
+    let makeTileData (tileMap : Entity) tmd (tl : TmxLayer) tileIndex =
         let mapRun = fst tmd.MapSize
         let tileSetRun = fst tmd.TileSetSize
         let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-        let tile = tld.Tiles.[tileIndex]
+        let tile = tl.Tiles.[tileIndex]
         let gid = tile.Gid - tmd.TileSet.FirstGid
         let gidPosition = gid * fst tmd.TileSize
         let gid2 = (gid % tileSetRun, gid / tileSetRun)
@@ -184,16 +174,13 @@ module WorldPrims =
             match get world <| worldOptEntity address with
             | None -> world
             | Some _ -> removeEntity address world
-        let (entity, world) = registerEntity address entity world
         let world = set entity world <| worldEntity address
-        (entity, world)
+        registerEntity address entity world
 
     let addEntities groupAddress entities world =
         List.fold
-            (fun (entities, world) entity ->
-                let (entity, world) = addEntity (addrstr groupAddress entity.Name) entity world
-                (entity :: entities, world))
-            ([], world)
+            (fun world entity -> addEntity (addrstr groupAddress entity.Name) entity world)
+            world
             entities
 
     let private sortFstAsc (priority, _) (priority2, _) =
@@ -298,16 +285,13 @@ module WorldPrims =
             match get world <| worldOptGroup address with
             | None -> world
             | Some _ -> removeGroup address world
-        let (entities, world) = registerGroup address entities group world
         let world = set group world <| worldGroup address
-        (entities, world)
+        registerGroup address entities group world
 
     let addGroups screenAddress groupDescriptors world =
         List.fold
-            (fun (entitiesAcc, world) (groupName, group, entities) ->
-                let (entities, world) = addGroup (screenAddress @ [groupName]) group entities world
-                (entitiesAcc @ entities, world))
-            ([], world)
+            (fun world (groupName, group, entities) -> addGroup (screenAddress @ [groupName]) group entities world)
+            world
             groupDescriptors
 
     (* Screen functions. *)
@@ -367,9 +351,8 @@ module WorldPrims =
             match get world <| worldOptScreen address with
             | None -> world
             | Some _ -> removeScreen address world
-        let (entities, world) = registerScreen address screen groupDescriptors world
         let world = set screen world <| worldScreen address
-        (entities, world)
+        registerScreen address screen groupDescriptors world
 
     (* Game functions. *)
 

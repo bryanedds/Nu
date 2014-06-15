@@ -48,11 +48,11 @@ module BlazeDispatchersModule =
                 .SetSize(Vector2 (12.0f, 12.0f))
 
         override dispatcher.Register (bullet, address, world) =
-            let (bullet, world) = base.Register (bullet, address, world)
-            let bullet = bullet.SetBirthTime world.Ticks
+            let world = base.Register (bullet, address, world)
             let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
-            let world = launch bullet world
-            (bullet, world)
+            let bullet = bullet.SetBirthTime world.Ticks
+            let world = set bullet world <| World.worldEntity address
+            launch bullet world
 
         override dispatcher.Unregister (bullet, address, world) =
             let world = base.Unregister (bullet, address, world)
@@ -76,7 +76,7 @@ module BlazeDispatchersModule =
                 let player = get world <| World.worldEntity address
                 if world.Ticks % 5UL <> 0UL then (message, true, world)
                 else
-                    let (_, world) = createBullet player address world
+                    let world = createBullet player address world
                     (message, true, world)
 
         let movePlayerHandler _ _ address message world =
@@ -104,13 +104,11 @@ module BlazeDispatchersModule =
                     (message, true, world)
 
         override dispatcher.Register (player, address, world) =
-            let (player, world) = base.Register (player, address, world)
-            let world =
-                world |>
+            let world = base.Register (player, address, world)
+            world |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub movePlayerHandler |>
                 World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpPlayerHandler
-            (player, world)
 
         override dispatcher.Unregister (player, address, world) =
             let world = base.Unregister (player, address, world)
@@ -136,9 +134,8 @@ module BlazeDispatchersModule =
                 (message, true, world)
 
         override dispatcher.Register (enemy, address, world) =
-            let (enemy, world) = base.Register (enemy, address, world)
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub moveEnemyHandler) world
-            (enemy, world)
+            let world = base.Register (enemy, address, world)
+            World.subscribe NuConstants.TickEvent address (CustomSub moveEnemyHandler) world
 
         override dispatcher.Unregister (enemy, address, world) =
             let world = base.Unregister (enemy, address, world)
@@ -161,10 +158,9 @@ module BlazeDispatchersModule =
             (message, true, adjustCamera groupAddress world)
 
         override dispatcher.Register (group, address, entities, world) =
-            let (entities, world) = base.Register (group, address, entities, world)
+            let world = base.Register (group, address, entities, world)
             let world = World.subscribe NuConstants.TickEvent address (CustomSub adjustCameraHandler) world
-            let world = adjustCamera address world
-            (entities, world)
+            adjustCamera address world
             
         override dispatcher.Unregister (group, address, world) =
             let world = base.Unregister (group, address, world)
