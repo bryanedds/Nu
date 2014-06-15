@@ -75,7 +75,7 @@ module WorldPrims =
         let tilePosition = (
             int tileMapPosition.X + fst tmd.TileSize * i,
             int tileMapPosition.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
-        let optTileSetTile = Seq.tryFind (fun (tileSetTile' : TmxTilesetTile) -> tile.Gid - 1 = tileSetTile'.Id) tmd.TileSet.Tiles
+        let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
     (* Entity functions. *)
@@ -102,12 +102,12 @@ module WorldPrims =
             match optEntityMap with
             | None ->
                 let entityMap = Map.singleton (List.at 2 address) child
-                let groupMap' = Map.add (List.at 1 address) entityMap groupMap
-                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
+                let groupMap = Map.add (List.at 1 address) entityMap groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
             | Some entityMap ->
-                let entityMap' = Map.add (List.at 2 address) child entityMap
-                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
-                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
+                let entityMap = Map.add (List.at 2 address) child entityMap
+                let groupMap = Map.add (List.at 1 address) entityMap groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
 
     let private entityRemover (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
@@ -118,9 +118,9 @@ module WorldPrims =
             match optEntityMap with
             | None -> world
             | Some entityMap ->
-                let entityMap' = Map.remove (List.at 2 address) entityMap
-                let groupMap' = Map.add (List.at 1 address) entityMap' groupMap
-                { world with Entities = Map.add (List.at 0 address) groupMap' world.Entities }
+                let entityMap = Map.remove (List.at 2 address) entityMap
+                let groupMap = Map.add (List.at 1 address) entityMap groupMap
+                { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
 
     let worldEntity address =
         { Get = fun world -> Option.get <| optEntityFinder address world
@@ -169,30 +169,30 @@ module WorldPrims =
         entity.Unregister (address, world)
 
     let removeEntity address world =
-        let world' = unregisterEntity address world
-        set None world' <| worldOptEntity address
+        let world = unregisterEntity address world
+        set None world <| worldOptEntity address
 
     let removeEntities address world =
         let entities = get world <| worldEntities address
         Map.fold
-            (fun world' entityName _ -> removeEntity (address @ [entityName]) world')
+            (fun world entityName _ -> removeEntity (address @ [entityName]) world)
             world
             entities
 
     let addEntity address entity world =
-        let world' =
+        let world =
             match get world <| worldOptEntity address with
             | None -> world
             | Some _ -> removeEntity address world
-        let (entity', world'') = registerEntity address entity world'
-        let world'3 = set entity' world'' <| worldEntity address
-        (entity', world'3)
+        let (entity, world) = registerEntity address entity world
+        let world = set entity world <| worldEntity address
+        (entity, world)
 
     let addEntities groupAddress entities world =
         List.fold
-            (fun (entities, world') entity ->
-                let (entity', world'') = addEntity (addrstr groupAddress entity.Name) entity world'
-                (entity' :: entities, world''))
+            (fun (entities, world) entity ->
+                let (entity, world) = addEntity (addrstr groupAddress entity.Name) entity world
+                (entity :: entities, world))
             ([], world)
             entities
 
@@ -231,16 +231,16 @@ module WorldPrims =
         | None ->
             { world with Groups = Map.singleton (List.at 0 address) <| Map.singleton (List.at 1 address) child }
         | Some groupMap ->
-            let groupMap' = Map.add (List.at 1 address) child groupMap
-            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
+            let groupMap = Map.add (List.at 1 address) child groupMap
+            { world with Groups = Map.add (List.at 0 address) groupMap world.Groups }
 
     let private groupRemover (address : Address) world =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
         match optGroupMap with
         | None -> world
         | Some groupMap ->
-            let groupMap' = Map.remove (List.at 1 address) groupMap
-            { world with Groups = Map.add (List.at 0 address) groupMap' world.Groups }
+            let groupMap = Map.remove (List.at 1 address) groupMap
+            { world with Groups = Map.add (List.at 0 address) groupMap world.Groups }
 
     let worldGroup address =
         { Get = fun world -> Option.get <| optGroupFinder address world
@@ -283,30 +283,30 @@ module WorldPrims =
         group.Unregister (address, world)
 
     let removeGroup address world =
-        let world' = unregisterGroup address world
-        set None world' <| worldOptGroup address
+        let world = unregisterGroup address world
+        set None world <| worldOptGroup address
 
     let removeGroups address world =
         let groups = get world <| worldGroups address
         Map.fold
-            (fun world' groupName _ -> removeGroup (address @ [groupName]) world')
+            (fun world groupName _ -> removeGroup (address @ [groupName]) world)
             world
             groups
 
     let addGroup address (group : Group) entities world =
-        let world' =
+        let world =
             match get world <| worldOptGroup address with
             | None -> world
             | Some _ -> removeGroup address world
-        let (entities, world'') = registerGroup address entities group world'
-        let world'3 = set group world'' <| worldGroup address
-        (entities, world'3)
+        let (entities, world) = registerGroup address entities group world
+        let world = set group world <| worldGroup address
+        (entities, world)
 
     let addGroups screenAddress groupDescriptors world =
         List.fold
-            (fun (entitiesAcc, world') (groupName, group, entities) ->
-                let (entities', world'') = addGroup (screenAddress @ [groupName]) group entities world'
-                (entitiesAcc @ entities, world''))
+            (fun (entitiesAcc, world) (groupName, group, entities) ->
+                let (entities, world) = addGroup (screenAddress @ [groupName]) group entities world
+                (entitiesAcc @ entities, world))
             ([], world)
             groupDescriptors
 
@@ -359,17 +359,17 @@ module WorldPrims =
         screen.Unregister (address, world)
 
     let removeScreen address world =
-        let world' = unregisterScreen address world
-        set None world' <| worldOptScreen address
+        let world = unregisterScreen address world
+        set None world <| worldOptScreen address
 
     let addScreen address screen groupDescriptors world =
-        let world' =
+        let world =
             match get world <| worldOptScreen address with
             | None -> world
             | Some _ -> removeScreen address world
-        let (entities, world'') = registerScreen address screen groupDescriptors world'
-        let world'3 = set screen world'' <| worldScreen address
-        (entities, world'3)
+        let (entities, world) = registerScreen address screen groupDescriptors world
+        let world = set screen world <| worldScreen address
+        (entities, world)
 
     (* Game functions. *)
 
@@ -441,22 +441,22 @@ module WorldPrims =
         | None -> (true, world)
         | Some subList ->
             let subListSorted = subscriptionSort subList world
-            let (_, keepRunning, world'') =
+            let (_, keepRunning, world) =
                 List.foldWhile
-                    (fun (message', keepRunning', world'3) (subscriber, subscription) ->
-                        if message'.Handled || not keepRunning' then None
-                        elif not <| isAddressSelected subscriber world'3 then Some (message', keepRunning', world'3)
+                    (fun (message, keepRunning, world) (subscriber, subscription) ->
+                        if message.Handled || not keepRunning then None
+                        elif not <| isAddressSelected subscriber world then Some (message, keepRunning, world)
                         else
                             let result =
                                 match subscription with
-                                | ExitSub -> handleEventAsExit message' world'3
-                                | SwallowSub -> handleEventAsSwallow message' world'3
-                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination message' world'3
-                                | CustomSub fn -> fn event publisher subscriber message' world'3
+                                | ExitSub -> handleEventAsExit message world
+                                | SwallowSub -> handleEventAsSwallow message world
+                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination message world
+                                | CustomSub fn -> fn event publisher subscriber message world
                             Some result)
                     (message, true, world)
                     subListSorted
-            (keepRunning, world'')
+            (keepRunning, world)
 
     /// Subscribe to messages for the given event.
     and subscribe event subscriber subscription world =
@@ -475,15 +475,15 @@ module WorldPrims =
         match optSubList with
         | None -> world
         | Some subList ->
-            let subList' = List.remove (fun (address, _) -> address = subscriber) subList
-            let subscriptions' = Map.add event subList' subs
-            { world with Subscriptions = subscriptions' }
+            let subList = List.remove (fun (address, _) -> address = subscriber) subList
+            let subscriptions = Map.add event subList subs
+            { world with Subscriptions = subscriptions }
 
     /// Execute a procedure within the context of a given subscription for the given event.
     and withSubscription event subscription subscriber procedure world =
-        let world' = subscribe event subscriber subscription world
-        let world'' = procedure world'
-        unsubscribe event subscriber world''
+        let world = subscribe event subscriber subscription world
+        let world = procedure world
+        unsubscribe event subscriber world
     
     and handleEventAsSwallow message (world : World) =
         (Message.handle message, true, world)
@@ -496,27 +496,27 @@ module WorldPrims =
         screen.State
 
     and private setScreenState address state world =
-        let world' = withScreen (fun screen -> { screen with State = state }) address world
+        let world = withScreen (fun screen -> { screen with State = state }) address world
         match state with
         | IdlingState ->
-            world' |>
+            world |>
                 unsubscribe DownMouseLeftEvent address |>
                 unsubscribe UpMouseLeftEvent address
         | IncomingState | OutgoingState ->
-            world' |>
+            world |>
                 subscribe DownMouseLeftEvent address SwallowSub |>
                 subscribe UpMouseLeftEvent address SwallowSub
 
     and transitionScreen destination world =
-        let world' = setScreenState destination IncomingState world
-        set (Some destination) world' worldOptSelectedScreenAddress
+        let world = setScreenState destination IncomingState world
+        set (Some destination) world worldOptSelectedScreenAddress
 
     and private updateTransition1 (transition : Transition) =
         if transition.TransitionTicks = transition.TransitionLifetime then ({ transition with TransitionTicks = 0 }, true)
         else ({ transition with TransitionTicks = transition.TransitionTicks + 1 }, false)
 
     and internal updateTransition update world =
-        let (keepRunning, world') =
+        let (keepRunning, world) =
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None -> (true, world)
@@ -527,61 +527,61 @@ module WorldPrims =
                     // TODO: remove duplication with below
                     let selectedScreen = get world <| worldScreen selectedScreenAddress
                     let incoming = get selectedScreen Screen.screenIncoming
-                    let (incoming', finished) = updateTransition1 incoming
-                    let selectedScreen' = set incoming' selectedScreen Screen.screenIncoming
-                    let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
-                    let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world''
-                    if not finished then (true, world'3)
+                    let (incoming, finished) = updateTransition1 incoming
+                    let selectedScreen = set incoming selectedScreen Screen.screenIncoming
+                    let world = set selectedScreen world <| worldScreen selectedScreenAddress
+                    let world = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world
+                    if not finished then (true, world)
                     else
                         publish
                             (FinishedIncomingEvent @ selectedScreenAddress)
                             selectedScreenAddress
                             { Handled = false; Data = NoData }
-                            world'3
+                            world
                 | OutgoingState ->
                     let selectedScreen = get world <| worldScreen selectedScreenAddress
                     let outgoing = get selectedScreen Screen.screenOutgoing
-                    let (outgoing', finished) = updateTransition1 outgoing
-                    let selectedScreen' = set outgoing' selectedScreen Screen.screenOutgoing
-                    let world'' = set selectedScreen' world <| worldScreen selectedScreenAddress
-                    let world'3 = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world''
-                    if not finished then (true, world'3)
+                    let (outgoing, finished) = updateTransition1 outgoing
+                    let selectedScreen = set outgoing selectedScreen Screen.screenOutgoing
+                    let world = set selectedScreen world <| worldScreen selectedScreenAddress
+                    let world = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world
+                    if not finished then (true, world)
                     else
                         publish
                             (FinishedOutgoingEvent @ selectedScreenAddress)
                             selectedScreenAddress
                             { Handled = false; Data = NoData }
-                            world'3
+                            world
                 | IdlingState -> (true, world)
-        if keepRunning then update world'
-            else (keepRunning, world')
+        if keepRunning then update world
+            else (keepRunning, world)
 
     and private handleSplashScreenIdleTick idlingTime ticks event publisher subscriber message world =
-        let world' = unsubscribe event subscriber world
+        let world = unsubscribe event subscriber world
         if ticks < idlingTime then
             let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incI ticks
-            let world'' = subscribe event subscriber subscription world'
-            (message, true, world'')
+            let world = subscribe event subscriber subscription world
+            (message, true, world)
         else
-            let optSelectedScreenAddress = get world' worldOptSelectedScreenAddress
+            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None ->
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."
                 (message, false, world)
             | Some selectedScreenAddress ->
-                let world'' = setScreenState selectedScreenAddress OutgoingState world'
-                (message, true, world'')
+                let world = setScreenState selectedScreenAddress OutgoingState world
+                (message, true, world)
 
     and internal handleSplashScreenIdle idlingTime event publisher subscriber message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
-        let world' = subscribe TickEvent subscriber subscription world
-        (Message.handle message, true, world')
+        let world = subscribe TickEvent subscriber subscription world
+        (Message.handle message, true, world)
 
     and private handleFinishedScreenOutgoing destination event publisher subscriber message world =
-        let world' = unsubscribe event subscriber world
-        let world'' = transitionScreen destination world'
-        (Message.handle message, true, world'')
+        let world = unsubscribe event subscriber world
+        let world = transitionScreen destination world
+        (Message.handle message, true, world)
 
     and handleEventAsScreenTransition destination message world =
-        let world' = transitionScreen destination world
-        (Message.handle message, true, world')
+        let world = transitionScreen destination world
+        (Message.handle message, true, world)

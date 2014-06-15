@@ -87,9 +87,9 @@ module World =
         let gameDispatcherShortName = gameDispatcherType.Name
         let gameDispatcher = Activator.CreateInstance gameDispatcherType
         let dispatchers = Map.add gameDispatcherShortName gameDispatcher world.Dispatchers
-        let world' = { world with Dispatchers = dispatchers }
-        let world'' = { world' with Game = { world'.Game with Xtension = { world'.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
-        world''.Game.Register world''
+        let world = { world with Dispatchers = dispatchers }
+        let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
+        world.Game.Register world
 
     let saveGroupToFile group entities fileName world =
         use file = File.Open (fileName, FileMode.Create)
@@ -111,8 +111,8 @@ module World =
 
     let private play world =
         let audioMessages = world.AudioMessages
-        let world' = { world with AudioMessages = [] }
-        { world' with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
+        let world = { world with AudioMessages = [] }
+        { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
     let private getGroupRenderDescriptors camera dispatcherContainer entities =
         let entityValues = Map.toValueSeq entities
@@ -159,8 +159,8 @@ module World =
         let renderMessages = world.RenderMessages
         let renderDescriptors = getRenderDescriptors world
         let renderer = world.Renderer
-        let renderer' = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
-        { world with RenderMessages = []; Renderer = renderer' }
+        let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
+        { world with RenderMessages = []; Renderer = renderer }
 
     let private handleIntegrationMessage (keepRunning, world) integrationMessage =
         if not keepRunning then (keepRunning, world)
@@ -181,8 +181,8 @@ module World =
 
     let private integrate world =
         let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
-        let world' = { world with PhysicsMessages = [] }
-        handleIntegrationMessages integrationMessages world'
+        let world = { world with PhysicsMessages = [] }
+        handleIntegrationMessages integrationMessages world
 
     let run4 tryMakeWorld handleUpdate handleRender sdlConfig =
         Sdl.run
@@ -193,34 +193,34 @@ module World =
                 | SDL.SDL_EventType.SDL_QUIT -> (false, world)
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                    let world' = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                    if Set.contains MouseLeft world'.MouseState.MouseDowns then publish MouseDragEvent [] { Handled = false; Data = MouseMoveData mousePosition } world'
-                    else publish MouseMoveEvent [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world'
+                    let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
+                    if Set.contains MouseLeft world.MouseState.MouseDowns then publish MouseDragEvent [] { Handled = false; Data = MouseMoveData mousePosition } world
+                    else publish MouseMoveEvent [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = Sdl.makeNuMouseButton event.button.button
                     let mouseEvent = addrstr DownMouseEvent <| string mouseButton
-                    let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                    let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                    publish mouseEvent [] { Handled = false; Data = messageData } world'
+                    let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
+                    let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                    publish mouseEvent [] { Handled = false; Data = messageData } world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
                     let mouseButton = Sdl.makeNuMouseButton event.button.button
                     let mouseEvent = addrstr UpMouseEvent <| string mouseButton
                     if Set.contains mouseButton mouseState.MouseDowns then
-                        let world' = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
-                        let messageData = MouseButtonData (world'.MouseState.MousePosition, mouseButton)
-                        publish mouseEvent [] { Handled = false; Data = messageData } world'
+                        let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
+                        let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                        publish mouseEvent [] { Handled = false; Data = messageData } world
                     else (true, world)
                 | _ -> (true, world))
             (fun world ->
-                let (keepRunning, world') = integrate world
-                if not keepRunning then (false, world')
+                let (keepRunning, world) = integrate world
+                if not keepRunning then (false, world)
                 else
-                    let (keepRunning', world'') = publish TickEvent [] { Handled = false; Data = NoData } world'
-                    if not keepRunning' then (false, world'')
-                    else WorldPrims.updateTransition handleUpdate world'')
-            (fun world -> let world' = render world in handleRender world')
-            (fun world -> let world' = play world in { world' with Ticks = world'.Ticks + 1UL })
+                    let (keepRunning, world) = publish TickEvent [] { Handled = false; Data = NoData } world
+                    if not keepRunning then (false, world)
+                    else WorldPrims.updateTransition handleUpdate world)
+            (fun world -> let world = render world in handleRender world)
+            (fun world -> let world = play world in { world with Ticks = world.Ticks + 1UL })
             (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
             sdlConfig
 
@@ -231,18 +231,18 @@ module World =
         let splashScreen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
         let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
-        let splashLabel' = splashLabel.SetSize world.Camera.EyeSize
-        let splashLabel'' = splashLabel'.SetPosition <| -world.Camera.EyeSize * 0.5f
-        let splashLabel'3 = splashLabel''.SetLabelSprite (sprite : Sprite)
-        let (_, world') = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel'3])] world
-        let world'' = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world'
-        subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world''
+        let splashLabel = splashLabel.SetSize world.Camera.EyeSize
+        let splashLabel = splashLabel.SetPosition <| -world.Camera.EyeSize * 0.5f
+        let splashLabel = splashLabel.SetLabelSprite (sprite : Sprite)
+        let (_, world) = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
+        let world = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
+        subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress seal world =
         let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let (group, entities) = loadGroupFromFile groupFileName seal world
-        let (_, world') = addScreen screenAddress screen [(groupName, group, entities)] world
-        world'
+        let (_, world) = addScreen screenAddress screen [(groupName, group, entities)] world
+        world
 
     let tryMakeEmpty sdlDeps gameDispatcher interactive extData =
         match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
@@ -289,8 +289,8 @@ module World =
                   PhysicsMessages = []
                   Dispatchers = dispatchers
                   ExtData = extData }
-            let world' = world.Game.Register world
-            Right world'
+            let world = world.Game.Register world
+            Right world
 
     let reregisterPhysicsHack groupAddress world =
         let entities = get world <| worldEntities groupAddress

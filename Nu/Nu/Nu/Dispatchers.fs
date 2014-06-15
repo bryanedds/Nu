@@ -98,10 +98,10 @@ module DispatchersModule =
         inherit EntityDispatcher ()
             
         override this.Init (entity2d, dispatcherContainer) =
-            let entity2d' = base.Init (entity2d, dispatcherContainer)
+            let entity2d = base.Init (entity2d, dispatcherContainer)
             // perhaps a nice 'with' syntax macro would work better here -
             // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
-            entity2d'
+            entity2d
                 .SetPosition(Vector2.Zero)
                 .SetDepth(0.0f)
                 .SetSize(DefaultEntitySize)
@@ -129,8 +129,8 @@ module DispatchersModule =
         inherit Entity2dDispatcher ()
             
         override dispatcher.Init (entity, dispatcherContainer) =
-            let entity' = base.Init (entity, dispatcherContainer)
-            entity'.SetEnabled(true)
+            let entity = base.Init (entity, dispatcherContainer)
+            entity.SetEnabled(true)
 
     type [<AbstractClass>] Entity2dWithSimplePhysicsDispatcher () =
         inherit Entity2dDispatcher ()
@@ -156,18 +156,18 @@ module DispatchersModule =
                   IsSensor = entity.IsSensor }}
 
         member dispatcher.RegisterCharacterPhysics (entity : Entity, address, world) =
-            let entity' = entity.SetPhysicsId <| Physics.getId entity.Id
-            let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity', address, world)
-            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (entity', world')
+            let entity = entity.SetPhysicsId <| Physics.getId entity.Id
+            let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity, address, world)
+            let world = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
+            (entity, world)
 
         member dispatcher.UnregisterCharacterPhysics (entity : Entity, world) =
             let destroyBodyMessage = { DestroyBodyMessage.PhysicsId = entity.PhysicsId }
             { world with PhysicsMessages = DestroyBodyMessage destroyBodyMessage :: world.PhysicsMessages }
 
         override dispatcher.Init (entity, dispatcherContainer) =
-            let entity' = base.Init (entity, dispatcherContainer)
-            entity'
+            let entity = base.Init (entity, dispatcherContainer)
+            entity
                 .SetPhysicsId(Physics.InvalidId)
                 .SetBodyType(BodyType.Dynamic)
                 .SetDensity(NuConstants.NormalDensity)
@@ -187,24 +187,24 @@ module DispatchersModule =
             dispatcher.UnregisterCharacterPhysics (entity, world)
             
         override dispatcher.PropagatePhysics (entity, address, world) =
-            let (entity', world') =
+            let (entity, world) =
                 world |>
                 (fun world -> dispatcher.UnregisterCharacterPhysics (entity, world)) |>
                 (fun world -> dispatcher.RegisterCharacterPhysics (entity, address, world))
-            set entity' world' <| World.worldEntity address
+            set entity world <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (entity, groupAddress, world) =
             let address = addrstr groupAddress entity.Name
-            let world' = dispatcher.UnregisterCharacterPhysics (entity, world)
-            let (entity', world'') = dispatcher.RegisterCharacterPhysics (entity, address, world')
-            set entity' world'' <| World.worldEntity address
+            let world = dispatcher.UnregisterCharacterPhysics (entity, world)
+            let (entity, world) = dispatcher.RegisterCharacterPhysics (entity, address, world)
+            set entity world <| World.worldEntity address
 
         override dispatcher.HandleBodyTransformMessage (entity, message, address, world) =
-            let entity' =
+            let entity =
                 entity
                     .SetPosition(message.Position - entity.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation(message.Rotation)
-            set entity' world <| World.worldEntity message.EntityAddress
+            set entity world <| World.worldEntity message.EntityAddress
 
     type [<AbstractClass>] Entity2dWithSimplePhysicsAndRenderingDispatcher () =
         inherit Entity2dWithSimplePhysicsDispatcher ()
@@ -212,9 +212,9 @@ module DispatchersModule =
         abstract GetImageSpriteAssetName : unit -> string
 
         override dispatcher.Init (entity, dispatcherContainer) =
-            let entity' = base.Init (entity, dispatcherContainer)
+            let entity = base.Init (entity, dispatcherContainer)
             let spriteAssetName = dispatcher.GetImageSpriteAssetName ()
-            entity'.SetImageSprite({ SpriteAssetName = spriteAssetName; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            entity.SetImageSprite({ SpriteAssetName = spriteAssetName; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) =
             if not entity.Visible then []
@@ -245,10 +245,10 @@ module DispatchersModule =
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     if NuMath.isInBox3 mousePositionButton button.Position button.Size then
-                        let button' = button.SetIsDown true
-                        let world' = set button' world <| World.worldEntity subscriber
-                        let (keepRunning, world'') = World.publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world'
-                        (Message.handle message, keepRunning, world'')
+                        let button = button.SetIsDown true
+                        let world = set button world <| World.worldEntity subscriber
+                        let (keepRunning, world) = World.publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world
+                        (Message.handle message, keepRunning, world)
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -259,33 +259,33 @@ module DispatchersModule =
                 let button = get world <| World.worldEntity subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
-                    let (keepRunning, world') =
-                        let button' = button.SetIsDown false
-                        let world'' = set button' world <| World.worldEntity subscriber
-                        World.publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world''
+                    let (keepRunning, world) =
+                        let button = button.SetIsDown false
+                        let world = set button world <| World.worldEntity subscriber
+                        World.publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world
                     if keepRunning && NuMath.isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
-                        let (keepRunning', world'') = World.publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world'
+                        let (keepRunning, world) = World.publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
-                        let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
-                        (Message.handle message, keepRunning', world'3)
-                    else (message, keepRunning, world')
+                        let world = { world with AudioMessages = sound :: world.AudioMessages }
+                        (Message.handle message, keepRunning, world)
+                    else (message, keepRunning, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
 
         override dispatcher.Init (button, dispatcherContainer) =
-            let button' = base.Init (button, dispatcherContainer)
-            button'
+            let button = base.Init (button, dispatcherContainer)
+            button
                 .SetIsDown(false)
                 .SetUpSprite({ SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetClickSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (button, address, world) =
-            let world' =
+            let world =
                 world |>
                     World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
                     World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
-            (button, world')
+            (button, world)
 
         override dispatcher.Unregister (button, address, world) =
             world |>
@@ -318,8 +318,8 @@ module DispatchersModule =
         inherit EntityUiDispatcher ()
             
         override dispatcher.Init (label, dispatcherContainer) =
-            let label' = base.Init (label, dispatcherContainer)
-            label'.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            let label = base.Init (label, dispatcherContainer)
+            label.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.GetRenderDescriptors (label, viewAbsolute, viewRelative, world) =
             if not label.Visible then []
@@ -347,8 +347,8 @@ module DispatchersModule =
         inherit EntityUiDispatcher ()
             
         override dispatcher.Init (textBox, dispatcherContainer) =
-            let textBox' = base.Init (textBox, dispatcherContainer)
-            textBox'
+            let textBox = base.Init (textBox, dispatcherContainer)
+            textBox
                 .SetBoxSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetText(String.Empty)
                 .SetTextFont({ FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
@@ -396,9 +396,9 @@ module DispatchersModule =
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
-                        let toggle' = toggle.SetIsPressed true
-                        let world' = set toggle' world <| World.worldEntity subscriber
-                        (Message.handle message, true, world')
+                        let toggle = toggle.SetIsPressed true
+                        let world = set toggle world <| World.worldEntity subscriber
+                        (Message.handle message, true, world)
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -409,24 +409,24 @@ module DispatchersModule =
                 let toggle = get world <| World.worldEntity subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
-                    let toggle' = toggle.SetIsPressed false
-                    if NuMath.isInBox3 mousePositionToggle toggle'.Position toggle'.Size then
-                        let toggle'' = toggle'.SetIsOn <| not toggle'.IsOn
-                        let world' = set toggle'' world <| World.worldEntity subscriber
-                        let messageType = if toggle''.IsOn then "On" else "Off"
-                        let (keepRunning, world'') = World.publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world'
-                        let sound = PlaySound { Volume = 1.0f; Sound = toggle''.ToggleSound }
-                        let world'3 = { world'' with AudioMessages = sound :: world''.AudioMessages }
-                        (Message.handle message, keepRunning, world'3)
+                    let toggle = toggle.SetIsPressed false
+                    if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
+                        let toggle = toggle.SetIsOn <| not toggle.IsOn
+                        let world = set toggle world <| World.worldEntity subscriber
+                        let messageType = if toggle.IsOn then "On" else "Off"
+                        let (keepRunning, world) = World.publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world
+                        let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
+                        let world = { world with AudioMessages = sound :: world.AudioMessages }
+                        (Message.handle message, keepRunning, world)
                     else
-                        let world' = set toggle' world <| World.worldEntity subscriber
-                        (message, true, world')
+                        let world = set toggle world <| World.worldEntity subscriber
+                        (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
         override dispatcher.Init (toggle, dispatcherContainer) =
-            let toggle' = base.Init (toggle, dispatcherContainer)
-            toggle'
+            let toggle = base.Init (toggle, dispatcherContainer)
+            toggle
                 .SetIsOn(false)
                 .SetIsPressed(false)
                 .SetOffSprite({ SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
@@ -434,11 +434,11 @@ module DispatchersModule =
                 .SetToggleSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (toggle, address, world) =
-            let world' =
+            let world =
                 world |>
                     World.subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
                     World.subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
-            (toggle, world')
+            (toggle, world)
 
         override dispatcher.Unregister (toggle, address, world) =
             world |>
@@ -477,10 +477,10 @@ module DispatchersModule =
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
                     if NuMath.isInBox3 mousePositionFeeler feeler.Position feeler.Size then
-                        let feeler' = feeler.SetIsTouched true
-                        let world' = set feeler' world <| World.worldEntity subscriber
-                        let (keepRunning, world'') = World.publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world'
-                        (Message.handle message, keepRunning, world'')
+                        let feeler = feeler.SetIsTouched true
+                        let world = set feeler world <| World.worldEntity subscriber
+                        let (keepRunning, world) = World.publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world
+                        (Message.handle message, keepRunning, world)
                     else (message, true, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
@@ -490,23 +490,23 @@ module DispatchersModule =
             | MouseButtonData _ ->
                 let feeler = get world <| World.worldEntity subscriber
                 if feeler.Enabled && feeler.Visible then
-                    let feeler' = feeler.SetIsTouched false
-                    let world' = set feeler' world <| World.worldEntity subscriber
-                    let (keepRunning, world'') = World.publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world'
-                    (Message.handle message, keepRunning, world'')
+                    let feeler = feeler.SetIsTouched false
+                    let world = set feeler world <| World.worldEntity subscriber
+                    let (keepRunning, world) = World.publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world
+                    (Message.handle message, keepRunning, world)
                 else (message, true, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
         override dispatcher.Init (feeler, dispatcherContainer) =
-            let feeler' = base.Init (feeler, dispatcherContainer)
-            feeler'.SetIsTouched(false)
+            let feeler = base.Init (feeler, dispatcherContainer)
+            feeler.SetIsTouched(false)
 
         override dispatcher.Register (feeler, address, world) =
-            let world' =
+            let world =
                 world |>
                     World.subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
                     World.subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
-            (feeler, world')
+            (feeler, world)
 
         override dispatcher.Unregister (feeler, address, world) =
             world |>
@@ -530,8 +530,8 @@ module DispatchersModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         override dispatcher.Init (fillBar, dispatcherContainer) =
-            let fillBar' = base.Init (fillBar, dispatcherContainer)
-            fillBar'
+            let fillBar = base.Init (fillBar, dispatcherContainer)
+            fillBar
                 .SetFill(0.0f)
                 .SetFillInset(0.0f)
                 .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
@@ -588,8 +588,8 @@ module DispatchersModule =
             "Image7"
 
         override dispatcher.Init (avatar, dispatcherContainer) =
-            let avatar' = base.Init (avatar, dispatcherContainer)
-            avatar'
+            let avatar = base.Init (avatar, dispatcherContainer)
+            avatar
                 .SetFixedRotation(true)
                 .SetLinearDamping(10.0f)
                 .SetGravityScale(0.0f)
@@ -604,8 +604,8 @@ module DispatchersModule =
             "Image6"
 
         override dispatcher.Init (character, dispatcherContainer) =
-            let character' = base.Init (character, dispatcherContainer)
-            character'
+            let character = base.Init (character, dispatcherContainer)
+            character
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
                 .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
@@ -635,8 +635,8 @@ module DispatchersModule =
                       GravityScale = 0.0f
                       IsBullet = false
                       IsSensor = false }}
-            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (world', physicsId)
+            let world = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
+            (world, physicsId)
 
         let registerTilePhysicsPolygon address (tm : Entity) tmd td vertices world =
             let physicsId = Physics.getId tm.Id
@@ -660,8 +660,8 @@ module DispatchersModule =
                       GravityScale = 0.0f
                       IsBullet = false
                       IsSensor = false }}
-            let world' = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-            (world', physicsId)
+            let world = { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
+            (world, physicsId)
 
         let registerTilePhysics tm tmd tld address tileIndex (world, physicsIds) _ =
             let td = World.makeTileData tm tmd tld tileIndex
@@ -677,15 +677,15 @@ module DispatchersModule =
                     match collisionTermsTrimmed with
                     | [""]
                     | ["Box"] ->
-                        let (world', physicsId) = registerTilePhysicsBox address tm tmd td world
-                        (world', physicsId :: physicsIds)
+                        let (world, physicsId) = registerTilePhysicsBox address tm tmd td world
+                        (world, physicsId :: physicsIds)
                     | ["Polygon"; verticesStr] ->
                         let vertexStrs = List.ofArray <| verticesStr.Split '|'
                         try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
                             let verticesOffset = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                             let verticesScaled = List.map (fun vertex -> Vector2.Multiply (vertex, tmd.TileSizeF)) verticesOffset
-                            let (world', physicsId) = registerTilePhysicsPolygon address tm tmd td verticesScaled world
-                            (world', physicsId :: physicsIds)
+                            let (world, physicsId) = registerTilePhysicsPolygon address tm tmd td verticesScaled world
+                            (world, physicsId :: physicsIds)
                         with :? NotSupportedException as e ->
                             trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
                             (world, physicsIds)
@@ -704,15 +704,15 @@ module DispatchersModule =
 
         let registerTileMapPhysics address (tileMap : Entity) world =
             let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
-            let (world', physicsIds) =
+            let (world, physicsIds) =
                 List.fold
-                    (fun (world'', physicsIds) tileLayer ->
-                        let (world'3, physicsIds') = registerTileLayerPhysics address tileMap tileMapData tileLayer world''
-                        (world'3, physicsIds @ physicsIds'))
+                    (fun (world, physicsIds) tileLayer ->
+                        let (world, physicsIds) = registerTileLayerPhysics address tileMap tileMapData tileLayer world
+                        (world, physicsIds @ physicsIds))
                     (world, [])
                     (List.ofSeq tileMapData.Map.Layers)
-            let tileMap' = tileMap.SetPhysicsIds physicsIds
-            (tileMap', world')
+            let tileMap = tileMap.SetPhysicsIds physicsIds
+            (tileMap, world)
 
         let unregisterTilePhysics world physicsId =
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
@@ -722,8 +722,8 @@ module DispatchersModule =
             List.fold unregisterTilePhysics world <| tileMap.PhysicsIds
         
         override dispatcher.Init (tileMap, dispatcherContainer) =
-            let tileMap' = base.Init (tileMap, dispatcherContainer)
-            tileMap'
+            let tileMap = base.Init (tileMap, dispatcherContainer)
+            tileMap
                 .SetPhysicsIds([])
                 .SetDensity(NuConstants.NormalDensity)
                 .SetFriction(0.0f)
@@ -738,14 +738,14 @@ module DispatchersModule =
             unregisterTileMapPhysics address tileMap world
             
         override dispatcher.PropagatePhysics (tileMap, address, world) =
-            let (tileMap', world') = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
-            set tileMap' world' <| World.worldEntity address
+            let (tileMap, world) = world |> unregisterTileMapPhysics address tileMap |> registerTileMapPhysics address tileMap
+            set tileMap world <| World.worldEntity address
 
         override dispatcher.ReregisterPhysicsHack (tileMap, groupAddress, world) =
             let address = addrstr groupAddress tileMap.Name
-            let world' = unregisterTileMapPhysics address tileMap world
-            let (tileMap', world'') = registerTileMapPhysics address tileMap world'
-            set tileMap' world'' <| World.worldEntity address
+            let world = unregisterTileMapPhysics address tileMap world
+            let (tileMap, world) = registerTileMapPhysics address tileMap world
+            set tileMap world <| World.worldEntity address
 
         override dispatcher.GetRenderDescriptors (tileMap, viewAbsolute, viewRelative, world) =
             if not tileMap.Visible then []

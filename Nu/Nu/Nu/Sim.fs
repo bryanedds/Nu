@@ -206,36 +206,36 @@ module Sim =
 
     let withSimulant worldSimulantLens fn address world =
         let simulant = get world <| worldSimulantLens address
-        let simulant' = fn simulant
-        set simulant' world <| worldSimulantLens address
+        let simulant = fn simulant
+        set simulant world <| worldSimulantLens address
 
     let withSimulantAndWorld worldSimulantLens fn address world =
         let simulant = get world <| worldSimulantLens address
-        let (simulant', world') = fn simulant
-        set simulant' world' <| worldSimulantLens address
+        let (simulant, world) = fn simulant
+        set simulant world <| worldSimulantLens address
 
     let withOptSimulant worldOptSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
-        let optSimulant' = fn optSimulant
-        set optSimulant' world <| worldOptSimulantLens address
+        let optSimulant = fn optSimulant
+        set optSimulant world <| worldOptSimulantLens address
 
     let withOptSimulantAndWorld worldOptSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
-        let (optSimulant', world') = fn optSimulant
-        set optSimulant' world' <| worldOptSimulantLens address
+        let (optSimulant, world) = fn optSimulant
+        set optSimulant world <| worldOptSimulantLens address
 
     let tryWithSimulant worldOptSimulantLens worldSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         match optSimulant with
         | None -> world
         | Some simulant ->
-            let simulant' = fn simulant
-            set simulant' world <| worldSimulantLens address
+            let simulant = fn simulant
+            set simulant world <| worldSimulantLens address
 
     let tryWithSimulantAndWorld worldOptSimulantLens worldSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         match optSimulant with
         | None -> world
         | Some simulant ->
-            let (simulant', world') = fn simulant
-            set simulant' world' <| worldSimulantLens address
+            let (simulant, world) = fn simulant
+            set simulant world <| worldSimulantLens address
