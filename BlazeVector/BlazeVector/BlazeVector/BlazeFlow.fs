@@ -11,7 +11,7 @@ module BlazeFlow =
         
         // this adds a dissolve screen from the specified file with the given parameters. Note that
         // the 'seal' parameter is set to true as no XFields will be added to the title screen
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress true world
+        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
         
         // this subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
@@ -27,12 +27,12 @@ module BlazeFlow =
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress true world
+        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress world
         World.subscribe ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     // and so on.
     let addStageScreen world =
-        let world = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress true world
+        let world = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.

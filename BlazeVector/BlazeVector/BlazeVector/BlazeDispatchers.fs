@@ -177,12 +177,12 @@ module BlazeDispatchersModule =
                 entities
 
         let makeSectionFromFile fileName sectionName xShift world =
-            let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName true world
+            let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName world
             let sectionEntities = shiftEntities xShift sectionEntities world
             (sectionName, sectionGroup, sectionEntities)
 
         override dispatcher.Register (screen, address, groupDescriptors, world) =
-            let stagePlay = World.loadGroupFromFile BlazeConstants.StagePlayFileName true world
+            let stagePlay = World.loadGroupFromFile BlazeConstants.StagePlayFileName world
             let stagePlayDescriptor = Triple.prepend BlazeConstants.StagePlayName stagePlay
             let sectionDescriptor0 = makeSectionFromFile BlazeConstants.Section0FileName BlazeConstants.Section0Name 0.0f world
             let sectionDescriptor1 = makeSectionFromFile BlazeConstants.Section1FileName BlazeConstants.Section1Name 2048.0f world
@@ -199,7 +199,7 @@ module BlazeDispatchersModule =
     type BlazeGameDispatcher () =
         inherit GameDispatcher ()
 
-        override dispatcher.Register (blazeGame, world) =
+        override dispatcher.Register (_, world) =
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany

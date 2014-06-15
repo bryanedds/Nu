@@ -85,7 +85,7 @@ module Sdl =
             destroy ()
             result
 
-    let advance handleEvent handleUpdate sdlDeps world =
+    let advance handleEvent handleUpdate world =
         let mutable result = (true, world)
         let polledEvent = ref (SDL.SDL_Event ())
         while SDL.SDL_PollEvent polledEvent <> 0 do
@@ -110,7 +110,7 @@ module Sdl =
 
     let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
         if keepRunning then
-            let (keepRunning, world) = advance handleEvent handleUpdate sdlDeps world
+            let (keepRunning, world) = advance handleEvent handleUpdate world
             if not keepRunning then ignore <| handleExit world
             else
                 let world = render handleRender sdlDeps world

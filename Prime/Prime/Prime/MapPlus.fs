@@ -18,7 +18,7 @@ module MapPlus =
 
     let empty : MapPlus<'p, 'm, 'v> = Map.empty
 
-    let isEmpty (mapPlus : MapPlus<'p, 'm, 'v>) = Map.isEmpty
+    let isEmpty (_ : MapPlus<'p, 'm, 'v>) = Map.isEmpty
 
     let tryFind (plusKey, mapKey) mapPlus =
         let optMap = Map.tryFind plusKey mapPlus
@@ -26,7 +26,7 @@ module MapPlus =
         | None -> None
         | Some map -> Map.tryFind mapKey map
 
-    let containsKey (plusKey, mapKey) plus mapPlus =
+    let containsKey (plusKey, mapKey) _ mapPlus =
         let optMap = Map.tryFind plusKey mapPlus
         match optMap with
         | None -> false

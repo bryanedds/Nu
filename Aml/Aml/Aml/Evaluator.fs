@@ -35,7 +35,7 @@ module Evaluator =
 #else
         if isUnit contract then (true, None)
         else
-            let (result : EvalResult) = applyLambda env args argCount largs largCount contract tautology UnitValue UnitValue true contract
+            let (result : EvalResult) = applyLambda env args argCount largs largCount contract tautology UnitValue UnitValue contract
             match result.Value with
             | Violation _ as v -> (false, Some v)
             | Boolean boolean -> (boolean.BRValue, None)
@@ -119,15 +119,15 @@ module Evaluator =
         result.Env
 
     /// Project a signature implementation to a concrete value.
-    and projectSigImpl env pname sigImpl =
+    and projectSigImpl env sigImpl =
         match sigImpl with
         | Variable variable -> (variable.VarName, evalExprDropEnv env variable.VarBody)
         | Function fn -> (fn.FnName, Lambda (makeLambdaRecord false fn.FnName fn.FnArgs fn.FnArgCount fn.FnBody tautology fn.FnPre fn.FnPost fn.FnEmptyUnification fn.FnOptPositions (Some env)))
         | _ -> failwith "Unexpected match failure in Aml.Evaluator.Prims.sigImplToNamedExpr."
 
     /// Project a list of signature implementations to concrete values.
-    and projectSigImpls env pname sigImpls =
-        List.map (fun sigImpl -> projectSigImpl env pname sigImpl) sigImpls
+    and projectSigImpls env sigImpls =
+        List.map (fun sigImpl -> projectSigImpl env sigImpl) sigImpls
 
     /// Apply an unary operator.
     and applyUnop exprToOptNumber numberToExpr env unop (args : Expr list) argCount =
@@ -156,7 +156,7 @@ module Evaluator =
                 else makeEvalViolation env ":v/contract/divByZero" "Division by zero."
 
     /// Apply a comparator.
-    and applyComparator comparator env name (args : Expr list) argCount =
+    and applyComparator comparator env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedComparator" "Comparator must have 2 arguments."
         else
             let argValues = evalExprsDropEnv env args
@@ -169,7 +169,7 @@ module Evaluator =
                 makeEvalResult env (Boolean (makeBooleanRecord compareResult None))
 
     /// Apply an and operator.
-    and applyAnd env name (args : Expr list) argCount =
+    and applyAnd env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedAndOperation" "And operation must have 2 arguments."
         else
             let xValue = evalExprDropEnv env args.[0]
@@ -189,7 +189,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/invalidAndArgumentType" "And expression requires both argumements to be boolean."
 
     /// Apply an or operator.
-    and applyOr env name (args : Expr list) argCount =
+    and applyOr env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedOrOperation" "Or operation must have 2 arguments."
         else
             let xValue = evalExprDropEnv env args.[0]
@@ -207,7 +207,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/invalidOrArgumentType" "Or expression requires both argumements to be boolean."
 
     /// Apply an if operator.
-    and applyIf env name (args : Expr list) argCount =
+    and applyIf env (_ : string) (args : Expr list) argCount =
         if argCount <> 3 then makeEvalViolation env ":v/eval/malformedIfOperation" "If operation must have 3 arguments."
         else
             let condition = evalExprDropEnv env args.Head
@@ -217,7 +217,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/invalidIfCondition" "Condition part of if operator must result in a boolean."
 
     /// Apply the apply operator.
-    and applyApply env name (args : Expr list) argCount =
+    and applyApply env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedApplyOperation" "Apply operation must have 2 arguments."
         else
             let op = args.[0]
@@ -227,7 +227,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/invalidApplyArgument" "Apply requires a list as its argument."
 
     /// Apply the doc operator.
-    and applyDoc env name (args : Expr list) argCount =
+    and applyDoc env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedDocOperation" "Doc operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -247,7 +247,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/eval/invalidDocParameter" "Doc operation requires a keyword argument."
 
     /// Apply a type selector.
-    and applyType env name (args : Expr list) argCount =
+    and applyType env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedTypeOperation" "Type operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -256,7 +256,7 @@ module Evaluator =
             | _ -> let aType = getType env value in makeEvalResult env aType
         
     /// Apply a typeOf operator.
-    and applyTypeOf env name (args : Expr list) argCount =
+    and applyTypeOf env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedTypeOfOperation" "TypeOf operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -271,7 +271,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/eval/invalidTypeOfArgumentType" "TypeOf operation requires a keyword argument."
 
     /// Apply a structural equal query.
-    and applyEqual env name (args : Expr list) argCount =
+    and applyEqual env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -282,7 +282,7 @@ module Evaluator =
             | _ -> makeEvalResult env (Boolean (makeBooleanRecord (firstValue = secondValue) None))
     
     /// Apply a structural inequal query.
-    and applyInequal env name (args : Expr list) argCount =
+    and applyInequal env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedInequalOperation" "Inequal operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -293,7 +293,7 @@ module Evaluator =
             | _ -> makeEvalResult env (Boolean (makeBooleanRecord (firstValue <> secondValue) None))
 
     /// Apply a ref equality query.
-    and applyRefEqual env name (args : Expr list) argCount =
+    and applyRefEqual env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -307,7 +307,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/refEqualityOnNonRef" "Both arguments of reference equal operation must be references."
 
     /// Apply a ref inequality query.
-    and applyRefInequal env name (args : Expr list) argCount =
+    and applyRefInequal env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedEqualOperation" "Equal operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -321,7 +321,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/refInequalityOnNonRef" "Both arguments of reference inequal operation must be references."
     
     /// Apply a cons operation.
-    and applyCons env name (args : Expr list) argCount =
+    and applyCons env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedConsOperation" "Cons operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -336,7 +336,7 @@ module Evaluator =
                 | _ -> makeEvalViolation env ":v/contract/consToNonList" "Cannot cons to a non-list."
     
     /// Apply a head operation.
-    and applyHead env name (args : Expr list) argCount =
+    and applyHead env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedHeadOperation" "Head operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -347,7 +347,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/headOfNonList" "Cannot take the head of a non-list."
     
     /// Apply a tail operation.
-    and applyTail env name (args : Expr list) argCount =
+    and applyTail env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedTailOperation" "Tail operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -358,7 +358,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/tailOfNonList" "Cannot take the tail of a non-list."
     
     /// Apply a string length query.
-    and applyStringLength env name (args : Expr list) argCount =
+    and applyStringLength env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedStringLengthOperation" "StringLength operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -368,7 +368,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/stringLengthOfNonString" "Cannot get the string length of a non-string."
     
     /// Apply a string append.
-    and applyStringAppend env name (args : Expr list) argCount =
+    and applyStringAppend env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedStringAppendOperation" "StringAppend operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -383,7 +383,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/stringAppendOfNonString" "String appending requires 2 strings as arguments."
     
     /// Apply a list length query.
-    and applyListLength env name (args : Expr list) argCount =
+    and applyListLength env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedListLengthOperation" "ListLength operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -393,7 +393,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/listLengthOfNonList" "Cannot get the list length of a non-list."
 
     /// Apply a list append.
-    and applyListAppend env name (args : Expr list) argCount =
+    and applyListAppend env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedListAppendOperation" "ListAppend operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -415,7 +415,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/listAppendOfNonList" "Cannot append a non-list to a list."
 
     /// Apply an array length query.
-    and applyArrayLength env name (args : Expr list) argCount =
+    and applyArrayLength env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedArrayLengthOperation" "ArrayLength operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -425,7 +425,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/arrayLengthOfNonArray" "Cannot get the array length of a non-array."
 
     /// Apply an array append.
-    and applyArrayAppend env name (args : Expr list) argCount =
+    and applyArrayAppend env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedArrayAppendOperation" "ArrayLength operation must have 2 arguments."
         else
             let firstValue = evalExprDropEnv env args.[0]
@@ -440,13 +440,13 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/arrayAppendOfNonArray" "Array appending requires two arrays as arguments."
 
     /// Apply a steps operation.
-    and applySteps env name args _ =
+    and applySteps env (_ : string) args _ =
         match args with
         | [] -> makeEvalViolation env ":v/eval/malformedStepsOperation" "Steps operation must have at least one argument."
         | _ -> let results = sequentiallyEvalExprs env args false in List.last results
 
     /// Apply a while operation.
-    and applyWhile env name args _ =
+    and applyWhile env (_ : string) args _ =
         match args with
         | [condition; statement] ->
             let mutable conditionResult = evalConditional env condition
@@ -463,7 +463,7 @@ module Evaluator =
         | _ -> makeEvalViolation env ":v/eval/malformedStepsOperation" "While operation must have two arguments."
 
     /// Apply a type query with a predicate.
-    and applyIsPred pred env name (args : Expr list) argCount =
+    and applyIsPred pred env (_ : string) (args : Expr list) argCount =
         if argCount <> 1 then makeEvalViolation env ":v/eval/malformedAstPredicateOperation" "AST predicate operation must have 1 argument."
         else
             let value = evalExprDropEnv env args.Head
@@ -514,13 +514,13 @@ module Evaluator =
     and applyIsComposite env name (args : Expr list) argCount = applyIsPred isComposite env name args argCount
 
     /// Apply a has type query.
-    and applyHasType env name (args : Expr list) argCount =
+    and applyHasType env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedHasTypeOperation" "HasType operation must have 2 arguments."
         else
             let typeNameValue = evalExprDropEnv env args.[0]
             match typeNameValue with
             | Violation _ as v -> forwardEvalViolation env v
-            | Keyword keyword as typeKeyword ->
+            | Keyword keyword ->
                 let typeName = keyword.KRValue
                 let value = evalExprDropEnv env args.[1]
                 match value with
@@ -529,7 +529,7 @@ module Evaluator =
             | _ -> makeEvalViolation env ":v/contract/typeLookupWithNonKeyword" "Types can only be looked up with a keyword."
 
     /// Apply a has protocol query.
-    and applyHasProtocol env name (args : Expr list) argCount =
+    and applyHasProtocol env (_ : string) (args : Expr list) argCount =
         if argCount <> 2 then makeEvalViolation env ":v/eval/malformedHasProtocolOperation" "HasProtocol operation must have 2 arguments."
         else
             let protocolNameValue = evalExprDropEnv env args.[0]
@@ -557,58 +557,58 @@ module Evaluator =
             | Some convertedValue -> makeEvalResult env convertedValue
 
     /// Apply a char to int conversion.
-    and applyCharToInt env name (args : Expr list) argCount = applyConversion env (function | Character c -> Some (Int (makeIntRecord (int c.CRValue) None)) | _ -> None) args argCount CharacterStr
+    and applyCharToInt env (_ : string) (args : Expr list) argCount = applyConversion env (function | Character c -> Some (Int (makeIntRecord (int c.CRValue) None)) | _ -> None) args argCount CharacterStr
 
     /// Apply an int to char conversion.
-    and applyIntToChar env name (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Character (makeCharacterRecord (char i.IRValue) None)) | _ -> None) args argCount IntStr
+    and applyIntToChar env (_ : string) (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Character (makeCharacterRecord (char i.IRValue) None)) | _ -> None) args argCount IntStr
 
     /// Apply an int to long conversion.
-    and applyIntToLong env name (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Long (makeLongRecord (int64 i.IRValue) None)) | _ -> None) args argCount IntStr
+    and applyIntToLong env (_ : string) (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Long (makeLongRecord (int64 i.IRValue) None)) | _ -> None) args argCount IntStr
 
     /// Apply a long to int conversion.
-    and applyLongToInt env name (args : Expr list) argCount = applyConversion env (function | Long l -> Some (Int (makeIntRecord (int l.GRValue) None)) | _ -> None) args argCount LongStr
+    and applyLongToInt env (_ : string) (args : Expr list) argCount = applyConversion env (function | Long l -> Some (Int (makeIntRecord (int l.GRValue) None)) | _ -> None) args argCount LongStr
 
     /// Apply a float to double conversion.
-    and applyFloatToDouble env name (args : Expr list) argCount = applyConversion env (function | Float f -> Some (Double (makeDoubleRecord (float f.FRValue) None)) | _ -> None) args argCount FloatStr
+    and applyFloatToDouble env (_ : string) (args : Expr list) argCount = applyConversion env (function | Float f -> Some (Double (makeDoubleRecord (float f.FRValue) None)) | _ -> None) args argCount FloatStr
 
     /// Apply a double to float conversion.
-    and applyDoubleToFloat env name (args : Expr list) argCount = applyConversion env (function | Double d -> Some (Float (makeFloatRecord (single d.DRValue) None)) | _ -> None) args argCount DoubleStr
+    and applyDoubleToFloat env (_ : string) (args : Expr list) argCount = applyConversion env (function | Double d -> Some (Float (makeFloatRecord (single d.DRValue) None)) | _ -> None) args argCount DoubleStr
 
     /// Apply an int to float conversion.
-    and applyIntToFloat env name (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Float (makeFloatRecord (single i.IRValue) None)) | _ -> None) args argCount IntStr
+    and applyIntToFloat env (_ : string) (args : Expr list) argCount = applyConversion env (function | Int i -> Some (Float (makeFloatRecord (single i.IRValue) None)) | _ -> None) args argCount IntStr
 
     /// Apply a float to int conversion.
-    and applyFloatToInt env name (args : Expr list) argCount = applyConversion env (function | Float f -> Some (Int (makeIntRecord (int f.FRValue) None)) | _ -> None) args argCount FloatStr
+    and applyFloatToInt env (_ : string) (args : Expr list) argCount = applyConversion env (function | Float f -> Some (Int (makeIntRecord (int f.FRValue) None)) | _ -> None) args argCount FloatStr
 
     /// Apply a long to double conversion.
-    and applyLongToDouble env name (args : Expr list) argCount = applyConversion env (function | Long l -> Some (Double (makeDoubleRecord (float l.GRValue) None)) | _ -> None) args argCount LongStr
+    and applyLongToDouble env (_ : string) (args : Expr list) argCount = applyConversion env (function | Long l -> Some (Double (makeDoubleRecord (float l.GRValue) None)) | _ -> None) args argCount LongStr
 
     /// Apply a double to long conversion.
-    and applyDoubleToLong env name (args : Expr list) argCount = applyConversion env (function | Double d -> Some (Long (makeLongRecord (int64 d.DRValue) None)) | _ -> None) args argCount DoubleStr
+    and applyDoubleToLong env (_ : string) (args : Expr list) argCount = applyConversion env (function | Double d -> Some (Long (makeLongRecord (int64 d.DRValue) None)) | _ -> None) args argCount DoubleStr
 
     /// Apply a string to array conversion.
-    and applyStringToArray env name (args : Expr list) argCount = applyConversion env (function | String s -> Some (stringToArray env s.SRValue.SVValue) | _ -> None) args argCount StringStr
+    and applyStringToArray env (_ : string) (args : Expr list) argCount = applyConversion env (function | String s -> Some (stringToArray env s.SRValue.SVValue) | _ -> None) args argCount StringStr
 
     /// Apply an array to string conversion.
-    and applyArrayToString env name (args : Expr list) argCount = applyConversion env (function | Array a -> Some (arrayToString env a) | _ -> None) args argCount ArrayStr
+    and applyArrayToString env (_ : string) (args : Expr list) argCount = applyConversion env (function | Array a -> Some (arrayToString env a) | _ -> None) args argCount ArrayStr
 
     /// Apply a list to array conversion.
-    and applyListToArray env name (args : Expr list) argCount = applyConversion env (function | List l -> Some (listToArray env l) | _ -> None) args argCount ListStr
+    and applyListToArray env (_ : string) (args : Expr list) argCount = applyConversion env (function | List l -> Some (listToArray env l) | _ -> None) args argCount ListStr
 
     /// Apply an array to list conversion.
-    and applyArrayToList env name (args : Expr list) argCount = applyConversion env (function | Array a -> Some (arrayToList env a) | _ -> None) args argCount ArrayStr
+    and applyArrayToList env (_ : string) (args : Expr list) argCount = applyConversion env (function | Array a -> Some (arrayToList env a) | _ -> None) args argCount ArrayStr
 
     /// Apply an int unop.
-    and applyIntUnop intUnop env opName args argCount = applyUnop exprToOptIntValue (fun i -> Int (makeIntRecord i None)) env intUnop args argCount
+    and applyIntUnop intUnop env (_ : string) args argCount = applyUnop exprToOptIntValue (fun i -> Int (makeIntRecord i None)) env intUnop args argCount
 
     /// Apply a long unop.
-    and applyLongUnop longUnop env opName args argCount = applyUnop exprToOptLongValue (fun l -> Long (makeLongRecord l None)) env longUnop args argCount
+    and applyLongUnop longUnop env (_ : string) args argCount = applyUnop exprToOptLongValue (fun l -> Long (makeLongRecord l None)) env longUnop args argCount
 
     /// Apply a float unop.
-    and applyFloatUnop floatUnop env opName args argCount = applyUnop exprToOptFloatValue (fun f -> Float (makeFloatRecord f None)) env floatUnop args argCount
+    and applyFloatUnop floatUnop env (_ : string) args argCount = applyUnop exprToOptFloatValue (fun f -> Float (makeFloatRecord f None)) env floatUnop args argCount
 
     /// Apply a double unop.
-    and applyDoubleUnop doubleUnop env opName args argCount = applyUnop exprToOptDoubleValue (fun d -> Double (makeDoubleRecord d None)) env doubleUnop args argCount
+    and applyDoubleUnop doubleUnop env (_ : string) args argCount = applyUnop exprToOptDoubleValue (fun d -> Double (makeDoubleRecord d None)) env doubleUnop args argCount
 
     /// Apply an int binop.
     and applyIntBinop intBinop env opName args argCount = applyBinop allExprsToIntValues (fun i -> Int (makeIntRecord i None)) env intBinop (fun i -> i = 0) (usesDivisionOperation opName) args argCount
@@ -617,10 +617,10 @@ module Evaluator =
     and applyLongBinop longBinop env opName args argCount = applyBinop allExprsToLongValues (fun l -> Long (makeLongRecord l None)) env longBinop (fun l -> l = 0L) (usesDivisionOperation opName) args argCount
 
     /// Apply a float binop.
-    and applyFloatBinop floatBinop env opName args argCount = applyBinop allExprsToFloatValues (fun f -> Float (makeFloatRecord f None)) env floatBinop absurdity false args argCount
+    and applyFloatBinop floatBinop env (_ : string) args argCount = applyBinop allExprsToFloatValues (fun f -> Float (makeFloatRecord f None)) env floatBinop absurdity false args argCount
 
     /// Apply a double binop.
-    and applyDoubleBinop doubleBinop env opName args argCount = applyBinop allExprsToDoubleValues (fun d -> Double (makeDoubleRecord d None)) env doubleBinop absurdity false args argCount
+    and applyDoubleBinop doubleBinop env (_ : string) args argCount = applyBinop allExprsToDoubleValues (fun d -> Double (makeDoubleRecord d None)) env doubleBinop absurdity false args argCount
 
     /// Apply a special builtin operation.
     and applySpecialBuiltin env name args argCount =
@@ -789,7 +789,7 @@ module Evaluator =
         makeEvalResult env builtinResult.Value
 
     /// Apply a lambda once its been pushed on the stack frame and its arguments have been unified.
-    and applyLambdaPostPushAndUnification env args argCount largs largCount cpre body pre post skipArgEval =
+    and applyLambdaPostPushAndUnification env args argCount largs largCount cpre body pre post =
 #if AML_OPTIMIZED
         let constraintPassed = true
 #else
@@ -822,15 +822,15 @@ module Evaluator =
         else makeEvalViolation env ":v/contract/constraintFailed" "Constraint not satisfied."
 
     /// Apply a lambda.
-    and applyLambda env (args : Expr list) argCount (largs : Arg list) largCount body cpre pre post skipArgEval lambdaExpr =
+    and applyLambda env (args : Expr list) argCount (largs : Arg list) largCount body cpre pre post lambdaExpr =
         let pushedEnv = pushStackFrame env lambdaExpr
-        let evalResult = applyLambdaPostPushAndUnification pushedEnv args argCount largs largCount cpre body pre post skipArgEval
+        let evalResult = applyLambdaPostPushAndUnification pushedEnv args argCount largs largCount cpre body pre post
         popEvalResultStackFrame evalResult
 
     /// Apply a dynamic dispatch as a lambda.
     and applyLambdaDispatch env args argCount largs largCount lambda expr =
         let overlaidEnv = overlayEnv lambda.LamEnv env
-        let result = applyLambda overlaidEnv args argCount largs largCount lambda.LamBody lambda.LamCpre lambda.LamPre lambda.LamPost true expr
+        let result = applyLambda overlaidEnv args argCount largs largCount lambda.LamBody lambda.LamCpre lambda.LamPre lambda.LamPost expr
         makeEvalResult env result.Value
 
     /// Apply a dynamic dispatch.
@@ -964,14 +964,14 @@ module Evaluator =
             | Violation _ as v -> forwardEvalViolation env v
             | SpecialObject _ as s -> evalExpr env s
             | _ -> failwith "Unexpected match failure in 'Aml.Evaluator.evalSpecialValue'."
-        | Some lm -> makeEvalViolation env ":v/languageModule/mismatchedLanguageModule" "Wrong language module for special value evaluation."
+        | Some _ -> makeEvalViolation env ":v/languageModule/mismatchedLanguageModule" "Wrong language module for special value evaluation."
 
     /// Evaluate a special object.
     and evalSpecialObject env specialObject specialObjectExpr =
         match env.EnvOptLanguageModule with
         | None -> makeEvalViolation env ":v/languageModule/missingLanguageModule" "Cannot evaluate a special object without a language module."
         | Some lm when lm.Guid = specialObject.SOLanguageGuid -> lm.EvalSpecialObject env specialObjectExpr
-        | Some lm -> makeEvalViolation env ":v/languageModule/mismatchedLanguageModule" "Wrong language module for special object evaluation."
+        | Some _ -> makeEvalViolation env ":v/languageModule/mismatchedLanguageModule" "Wrong language module for special object evaluation."
 
     /// Evaluate a violation.
     and evalViolation env violation vioExpr =
@@ -983,13 +983,13 @@ module Evaluator =
             interveneOnViolation env violation'' (Violation violation'')
 
     /// Evaluate a prefixed expressions.
-    and evalPrefixed env prefixed pfxExpr =
+    and evalPrefixed env (_ : PrefixedRecord) pfxExpr =
         match env.EnvOptLanguageModule with
         | Some lm -> lm.EvalPrefixed env pfxExpr
         | _ -> makeEvalViolation env ":v/languageModule/missingLanguageModule" "Cannot evaluate prefixed expressions without a language module."
 
     /// Evaluate an operation.
-    and evalOperation env (exprs : Expr list) exprCount optPositions =
+    and evalOperation env (exprs : Expr list) exprCount =
 
         let opValue = evalExprDropEnv env exprs.Head
         let args = exprs.Tail
@@ -1024,7 +1024,7 @@ module Evaluator =
 
                 let argValues = evalExprsDropEnv env abstractedArgs
                 let overlaidEnv = overlayEnv lambda.LamEnv env
-                let lambdaResult = applyLambda overlaidEnv argValues unifiedCount unifiedLargs unifiedCount lambda.LamBody lambda.LamCpre lambda.LamPre lambda.LamPost true l
+                let lambdaResult = applyLambda overlaidEnv argValues unifiedCount unifiedLargs unifiedCount lambda.LamBody lambda.LamCpre lambda.LamPre lambda.LamPost l
                 makeEvalResult env lambdaResult.Value
 
         | _ -> makeEvalViolation env ":v/eval/invalidOperator" ("Invalid operator '" + writeExpr opValue + "'.")
@@ -1210,7 +1210,7 @@ module Evaluator =
         match evaledTarget with
         | Violation _ as v -> forwardEvalViolation env v
         | String string -> applyStringSelector env selector.SelKey string.SRValue.SVValue
-        | SpecialObject specialObject -> applySpecialSelector env selector.SelKey evaledTarget
+        | SpecialObject _ -> applySpecialSelector env selector.SelKey evaledTarget
         | Composite composite -> applyCompositeSelector env selector.SelKey selector.SelType composite.CompMembers
         | List list -> applyListSelector env selector.SelKey list.ListElements
         | Array array -> applyArraySelector env selector.SelKey array.ArrElements
@@ -1275,7 +1275,7 @@ module Evaluator =
 
     /// Evaluate an instance.
     /// TODO: optimize this generally.
-    and evalInstance env instance instanceExpr =
+    and evalInstance env instance (_ : Expr) =
         let optProtocol = tryFindProtocolEntry env instance.InstProtocolName
         match optProtocol with
         | None -> makeEvalViolation env ":v/eval/missingProtocol" "Cannot declare an instance with a non-existent protocol."
@@ -1295,7 +1295,7 @@ module Evaluator =
                     let (constraintsSatisfied, constraintProjections) = projectConstraintsToProtocolArg constraints parg
                     if not constraintsSatisfied then makeEvalViolation env ":v/eval/invalidInstanceConstraint" (writeConstraintFailures constraintProjections)
                     else
-                        let projectedImpls = projectSigImpls env protocolName sigImpls
+                        let projectedImpls = projectSigImpls env sigImpls
                         if not (tryAppendInstance env protocolName args constraints projectedImpls)
                         then makeEvalViolation env ":v/eval/invalidInstance" "Instances must be instantiated with an existing protocol and not over a protocol."
                         else makeEvalUnit env
@@ -1390,7 +1390,7 @@ module Evaluator =
             | Dispatch _ -> makeEvalResult pushedEnv expr
             | SpecialValue specialValue -> evalSpecialValue pushedEnv specialValue expr
             | SpecialObject specialObject -> evalSpecialObject pushedEnv specialObject expr
-            | Series series -> if series.SerExprs.IsEmpty then makeEvalResult pushedEnv expr else evalOperation pushedEnv series.SerExprs series.SerExprCount series.SerOptPositions
+            | Series series -> if series.SerExprs.IsEmpty then makeEvalResult pushedEnv expr else evalOperation pushedEnv series.SerExprs series.SerExprCount
             | Lambda lambda -> evalLambda pushedEnv lambda expr
             | Attempt attemptRecord -> evalAttempt pushedEnv attemptRecord
             | Let letRecord -> evalLet pushedEnv letRecord

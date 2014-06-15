@@ -658,13 +658,10 @@ module Reader =
     /// Read an attempt branch.
     let readAttemptBranch =
         parse {
-            let! start = getPosition
             do! openParenForm
             let! category = readKeywordValueWithWhitespace
             let! body = readProceduralExpr
             do! closeParenForm
-            let! stop = getPosition
-            let optPositions = Some (makeParserPositions start stop)
             return makeAttemptBranch category body }
 
     /// Read at least one attempt branch.
@@ -673,15 +670,12 @@ module Reader =
     /// Read an intervention branch.
     let readInterventionBranch =
         parse {
-            let! start = getPosition
             do! openParenForm
             let! category = readKeywordValueWithWhitespace
             let! body = readProceduralExpr
             let! optHide = readOptFlag HideStr
             let hide = match optHide with Some (Boolean hide) -> hide.BRValue | _ -> false
             do! closeParenForm
-            let! stop = getPosition
-            let optPositions = Some (makeParserPositions start stop)
             return makeInterventionBranch None category body hide }
 
     /// Read at least one intervention branch.
@@ -703,19 +697,15 @@ module Reader =
     /// Read a variable let binding.
     let readLetVariable =
         parse {
-            let! start = getPosition
             do! openParenForm
             let! name = readName
             let! expr = readProceduralExpr
             do! closeParenForm
-            let! stop = getPosition
-            let optPositions = Some (makeParserPositions start stop)
             return LetVariable (name, expr) }
 
     /// Read a function let binding.
     let readLetFunction =
         parse {
-            let! start = getPosition
             do! openParenForm
             let! name = readName
             let! args = readArgs openParenForm closeParenForm
@@ -726,8 +716,6 @@ module Reader =
             let! post = readContract PostconditionStr
             let! body = readProceduralExpr
             do! closeParenForm
-            let! stop = getPosition
-            let optPositions = Some (makeParserPositions start stop)
             return LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) }
 
     /// Read a let binding.
@@ -1034,7 +1022,7 @@ module Reader =
             let! protocolName = readName |>> fun name -> ProtocolPrefixStr + name
             let! args = readArgNames1 openBracketForm closeBracketForm
             let! constraints = readConstraints openBracketForm closeBracketForm
-            let! doc = readDoc
+            let! _ = readDoc // TODO: use the read documentation?
             let! sigImpls = readVariablesAndUnconstrainedFunctions1
             do! closeBracketForm
             let! stop = getPosition

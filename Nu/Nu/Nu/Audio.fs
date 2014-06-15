@@ -63,7 +63,7 @@ module AudioModule =
             String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sound> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Sound> then obj
             else
@@ -79,7 +79,7 @@ module AudioModule =
             String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Song> || sourceType = typeof<string>
-        override this.ConvertFrom (_, culture, obj) =
+        override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<Song> then obj
             else
@@ -100,7 +100,7 @@ module Audio =
         for i in [0 .. !channelCount - 1] do
             ignore <| SDL_mixer.Mix_HaltChannel i
 
-    let private tryLoadAudioAsset2 audioContext (asset : Asset) =
+    let private tryLoadAudioAsset2 (asset : Asset) =
         let extension = Path.GetExtension asset.FileName
         match extension with
         | ".wav" ->
@@ -120,7 +120,7 @@ module Audio =
             trace <| "HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
             audioPlayer
         | Right assets ->
-            let optAudioAssets = List.map (tryLoadAudioAsset2 audioPlayer.AudioContext) assets
+            let optAudioAssets = List.map tryLoadAudioAsset2 assets
             let audioAssets = List.definitize optAudioAssets
             let optAudioAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
             match optAudioAssetMap with
@@ -139,14 +139,14 @@ module Audio =
                 note <| "Loading audio package '" + packageName + "' for asset '" + assetName + "' on the fly."
                 let audioPlayer = tryLoadAudioPackage packageName packageFileName audioPlayer
                 (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
-            | Some assetMap -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
+            | Some _ -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
         (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private playSong (song : Song) audioPlayer =
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
         match optAudioAsset with
         | None -> debug <| "PlaySong failed due to unloadable assets for '" + string song + "'."
-        | Some (WavAsset wavAsset) -> debug <| "Cannot play wav file as song '" + string song + "'."
+        | Some (WavAsset _) -> debug <| "Cannot play wav file as song '" + string song + "'."
         | Some (OggAsset oggAsset) -> ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
         { audioPlayer' with OptCurrentSong = Some song }
 
@@ -192,7 +192,7 @@ module Audio =
         match optAudioAsset with
         | None -> debug <| "PlaySound failed due to unloadable assets for '" + string sound + "'."
         | Some (WavAsset wavAsset) -> ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
-        | Some (OggAsset oggAsset) -> debug <| "Cannot play ogg file as sound '" + string sound + "'."
+        | Some (OggAsset _) -> debug <| "Cannot play ogg file as sound '" + string sound + "'."
         audioPlayer
 
     let private handlePlaySong playSongValue audioPlayer =
