@@ -283,7 +283,7 @@ module Program =
 
     /// Needed for physics system side-effects...
     let physicsHack world =
-        let world = { world with PhysicsMessages = ResetHackMessage :: world.PhysicsMessages }
+        let world = { world with PhysicsMessages = [ResetHackMessage] }
         World.reregisterPhysicsHack EditorGroupAddress world
 
     let handleExit (form : NuEditForm) _ =
