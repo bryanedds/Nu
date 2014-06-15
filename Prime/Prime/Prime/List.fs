@@ -113,9 +113,9 @@ let rec roll roller state (list : 'a list) =
         let curr = list.[0]
         let next = list.[1]
         let rest = list.Tail
-        let state' = roller state curr next
-        if rest.Tail.IsEmpty then state'
-        else roll roller state' rest
+        let state = roller state curr next
+        if rest.Tail.IsEmpty then state
+        else roll roller state rest
 
 /// Windowed for lists.
 let windowed count (list : 'a list) =
@@ -154,8 +154,8 @@ let rec fornone pred list =
     
 /// Foldi for lists.
 let foldi folder state (list : 'a list)=
-    let seq' = Seq.foldi folder state list
-    List.ofSeq seq'
+    let seq = Seq.foldi folder state list
+    List.ofSeq seq
 
 /// Take for lists.
 /// TODO: make this tail-recursive.

@@ -31,7 +31,7 @@ module EitherModule =
 module Either =
 
     /// Monadic return.
-    let inline return' value =
+    let inline returnM value =
         Right value
 
     /// Monadic returnFrom.
@@ -41,7 +41,7 @@ module Either =
 
     type EitherBuilder () =
         member this.Bind (either, fn) = either >>= fn
-        member this.Return value = return' value
+        member this.Return value = returnM value
         member this.ReturnFrom value = returnFrom value
 
     let either = EitherBuilder ()

@@ -21,12 +21,12 @@ let inline definitize opts =
 
 /// Fold, now with a counter!
 let foldi folder state seq =
-    let state' =
+    let (_, result) =
         Seq.fold
             (fun (i, state) item -> (i + 1, folder i state item))
             (0, state)
             seq
-    snd state'
+    result
 
 /// Check if no elements satisfy a predicate in a seq.
 let fornone pred seq =

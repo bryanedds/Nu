@@ -11,9 +11,9 @@ let singleton elem =
 
 /// Map over a dictionary. A new dictionary is produced.
 let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) =
-    let dictionary' = Dictionary<'k, 'v> ()
-    for kvp in dictionary do dictionary'.Add (kvp.Key, mapper kvp)
-    dictionary'
+    let result = Dictionary<'k, 'v> ()
+    for kvp in dictionary do result.Add (kvp.Key, mapper kvp)
+    result
 
 /// Try to find a value in a dictonary.
 let inline tryFind key (dictionary : Dictionary<'k, 'v>) =
