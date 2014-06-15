@@ -247,7 +247,7 @@ module Writer =
     and writeLetBinding binding =
         match binding with
         | LetVariable (name, body) -> parenthesize (name <+> writeExpr body)
-        | LetFunction (name, args, _, body, optConstraints, pre, post, _) -> parenthesize (name <+> writeArgs args parenthesize + writeOptConstraintsWithSpace parenthesize optConstraints + writeContractWithSpace PreconditionStr pre + writeContractWithSpace PostconditionStr pre <+> writeExpr body)
+        | LetFunction (name, args, _, body, optConstraints, pre, post, _) -> parenthesize (name <+> writeArgs args parenthesize + writeOptConstraintsWithSpace parenthesize optConstraints + writeContractWithSpace PreconditionStr pre + writeContractWithSpace PostconditionStr post <+> writeExpr body)
 
     /// Write multiple let bindings.
     and writeLetBindings bindings =
@@ -313,7 +313,6 @@ module Writer =
         | None -> None
         | Some positions ->
             let start = positions.ParStart
-            let stop = positions.ParStop
             let usesFile = start.StreamName <> null && start.StreamName.Length <> 0 // NOTE: it seems like it's a bug for FParsec to allow StreamName to be null...
             if usesFile then
                 let fileLines = File.ReadAllLines start.StreamName
@@ -322,7 +321,6 @@ module Writer =
                 let start = positions.ParStart
                 let startFile = if start.StreamName.Length <> 0 then start.StreamName else "[N/A]"
                 let startStr = "[Ln: " + string start.Line + ", Col: " + string start.Column + ", In: " + startFile + "]"
-                let stop = positions.ParStop
                 let result = firstFileLineTrimmed + "\n  " + startStr
                 Some result
             else None

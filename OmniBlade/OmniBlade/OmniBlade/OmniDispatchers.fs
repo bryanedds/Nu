@@ -57,7 +57,7 @@ module OmniDispatchersModule =
     type OmniGameDispatcher () =
         inherit GameDispatcher ()
         
-        override dispatcher.Register (omniGame, world) =
+        override dispatcher.Register (_, world) =
             let dispatchers =
                 Map.addMany
                     [|typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj

@@ -43,11 +43,11 @@ module RduTree =
             let listFolded = List.fold listFolder state children
             folder listFolded parent
 
+    // TODO: test this!
     let rec foldParent (getChildren : 't -> 't list) (folder : 't -> 't list -> 's) (state : 's) (parent : 't) : 's =
         let children = getChildren parent
         let listFolder = fun child -> foldParent getChildren folder child
-        let listFolded = List.fold listFolder state children
-        folder parent children
+        List.fold listFolder state children
 
     let rec filter (pred : 't -> bool) (tree : 't RduTree) : 't option RduTree =
         match tree with

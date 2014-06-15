@@ -138,7 +138,7 @@ module EvaluatorPrims =
         | SpecialValue _ -> Some SpecialValueType
         | SpecialObject _ -> None
         | Series s -> if s.SerExprs.IsEmpty then Some UnitType else None
-        | Lambda lambda -> Some LambdaType
+        | Lambda _ -> Some LambdaType
         | Attempt _ -> None
         | Let _ -> None
         | Extend _ -> None
@@ -217,7 +217,7 @@ module EvaluatorPrims =
         let optFirstSigMatchingEntry = Seq.tryHead sigsMatchingEntry
         match optFirstSigMatchingEntry with
         | Some firstSigMatchingEntry when not env.EnvAllowRedeclaration ->
-            failwith ("The protocol signature '" + optFirstSigMatchingEntry.Value.SigName + "' clashes names with an existing declaration.")
+            failwith ("The protocol signature '" + firstSigMatchingEntry.SigName + "' clashes names with an existing declaration.")
         | Some _ | None ->
             let protocolName = ProtocolPrefixStr + name
             let protocol = ProtocolEntry (arg, optConstraints, doc, sigs)
@@ -323,7 +323,6 @@ module EvaluatorPrims =
                 | Some env'3 ->
 
                     // append constructor
-                    let recEnv = Some env'3
                     let concreteArgs = List.map (fun argName -> makeArg argName Concrete UnitValue) argNames
                     let memberList = List.zipBy (fun (name, expr) -> makeMember name expr) memberNames symbols
                     let members = List.toDictionaryBy (fun mem -> (mem.MemName, mem)) memberList
@@ -360,7 +359,7 @@ module EvaluatorPrims =
                 let protocolName = ProtocolPrefixStr + constr.ConstrName
                 let protocolTarget = tryFindProtocolEntry env protocolName
                 match protocolTarget with
-                | Some (ProtocolEntry (parg, _, _, _)) -> if List.hasExactly 1 constr.ConstrArgs then ValidConstraint else WrongArgCount
+                | Some (ProtocolEntry _) -> if List.hasExactly 1 constr.ConstrArgs then ValidConstraint else WrongArgCount
                 | _ -> NonexistentTarget
             | Some _ ->
                 match constr.ConstrArgs with
@@ -474,7 +473,7 @@ module EvaluatorPrims =
                 let chosen = Seq.map (tryPartialUnifyArgs argsEvaluated args largs) largs
                 Seq.tryHead chosen
 
-        let advanceArgs (argsEvaluated : bool) (largs : Arg list) count =
+        let advanceArgs (largs : Arg list) count =
             // TODO: see if a sequence can be sliced without redundant evaluation
             let advancedLargs = List.take count largs
             let restLargs = List.skip count largs
@@ -488,7 +487,7 @@ module EvaluatorPrims =
                 match optPartialUnifyResult with
                 | None -> [(args.Head, makeArg MissingStr Concrete UnitValue)]
                 | Some r ->
-                    let (unifiedArgs, restLargs) = advanceArgs argsEvaluated largs r.LargAdvances
+                    let (unifiedArgs, restLargs) = advanceArgs largs r.LargAdvances
                     let restLargs2 = if r.LargShouldAdvance then restLargs.Tail else restLargs
                     let unifiedRest = unifyArgs argsEvaluated r.RestArgs restLargs2
                     let unifiedRest2 = match r.OptUnifiedArg with None -> unifiedRest | Some unifiedArg -> unifiedArg :: unifiedRest

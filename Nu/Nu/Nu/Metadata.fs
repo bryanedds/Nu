@@ -35,7 +35,7 @@ module Metadata =
         try { SpriteAssetName = properties.["SpriteAssetName"]
               PackageName = properties.["PackageName"]
               PackageFileName = properties.["PackageFileName"] }
-        with :? KeyNotFoundException as e ->
+        with :? KeyNotFoundException ->
             let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (SpriteAssetName, PackageName, and / or PackageFileName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 

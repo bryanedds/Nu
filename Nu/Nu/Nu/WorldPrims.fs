@@ -401,7 +401,7 @@ module WorldPrims =
         | ([], _) -> true
         | (_, None) -> false
         | (_, Some []) -> false
-        | (addressHead :: addressTail, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
+        | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
     let private getPublishingPriority simulant =
         match simulant with
@@ -539,7 +539,7 @@ module WorldPrims =
         if keepRunning then update world
             else (keepRunning, world)
 
-    and private handleSplashScreenIdleTick idlingTime ticks event publisher subscriber message world =
+    and private handleSplashScreenIdleTick idlingTime ticks event _ subscriber message world =
         let world = unsubscribe event subscriber world
         if ticks < idlingTime then
             let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incI ticks
@@ -555,12 +555,12 @@ module WorldPrims =
                 let world = setScreenState selectedScreenAddress OutgoingState world
                 (message, true, world)
 
-    and internal handleSplashScreenIdle idlingTime event publisher subscriber message world =
+    and internal handleSplashScreenIdle idlingTime _ _ subscriber message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
         let world = subscribe TickEvent subscriber subscription world
         (Message.handle message, true, world)
 
-    and private handleFinishedScreenOutgoing destination event publisher subscriber message world =
+    and private handleFinishedScreenOutgoing destination event _ subscriber message world =
         let world = unsubscribe event subscriber world
         let world = transitionScreen destination world
         (Message.handle message, true, world)

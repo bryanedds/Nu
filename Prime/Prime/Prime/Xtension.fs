@@ -43,7 +43,7 @@ module XtensionModule =
         // NOTE: this could instead be a special class with a MethodMissing method
         static member private emptyDispatcher = new obj ()
 
-        static member private getDefaultValue (this : Xtension) : 'r =
+        static member private getDefaultValue () : 'r =
             let defaultFieldType = typeof<'r>
             let optDefaultValueAttribute = Seq.tryHead <| defaultFieldType.GetCustomAttributes<XDefaultValueAttribute> ()
             match optDefaultValueAttribute with
@@ -61,7 +61,7 @@ module XtensionModule =
         static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
             if not this.CanDefault
             then failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
-            else Xtension.getDefaultValue this
+            else Xtension.getDefaultValue ()
 
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
                 let dispatchers = dispatcherContainer.GetDispatchers ()
@@ -77,7 +77,7 @@ module XtensionModule =
 
         static member derivesFrom dispatcherTarget xtension dispatcherContainer =
             let dispatcher = Xtension.getDispatcher xtension dispatcherContainer
-            let dispatcherType = dispatcherTarget.GetType ()
+            let dispatcherType = dispatcher.GetType ()
             let dispatcherTargetType = dispatcherTarget.GetType ()
             dispatcherType.IsSubclassOf dispatcherTargetType
 
