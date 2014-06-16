@@ -24,11 +24,11 @@ module BlazeDispatchersModule =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
-        let tickHandler _ _ address _ world =
-            let bullet = get world <| World.worldEntity address
+        let tickHandler message world =
+            let bullet = get world <| World.worldEntity message.Subscriber
             if bullet.BirthTime + 30UL > world.Ticks then (true, Unhandled, world)
             else
-                let world = World.removeEntity address world
+                let world = World.removeEntity message.Subscriber world
                 (true, Unhandled, world)
 
         override this.MakeBodyShape (bullet : Entity) =
@@ -70,19 +70,19 @@ module BlazeDispatchersModule =
             let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
-        let spawnBulletHandler _ _ address _ world =
+        let spawnBulletHandler message world =
             if not world.Interactive then (true, Unhandled, world)
             else
-                let player = get world <| World.worldEntity address
+                let player = get world <| World.worldEntity message.Subscriber
                 if world.Ticks % 5UL <> 0UL then (true, Unhandled, world)
                 else
-                    let world = createBullet player address world
+                    let world = createBullet player message.Subscriber world
                     (true, Unhandled, world)
 
-        let movePlayerHandler _ _ address _ world =
+        let movePlayerHandler message world =
             if not world.Interactive then (true, Unhandled, world)
             else
-                let player = get world <| World.worldEntity address
+                let player = get world <| World.worldEntity message.Subscriber
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
@@ -92,10 +92,10 @@ module BlazeDispatchersModule =
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (true, Unhandled, world)
 
-        let jumpPlayerHandler _ _ address _ world =
+        let jumpPlayerHandler message world =
             if not world.Interactive then (true, Unhandled, world)
             else
-                let player = get world <| World.worldEntity address
+                let player = get world <| World.worldEntity message.Subscriber
                 if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
                 then (true, Unhandled, world)
                 else
@@ -120,10 +120,10 @@ module BlazeDispatchersModule =
     type BlazeEnemyDispatcher () =
         inherit CharacterDispatcher ()
 
-        let moveEnemyHandler _ _ address _ world =
+        let moveEnemyHandler message world =
             if not world.Interactive then (true, Unhandled, world)
             else
-                let enemy = get world <| World.worldEntity address
+                let enemy = get world <| World.worldEntity message.Subscriber
                 let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
@@ -154,14 +154,14 @@ module BlazeDispatchersModule =
             let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f, world.Camera.EyeCenter.Y)
             { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
 
-        let adjustCameraHandler _ _ groupAddress _ world =
-            (true, Unhandled, adjustCamera groupAddress world)
+        let adjustCameraHandler message world =
+            (true, Unhandled, adjustCamera message.Subscriber world)
 
         override dispatcher.Register (group, address, entities, world) =
             let world = base.Register (group, address, entities, world)
             let world = World.subscribe NuConstants.TickEvent address (CustomSub adjustCameraHandler) world
             adjustCamera address world
-            
+
         override dispatcher.Unregister (group, address, world) =
             let world = base.Unregister (group, address, world)
             World.unsubscribe NuConstants.TickEvent address world

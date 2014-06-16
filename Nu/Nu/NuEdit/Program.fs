@@ -184,7 +184,7 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let beginEntityDrag (form : NuEditForm) worldChangers refWorld _ _ _ message world =
+    let beginEntityDrag (form : NuEditForm) worldChangers refWorld message world =
         let pastWorld = world
         match message.Data with
         | MouseButtonData _ ->
@@ -208,7 +208,7 @@ module Program =
                     (true, Handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
-    let endEntityDrag (form : NuEditForm) _ _ _ message world =
+    let endEntityDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
             if form.interactButton.Checked then (true, Unhandled, world)
@@ -241,7 +241,7 @@ module Program =
             world
         | DragEntityRotation _ -> world
 
-    let beginCameraDrag (form : NuEditForm) _ _ _ message world =
+    let beginCameraDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
             if form.interactButton.Checked then (true, Unhandled, world)
@@ -255,7 +255,7 @@ module Program =
                 (true, Handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
-    let endCameraDrag (form : NuEditForm) _ _ _ message world =
+    let endCameraDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
             if form.interactButton.Checked then (true, Unhandled, world)
