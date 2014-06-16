@@ -232,9 +232,9 @@ module DispatchersModule =
                         let button = button.SetIsDown true
                         let world = set button world <| World.worldEntity subscriber
                         let (keepRunning, world) = World.publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world
-                        (Message.handle message, keepRunning, world)
-                    else (message, true, world)
-                else (message, true, world)
+                        (keepRunning, Handled, world)
+                    else (true, Unhandled, world)
+                else (true, Unhandled, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
 
         let handleButtonEventUpMouseLeft event _ subscriber message world =
@@ -251,9 +251,9 @@ module DispatchersModule =
                         let (keepRunning, world) = World.publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
-                        (Message.handle message, keepRunning, world)
-                    else (message, keepRunning, world)
-                else (message, true, world)
+                        (keepRunning, Handled, world)
+                    else (keepRunning, Unhandled, world)
+                else (true, Unhandled, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
 
         override dispatcher.Init (button, dispatcherContainer) =
@@ -380,9 +380,9 @@ module DispatchersModule =
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsPressed true
                         let world = set toggle world <| World.worldEntity subscriber
-                        (Message.handle message, true, world)
-                    else (message, true, world)
-                else (message, true, world)
+                        (true, Handled, world)
+                    else (true, Unhandled, world)
+                else (true, Unhandled, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
         let handleToggleEventUpMouseLeft event _ subscriber message world =
@@ -399,11 +399,11 @@ module DispatchersModule =
                         let (keepRunning, world) = World.publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
-                        (Message.handle message, keepRunning, world)
+                        (keepRunning, Handled, world)
                     else
                         let world = set toggle world <| World.worldEntity subscriber
-                        (message, true, world)
-                else (message, true, world)
+                        (true, Unhandled, world) // TODO: make sure message should actually be Unhandled!
+                else (true, Unhandled, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
         override dispatcher.Init (toggle, dispatcherContainer) =
@@ -460,9 +460,9 @@ module DispatchersModule =
                         let feeler = feeler.SetIsTouched true
                         let world = set feeler world <| World.worldEntity subscriber
                         let (keepRunning, world) = World.publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world
-                        (Message.handle message, keepRunning, world)
-                    else (message, true, world)
-                else (message, true, world)
+                        (keepRunning, Handled, world)
+                    else (true, Unhandled, world)
+                else (true, Unhandled, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
     
         let handleFeelerEventUpMouseLeft event _ subscriber message world =
@@ -473,8 +473,8 @@ module DispatchersModule =
                     let feeler = feeler.SetIsTouched false
                     let world = set feeler world <| World.worldEntity subscriber
                     let (keepRunning, world) = World.publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world
-                    (Message.handle message, keepRunning, world)
-                else (message, true, world)
+                    (keepRunning, Handled, world)
+                else (true, Unhandled, world)
             | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
         
         override dispatcher.Init (feeler, dispatcherContainer) =
