@@ -424,20 +424,20 @@ module WorldPrims =
         | None -> (true, world)
         | Some subList ->
             let subListSorted = subscriptionSort subList world
-            let (_, keepRunning, world) =
+            let (keepRunning, _, world) =
                 List.foldWhile
-                    (fun (message, keepRunning, world) (subscriber, subscription) ->
-                        if message.Handled || not keepRunning then None
-                        elif not <| isAddressSelected subscriber world then Some (message, keepRunning, world)
+                    (fun (keepRunning, messageHandled, world) (subscriber, subscription) ->
+                        if messageHandled = Handled || not keepRunning then None
+                        elif not <| isAddressSelected subscriber world then Some (keepRunning, messageHandled, world)
                         else
                             let result =
                                 match subscription with
-                                | ExitSub -> handleEventAsExit message world
-                                | SwallowSub -> handleEventAsSwallow message world
-                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination message world
+                                | ExitSub -> handleEventAsExit world
+                                | SwallowSub -> handleEventAsSwallow world
+                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
                                 | CustomSub fn -> fn event publisher subscriber message world
                             Some result)
-                    (message, true, world)
+                    (true, Unhandled, world)
                     subListSorted
             (keepRunning, world)
 
@@ -468,11 +468,11 @@ module WorldPrims =
         let world = procedure world
         unsubscribe event subscriber world
     
-    and handleEventAsSwallow message (world : World) =
-        (Message.handle message, true, world)
+    and handleEventAsSwallow (world : World) =
+        (true, Handled, world)
 
-    and handleEventAsExit message (world : World) =
-        (Message.handle message, false, world)
+    and handleEventAsExit (world : World) =
+        (false, Handled, world)
 
     and private getScreenState address world =
         let screen = get world <| worldScreen address
@@ -539,32 +539,32 @@ module WorldPrims =
         if keepRunning then update world
             else (keepRunning, world)
 
-    and private handleSplashScreenIdleTick idlingTime ticks event _ subscriber message world =
+    and private handleSplashScreenIdleTick idlingTime ticks event _ subscriber _ world =
         let world = unsubscribe event subscriber world
         if ticks < idlingTime then
             let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incI ticks
             let world = subscribe event subscriber subscription world
-            (message, true, world)
+            (true, Unhandled, world)
         else
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None ->
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                (message, false, world)
+                (false, Unhandled, world)
             | Some selectedScreenAddress ->
                 let world = setScreenState selectedScreenAddress OutgoingState world
-                (message, true, world)
+                (true, Unhandled, world)
 
-    and internal handleSplashScreenIdle idlingTime _ _ subscriber message world =
+    and internal handleSplashScreenIdle idlingTime _ _ subscriber _ world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
         let world = subscribe TickEvent subscriber subscription world
-        (Message.handle message, true, world)
+        (true, Handled, world)
 
-    and private handleFinishedScreenOutgoing destination event _ subscriber message world =
+    and private handleFinishedScreenOutgoing destination event _ subscriber _ world =
         let world = unsubscribe event subscriber world
         let world = transitionScreen destination world
-        (Message.handle message, true, world)
+        (true, Handled, world)
 
-    and handleEventAsScreenTransition destination message world =
+    and handleEventAsScreenTransition destination world =
         let world = transitionScreen destination world
-        (Message.handle message, true, world)
+        (true, Handled, world)
