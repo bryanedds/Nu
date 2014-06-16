@@ -54,17 +54,17 @@ module Environment =
                 []
 
         // add equatable protocol declaration
-        let env' = declareEquatable env
+        let env = declareEquatable env
 
         // add equatable protocol instantiations for primitives types
-        let env'' =
+        let env =
             List.fold
                 (fun env initialType ->
-                    let (typeName : string) = a__ initialType
+                    let typeName = a__ initialType : string
                     let rawTypeName = typeName.Substring TypePrefixStr.Length
                     instantiateEquatable env rawTypeName)
-                env'
+                env
                 InitialTypes
 
         // present the full initial environment
-        env''
+        env

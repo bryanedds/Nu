@@ -35,7 +35,7 @@ module Evaluator =
 #else
         if isUnit contract then (true, None)
         else
-            let (result : EvalResult) = applyLambda env args argCount largs largCount contract tautology UnitValue UnitValue contract
+            let result = applyLambda env args argCount largs largCount contract tautology UnitValue UnitValue contract
             match result.Value with
             | Violation _ as v -> (false, Some v)
             | Boolean boolean -> (boolean.BRValue, None)
@@ -54,14 +54,14 @@ module Evaluator =
         while branchEnumerator.MoveNext () && intervening do
             let branch = branchEnumerator.Current
             if isInCategory violation.VioCategory branch.IBCategory then
-                let env' =
+                let env =
                     match branch.IBEnv with
                     | None -> failwith "Unexpected match failure in 'Aml.Evaluator.interveneOnViolation'."
                     | Some env -> env
-                let env'' = appendProceduralVariable env' (AppendToNewFrame 2) ProblemStr None vioExpr
-                let env'3 = appendProceduralVariable env'' (AppendToHeadFrame 1) DataStr None violation.VioData
+                let env = appendProceduralVariable env (AppendToNewFrame 2) ProblemStr None vioExpr
+                let env = appendProceduralVariable env (AppendToHeadFrame 1) DataStr None violation.VioData
                 if branch.IBHide then intervening <- false
-                currentResultValue <- evalExprDropEnv env'3 branch.IBBody
+                currentResultValue <- evalExprDropEnv env branch.IBBody
         makeEvalResult env currentResultValue
 
     /// Make a violation from a category and a message during evaluation, intervening if necessary.
@@ -94,7 +94,7 @@ module Evaluator =
                 [makeSignature EqualityStr [makeArg AStr Concrete UnitValue; makeArg AStr Concrete UnitValue] (makeDoc "Query for semantic equality.")
                  makeSignature InequalityStr [makeArg AStr Concrete UnitValue; makeArg AStr Concrete UnitValue] (makeDoc "Query for semantic inequality.")]
                 None
-        let result : EvalResult = evalProtocol env equatableProtocol
+        let result = evalProtocol env equatableProtocol
         if isViolation result.Value then failwith "Could not declare equatable protocol."
         result.Env
 
@@ -114,7 +114,7 @@ module Evaluator =
         let inequalFunction = Function (makeFunctionRecord InequalityStr [xArg; yArg] 2 inequalBody None None UnitValue UnitValue true None)
         let instance = makeInstanceRecord EquatableProtocolStr [XStr; YStr] [xConstraint; yConstraint] [equalFunction; inequalFunction] None
         let instanceExpr = Instance instance
-        let result : EvalResult = evalInstance env instance instanceExpr
+        let result = evalInstance env instance instanceExpr
         if isViolation result.Value then failwith "Could not instantiate type over equatable protocol."
         result.Env
 
@@ -799,8 +799,9 @@ module Evaluator =
             let (preconditionPassed, optPreViolation) = checkContract env args argCount largs largCount pre
             if preconditionPassed then
                 let localVars = List.map2 (fun arg larg -> (larg.ArgName, ValueEntry (arg, None))) args largs
-                let env'' = appendProceduralEntries env (AppendToNewFrame argCount) localVars
-                let resultValue = evalExprDropEnv env'' body
+                let resultValue =
+                    let env = appendProceduralEntries env (AppendToNewFrame argCount) localVars
+                    evalExprDropEnv env body
                 let result = makeEvalResult env resultValue
                 if isUnit post then result // OPTIMIZATION: explicitly checks for unit
                 else
@@ -874,8 +875,8 @@ module Evaluator =
 
     /// Apply a composite selector.
     and applyCompositeSelector env key selectorType members =
-        let key' = if selectorType = FunctionalSelector then evalExprDropEnv env key else key
-        match key' with
+        let key = if selectorType = FunctionalSelector then evalExprDropEnv env key else key
+        match key with
         | Violation _ as v -> forwardEvalViolation env v
         | Keyword keyword ->
             let name = keyword.KRValue
@@ -978,9 +979,9 @@ module Evaluator =
         if violation.VioEvaluated then makeEvalResult env vioExpr
         else
             let dataValue = evalExprDropEnv env violation.VioData
-            let violation' = { violation with VioData = dataValue }
-            let violation'' = { violation' with VioEvaluated = true }
-            interveneOnViolation env violation'' (Violation violation'')
+            let violation = { violation with VioData = dataValue }
+            let violation = { violation with VioEvaluated = true }
+            interveneOnViolation env violation (Violation violation)
 
     /// Evaluate a prefixed expressions.
     and evalPrefixed env (_ : PrefixedRecord) pfxExpr =
@@ -1033,12 +1034,12 @@ module Evaluator =
     and evalLambda env lambda lambdaExpr =
         if lambda.LamEvaluated then makeEvalResult env lambdaExpr
         else
-            let lambda' =
+            let lambda =
                 match lambda.LamEnv with
                 | None -> { lambda with LamEnv = Some env }
                 | Some _ -> lambda
-            let lambda'' = { lambda' with LamEvaluated = true }
-            makeEvalResult env (Lambda lambda'')
+            let lambda = { lambda with LamEvaluated = true }
+            makeEvalResult env (Lambda lambda)
 
     /// Evaluate an attempt expression.
     and evalAttempt env attemptRecord =
@@ -1052,10 +1053,31 @@ module Evaluator =
                 | None -> forwardEvalViolation env v
                 | Some branch ->
                     let dataValue = evalExprDropEnv env violation.VioData
-                    let env' = appendProceduralVariable env (AppendToNewFrame 1) DataStr None dataValue
-                    let branchResult = evalExprDropEnv env' branch.ABBody
+                    let branchResult =
+                        let env = appendProceduralVariable env (AppendToNewFrame 1) DataStr None dataValue
+                        evalExprDropEnv env branch.ABBody
                     makeEvalResult env branchResult
             | _ -> makeEvalResult env bodyValue
+
+    /// Let evaluation helper function.
+    and evalLet4 env letRecord headBinding tailBindings =
+        let env =
+            match headBinding with
+            | LetVariable (name, body) ->
+                let bodyValue = evalExprDropEnv env body
+                appendProceduralVariable env (AppendToNewFrame letRecord.LetBindingCount) name None bodyValue
+            | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
+                appendProceduralFunction env (AppendToNewFrame letRecord.LetBindingCount) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions
+        let mutable start = 1
+        for binding in tailBindings do
+            match binding with
+            | LetVariable (name, body) ->
+                let bodyValue = evalExprDropEnv env body
+                ignore (appendProceduralVariable env (AppendToHeadFrame start) name None bodyValue)
+            | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
+                ignore (appendProceduralFunction env (AppendToHeadFrame start) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions)
+            start <- start + 1
+        evalExpr env letRecord.LetBody
 
     /// Evaluate a let expression.
     /// NOTE: the semantics for let will vary from the interpreter to a compiled-version in that premature access of
@@ -1065,23 +1087,7 @@ module Evaluator =
         match letRecord.LetBindings with
         | [] -> makeEvalViolation env ":v/eval/malformedLetOperation" "Let operation must have at least 1 binding."
         | headBinding :: tailBindings ->
-            let env' =
-                match headBinding with
-                | LetVariable (name, body) ->
-                    let bodyValue = evalExprDropEnv env body
-                    appendProceduralVariable env (AppendToNewFrame letRecord.LetBindingCount) name None bodyValue
-                | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
-                    appendProceduralFunction env (AppendToNewFrame letRecord.LetBindingCount) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions
-            let mutable start = 1
-            for binding in tailBindings do
-                match binding with
-                | LetVariable (name, body) ->
-                    let bodyValue = evalExprDropEnv env' body
-                    ignore (appendProceduralVariable env' (AppendToHeadFrame start) name None bodyValue)
-                | LetFunction (name, args, argCount, body, optConstraints, pre, post, emptyUnification) ->
-                    ignore (appendProceduralFunction env' (AppendToHeadFrame start) name args argCount body optConstraints None pre post emptyUnification letRecord.LetOptPositions)
-                start <- start + 1
-            let result = evalExpr env' letRecord.LetBody
+            let result = evalLet4 env letRecord headBinding tailBindings
             makeEvalResult env result.Value
 
     /// Evaluate an extend expression.
@@ -1137,8 +1143,9 @@ module Evaluator =
         if branches.IsEmpty then makeEvalViolation env ":v/eval/malformedInterveneOperation" "Intervene operation must have at least 1 branch."
         else
             let branchesWithEnv = List.map (fun branch -> { branch with IBEnv = Some env }) branches
-            let env' = pushInterventionBranchList env branchesWithEnv
-            let resultValue = evalExprDropEnv env' intervene.ItvBody
+            let resultValue =
+                let env = pushInterventionBranchList env branchesWithEnv
+                evalExprDropEnv env intervene.ItvBody
             makeEvalResult env resultValue
     
     /// Evaluate a ref operation.
@@ -1219,17 +1226,17 @@ module Evaluator =
     /// Evaluate a variable expression.
     and evalVariable env variable =
         let value = evalExprDropEnv env variable.VarBody
-        let optEnv' = tryAppendDeclarationVariable env variable.VarName variable.VarDoc value
-        match optEnv' with
+        let optEnv = tryAppendDeclarationVariable env variable.VarName variable.VarDoc value
+        match optEnv with
         | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The variable '" + variable.VarName + "' clashes names with an existing declaration.")
-        | Some env' -> makeEvalUnit env'
+        | Some env -> makeEvalUnit env
     
     /// Evaluate a function expression.
     and evalFunction env fn =
-        let optEnv' = tryAppendDeclarationFunction env fn.FnName fn.FnArgs fn.FnArgCount fn.FnBody fn.FnOptConstraints fn.FnDoc fn.FnPre fn.FnPost fn.FnEmptyUnification fn.FnOptPositions
-        match optEnv' with
+        let optEnv = tryAppendDeclarationFunction env fn.FnName fn.FnArgs fn.FnArgCount fn.FnBody fn.FnOptConstraints fn.FnDoc fn.FnPre fn.FnPost fn.FnEmptyUnification fn.FnOptPositions
+        match optEnv with
         | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The function '" + fn.FnName + "' clashes names with an existing declaration.")
-        | Some env' -> makeEvalUnit env'
+        | Some env -> makeEvalUnit env
     
     /// Evaluate a structure expression.
     and evalStructure env structure =
@@ -1237,10 +1244,10 @@ module Evaluator =
         then makeEvalViolation env ":v/eval/structShadows" ("The struct '" + structure.StructName + "' shadows an existing entry.")
         else
             let symbols = List.map (fun mem -> Symbol (makeSymbolRecord mem (ref CEUncached) structure.StructOptPositions)) structure.StructMemberNames
-            let optEnv' = tryAppendStructure env structure.StructName structure.StructMemberNames structure.StructOptConstraints structure.StructDoc structure.StructReq structure.StructMemberNames symbols structure.StructOptPositions
-            match optEnv' with
+            let optEnv = tryAppendStructure env structure.StructName structure.StructMemberNames structure.StructOptConstraints structure.StructDoc structure.StructReq structure.StructMemberNames symbols structure.StructOptPositions
+            match optEnv with
             | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The struct '" + structure.StructName + "' or one of its dependents clashes names with an existing declaration.")
-            | Some env' -> let env'' = instantiateEquatable env' structure.StructName in makeEvalUnit env''
+            | Some env -> let env = instantiateEquatable env structure.StructName in makeEvalUnit env
 
     /// Evaluate a protocol.
     and evalProtocol env protocol =
@@ -1267,10 +1274,10 @@ module Evaluator =
                         let optSigsViolation = getSignaturesViolation env arg sigs
                         if optSigsViolation.IsSome then makeEvalResult env optSigsViolation.Value
                         else
-                            let optEnv' = tryAppendProtocol env protocol.ProtoName arg optConstraints protocol.ProtoDoc sigs
-                            match optEnv' with
+                            let optEnv = tryAppendProtocol env protocol.ProtoName arg optConstraints protocol.ProtoDoc sigs
+                            match optEnv with
                             | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The protocol '" + protocol.ProtoName + "' clashes names with an existing declaration.")
-                            | Some env' -> makeEvalUnit env'
+                            | Some env -> makeEvalUnit env
             | Some constraintsViolation -> makeEvalResult env constraintsViolation
 
     /// Evaluate an instance.
@@ -1308,10 +1315,10 @@ module Evaluator =
         match value with
         | Violation _ as v -> forwardEvalViolation env v
         | Boolean b when b.BRValue ->
-            let optEnv' = tryAppendAffirmationFunction env name doc body optPositions
-            match optEnv' with
+            let optEnv = tryAppendAffirmationFunction env name doc body optPositions
+            match optEnv with
             | None -> makeEvalViolation env ":v/eval/duplicateDeclarationEntry" ("The affirmation '" + name + "' clashes names with an existing declaration.")
-            | Some env' -> makeEvalUnit env'
+            | Some env -> makeEvalUnit env
         | Boolean b when not b.BRValue -> makeEvalViolation env ":v/affirmation/affirmationFailure" ("The affirmation '" + name + "' was determined to be false.")
         | _ -> makeEvalViolation env ":v/affirmation/invalidResultType" ("Expression for affirmation '" + name + "' must return a boolean value.")
 
@@ -1321,29 +1328,29 @@ module Evaluator =
         let directoryPath = getDirectoryRelativeToFile env usingFile.UFPath
         let absolutePath = Path.Combine (directoryPath, fileName)
         let usingFiles = if usingFile.UFReload then Set.empty else env.EnvUsingFiles
-        let env' = { env with EnvPath = directoryPath; EnvUsingFiles = usingFiles }
-        if env'.EnvUsingFiles.Contains absolutePath then makeEvalUnit env
+        let envUsing = { env with EnvPath = directoryPath; EnvUsingFiles = usingFiles }
+        if envUsing.EnvUsingFiles.Contains absolutePath then makeEvalUnit env
         else
             try let exprs = runParserOnFile readExprsTillEnd () absolutePath System.Text.Encoding.Default
-                let results = sequentiallyEvalReadResults env' exprs false
+                let results = sequentiallyEvalReadResults envUsing exprs false
                 if List.isEmpty results then makeEvalUnit env
                 else
                     let lastResult = List.last results
-                    let values = List.map (fun (result : EvalResult) -> result.Value) results
+                    let values = List.map (fun result -> result.Value) results
                     let anyViolationsInValues = anyViolations values
-                    let usingFiles' =
+                    let usingFiles =
                         if usingFile.UFReload && not anyViolationsInValues
-                        then Set.union env'.EnvUsingFiles env.EnvUsingFiles
+                        then Set.union envUsing.EnvUsingFiles env.EnvUsingFiles
                         else lastResult.Env.EnvUsingFiles
                     // NOTE: even if there are violations during file evaluation, and though we take no definitions from
                     // such a file, the file is still consider 'used'
-                    let usingFiles'' = Set.add absolutePath usingFiles'
-                    let env'' = if anyViolationsInValues then env else lastResult.Env
-                    let env'3 = { env'' with EnvPath = env.EnvPath; EnvUsingFiles = usingFiles'' }
+                    let usingFiles = Set.add absolutePath usingFiles
+                    let envEvaled = if anyViolationsInValues then env else lastResult.Env
+                    let envEvaled = { envEvaled with EnvPath = env.EnvPath; EnvUsingFiles = usingFiles }
                     if anyViolationsInValues then
                         let violation = firstViolation values
-                        forwardEvalViolation env'3 violation
-                    else makeEvalUnit env'3
+                        forwardEvalViolation envEvaled violation
+                    else makeEvalUnit envEvaled
             with exn -> makeEvalExceptionViolation env exn
 
     /// Evaluate an Aml language.
@@ -1355,11 +1362,11 @@ module Evaluator =
                 if instance = null then makeEvalViolation env ":v/languageModule/creationFailure" ("Could not make language module '" + usingLanguage.ULType + "'.")
                 else
                     let languageModule = instance :?> ILanguageModule
-                    let env' = { env with EnvOptLanguageModule = Some languageModule }
-                    let optEnv'' = languageModule.TryInitialize env'
-                    match optEnv'' with
+                    let envLm = { env with EnvOptLanguageModule = Some languageModule }
+                    let optEnvLm = languageModule.TryInitialize envLm
+                    match optEnvLm with
                     | None -> makeEvalViolation env ":v/languageModule/creationFailure" ("Could not make language module '" + usingLanguage.ULType + "' due to duplicate declaration names.")
-                    | Some env'' -> makeEvalUnit env''
+                    | Some envLm -> makeEvalUnit envLm
             with exn -> makeEvalExceptionViolation env exn
         // TODO: consider making a violation if a different LM than a current one is loaded
         | Some _ -> makeEvalUnit env
@@ -1451,10 +1458,10 @@ module Evaluator =
 
     /// Evaluate multiple expressions sequentially.
     and sequentiallyEvalExprs env exprs tillViolation =
-        let nextEnv currentEnv (evalResults : EvalResult list) = if evalResults.IsEmpty then currentEnv else evalResults.Head.Env
+        let nextEnv currentEnv evalResults = if List.isEmpty evalResults then currentEnv else (List.head evalResults).Env
         let evalResults = List.fold (fun evalResults expr -> evalExprWithExplicitTracing (nextEnv env evalResults) expr :: evalResults) [] exprs
         let evalResultsRev = List.rev evalResults // TODO: see if we can avoid this reverse by using a Queue or List.foldBack
-        if tillViolation then List.takeTillInclusive (fun (evalResult : EvalResult) -> isViolation evalResult.Value) evalResultsRev
+        if tillViolation then List.takeTillInclusive (fun evalResult -> isViolation evalResult.Value) evalResultsRev
         else evalResultsRev
 
     /// Evaluate Aml expressions that have been read in.
