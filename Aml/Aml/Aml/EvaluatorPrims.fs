@@ -19,10 +19,10 @@ open Aml.Conversions
 module EvaluatorPrims =
 
     /// Make an evaluation result.
-    let makeEvalResult env value = { Env = env; Value = value }
+    let makeEvalResult value env = { Value = value; Env = env }
 
     /// Make an evaluation result with unit as the value.
-    let makeEvalUnit env = makeEvalResult env UnitValue
+    let makeEvalUnit env = makeEvalResult UnitValue env
 
     /// Make an evaluation result whose environment has had its repl line configured.
     let configureEvalResultFirstReplLine (result : EvalResult) line =
@@ -31,18 +31,18 @@ module EvaluatorPrims =
 #else
         let resultEnv = result.Env
         let configuredEnv = { resultEnv with EnvDebugInfo = { resultEnv.EnvDebugInfo with DIOptFirstReplLine = line }}
-        makeEvalResult configuredEnv result.Value
+        makeEvalResult result.Value configuredEnv
 #endif
 
     /// Make an evaluation result whose environment has had its expr trace popped.
     let popEvalResultExpr (result : EvalResult) =
         let poppedEnv = popExpr result.Env
-        makeEvalResult poppedEnv result.Value
+        makeEvalResult result.Value poppedEnv
 
     /// Make an evaluation result whose environment has had its stack trace popped.
     let popEvalResultStackFrame (result : EvalResult) =
         let poppedEnv = popStackFrame result.Env
-        makeEvalResult poppedEnv result.Value
+        makeEvalResult result.Value poppedEnv
 
     /// Get a composite's type.
     let getTypeOfComposite composite =
@@ -50,18 +50,18 @@ module EvaluatorPrims =
         if isUnit aType then CompositeType else aType
 
     /// Try to find a declaration entry.
-    let tryFindDeclarationEntry env name =
+    let tryFindDeclarationEntry name env =
         let entry = ref Unchecked.defaultof<EnvEntry>
         if env.EnvDeclarationFrame.TryGetValue (name, entry) then Some !entry
         else None
 
     /// Try to find a declaration entry by the given search method.
-    let tryFindDeclarationEntryBy env by name =
-        let typeEntry = tryFindDeclarationEntry env name
+    let tryFindDeclarationEntryBy by name env =
+        let typeEntry = tryFindDeclarationEntry name env
         by typeEntry
 
     /// Try to find a procedural entry plus directions on how to access it again.
-    let tryFindProceduralEntry env name =
+    let tryFindProceduralEntry name env =
         let offset = ref -1
         let optIndex = ref None
         let optEntry =
@@ -79,7 +79,7 @@ module EvaluatorPrims =
         | Some None -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.tryFindProceduralEntry'."
 
     /// Try to find an entry.
-    let tryFindEntry env name =
+    let tryFindEntry name env =
         let optEntry =
             List.tryFindPlus
                 (fun (frame : ProceduralFrame) ->
@@ -87,37 +87,37 @@ module EvaluatorPrims =
                     match optEntry with None -> (false, None) | Some (_, entry) -> (true, Some entry))
                 env.EnvProceduralFrames
         match optEntry with
-        | None -> tryFindDeclarationEntry env name
+        | None -> tryFindDeclarationEntry name env
         | Some (Some entry) -> Some entry
         | Some None -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.tryFindEntry'."
 
     /// Try to find a dynamic entry. 
-    let tryFindDynamicEntry env name =
+    let tryFindDynamicEntry name env =
         let findBy = function | Some (DynamicEntry _ as value) -> Some value | _ -> None
-        tryFindDeclarationEntryBy env findBy name
+        tryFindDeclarationEntryBy findBy name env
 
     /// Try to find a protocol entry. 
-    let tryFindProtocolEntry env name =
+    let tryFindProtocolEntry name env =
         let findBy = function | Some (ProtocolEntry _ as value) -> Some value | _ -> None
-        tryFindDeclarationEntryBy env findBy name
+        tryFindDeclarationEntryBy findBy name env
 
     /// Try to find a type entry.
-    let tryFindTypeEntry env typeName =
+    let tryFindTypeEntry typeName env =
         let findBy = function | Some (TypeEntry _ as value) -> Some value | _ -> None
-        tryFindDeclarationEntryBy env findBy typeName
+        tryFindDeclarationEntryBy findBy typeName env
 
     /// Try to find a type.
-    let tryFindType env typeName =
+    let tryFindType typeName env =
         let findBy = function | Some (TypeEntry (typeName, value, doc)) -> Some (typeName, value, doc) | _ -> None
-        tryFindDeclarationEntryBy env findBy typeName
+        tryFindDeclarationEntryBy findBy typeName env
 
     /// Try to find a protocol.
-    let tryFindProtocol env protocolName =
+    let tryFindProtocol protocolName env =
         let findBy =
             function
             | Some (ProtocolEntry (arg, optConstraints, doc, signatures)) -> Some (arg, optConstraints, doc, signatures)
             | _ -> None
-        tryFindDeclarationEntryBy env findBy protocolName
+        tryFindDeclarationEntryBy findBy protocolName env
 
     /// Try to find the type of a value.
     let tryFindTypeByValue arg =
@@ -163,18 +163,18 @@ module EvaluatorPrims =
         | SpecialSeries _ -> None
     
     /// Query that a declaration entry exists.
-    let hasDeclarationEntry env name =
-        (tryFindDeclarationEntry env name).IsSome
+    let hasDeclarationEntry name env =
+        (tryFindDeclarationEntry name env).IsSome
 
     /// Query that a symbol refers to a built-in operator.
-    let isBuiltin env expr =
+    let isBuiltin expr env =
         match expr with
         | Symbol symbol ->
             if InitialBuiltinNames.Contains symbol.SymName then true
             else
                 match env.EnvOptLanguageModule with
                 | None -> false
-                | Some lm -> lm.IsSpecialBuiltin env symbol.SymName
+                | Some lm -> lm.IsSpecialBuiltin symbol.SymName env
         | _ -> false
 
     /// Expand an entry to a lambda record represenation.
@@ -184,27 +184,27 @@ module EvaluatorPrims =
         | _ -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.expandLambda'."
     
     /// Get a member from some composite members.
-    let getMember env memberName (members : MemberDict) =
+    let getMember memberName (members : MemberDict) env =
         let mem = ref Unchecked.defaultof<Member>
         if members.TryGetValue (memberName, mem) then (!mem).MemExpr
-        else makeViolationWithPositions env ":v/eval/missingMember" ("Member '" + memberName + "' does not exist.")
+        else makeViolationWithPositions ":v/eval/missingMember" ("Member '" + memberName + "' does not exist.") env
 
     /// Get a value's type (not from the environment).
-    let getType env value =
+    let getType value env =
         match value with
         | SpecialObject _ | Prefixed _ ->
             match env.EnvOptLanguageModule with
-            | None -> makeViolationWithPositions env ":v/languageModule/missingLanguageModule" "Cannot get type of special value without a language module."
-            | Some lm -> lm.GetSpecialType env value
+            | None -> makeViolationWithPositions ":v/languageModule/missingLanguageModule" "Cannot get type of special value without a language module." env
+            | Some lm -> lm.GetSpecialType value env
         | _ ->
             let optType = tryFindTypeByValue value
             match optType with
-            | None -> makeViolationWithPositions env ":v/eval/invalidTypeQuery" "Invalid type query."
+            | None -> makeViolationWithPositions ":v/eval/invalidTypeQuery" "Invalid type query." env
             | Some aType -> aType
 
     /// Query that a value has the given type.
-    let hasType env typeName value =
-        let vtype = getType env value
+    let hasType typeName value env =
+        let vtype = getType value env
         match vtype with
         | Composite composite -> composite.CompName = typeName
         | _ -> false
@@ -212,8 +212,8 @@ module EvaluatorPrims =
     /// Augment an environment with a protocol.
     /// OPTIMIZATION: implemented with Seq.
     /// TODO: clean up this function with extraction.
-    let tryAppendProtocol env name arg optConstraints doc sigs =
-        let sigsMatchingEntry = Seq.filter (fun signature -> (tryFindDeclarationEntry env signature.SigName).IsSome) sigs
+    let tryAppendProtocol name arg optConstraints doc sigs env =
+        let sigsMatchingEntry = Seq.filter (fun signature -> (tryFindDeclarationEntry signature.SigName env).IsSome) sigs
         let optFirstSigMatchingEntry = Seq.tryHead sigsMatchingEntry
         match optFirstSigMatchingEntry with
         | Some firstSigMatchingEntry when not env.EnvAllowRedeclaration ->
@@ -221,7 +221,7 @@ module EvaluatorPrims =
         | _ ->
             let protocolName = ProtocolPrefixStr + name
             let protocol = ProtocolEntry (arg, optConstraints, doc, sigs)
-            let optEnv = tryAppendDeclarationEntry env protocolName protocol
+            let optEnv = tryAppendDeclarationEntry protocolName protocol env
             match optEnv with
             | None -> None
             | Some env ->
@@ -231,16 +231,16 @@ module EvaluatorPrims =
                             let contingentArg = List.findIndex (fun sigArg -> sigArg.ArgName = arg) signature.SigArgs
                             (signature.SigName, DynamicEntry (contingentArg, signature.SigDoc)))
                         sigs
-                let optEnv = tryAppendDeclarationEntries env entries
+                let optEnv = tryAppendDeclarationEntries entries env
                 match optEnv with
                 | None -> None
                 | Some env -> Some env
 
     /// Augment an environment with an instance.
-    let tryAppendInstance env protocolName args constraints namedSigImpls =
+    let tryAppendInstance protocolName args constraints namedSigImpls env =
         let firstArg = List.head args
         let firstConstraint = List.find (fun (constr : Constraint) -> constr.ConstrArgs.Head = firstArg) constraints
-        let optFirstConstraintTypeEntry = tryFindTypeEntry env firstConstraint.ConstrTypeName
+        let optFirstConstraintTypeEntry = tryFindTypeEntry firstConstraint.ConstrTypeName env
         match optFirstConstraintTypeEntry with
         | Some (TypeEntry (_, Composite composite, _)) ->
             for (name, sigImpl) in namedSigImpls do ignore (composite.CompSigImpls.ForceAdd (name, sigImpl))
@@ -249,53 +249,53 @@ module EvaluatorPrims =
         | _ -> false
 
     /// Query that a value has an instance of the given protocol.
-    let hasProtocol env protocolName value =
-        let vtype = getType env value
+    let hasProtocol protocolName value env =
+        let vtype = getType value env
         match vtype with
         | Composite ctype -> ctype.CompProtocols.Contains protocolName
         | _ -> false
 
     /// Make a constraint predicate.
-    let makeConstraintPredicate env args1 (constraints1 : Dictionary<string, Constraint>) =
+    let makeConstraintPredicate args1 (constraints1 : Dictionary<string, Constraint>) env =
         fun argValues1 ->
             List.forall2Plus
                 (fun arg argValue ->
                     let constraintRef = ref Unchecked.defaultof<Constraint>
                     if constraints1.TryGetValue (arg.ArgName, constraintRef) then
                         let constr = !constraintRef
-                        if hasType env constr.ConstrTypeName argValue then true
-                        else hasProtocol env constr.ConstrProtocolName argValue
+                        if hasType constr.ConstrTypeName argValue env then true
+                        else hasProtocol constr.ConstrProtocolName argValue env
                     else true)
                 args1
                 argValues1
 
     /// Make a constraint predicate from a constraint list.
-    let makeConstraintPredicateFromList env args optConstraints =
+    let makeConstraintPredicateFromList args optConstraints env =
         match optConstraints with
         | None -> tautology
         | Some constraints ->
             let constraintDict = List.toDictionaryBy (fun constr -> (constr.ConstrArgs.Head, constr)) constraints
-            makeConstraintPredicate env args constraintDict
+            makeConstraintPredicate args constraintDict env
 
     /// Augment an environment with a declaration function.
-    let tryAppendDeclarationFunction env name args argCount body optConstraints doc pre post emptyUnification optPositions =
-        let cpre = makeConstraintPredicateFromList env args optConstraints
+    let tryAppendDeclarationFunction name args argCount body optConstraints doc pre post emptyUnification optPositions env =
+        let cpre = makeConstraintPredicateFromList args optConstraints env
         let lambda = Lambda (makeLambdaRecord false name args argCount body cpre pre post emptyUnification optPositions (Some env))
-        tryAppendDeclarationEntry env name (ValueEntry (lambda, doc))
+        tryAppendDeclarationEntry name (ValueEntry (lambda, doc)) env
 
     /// Augment an environment with a procedural function.
-    let appendProceduralFunction env appendType name args argCount body optConstraints doc pre post emptyUnification optPositions =
-        let cpre = makeConstraintPredicateFromList env args optConstraints
+    let appendProceduralFunction appendType name args argCount body optConstraints doc pre post emptyUnification optPositions env =
+        let cpre = makeConstraintPredicateFromList args optConstraints env
         let lambda = Lambda (makeLambdaRecord false name args argCount body cpre pre post emptyUnification optPositions (Some env))
-        appendProceduralEntry env appendType name (ValueEntry (lambda, doc))
+        appendProceduralEntry appendType name (ValueEntry (lambda, doc)) env
 
     /// Augment an environment with a structure.
-    let tryAppendStructure env name memberNames optConstraints doc req argNames symbols optPositions =
+    let tryAppendStructure name memberNames optConstraints doc req argNames symbols optPositions env =
 
         // append type
         let typeName = TypePrefixStr + name
         let typeValue = makeType typeName optPositions
-        let optEnv = tryAppendType env typeName typeValue doc
+        let optEnv = tryAppendType typeName typeValue doc env
         match optEnv with
         | None -> None
         | Some env ->
@@ -305,7 +305,7 @@ module EvaluatorPrims =
             let typeIndicatorMembers = List.toDictionaryBy (fun memName -> memName, (makeMember memName (makeViolationWithoutBreakpoint ":v/eval/typeIndicatorMemberAccess" "Cannot access the members of a type indicator."))) memberNames
             let typeIndicatorDoc = makeDoc ("A type indicator for a(n) '" + name + "' type.")
             let typeIndicatorValue = Composite (makeCompositeRecord false name typeIndicatorMembers typeValue null null optPositions)
-            let optEnv = tryAppendDeclarationVariable env typeIndicatorName typeIndicatorDoc typeIndicatorValue
+            let optEnv = tryAppendDeclarationVariable typeIndicatorName typeIndicatorDoc typeIndicatorValue env
             match optEnv with
             | None -> None
             | Some env ->
@@ -317,7 +317,7 @@ module EvaluatorPrims =
                 let selfSymbol = Symbol (makeSymbolRecord XStr (ref CEUncached) optPositions)
                 let keywordTypeName = Keyword (makeKeywordRecord typeName optPositions)
                 let isStructureBody = Series (makeSeriesRecord [hasTypeSymbol; keywordTypeName; selfSymbol] 3 optPositions)
-                let optEnv = tryAppendDeclarationFunction env isStructureName isStructureArgs 1 isStructureBody None doc UnitValue UnitValue true optPositions
+                let optEnv = tryAppendDeclarationFunction isStructureName isStructureArgs 1 isStructureBody None doc UnitValue UnitValue true optPositions env
                 match optEnv with
                 | None -> None
                 | Some env ->
@@ -327,11 +327,11 @@ module EvaluatorPrims =
                     let memberList = List.zipBy (fun (name, expr) -> makeMember name expr) memberNames symbols
                     let members = List.toDictionaryBy (fun mem -> (mem.MemName, mem)) memberList
                     let body = Composite (makeCompositeRecord false name members typeValue null null optPositions)
-                    tryAppendDeclarationFunction env name concreteArgs concreteArgs.Length body optConstraints doc req UnitValue true optPositions
+                    tryAppendDeclarationFunction name concreteArgs concreteArgs.Length body optConstraints doc req UnitValue true optPositions env
 
     /// Augment an environment with an affirmation function.
-    let tryAppendAffirmationFunction env name doc expr optPositions =
-        tryAppendDeclarationFunction env name [] 0 expr None doc UnitValue UnitValue true optPositions
+    let tryAppendAffirmationFunction name doc expr optPositions env =
+        tryAppendDeclarationFunction name [] 0 expr None doc UnitValue UnitValue true optPositions env
 
     [<AutoOpen>]
     module ContraintValidationModule =
@@ -351,13 +351,13 @@ module EvaluatorPrims =
             let cargsDup = List.concat cargss
             List.distinct cargsDup
 
-        let getConstraintValidity env constr =
+        let getConstraintValidity constr env =
             let typeName = TypePrefixStr + constr.ConstrName
-            let typeTarget = tryFindTypeEntry env typeName
+            let typeTarget = tryFindTypeEntry typeName env
             match typeTarget with
             | None ->
                 let protocolName = ProtocolPrefixStr + constr.ConstrName
-                let protocolTarget = tryFindProtocolEntry env protocolName
+                let protocolTarget = tryFindProtocolEntry protocolName env
                 match protocolTarget with
                 | Some (ProtocolEntry _) -> if List.hasExactly 1 constr.ConstrArgs then ValidConstraint else WrongArgCount
                 | _ -> NonexistentTarget
@@ -366,29 +366,29 @@ module EvaluatorPrims =
                 | [_] -> ValidConstraint
                 | _ -> WrongArgCount
 
-        let getConstraintsValidity env pargs (optConstraints : Constraint list option) =
+        let getConstraintsValidity pargs (optConstraints : Constraint list option) env =
             match optConstraints with
             | None -> ValidConstraints
             | Some constraints ->
                 let cargs = getConstraintArgs constraints
                 if List.isSubset pargs cargs then
-                    let constraintValidities = List.map (getConstraintValidity env) constraints
+                    let constraintValidities = List.map (fun constr -> getConstraintValidity constr env) constraints
                     let optConstraintInvalidity = List.tryFind (fun validity -> validity <> ValidConstraint) constraintValidities
                     match optConstraintInvalidity with
                     | None -> ValidConstraints
                     | Some (_ as invalidity) -> InvalidConstraints invalidity
                 else TooManyConstraints
 
-        let getOptConstraintsViolation env pargs (optConstraints : Constraint list option) =
-            let constraintsValidity = getConstraintsValidity env pargs optConstraints
+        let getOptConstraintsViolation pargs (optConstraints : Constraint list option) env =
+            let constraintsValidity = getConstraintsValidity pargs optConstraints env
             match constraintsValidity with
             | ValidConstraints -> None
-            | TooManyConstraints -> Some (makeViolationWithPositions env ":v/eval/tooManyConstraints" "Too many constraints for target.")
+            | TooManyConstraints -> Some (makeViolationWithPositions ":v/eval/tooManyConstraints" "Too many constraints for target." env)
             | InvalidConstraints constraintInvalidity ->
                 match constraintInvalidity with
                 | ValidConstraint -> failwith "Unexpected match failure in 'Aml.Evaluator.evalProtocol'."
-                | WrongArgCount -> Some (makeViolationWithPositions env ":v/eval/invalidConstraintArguments" "Wrong number of arguments for target's constraints.")
-                | NonexistentTarget -> Some (makeViolationWithPositions env ":v/eval/invalidConstraintTarget" "Constraint target does not exist.")
+                | WrongArgCount -> Some (makeViolationWithPositions ":v/eval/invalidConstraintArguments" "Wrong number of arguments for target's constraints." env)
+                | NonexistentTarget -> Some (makeViolationWithPositions ":v/eval/invalidConstraintTarget" "Constraint target does not exist." env)
 
     [<AutoOpen>]
     module SignatureValidationModule =
@@ -416,15 +416,15 @@ module EvaluatorPrims =
             | None -> ValidSignatures
             | Some (_ as invalidity) -> InvalidSignatures invalidity
 
-        let getSignaturesViolation env parg (sigs : Signature list) =
+        let getSignaturesViolation parg (sigs : Signature list) env =
             let sigsValidity = getSignaturesValidity parg sigs
             match sigsValidity with
             | ValidSignatures -> None
             | InvalidSignatures sigInvalidity ->
                 match sigInvalidity with
                 | ValidSignature -> failwith "Unexpected match failure in 'Aml.Evaluator.evalProtocol'."
-                | NoSignatureArgs -> Some (makeViolationWithPositions env ":v/eval/missingProtocolSignatureArguments" "Protocol signature must have at least one argument.")
-                | InvalidSignatureArgs -> Some (makeViolationWithPositions env ":v/eval/invalidProtocolSignatureArguments" "A signature must use the protocol's argument.")
+                | NoSignatureArgs -> Some (makeViolationWithPositions ":v/eval/missingProtocolSignatureArguments" "Protocol signature must have at least one argument." env)
+                | InvalidSignatureArgs -> Some (makeViolationWithPositions ":v/eval/invalidProtocolSignatureArguments" "A signature must use the protocol's argument." env)
 
         (* Argument Unification *)
 

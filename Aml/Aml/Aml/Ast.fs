@@ -88,10 +88,10 @@ module AstModule =
 
     /// An intervention branch.
     and [<NoEquality; NoComparison>] InterveneBranch = {
-        IBEnv : Env option
         IBCategory : string
         IBBody : Expr
-        IBHide : bool }
+        IBHide : bool
+        IBEnv : Env option }
 
     /// A test branch.
     and [<NoEquality; NoComparison>] TestBranch = {
@@ -418,21 +418,21 @@ module AstModule =
         /// Try to initialize the language module.
         abstract TryInitialize : Env -> Env option
         /// Convert a special value to a special object.
-        abstract SpecialValueToSpecialObject : Env -> Expr -> Expr
+        abstract SpecialValueToSpecialObject : Expr -> Env -> Expr
         /// Query that a symbol name represents a special built-in operator.
-        abstract IsSpecialBuiltin : Env -> string -> bool
+        abstract IsSpecialBuiltin : string -> Env -> bool
         /// Get the type of a special object.
-        abstract GetSpecialType : Env -> Expr -> Expr
+        abstract GetSpecialType : Expr -> Env -> Expr
         /// Apply a special built-in operator.
-        abstract ApplySpecialBuiltin : Env -> string -> Expr list -> int -> EvalResult
+        abstract ApplySpecialBuiltin : string -> Expr list -> int -> Env -> EvalResult
         /// Apply a selector to a special object.
-        abstract ApplySpecialSelector : Env -> Expr -> Expr -> EvalResult
+        abstract ApplySpecialSelector : Expr -> Expr -> Env -> EvalResult
         /// Evaluate a prefixed expression.
-        abstract EvalPrefixed : Env -> Expr -> EvalResult
+        abstract EvalPrefixed : Expr -> Env -> EvalResult
         /// Evaluate a special object.
-        abstract EvalSpecialObject : Env -> Expr -> EvalResult
+        abstract EvalSpecialObject : Expr -> Env -> EvalResult
         /// Evaluate a special series expression.
-        abstract EvalSpecialSeries : Env -> Expr -> EvalResult
+        abstract EvalSpecialSeries : Expr -> Env -> EvalResult
         /// The name of the language.
         abstract Name : string
         /// The unique identifier for the language.
@@ -500,7 +500,7 @@ module AstModule =
                 | (Ref xr, Ref yr) -> xr.RefExpr = yr.RefExpr
                 | (List xl, List yl) -> xl.ListElements = yl.ListElements
                 | (Array xa, Array ya) -> xa.ArrElements = ya.ArrElements
-                | (Composite xc, Composite yc) -> xc.CompType = yc.CompType && xc.CompMembers.ValueEquals(yc.CompMembers)
+                | (Composite xc, Composite yc) -> xc.CompType = yc.CompType && xc.CompMembers.ValueEquals yc.CompMembers
                 | (Variable xv, Variable yv) -> xv.VarBody = yv.VarBody
                 | (SpecialSeries xs, SpecialSeries ys) -> xs.SSType = ys.SSType && xs.SSExprs = ys.SSExprs
                 | _ -> false
@@ -509,8 +509,8 @@ module AstModule =
 
     /// The resulting context of evaluating an expression.
     and [<NoEquality; NoComparison>] EvalResult =
-        { Env : Env
-          Value : Expr }
+        { Value : Expr
+          Env : Env }
 
 module Ast =
 

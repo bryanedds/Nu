@@ -173,11 +173,11 @@ module Primitives =
           ABBody = body }
 
     /// Make an intervention branch.
-    let makeInterventionBranch env category body hide =
-        { IBEnv = env
-          IBCategory = category
+    let makeInterventionBranch category body hide env =
+        { IBCategory = category
           IBBody = body
-          IBHide = hide }
+          IBHide = hide
+          IBEnv = env }
 
     /// Make a ParserPositions value.
     let makeParserPositions start stop =
@@ -575,7 +575,7 @@ module Primitives =
         | _ -> env
 
     /// Push an environment's expr trace.
-    let pushExpr env exprTrace =
+    let pushExpr exprTrace env =
 #if AML_OPTIMIZED
         env
 #else
@@ -593,7 +593,7 @@ module Primitives =
 #endif
 
     /// Push a frame on an environment's stack trace.
-    let pushStackFrame env frame =
+    let pushStackFrame frame env =
 #if AML_OPTIMIZED
         env
 #else
@@ -611,11 +611,11 @@ module Primitives =
 #endif
 
     /// Push a list of intervention branches on an environment.
-    let pushInterventionBranchList env interventionBranches =
+    let pushInterventionBranchList interventionBranches env =
         { env with EnvInterventionBranchLists = interventionBranches :: env.EnvInterventionBranchLists }
 
     /// Get the directory relative to the file.
-    let getDirectoryRelativeToFile env path =
+    let getDirectoryRelativeToFile path env =
         if Path.IsPathRooted path then path
         else
             let currentPath = env.EnvPath
@@ -699,14 +699,14 @@ module Primitives =
         List.forall (fun signature -> areConcreteArgs signature.SigArgs) sigs
 
     /// Augment an environment with a declaration entry.
-    let tryAppendDeclarationEntry env name entry =
+    let tryAppendDeclarationEntry name entry env =
         let declarationFrame = env.EnvDeclarationFrame
         if env.EnvAllowRedeclaration then ignore (declarationFrame.ForceAdd (name, entry)); Some env
         elif declarationFrame.ContainsKey name then None
         else declarationFrame.Add (name, entry); Some env
 
     /// Augment an environment with a procedural entry.
-    let appendProceduralEntry env appendType name entry =
+    let appendProceduralEntry appendType name entry env =
         match appendType with
         | AppendToNewFrame size ->
             let newProceduralFrame = makeProceduralFrame size
@@ -719,7 +719,7 @@ module Primitives =
             | headFrame :: _ -> (headFrame.[offset] <- (name, entry)); env
 
     /// Augment an environment with multiple declaration entries.
-    let tryAppendDeclarationEntries env entries =
+    let tryAppendDeclarationEntries entries env =
         let declarationFrame = env.EnvDeclarationFrame
         if env.EnvAllowRedeclaration then 
             for (name, value) in entries do ignore (declarationFrame.ForceAdd (name, value))
@@ -732,7 +732,7 @@ module Primitives =
                 Some env
 
     /// Augment an environment with multiple procedural entries.
-    let appendProceduralEntries env appendType entries =
+    let appendProceduralEntries appendType entries env =
         match appendType with
         | AppendToNewFrame size ->
             let newProceduralFrame = makeProceduralFrame size
@@ -753,19 +753,19 @@ module Primitives =
                 env
 
     /// Augment an environment with a declaration variable.
-    let tryAppendDeclarationVariable env name doc value =
+    let tryAppendDeclarationVariable name doc value env =
         let entry = ValueEntry (value, doc)
-        tryAppendDeclarationEntry env name entry
+        tryAppendDeclarationEntry name entry env
 
     /// Augment an environment with a procedural variable.
-    let appendProceduralVariable env appendType name doc value =
+    let appendProceduralVariable appendType name doc value env =
         let entry = ValueEntry (value, doc)
-        appendProceduralEntry env appendType name entry
+        appendProceduralEntry appendType name entry env
 
     /// Augment an environment with a type.
-    let tryAppendType env typeName typeValue doc =
+    let tryAppendType typeName typeValue doc env =
         let typeEntry = TypeEntry (typeName, typeValue, doc)
-        tryAppendDeclarationEntry env typeName typeEntry
+        tryAppendDeclarationEntry typeName typeEntry env
 
     let intInc (x : int) = x + 1
     let intDec (x : int) = x - 1

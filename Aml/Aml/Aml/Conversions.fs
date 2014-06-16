@@ -13,28 +13,28 @@ module Conversions =
 
     /// Convert from a string to an array representation.
     /// TODO: consider optimizing this.
-    let stringToArray (_ : Env) str =
+    let stringToArray str (_ : Env) =
         let array = Array.map (fun c -> Character (makeCharacterRecord c None)) (String.toArray str)
         Array (makeArrayRecord true array None)
 
     /// Convert from an array to a string representation.
     /// TODO: optimize this.
-    let arrayToString env array =
+    let arrayToString array env =
         let list = List.ofArray array.ArrElements
         let mapped = List.map (function | Character c -> Some c.CRValue | _ -> None) list
         let filtered = List.choose id mapped
         if not (List.areSameLength list filtered) then
             if anyViolations list then firstViolation list
-            else makeViolationWithPositions env ":v/contract/invalidStringElements" "Conversion to string requires all members to be characters."
+            else makeViolationWithPositions ":v/contract/invalidStringElements" "Conversion to string requires all members to be characters." env
         else
             let imploded = String.implode filtered
             String (makeStringRecord (makeStringValue imploded LiteralString) None)
 
     /// Convert from a list to an array representation.
-    let listToArray (_ : Env) list = Array (makeArrayRecord list.ListEvaluated (Array.ofList list.ListElements) None)
+    let listToArray list (_ : Env) = Array (makeArrayRecord list.ListEvaluated (Array.ofList list.ListElements) None)
 
     /// Convert from an array to a list representation.
-    let arrayToList (_ : Env) array = List (makeListRecord array.ArrEvaluated (List.ofArray array.ArrElements) None)
+    let arrayToList array (_ : Env) = List (makeListRecord array.ArrEvaluated (List.ofArray array.ArrElements) None)
 
     /// Convert an expr to an optional violation.
     let exprToOptViolation = function | Violation _ as v -> Some v | _ -> None
