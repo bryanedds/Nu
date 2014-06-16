@@ -24,12 +24,12 @@ module BlazeDispatchersModule =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
-        let tickHandler _ _ address message world =
+        let tickHandler _ _ address _ world =
             let bullet = get world <| World.worldEntity address
-            if bullet.BirthTime + 30UL > world.Ticks then (message, true, world)
+            if bullet.BirthTime + 30UL > world.Ticks then (true, Unhandled, world)
             else
                 let world = World.removeEntity address world
-                (message, true, world)
+                (true, Unhandled, world)
 
         override this.MakeBodyShape (bullet : Entity) =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
@@ -70,17 +70,17 @@ module BlazeDispatchersModule =
             let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
-        let spawnBulletHandler _ _ address message world =
-            if not world.Interactive then (message, true, world)
+        let spawnBulletHandler _ _ address _ world =
+            if not world.Interactive then (true, Unhandled, world)
             else
                 let player = get world <| World.worldEntity address
-                if world.Ticks % 5UL <> 0UL then (message, true, world)
+                if world.Ticks % 5UL <> 0UL then (true, Unhandled, world)
                 else
                     let world = createBullet player address world
-                    (message, true, world)
+                    (true, Unhandled, world)
 
-        let movePlayerHandler _ _ address message world =
-            if not world.Interactive then (message, true, world)
+        let movePlayerHandler _ _ address _ world =
+            if not world.Interactive then (true, Unhandled, world)
             else
                 let player = get world <| World.worldEntity address
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
@@ -90,18 +90,18 @@ module BlazeDispatchersModule =
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
                 let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                (message, true, world)
+                (true, Unhandled, world)
 
-        let jumpPlayerHandler _ _ address message world =
-            if not world.Interactive then (message, true, world)
+        let jumpPlayerHandler _ _ address _ world =
+            if not world.Interactive then (true, Unhandled, world)
             else
                 let player = get world <| World.worldEntity address
                 if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
-                then (message, true, world)
+                then (true, Unhandled, world)
                 else
                     let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
-                    (message, true, world)
+                    (true, Unhandled, world)
 
         override dispatcher.Register (player, address, world) =
             let world = base.Register (player, address, world)
@@ -120,8 +120,8 @@ module BlazeDispatchersModule =
     type BlazeEnemyDispatcher () =
         inherit CharacterDispatcher ()
 
-        let moveEnemyHandler _ _ address message world =
-            if not world.Interactive then (message, true, world)
+        let moveEnemyHandler _ _ address _ world =
+            if not world.Interactive then (true, Unhandled, world)
             else
                 let enemy = get world <| World.worldEntity address
                 let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
@@ -131,7 +131,7 @@ module BlazeDispatchersModule =
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-800.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
                 let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                (message, true, world)
+                (true, Unhandled, world)
 
         override dispatcher.Register (enemy, address, world) =
             let world = base.Register (enemy, address, world)
@@ -154,8 +154,8 @@ module BlazeDispatchersModule =
             let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f, world.Camera.EyeCenter.Y)
             { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
 
-        let adjustCameraHandler _ _ groupAddress message world =
-            (message, true, adjustCamera groupAddress world)
+        let adjustCameraHandler _ _ groupAddress _ world =
+            (true, Unhandled, adjustCamera groupAddress world)
 
         override dispatcher.Register (group, address, entities, world) =
             let world = base.Register (group, address, entities, world)

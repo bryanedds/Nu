@@ -39,8 +39,15 @@ module MessageModule =
     /// A generic message for the Nu game engine.
     /// A reference type.
     type [<ReferenceEquality>] Message =
-        { Handled : bool
-          Data : MessageData }
+        { (*Event : Address
+          Publisher : Address
+          Subscriber : Address*)
+          Data : MessageData 
+          Handled : bool }
+
+    type MessageHandled =
+        | Handled
+        | Unhandled
 
 [<AutoOpen>]
 module SimModule =
@@ -146,7 +153,7 @@ module SimModule =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
-        | CustomSub of (Address (*event*) -> Address (*publisher*) -> Address (*subscriber*) -> Message -> World -> (Message * bool * World))
+        | CustomSub of (Address -> Address -> Address -> Message -> World -> bool * MessageHandled * World)
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
