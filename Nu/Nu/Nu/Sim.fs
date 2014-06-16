@@ -39,11 +39,10 @@ module MessageModule =
     /// A generic message for the Nu game engine.
     /// A reference type.
     type [<ReferenceEquality>] Message =
-        { (*Event : Address
+        { Event : Address
           Publisher : Address
-          Subscriber : Address*)
-          Data : MessageData 
-          Handled : bool }
+          Subscriber : Address
+          Data : MessageData }
 
     type MessageHandled =
         | Handled
@@ -153,7 +152,7 @@ module SimModule =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
-        | CustomSub of (Address -> Address -> Address -> Message -> World -> bool * MessageHandled * World)
+        | CustomSub of (Message -> World -> bool * MessageHandled * World)
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
@@ -184,12 +183,6 @@ module SimModule =
         interface IXDispatcherContainer with
             member this.GetDispatchers () = this.Dispatchers
             end
-
-[<RequireQualifiedAccess>]
-module Message =
-
-    let handle message =
-        { Handled = true; Data = message.Data }
 
 [<RequireQualifiedAccess>]
 module Sim =

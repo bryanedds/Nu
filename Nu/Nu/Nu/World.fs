@@ -173,8 +173,7 @@ module World =
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
-                let collisionMessage = { Handled = false; Data = collisionData }
-                publish collisionAddress [] collisionMessage world
+                publish collisionAddress [] collisionData world
 
     let private handleIntegrationMessages integrationMessages world =
         List.fold handleIntegrationMessage (true, world) integrationMessages
@@ -194,14 +193,14 @@ module World =
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                    if Set.contains MouseLeft world.MouseState.MouseDowns then publish MouseDragEvent [] { Handled = false; Data = MouseMoveData mousePosition } world
-                    else publish MouseMoveEvent [] { Handled = false; Data = MouseButtonData (mousePosition, MouseLeft) } world
+                    if Set.contains MouseLeft world.MouseState.MouseDowns then publish MouseDragEvent [] (MouseMoveData mousePosition) world
+                    else publish MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mouseButton = Sdl.makeNuMouseButton event.button.button
                     let mouseEvent = addrstr DownMouseEvent <| string mouseButton
                     let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                     let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                    publish mouseEvent [] { Handled = false; Data = messageData } world
+                    publish mouseEvent [] messageData world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mouseState = world.MouseState
                     let mouseButton = Sdl.makeNuMouseButton event.button.button
@@ -209,14 +208,14 @@ module World =
                     if Set.contains mouseButton mouseState.MouseDowns then
                         let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                         let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                        publish mouseEvent [] { Handled = false; Data = messageData } world
+                        publish mouseEvent [] messageData world
                     else (true, world)
                 | _ -> (true, world))
             (fun world ->
                 let (keepRunning, world) = integrate world
                 if not keepRunning then (false, world)
                 else
-                    let (keepRunning, world) = publish TickEvent [] { Handled = false; Data = NoData } world
+                    let (keepRunning, world) = publish TickEvent [] NoData world
                     if not keepRunning then (false, world)
                     else WorldPrims.updateTransition handleUpdate world)
             (fun world -> let world = render world in handleRender world)
