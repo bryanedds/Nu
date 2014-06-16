@@ -379,5 +379,5 @@ module Writer =
                     fileStr +
                     "\n\nStack trace:\n\n" +
                     stackTrace
-        let message' = message + positionDescription
-        makeViolation category message'
+        let messagePositioned = message + positionDescription
+        makeViolation category messagePositioned

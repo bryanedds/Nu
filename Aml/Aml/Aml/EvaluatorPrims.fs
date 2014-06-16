@@ -218,23 +218,23 @@ module EvaluatorPrims =
         match optFirstSigMatchingEntry with
         | Some firstSigMatchingEntry when not env.EnvAllowRedeclaration ->
             failwith ("The protocol signature '" + firstSigMatchingEntry.SigName + "' clashes names with an existing declaration.")
-        | Some _ | None ->
+        | _ ->
             let protocolName = ProtocolPrefixStr + name
             let protocol = ProtocolEntry (arg, optConstraints, doc, sigs)
-            let optEnv' = tryAppendDeclarationEntry env protocolName protocol
-            match optEnv' with
+            let optEnv = tryAppendDeclarationEntry env protocolName protocol
+            match optEnv with
             | None -> None
-            | Some env' ->
+            | Some env ->
                 let entries =
                     List.map
                         (fun signature ->
                             let contingentArg = List.findIndex (fun sigArg -> sigArg.ArgName = arg) signature.SigArgs
                             (signature.SigName, DynamicEntry (contingentArg, signature.SigDoc)))
                         sigs
-                let optEnv'' = tryAppendDeclarationEntries env' entries
-                match optEnv'' with
+                let optEnv = tryAppendDeclarationEntries env entries
+                match optEnv with
                 | None -> None
-                | Some env'' -> Some env''
+                | Some env -> Some env
 
     /// Augment an environment with an instance.
     let tryAppendInstance env protocolName args constraints namedSigImpls =
@@ -295,20 +295,20 @@ module EvaluatorPrims =
         // append type
         let typeName = TypePrefixStr + name
         let typeValue = makeType typeName optPositions
-        let optEnv' = tryAppendType env typeName typeValue doc
-        match optEnv' with
+        let optEnv = tryAppendType env typeName typeValue doc
+        match optEnv with
         | None -> None
-        | Some env' ->
+        | Some env ->
 
             // append type indicator
             let typeIndicatorName = String.surround name TypeIndicatorStr
             let typeIndicatorMembers = List.toDictionaryBy (fun memName -> memName, (makeMember memName (makeViolationWithoutBreakpoint ":v/eval/typeIndicatorMemberAccess" "Cannot access the members of a type indicator."))) memberNames
             let typeIndicatorDoc = makeDoc ("A type indicator for a(n) '" + name + "' type.")
             let typeIndicatorValue = Composite (makeCompositeRecord false name typeIndicatorMembers typeValue null null optPositions)
-            let optEnv'' = tryAppendDeclarationVariable env' typeIndicatorName typeIndicatorDoc typeIndicatorValue
-            match optEnv'' with
+            let optEnv = tryAppendDeclarationVariable env typeIndicatorName typeIndicatorDoc typeIndicatorValue
+            match optEnv with
             | None -> None
-            | Some env'' ->
+            | Some env ->
 
                 // append type query
                 let isStructureArgs = [makeArg XStr Concrete UnitValue]
@@ -317,17 +317,17 @@ module EvaluatorPrims =
                 let selfSymbol = Symbol (makeSymbolRecord XStr (ref CEUncached) optPositions)
                 let keywordTypeName = Keyword (makeKeywordRecord typeName optPositions)
                 let isStructureBody = Series (makeSeriesRecord [hasTypeSymbol; keywordTypeName; selfSymbol] 3 optPositions)
-                let optEnv'3 = tryAppendDeclarationFunction env'' isStructureName isStructureArgs 1 isStructureBody None doc UnitValue UnitValue true optPositions
-                match optEnv'3 with
+                let optEnv = tryAppendDeclarationFunction env isStructureName isStructureArgs 1 isStructureBody None doc UnitValue UnitValue true optPositions
+                match optEnv with
                 | None -> None
-                | Some env'3 ->
+                | Some env ->
 
                     // append constructor
                     let concreteArgs = List.map (fun argName -> makeArg argName Concrete UnitValue) argNames
                     let memberList = List.zipBy (fun (name, expr) -> makeMember name expr) memberNames symbols
                     let members = List.toDictionaryBy (fun mem -> (mem.MemName, mem)) memberList
                     let body = Composite (makeCompositeRecord false name members typeValue null null optPositions)
-                    tryAppendDeclarationFunction env'3 name concreteArgs concreteArgs.Length body optConstraints doc req UnitValue true optPositions
+                    tryAppendDeclarationFunction env name concreteArgs concreteArgs.Length body optConstraints doc req UnitValue true optPositions
 
     /// Augment an environment with an affirmation function.
     let tryAppendAffirmationFunction env name doc expr optPositions =
