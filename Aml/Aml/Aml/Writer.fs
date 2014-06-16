@@ -340,7 +340,7 @@ module Writer =
         result
 
     /// Make a violation with an error message using an environment's parser positions.
-    let makeViolationWithPositions env category message =
+    let makeViolationWithPositions category message env =
         let optExpr = match env.EnvDebugInfo.DIExprTrace with [] -> None | exprTrace -> Some exprTrace.Head
         let optPositions = match optExpr with None -> None | Some expr -> getOptPositions expr
         let positionDescription =
