@@ -62,7 +62,7 @@ module Environment =
                 (fun env initialType ->
                     let typeName = a__ initialType : string
                     let rawTypeName = typeName.Substring TypePrefixStr.Length
-                    instantiateEquatable env rawTypeName)
+                    instantiateEquatable rawTypeName env)
                 env
                 InitialTypes
 

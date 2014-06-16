@@ -48,7 +48,7 @@ module Program =
         Console.WriteLine "Enter Aml expression(s) at the prompt or '?quit' to quit."
 
     let loadStdlib () =
-        let stdlibEvalResult = evalUsingFile (makeInitialEnv ()) (makeUsingFileRecord StdlibPath false None)
+        let stdlibEvalResult = evalUsingFile (makeUsingFileRecord StdlibPath false None) (makeInitialEnv ())
         match stdlibEvalResult.Value with
         | Violation violation -> echoStdlibFailure violation.VioMessage.SVValue
         | _ -> echoStdlibSuccess ()

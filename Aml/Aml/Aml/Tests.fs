@@ -44,7 +44,7 @@ module Tests =
         EvaledActual =
             List.map
                 (fun result -> result.Value)
-                (sequentiallyEvalReadResults (makeInitialEnv ()) testCase.ParsedActual false) }
+                (sequentiallyEvalReadResults testCase.ParsedActual false (makeInitialEnv ())) }
 
     let writeTestCase testCase = {
         Expected = testCase.EvaledExpected

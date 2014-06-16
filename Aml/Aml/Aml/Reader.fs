@@ -676,7 +676,7 @@ module Reader =
             let! optHide = readOptFlag HideStr
             let hide = match optHide with Some (Boolean hide) -> hide.BRValue | _ -> false
             do! closeParenForm
-            return makeInterventionBranch None category body hide }
+            return makeInterventionBranch category body hide None }
 
     /// Read at least one intervention branch.
     let readInterventionBranches1 = many1 readInterventionBranch

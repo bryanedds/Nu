@@ -47,26 +47,26 @@ module Repl =
         let chars = String.explode str
         scopesOpen chars <= 0
 
-    let echoEvalReadSuccess env expr =
-        let evalResult = try evalExprWithExplicitTracing env expr with exn -> makeEvalExceptionViolation env exn
+    let echoEvalReadSuccess expr env =
+        let evalResult = try evalExprWithExplicitTracing expr env with exn -> makeEvalExceptionViolation exn env
         let exprStr = writeExpr evalResult.Value
         Console.ForegroundColor <- match evalResult.Value with Violation _ -> ErrorConsoleColor | _ -> NormalConsoleColor
         Console.WriteLine (AmlPromptStr + exprStr)
         Console.ForegroundColor <- NormalConsoleColor
         evalResult
 
-    let echoReadFailure env (message : string) =
+    let echoReadFailure (message : string) env =
         Console.ForegroundColor <- ErrorConsoleColor
         Console.WriteLine (AmlPromptStr + message)
         Console.ForegroundColor <- NormalConsoleColor
         makeEvalUnit env
 
-    let echoEvalReadResult env readResult =
+    let echoEvalReadResult readResult env =
         match readResult with
-        | Failure (message, _, _) -> echoReadFailure env message
+        | Failure (message, _, _) -> echoReadFailure message env
         | Success (exprs, _, _) ->
             List.fold
-                (fun evalResult expr -> echoEvalReadSuccess evalResult.Env expr)
+                (fun evalResult expr -> echoEvalReadSuccess expr evalResult.Env)
                 (makeEvalUnit env)
                 exprs
 
@@ -114,7 +114,7 @@ module Repl =
         else
             let env = { env with EnvDebugInfo = { env.EnvDebugInfo with DIOptFirstReplLine = Some firstLine }}
             let readResult = run readExprsTillEnd input
-            let evalResult = echoEvalReadResult env readResult
+            let evalResult = echoEvalReadResult readResult env
             let evalResult = configureEvalResultFirstReplLine evalResult None
             Console.WriteLine ()
             repl evalResult.Env
