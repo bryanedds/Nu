@@ -15,14 +15,14 @@ module OmniDispatchersModule =
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
 
-        let adjustFieldCameraHandler _ _ groupAddress _ world =
-            (true, Unhandled, adjustFieldCamera groupAddress world)
+        let adjustFieldCameraHandler message world =
+            (true, Unhandled, adjustFieldCamera message.Subscriber world)
 
-        let moveFieldAvatarHandler _ _ groupAddress _ world =
-            let feelerAddress = groupAddress @ [OmniConstants.FieldFeelerName]
+        let moveFieldAvatarHandler message world =
+            let feelerAddress = message.Subscriber @ [OmniConstants.FieldFeelerName]
             let feeler = get world <| World.worldEntity feelerAddress
             if feeler.IsTouched then
-                let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
+                let avatarAddress = message.Subscriber @ [OmniConstants.FieldAvatarName]
                 let avatar = get world <| World.worldEntity avatarAddress
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f

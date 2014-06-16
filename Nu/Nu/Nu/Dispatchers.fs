@@ -222,39 +222,39 @@ module DispatchersModule =
     type ButtonDispatcher () =
         inherit EntityUiDispatcher ()
 
-        let handleButtonEventDownMouseLeft event _ subscriber message world =
+        let handleButtonEventDownMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| World.worldEntity subscriber
+                let button = get world <| World.worldEntity message.Subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     if NuMath.isInBox3 mousePositionButton button.Position button.Size then
                         let button = button.SetIsDown true
-                        let world = set button world <| World.worldEntity subscriber
-                        let (keepRunning, world) = World.publish (straddr "Down" subscriber) subscriber { Handled = false; Data = NoData } world
+                        let world = set button world <| World.worldEntity message.Subscriber
+                        let (keepRunning, world) = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
                         (keepRunning, Handled, world)
                     else (true, Unhandled, world)
                 else (true, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
 
-        let handleButtonEventUpMouseLeft event _ subscriber message world =
+        let handleButtonEventUpMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| World.worldEntity subscriber
+                let button = get world <| World.worldEntity message.Subscriber
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     let (keepRunning, world) =
                         let button = button.SetIsDown false
-                        let world = set button world <| World.worldEntity subscriber
-                        World.publish (straddr "Up" subscriber) subscriber { Handled = false; Data = NoData } world
+                        let world = set button world <| World.worldEntity message.Subscriber
+                        World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
                     if keepRunning && NuMath.isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
-                        let (keepRunning, world) = World.publish (straddr "Click" subscriber) subscriber { Handled = false; Data = NoData } world
+                        let (keepRunning, world) = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
                         (keepRunning, Handled, world)
                     else (keepRunning, Unhandled, world)
                 else (true, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
 
         override dispatcher.Init (button, dispatcherContainer) =
             let button = base.Init (button, dispatcherContainer)
@@ -371,40 +371,40 @@ module DispatchersModule =
     type ToggleDispatcher () =
         inherit EntityUiDispatcher ()
 
-        let handleToggleEventDownMouseLeft event _ subscriber message world =
+        let handleToggleEventDownMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| World.worldEntity subscriber
+                let toggle = get world <| World.worldEntity message.Subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsPressed true
-                        let world = set toggle world <| World.worldEntity subscriber
+                        let world = set toggle world <| World.worldEntity message.Subscriber
                         (true, Handled, world)
                     else (true, Unhandled, world)
                 else (true, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
     
-        let handleToggleEventUpMouseLeft event _ subscriber message world =
+        let handleToggleEventUpMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| World.worldEntity subscriber
+                let toggle = get world <| World.worldEntity message.Subscriber
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle = toggle.SetIsPressed false
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsOn <| not toggle.IsOn
-                        let world = set toggle world <| World.worldEntity subscriber
+                        let world = set toggle world <| World.worldEntity message.Subscriber
                         let messageType = if toggle.IsOn then "On" else "Off"
-                        let (keepRunning, world) = World.publish (straddr messageType subscriber) subscriber { Handled = false; Data = NoData } world
+                        let (keepRunning, world) = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
                         (keepRunning, Handled, world)
                     else
-                        let world = set toggle world <| World.worldEntity subscriber
+                        let world = set toggle world <| World.worldEntity message.Subscriber
                         (true, Unhandled, world) // TODO: make sure message should actually be Unhandled!
                 else (true, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
         
         override dispatcher.Init (toggle, dispatcherContainer) =
             let toggle = base.Init (toggle, dispatcherContainer)
@@ -450,32 +450,32 @@ module DispatchersModule =
     type FeelerDispatcher () =
         inherit EntityUiDispatcher ()
 
-        let handleFeelerEventDownMouseLeft event _ subscriber message world =
+        let handleFeelerEventDownMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
-                let feeler = get world <| World.worldEntity subscriber
+                let feeler = get world <| World.worldEntity message.Subscriber
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
                     if NuMath.isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler = feeler.SetIsTouched true
-                        let world = set feeler world <| World.worldEntity subscriber
-                        let (keepRunning, world) = World.publish (straddr "Touch" subscriber) subscriber { Handled = false; Data = mouseButtonData } world
+                        let world = set feeler world <| World.worldEntity message.Subscriber
+                        let (keepRunning, world) = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
                         (keepRunning, Handled, world)
                     else (true, Unhandled, world)
                 else (true, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
     
-        let handleFeelerEventUpMouseLeft event _ subscriber message world =
+        let handleFeelerEventUpMouseLeft message world =
             match message.Data with
             | MouseButtonData _ ->
-                let feeler = get world <| World.worldEntity subscriber
+                let feeler = get world <| World.worldEntity message.Subscriber
                 if feeler.Enabled && feeler.Visible then
                     let feeler = feeler.SetIsTouched false
-                    let world = set feeler world <| World.worldEntity subscriber
-                    let (keepRunning, world) = World.publish (straddr "Release" subscriber) subscriber { Handled = false; Data = NoData } world
+                    let world = set feeler world <| World.worldEntity message.Subscriber
+                    let (keepRunning, world) = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
                     (keepRunning, Handled, world)
                 else (true, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr event + "'.")
+            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
         
         override dispatcher.Init (feeler, dispatcherContainer) =
             let feeler = base.Init (feeler, dispatcherContainer)

@@ -418,7 +418,7 @@ module WorldPrims =
         List.map snd prioritiesAndSubscriptionsSorted
 
     /// Publish a message for the given event.
-    let rec publish event publisher message world =
+    let rec publish event publisher messageData world =
         let optSubList = Map.tryFind event world.Subscriptions
         match optSubList with
         | None -> (true, world)
@@ -427,6 +427,7 @@ module WorldPrims =
             let (keepRunning, _, world) =
                 List.foldWhile
                     (fun (keepRunning, messageHandled, world) (subscriber, subscription) ->
+                        let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
                         if messageHandled = Handled || not keepRunning then None
                         elif not <| isAddressSelected subscriber world then Some (keepRunning, messageHandled, world)
                         else
@@ -435,7 +436,7 @@ module WorldPrims =
                                 | ExitSub -> handleEventAsExit world
                                 | SwallowSub -> handleEventAsSwallow world
                                 | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
-                                | CustomSub fn -> fn event publisher subscriber message world
+                                | CustomSub fn -> fn message world
                             Some result)
                     (true, Unhandled, world)
                     subListSorted
@@ -515,12 +516,7 @@ module WorldPrims =
                     let world = set selectedScreen world <| worldScreen selectedScreenAddress
                     let world = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world
                     if not finished then (true, world)
-                    else
-                        publish
-                            (FinishedIncomingEvent @ selectedScreenAddress)
-                            selectedScreenAddress
-                            { Handled = false; Data = NoData }
-                            world
+                    else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | OutgoingState ->
                     let selectedScreen = get world <| worldScreen selectedScreenAddress
                     let outgoing = get selectedScreen Screen.screenOutgoing
@@ -529,21 +525,16 @@ module WorldPrims =
                     let world = set selectedScreen world <| worldScreen selectedScreenAddress
                     let world = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world
                     if not finished then (true, world)
-                    else
-                        publish
-                            (FinishedOutgoingEvent @ selectedScreenAddress)
-                            selectedScreenAddress
-                            { Handled = false; Data = NoData }
-                            world
+                    else publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | IdlingState -> (true, world)
         if keepRunning then update world
             else (keepRunning, world)
 
-    and private handleSplashScreenIdleTick idlingTime ticks event _ subscriber _ world =
-        let world = unsubscribe event subscriber world
+    and private handleSplashScreenIdleTick idlingTime ticks message world =
+        let world = unsubscribe message.Event message.Subscriber world
         if ticks < idlingTime then
             let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incI ticks
-            let world = subscribe event subscriber subscription world
+            let world = subscribe message.Event message.Subscriber subscription world
             (true, Unhandled, world)
         else
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
@@ -555,13 +546,13 @@ module WorldPrims =
                 let world = setScreenState selectedScreenAddress OutgoingState world
                 (true, Unhandled, world)
 
-    and internal handleSplashScreenIdle idlingTime _ _ subscriber _ world =
+    and internal handleSplashScreenIdle idlingTime message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
-        let world = subscribe TickEvent subscriber subscription world
+        let world = subscribe TickEvent message.Subscriber subscription world
         (true, Handled, world)
 
-    and private handleFinishedScreenOutgoing destination event _ subscriber _ world =
-        let world = unsubscribe event subscriber world
+    and private handleFinishedScreenOutgoing destination message world =
+        let world = unsubscribe message.Event message.Subscriber world
         let world = transitionScreen destination world
         (true, Handled, world)
 
