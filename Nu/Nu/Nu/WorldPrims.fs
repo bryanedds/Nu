@@ -142,14 +142,21 @@ module WorldPrims =
                     | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
             | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
 
+    let getEntity address world = get world <| worldEntity address
+    let setEntity address entity world = set entity world <| worldEntity address
     let withEntity fn address world = Sim.withSimulant worldEntity fn address world
     let withEntityAndWorld fn address world = Sim.withSimulantAndWorld worldEntity fn address world
 
+    let getOptEntity address world = get world <| worldOptEntity address
+    let setOptEntity address optEntity world = set optEntity world <| worldOptEntity address
     let withOptEntity fn address world = Sim.withOptSimulant worldOptEntity fn address world
     let withOptEntityAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptEntity fn address world
 
     let tryWithEntity fn address world = Sim.tryWithSimulant worldOptEntity worldEntity fn address world
     let tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptEntity worldEntity fn address world
+    
+    let getEntities address world = get world <| worldEntities address
+    let setEntities address entities world = set entities world <| worldEntities address
 
     let registerEntity address (entity : Entity) world =
         entity.Register (address, world)
@@ -252,15 +259,22 @@ module WorldPrims =
                 | None -> { world with Groups = Map.add screenStr groups world.Groups }
                 | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
             | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
-
+            
+    let getGroup address world = get world <| worldGroup address
+    let setGroup address group world = set group world <| worldGroup address
     let withGroup fn address world = Sim.withSimulant worldGroup fn address world
     let withGroupAndWorld fn address world = Sim.withSimulantAndWorld worldGroup fn address world
 
+    let getOptGroup address world = get world <| worldOptGroup address
+    let setOptGroup address optGroup world = set optGroup world <| worldOptGroup address
     let withOptGroup fn address world = Sim.withOptSimulant worldOptGroup fn address world
     let withOptGroupAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptGroup fn address world
 
     let tryWithGroup fn address world = Sim.tryWithSimulant worldOptGroup worldGroup fn address world
     let tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptGroup worldGroup fn address world
+    
+    let getGroups address world = get world <| worldGroups address
+    let setGroups address groups world = set groups world <| worldGroups address
 
     let registerGroup address entities (group : Group) world =
         group.Register (address, entities, world)
@@ -326,14 +340,21 @@ module WorldPrims =
     let worldScreenIncoming address = worldScreen address >>| Screen.screenIncoming
     let worldScreenOutgoing address = worldScreen address >>| Screen.screenOutgoing
 
+    let getScreen address world = get world <| worldScreen address
+    let setScreen address screen world = set screen world <| worldScreen address
     let withScreen fn address world = Sim.withSimulant worldScreen fn address world
     let withScreenAndWorld fn address world = Sim.withSimulantAndWorld worldScreen fn address world
-
+    
+    let getOptScreen address world = get world <| worldOptScreen address
+    let setOptScreen address optScreen world = set optScreen world <| worldOptScreen address
     let withOptScreen fn address world = Sim.withOptSimulant worldOptScreen fn address world
     let withOptScreenAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptScreen fn address world
 
     let tryWithScreen fn address world = Sim.tryWithSimulant worldOptScreen worldScreen fn address world
     let tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptScreen worldScreen fn address world
+
+    let getScreens address world = get world <| worldScreens address
+    let setScreens address screens world = set screens world <| worldScreens address
 
     let registerScreen address (screen : Screen) groupDescriptors world =
         screen.Register (address, groupDescriptors, world)
@@ -374,6 +395,12 @@ module WorldPrims =
             match optSelectedScreenAddress with
             | None -> failwith "Cannot set a non-existent screen."
             | Some selectedScreenAddress -> set screen.Value world <| worldScreen selectedScreenAddress }
+
+    let getOptSelectedScreenAddress world = get world worldOptSelectedScreenAddress
+    let setOptSelectedScreenAddress optAddress world = set optAddress world worldOptSelectedScreenAddress
+
+    let getOptSelectedScreen world = get world worldOptSelectedScreen
+    let setOptSelectedScreen optScreen world = set optScreen world worldOptSelectedScreen
 
     (* Normal functions. *)
 

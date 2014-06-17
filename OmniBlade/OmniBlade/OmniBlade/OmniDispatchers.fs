@@ -11,7 +11,7 @@ module OmniDispatchersModule =
 
         let adjustFieldCamera groupAddress world =
             let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
-            let avatar = get world <| World.worldEntity avatarAddress
+            let avatar = World.getEntity avatarAddress world
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
 
@@ -20,10 +20,10 @@ module OmniDispatchersModule =
 
         let moveFieldAvatarHandler message world =
             let feelerAddress = message.Subscriber @ [OmniConstants.FieldFeelerName]
-            let feeler = get world <| World.worldEntity feelerAddress
+            let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then
                 let avatarAddress = message.Subscriber @ [OmniConstants.FieldAvatarName]
-                let avatar = get world <| World.worldEntity avatarAddress
+                let avatar = World.getEntity avatarAddress world
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f

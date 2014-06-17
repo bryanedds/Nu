@@ -16,7 +16,7 @@
  </layer>
  <layer name="Chains" width="32" height="9">
   <data encoding="base64" compression="zlib">
-   eJxjYEAAZijNgkYzM6ACXOpwiTGj0ejyQ9V+FTQaWQ+ymDIaTaz9MDOUcajDBlTwyCEDbPbD7CHWDEoAPewYBYMfAAAtZgIG
+   eJxjYEAAZijNgkaji+NSh0uMGY1Glx+q9qug0chqkMWU0Whi7YeZoYzGR/YHOlDBI4cMsNmPbg8tAT3sGAWDHwAAwSYCNg==
   </data>
  </layer>
  <layer name="Platforms" width="32" height="9">
@@ -24,7 +24,7 @@
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgF5AJRIBaDYnE0OUks6tDVEGs+KfokCSuh2D5OCuyAAUrcOQqGDwAAJkQBcw==
+   eJxjYBgF5AJRIBaDYnE0OUks6tDVEGs+TJ8kHrXY7CUVEOtOTgrsgAFK3DkKhg8AAGz4AYw=
   </data>
  </layer>
 </map>
