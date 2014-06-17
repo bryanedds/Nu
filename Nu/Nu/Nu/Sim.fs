@@ -152,7 +152,7 @@ module SimModule =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
-        | CustomSub of (Message -> World -> bool * MessageHandled * World)
+        | CustomSub of (Message -> World -> Liveness * MessageHandled * World)
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.

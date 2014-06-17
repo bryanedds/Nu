@@ -86,13 +86,15 @@ module Sdl =
             result
 
     let advance handleEvent handleUpdate world =
-        let mutable result = (true, world)
+        let mutable result = (Running, world)
         let polledEvent = ref (SDL.SDL_Event ())
         while SDL.SDL_PollEvent polledEvent <> 0 do
-            if fst result then
-                result <- handleEvent polledEvent (snd result)
-        if fst result then
-            result <- handleUpdate (snd result)
+            match fst result with
+            | Exiting -> ()
+            | Running -> result <- handleEvent polledEvent (snd result)
+        match fst result with
+        | Exiting -> ()
+        | Running -> result <- handleUpdate (snd result)
         result
 
     let render handleRender sdlDeps world =
@@ -108,14 +110,17 @@ module Sdl =
     let play handlePlay world =
         handlePlay world
 
-    let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world =
-        if keepRunning then
-            let (keepRunning, world) = advance handleEvent handleUpdate world
-            if not keepRunning then ignore <| handleExit world
-            else
+    let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
+        match liveness with
+        | Exiting -> ()
+        | Running ->
+            let (liveness, world) = advance handleEvent handleUpdate world
+            match liveness with
+            | Exiting -> ignore <| handleExit world
+            | Running ->
                 let world = render handleRender sdlDeps world
                 let world = play handlePlay world
-                run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps keepRunning world
+                run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world
 
     let run tryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
         withSdlInit
@@ -156,5 +161,5 @@ module Sdl =
                                         trace errorMsg
                                         FailureReturnCode
                                     | Right world ->
-                                        run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps true world
+                                        run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
                                         SuccessReturnCode))))))

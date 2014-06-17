@@ -63,7 +63,7 @@ module Program =
         // need no special update behavoir in this program, we simply return the world as it was
         // received.
         let updateWorld world =
-            (true, world)
+            (Running, world)
 
         // after some configuration it is time to run Nu. We're off and running!
         World.run tryMakeWorld updateWorld sdlConfig
