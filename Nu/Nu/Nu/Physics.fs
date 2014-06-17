@@ -85,6 +85,8 @@ module PhysicsModule =
           LinearDamping : single
           AngularDamping : single
           GravityScale : single
+          CollisionCategories : int
+          CollisionMask : int
           IsBullet : bool
           IsSensor : bool }
 
@@ -231,6 +233,11 @@ module Physics =
         let groundNormals = getGroundContactNormals physicsId integrator
         not <| List.isEmpty groundNormals
 
+    let toCollisionCategories categoryExpr =
+        match categoryExpr with
+        | "All" -> -1
+        | _ -> Convert.ToInt32 (categoryExpr, 2)
+
     let private configureBodyProperties bodyPosition bodyRotation bodyProperties (body : Body) =
         body.Position <- toPhysicsV2 bodyPosition
         body.Rotation <- bodyRotation
@@ -240,6 +247,8 @@ module Physics =
         body.LinearDamping <- bodyProperties.LinearDamping
         body.AngularDamping <- bodyProperties.AngularDamping
         body.GravityScale <- bodyProperties.GravityScale
+        body.CollisionCategories <- enum<Category> bodyProperties.CollisionCategories
+        body.CollidesWith <- enum<Category> bodyProperties.CollisionMask
         body.IsBullet <- bodyProperties.IsBullet
         body.IsSensor <- bodyProperties.IsSensor
         body.SleepingAllowed <- true
