@@ -29,7 +29,7 @@ module BlazeDispatchersModule =
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
         let tickHandler message world =
-            let bullet = get world <| World.worldEntity message.Subscriber
+            let bullet = World.getEntity message.Subscriber world
             if bullet.BirthTime + 90UL > world.Ticks then (Running, Unhandled, world)
             else
                 let world = World.removeEntity message.Subscriber world
@@ -54,7 +54,7 @@ module BlazeDispatchersModule =
             let world = base.Register (bullet, address, world)
             let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
             let bullet = bullet.SetBirthTime world.Ticks
-            let world = set bullet world <| World.worldEntity address
+            let world = World.setEntity address bullet world
             launch bullet world
 
         override dispatcher.Unregister (bullet, address, world) =
@@ -78,14 +78,14 @@ module BlazeDispatchersModule =
             else
                 if world.Ticks % 5UL <> 0UL then (Running, Unhandled, world)
                 else
-                    let player = get world <| World.worldEntity message.Subscriber
+                    let player = World.getEntity message.Subscriber world
                     let world = createBullet player message.Subscriber world
                     (Running, Unhandled, world)
 
         let movementHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
-                let player = get world <| World.worldEntity message.Subscriber
+                let player = World.getEntity message.Subscriber world
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
@@ -98,7 +98,7 @@ module BlazeDispatchersModule =
         let jumpHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
-                let player = get world <| World.worldEntity message.Subscriber
+                let player = World.getEntity message.Subscriber world
                 if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
                 then (Running, Unhandled, world)
                 else
@@ -126,7 +126,7 @@ module BlazeDispatchersModule =
         let movementHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
-                let enemy = get world <| World.worldEntity message.Subscriber
+                let enemy = World.getEntity message.Subscriber world
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
                 if not hasAppeared then (Running, Unhandled, world)
                 else
@@ -142,14 +142,14 @@ module BlazeDispatchersModule =
         let collisionHandler message world =
             match message.Data with
             | CollisionData (_, _, colliderAddress) ->
-                match get world <| World.worldOptEntity colliderAddress with
+                match World.getOptEntity colliderAddress world with
                 | None -> (Running, Unhandled, world)
                 | Some collider ->
                     if not <| Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world then (Running, Unhandled, world)
                     else
-                        let enemy = get world <| World.worldEntity message.Subscriber
+                        let enemy = World.getEntity message.Subscriber world
                         let enemy = enemy.SetHealth <| enemy.Health - 1
-                        let world = set enemy world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber enemy world
                         let world = if enemy.Health = 0 then World.removeEntity message.Subscriber world else world
                         (Running, Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
@@ -173,7 +173,7 @@ module BlazeDispatchersModule =
 
         let getPlayer groupAddress world =
             let playerAddress = groupAddress @ [BlazeConstants.StagePlayerName]
-            get world <| World.worldEntity playerAddress
+            World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
             let player = getPlayer groupAddress world

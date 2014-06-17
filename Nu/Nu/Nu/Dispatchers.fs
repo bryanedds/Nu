@@ -192,7 +192,7 @@ module DispatchersModule =
                 entity
                     .SetPosition(message.Position - entity.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
                     .SetRotation(message.Rotation)
-            set entity world <| World.worldEntity message.EntityAddress
+            World.setEntity message.EntityAddress entity world
 
     type [<AbstractClass>] Entity2dWithSimplePhysicsAndRenderingDispatcher () =
         inherit Entity2dWithSimplePhysicsDispatcher ()
@@ -229,12 +229,12 @@ module DispatchersModule =
         let handleButtonEventDownMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| World.worldEntity message.Subscriber
+                let button = World.getEntity message.Subscriber world
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     if NuMath.isInBox3 mousePositionButton button.Position button.Size then
                         let button = button.SetIsDown true
-                        let world = set button world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber button world
                         let (liveness, world) = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
                         (liveness, Handled, world)
                     else (Running, Unhandled, world)
@@ -244,12 +244,12 @@ module DispatchersModule =
         let handleButtonEventUpMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let button = get world <| World.worldEntity message.Subscriber
+                let button = World.getEntity message.Subscriber world
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
                     let (liveness, world) =
                         let button = button.SetIsDown false
-                        let world = set button world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber button world
                         World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
                     match liveness with
                     | Running ->
@@ -381,12 +381,12 @@ module DispatchersModule =
         let handleToggleEventDownMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| World.worldEntity message.Subscriber
+                let toggle = World.getEntity message.Subscriber world
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsPressed true
-                        let world = set toggle world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber toggle world
                         (Running, Handled, world)
                     else (Running, Unhandled, world)
                 else (Running, Unhandled, world)
@@ -395,20 +395,20 @@ module DispatchersModule =
         let handleToggleEventUpMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) ->
-                let toggle = get world <| World.worldEntity message.Subscriber
+                let toggle = World.getEntity message.Subscriber world
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle = toggle.SetIsPressed false
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsOn <| not toggle.IsOn
-                        let world = set toggle world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber toggle world
                         let messageType = if toggle.IsOn then "On" else "Off"
                         let (liveness, world) = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
                         (liveness, Handled, world)
                     else
-                        let world = set toggle world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber toggle world
                         (Running, Unhandled, world) // TODO: make sure message should actually be Unhandled!
                 else (Running, Unhandled, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
@@ -460,12 +460,12 @@ module DispatchersModule =
         let handleFeelerEventDownMouseLeft message world =
             match message.Data with
             | MouseButtonData (mousePosition, _) as mouseButtonData ->
-                let feeler = get world <| World.worldEntity message.Subscriber
+                let feeler = World.getEntity message.Subscriber world
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
                     if NuMath.isInBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler = feeler.SetIsTouched true
-                        let world = set feeler world <| World.worldEntity message.Subscriber
+                        let world = World.setEntity message.Subscriber feeler world
                         let (liveness, world) = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
                         (liveness, Handled, world)
                     else (Running, Unhandled, world)
@@ -475,10 +475,10 @@ module DispatchersModule =
         let handleFeelerEventUpMouseLeft message world =
             match message.Data with
             | MouseButtonData _ ->
-                let feeler = get world <| World.worldEntity message.Subscriber
+                let feeler = World.getEntity message.Subscriber world
                 if feeler.Enabled && feeler.Visible then
                     let feeler = feeler.SetIsTouched false
-                    let world = set feeler world <| World.worldEntity message.Subscriber
+                    let world = World.setEntity message.Subscriber feeler world
                     let (liveness, world) = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
                     (liveness, Handled, world)
                 else (Running, Unhandled, world)

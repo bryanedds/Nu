@@ -31,20 +31,20 @@ module NuEditReflection =
             else p.GetValue entity
 
     let setEntityPropertyValue address property value world =
-        let entity = get world <| World.worldEntity address
+        let entity = World.getEntity address world
         match property with
         | EntityXFieldDescriptor x ->
             let xFields = Map.add x.FieldName value entity.Xtension.XFields
             let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-            set entity world <| World.worldEntity address
+            World.setEntity address entity world
         | EntityPropertyInfo p ->
             let entity = { entity with Id = entity.Id } // NOTE: hacky copy
             p.SetValue (entity, value)
-            set entity world <| World.worldEntity address
+            World.setEntity address entity world
 
     let saveFile fileName world =
-        let editorGroup = get world <| World.worldGroup NuEditConstants.EditorGroupAddress
-        let editorEntities = get world <| World.worldEntities NuEditConstants.EditorGroupAddress
+        let editorGroup = World.getGroup NuEditConstants.EditorGroupAddress world
+        let editorEntities = World.getEntities NuEditConstants.EditorGroupAddress world
         World.saveGroupToFile editorGroup editorEntities fileName world
 
     let loadFile fileName world =
