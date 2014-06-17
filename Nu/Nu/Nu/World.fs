@@ -162,21 +162,22 @@ module World =
         let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
         { world with RenderMessages = []; Renderer = renderer }
 
-    let private handleIntegrationMessage (keepRunning, world) integrationMessage =
-        if not keepRunning then (keepRunning, world)
-        else
+    let private handleIntegrationMessage (liveness, world) integrationMessage =
+        match liveness with
+        | Exiting -> (liveness, world)
+        | Running ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
                 let entityAddress = bodyTransformMessage.EntityAddress
                 let entity = get world <| worldEntity entityAddress
-                (keepRunning, entity.HandleBodyTransformMessage (entityAddress, bodyTransformMessage, world))
+                (liveness, entity.HandleBodyTransformMessage (entityAddress, bodyTransformMessage, world))
             | BodyCollisionMessage bodyCollisionMessage ->
                 let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
                 let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
                 publish collisionAddress [] collisionData world
 
     let private handleIntegrationMessages integrationMessages world =
-        List.fold handleIntegrationMessage (true, world) integrationMessages
+        List.fold handleIntegrationMessage (Running, world) integrationMessages
 
     let private integrate world =
         let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
@@ -189,7 +190,7 @@ module World =
             (fun refEvent world ->
                 let event = !refEvent
                 match event.``type`` with
-                | SDL.SDL_EventType.SDL_QUIT -> (false, world)
+                | SDL.SDL_EventType.SDL_QUIT -> (Exiting, world)
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
@@ -209,15 +210,17 @@ module World =
                         let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                         let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
                         publish mouseEvent [] messageData world
-                    else (true, world)
-                | _ -> (true, world))
+                    else (Running, world)
+                | _ -> (Running, world))
             (fun world ->
-                let (keepRunning, world) = integrate world
-                if not keepRunning then (false, world)
-                else
-                    let (keepRunning, world) = publish TickEvent [] NoData world
-                    if not keepRunning then (false, world)
-                    else WorldPrims.updateTransition handleUpdate world)
+                let (liveness, world) = integrate world
+                match liveness with
+                | Exiting -> (liveness, world)
+                | Running ->
+                    let (liveness, world) = publish TickEvent [] NoData world
+                    match liveness with
+                    | Exiting -> (liveness, world)
+                    | Running -> WorldPrims.updateTransition handleUpdate world)
             (fun world -> let world = render world in handleRender world)
             (fun world -> let world = play world in { world with Ticks = world.Ticks + 1UL })
             (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })

@@ -19,6 +19,11 @@ module NuCoreModule =
         | NoClear
         | ColorClear of byte * byte * byte
 
+    /// Specifies whether the engine is running or exiting.
+    type Liveness =
+        | Exiting
+        | Running
+
     let addr (str : string) : Address =
         List.ofArray <| str.Split '/'
 
