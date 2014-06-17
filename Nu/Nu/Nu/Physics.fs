@@ -235,7 +235,7 @@ module Physics =
 
     let toCollisionCategories categoryExpr =
         match categoryExpr with
-        | "All" -> -1
+        | "*" -> -1
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
     let private configureBodyProperties bodyPosition bodyRotation bodyProperties (body : Body) =
