@@ -46,10 +46,9 @@ module BlazeDispatchersModule =
             bullet
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
-                .SetIsBullet(true)
                 .SetBirthTime(0UL)
                 .SetSize(Vector2 (12.0f, 12.0f))
-                .SetRestitution(1.0f)
+                .SetRestitution(0.5f)
 
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
@@ -77,9 +76,9 @@ module BlazeDispatchersModule =
         let spawnBulletHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
-                let player = get world <| World.worldEntity message.Subscriber
                 if world.Ticks % 5UL <> 0UL then (Running, Unhandled, world)
                 else
+                    let player = get world <| World.worldEntity message.Subscriber
                     let world = createBullet player message.Subscriber world
                     (Running, Unhandled, world)
 
@@ -103,7 +102,7 @@ module BlazeDispatchersModule =
                 if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
                 then (Running, Unhandled, world)
                 else
-                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 7500.0f) }
+                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 8500.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     (Running, Unhandled, world)
 
@@ -157,7 +156,7 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            enemy.SetHealth(15)
+            enemy.SetHealth 10
 
         override dispatcher.Register (enemy, address, world) =
             let world = base.Register (enemy, address, world)
