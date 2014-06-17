@@ -173,7 +173,7 @@ module DispatchersModule =
                 .SetAngularDamping(1.0f)
                 .SetGravityScale(1.0f)
                 .SetCollisionCategories("1")
-                .SetCollisionMask("All")
+                .SetCollisionMask("*")
                 .SetIsBullet(false)
                 .SetIsSensor(false)
 
@@ -730,7 +730,7 @@ module DispatchersModule =
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetParallax(0.0f)
                 .SetCollisionCategories("1")
-                .SetCollisionMask("All")
+                .SetCollisionMask("*")
 
         override dispatcher.Register (tileMap, address, world) =
             registerTileMapPhysics address tileMap world
