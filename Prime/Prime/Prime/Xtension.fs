@@ -75,18 +75,18 @@ module XtensionModule =
             | None -> Xtension.emptyDispatcher
             | Some dispatcherName -> Xtension.getDispatcherByName dispatcherName dispatcherContainer
 
-        static member derivesFrom dispatcherTarget xtension dispatcherContainer =
+        static member dispatchesAs (dispatcherTargetType : Type) xtension dispatcherContainer =
             let dispatcher = Xtension.getDispatcher xtension dispatcherContainer
             let dispatcherType = dispatcher.GetType ()
-            let dispatcherTargetType = dispatcherTarget.GetType ()
-            dispatcherType.IsSubclassOf dispatcherTargetType
+            let result =
+                dispatcherTargetType = dispatcherType ||
+                dispatcherTargetType.IsSubclassOf dispatcherType
+            result
 
-        static member derivesFromByName dispatcherTargetName xtension dispatcherContainer =
-            let dispatcher = Xtension.getDispatcher xtension dispatcherContainer
+        static member dispatchesAsByName dispatcherTargetName xtension dispatcherContainer =
             let dispatcherTarget = Xtension.getDispatcherByName dispatcherTargetName dispatcherContainer
-            let dispatcherType = dispatcher.GetType ()
             let dispatcherTargetType = dispatcherTarget.GetType ()
-            dispatcherType.IsSubclassOf dispatcherTargetType
+            Xtension.dispatchesAs dispatcherTargetType xtension dispatcherContainer
 
         /// The dynamic dispatch operator.
         static member (?) (target, xtension, memberName) : 'a -> 'r =
