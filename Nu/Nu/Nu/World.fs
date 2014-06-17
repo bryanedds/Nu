@@ -168,13 +168,18 @@ module World =
         | Running ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
-                let entityAddress = bodyTransformMessage.EntityAddress
-                let entity = get world <| worldEntity entityAddress
-                (liveness, entity.HandleBodyTransformMessage (entityAddress, bodyTransformMessage, world))
+                match get world <| worldOptEntity bodyTransformMessage.EntityAddress with
+                | None -> (liveness, world)
+                | Some entity ->
+                    let world = entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
+                    (liveness, world)
             | BodyCollisionMessage bodyCollisionMessage ->
-                let collisionAddress = straddr "Collision" bodyCollisionMessage.EntityAddress
-                let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
-                publish collisionAddress [] collisionData world
+                match get world <| worldOptEntity bodyCollisionMessage.EntityAddress with
+                | None -> (liveness, world)
+                | Some _ ->
+                    let collisionAddress = CollisionEvent @ bodyCollisionMessage.EntityAddress
+                    let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
+                    publish collisionAddress [] collisionData world
 
     let private handleIntegrationMessages integrationMessages world =
         List.fold handleIntegrationMessage (Running, world) integrationMessages

@@ -172,15 +172,21 @@ module Physics =
         | Kinematic -> Dynamics.BodyType.Kinematic
         | Dynamic -> Dynamics.BodyType.Dynamic
 
+    let private getNormalAndManifold (contact : Contact) =
+        let (normal, manifold) = (ref <| Framework.Vector2 (), ref <| FixedArray2<Framework.Vector2> ())
+        contact.GetWorldManifold (normal, manifold)
+        (!normal, !manifold)
+
     let private handleCollision
         integrator
         (fixture : Dynamics.Fixture)
         (fixture2 : Dynamics.Fixture)
         (contact : Dynamics.Contacts.Contact) =
+        let (normal, _) = getNormalAndManifold contact
         let bodyCollisionMessage =
             { EntityAddress = fixture.Body.UserData :?> Address
               EntityAddress2 = fixture2.Body.UserData :?> Address
-              Normal = let localNormal = contact.Manifold.LocalNormal in Vector2 (localNormal.X, localNormal.Y)
+              Normal = Vector2 (normal.X, normal.Y)
               Speed = contact.TangentSpeed * PhysicsToPixelRatio }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         integrator.IntegrationMessages.Add integrationMessage
@@ -199,10 +205,8 @@ module Physics =
         let contacts = getBodyContacts physicsId integrator
         List.map
             (fun (contact : Contact) ->
-                let normal = ref <| Framework.Vector2 ()
-                let manifold = ref <| FixedArray2<Framework.Vector2> ()
-                contact.GetWorldManifold (normal, manifold)
-                Vector2 ((!normal).X, (!normal).Y))
+                let (normal, _) = getNormalAndManifold contact
+                Vector2 (normal.X, normal.Y))
             contacts
 
     let getLinearVelocity physicsId integrator =
