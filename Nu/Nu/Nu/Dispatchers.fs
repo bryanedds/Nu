@@ -147,6 +147,8 @@ module DispatchersModule =
                   LinearDamping = entity.LinearDamping
                   AngularDamping = entity.AngularDamping
                   GravityScale = entity.GravityScale
+                  CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
+                  CollisionMask = Physics.toCollisionCategories entity.CollisionMask
                   IsBullet = entity.IsBullet
                   IsSensor = entity.IsSensor }}
 
@@ -170,6 +172,8 @@ module DispatchersModule =
                 .SetLinearDamping(1.0f)
                 .SetAngularDamping(1.0f)
                 .SetGravityScale(1.0f)
+                .SetCollisionCategories("1")
+                .SetCollisionMask("All")
                 .SetIsBullet(false)
                 .SetIsSensor(false)
 
@@ -620,6 +624,8 @@ module DispatchersModule =
                           LinearDamping = 0.0f
                           AngularDamping = 0.0f
                           GravityScale = 0.0f
+                          CollisionCategories = Physics.toCollisionCategories tm.CollisionCategories
+                          CollisionMask = Physics.toCollisionCategories tm.CollisionMask
                           IsBullet = false
                           IsSensor = false }}
             { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
@@ -645,6 +651,8 @@ module DispatchersModule =
                           LinearDamping = 0.0f
                           AngularDamping = 0.0f
                           GravityScale = 0.0f
+                          CollisionCategories = Physics.toCollisionCategories tm.CollisionCategories
+                          CollisionMask = Physics.toCollisionCategories tm.CollisionMask
                           IsBullet = false
                           IsSensor = false }}
             { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
@@ -721,6 +729,8 @@ module DispatchersModule =
                 .SetRestitution(0.0f)
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetParallax(0.0f)
+                .SetCollisionCategories("1")
+                .SetCollisionMask("All")
 
         override dispatcher.Register (tileMap, address, world) =
             registerTileMapPhysics address tileMap world

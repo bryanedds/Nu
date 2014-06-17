@@ -123,10 +123,7 @@ module XtensionModule =
                             // include 'target' context as first arg
                             // NOTE: array appending is a linear-time operation, but is currently required to satisfy
                             // the MethodInfo.Invoke interface.
-                            let args = Array.append [|target :> obj|] argArray
-
-                            // find dispatcher, or use the empty dispatcher
-                            
+                            let args = Array.append [|target :> obj|] argArray                            
 
                             // attempt to dispatch method
                             let dispatcher = Xtension.getDispatcher xtension context
