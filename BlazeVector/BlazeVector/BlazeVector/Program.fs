@@ -41,5 +41,5 @@ module Program =
         // after some configuration it is time to run the game. We're off and running!
         World.run
             (fun sdlDeps -> BlazeFlow.tryMakeBlazeVectorWorld sdlDeps ())
-            (fun world -> (true, world))
+            (fun world -> (Running, world))
             sdlConfig
