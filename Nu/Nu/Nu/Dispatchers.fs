@@ -239,7 +239,7 @@ module DispatchersModule =
                         (liveness, Handled, world)
                     else (Running, Unhandled, world)
                 else (Running, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
+            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
 
         let handleButtonEventUpMouseLeft message world =
             match message.Data with
@@ -261,7 +261,7 @@ module DispatchersModule =
                         else (liveness, Unhandled, world)
                     | Exiting -> (liveness, Unhandled, world)
                 else (Running, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
+            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (button, dispatcherContainer) =
             let button = base.Init (button, dispatcherContainer)
@@ -390,7 +390,7 @@ module DispatchersModule =
                         (Running, Handled, world)
                     else (Running, Unhandled, world)
                 else (Running, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
+            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
     
         let handleToggleEventUpMouseLeft message world =
             match message.Data with
@@ -411,7 +411,7 @@ module DispatchersModule =
                         let world = set toggle world <| World.worldEntity message.Subscriber
                         (Running, Unhandled, world) // TODO: make sure message should actually be Unhandled!
                 else (Running, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
+            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
         
         override dispatcher.Init (toggle, dispatcherContainer) =
             let toggle = base.Init (toggle, dispatcherContainer)
@@ -470,7 +470,7 @@ module DispatchersModule =
                         (liveness, Handled, world)
                     else (Running, Unhandled, world)
                 else (Running, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
+            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
     
         let handleFeelerEventUpMouseLeft message world =
             match message.Data with
@@ -482,7 +482,7 @@ module DispatchersModule =
                     let (liveness, world) = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
                     (liveness, Handled, world)
                 else (Running, Unhandled, world)
-            | _ -> failwith ("Expected MouseButtonData from event '" + addrToStr message.Event + "'.")
+            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
         
         override dispatcher.Init (feeler, dispatcherContainer) =
             let feeler = base.Init (feeler, dispatcherContainer)

@@ -392,8 +392,13 @@ module WorldPrims =
         | [_; _; _] as entityAddress -> Entity <| get world -<| worldEntity entityAddress
         | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
-    let private getSubscribedSimulants subscriptions world =
-        List.map (fun (address, _) -> getSimulant address world) subscriptions
+    let private getOptSimulant address world =
+        match address with
+        | [] -> Some <| Game world.Game
+        | [_] as screenAddress -> Option.map Screen (get world <| worldOptScreen screenAddress)
+        | [_; _] as groupAddress -> Option.map Group (get world <| worldOptGroup groupAddress)
+        | [_; _; _] as entityAddress -> Option.map Entity (get world <| worldOptEntity entityAddress)
+        | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
     let private isAddressSelected address world =
         let optScreenAddress = get world worldOptSelectedScreenAddress
@@ -410,12 +415,19 @@ module WorldPrims =
         | Group _ -> GroupPublishingPriority
         | Entity entity -> Entity.getPickingPriority entity
 
+    let private getSubscriptionDescriptors subscriptions world =
+        let optSimulants =
+            List.map
+                (fun (address, subscription) ->
+                    let optSimulant = getOptSimulant address world
+                    Option.map (fun simulant -> (getPublishingPriority simulant, (address, subscription))) optSimulant)
+                subscriptions
+        List.definitize optSimulants
+
     let private subscriptionSort subscriptions world =
-        let simulants = getSubscribedSimulants subscriptions world
-        let priorities = List.map getPublishingPriority simulants
-        let prioritiesAndSubscriptions = List.zip priorities subscriptions
-        let prioritiesAndSubscriptionsSorted = List.sortWith sortFstAsc prioritiesAndSubscriptions
-        List.map snd prioritiesAndSubscriptionsSorted
+        let subscriptionDescriptors = getSubscriptionDescriptors subscriptions world
+        let subscriptionDescriptors = List.sortWith sortFstAsc subscriptionDescriptors
+        List.map snd subscriptionDescriptors
 
     /// Publish a message for the given event.
     let rec publish event publisher messageData world =
@@ -436,7 +448,10 @@ module WorldPrims =
                                 | ExitSub -> handleEventAsExit world
                                 | SwallowSub -> handleEventAsSwallow world
                                 | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
-                                | CustomSub fn -> fn message world
+                                | CustomSub fn ->
+                                    match getOptSimulant message.Subscriber world with
+                                    | None -> (liveness, Unhandled, world)
+                                    | Some _ -> fn message world
                             Some result)
                     (Running, Unhandled, world)
                     subListSorted

@@ -48,6 +48,7 @@ module NuConstants =
     let UpMouseEvent = addr "Up/Mouse"
     let FinishedIncomingEvent = addr "Finished/Incoming"
     let FinishedOutgoingEvent = addr "Finished/Outgoing"
+    let CollisionEvent = addr "Collision"
     let GamePublishingPriority = Single.MaxValue
     let ScreenPublishingPriority = GamePublishingPriority * 0.5f
     let GroupPublishingPriority = ScreenPublishingPriority * 0.5f

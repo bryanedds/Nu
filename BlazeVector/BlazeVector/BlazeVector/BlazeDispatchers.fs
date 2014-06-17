@@ -17,6 +17,10 @@ module BlazeDispatchersModule =
         [<XField>] member this.BirthTime with get () = this?BirthTime () : uint64
         member this.SetBirthTime (value : uint64) : Entity = this?BirthTime <- value
 
+        (* enemy xfields *)
+        [<XField>] member this.Health with get () = this?Health () : int
+        member this.SetHealth (value : int) : Entity = this?Health <- value
+
     type BlazeBulletDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
@@ -26,7 +30,7 @@ module BlazeDispatchersModule =
 
         let tickHandler message world =
             let bullet = get world <| World.worldEntity message.Subscriber
-            if bullet.BirthTime + 30UL > world.Ticks then (Running, Unhandled, world)
+            if bullet.BirthTime + 90UL > world.Ticks then (Running, Unhandled, world)
             else
                 let world = World.removeEntity message.Subscriber world
                 (Running, Unhandled, world)
@@ -43,9 +47,9 @@ module BlazeDispatchersModule =
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
                 .SetIsBullet(true)
-                .SetIsSensor(true)
                 .SetBirthTime(0UL)
                 .SetSize(Vector2 (12.0f, 12.0f))
+                .SetRestitution(1.0f)
 
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
@@ -79,7 +83,7 @@ module BlazeDispatchersModule =
                     let world = createBullet player message.Subscriber world
                     (Running, Unhandled, world)
 
-        let movePlayerHandler message world =
+        let movementHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
                 let player = get world <| World.worldEntity message.Subscriber
@@ -92,7 +96,7 @@ module BlazeDispatchersModule =
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (Running, Unhandled, world)
 
-        let jumpPlayerHandler message world =
+        let jumpHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
                 let player = get world <| World.worldEntity message.Subscriber
@@ -107,8 +111,8 @@ module BlazeDispatchersModule =
             let world = base.Register (player, address, world)
             world |>
                 World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub movePlayerHandler |>
-                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpPlayerHandler
+                World.subscribe NuConstants.TickEvent address -<| CustomSub movementHandler |>
+                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpHandler
 
         override dispatcher.Unregister (player, address, world) =
             let world = base.Unregister (player, address, world)
@@ -120,22 +124,45 @@ module BlazeDispatchersModule =
     type BlazeEnemyDispatcher () =
         inherit CharacterDispatcher ()
 
-        let moveEnemyHandler message world =
+        let movementHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
                 let enemy = get world <| World.worldEntity message.Subscriber
-                let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
-                let force =
-                    match optGroundTangent with
-                    | None -> Vector2 (-1.0f, -2.5f) * 800.0f
-                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-800.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
-                let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
-                let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                (Running, Unhandled, world)
+                let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
+                if not hasAppeared then (Running, Unhandled, world)
+                else
+                    let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
+                    let force =
+                        match optGroundTangent with
+                        | None -> Vector2 (-1.0f, -2.5f) * 1500.0f
+                        | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-1500.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
+                    let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
+                    let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+                    (Running, Unhandled, world)
+
+        let collisionHandler message world =
+            match message.Data with
+            | CollisionData (_, _, colliderAddress) ->
+                match get world <| World.worldOptEntity colliderAddress with
+                | None -> (Running, Unhandled, world)
+                | Some collider ->
+                    if not <| Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world then (Running, Unhandled, world)
+                    else
+                        let enemy = get world <| World.worldEntity message.Subscriber
+                        let enemy = enemy.SetHealth <| enemy.Health - 1
+                        let world = set enemy world <| World.worldEntity message.Subscriber
+                        let world = if enemy.Health = 0 then World.removeEntity message.Subscriber world else world
+                        (Running, Unhandled, world)
+            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
+
+        override dispatcher.Init (enemy, dispatcherContainer) =
+            let enemy = base.Init (enemy, dispatcherContainer)
+            enemy.SetHealth(15)
 
         override dispatcher.Register (enemy, address, world) =
             let world = base.Register (enemy, address, world)
-            World.subscribe NuConstants.TickEvent address (CustomSub moveEnemyHandler) world
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub movementHandler) world
+            World.subscribe (NuConstants.CollisionEvent @ address) address (CustomSub collisionHandler) world
 
         override dispatcher.Unregister (enemy, address, world) =
             let world = base.Unregister (enemy, address, world)
@@ -151,7 +178,7 @@ module BlazeDispatchersModule =
 
         let adjustCamera groupAddress world =
             let player = getPlayer groupAddress world
-            let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f, world.Camera.EyeCenter.Y)
+            let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
             { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
 
         let adjustCameraHandler message world =
@@ -172,7 +199,7 @@ module BlazeDispatchersModule =
         let shiftEntities xShift entities world =
             List.map
                 (fun (entity : Entity) ->
-                    if Xtension.derivesFrom typeof<Entity2dDispatcher> entity.Xtension world then entity
+                    if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world then entity
                     else entity.SetPosition <| entity.Position + Vector2 (xShift, 0.0f))
                 entities
 
