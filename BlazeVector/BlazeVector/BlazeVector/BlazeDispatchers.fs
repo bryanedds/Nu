@@ -210,11 +210,11 @@ module BlazeDispatchersModule =
         override dispatcher.Register (screen, address, groupDescriptors, world) =
             let stagePlay = World.loadGroupFromFile BlazeConstants.StagePlayFileName world
             let stagePlayDescriptor = Triple.prepend BlazeConstants.StagePlayName stagePlay
-            let sectionDescriptor0 = makeSectionFromFile BlazeConstants.Section0FileName BlazeConstants.Section0Name 0.0f world
-            let sectionDescriptor1 = makeSectionFromFile BlazeConstants.Section1FileName BlazeConstants.Section1Name 2048.0f world
-            let sectionDescriptor2 = makeSectionFromFile BlazeConstants.Section2FileName BlazeConstants.Section2Name 4096.0f world
-            let sectionDescriptor3 = makeSectionFromFile BlazeConstants.Section3FileName BlazeConstants.Section3Name 6144.0f world
-            let sectionDescriptors = [sectionDescriptor0; sectionDescriptor1; sectionDescriptor2; sectionDescriptor3]
+            let sectionDescriptors =
+                [makeSectionFromFile BlazeConstants.Section0FileName BlazeConstants.Section0Name 0.0f world
+                 makeSectionFromFile BlazeConstants.Section1FileName BlazeConstants.Section1Name 2048.0f world
+                 makeSectionFromFile BlazeConstants.Section2FileName BlazeConstants.Section2Name 4096.0f world
+                 makeSectionFromFile BlazeConstants.Section3FileName BlazeConstants.Section3Name 6144.0f world]
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors @ groupDescriptors
             base.Register (screen, address, groupDescriptors, world)
 
