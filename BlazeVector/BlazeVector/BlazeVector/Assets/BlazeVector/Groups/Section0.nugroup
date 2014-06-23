@@ -32,14 +32,15 @@
         <FixedRotation type="System.Boolean">True</FixedRotation>
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <Health type="System.Int32">6</Health>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
-        <Position type="OpenTK.Vector2">1512;-175.6802</Position>
+        <Position type="OpenTK.Vector2">1512;-175.68</Position>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
+        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
     <Entity>
@@ -55,14 +56,15 @@
         <FixedRotation type="System.Boolean">True</FixedRotation>
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <Health type="System.Int32">6</Health>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
-        <Position type="OpenTK.Vector2">176;-79.68034</Position>
+        <Position type="OpenTK.Vector2">176;-79.6803</Position>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
+        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
     <Entity>
@@ -95,14 +97,15 @@
         <FixedRotation type="System.Boolean">True</FixedRotation>
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <Health type="System.Int32">6</Health>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
-        <Position type="OpenTK.Vector2">1304;-175.5635</Position>
+        <Position type="OpenTK.Vector2">1376;-175.6803</Position>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
+        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
     <Entity>
@@ -118,14 +121,15 @@
         <FixedRotation type="System.Boolean">True</FixedRotation>
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <Health type="System.Int32">6</Health>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
-        <Position type="OpenTK.Vector2">1256;112.3195</Position>
+        <Position type="OpenTK.Vector2">1256;112.32</Position>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
+        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
     <Entity>
@@ -141,14 +145,15 @@
         <FixedRotation type="System.Boolean">True</FixedRotation>
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <Health type="System.Int32">6</Health>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
-        <Position type="OpenTK.Vector2">928;112.3197</Position>
+        <Position type="OpenTK.Vector2">928;112.32</Position>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
+        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
     <Entity>
@@ -164,14 +169,15 @@
         <FixedRotation type="System.Boolean">True</FixedRotation>
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Image6;Default;AssetGraph.xml</ImageSprite>
+        <Health type="System.Int32">6</Health>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
-        <Position type="OpenTK.Vector2">24;48.31985</Position>
+        <Position type="OpenTK.Vector2">112;48.3195</Position>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
+        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
     <Entity>
