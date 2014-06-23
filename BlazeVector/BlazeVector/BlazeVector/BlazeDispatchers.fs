@@ -159,8 +159,8 @@ module BlazeDispatchersModule =
                     let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
                     let force =
                         match optGroundTangent with
-                        | None -> Vector2 (-1.0f, -2.5f) * 1500.0f
-                        | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-1500.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
+                        | None -> Vector2 (-1.0f, -2.5f) * 2000.0f
+                        | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
                     let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
                     let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                     (Running, Unhandled, world)
@@ -182,7 +182,7 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            enemy.SetHealth 5
+            enemy.SetHealth 6
 
         override dispatcher.Register (enemy, address, world) =
             let world = base.Register (enemy, address, world)
@@ -192,6 +192,18 @@ module BlazeDispatchersModule =
         override dispatcher.Unregister (enemy, address, world) =
             let world = base.Unregister (enemy, address, world)
             World.unsubscribe NuConstants.TickEvent address world
+
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "Enemy"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+
+        override dispatcher.GetImageOptInset (_, world) =
+            let tile = (world.Ticks / 8UL) % 6UL
+            let tileI = tile % 4UL
+            let tileJ = tile / 4UL
+            let tileX = single tileI * 48.0f
+            let tileY = single tileJ * 96.0f
+            let inset = Vector4 (tileX, tileY, tileX + 48.0f, tileY + 96.0f)
+            Some inset
 
     /// TODO document.
     type BlazeStageGroupDispatcher () =
