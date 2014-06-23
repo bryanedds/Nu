@@ -37,7 +37,6 @@
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">1512;-175.6802</Position>
-        <Radius type="System.Single">16</Radius>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -61,7 +60,6 @@
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">176;-79.68034</Position>
-        <Radius type="System.Single">16</Radius>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -102,7 +100,6 @@
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">1304;-175.5635</Position>
-        <Radius type="System.Single">16</Radius>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -126,7 +123,6 @@
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">1256;112.3195</Position>
-        <Radius type="System.Single">16</Radius>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -150,7 +146,6 @@
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">928;112.3197</Position>
-        <Radius type="System.Single">16</Radius>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -174,7 +169,6 @@
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">24;48.31985</Position>
-        <Radius type="System.Single">16</Radius>
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
