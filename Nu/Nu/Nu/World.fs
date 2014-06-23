@@ -164,6 +164,7 @@ module World =
                         { Position = -camera.EyeSize * 0.5f // negation for right-handedness
                           Size = camera.EyeSize
                           Rotation = 0.0f
+                          OptInset = None
                           Sprite = dissolveSprite
                           Color = color }
                       Depth = Single.MaxValue }]
