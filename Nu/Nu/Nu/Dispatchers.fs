@@ -72,8 +72,7 @@ module DispatchersModule =
         // all xfields already declared
 
         (* character xfields *)
-        [<XField>] member this.Radius with get () = this?Radius () : single
-        member this.SetRadius (value : single) : Entity = this?Radius <- value
+        // all xfields already declared
 
         (* tile map xfields *)
         [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
@@ -197,14 +196,17 @@ module DispatchersModule =
     type [<AbstractClass>] Entity2dWithSimplePhysicsAndRenderingDispatcher () =
         inherit Entity2dWithSimplePhysicsDispatcher ()
 
-        abstract GetImageSpriteAssetName : unit -> string
+        abstract GetImageSprite : unit -> Sprite
+
+        abstract GetImageOptInset : Entity * World -> Vector4 option
+        default dispatcher.GetImageOptInset (_, _) = None
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            let spriteAssetName = dispatcher.GetImageSpriteAssetName ()
-            entity.SetImageSprite({ SpriteAssetName = spriteAssetName; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            let sprite = dispatcher.GetImageSprite ()
+            entity.SetImageSprite sprite
 
-        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, _) =
+        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) =
             if not entity.Visible then []
             else
                 [LayerableDescriptor <|
@@ -213,6 +215,7 @@ module DispatchersModule =
                             { Position = entity.Position * viewRelative
                               Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
                               Rotation = entity.Rotation
+                              OptInset = dispatcher.GetImageOptInset (entity, world)
                               Sprite = entity.ImageSprite
                               Color = Vector4.One }
                           Depth = entity.Depth }]
@@ -290,6 +293,7 @@ module DispatchersModule =
                             { Position = button.Position * viewAbsolute
                               Size = button.Size
                               Rotation = 0.0f
+                              OptInset = None
                               Sprite = if button.IsDown then button.DownSprite else button.UpSprite
                               Color = Vector4.One }
                           Depth = button.Depth }]
@@ -319,6 +323,7 @@ module DispatchersModule =
                             { Position = label.Position * viewAbsolute
                               Size = label.Size
                               Rotation = 0.0f
+                              OptInset = None
                               Sprite = label.LabelSprite
                               Color = Vector4.One }
                           Depth = label.Depth }]
@@ -353,6 +358,7 @@ module DispatchersModule =
                             { Position = textBox.Position * viewAbsolute
                               Size = textBox.Size
                               Rotation = 0.0f
+                              OptInset = None
                               Sprite = textBox.BoxSprite
                               Color = Vector4.One }
                           Depth = textBox.Depth }
@@ -441,6 +447,7 @@ module DispatchersModule =
                             { Position = toggle.Position * viewAbsolute
                               Size = toggle.Size
                               Rotation = 0.0f
+                              OptInset = None
                               Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
                               Color = Vector4.One }
                           Depth = toggle.Depth }]
@@ -532,6 +539,7 @@ module DispatchersModule =
                             { Position = fillBarSpritePosition * viewAbsolute
                               Size = fillBarSpriteSize
                               Rotation = 0.0f
+                              OptInset = None
                               Sprite = fillBar.FillSprite
                               Color = Vector4.One }
                           Depth = fillBar.Depth }
@@ -541,6 +549,7 @@ module DispatchersModule =
                             { Position = fillBar.Position * viewAbsolute
                               Size = fillBar.Size
                               Rotation = 0.0f
+                              OptInset = None
                               Sprite = fillBar.BorderSprite
                               Color = Vector4.One }
                           Depth = fillBar.Depth }]
@@ -560,8 +569,8 @@ module DispatchersModule =
         override dispatcher.MakeBodyShape (block : Entity) =
             BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
 
-        override dispatcher.GetImageSpriteAssetName () =
-            "Image3"
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } 
     
     type AvatarDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
@@ -569,8 +578,8 @@ module DispatchersModule =
         override dispatcher.MakeBodyShape (avatar : Entity) =
             CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override dispatcher.GetImageSpriteAssetName () =
-            "Image7"
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar = base.Init (avatar, dispatcherContainer)
@@ -583,17 +592,16 @@ module DispatchersModule =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
         
         override dispatcher.MakeBodyShape (character : Entity) =
-            CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Radius; Center = Vector2.Zero }
+            CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }
 
-        override dispatcher.GetImageSpriteAssetName () =
-            "Image6"
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character = base.Init (character, dispatcherContainer)
             character
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
-                .SetRadius(NuConstants.DefaultEntitySize.X * 0.25f)
 
     type TileMapDispatcher () =
         inherit Entity2dDispatcher ()

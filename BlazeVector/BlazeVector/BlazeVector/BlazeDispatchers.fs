@@ -25,7 +25,7 @@ module BlazeDispatchersModule =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
         let launch (bullet : Entity) world =
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (400.0f, 0.0f) }
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (1600.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
         let tickHandler message world =
@@ -38,8 +38,8 @@ module BlazeDispatchersModule =
         override dispatcher.MakeBodyShape (bullet : Entity) =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override dispatcher.GetImageSpriteAssetName () =
-            "Image7"
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "PlayerBullet"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
@@ -47,7 +47,7 @@ module BlazeDispatchersModule =
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
                 .SetBirthTime(0UL)
-                .SetSize(Vector2 (12.0f, 12.0f))
+                .SetSize(Vector2 (24.0f, 24.0f))
                 .SetRestitution(0.5f)
 
         override dispatcher.Register (bullet, address, world) =
@@ -68,7 +68,7 @@ module BlazeDispatchersModule =
             let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
             let bullet =
                 bullet
-                    .SetPosition(player.Position + player.Size * 0.75f)
+                    .SetPosition(player.Position + Vector2 (player.Size.X * 0.75f, player.Size.Y * 0.4f))
                     .SetDepth(player.Depth + 1.0f)
             let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
             World.addEntity bulletAddress bullet world
@@ -89,8 +89,8 @@ module BlazeDispatchersModule =
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
-                    | None -> Vector2 (1.0f, -2.5f) * 3000.0f
-                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (3000.0f, if groundTangent.Y > 0.0f then 7000.0f else 0.0f))
+                    | None -> Vector2 (1.0f, -2.5f) * 4000.0f
+                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (4000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
                 let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (Running, Unhandled, world)
@@ -102,9 +102,13 @@ module BlazeDispatchersModule =
                 if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
                 then (Running, Unhandled, world)
                 else
-                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 8500.0f) }
+                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 10000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     (Running, Unhandled, world)
+
+        override dispatcher.Init (player, dispatcherContainer) =
+            let player = base.Init (player, dispatcherContainer)
+            player.SetSize <| Vector2 (64.0f, 128.0f)
 
         override dispatcher.Register (player, address, world) =
             let world = base.Register (player, address, world)
@@ -119,6 +123,18 @@ module BlazeDispatchersModule =
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.TickEvent address |>
                 World.unsubscribe NuConstants.DownMouseRightEvent address
+
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "Player"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+
+        override dispatcher.GetImageOptInset (_, world) =
+            let tile = (world.Ticks / 3UL) % 16UL
+            let tileI = tile % 4UL
+            let tileJ = tile / 4UL
+            let tileX = single tileI * 48.0f
+            let tileY = single tileJ * 96.0f
+            let inset = Vector4 (tileX, tileY, tileX + 48.0f, tileY + 96.0f)
+            Some inset
 
     type BlazeEnemyDispatcher () =
         inherit CharacterDispatcher ()
