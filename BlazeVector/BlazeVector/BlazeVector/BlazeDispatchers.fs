@@ -229,10 +229,10 @@ module BlazeDispatchersModule =
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany
-                    [|typeof<BlazeBulletDispatcher>.Name, BlazeBulletDispatcher () :> obj
-                      typeof<BlazePlayerDispatcher>.Name, BlazePlayerDispatcher () :> obj
-                      typeof<BlazeEnemyDispatcher>.Name, BlazeEnemyDispatcher () :> obj
-                      typeof<BlazeStageGroupDispatcher>.Name, BlazeStageGroupDispatcher () :> obj
-                      typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj|]
+                    [typeof<BlazeBulletDispatcher>.Name, BlazeBulletDispatcher () :> obj
+                     typeof<BlazePlayerDispatcher>.Name, BlazePlayerDispatcher () :> obj
+                     typeof<BlazeEnemyDispatcher>.Name, BlazeEnemyDispatcher () :> obj
+                     typeof<BlazeStageGroupDispatcher>.Name, BlazeStageGroupDispatcher () :> obj
+                     typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj]
                     world.Dispatchers
             { world with Dispatchers = dispatchers }
