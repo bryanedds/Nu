@@ -24,6 +24,7 @@ module RenderingModule =
         { Position : Vector2
           Size : Vector2
           Rotation : single
+          OptInset : Vector4 option
           Sprite : Sprite
           Color : Vector4 }
 
@@ -244,7 +245,7 @@ module Rendering =
             let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
-                note <| "LayeredSpriteDescriptor failed due to unloadable assets for '" + string sprite + "'."
+                debug <| "LayeredSpriteDescriptor failed due to unloadable assets for '" + string sprite + "'."
                 renderer
             | Some renderAsset ->
                 match renderAsset with
@@ -255,10 +256,17 @@ module Rendering =
                     let textureSizeY = ref 0
                     ignore <| SDL.SDL_QueryTexture (texture, textureFormat, textureAccess, textureSizeX, textureSizeY)
                     let mutable sourceRect = SDL.SDL_Rect ()
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- !textureSizeX
-                    sourceRect.h <- !textureSizeY
+                    match spriteDescriptor.OptInset with
+                    | None ->
+                        sourceRect.x <- 0
+                        sourceRect.y <- 0
+                        sourceRect.w <- !textureSizeX
+                        sourceRect.h <- !textureSizeY
+                    | Some inset ->
+                        sourceRect.x <- int inset.X
+                        sourceRect.y <- int inset.Y
+                        sourceRect.w <- int <| inset.Z - inset.X
+                        sourceRect.h <- int <| inset.W - inset.Y
                     let mutable destRect = SDL.SDL_Rect ()
                     destRect.x <- int <| spriteDescriptor.Position.X + camera.EyeSize.X * 0.5f
                     destRect.y <- int <| -spriteDescriptor.Position.Y + camera.EyeSize.Y * 0.5f - spriteDescriptor.Size.Y // negation for right-handedness
