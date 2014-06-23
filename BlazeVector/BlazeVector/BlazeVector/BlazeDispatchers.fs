@@ -25,7 +25,7 @@ module BlazeDispatchersModule =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
         let launch (bullet : Entity) world =
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (1600.0f, 0.0f) }
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
         let tickHandler message world =
@@ -34,6 +34,13 @@ module BlazeDispatchersModule =
             else
                 let world = World.removeEntity message.Subscriber world
                 (Running, Unhandled, world)
+
+        let collisionHandler message world =
+            match message.Data with
+            | CollisionData (_, _, _) ->
+                let world = World.removeEntity message.Subscriber world
+                (Running, Unhandled, world)
+            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.MakeBodyShape (bullet : Entity) =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
@@ -49,10 +56,13 @@ module BlazeDispatchersModule =
                 .SetBirthTime(0UL)
                 .SetSize(Vector2 (24.0f, 24.0f))
                 .SetRestitution(0.5f)
+                .SetDensity(0.25f)
+                .SetIsBullet(true)
 
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
             let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
+            let world = World.subscribe (NuConstants.CollisionEvent @ address) address (CustomSub collisionHandler) world
             let world = launch bullet world
             let bullet = bullet.SetBirthTime world.Ticks
             World.setEntity address bullet world
@@ -68,7 +78,7 @@ module BlazeDispatchersModule =
             let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
             let bullet =
                 bullet
-                    .SetPosition(player.Position + Vector2 (player.Size.X * 0.75f, player.Size.Y * 0.4f))
+                    .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
                     .SetDepth(player.Depth + 1.0f)
             let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
             World.addEntity bulletAddress bullet world
@@ -76,7 +86,7 @@ module BlazeDispatchersModule =
         let spawnBulletHandler message world =
             if not world.Interactive then (Running, Unhandled, world)
             else
-                if world.Ticks % 5UL <> 0UL then (Running, Unhandled, world)
+                if world.Ticks % 6UL <> 0UL then (Running, Unhandled, world)
                 else
                     let player = World.getEntity message.Subscriber world
                     let world = createBullet player message.Subscriber world
@@ -172,7 +182,7 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            enemy.SetHealth 10
+            enemy.SetHealth 5
 
         override dispatcher.Register (enemy, address, world) =
             let world = base.Register (enemy, address, world)
