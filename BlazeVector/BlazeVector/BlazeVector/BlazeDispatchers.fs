@@ -89,8 +89,8 @@ module BlazeDispatchersModule =
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
-                    | None -> Vector2 (1.0f, -2.5f) * 4000.0f
-                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (4000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
+                    | None -> Vector2 (1.0f, -2.5f) * 8000.0f
+                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
                 let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (Running, Unhandled, world)
@@ -102,13 +102,13 @@ module BlazeDispatchersModule =
                 if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
                 then (Running, Unhandled, world)
                 else
-                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 10000.0f) }
+                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     (Running, Unhandled, world)
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
-            player.SetSize <| Vector2 (64.0f, 128.0f)
+            player.SetSize <| Vector2 (48.0f, 96.0f)
 
         override dispatcher.Register (player, address, world) =
             let world = base.Register (player, address, world)
