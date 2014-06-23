@@ -84,18 +84,18 @@ module DispatchersModule =
     type EntityDispatcher () =
 
         abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default this.Init (entity, _) = entity
+        default dispatcher.Init (entity, _) = entity
 
         abstract member Register : Entity * Address * World -> World
-        default this.Register (_, _, world) = world
+        default dispatcher.Register (_, _, world) = world
 
         abstract member Unregister : Entity * Address * World -> World
-        default this.Unregister (_, _, world) = world
+        default dispatcher.Unregister (_, _, world) = world
 
     type Entity2dDispatcher () =
         inherit EntityDispatcher ()
             
-        override this.Init (entity2d, dispatcherContainer) =
+        override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
             // perhaps a nice 'with' syntax macro would work better here -
             // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
@@ -106,19 +106,19 @@ module DispatchersModule =
                 .SetRotation(0.0f)
 
         abstract member PropagatePhysics : Entity * Address * World -> World
-        default this.PropagatePhysics (_, _, world) = world
+        default dispatcher.PropagatePhysics (_, _, world) = world
 
         abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
-        default this.HandleBodyTransformMessage (_, _, _, world) = world
+        default dispatcher.HandleBodyTransformMessage (_, _, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
-        default this.GetRenderDescriptors (_, _, _, _) = []
+        default dispatcher.GetRenderDescriptors (_, _, _, _) = []
 
         abstract member GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = DefaultEntitySize
+        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
 
         abstract member IsTransformRelative : Entity * World -> bool
-        default this.IsTransformRelative (_, _) = true
+        default dispatcher.IsTransformRelative (_, _) = true
 
     type EntityUiDispatcher () =
         inherit Entity2dDispatcher ()
@@ -132,13 +132,13 @@ module DispatchersModule =
 
         abstract member MakeBodyShape : Entity -> BodyShape
 
-        member this.MakeCreateBodyMessage (entity : Entity, address : Address) =
+        member dispatcher.MakeCreateBodyMessage (entity : Entity, address : Address) =
             { EntityAddress = address
               PhysicsId = entity.PhysicsId
               Position = entity.Position + entity.Size * 0.5f
               Rotation = entity.Rotation
               BodyProperties =
-                { Shape = this.MakeBodyShape entity
+                { Shape = dispatcher.MakeBodyShape entity
                   BodyType = entity.BodyType
                   Density = entity.Density
                   Friction = entity.Friction
@@ -557,19 +557,19 @@ module DispatchersModule =
     type BlockDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
-        override this.MakeBodyShape (block : Entity) =
+        override dispatcher.MakeBodyShape (block : Entity) =
             BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () =
+        override dispatcher.GetImageSpriteAssetName () =
             "Image3"
     
     type AvatarDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
         
-        override this.MakeBodyShape (avatar : Entity) =
+        override dispatcher.MakeBodyShape (avatar : Entity) =
             CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () =
+        override dispatcher.GetImageSpriteAssetName () =
             "Image7"
 
         override dispatcher.Init (avatar, dispatcherContainer) =
@@ -582,10 +582,10 @@ module DispatchersModule =
     type CharacterDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
         
-        override this.MakeBodyShape (character : Entity) =
+        override dispatcher.MakeBodyShape (character : Entity) =
             CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Radius; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () =
+        override dispatcher.GetImageSpriteAssetName () =
             "Image6"
 
         override dispatcher.Init (character, dispatcherContainer) =
@@ -784,13 +784,13 @@ module DispatchersModule =
     type GroupDispatcher () =
 
         abstract member Init : Group * IXDispatcherContainer -> Group
-        default this.Init (group, _) = group
+        default dispatcher.Init (group, _) = group
         
         abstract member Register : Group * Address * Entity list * World -> World
-        default this.Register (_, address, entities, world) = World.addEntities address entities world
+        default dispatcher.Register (_, address, entities, world) = World.addEntities address entities world
 
         abstract member Unregister : Group * Address * World -> World
-        default this.Unregister (_, address, world) = World.removeEntities address world
+        default dispatcher.Unregister (_, address, world) = World.removeEntities address world
 
     type TransitionDispatcher () =
         class end
@@ -798,11 +798,11 @@ module DispatchersModule =
     type ScreenDispatcher () =
 
         abstract member Register : Screen * Address * GroupDescriptor list * World -> World
-        default this.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
+        default dispatcher.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
         abstract member Unregister : Screen * Address * World -> World
-        default this.Unregister (_, address, world) = World.removeGroups address world
+        default dispatcher.Unregister (_, address, world) = World.removeGroups address world
 
     type GameDispatcher () =
         abstract member Register : Game * World -> World
-        default this.Register (_, world) = world
+        default dispatcher.Register (_, world) = world
