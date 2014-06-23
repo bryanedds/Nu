@@ -30,6 +30,7 @@
   <package name="BlazeStages">
     <asset name="Player" fileName="Assets/BlazeVector/Stages/Player.png" associations="Rendering"/>
     <asset name="PlayerBullet" fileName="Assets/BlazeVector/Stages/PlayerBullet.png" associations="Rendering"/>
+    <asset name="Enemy" fileName="Assets/BlazeVector/Stages/Enemy.png" associations="Rendering"/>
     <asset name="EnemyBullet" fileName="Assets/BlazeVector/Stages/EnemyBullet.png" associations="Rendering"/>
     <asset name="RoadTileSet" fileName="Assets/BlazeVector/Stages/RoadTileSet.png" associations="Rendering"/>
     <asset name="SkylineTileSet" fileName="Assets/BlazeVector/Stages/SkylineTileSet.png" associations="Rendering"/>
