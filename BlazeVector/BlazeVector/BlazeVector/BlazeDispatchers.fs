@@ -35,10 +35,10 @@ module BlazeDispatchersModule =
                 let world = World.removeEntity message.Subscriber world
                 (Running, Unhandled, world)
 
-        override this.MakeBodyShape (bullet : Entity) =
+        override dispatcher.MakeBodyShape (bullet : Entity) =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override this.GetImageSpriteAssetName () =
+        override dispatcher.GetImageSpriteAssetName () =
             "Image7"
 
         override dispatcher.Init (bullet, dispatcherContainer) =
@@ -53,9 +53,9 @@ module BlazeDispatchersModule =
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
             let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
+            let world = launch bullet world
             let bullet = bullet.SetBirthTime world.Ticks
-            let world = World.setEntity address bullet world
-            launch bullet world
+            World.setEntity address bullet world
 
         override dispatcher.Unregister (bullet, address, world) =
             let world = base.Unregister (bullet, address, world)
