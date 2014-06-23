@@ -686,7 +686,7 @@ module DispatchersModule =
                             let verticesScaled = List.map (fun vertex -> Vector2.Multiply (vertex, tmd.TileSizeF)) verticesOffset
                             registerTilePhysicsPolygon address tm tmd tli td ti verticesScaled world
                         with :? NotSupportedException ->
-                            trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
+                            trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;0.0 | 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
                             world
                     | _ ->
                         trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
