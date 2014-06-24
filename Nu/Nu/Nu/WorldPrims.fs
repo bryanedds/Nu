@@ -169,12 +169,18 @@ module WorldPrims =
         let world = unregisterEntity address world
         set None world <| worldOptEntity address
 
-    let removeEntities address world =
+    let removeAllEntities (address : Address) world =
         let entities = get world <| worldEntities address
         Map.fold
             (fun world entityName _ -> removeEntity (address @ [entityName]) world)
             world
             entities
+
+    let removeEntities (screenAddress : Address) entityNames world =
+        List.fold
+            (fun world entityName -> removeEntity (screenAddress @ [entityName]) world)
+            world
+            entityNames
 
     let addEntity address entity world =
         let world =
@@ -287,12 +293,18 @@ module WorldPrims =
         let world = unregisterGroup address world
         set None world <| worldOptGroup address
 
-    let removeGroups address world =
+    let removeAllGroups (address : Address) world =
         let groups = get world <| worldGroups address
         Map.fold
             (fun world groupName _ -> removeGroup (address @ [groupName]) world)
             world
             groups
+
+    let removeGroups (screenAddress : Address) groupNames world =
+        List.fold
+            (fun world groupName -> removeGroup (screenAddress @ [groupName]) world)
+            world
+            groupNames
 
     let addGroup address (group : Group) entities world =
         let world =
@@ -458,31 +470,32 @@ module WorldPrims =
 
     /// Publish a message for the given event.
     let rec publish event publisher messageData world =
-        let optSubList = Map.tryFind event world.Subscriptions
-        match optSubList with
-        | None -> (Running, world)
-        | Some subList ->
-            let subListSorted = subscriptionSort subList world
-            let (liveness, _, world) =
-                List.foldWhile
-                    (fun (liveness, messageHandled, world) (subscriber, subscription) ->
-                        let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
-                        if messageHandled = Handled || liveness = Exiting then None
-                        elif not <| isAddressSelected subscriber world then Some (liveness, messageHandled, world)
-                        else
-                            let result =
-                                match subscription with
-                                | ExitSub -> handleEventAsExit world
-                                | SwallowSub -> handleEventAsSwallow world
-                                | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
-                                | CustomSub fn ->
-                                    match getOptSimulant message.Subscriber world with
-                                    | None -> (liveness, Unhandled, world)
-                                    | Some _ -> fn message world
-                            Some result)
-                    (Running, Unhandled, world)
-                    subListSorted
-            (liveness, world)
+        let events = List.collapseLeft event
+        let optSubLists = List.map (fun event -> Map.tryFind event world.Subscriptions) events
+        let subLists = List.definitize optSubLists
+        let subList = List.concat subLists
+        let subListSorted = subscriptionSort subList world
+        let (_, liveness, world) =
+            List.foldWhile
+                (fun (messageHandled, liveness, world) (subscriber, subscription) ->
+                    let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
+                    if messageHandled = Handled || liveness = Exiting then None
+                    elif not <| isAddressSelected subscriber world then Some (messageHandled, liveness, world)
+                    else
+                        let result =
+                            match subscription with
+                            | ExitSub -> handleEventAsExit world
+                            | SwallowSub -> handleEventAsSwallow world
+                            | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
+                            | ScreenTransitionFromSplashSub destination -> handleEventAsScreenTransitionFromSplash destination world
+                            | CustomSub fn ->
+                                match getOptSimulant message.Subscriber world with
+                                | None -> (Unhandled, liveness, world)
+                                | Some _ -> fn message world
+                        Some result)
+                (Unhandled, Running, world)
+                subListSorted
+        (liveness, world)
 
     /// Subscribe to messages for the given event.
     and subscribe event subscriber subscription world =
@@ -512,16 +525,12 @@ module WorldPrims =
         unsubscribe event subscriber world
     
     and handleEventAsSwallow (world : World) =
-        (Running, Handled, world)
+        (Handled, Running, world)
 
     and handleEventAsExit (world : World) =
-        (Exiting, Handled, world)
+        (Handled, Exiting, world)
 
-    and private getScreenState address world =
-        let screen = get world <| worldScreen address
-        screen.State
-
-    and private setScreenState address state world =
+    and private setScreenStatePlus address state world =
         let world = withScreen (fun screen -> { screen with State = state }) address world
         match state with
         | IdlingState ->
@@ -534,12 +543,12 @@ module WorldPrims =
                 subscribe UpMouseLeftEvent address SwallowSub
 
     and transitionScreen destination world =
-        let world = setScreenState destination IncomingState world
+        let world = setScreenStatePlus destination IncomingState world
         set (Some destination) world worldOptSelectedScreenAddress
 
     and private updateTransition1 (transition : Transition) =
-        if transition.TransitionTicks = transition.TransitionLifetime then ({ transition with TransitionTicks = 0 }, true)
-        else ({ transition with TransitionTicks = transition.TransitionTicks + 1 }, false)
+        if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
+        else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
 
     and internal updateTransition update world =
         let (liveness, world) =
@@ -547,27 +556,32 @@ module WorldPrims =
             match optSelectedScreenAddress with
             | None -> (Running, world)
             | Some selectedScreenAddress ->
-                let screenState = getScreenState selectedScreenAddress world
-                match screenState with
+                let selectedScreen = getScreen selectedScreenAddress world
+                match selectedScreen.State with
                 | IncomingState ->
-                    // TODO: remove duplication with below
-                    let selectedScreen = get world <| worldScreen selectedScreenAddress
-                    let incoming = get selectedScreen Screen.screenIncoming
-                    let (incoming, finished) = updateTransition1 incoming
-                    let selectedScreen = set incoming selectedScreen Screen.screenIncoming
-                    let world = set selectedScreen world <| worldScreen selectedScreenAddress
-                    let world = setScreenState selectedScreenAddress (if finished then IdlingState else IncomingState) world
-                    if not finished then (Running, world)
-                    else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                    let (finished, incoming) = updateTransition1 selectedScreen.Incoming
+                    let selectedScreen = { selectedScreen with Incoming = incoming }
+                    let world = setScreen selectedScreenAddress selectedScreen world
+                    let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
+                    let (liveness, world) =
+                        if not finished then (Running, world)
+                        else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                    match liveness with
+                    | Exiting -> (liveness, world)
+                    | Running ->
+                        if selectedScreen.Incoming.TransitionTicks <> 0L then (liveness, world)
+                        else publish (SelectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | OutgoingState ->
-                    let selectedScreen = get world <| worldScreen selectedScreenAddress
-                    let outgoing = get selectedScreen Screen.screenOutgoing
-                    let (outgoing, finished) = updateTransition1 outgoing
-                    let selectedScreen = set outgoing selectedScreen Screen.screenOutgoing
-                    let world = set selectedScreen world <| worldScreen selectedScreenAddress
-                    let world = setScreenState selectedScreenAddress (if finished then IdlingState else OutgoingState) world
+                    let (finished, outgoing) = updateTransition1 selectedScreen.Outgoing
+                    let selectedScreen = { selectedScreen with Outgoing = outgoing }
+                    let world = setScreen selectedScreenAddress selectedScreen world
+                    let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else OutgoingState) world
                     if not finished then (Running, world)
-                    else publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                    else
+                        let (liveness, world) = publish (DeselectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        match liveness with
+                        | Exiting -> (liveness, world)
+                        | Running -> publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | IdlingState -> (Running, world)
         match liveness with
         | Exiting -> (liveness, world)
@@ -576,29 +590,44 @@ module WorldPrims =
     and private handleSplashScreenIdleTick idlingTime ticks message world =
         let world = unsubscribe message.Event message.Subscriber world
         if ticks < idlingTime then
-            let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incI ticks
+            let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incL ticks
             let world = subscribe message.Event message.Subscriber subscription world
-            (Running, Unhandled, world)
+            (Unhandled, Running, world)
         else
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with
             | None ->
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                (Exiting, Unhandled, world)
+                (Handled, Exiting, world)
             | Some selectedScreenAddress ->
-                let world = setScreenState selectedScreenAddress OutgoingState world
-                (Running, Unhandled, world)
+                let world = setScreenStatePlus selectedScreenAddress OutgoingState world
+                (Unhandled, Running, world)
 
     and internal handleSplashScreenIdle idlingTime message world =
-        let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0
+        let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0L
         let world = subscribe TickEvent message.Subscriber subscription world
-        (Running, Handled, world)
+        (Handled, Running, world)
 
     and private handleFinishedScreenOutgoing destination message world =
         let world = unsubscribe message.Event message.Subscriber world
         let world = transitionScreen destination world
-        (Running, Handled, world)
+        (Handled, Running, world)
+
+    and handleEventAsScreenTransitionFromSplash destination world =
+        let world = transitionScreen destination world
+        (Unhandled, Running, world)
 
     and handleEventAsScreenTransition destination world =
-        let world = transitionScreen destination world
-        (Running, Handled, world)
+        match get world worldOptSelectedScreenAddress with
+        | None ->
+            trace "Program Error: Could not handle screen transition due to no selected screen."
+            (Handled, Exiting, world)
+        | Some selectedScreenAddress ->
+            let sub = CustomSub (fun _ world -> let world = transitionScreen destination world in (Unhandled, Running, world))
+            let world = setScreenStatePlus selectedScreenAddress OutgoingState world
+            let world = subscribe (NuConstants.FinishedOutgoingEvent @ selectedScreenAddress) [] sub world
+            (Unhandled, Running, world)
+
+    let removeEntityPlus address world =
+        let world = removeEntity address world
+        publish (RemovedEvent @ address) address NoData world

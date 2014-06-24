@@ -32,14 +32,14 @@ module BlazeFlow =
 
     // and so on.
     let addStageScreen world =
-        let world = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
+        let world = World.addDissolveScreenFromFile typeof<BlazeStageDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
     let tryMakeBlazeVectorWorld sdlDeps extData =
 
         // our custom game dispatcher here is OmniGameDispatcher
-        let gameDispatcher = BlazeGameDispatcher () :> obj
+        let gameDispatcher = BlazeVectorDispatcher () :> obj
 
         // we use World.tryMakeEmpty to create an empty world that we will transform to create the
         // BlazeVector world
@@ -59,7 +59,7 @@ module BlazeFlow =
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
-            let world = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
+            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
 
             // add our UI screens to the world
             let world = addTitleScreen world

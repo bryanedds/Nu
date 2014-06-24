@@ -42,10 +42,12 @@ module World =
     let registerEntity = WorldPrims.registerEntity
     let unregisterEntity = WorldPrims.unregisterEntity
     let removeEntity = WorldPrims.removeEntity
+    let removeAllEntities = WorldPrims.removeAllEntities
     let removeEntities = WorldPrims.removeEntities
     let addEntity = WorldPrims.addEntity
     let addEntities = WorldPrims.addEntities
     let tryPickEntity = WorldPrims.tryPickEntity
+    let removeEntityPlus = WorldPrims.removeEntityPlus
     
     // Group forwarders.
     let worldGroup = WorldPrims.worldGroup
@@ -66,6 +68,7 @@ module World =
     let registerGroup = WorldPrims.registerGroup
     let unregisterGroup = WorldPrims.unregisterGroup
     let removeGroup = WorldPrims.removeGroup
+    let removeAllGroups = WorldPrims.removeAllGroups
     let removeGroups = WorldPrims.removeGroups
     let addGroup = WorldPrims.addGroup
     let addGroups = WorldPrims.addGroups
@@ -259,14 +262,14 @@ module World =
                     | Exiting -> (liveness, world)
                     | Running -> WorldPrims.updateTransition handleUpdate world)
             (fun world -> let world = render world in handleRender world)
-            (fun world -> let world = play world in { world with Ticks = world.Ticks + 1UL })
+            (fun world -> let world = play world in { world with Ticks = world.Ticks + 1L })
             (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
             sdlConfig
 
     let run tryMakeWorld handleUpdate sdlConfig =
         run4 tryMakeWorld handleUpdate id sdlConfig
 
-    let addSplashScreenFromData handleFinishedOutgoing address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
+    let addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
         let splashScreen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
         let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
         let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
@@ -275,7 +278,7 @@ module World =
         let splashLabel = splashLabel.SetLabelSprite (sprite : Sprite)
         let world = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
         let world = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
-        subscribe (FinishedOutgoingEvent @ address) address handleFinishedOutgoing world
+        subscribe (FinishedOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
@@ -314,7 +317,7 @@ module World =
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
-                  Ticks = 0UL
+                  Ticks = 0L
                   Interactive = interactive
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty

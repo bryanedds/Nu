@@ -239,9 +239,9 @@ module DispatchersModule =
                         let button = button.SetIsDown true
                         let world = World.setEntity message.Subscriber button world
                         let (liveness, world) = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
-                        (liveness, Handled, world)
-                    else (Running, Unhandled, world)
-                else (Running, Unhandled, world)
+                        (Handled, liveness, world)
+                    else (Unhandled, Running, world)
+                else (Unhandled, Running, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
 
         let handleButtonEventUpMouseLeft message world =
@@ -260,10 +260,10 @@ module DispatchersModule =
                             let (liveness, world) = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
                             let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                             let world = { world with AudioMessages = sound :: world.AudioMessages }
-                            (liveness, Handled, world)
-                        else (liveness, Unhandled, world)
-                    | Exiting -> (liveness, Unhandled, world)
-                else (Running, Unhandled, world)
+                            (Handled, liveness, world)
+                        else (Unhandled, liveness, world)
+                    | Exiting -> (Unhandled, liveness, world)
+                else (Unhandled, Running, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (button, dispatcherContainer) =
@@ -393,9 +393,9 @@ module DispatchersModule =
                     if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsPressed true
                         let world = World.setEntity message.Subscriber toggle world
-                        (Running, Handled, world)
-                    else (Running, Unhandled, world)
-                else (Running, Unhandled, world)
+                        (Handled, Running, world)
+                    else (Unhandled, Running, world)
+                else (Unhandled, Running, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
     
         let handleToggleEventUpMouseLeft message world =
@@ -412,11 +412,11 @@ module DispatchersModule =
                         let (liveness, world) = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
                         let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
-                        (liveness, Handled, world)
+                        (Handled, liveness, world)
                     else
                         let world = World.setEntity message.Subscriber toggle world
-                        (Running, Unhandled, world) // TODO: make sure message should actually be Unhandled!
-                else (Running, Unhandled, world)
+                        (Unhandled, Running, world) // TODO: make sure message should actually be Unhandled!
+                else (Unhandled, Running, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
         
         override dispatcher.Init (toggle, dispatcherContainer) =
@@ -474,9 +474,9 @@ module DispatchersModule =
                         let feeler = feeler.SetIsTouched true
                         let world = World.setEntity message.Subscriber feeler world
                         let (liveness, world) = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
-                        (liveness, Handled, world)
-                    else (Running, Unhandled, world)
-                else (Running, Unhandled, world)
+                        (Handled, liveness, world)
+                    else (Unhandled, Running, world)
+                else (Unhandled, Running, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
     
         let handleFeelerEventUpMouseLeft message world =
@@ -487,8 +487,8 @@ module DispatchersModule =
                     let feeler = feeler.SetIsTouched false
                     let world = World.setEntity message.Subscriber feeler world
                     let (liveness, world) = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
-                    (liveness, Handled, world)
-                else (Running, Unhandled, world)
+                    (Handled, liveness, world)
+                else (Unhandled, Running, world)
             | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
         
         override dispatcher.Init (feeler, dispatcherContainer) =
@@ -798,7 +798,7 @@ module DispatchersModule =
         default dispatcher.Register (_, address, entities, world) = World.addEntities address entities world
 
         abstract member Unregister : Group * Address * World -> World
-        default dispatcher.Unregister (_, address, world) = World.removeEntities address world
+        default dispatcher.Unregister (_, address, world) = World.removeAllEntities address world
 
     type TransitionDispatcher () =
         class end
@@ -809,7 +809,7 @@ module DispatchersModule =
         default dispatcher.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
         abstract member Unregister : Screen * Address * World -> World
-        default dispatcher.Unregister (_, address, world) = World.removeGroups address world
+        default dispatcher.Unregister (_, address, world) = World.removeAllGroups address world
 
     type GameDispatcher () =
         abstract member Register : Game * World -> World
