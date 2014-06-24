@@ -558,18 +558,18 @@ module WorldPrims =
                 let selectedScreen = getScreen selectedScreenAddress world
                 match selectedScreen.State with
                 | IncomingState ->
-                    let (finished, incoming) = updateTransition1 selectedScreen.Incoming
-                    let selectedScreen = { selectedScreen with Incoming = incoming }
-                    let world = setScreen selectedScreenAddress selectedScreen world
-                    let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
                     let (liveness, world) =
-                        if not finished then (Running, world)
-                        else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        if selectedScreen.Incoming.TransitionTicks <> 0L then (Running, world)
+                        else publish (SelectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                     match liveness with
                     | Exiting -> (liveness, world)
                     | Running ->
-                        if selectedScreen.Incoming.TransitionTicks <> 0L then (liveness, world)
-                        else publish (SelectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        let (finished, incoming) = updateTransition1 selectedScreen.Incoming
+                        let selectedScreen = { selectedScreen with Incoming = incoming }
+                        let world = setScreen selectedScreenAddress selectedScreen world
+                        let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
+                        if not finished then (liveness, world)
+                        else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | OutgoingState ->
                     let (finished, outgoing) = updateTransition1 selectedScreen.Outgoing
                     let selectedScreen = { selectedScreen with Outgoing = outgoing }
