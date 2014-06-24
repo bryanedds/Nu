@@ -94,16 +94,17 @@ module BlazeDispatchersModule =
         let collisionHandler message world =
             match message.Data with
             | CollisionData (_, _, colliderAddress) ->
-                match World.getOptEntity colliderAddress world with
-                | None -> (Unhandled, Running, world)
-                | Some collider ->
-                    if not <| Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world then (Unhandled, Running, world)
-                    else
-                        let enemy = World.getEntity message.Subscriber world
-                        let enemy = enemy.SetHealth <| enemy.Health - 1
-                        let world = World.setEntity message.Subscriber enemy world
-                        let (liveness, world) = if enemy.Health = 0 then World.removeEntityPlus message.Subscriber world else (Running, world)
-                        (Unhandled, liveness, world)
+                let isBullet =
+                    match World.getOptEntity colliderAddress world with
+                    | None -> true // HACK: assume is bullet if entity was just removed
+                    | Some collider -> Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world
+                if not isBullet then (Unhandled, Running, world)
+                else
+                    let enemy = World.getEntity message.Subscriber world
+                    let enemy = enemy.SetHealth <| enemy.Health - 1
+                    let world = World.setEntity message.Subscriber enemy world
+                    let (liveness, world) = if enemy.Health = 0 then World.removeEntityPlus message.Subscriber world else (Running, world)
+                    (Unhandled, liveness, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (enemy, dispatcherContainer) =
