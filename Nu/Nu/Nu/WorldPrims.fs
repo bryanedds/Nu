@@ -162,15 +162,15 @@ module WorldPrims =
         entity.Register (address, world)
 
     let unregisterEntity address world =
-        let entity = get world <| worldEntity address
+        let entity = getEntity address world
         entity.Unregister (address, world)
 
     let removeEntity address world =
         let world = unregisterEntity address world
-        set None world <| worldOptEntity address
+        setOptEntity address None world
 
-    let removeAllEntities (address : Address) world =
-        let entities = get world <| worldEntities address
+    let clearEntities (address : Address) world =
+        let entities = getEntities address world
         Map.fold
             (fun world entityName _ -> removeEntity (address @ [entityName]) world)
             world
@@ -184,10 +184,10 @@ module WorldPrims =
 
     let addEntity address entity world =
         let world =
-            match get world <| worldOptEntity address with
+            match getOptEntity address world with
             | None -> world
             | Some _ -> removeEntity address world
-        let world = set entity world <| worldEntity address
+        let world = setEntity address entity world
         registerEntity address entity world
 
     let addEntities groupAddress entities world =
@@ -286,15 +286,15 @@ module WorldPrims =
         group.Register (address, entities, world)
 
     let unregisterGroup address world =
-        let group = get world <| worldGroup address
+        let group = getGroup address world
         group.Unregister (address, world)
 
     let removeGroup address world =
         let world = unregisterGroup address world
-        set None world <| worldOptGroup address
+        setOptGroup address None world
 
-    let removeAllGroups (address : Address) world =
-        let groups = get world <| worldGroups address
+    let clearGroups (address : Address) world =
+        let groups = getGroups address world
         Map.fold
             (fun world groupName _ -> removeGroup (address @ [groupName]) world)
             world
@@ -308,10 +308,10 @@ module WorldPrims =
 
     let addGroup address (group : Group) entities world =
         let world =
-            match get world <| worldOptGroup address with
+            match getOptGroup address world with
             | None -> world
             | Some _ -> removeGroup address world
-        let world = set group world <| worldGroup address
+        let world = setGroup address group world
         registerGroup address entities group world
 
     let addGroups screenAddress groupDescriptors world =
@@ -372,19 +372,19 @@ module WorldPrims =
         screen.Register (address, groupDescriptors, world)
 
     let unregisterScreen address world =
-        let screen = get world <| worldScreen address
+        let screen = getScreen address world
         screen.Unregister (address, world)
 
     let removeScreen address world =
         let world = unregisterScreen address world
-        set None world <| worldOptScreen address
+        setOptScreen address None world
 
     let addScreen address screen groupDescriptors world =
         let world =
-            match get world <| worldOptScreen address with
+            match getOptScreen address world with
             | None -> world
             | Some _ -> removeScreen address world
-        let world = set screen world <| worldScreen address
+        let world = setScreen address screen world
         registerScreen address screen groupDescriptors world
 
     (* Game functions. *)
@@ -426,21 +426,21 @@ module WorldPrims =
     let private getSimulant address world =
         match address with
         | [] -> Game <| world.Game
-        | [_] as screenAddress -> Screen <| get world -<| worldScreen screenAddress
-        | [_; _] as groupAddress -> Group <| get world -<| worldGroup groupAddress
-        | [_; _; _] as entityAddress -> Entity <| get world -<| worldEntity entityAddress
+        | [_] as screenAddress -> Screen <| getScreen screenAddress world
+        | [_; _] as groupAddress -> Group <| getGroup groupAddress world
+        | [_; _; _] as entityAddress -> Entity <| getEntity entityAddress world
         | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
     let private getOptSimulant address world =
         match address with
         | [] -> Some <| Game world.Game
-        | [_] as screenAddress -> Option.map Screen (get world <| worldOptScreen screenAddress)
-        | [_; _] as groupAddress -> Option.map Group (get world <| worldOptGroup groupAddress)
-        | [_; _; _] as entityAddress -> Option.map Entity (get world <| worldOptEntity entityAddress)
+        | [_] as screenAddress -> Option.map Screen <| getOptScreen screenAddress world
+        | [_; _] as groupAddress -> Option.map Group <| getOptGroup groupAddress world
+        | [_; _; _] as entityAddress -> Option.map Entity <| getOptEntity entityAddress world
         | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
 
     let private isAddressSelected address world =
-        let optScreenAddress = get world worldOptSelectedScreenAddress
+        let optScreenAddress = getOptSelectedScreenAddress world
         match (address, optScreenAddress) with
         | ([], _) -> true
         | (_, None) -> false
@@ -544,7 +544,7 @@ module WorldPrims =
 
     and transitionScreen destination world =
         let world = setScreenStatePlus destination IncomingState world
-        set (Some destination) world worldOptSelectedScreenAddress
+        setOptSelectedScreenAddress (Some destination) world
 
     and private updateTransition1 (transition : Transition) =
         if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -552,8 +552,7 @@ module WorldPrims =
 
     and internal updateTransition update world =
         let (liveness, world) =
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
-            match optSelectedScreenAddress with
+            match getOptSelectedScreenAddress world with
             | None -> (Running, world)
             | Some selectedScreenAddress ->
                 let selectedScreen = getScreen selectedScreenAddress world
@@ -594,8 +593,7 @@ module WorldPrims =
             let world = subscribe message.Event message.Subscriber subscription world
             (Unhandled, Running, world)
         else
-            let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
-            match optSelectedScreenAddress with
+            match getOptSelectedScreenAddress world with
             | None ->
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."
                 (Handled, Exiting, world)
@@ -618,16 +616,23 @@ module WorldPrims =
         (Unhandled, Running, world)
 
     and handleEventAsScreenTransition destination world =
-        match get world worldOptSelectedScreenAddress with
+        match getOptSelectedScreenAddress world with
         | None ->
             trace "Program Error: Could not handle screen transition due to no selected screen."
             (Handled, Exiting, world)
         | Some selectedScreenAddress ->
-            let sub = CustomSub (fun _ world -> let world = transitionScreen destination world in (Unhandled, Running, world))
+            let sub = CustomSub (fun _ world ->
+                let world = unsubscribe (NuConstants.FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
+                let world = transitionScreen destination world
+                (Unhandled, Running, world))
             let world = setScreenStatePlus selectedScreenAddress OutgoingState world
-            let world = subscribe (NuConstants.FinishedOutgoingEvent @ selectedScreenAddress) [] sub world
+            let world = subscribe (NuConstants.FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
             (Unhandled, Running, world)
 
     let removeEntityPlus address world =
         let world = removeEntity address world
         publish (RemovedEvent @ address) address NoData world
+
+    let addEntityPlus address entity world =
+        let world = addEntity address entity world
+        publish (AddedEvent @ address) address NoData world
