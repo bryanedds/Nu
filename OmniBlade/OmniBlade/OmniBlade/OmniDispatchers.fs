@@ -2,6 +2,9 @@
 open OpenTK
 open Prime
 open Nu
+open Nu.NuConstants
+open OmniBlade
+open OmniBlade.OmniConstants
 
 [<AutoOpen>]
 module OmniDispatchersModule =
@@ -10,7 +13,7 @@ module OmniDispatchersModule =
         inherit GroupDispatcher ()
 
         let adjustFieldCamera groupAddress world =
-            let avatarAddress = groupAddress @ [OmniConstants.FieldAvatarName]
+            let avatarAddress = groupAddress @ [FieldAvatarName]
             let avatar = World.getEntity avatarAddress world
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
@@ -19,10 +22,10 @@ module OmniDispatchersModule =
             (Unhandled, Running, adjustFieldCamera message.Subscriber world)
 
         let moveFieldAvatarHandler message world =
-            let feelerAddress = message.Subscriber @ [OmniConstants.FieldFeelerName]
+            let feelerAddress = message.Subscriber @ [FieldFeelerName]
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then
-                let avatarAddress = message.Subscriber @ [OmniConstants.FieldAvatarName]
+                let avatarAddress = message.Subscriber @ [FieldAvatarName]
                 let avatar = World.getEntity avatarAddress world
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
@@ -33,15 +36,15 @@ module OmniDispatchersModule =
             else (Unhandled, Running, world)
         
         override dispatcher.Register (omniFieldGroup, address, entities, world) =
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub moveFieldAvatarHandler) world
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub adjustFieldCameraHandler) world
+            let world = World.subscribe TickEvent address (CustomSub moveFieldAvatarHandler) world
+            let world = World.subscribe TickEvent address (CustomSub adjustFieldCameraHandler) world
             let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
             let world = base.Register (omniFieldGroup, address, entities, world)
             adjustFieldCamera address world
 
         override dispatcher.Unregister (omniFieldGroup, address, world) =
-            let world = World.unsubscribe NuConstants.TickEvent address world
-            let world = World.unsubscribe NuConstants.TickEvent address world
+            let world = World.unsubscribe TickEvent address world
+            let world = World.unsubscribe TickEvent address world
             base.Unregister (omniFieldGroup, address, world)
 
     type OmniBattleGroupDispatcher () =

@@ -7,6 +7,9 @@ open FarseerPhysics
 open FarseerPhysics.Dynamics
 open Prime
 open Nu
+open Nu.NuConstants
+open BlazeVector
+open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
 module BlazeDispatchersModule =
@@ -46,7 +49,7 @@ module BlazeDispatchersModule =
             CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
         override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "PlayerBullet"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            { SpriteAssetName = "PlayerBullet"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
@@ -61,16 +64,16 @@ module BlazeDispatchersModule =
 
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub tickHandler) world
-            let world = World.subscribe (NuConstants.CollisionEvent @ address) address (CustomSub collisionHandler) world
+            let world = World.subscribe TickEvent address (CustomSub tickHandler) world
+            let world = World.subscribe (CollisionEvent @ address) address (CustomSub collisionHandler) world
             let world = launch bullet world
             let bullet = bullet.SetBirthTime world.Ticks
             World.setEntity address bullet world
 
         override dispatcher.Unregister (bullet, address, world) =
             let world = base.Unregister (bullet, address, world)
-            let world = World.unsubscribe NuConstants.TickEvent address world
-            World.unsubscribe (NuConstants.CollisionEvent @ address) address world
+            let world = World.unsubscribe TickEvent address world
+            World.unsubscribe (CollisionEvent @ address) address world
 
     type BlazeEnemyDispatcher () =
         inherit CharacterDispatcher ()
@@ -96,7 +99,7 @@ module BlazeDispatchersModule =
             | CollisionData (_, _, colliderAddress) ->
                 let isBullet =
                     match World.getOptEntity colliderAddress world with
-                    | None -> true // HACK: assume is bullet if entity was just removed
+                    | None -> true // HACK: assume is bullet if entity was just removed. TODO: implement a way to schedule simulant removal at end of frame
                     | Some collider -> Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world
                 if not isBullet then (Unhandled, Running, world)
                 else
@@ -113,16 +116,16 @@ module BlazeDispatchersModule =
 
         override dispatcher.Register (enemy, address, world) =
             let world = base.Register (enemy, address, world)
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub movementHandler) world
-            World.subscribe (NuConstants.CollisionEvent @ address) address (CustomSub collisionHandler) world
+            let world = World.subscribe TickEvent address (CustomSub movementHandler) world
+            World.subscribe (CollisionEvent @ address) address (CustomSub collisionHandler) world
 
         override dispatcher.Unregister (enemy, address, world) =
             let world = base.Unregister (enemy, address, world)
-            let world = World.unsubscribe NuConstants.TickEvent address world
-            World.unsubscribe (NuConstants.CollisionEvent @ address) address world
+            let world = World.unsubscribe TickEvent address world
+            World.unsubscribe (CollisionEvent @ address) address world
 
         override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "Enemy"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            { SpriteAssetName = "Enemy"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetImageOptInset (_, world) =
             let tile = (world.Ticks / 8L) % 6L
@@ -185,19 +188,19 @@ module BlazeDispatchersModule =
         override dispatcher.Register (player, address, world) =
             let world = base.Register (player, address, world)
             world |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub spawnBulletHandler |>
-                World.subscribe NuConstants.TickEvent address -<| CustomSub movementHandler |>
-                World.subscribe NuConstants.DownMouseRightEvent address -<| CustomSub jumpHandler
+                World.subscribe TickEvent address -<| CustomSub spawnBulletHandler |>
+                World.subscribe TickEvent address -<| CustomSub movementHandler |>
+                World.subscribe DownMouseRightEvent address -<| CustomSub jumpHandler
 
         override dispatcher.Unregister (player, address, world) =
             let world = base.Unregister (player, address, world)
             world |>
-                World.unsubscribe NuConstants.TickEvent address |>
-                World.unsubscribe NuConstants.TickEvent address |>
-                World.unsubscribe NuConstants.DownMouseRightEvent address
+                World.unsubscribe TickEvent address |>
+                World.unsubscribe TickEvent address |>
+                World.unsubscribe DownMouseRightEvent address
 
         override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "Player"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            { SpriteAssetName = "Player"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetImageOptInset (_, world) =
             let tile = (world.Ticks / 3L) % 16L
@@ -213,7 +216,7 @@ module BlazeDispatchersModule =
         inherit GroupDispatcher ()
 
         let getPlayer groupAddress world =
-            let playerAddress = groupAddress @ [BlazeConstants.StagePlayerName]
+            let playerAddress = groupAddress @ [StagePlayerName]
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
@@ -226,12 +229,12 @@ module BlazeDispatchersModule =
 
         override dispatcher.Register (group, address, entities, world) =
             let world = base.Register (group, address, entities, world)
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub adjustCameraHandler) world
+            let world = World.subscribe TickEvent address (CustomSub adjustCameraHandler) world
             adjustCamera address world
 
         override dispatcher.Unregister (group, address, world) =
             let world = base.Unregister (group, address, world)
-            World.unsubscribe NuConstants.TickEvent address world
+            World.unsubscribe TickEvent address world
 
     type Screen with
 
@@ -255,13 +258,13 @@ module BlazeDispatchersModule =
             (sectionName, sectionGroup, sectionEntities)
 
         let beginPlay message world =
-            let stagePlay = World.loadGroupFromFile BlazeConstants.StagePlayFileName world
-            let stagePlayDescriptor = Triple.prepend BlazeConstants.StagePlayName stagePlay
+            let stagePlay = World.loadGroupFromFile StagePlayFileName world
+            let stagePlayDescriptor = Triple.prepend StagePlayName stagePlay
             let sectionDescriptors =
-                [makeSectionFromFile BlazeConstants.Section0FileName BlazeConstants.Section0Name 0.0f world
-                 makeSectionFromFile BlazeConstants.Section1FileName BlazeConstants.Section1Name 2048.0f world
-                 makeSectionFromFile BlazeConstants.Section2FileName BlazeConstants.Section2Name 4096.0f world
-                 makeSectionFromFile BlazeConstants.Section3FileName BlazeConstants.Section3Name 6144.0f world]
+                [makeSectionFromFile Section0FileName Section0Name 0.0f world
+                 makeSectionFromFile Section1FileName Section1Name 2048.0f world
+                 makeSectionFromFile Section2FileName Section2Name 4096.0f world
+                 makeSectionFromFile Section3FileName Section3Name 6144.0f world]
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
             (Unhandled, Running, world)
@@ -270,23 +273,19 @@ module BlazeDispatchersModule =
             let world =
                 World.removeGroups
                     message.Subscriber
-                    [BlazeConstants.StagePlayName
-                     BlazeConstants.Section0Name
-                     BlazeConstants.Section1Name
-                     BlazeConstants.Section2Name
-                     BlazeConstants.Section3Name]
+                    [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
                     world
             (Unhandled, Running, world)
 
         override dispatcher.Register (screen, address, groupDescriptors, world) =
             let world = base.Register (screen, address, groupDescriptors, world)
-            let world = World.subscribe (NuConstants.SelectedEvent @ address) address (CustomSub beginPlay) world
-            World.subscribe (NuConstants.DeselectedEvent @ address) address (CustomSub endPlay) world
+            let world = World.subscribe (SelectedEvent @ address) address (CustomSub beginPlay) world
+            World.subscribe (DeselectedEvent @ address) address (CustomSub endPlay) world
 
         override dispatcher.Unregister (screen, address, world) =
             let world = base.Unregister (screen, address, world)
-            let world = World.unsubscribe (NuConstants.SelectedEvent @ address) address world
-            World.unsubscribe (NuConstants.DeselectedEvent @ address) address world
+            let world = World.unsubscribe (SelectedEvent @ address) address world
+            World.unsubscribe (DeselectedEvent @ address) address world
 
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeVectorDispatcher () =
