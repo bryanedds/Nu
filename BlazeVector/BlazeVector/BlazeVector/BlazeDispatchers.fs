@@ -69,7 +69,8 @@ module BlazeDispatchersModule =
 
         override dispatcher.Unregister (bullet, address, world) =
             let world = base.Unregister (bullet, address, world)
-            World.unsubscribe NuConstants.TickEvent address world
+            let world = World.unsubscribe NuConstants.TickEvent address world
+            World.unsubscribe (NuConstants.CollisionEvent @ address) address world
 
     type BlazePlayerDispatcher () =
         inherit CharacterDispatcher ()
@@ -81,7 +82,7 @@ module BlazeDispatchersModule =
                     .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
                     .SetDepth(player.Depth + 1.0f)
             let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
-            World.addEntity bulletAddress bullet world
+            World.addEntityPlus bulletAddress bullet world
 
         let spawnBulletHandler message world =
             if not world.Interactive then (Unhandled, Running, world)
@@ -89,8 +90,8 @@ module BlazeDispatchersModule =
                 if world.Ticks % 6L <> 0L then (Unhandled, Running, world)
                 else
                     let player = World.getEntity message.Subscriber world
-                    let world = createBullet player message.Subscriber world
-                    (Unhandled, Running, world)
+                    let (liveness, world) = createBullet player message.Subscriber world
+                    (Unhandled, liveness, world)
 
         let movementHandler message world =
             if not world.Interactive then (Unhandled, Running, world)
@@ -191,7 +192,8 @@ module BlazeDispatchersModule =
 
         override dispatcher.Unregister (enemy, address, world) =
             let world = base.Unregister (enemy, address, world)
-            World.unsubscribe NuConstants.TickEvent address world
+            let world = World.unsubscribe NuConstants.TickEvent address world
+            World.unsubscribe (NuConstants.CollisionEvent @ address) address world
 
         override dispatcher.GetImageSprite () =
             { SpriteAssetName = "Enemy"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
