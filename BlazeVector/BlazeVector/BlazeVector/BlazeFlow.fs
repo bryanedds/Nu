@@ -33,7 +33,7 @@ module BlazeFlow =
 
     // and so on.
     let addStageScreen world =
-        let world = World.addDissolveScreenFromFile typeof<BlazeStageDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
+        let world = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
