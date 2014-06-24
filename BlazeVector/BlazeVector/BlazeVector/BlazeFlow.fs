@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.NuConstants
 open BlazeVector
 open BlazeVector.BlazeConstants
 module BlazeFlow =
@@ -49,16 +50,16 @@ module BlazeFlow =
         | Right world ->
 
             // hint to the renderer that the BlazeGui package should be loaded up front
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = NuConstants.AssetGraphFileName; PackageName = BlazeConstants.BlazeGuiPackageName } 
+            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = BlazeGuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
             
             // specify a song to play for the duration of the game via the audio message system
-            let gameSong = { SongAssetName = "Song"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            let gameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
 
             // add to the world a splash screen that automatically transitions to the Title screen
-            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
 
             // add our UI screens to the world

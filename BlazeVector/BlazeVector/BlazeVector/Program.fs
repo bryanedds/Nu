@@ -2,6 +2,7 @@
 open System
 open SDL2
 open Nu
+open Nu.NuConstants
 open BlazeVector
 module Program =
 
@@ -33,10 +34,10 @@ module Program =
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             { ViewConfig = sdlViewConfig
-              ViewW = NuConstants.ResolutionX
-              ViewH = NuConstants.ResolutionY
+              ViewW = ResolutionX
+              ViewH = ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
+              AudioChunkSize = AudioBufferSizeDefault }
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
