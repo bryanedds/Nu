@@ -535,12 +535,12 @@ module WorldPrims =
         match state with
         | IdlingState ->
             world |>
-                unsubscribe DownMouseLeftEvent address |>
-                unsubscribe UpMouseLeftEvent address
+                unsubscribe DownMouseEvent address |>
+                unsubscribe UpMouseEvent address
         | IncomingState | OutgoingState ->
             world |>
-                subscribe DownMouseLeftEvent address SwallowSub |>
-                subscribe UpMouseLeftEvent address SwallowSub
+                subscribe DownMouseEvent address SwallowSub |>
+                subscribe UpMouseEvent address SwallowSub
 
     and transitionScreen destination world =
         let world = setScreenStatePlus destination IncomingState world
