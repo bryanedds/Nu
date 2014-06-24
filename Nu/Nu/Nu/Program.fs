@@ -4,6 +4,7 @@
 namespace Nu
 open SDL2
 open Nu
+open Nu.NuConstants
 module Program =
 
     // this the entry point for the empty Nu application
@@ -34,10 +35,10 @@ module Program =
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             { ViewConfig = sdlViewConfig
-              ViewW = NuConstants.ResolutionX
-              ViewH = NuConstants.ResolutionY
+              ViewW = ResolutionX
+              ViewH = ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
+              AudioChunkSize = AudioBufferSizeDefault }
 
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as a complex record type named World.

@@ -2,6 +2,7 @@
 open System
 open Prime
 open Nu
+open Nu.NuConstants
 open OmniBlade
 open OmniBlade.OmniConstants
 module OmniFlow =
@@ -31,12 +32,12 @@ module OmniFlow =
         match optWorld with
         | Left _ as left -> left
         | Right world ->
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = NuConstants.AssetGraphFileName; PackageName = OmniGuiPackageName } 
+            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = OmniGuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
-            let gameSong = { SongAssetName = "Song"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            let gameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
-            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
             let world = addTitleScreen world
             let world = addLoadGameScreen world

@@ -164,7 +164,7 @@ module DispatchersModule =
             entity
                 .SetPhysicsId(Physics.getId entity.Id)
                 .SetBodyType(BodyType.Dynamic)
-                .SetDensity(NuConstants.NormalDensity)
+                .SetDensity(NormalDensity)
                 .SetFriction(0.0f)
                 .SetRestitution(0.0f)
                 .SetFixedRotation(false)
@@ -276,7 +276,7 @@ module DispatchersModule =
 
         override dispatcher.Register (_, address, world) =
             world |>
-                World.subscribe NuConstants.DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
+                World.subscribe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
                 World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
 
         override dispatcher.Unregister (_, address, world) =
@@ -671,7 +671,7 @@ module DispatchersModule =
             | None -> world
             | Some tileSetTile ->
                 let collisionProperty = ref Unchecked.defaultof<string>
-                if not <| tileSetTile.Properties.TryGetValue (NuConstants.CollisionProperty, collisionProperty) then world
+                if not <| tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then world
                 else
                     let collisionExpr = string collisionProperty.Value
                     let collisionTerms = List.ofArray <| collisionExpr.Split '?'
@@ -693,7 +693,7 @@ module DispatchersModule =
                         world
 
         let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world (tileLayer : TmxLayer) =
-            if not <| tileLayer.Properties.ContainsKey NuConstants.CollisionProperty then world
+            if not <| tileLayer.Properties.ContainsKey CollisionProperty then world
             else
                 Seq.foldi
                     (registerTilePhysics tileMap tileMapData tileLayer tileLayerIndex address)
@@ -711,7 +711,7 @@ module DispatchersModule =
             let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                    if not <| tileLayer.Properties.ContainsKey NuConstants.CollisionProperty then world
+                    if not <| tileLayer.Properties.ContainsKey CollisionProperty then world
                     else
                         Seq.foldi
                             (fun tileIndex world _ ->
@@ -719,7 +719,7 @@ module DispatchersModule =
                                 match tileData.OptTileSetTile with
                                 | None -> world
                                 | Some tileSetTile ->
-                                    if not <| tileSetTile.Properties.ContainsKey NuConstants.CollisionProperty then world
+                                    if not <| tileSetTile.Properties.ContainsKey CollisionProperty then world
                                     else
                                         let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
                                         let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
@@ -732,7 +732,7 @@ module DispatchersModule =
         override dispatcher.Init (tileMap, dispatcherContainer) =
             let tileMap = base.Init (tileMap, dispatcherContainer)
             tileMap
-                .SetDensity(NuConstants.NormalDensity)
+                .SetDensity(NormalDensity)
                 .SetFriction(0.0f)
                 .SetRestitution(0.0f)
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })

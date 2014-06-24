@@ -18,6 +18,7 @@ open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
 open Prime
 open Nu
+open Nu.NuConstants
 open NuEdit.NuEditConstants
 open NuEdit.NuEditReflection
 
@@ -304,7 +305,7 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
-                let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = NuConstants.DefaultEntitySize; Rotation = NuConstants.DefaultEntityRotation }
+                let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = addrstr EditorGroupAddress entity.Name
                 let world = World.addEntity entityAddress entity world
@@ -531,7 +532,7 @@ module Program =
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
-        form.displayPanel.MaximumSize <- Drawing.Size (NuConstants.ResolutionX, NuConstants.ResolutionY)
+        form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
         form.positionSnapTextBox.Text <- string DefaultPositionSnap
         form.rotationSnapTextBox.Text <- string DefaultRotationSnap
         form.creationDepthTextBox.Text <- string DefaultCreationDepth
@@ -578,11 +579,11 @@ module Program =
             refWorld := world
             refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := World.setOptSelectedScreenAddress (Some EditorScreenAddress) !refWorld 
-            refWorld := World.subscribe NuConstants.DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := World.subscribe NuConstants.UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
-            refWorld := World.subscribe NuConstants.DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
-            refWorld := World.subscribe NuConstants.UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe NuConstants.RemovedEvent [] (CustomSub <| simulantRemovedHandler form) !refWorld
+            refWorld := World.subscribe DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := World.subscribe UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
+            refWorld := World.subscribe DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
+            refWorld := World.subscribe UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
+            refWorld := World.subscribe RemovedEvent [] (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     // TODO: remove code duplication with below
@@ -641,7 +642,7 @@ module Program =
               ViewW = form.displayPanel.MaximumSize.Width
               ViewH = form.displayPanel.MaximumSize.Height
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
+              AudioChunkSize = AudioBufferSizeDefault }
         World.run4
             (tryMakeEditorWorld gameDispatcher form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)

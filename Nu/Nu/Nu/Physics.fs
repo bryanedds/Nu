@@ -155,10 +155,10 @@ module Physics =
         PhysicsId (entityId, Guid.NewGuid ())
 
     let private toPixel value =
-        value * Nu.NuConstants.PhysicsToPixelRatio
+        value * PhysicsToPixelRatio
 
     let private toPhysics value =
-        value * Nu.NuConstants.PixelToPhysicsRatio
+        value * PixelToPhysicsRatio
 
     let private toPixelV2 (v2 : Framework.Vector2) =
         Vector2 (toPixel v2.X, toPixel v2.Y)

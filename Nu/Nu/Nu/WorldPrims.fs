@@ -622,11 +622,11 @@ module WorldPrims =
             (Handled, Exiting, world)
         | Some selectedScreenAddress ->
             let sub = CustomSub (fun _ world ->
-                let world = unsubscribe (NuConstants.FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
+                let world = unsubscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
                 let world = transitionScreen destination world
                 (Unhandled, Running, world))
             let world = setScreenStatePlus selectedScreenAddress OutgoingState world
-            let world = subscribe (NuConstants.FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
+            let world = subscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
             (Unhandled, Running, world)
 
     let removeEntityPlus address world =

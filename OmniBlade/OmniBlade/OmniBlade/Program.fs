@@ -4,6 +4,7 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
+open Nu.NuConstants
 open OmniBlade
 module Program =
 
@@ -24,10 +25,10 @@ module Program =
 
         let sdlConfig =
             { ViewConfig = sdlViewConfig
-              ViewW = NuConstants.ResolutionX
-              ViewH = NuConstants.ResolutionY
+              ViewW = ResolutionX
+              ViewH = ResolutionY
               RendererFlags = sdlRendererFlags
-              AudioChunkSize = NuConstants.AudioBufferSizeDefault }
+              AudioChunkSize = AudioBufferSizeDefault }
 
         World.run
             (fun sdlDeps -> OmniFlow.tryMakeOmniBladeWorld sdlDeps ())
