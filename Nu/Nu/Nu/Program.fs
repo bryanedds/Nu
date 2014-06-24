@@ -56,15 +56,12 @@ module Program =
             World.tryMakeEmpty sdlDeps gameDispatcher true ()
             
         // this is a callback that specifies your game's unique behavior when updating the world
-        // every tick. Its return type is a (bool * World). The bool value is whether the program
-        // should continue (true), or exit (false). The World value is the state of the world
-        // after the callback has transformed the one it receives. It is here where we first clearly
-        // see Nu's purely-functional(ish) design. The World type is almost entirely immutable, and
-        // thus the only way to update it is by making a new copy of an existing instance. Since we
-        // need no special update behavoir in this program, we simply return the world as it was
-        // received.
-        let updateWorld world =
-            (Running, world)
+        // every tick. The World value is the state of the world after the callback has transformed
+        // the one it receives. It is here where we first clearly see Nu's purely-functional(ish)
+        // design. The World type is almost entirely immutable, and thus the only way to update it
+        // is by making a new copy of an existing instance. Since we need no special update
+        // behavior in this program, we simply return the world as it was received.
+        let updateWorld world = world
 
         // after some configuration it is time to run Nu. We're off and running!
         World.run tryMakeWorld updateWorld sdlConfig

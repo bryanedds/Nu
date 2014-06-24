@@ -68,6 +68,18 @@ module WorldPrims =
         let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
         { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
+    let mutable publish =
+        Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
+
+    let mutable subscribe =
+        Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+
+    let mutable unsubscribe =
+        Unchecked.defaultof<Address -> Address -> World -> World>
+
+    let mutable withSubscription =
+        Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
+
     (* Entity functions. *)
 
     let private optEntityFinder (address : Address) world =
@@ -167,7 +179,8 @@ module WorldPrims =
 
     let removeEntity address world =
         let world = unregisterEntity address world
-        setOptEntity address None world
+        let world = setOptEntity address None world
+        publish (RemovedEvent @ address) address NoData world
 
     let clearEntities (address : Address) world =
         let entities = getEntities address world
@@ -188,7 +201,8 @@ module WorldPrims =
             | None -> world
             | Some _ -> removeEntity address world
         let world = setEntity address entity world
-        registerEntity address entity world
+        let world = registerEntity address entity world
+        publish (AddedEvent @ address) address NoData world
 
     let addEntities groupAddress entities world =
         List.fold
@@ -467,70 +481,15 @@ module WorldPrims =
         let subscriptionDescriptors = getSubscriptionDescriptors subscriptions world
         let subscriptionDescriptors = List.sortWith sortFstAsc subscriptionDescriptors
         List.map snd subscriptionDescriptors
-
-    /// Publish a message for the given event.
-    let rec publish event publisher messageData world =
-        let events = List.collapseLeft event
-        let optSubLists = List.map (fun event -> Map.tryFind event world.Subscriptions) events
-        let subLists = List.definitize optSubLists
-        let subList = List.concat subLists
-        let subListSorted = subscriptionSort subList world
-        let (_, liveness, world) =
-            List.foldWhile
-                (fun (messageHandled, liveness, world) (subscriber, subscription) ->
-                    let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
-                    if messageHandled = Handled || liveness = Exiting then None
-                    elif not <| isAddressSelected subscriber world then Some (messageHandled, liveness, world)
-                    else
-                        let result =
-                            match subscription with
-                            | ExitSub -> handleEventAsExit world
-                            | SwallowSub -> handleEventAsSwallow world
-                            | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
-                            | ScreenTransitionFromSplashSub destination -> handleEventAsScreenTransitionFromSplash destination world
-                            | CustomSub fn ->
-                                match getOptSimulant message.Subscriber world with
-                                | None -> (Unhandled, liveness, world)
-                                | Some _ -> fn message world
-                        Some result)
-                (Unhandled, Running, world)
-                subListSorted
-        (liveness, world)
-
-    /// Subscribe to messages for the given event.
-    and subscribe event subscriber subscription world =
-        let subs = world.Subscriptions
-        let optSubList = Map.tryFind event subs
-        { world with
-            Subscriptions =
-                match optSubList with
-                | None -> Map.add event [(subscriber, subscription)] subs
-                | Some subList -> Map.add event ((subscriber, subscription) :: subList) subs }
-
-    /// Unsubscribe to messages for the given event.
-    and unsubscribe event subscriber world =
-        let subs = world.Subscriptions
-        let optSubList = Map.tryFind event subs
-        match optSubList with
-        | None -> world
-        | Some subList ->
-            let subList = List.remove (fun (address, _) -> address = subscriber) subList
-            let subscriptions = Map.add event subList subs
-            { world with Subscriptions = subscriptions }
-
-    /// Execute a procedure within the context of a given subscription for the given event.
-    and withSubscription event subscription subscriber procedure world =
-        let world = subscribe event subscriber subscription world
-        let world = procedure world
-        unsubscribe event subscriber world
     
-    and handleEventAsSwallow (world : World) =
-        (Handled, Running, world)
+    let handleEventAsSwallow (world : World) =
+        (Handled, world)
 
-    and handleEventAsExit (world : World) =
-        (Handled, Exiting, world)
+    let handleEventAsExit (world : World) =
+        (Handled, { world with Liveness = Exiting })
 
-    and private setScreenStatePlus address state world =
+    let private setScreenStatePlus address state world =
+        // TODO: add swallowing for other types of input as well (keys, joy buttons, etc.)
         let world = withScreen (fun screen -> { screen with State = state }) address world
         match state with
         | IdlingState ->
@@ -542,97 +501,150 @@ module WorldPrims =
                 subscribe DownMouseEvent address SwallowSub |>
                 subscribe UpMouseEvent address SwallowSub
 
-    and transitionScreen destination world =
+    let transitionScreen destination world =
         let world = setScreenStatePlus destination IncomingState world
         setOptSelectedScreenAddress (Some destination) world
 
-    and private updateTransition1 (transition : Transition) =
+    let private updateTransition1 (transition : Transition) =
         if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
         else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
 
-    and internal updateTransition update world =
-        let (liveness, world) =
+    let internal updateTransition update world =
+        let world =
             match getOptSelectedScreenAddress world with
-            | None -> (Running, world)
+            | None -> world
             | Some selectedScreenAddress ->
                 let selectedScreen = getScreen selectedScreenAddress world
                 match selectedScreen.State with
                 | IncomingState ->
-                    let (liveness, world) =
-                        if selectedScreen.Incoming.TransitionTicks <> 0L then (Running, world)
+                    let world =
+                        if selectedScreen.Incoming.TransitionTicks <> 0L then world
                         else publish (SelectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
-                    match liveness with
-                    | Exiting -> (liveness, world)
+                    match world.Liveness with
+                    | Exiting -> world
                     | Running ->
                         let (finished, incoming) = updateTransition1 selectedScreen.Incoming
                         let selectedScreen = { selectedScreen with Incoming = incoming }
                         let world = setScreen selectedScreenAddress selectedScreen world
                         let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
-                        if not finished then (liveness, world)
+                        if not finished then world
                         else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | OutgoingState ->
                     let (finished, outgoing) = updateTransition1 selectedScreen.Outgoing
                     let selectedScreen = { selectedScreen with Outgoing = outgoing }
                     let world = setScreen selectedScreenAddress selectedScreen world
                     let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else OutgoingState) world
-                    if not finished then (Running, world)
+                    if not finished then world
                     else
-                        let (liveness, world) = publish (DeselectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
-                        match liveness with
-                        | Exiting -> (liveness, world)
+                        let world = publish (DeselectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        match world.Liveness with
+                        | Exiting -> world
                         | Running -> publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
-                | IdlingState -> (Running, world)
-        match liveness with
-        | Exiting -> (liveness, world)
+                | IdlingState -> world
+        match world.Liveness with
+        | Exiting -> world
         | Running -> update world
 
-    and private handleSplashScreenIdleTick idlingTime ticks message world =
+    let rec private handleSplashScreenIdleTick idlingTime ticks message world =
         let world = unsubscribe message.Event message.Subscriber world
         if ticks < idlingTime then
             let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incL ticks
             let world = subscribe message.Event message.Subscriber subscription world
-            (Unhandled, Running, world)
+            (Unhandled, world)
         else
             match getOptSelectedScreenAddress world with
             | None ->
                 trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                (Handled, Exiting, world)
+                (Handled, { world with Liveness = Exiting })
             | Some selectedScreenAddress ->
                 let world = setScreenStatePlus selectedScreenAddress OutgoingState world
-                (Unhandled, Running, world)
+                (Unhandled, world)
 
-    and internal handleSplashScreenIdle idlingTime message world =
+    let internal handleSplashScreenIdle idlingTime message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0L
         let world = subscribe TickEvent message.Subscriber subscription world
-        (Handled, Running, world)
+        (Handled, world)
 
-    and private handleFinishedScreenOutgoing destination message world =
+    let private handleFinishedScreenOutgoing destination message world =
         let world = unsubscribe message.Event message.Subscriber world
         let world = transitionScreen destination world
-        (Handled, Running, world)
+        (Handled, world)
 
-    and handleEventAsScreenTransitionFromSplash destination world =
+    let handleEventAsScreenTransitionFromSplash destination world =
         let world = transitionScreen destination world
-        (Unhandled, Running, world)
+        (Unhandled, world)
 
-    and handleEventAsScreenTransition destination world =
+    let handleEventAsScreenTransition destination world =
         match getOptSelectedScreenAddress world with
         | None ->
             trace "Program Error: Could not handle screen transition due to no selected screen."
-            (Handled, Exiting, world)
+            (Handled, { world with Liveness = Exiting })
         | Some selectedScreenAddress ->
             let sub = CustomSub (fun _ world ->
                 let world = unsubscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
                 let world = transitionScreen destination world
-                (Unhandled, Running, world))
+                (Unhandled, world))
             let world = setScreenStatePlus selectedScreenAddress OutgoingState world
             let world = subscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
-            (Unhandled, Running, world)
+            (Unhandled, world)
 
-    let removeEntityPlus address world =
-        let world = removeEntity address world
-        publish (RemovedEvent @ address) address NoData world
+    /// Publish a message for the given event.
+    let rec publishDefinition event publisher messageData world =
+        let events = List.collapseLeft event
+        let optSubLists = List.map (fun event -> Map.tryFind event world.Subscriptions) events
+        let subLists = List.definitize optSubLists
+        let subList = List.concat subLists
+        let subListSorted = subscriptionSort subList world
+        let (_, world) =
+            List.foldWhile
+                (fun (messageHandled, world) (subscriber, subscription) ->
+                    let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
+                    if messageHandled = Handled || world.Liveness = Exiting then None
+                    elif not <| isAddressSelected subscriber world then Some (messageHandled, world)
+                    else
+                        let result =
+                            match subscription with
+                            | ExitSub -> handleEventAsExit world
+                            | SwallowSub -> handleEventAsSwallow world
+                            | ScreenTransitionSub destination -> handleEventAsScreenTransition destination world
+                            | ScreenTransitionFromSplashSub destination -> handleEventAsScreenTransitionFromSplash destination world
+                            | CustomSub fn ->
+                                match getOptSimulant message.Subscriber world with
+                                | None -> (Unhandled, world)
+                                | Some _ -> fn message world
+                        Some result)
+                (Unhandled, world)
+                subListSorted
+        world
 
-    let addEntityPlus address entity world =
-        let world = addEntity address entity world
-        publish (AddedEvent @ address) address NoData world
+    /// Subscribe to messages for the given event.
+    and subscribeDefinition event subscriber subscription world =
+        let subs = world.Subscriptions
+        let optSubList = Map.tryFind event subs
+        { world with
+            Subscriptions =
+                match optSubList with
+                | None -> Map.add event [(subscriber, subscription)] subs
+                | Some subList -> Map.add event ((subscriber, subscription) :: subList) subs }
+
+    /// Unsubscribe to messages for the given event.
+    and unsubscribeDefinition event subscriber world =
+        let subs = world.Subscriptions
+        let optSubList = Map.tryFind event subs
+        match optSubList with
+        | None -> world
+        | Some subList ->
+            let subList = List.remove (fun (address, _) -> address = subscriber) subList
+            let subscriptions = Map.add event subList subs
+            { world with Subscriptions = subscriptions }
+
+    /// Execute a procedure within the context of a given subscription for the given event.
+    and withSubscriptionDefinition event subscriber subscription procedure world =
+        let world = subscribe event subscriber subscription world
+        let world = procedure world
+        unsubscribe event subscriber world
+
+    publish <- publishDefinition
+    subscribe <- subscribeDefinition
+    unsubscribe <- unsubscribeDefinition
+    withSubscription <- withSubscriptionDefinition

@@ -47,8 +47,6 @@ module World =
     let addEntity = WorldPrims.addEntity
     let addEntities = WorldPrims.addEntities
     let tryPickEntity = WorldPrims.tryPickEntity
-    let addEntityPlus = WorldPrims.addEntityPlus
-    let removeEntityPlus = WorldPrims.removeEntityPlus
     
     // Group forwarders.
     let worldGroup = WorldPrims.worldGroup
@@ -198,27 +196,25 @@ module World =
         let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
         { world with RenderMessages = []; Renderer = renderer }
 
-    let private handleIntegrationMessage (liveness, world) integrationMessage =
-        match liveness with
-        | Exiting -> (liveness, world)
+    let private handleIntegrationMessage world integrationMessage =
+        match world.Liveness with
+        | Exiting -> world
         | Running ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
                 match getOptEntity bodyTransformMessage.EntityAddress world with
-                | None -> (liveness, world)
-                | Some entity ->
-                    let world = entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
-                    (liveness, world)
+                | None -> world
+                | Some entity -> entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
             | BodyCollisionMessage bodyCollisionMessage ->
                 match getOptEntity bodyCollisionMessage.EntityAddress world with
-                | None -> (liveness, world)
+                | None -> world
                 | Some _ ->
                     let collisionAddress = CollisionEvent @ bodyCollisionMessage.EntityAddress
                     let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
                     publish collisionAddress [] collisionData world
 
     let private handleIntegrationMessages integrationMessages world =
-        List.fold handleIntegrationMessage (Running, world) integrationMessages
+        List.fold handleIntegrationMessage world integrationMessages
 
     let private integrate world =
         let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
@@ -230,38 +226,40 @@ module World =
             (fun sdlDeps -> tryMakeWorld sdlDeps)
             (fun refEvent world ->
                 let event = !refEvent
-                match event.``type`` with
-                | SDL.SDL_EventType.SDL_QUIT -> (Exiting, world)
-                | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                    let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                    if Set.contains MouseLeft world.MouseState.MouseDowns then publish MouseDragEvent [] (MouseMoveData mousePosition) world
-                    else publish MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
-                | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mouseButton = Sdl.makeNuMouseButton event.button.button
-                    let mouseEvent = addrstr DownMouseEvent <| string mouseButton
-                    let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                    let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                    publish mouseEvent [] messageData world
-                | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mouseState = world.MouseState
-                    let mouseButton = Sdl.makeNuMouseButton event.button.button
-                    let mouseEvent = addrstr UpMouseEvent <| string mouseButton
-                    if Set.contains mouseButton mouseState.MouseDowns then
-                        let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
+                let world =
+                    match event.``type`` with
+                    | SDL.SDL_EventType.SDL_QUIT -> { world with Liveness = Exiting }
+                    | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                        let mousePosition = Vector2 (single event.button.x, single event.button.y)
+                        let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
+                        if Set.contains MouseLeft world.MouseState.MouseDowns then publish MouseDragEvent [] (MouseMoveData mousePosition) world
+                        else publish MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
+                    | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
+                        let mouseButton = Sdl.makeNuMouseButton event.button.button
+                        let mouseEvent = addrstr DownMouseEvent <| string mouseButton
+                        let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                         let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
                         publish mouseEvent [] messageData world
-                    else (Running, world)
-                | _ -> (Running, world))
+                    | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
+                        let mouseState = world.MouseState
+                        let mouseButton = Sdl.makeNuMouseButton event.button.button
+                        let mouseEvent = addrstr UpMouseEvent <| string mouseButton
+                        if Set.contains mouseButton mouseState.MouseDowns then
+                            let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
+                            let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                            publish mouseEvent [] messageData world
+                        else world
+                    | _ -> world
+                (world.Liveness, world))
             (fun world ->
-                let (liveness, world) = integrate world
-                match liveness with
-                | Exiting -> (liveness, world)
+                let world = integrate world
+                match world.Liveness with
+                | Exiting -> (Exiting, world)
                 | Running ->
-                    let (liveness, world) = publish TickEvent [] NoData world
-                    match liveness with
-                    | Exiting -> (liveness, world)
-                    | Running -> WorldPrims.updateTransition handleUpdate world)
+                    let world = publish TickEvent [] NoData world
+                    match world.Liveness with
+                    | Exiting -> (Exiting, world)
+                    | Running -> (Running, WorldPrims.updateTransition handleUpdate world))
             (fun world -> let world = render world in handleRender world)
             (fun world -> let world = play world in { world with Ticks = world.Ticks + 1L })
             (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
@@ -319,6 +317,7 @@ module World =
                   Groups = Map.empty
                   Entities = Map.empty
                   Ticks = 0L
+                  Liveness = Running
                   Interactive = interactive
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty

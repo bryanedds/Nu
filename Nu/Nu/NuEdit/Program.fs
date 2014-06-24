@@ -189,13 +189,13 @@ module Program =
         let pastWorld = world
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, Running, world)
+            if form.interactButton.Checked then (Unhandled, world)
             else
                 let entities = Map.toValueList <| World.getEntities EditorGroupAddress world
                 let mousePosition = world.MouseState.MousePosition
                 let optPicked = World.tryPickEntity mousePosition entities world
                 match optPicked with
-                | None -> (Handled, Running, world)
+                | None -> (Handled, world)
                 | Some entity ->
                     let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                     let entityAddress = addrstr EditorGroupAddress entity.Name
@@ -206,22 +206,22 @@ module Program =
                     let world = pushPastWorld pastWorld world
                     refWorld := world // must be set for property grid
                     form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                    (Handled, Running, world)
+                    (Handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endEntityDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, Running, world)
+            if form.interactButton.Checked then (Unhandled, world)
             else
                 let editorState = world.ExtData :?> EditorState
                 match editorState.DragEntityState with
-                | DragEntityNone -> (Handled, Running, world)
+                | DragEntityNone -> (Handled, world)
                 | DragEntityPosition _
                 | DragEntityRotation _ ->
                     let editorState = { editorState with DragEntityState = DragEntityNone }
                     form.propertyGrid.Refresh ()
-                    (Handled, Running, { world with ExtData = editorState })
+                    (Handled, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
@@ -245,7 +245,7 @@ module Program =
     let beginCameraDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, Running, world)
+            if form.interactButton.Checked then (Unhandled, world)
             else
                 let mousePosition = world.MouseState.MousePosition
                 let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
@@ -253,31 +253,31 @@ module Program =
                 let editorState = world.ExtData :?> EditorState
                 let editorState = { editorState with DragCameraState = dragState }
                 let world = { world with ExtData = editorState }
-                (Handled, Running, world)
+                (Handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endCameraDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, Running, world)
+            if form.interactButton.Checked then (Unhandled, world)
             else
                 let editorState = world.ExtData :?> EditorState
                 match editorState.DragCameraState with
-                | DragCameraNone -> (Handled, Running, world)
+                | DragCameraNone -> (Handled, world)
                 | DragCameraPosition _ ->
                     let editorState = { editorState with DragCameraState = DragCameraNone }
-                    (Handled, Running, { world with ExtData = editorState })
+                    (Handled, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let simulantRemovedHandler (form : NuEditForm) message world =
         match form.propertyGrid.SelectedObject with
-        | null -> (Unhandled, Running, world)
+        | null -> (Unhandled, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if message.Publisher <> entityTds.Address then (Unhandled, Running, world)
+            if message.Publisher <> entityTds.Address then (Unhandled, world)
             else
                 form.propertyGrid.SelectedObject <- null
                 let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
-                (Unhandled, Running, { world with ExtData = editorState })
+                (Unhandled, { world with ExtData = editorState })
         | _ -> failwith "Unexpected match failure in NuEdit.Program.simulantRemovedHandler."
 
     let updateCameraDrag (_ : NuEditForm) world =
@@ -614,7 +614,8 @@ module Program =
         worldChangers.Clear ()
         updateUndo form !refWorld
         updateRedo form !refWorld
-        ((if form.IsDisposed then Exiting else Running), !refWorld)
+        refWorld := { !refWorld with Liveness = if form.IsDisposed then Exiting else Running }
+        !refWorld
 
     let selectWorkingDirectoryAndMakeGameDispatcher () =
         use openDialog = new OpenFileDialog ()
