@@ -273,13 +273,8 @@ module DispatchersModule =
 
         override dispatcher.Register (_, address, world) =
             world |>
-                World.subscribe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
-                World.subscribe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
-
-        override dispatcher.Unregister (_, address, world) =
-            world |>
-                World.unsubscribe DownMouseLeftEvent address |>
-                World.unsubscribe UpMouseLeftEvent address
+                World.observe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
+                World.observe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
 
         override dispatcher.GetRenderDescriptors (button, viewAbsolute, _, _) =
             if not button.Visible then []
@@ -427,13 +422,8 @@ module DispatchersModule =
 
         override dispatcher.Register (_, address, world) =
             world |>
-                World.subscribe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
-                World.subscribe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
-
-        override dispatcher.Unregister (_, address, world) =
-            world |>
-                World.unsubscribe DownMouseLeftEvent address |>
-                World.unsubscribe UpMouseLeftEvent address
+                World.observe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
+                World.observe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
 
         override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, _, _) =
             if not toggle.Visible then []
@@ -494,13 +484,8 @@ module DispatchersModule =
 
         override dispatcher.Register (_, address, world) =
             world |>
-                World.subscribe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
-                World.subscribe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
-
-        override dispatcher.Unregister (_, address, world) =
-            world |>
-                World.unsubscribe UpMouseLeftEvent address |>
-                World.unsubscribe DownMouseLeftEvent address
+                World.observe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
+                World.observe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
 
         override dispatcher.GetQuickSize (_, _) =
             Vector2 64.0f

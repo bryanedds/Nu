@@ -583,7 +583,7 @@ module Program =
             refWorld := World.subscribe UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
             refWorld := World.subscribe DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
             refWorld := World.subscribe UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe RemovedEvent [] (CustomSub <| simulantRemovedHandler form) !refWorld
+            refWorld := World.subscribe (RemovingEvent @ AnyEvent) [] (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     // TODO: remove code duplication with below
