@@ -798,7 +798,7 @@ module DispatchersModule =
         default dispatcher.Register (_, address, entities, world) = World.addEntities address entities world
 
         abstract member Unregister : Group * Address * World -> World
-        default dispatcher.Unregister (_, address, world) = World.removeAllEntities address world
+        default dispatcher.Unregister (_, address, world) = World.clearEntities address world
 
     type TransitionDispatcher () =
         class end
@@ -809,7 +809,7 @@ module DispatchersModule =
         default dispatcher.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
         abstract member Unregister : Screen * Address * World -> World
-        default dispatcher.Unregister (_, address, world) = World.removeAllGroups address world
+        default dispatcher.Unregister (_, address, world) = World.clearGroups address world
 
     type GameDispatcher () =
         abstract member Register : Game * World -> World

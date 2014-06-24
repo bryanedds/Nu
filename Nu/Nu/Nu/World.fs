@@ -42,11 +42,12 @@ module World =
     let registerEntity = WorldPrims.registerEntity
     let unregisterEntity = WorldPrims.unregisterEntity
     let removeEntity = WorldPrims.removeEntity
-    let removeAllEntities = WorldPrims.removeAllEntities
+    let clearEntities = WorldPrims.clearEntities
     let removeEntities = WorldPrims.removeEntities
     let addEntity = WorldPrims.addEntity
     let addEntities = WorldPrims.addEntities
     let tryPickEntity = WorldPrims.tryPickEntity
+    let addEntityPlus = WorldPrims.addEntityPlus
     let removeEntityPlus = WorldPrims.removeEntityPlus
     
     // Group forwarders.
@@ -68,7 +69,7 @@ module World =
     let registerGroup = WorldPrims.registerGroup
     let unregisterGroup = WorldPrims.unregisterGroup
     let removeGroup = WorldPrims.removeGroup
-    let removeAllGroups = WorldPrims.removeAllGroups
+    let clearGroups = WorldPrims.clearGroups
     let removeGroups = WorldPrims.removeGroups
     let addGroup = WorldPrims.addGroup
     let addGroups = WorldPrims.addGroups
@@ -173,10 +174,10 @@ module World =
                       Depth = Single.MaxValue }]
 
     let private getRenderDescriptors world =
-        match get world worldOptSelectedScreenAddress with
+        match getOptSelectedScreenAddress world with
         | None -> []
-        | Some activeScreenAddress ->
-            let optGroupMap = Map.tryFind activeScreenAddress.[0] world.Entities
+        | Some selectedScreenAddress ->
+            let optGroupMap = Map.tryFind selectedScreenAddress.[0] world.Entities
             match optGroupMap with
             | None -> []
             | Some groupMap ->
@@ -184,10 +185,10 @@ module World =
                 let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
-                let activeScreen = get world <| worldScreen activeScreenAddress
-                match activeScreen.State with
-                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera activeScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera activeScreen.Outgoing
+                let selectedScreen = getScreen selectedScreenAddress world
+                match selectedScreen.State with
+                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
+                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera selectedScreen.Outgoing
                 | IdlingState -> descriptors
 
     let private render world =
@@ -203,13 +204,13 @@ module World =
         | Running ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
-                match get world <| worldOptEntity bodyTransformMessage.EntityAddress with
+                match getOptEntity bodyTransformMessage.EntityAddress world with
                 | None -> (liveness, world)
                 | Some entity ->
                     let world = entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
                     (liveness, world)
             | BodyCollisionMessage bodyCollisionMessage ->
-                match get world <| worldOptEntity bodyCollisionMessage.EntityAddress with
+                match getOptEntity bodyCollisionMessage.EntityAddress world with
                 | None -> (liveness, world)
                 | Some _ ->
                     let collisionAddress = CollisionEvent @ bodyCollisionMessage.EntityAddress
@@ -337,7 +338,7 @@ module World =
     let rebuildPhysicsHack groupAddress world =
         let outstandingMessages = world.PhysicsMessages
         let world = { world with PhysicsMessages = [] }
-        let entities = get world <| worldEntities groupAddress
+        let entities = getEntities groupAddress world
         let world =
             Map.fold
                 (fun world _ (entity : Entity) -> entity.PropagatePhysics (groupAddress @ [entity.Name], world))
