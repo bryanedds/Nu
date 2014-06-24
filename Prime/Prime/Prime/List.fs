@@ -312,3 +312,11 @@ let rec remove pred list =
             []
             list
     List.rev listRev
+
+let collapseLeft list =
+    let length = List.length list
+    [for x in List.rev [0 .. length] do yield take x list]
+
+let collapseRight list =
+    let length = List.length list
+    [for x in 0 .. length do yield skip x list]

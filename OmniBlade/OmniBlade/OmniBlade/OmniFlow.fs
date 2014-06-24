@@ -26,7 +26,7 @@ module OmniFlow =
         World.subscribe ClickFieldBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     let tryMakeOmniBladeWorld sdlDeps extData =
-        let gameDispatcher = OmniGameDispatcher () :> obj
+        let gameDispatcher = OmniBladeDispatcher () :> obj
         let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher true extData
         match optWorld with
         | Left _ as left -> left
@@ -37,7 +37,7 @@ module OmniFlow =
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = NuConstants.DefaultPackageName; PackageFileName = NuConstants.AssetGraphFileName }
-            let world = World.addSplashScreenFromData (ScreenTransitionSub TitleAddress) SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
+            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
             let world = addTitleScreen world
             let world = addLoadGameScreen world
             let world = addCreditsScreen world

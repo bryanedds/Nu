@@ -17,8 +17,8 @@ module Transition =
 
     let makeDefault dispatcherName transitionType =
         { Id = NuCore.getId ()
-          TransitionLifetime = 0
-          TransitionTicks = 0
+          TransitionLifetime = 0L
+          TransitionTicks = 0L
           TransitionType = transitionType
           OptDissolveSprite = None
           FacetNamesNs = []

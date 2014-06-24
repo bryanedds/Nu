@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Xtension xDispatcher="BlazeStageGroupDispatcher" />
+    <Xtension xDispatcher="BlazeStagePlayDispatcher" />
     <Entity>
       <Name>Player</Name>
       <Visible>True</Visible>

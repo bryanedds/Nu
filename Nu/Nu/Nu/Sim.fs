@@ -100,8 +100,8 @@ module SimModule =
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { Id : Guid
-          TransitionLifetime : int
-          TransitionTicks : int
+          TransitionLifetime : int64
+          TransitionTicks : int64
           TransitionType : TransitionType
           OptDissolveSprite : Sprite option
           FacetNamesNs : string list
@@ -182,7 +182,8 @@ module SimModule =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
-        | CustomSub of (Message -> World -> Liveness * MessageHandled * World)
+        | ScreenTransitionFromSplashSub of Address (*desinationScreen*)
+        | CustomSub of (Message -> World -> MessageHandled * Liveness * World)
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
@@ -195,7 +196,7 @@ module SimModule =
           Screens : Map<string, Screen>
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
-          Ticks : uint64
+          Ticks : int64
           Interactive : bool
           Camera : Camera
           Subscriptions : Subscriptions
