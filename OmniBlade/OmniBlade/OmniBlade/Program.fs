@@ -32,5 +32,5 @@ module Program =
 
         World.run
             (fun sdlDeps -> OmniFlow.tryMakeOmniBladeWorld sdlDeps ())
-            (fun world -> (Running, world))
+            (fun world -> world)
             sdlConfig

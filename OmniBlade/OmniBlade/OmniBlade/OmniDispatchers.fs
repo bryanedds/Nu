@@ -19,7 +19,7 @@ module OmniDispatchersModule =
             { world with Camera = camera }
 
         let adjustFieldCameraHandler message world =
-            (Unhandled, Running, adjustFieldCamera message.Subscriber world)
+            (Unhandled, adjustFieldCamera message.Subscriber world)
 
         let moveFieldAvatarHandler message world =
             let feelerAddress = message.Subscriber @ [FieldFeelerName]
@@ -32,8 +32,8 @@ module OmniDispatchersModule =
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
                 let applyLinearImpulseMessage = { PhysicsId = avatar.PhysicsId; LinearImpulse = impulseVector }
                 let world = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
-                (Unhandled, Running, world)
-            else (Unhandled, Running, world)
+                (Unhandled, world)
+            else (Unhandled, world)
         
         override dispatcher.Register (omniFieldGroup, address, entities, world) =
             let world = World.subscribe TickEvent address (CustomSub moveFieldAvatarHandler) world
