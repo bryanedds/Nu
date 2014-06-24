@@ -33,16 +33,14 @@ module BlazeDispatchersModule =
 
         let tickHandler message world =
             let bullet = World.getEntity message.Subscriber world
-            if bullet.BirthTime + 90L > world.Ticks then (Unhandled, Running, world)
-            else
-                let (liveness, world) = World.removeEntityPlus message.Subscriber world
-                (Unhandled, liveness, world)
+            if world.Ticks < bullet.BirthTime + 90L then (Unhandled, world)
+            else (Unhandled, World.removeEntity message.Subscriber world)
 
         let collisionHandler message world =
             match message.Data with
             | CollisionData (_, _, _) ->
-                let (liveness, world) = World.removeEntityPlus message.Subscriber world
-                (Unhandled, liveness, world)
+                let world = World.removeEntity message.Subscriber world
+                (Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.MakeBodyShape (bullet : Entity) =
@@ -64,26 +62,28 @@ module BlazeDispatchersModule =
 
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
-            let world = World.subscribe TickEvent address (CustomSub tickHandler) world
-            let world = World.subscribe (CollisionEvent @ address) address (CustomSub collisionHandler) world
-            let world = launch bullet world
             let bullet = bullet.SetBirthTime world.Ticks
-            World.setEntity address bullet world
+            let world = World.setEntity address bullet world
+            let world = launch bullet world
+            world |>
+                World.subscribe TickEvent address -<| CustomSub tickHandler |>
+                World.subscribe (CollisionEvent @ address) address -<| CustomSub collisionHandler
 
         override dispatcher.Unregister (bullet, address, world) =
             let world = base.Unregister (bullet, address, world)
-            let world = World.unsubscribe TickEvent address world
-            World.unsubscribe (CollisionEvent @ address) address world
+            world |>
+                World.unsubscribe TickEvent address |>
+                World.unsubscribe (CollisionEvent @ address) address
 
     type BlazeEnemyDispatcher () =
         inherit CharacterDispatcher ()
 
         let movementHandler message world =
-            if not world.Interactive then (Unhandled, Running, world)
+            if not world.Interactive then (Unhandled, world)
             else
                 let enemy = World.getEntity message.Subscriber world
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
-                if not hasAppeared then (Unhandled, Running, world)
+                if not hasAppeared then (Unhandled, world)
                 else
                     let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
                     let force =
@@ -92,7 +92,7 @@ module BlazeDispatchersModule =
                         | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
                     let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
                     let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                    (Unhandled, Running, world)
+                    (Unhandled, world)
 
         let collisionHandler message world =
             match message.Data with
@@ -101,13 +101,14 @@ module BlazeDispatchersModule =
                     match World.getOptEntity colliderAddress world with
                     | None -> true // HACK: assume is bullet if entity was just removed. TODO: implement a way to schedule simulant removal at end of frame
                     | Some collider -> Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world
-                if not isBullet then (Unhandled, Running, world)
+                if not isBullet then (Unhandled, world)
                 else
                     let enemy = World.getEntity message.Subscriber world
                     let enemy = enemy.SetHealth <| enemy.Health - 1
-                    let world = World.setEntity message.Subscriber enemy world
-                    let (liveness, world) = if enemy.Health = 0 then World.removeEntityPlus message.Subscriber world else (Running, world)
-                    (Unhandled, liveness, world)
+                    let world =
+                        if enemy.Health <> 0 then World.setEntity message.Subscriber enemy world
+                        else World.removeEntity message.Subscriber world 
+                    (Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (enemy, dispatcherContainer) =
@@ -146,19 +147,19 @@ module BlazeDispatchersModule =
                     .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
                     .SetDepth(player.Depth + 1.0f)
             let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
-            World.addEntityPlus bulletAddress bullet world
+            World.addEntity bulletAddress bullet world
 
         let spawnBulletHandler message world =
-            if not world.Interactive then (Unhandled, Running, world)
+            if not world.Interactive then (Unhandled, world)
             else
-                if world.Ticks % 6L <> 0L then (Unhandled, Running, world)
+                if world.Ticks % 6L <> 0L then (Unhandled, world)
                 else
                     let player = World.getEntity message.Subscriber world
-                    let (liveness, world) = createBullet player message.Subscriber world
-                    (Unhandled, liveness, world)
+                    let world = createBullet player message.Subscriber world
+                    (Unhandled, world)
 
         let movementHandler message world =
-            if not world.Interactive then (Unhandled, Running, world)
+            if not world.Interactive then (Unhandled, world)
             else
                 let player = World.getEntity message.Subscriber world
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
@@ -168,18 +169,17 @@ module BlazeDispatchersModule =
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
                 let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                (Unhandled, Running, world)
+                (Unhandled, world)
 
         let jumpHandler message world =
-            if not world.Interactive then (Unhandled, Running, world)
+            if not world.Interactive then (Unhandled, world)
             else
                 let player = World.getEntity message.Subscriber world
-                if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
-                then (Unhandled, Running, world)
+                if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator then (Unhandled, world)
                 else
                     let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
-                    (Unhandled, Running, world)
+                    (Unhandled, world)
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
@@ -225,12 +225,12 @@ module BlazeDispatchersModule =
             { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
 
         let adjustCameraHandler message world =
-            (Unhandled, Running, adjustCamera message.Subscriber world)
+            (Unhandled, adjustCamera message.Subscriber world)
 
         override dispatcher.Register (group, address, entities, world) =
             let world = base.Register (group, address, entities, world)
-            let world = World.subscribe TickEvent address (CustomSub adjustCameraHandler) world
-            adjustCamera address world
+            let world = adjustCamera address world
+            World.subscribe TickEvent address (CustomSub adjustCameraHandler) world
 
         override dispatcher.Unregister (group, address, world) =
             let world = base.Unregister (group, address, world)
@@ -267,7 +267,7 @@ module BlazeDispatchersModule =
                  makeSectionFromFile Section3FileName Section3Name 6144.0f world]
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
-            (Unhandled, Running, world)
+            (Unhandled, world)
 
         let endPlay message world =
             let world =
@@ -275,17 +275,19 @@ module BlazeDispatchersModule =
                     message.Subscriber
                     [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
                     world
-            (Unhandled, Running, world)
+            (Unhandled, world)
 
         override dispatcher.Register (screen, address, groupDescriptors, world) =
             let world = base.Register (screen, address, groupDescriptors, world)
-            let world = World.subscribe (SelectedEvent @ address) address (CustomSub beginPlay) world
-            World.subscribe (DeselectedEvent @ address) address (CustomSub endPlay) world
+            world |>
+                World.subscribe (SelectedEvent @ address) address -<| CustomSub beginPlay |>
+                World.subscribe (DeselectedEvent @ address) address -<| CustomSub endPlay
 
         override dispatcher.Unregister (screen, address, world) =
             let world = base.Unregister (screen, address, world)
-            let world = World.unsubscribe (SelectedEvent @ address) address world
-            World.unsubscribe (DeselectedEvent @ address) address world
+            world |>
+                World.unsubscribe (SelectedEvent @ address) address |>
+                World.unsubscribe (DeselectedEvent @ address) address
 
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeVectorDispatcher () =

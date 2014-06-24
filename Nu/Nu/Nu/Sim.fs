@@ -183,7 +183,7 @@ module SimModule =
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
         | ScreenTransitionFromSplashSub of Address (*desinationScreen*)
-        | CustomSub of (Message -> World -> MessageHandled * Liveness * World)
+        | CustomSub of (Message -> World -> MessageHandled * World)
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
@@ -197,6 +197,7 @@ module SimModule =
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
           Ticks : int64
+          Liveness : Liveness
           Interactive : bool
           Camera : Camera
           Subscriptions : Subscriptions

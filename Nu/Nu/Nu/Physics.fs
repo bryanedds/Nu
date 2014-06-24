@@ -201,6 +201,9 @@ module Physics =
             current <- current.Next
         List.ofSeq contacts
 
+    let hasBody physicsId integrator =
+        integrator.Bodies.ContainsKey physicsId
+
     let getBodyContactNormals physicsId integrator =
         let contacts = getBodyContacts physicsId integrator
         List.map
