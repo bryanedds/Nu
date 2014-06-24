@@ -27,10 +27,6 @@ module BlazeDispatchersModule =
     type BlazeBulletDispatcher () =
         inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
 
-        let launch (bullet : Entity) world =
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
-            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
-
         let tickHandler message world =
             let bullet = World.getEntity message.Subscriber world
             if world.Ticks < bullet.BirthTime + 90L then (Unhandled, world)
@@ -64,7 +60,8 @@ module BlazeDispatchersModule =
             let world = base.Register (bullet, address, world)
             let bullet = bullet.SetBirthTime world.Ticks
             let world = World.setEntity address bullet world
-            let world = launch bullet world
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
+            let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
             world |>
                 World.subscribe TickEvent address -<| CustomSub tickHandler |>
                 World.subscribe (CollisionEvent @ address) address -<| CustomSub collisionHandler
@@ -236,13 +233,7 @@ module BlazeDispatchersModule =
             let world = base.Unregister (group, address, world)
             World.unsubscribe TickEvent address world
 
-    type Screen with
-
-        (* blaze stage screen dispatches *)
-        member this.BeginPlay (address : Address, world : World) = this?BeginPlay (address, world) : World
-        member this.EndPlay (address : Address, world : World) = this?EndPlay (address, world) : World
-
-    type BlazeStageDispatcher () =
+    type BlazeStageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
         let shiftEntities xShift entities world =
@@ -257,7 +248,7 @@ module BlazeDispatchersModule =
             let sectionEntities = shiftEntities xShift sectionEntities world
             (sectionName, sectionGroup, sectionEntities)
 
-        let beginPlay message world =
+        let beginPlayHandler message world =
             let stagePlay = World.loadGroupFromFile StagePlayFileName world
             let stagePlayDescriptor = Triple.prepend StagePlayName stagePlay
             let sectionDescriptors =
@@ -269,19 +260,16 @@ module BlazeDispatchersModule =
             let world = World.addGroups message.Subscriber groupDescriptors world
             (Unhandled, world)
 
-        let endPlay message world =
-            let world =
-                World.removeGroups
-                    message.Subscriber
-                    [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
-                    world
+        let endPlayHandler message world =
+            let sectionNames = [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
+            let world = World.removeGroups message.Subscriber sectionNames world
             (Unhandled, world)
 
         override dispatcher.Register (screen, address, groupDescriptors, world) =
             let world = base.Register (screen, address, groupDescriptors, world)
             world |>
-                World.subscribe (SelectedEvent @ address) address -<| CustomSub beginPlay |>
-                World.subscribe (DeselectedEvent @ address) address -<| CustomSub endPlay
+                World.subscribe (SelectedEvent @ address) address -<| CustomSub beginPlayHandler |>
+                World.subscribe (DeselectedEvent @ address) address -<| CustomSub endPlayHandler
 
         override dispatcher.Unregister (screen, address, world) =
             let world = base.Unregister (screen, address, world)
@@ -301,6 +289,6 @@ module BlazeDispatchersModule =
                      typeof<BlazePlayerDispatcher>.Name, BlazePlayerDispatcher () :> obj
                      typeof<BlazeEnemyDispatcher>.Name, BlazeEnemyDispatcher () :> obj
                      typeof<BlazeStagePlayDispatcher>.Name, BlazeStagePlayDispatcher () :> obj
-                     typeof<BlazeStageDispatcher>.Name, BlazeStageDispatcher () :> obj]
+                     typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj]
                     world.Dispatchers
             { world with Dispatchers = dispatchers }
