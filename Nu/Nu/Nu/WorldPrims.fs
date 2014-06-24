@@ -80,6 +80,9 @@ module WorldPrims =
     let mutable withSubscription =
         Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
 
+    let mutable observe =
+        Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+
     (* Entity functions. *)
 
     let private optEntityFinder (address : Address) world =
@@ -178,9 +181,9 @@ module WorldPrims =
         entity.Unregister (address, world)
 
     let removeEntity address world =
+        let world = publish (RemovingEvent @ address) address NoData world
         let world = unregisterEntity address world
-        let world = setOptEntity address None world
-        publish (RemovedEvent @ address) address NoData world
+        setOptEntity address None world
 
     let clearEntities (address : Address) world =
         let entities = getEntities address world
@@ -304,6 +307,7 @@ module WorldPrims =
         group.Unregister (address, world)
 
     let removeGroup address world =
+        let world = publish (RemovingEvent @ address) address NoData world
         let world = unregisterGroup address world
         setOptGroup address None world
 
@@ -326,7 +330,8 @@ module WorldPrims =
             | None -> world
             | Some _ -> removeGroup address world
         let world = setGroup address group world
-        registerGroup address entities group world
+        let world = registerGroup address entities group world
+        publish (AddedEvent @ address) address NoData world
 
     let addGroups screenAddress groupDescriptors world =
         List.fold
@@ -390,6 +395,7 @@ module WorldPrims =
         screen.Unregister (address, world)
 
     let removeScreen address world =
+        let world = publish (RemovingEvent @ address) address NoData world
         let world = unregisterScreen address world
         setOptScreen address None world
 
@@ -399,7 +405,8 @@ module WorldPrims =
             | None -> world
             | Some _ -> removeScreen address world
         let world = setScreen address screen world
-        registerScreen address screen groupDescriptors world
+        let world = registerScreen address screen groupDescriptors world
+        publish (AddedEvent @ address) address NoData world
 
     (* Game functions. *)
 
@@ -494,12 +501,12 @@ module WorldPrims =
         match state with
         | IdlingState ->
             world |>
-                unsubscribe DownMouseEvent address |>
-                unsubscribe UpMouseEvent address
+                unsubscribe (DownMouseEvent @ AnyEvent) address |>
+                unsubscribe (UpMouseEvent @ AnyEvent) address
         | IncomingState | OutgoingState ->
             world |>
-                subscribe DownMouseEvent address SwallowSub |>
-                subscribe UpMouseEvent address SwallowSub
+                subscribe (DownMouseEvent @ AnyEvent) address SwallowSub |>
+                subscribe (UpMouseEvent @ AnyEvent) address SwallowSub
 
     let transitionScreen destination world =
         let world = setScreenStatePlus destination IncomingState world
@@ -591,7 +598,8 @@ module WorldPrims =
     /// Publish a message for the given event.
     let rec publishDefinition event publisher messageData world =
         let events = List.collapseLeft event
-        let optSubLists = List.map (fun event -> Map.tryFind event world.Subscriptions) events
+        let optSubLists = List.map (fun event -> Map.tryFind (event @ AnyEvent) world.Subscriptions) events
+        let optSubLists = Map.tryFind event world.Subscriptions :: optSubLists
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
         let subListSorted = subscriptionSort subList world
@@ -644,7 +652,17 @@ module WorldPrims =
         let world = procedure world
         unsubscribe event subscriber world
 
+    /// Subscribe to messages for the given event during the lifetime of the subscriber.
+    and observeDefinition event subscriber subscription world =
+        let world = subscribe event subscriber subscription world
+        let sub = CustomSub (fun _ world ->
+            let world = unsubscribe (RemovingEvent @ subscriber) subscriber world
+            let world = unsubscribe event subscriber world
+            (Unhandled, world))
+        subscribe (RemovingEvent @ subscriber) subscriber sub world
+
     publish <- publishDefinition
     subscribe <- subscribeDefinition
     unsubscribe <- unsubscribeDefinition
     withSubscription <- withSubscriptionDefinition
+    observe <- observeDefinition
