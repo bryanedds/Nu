@@ -12,11 +12,11 @@ module OmniConstants =
     let FieldAvatarName = "Avatar"
 
     // transition constants
-    let IncomingTimeSplash = 60
-    let IncomingTime = 20
-    let IdlingTime = 60
-    let OutgoingTimeSplash = 40
-    let OutgoingTime = 20
+    let IncomingTimeSplash = 60L
+    let IncomingTime = 20L
+    let IdlingTime = 60L
+    let OutgoingTimeSplash = 40L
+    let OutgoingTime = 20L
 
     // splash constants
     let SplashAddress = addr "Splash"

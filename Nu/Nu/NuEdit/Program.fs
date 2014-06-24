@@ -188,13 +188,13 @@ module Program =
         let pastWorld = world
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Running, Unhandled, world)
+            if form.interactButton.Checked then (Unhandled, Running, world)
             else
                 let entities = Map.toValueList <| World.getEntities EditorGroupAddress world
                 let mousePosition = world.MouseState.MousePosition
                 let optPicked = World.tryPickEntity mousePosition entities world
                 match optPicked with
-                | None -> (Running, Handled, world)
+                | None -> (Handled, Running, world)
                 | Some entity ->
                     let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                     let entityAddress = addrstr EditorGroupAddress entity.Name
@@ -205,22 +205,22 @@ module Program =
                     let world = pushPastWorld pastWorld world
                     refWorld := world // must be set for property grid
                     form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                    (Running, Handled, world)
+                    (Handled, Running, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endEntityDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Running, Unhandled, world)
+            if form.interactButton.Checked then (Unhandled, Running, world)
             else
                 let editorState = world.ExtData :?> EditorState
                 match editorState.DragEntityState with
-                | DragEntityNone -> (Running, Handled, world)
+                | DragEntityNone -> (Handled, Running, world)
                 | DragEntityPosition _
                 | DragEntityRotation _ ->
                     let editorState = { editorState with DragEntityState = DragEntityNone }
                     form.propertyGrid.Refresh ()
-                    (Running, Handled, { world with ExtData = editorState })
+                    (Handled, Running, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
@@ -244,7 +244,7 @@ module Program =
     let beginCameraDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Running, Unhandled, world)
+            if form.interactButton.Checked then (Unhandled, Running, world)
             else
                 let mousePosition = world.MouseState.MousePosition
                 let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
@@ -252,21 +252,32 @@ module Program =
                 let editorState = world.ExtData :?> EditorState
                 let editorState = { editorState with DragCameraState = dragState }
                 let world = { world with ExtData = editorState }
-                (Running, Handled, world)
+                (Handled, Running, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endCameraDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Running, Unhandled, world)
+            if form.interactButton.Checked then (Unhandled, Running, world)
             else
                 let editorState = world.ExtData :?> EditorState
                 match editorState.DragCameraState with
-                | DragCameraNone -> (Running, Handled, world)
+                | DragCameraNone -> (Handled, Running, world)
                 | DragCameraPosition _ ->
                     let editorState = { editorState with DragCameraState = DragCameraNone }
-                    (Running, Handled, { world with ExtData = editorState })
+                    (Handled, Running, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
+
+    let simulantRemovedHandler (form : NuEditForm) message world =
+        match form.propertyGrid.SelectedObject with
+        | null -> (Unhandled, Running, world)
+        | :? EntityTypeDescriptorSource as entityTds ->
+            if message.Publisher <> entityTds.Address then (Unhandled, Running, world)
+            else
+                form.propertyGrid.SelectedObject <- null
+                let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
+                (Unhandled, Running, { world with ExtData = editorState })
+        | _ -> failwith "Unexpected match failure in NuEdit.Program.simulantRemovedHandler."
 
     let updateCameraDrag (_ : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
@@ -553,7 +564,7 @@ module Program =
         form
 
     let tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
-        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name typeof<TransitionDispatcher>.Name 100 100
+        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name typeof<TransitionDispatcher>.Name 100L 100L
         let editorState =
             { DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
@@ -571,6 +582,7 @@ module Program =
             refWorld := World.subscribe NuConstants.UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
             refWorld := World.subscribe NuConstants.DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
             refWorld := World.subscribe NuConstants.UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
+            refWorld := World.subscribe NuConstants.RemovedEvent [] (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     // TODO: remove code duplication with below
