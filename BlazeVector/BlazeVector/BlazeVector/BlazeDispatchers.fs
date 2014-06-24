@@ -72,6 +72,66 @@ module BlazeDispatchersModule =
             let world = World.unsubscribe NuConstants.TickEvent address world
             World.unsubscribe (NuConstants.CollisionEvent @ address) address world
 
+    type BlazeEnemyDispatcher () =
+        inherit CharacterDispatcher ()
+
+        let movementHandler message world =
+            if not world.Interactive then (Unhandled, Running, world)
+            else
+                let enemy = World.getEntity message.Subscriber world
+                let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
+                if not hasAppeared then (Unhandled, Running, world)
+                else
+                    let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
+                    let force =
+                        match optGroundTangent with
+                        | None -> Vector2 (-1.0f, -2.5f) * 2000.0f
+                        | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
+                    let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
+                    let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+                    (Unhandled, Running, world)
+
+        let collisionHandler message world =
+            match message.Data with
+            | CollisionData (_, _, colliderAddress) ->
+                match World.getOptEntity colliderAddress world with
+                | None -> (Unhandled, Running, world)
+                | Some collider ->
+                    if not <| Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world then (Unhandled, Running, world)
+                    else
+                        let enemy = World.getEntity message.Subscriber world
+                        let enemy = enemy.SetHealth <| enemy.Health - 1
+                        let world = World.setEntity message.Subscriber enemy world
+                        let (liveness, world) = if enemy.Health = 0 then World.removeEntityPlus message.Subscriber world else (Running, world)
+                        (Unhandled, liveness, world)
+            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
+
+        override dispatcher.Init (enemy, dispatcherContainer) =
+            let enemy = base.Init (enemy, dispatcherContainer)
+            enemy.SetHealth 6
+
+        override dispatcher.Register (enemy, address, world) =
+            let world = base.Register (enemy, address, world)
+            let world = World.subscribe NuConstants.TickEvent address (CustomSub movementHandler) world
+            World.subscribe (NuConstants.CollisionEvent @ address) address (CustomSub collisionHandler) world
+
+        override dispatcher.Unregister (enemy, address, world) =
+            let world = base.Unregister (enemy, address, world)
+            let world = World.unsubscribe NuConstants.TickEvent address world
+            World.unsubscribe (NuConstants.CollisionEvent @ address) address world
+
+        override dispatcher.GetImageSprite () =
+            { SpriteAssetName = "Enemy"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
+
+        override dispatcher.GetImageOptInset (_, world) =
+            let tile = (world.Ticks / 8L) % 6L
+            let tileI = tile % 4L
+            let tileJ = tile / 4L
+            let tileX = single tileI * 48.0f
+            let tileY = single tileJ * 96.0f
+            let inset = Vector4 (tileX, tileY, tileX + 48.0f, tileY + 96.0f)
+            Some inset
+
     type BlazePlayerDispatcher () =
         inherit CharacterDispatcher ()
 
@@ -140,66 +200,6 @@ module BlazeDispatchersModule =
 
         override dispatcher.GetImageOptInset (_, world) =
             let tile = (world.Ticks / 3L) % 16L
-            let tileI = tile % 4L
-            let tileJ = tile / 4L
-            let tileX = single tileI * 48.0f
-            let tileY = single tileJ * 96.0f
-            let inset = Vector4 (tileX, tileY, tileX + 48.0f, tileY + 96.0f)
-            Some inset
-
-    type BlazeEnemyDispatcher () =
-        inherit CharacterDispatcher ()
-
-        let movementHandler message world =
-            if not world.Interactive then (Unhandled, Running, world)
-            else
-                let enemy = World.getEntity message.Subscriber world
-                let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
-                if not hasAppeared then (Unhandled, Running, world)
-                else
-                    let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
-                    let force =
-                        match optGroundTangent with
-                        | None -> Vector2 (-1.0f, -2.5f) * 2000.0f
-                        | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
-                    let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
-                    let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                    (Unhandled, Running, world)
-
-        let collisionHandler message world =
-            match message.Data with
-            | CollisionData (_, _, colliderAddress) ->
-                match World.getOptEntity colliderAddress world with
-                | None -> (Unhandled, Running, world)
-                | Some collider ->
-                    if not <| Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world then (Unhandled, Running, world)
-                    else
-                        let enemy = World.getEntity message.Subscriber world
-                        let enemy = enemy.SetHealth <| enemy.Health - 1
-                        let world = World.setEntity message.Subscriber enemy world
-                        let (liveness, world) = if enemy.Health = 0 then World.removeEntityPlus message.Subscriber world else (Running, world)
-                        (Unhandled, liveness, world)
-            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
-
-        override dispatcher.Init (enemy, dispatcherContainer) =
-            let enemy = base.Init (enemy, dispatcherContainer)
-            enemy.SetHealth 6
-
-        override dispatcher.Register (enemy, address, world) =
-            let world = base.Register (enemy, address, world)
-            let world = World.subscribe NuConstants.TickEvent address (CustomSub movementHandler) world
-            World.subscribe (NuConstants.CollisionEvent @ address) address (CustomSub collisionHandler) world
-
-        override dispatcher.Unregister (enemy, address, world) =
-            let world = base.Unregister (enemy, address, world)
-            let world = World.unsubscribe NuConstants.TickEvent address world
-            World.unsubscribe (NuConstants.CollisionEvent @ address) address world
-
-        override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "Enemy"; PackageName = BlazeConstants.BlazeStagesPackageName; PackageFileName = NuConstants.AssetGraphFileName }
-
-        override dispatcher.GetImageOptInset (_, world) =
-            let tile = (world.Ticks / 8L) % 6L
             let tileI = tile % 4L
             let tileJ = tile / 4L
             let tileX = single tileI * 48.0f
