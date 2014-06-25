@@ -29,7 +29,6 @@ module Screen =
           State = IdlingState
           Incoming = Transition.makeDefault transitionDispatcherName Incoming
           Outgoing = Transition.makeDefault transitionDispatcherName Outgoing
-          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     let makeDissolve dispatcherName transitionDispatcherName incomingTime outgoingTime =
