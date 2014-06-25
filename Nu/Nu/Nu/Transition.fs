@@ -21,5 +21,4 @@ module Transition =
           TransitionTicks = 0L
           TransitionType = transitionType
           OptDissolveSprite = None
-          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}

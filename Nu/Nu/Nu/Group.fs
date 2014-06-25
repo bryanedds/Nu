@@ -21,7 +21,6 @@ module Group =
 
     let makeDefaultUninitialized dispatcherName =
         { Group.Id = NuCore.getId ()
-          FacetNamesNs = []
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     let makeDefault dispatcherName dispatcherContainer =

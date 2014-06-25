@@ -313,7 +313,7 @@ module World =
                       typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                       gameDispatcherName, gameDispatcher|]
             let world =
-                { Game = { Id = NuCore.getId (); OptSelectedScreenAddress = None; FacetNamesNs = []; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                { Game = { Id = NuCore.getId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
