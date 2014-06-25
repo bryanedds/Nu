@@ -12,6 +12,37 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
+module TileSheetAnimationFacetModule =
+
+    type Entity with
+    
+        [<XField>] member this.Stutter with get () = this?Stutter () : int
+        member this.SetStutter (value : int) : Entity = this?Stutter <- value
+        [<XField>] member this.TileCount with get () = this?TileCount () : int
+        member this.SetTileCount (value : int) : Entity = this?TileCount <- value
+        [<XField>] member this.TileRun with get () = this?TileRun () : int
+        member this.SetTileRun (value : int) : Entity = this?TileRun <- value
+        [<XField>] member this.TileSize with get () = this?TileSize () : Vector2
+        member this.SetTileSize (value : Vector2) : Entity = this?TileSize <- value
+
+module TileSheetAnimationFacet =
+
+    let init (entity : Entity) stutter tileCount tileRun tileSize =
+        entity
+            .SetStutter(stutter)
+            .SetTileCount(tileCount)
+            .SetTileRun(tileRun)
+            .SetTileSize(tileSize)
+
+    let getImageInset (entity : Entity) world =
+        let tile = (int world.Ticks / entity.Stutter) % entity.TileCount
+        let tileI = tile % entity.TileRun
+        let tileJ = tile / entity.TileRun
+        let tileX = single tileI * entity.TileSize.X
+        let tileY = single tileJ * entity.TileSize.Y
+        Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
+
+[<AutoOpen>]
 module BlazeDispatchersModule =
 
     type Entity with
@@ -103,6 +134,7 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
+            let enemy = TileSheetAnimationFacet.init enemy 8 6 4 <| Vector2 (48.0f, 96.0f)
             enemy.SetHealth 6
 
         override dispatcher.Register (enemy, address, world) =
@@ -114,13 +146,8 @@ module BlazeDispatchersModule =
         override dispatcher.GetImageSprite () =
             { SpriteAssetName = "Enemy"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetImageOptInset (_, world) =
-            let tile = (world.Ticks / 8L) % 6L
-            let tileI = tile % 4L
-            let tileJ = tile / 4L
-            let tileX = single tileI * 48.0f
-            let tileY = single tileJ * 96.0f
-            let inset = Vector4 (tileX, tileY, tileX + 48.0f, tileY + 96.0f)
+        override dispatcher.GetImageOptInset (enemy, world) =
+            let inset = TileSheetAnimationFacet.getImageInset enemy world
             Some inset
 
     type BlazePlayerDispatcher () =
@@ -169,6 +196,7 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
+            let player = TileSheetAnimationFacet.init player 3 16 4 <| Vector2 (48.0f, 96.0f)
             player.SetSize <| Vector2 (48.0f, 96.0f)
 
         override dispatcher.Register (player, address, world) =
@@ -184,13 +212,8 @@ module BlazeDispatchersModule =
         override dispatcher.GetImageSprite () =
             { SpriteAssetName = "Player"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetImageOptInset (_, world) =
-            let tile = (world.Ticks / 3L) % 16L
-            let tileI = tile % 4L
-            let tileJ = tile / 4L
-            let tileX = single tileI * 48.0f
-            let tileY = single tileJ * 96.0f
-            let inset = Vector4 (tileX, tileY, tileX + 48.0f, tileY + 96.0f)
+        override dispatcher.GetImageOptInset (player, world) =
+            let inset = TileSheetAnimationFacet.getImageInset player world
             Some inset
 
     /// TODO document.
