@@ -46,7 +46,6 @@ module World =
     let removeEntities = WorldPrims.removeEntities
     let addEntity = WorldPrims.addEntity
     let addEntities = WorldPrims.addEntities
-    let tryPickEntity = WorldPrims.tryPickEntity
     
     // Group forwarders.
     let worldGroup = WorldPrims.worldGroup
@@ -292,26 +291,24 @@ module World =
         | Right assetMetadataMap ->
             let gameDispatcherName = (gameDispatcher.GetType ()).Name
             let dispatchers =
-                Map.ofArray
+                Map.ofList
                     // TODO: see if we can reflectively generate this array
-                    [|typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
-                      typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
-                      typeof<GuiDispatcher>.Name, GuiDispatcher () :> obj
-                      typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
-                      typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
-                      typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
-                      typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
-                      typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
-                      typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
-                      typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
-                      typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
-                      typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
-                      typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
-                      typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
-                      typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
-                      typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
-                      typeof<GameDispatcher>.Name, GameDispatcher () :> obj
-                      gameDispatcherName, gameDispatcher|]
+                    [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
+                     typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
+                     typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
+                     typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
+                     typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
+                     typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
+                     typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
+                     typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
+                     typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
+                     typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
+                     typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
+                     typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
+                     typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
+                     typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
+                     typeof<GameDispatcher>.Name, GameDispatcher () :> obj
+                     gameDispatcherName, gameDispatcher]
             let world =
                 { Game = { Id = NuCore.getId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty

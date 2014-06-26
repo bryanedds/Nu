@@ -9,6 +9,98 @@ open Nu.NuConstants
 module World = WorldPrims
 
 [<AutoOpen>]
+module Entity2dFacetModule =
+
+    type Entity with
+
+        [<XField>] member this.Position with get () = this?Position () : Vector2
+        member this.SetPosition (value : Vector2) : Entity = this?Position <- value
+        [<XField>] member this.Depth with get () = this?Depth () : single
+        member this.SetDepth (value : single) : Entity = this?Depth <- value
+        [<XField>] member this.Rotation with get () = this?Rotation () : single
+        member this.SetRotation (value : single) : Entity = this?Rotation <- value
+        [<XField>] member this.Size with get () = this?Size () : Vector2
+        member this.SetSize (value : Vector2) : Entity = this?Size <- value
+
+        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
+        member this.HandleBodyTransformMessage (address : Address, message : BodyTransformMessage, world : World) : World = this?HandleBodyTransformMessage (address, message, world)
+        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, world)
+        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world
+        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative world
+
+        static member private sortFstDesc (priority, _) (priority2, _) =
+            if priority = priority2 then 0
+            elif priority > priority2 then -1
+            else 1
+
+        static member mouseToEntity position world (entity : Entity) =
+            let positionScreen = Camera.mouseToScreen position world.Camera
+            let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
+            let positionEntity = positionScreen * view
+            positionEntity
+
+        static member setPositionSnapped snap position (entity : Entity) =
+            let snapped = NuMath.snap2F snap position
+            entity.SetPosition snapped
+
+        static member getTransform (entity : Entity) =
+            { Transform.Position = entity.Position
+              Depth = entity.Depth
+              Size = entity.Size
+              Rotation = entity.Rotation }
+
+        static member setTransform positionSnap rotationSnap transform (entity : Entity) =
+            let transform = NuMath.snapTransform positionSnap rotationSnap transform
+            entity
+                .SetPosition(transform.Position)
+                .SetDepth(transform.Depth)
+                .SetSize(transform.Size)
+                .SetRotation(transform.Rotation)
+
+        static member pickingSort entities world =
+            let priorities = List.map (fun (entity : Entity) -> entity.GetPickingPriority world) entities
+            let prioritiesAndEntities = List.zip priorities entities
+            let prioritiesAndEntitiesSorted = List.sortWith Entity.sortFstDesc prioritiesAndEntities
+            List.map snd prioritiesAndEntitiesSorted
+
+        static member tryPick position entities world =
+            let entitiesSorted = Entity.pickingSort entities world
+            List.tryFind
+                (fun entity ->
+                    let positionEntity = Entity.mouseToEntity position world entity
+                    let transform = Entity.getTransform entity
+                    let picked = NuMath.isInBox3 positionEntity transform.Position transform.Size
+                    picked)
+                entitiesSorted
+
+[<RequireQualifiedAccess>]
+module Entity2dFacet =
+
+    let init (entity2d : Entity) =
+        entity2d
+            .SetPosition(Vector2.Zero)
+            .SetDepth(0.0f)
+            .SetSize(DefaultEntitySize)
+            .SetRotation(0.0f)
+
+    let getPickingPriority (entity2d : Entity) =
+        entity2d.Depth
+
+[<AutoOpen>]
+module GuiFacetModule =
+
+    type Entity with
+
+        [<XField>] member this.Enabled with get () = this?Enabled () : bool
+        member this.SetEnabled (value : bool) : Entity = this?Enabled <- value
+
+[<RequireQualifiedAccess>]
+module GuiFacet =
+
+    let init (entity : Entity) =
+        entity.SetEnabled true
+
+[<AutoOpen>]
 module SimpleBodyFacetModule =
 
     type Entity with
@@ -40,6 +132,7 @@ module SimpleBodyFacetModule =
         [<XField>] member this.IsSensor with get () = this?IsSensor () : bool
         member this.SetIsSensor (value : bool) : Entity = this?IsSensor <- value
 
+[<RequireQualifiedAccess>]
 module SimpleBodyFacet =
 
     let private makeCreateBodyMessage makeBodyShape (entity : Entity) (address : Address) =
@@ -106,6 +199,7 @@ module SimpleSpriteFacetModule =
         [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
+[<RequireQualifiedAccess>]
 module SimpleSpriteFacet =
 
     let init (entity : Entity) =
@@ -147,6 +241,7 @@ module SimpleAnimatedSpriteFacetModule =
         [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
+[<RequireQualifiedAccess>]
 module SimpleAnimatedSpriteFacet =
 
     let private getImageOptInset (entity : Entity) world =

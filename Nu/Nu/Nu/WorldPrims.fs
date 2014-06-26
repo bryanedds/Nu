@@ -38,36 +38,6 @@ module WorldPrimsModule =
 [<RequireQualifiedAccess>]
 module WorldPrims =
 
-    (* Tiling functions. *)
-
-    let makeTileMapData tileMapAsset world =
-        let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
-        let mapSize = (map.Width, map.Height)
-        let tileSize = (map.TileWidth, map.TileHeight)
-        let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
-        let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
-        let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
-        let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-        let optTileSetWidth = tileSet.Image.Width
-        let optTileSetHeight = tileSet.Image.Height
-        let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
-        { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
-
-    let makeTileData (tileMap : Entity) tmd (tl : TmxLayer) tileIndex =
-        let mapRun = fst tmd.MapSize
-        let tileSetRun = fst tmd.TileSetSize
-        let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-        let tile = tl.Tiles.[tileIndex]
-        let gid = tile.Gid - tmd.TileSet.FirstGid
-        let gidPosition = gid * fst tmd.TileSize
-        let gid2 = (gid % tileSetRun, gid / tileSetRun)
-        let tileMapPosition = tileMap.Position
-        let tilePosition = (
-            int tileMapPosition.X + fst tmd.TileSize * i,
-            int tileMapPosition.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
-        let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
-        { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
-
     let mutable publish =
         Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
 
@@ -212,27 +182,6 @@ module WorldPrims =
             (fun world entity -> addEntity (addrstr groupAddress entity.Name) entity world)
             world
             entities
-
-    let private sortFstAsc (priority, _) (priority2, _) =
-        if priority = priority2 then 0
-        elif priority > priority2 then -1
-        else 1
-
-    let pickingSort entities =
-        let priorities = List.map Entity.getPickingPriority entities
-        let prioritiesAndEntities = List.zip priorities entities
-        let prioritiesAndEntitiesSorted = List.sortWith sortFstAsc prioritiesAndEntities
-        List.map snd prioritiesAndEntitiesSorted
-
-    let tryPickEntity position entities camera =
-        let entitiesSorted = pickingSort entities
-        List.tryFind
-            (fun entity ->
-                let positionEntity = Entity.mouseToEntity position camera entity
-                let transform = Entity.getTransform entity
-                let picked = NuMath.isInBox3 positionEntity transform.Position transform.Size
-                picked)
-            entitiesSorted
 
     (* Group functions. *)
 
@@ -468,25 +417,30 @@ module WorldPrims =
         | (_, Some []) -> false
         | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
-    let private getPublishingPriority simulant =
+    let private getPublishingPriority simulant world =
         match simulant with
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | Entity entity -> Entity.getPickingPriority entity
+        | Entity entity -> entity.GetPickingPriority world
+
+    let private sortFstDesc (priority, _) (priority2, _) =
+        if priority = priority2 then 0
+        elif priority > priority2 then -1
+        else 1
 
     let private getSubscriptionDescriptors subscriptions world =
         let optSimulants =
             List.map
                 (fun (address, subscription) ->
                     let optSimulant = getOptSimulant address world
-                    Option.map (fun simulant -> (getPublishingPriority simulant, (address, subscription))) optSimulant)
+                    Option.map (fun simulant -> (getPublishingPriority simulant world, (address, subscription))) optSimulant)
                 subscriptions
         List.definitize optSimulants
 
     let private subscriptionSort subscriptions world =
         let subscriptionDescriptors = getSubscriptionDescriptors subscriptions world
-        let subscriptionDescriptors = List.sortWith sortFstAsc subscriptionDescriptors
+        let subscriptionDescriptors = List.sortWith sortFstDesc subscriptionDescriptors
         List.map snd subscriptionDescriptors
     
     let handleEventAsSwallow (world : World) =

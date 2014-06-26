@@ -12,7 +12,7 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
-module BlazeDispatchersModule =
+module BlazeBulletDispatcherModule =
 
     type Entity with
 
@@ -61,6 +61,9 @@ module BlazeDispatchersModule =
         override dispatcher.GetQuickSize (bullet, world) =
             SimpleSpriteFacet.getQuickSize bullet world
 
+[<AutoOpen>]
+module BlazeEnemyDispatcherModule =
+
     type Entity with
 
         [<XField>] member this.Health with get () = this?Health () : int
@@ -80,7 +83,7 @@ module BlazeDispatchersModule =
                     let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
                     let force =
                         match optGroundTangent with
-                        | None -> Vector2 (-1.0f, -2.5f) * 2000.0f
+                        | None -> Vector2 (-2000.0f, -30000.0f)
                         | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
                     let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
                     let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
@@ -109,6 +112,7 @@ module BlazeDispatchersModule =
             enemy
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
+                .SetGravityScale(0.0f)
                 .SetStutter(8)
                 .SetTileCount(6)
                 .SetTileRun(4)
@@ -127,6 +131,9 @@ module BlazeDispatchersModule =
 
         override dispatcher.GetQuickSize (enemy, _) =
             SimpleAnimatedSpriteFacet.getQuickSize enemy
+
+[<AutoOpen>]
+module BlazePlayerDispatcherModule =
 
     type BlazePlayerDispatcher () =
         inherit SimpleBodyDispatcher
@@ -157,7 +164,7 @@ module BlazeDispatchersModule =
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
-                    | None -> Vector2 (1.0f, -2.5f) * 8000.0f
+                    | None -> Vector2 (8000.0f, -30000.0f)
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
                 let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
@@ -199,6 +206,9 @@ module BlazeDispatchersModule =
         override dispatcher.GetQuickSize (player, _) =
             SimpleAnimatedSpriteFacet.getQuickSize player
 
+[<AutoOpen>]
+module BlazeStagePlayDispatcherModule =
+
     /// TODO document.
     type BlazeStagePlayDispatcher () =
         inherit GroupDispatcher ()
@@ -220,13 +230,16 @@ module BlazeDispatchersModule =
             let world = World.observe TickEvent address (CustomSub adjustCameraHandler) world
             adjustCamera address world
 
+[<AutoOpen>]
+module BlazeStageScreenModule =
+
     type BlazeStageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
         let shiftEntities xShift entities world =
             List.map
                 (fun (entity : Entity) ->
-                    if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world then entity
+                    if not <| Entity.dispatchesAs typeof<Entity2dDispatcher> entity world then entity
                     else entity.SetPosition <| entity.Position + Vector2 (xShift, 0.0f))
                 entities
 
@@ -269,6 +282,9 @@ module BlazeDispatchersModule =
             world |>
                 World.observe (SelectedEvent @ address) address -<| CustomSub beginPlayHandler |>
                 World.observe (DeselectedEvent @ address) address -<| CustomSub endPlayHandler
+
+[<AutoOpen>]
+module BlazeVectorDispatcherModule =
 
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeVectorDispatcher () =
