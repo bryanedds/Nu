@@ -17,52 +17,28 @@ open Nu.NuConstants
 module EntityModule =
 
     type Entity with
-        [<XField>] member this.Position with get () = this?Position () : Vector2
-        member this.SetPosition (value : Vector2) : Entity = this?Position <- value
-        [<XField>] member this.Depth with get () = this?Depth () : single
-        member this.SetDepth (value : single) : Entity = this?Depth <- value
-        [<XField>] member this.Rotation with get () = this?Rotation () : single
-        member this.SetRotation (value : single) : Entity = this?Rotation <- value
-        [<XField>] member this.Size with get () = this?Size () : Vector2
-        member this.SetSize (value : Vector2) : Entity = this?Size <- value
+
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
         member this.Register (address : Address, world : World) : World = this?Register (address, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
-        member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
-        member this.HandleBodyTransformMessage (address : Address, message : BodyTransformMessage, world : World) : World = this?HandleBodyTransformMessage (address, message, world)
-        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, world)
-        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world
-        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative world
+        member this.GetPickingPriority (world : World) : single = this?GetPickingPriority world
+
+    type EntityDispatcher () =
+
+        abstract member Init : Entity * IXDispatcherContainer -> Entity
+        default dispatcher.Init (entity, _) = entity
+
+        abstract member Register : Entity * Address * World -> World
+        default dispatcher.Register (_, _, world) = world
+
+        abstract member Unregister : Entity * Address * World -> World
+        default dispatcher.Unregister (_, _, world) = world
+
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (_, _) = 0.0f
 
 [<RequireQualifiedAccess>]
 module Entity =
-
-    let mouseToEntity position world (entity : Entity) =
-        let positionScreen = Camera.mouseToScreen position world.Camera
-        let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
-        let positionEntity = positionScreen * view
-        positionEntity
-
-    let setPositionSnapped snap position (entity : Entity) =
-        let snapped = NuMath.snap2F snap position
-        entity.SetPosition snapped
-
-    let getTransform (entity : Entity) =
-        { Transform.Position = entity.Position
-          Depth = entity.Depth
-          Size = entity.Size
-          Rotation = entity.Rotation }
-
-    let setTransform positionSnap rotationSnap transform (entity : Entity) =
-        let transform = NuMath.snapTransform positionSnap rotationSnap transform
-        entity
-            .SetPosition(transform.Position)
-            .SetDepth(transform.Depth)
-            .SetSize(transform.Size)
-            .SetRotation(transform.Rotation)
-
-    let getPickingPriority (entity : Entity) =
-        entity.Depth
 
     let makeDefaultUninitialized dispatcherName optName =
         let id = NuCore.getId ()

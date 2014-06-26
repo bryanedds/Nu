@@ -80,7 +80,7 @@ module XtensionModule =
             let dispatcherType = dispatcher.GetType ()
             let result =
                 dispatcherTargetType = dispatcherType ||
-                dispatcherTargetType.IsSubclassOf dispatcherType
+                dispatcherType.IsSubclassOf dispatcherTargetType
             result
 
         static member dispatchesAsByName dispatcherTargetName xtension dispatcherContainer =

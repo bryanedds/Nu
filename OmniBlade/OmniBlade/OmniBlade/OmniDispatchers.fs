@@ -7,7 +7,7 @@ open OmniBlade
 open OmniBlade.OmniConstants
 
 [<AutoOpen>]
-module OmniDispatchersModule =
+module OmniFieldGroupDispatcherModule =
 
     type OmniFieldGroupDispatcher () =
         inherit GroupDispatcher ()
@@ -42,6 +42,9 @@ module OmniDispatchersModule =
             let world = base.Register (omniFieldGroup, address, entities, world)
             adjustFieldCamera address world
 
+[<AutoOpen>]
+module OmniBattleGroupDispatcherModule =
+
     type OmniBattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
@@ -51,6 +54,9 @@ module OmniDispatchersModule =
 
         override dispatcher.Unregister (omniBattleGroup, address, world) =
             base.Unregister (omniBattleGroup, address, world)
+
+[<AutoOpen>]
+module OmniBladeDispatcherModule =
 
     type OmniBladeDispatcher () =
         inherit GameDispatcher ()

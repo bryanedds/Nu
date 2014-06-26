@@ -9,29 +9,22 @@ open Nu.NuConstants
 module World = WorldPrims
 
 [<AutoOpen>]
-module DispatchersModule =
+module Entity2dDispatcherModule =
 
-    type EntityDispatcher () =
-
-        abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default dispatcher.Init (entity, _) = entity
-
-        abstract member Register : Entity * Address * World -> World
-        default dispatcher.Register (_, _, world) = world
-
-        abstract member Unregister : Entity * Address * World -> World
-        default dispatcher.Unregister (_, _, world) = world
-
-    type Entity2dDispatcher () =
+    type [<AbstractClass>] Entity2dDispatcher () =
         inherit EntityDispatcher ()
 
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
+            let entity2d = Entity2dFacet.init entity2d
             entity2d
                 .SetPosition(Vector2.Zero)
                 .SetDepth(0.0f)
                 .SetSize(DefaultEntitySize)
                 .SetRotation(0.0f)
+
+        override dispatcher.GetPickingPriority (entity2d, _) =
+            Entity2dFacet.getPickingPriority entity2d
 
         abstract member PropagatePhysics : Entity * Address * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
@@ -48,19 +41,20 @@ module DispatchersModule =
         abstract member IsTransformRelative : Entity * World -> bool
         default dispatcher.IsTransformRelative (_, _) = true
 
-    type Entity with
+[<AutoOpen>]
+module GuiDispatcherModule =
 
-        [<XField>] member this.Enabled with get () = this?Enabled () : bool
-        member this.SetEnabled (value : bool) : Entity = this?Enabled <- value
-
-    type GuiDispatcher () =
+    type [<AbstractClass>] GuiDispatcher () =
         inherit Entity2dDispatcher ()
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            entity.SetEnabled true
+            GuiFacet.init entity
 
-    type SimpleBodyDispatcher (makeBodyShape) =
+[<AutoOpen>]
+module SimpleBodyDispatcherModule =
+
+    type [<AbstractClass>] SimpleBodyDispatcher (makeBodyShape) =
         inherit Entity2dDispatcher ()
 
         override dispatcher.Init (entity, world) =
@@ -78,6 +72,9 @@ module DispatchersModule =
 
         override dispatcher.HandleBodyTransformMessage (entity, _, message, world) =
             SimpleBodyFacet.handleBodyTransformMessage entity message world
+
+[<AutoOpen>]
+module ButtonDispatcherModule =
 
     type Entity with
 
@@ -163,6 +160,9 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
+[<AutoOpen>]
+module LabelDispatcherModule =
+
     type Entity with
 
         [<XField>] member this.LabelSprite with get () = this?LabelSprite () : Sprite
@@ -197,6 +197,9 @@ module DispatchersModule =
 
         override dispatcher.IsTransformRelative (_, _) =
             false
+
+[<AutoOpen>]
+module TextBoxDispatcherModule =
 
     type Entity with
 
@@ -254,6 +257,9 @@ module DispatchersModule =
 
         override dispatcher.IsTransformRelative (_, _) =
             false
+
+[<AutoOpen>]
+module ToggleDispatcherModule =
 
     type Entity with
 
@@ -343,6 +349,9 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
+[<AutoOpen>]
+module FeelerDispatcherModule =
+
     type Entity with
 
         [<XField>] member this.IsTouched with get () = this?IsTouched () : bool
@@ -392,6 +401,9 @@ module DispatchersModule =
 
         override dispatcher.IsTransformRelative (_, _) =
             false
+
+[<AutoOpen>]
+module FillBarDispatcherModule =
 
     type Entity with
     
@@ -456,6 +468,9 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
+[<AutoOpen>]
+module BlockDispatcherModule =
+
     type [<Sealed>] BlockDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (block : Entity) -> BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero })
@@ -465,11 +480,14 @@ module DispatchersModule =
             let block = SimpleSpriteFacet.init block
             block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, _) =
-            SimpleSpriteFacet.getRenderDescriptors entity viewAbsolute viewRelative
+        override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, _) =
+            SimpleSpriteFacet.getRenderDescriptors block viewAbsolute viewRelative
 
-        override dispatcher.GetQuickSize (entity, world) =
-            SimpleSpriteFacet.getQuickSize entity world
+        override dispatcher.GetQuickSize (block, world) =
+            SimpleSpriteFacet.getQuickSize block world
+
+[<AutoOpen>]
+module AvatarDispatcherModule =
 
     type [<Sealed>] AvatarDispatcher () =
         inherit SimpleBodyDispatcher
@@ -490,6 +508,9 @@ module DispatchersModule =
         override dispatcher.GetQuickSize (avatar, world) =
             SimpleSpriteFacet.getQuickSize avatar world
 
+[<AutoOpen>]
+module CharacterDispatcherModule =
+
     type [<Sealed>] CharacterDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (character : Entity) -> CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero })
@@ -508,12 +529,43 @@ module DispatchersModule =
         override dispatcher.GetQuickSize (character, world) =
             SimpleSpriteFacet.getQuickSize character world
 
+[<AutoOpen>]
+module TileMapDispatcherModule =
+
     type Entity with
 
         [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
         member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
         [<XField>] member this.Parallax with get () = this?Parallax () : single
         member this.SetParallax (value : single) : Entity = this?Parallax <- value
+
+        static member makeTileMapData tileMapAsset world =
+            let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
+            let mapSize = (map.Width, map.Height)
+            let tileSize = (map.TileWidth, map.TileHeight)
+            let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
+            let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
+            let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
+            let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
+            let optTileSetWidth = tileSet.Image.Width
+            let optTileSetHeight = tileSet.Image.Height
+            let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
+            { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
+
+        static member makeTileData (tileMap : Entity) tmd (tl : TmxLayer) tileIndex =
+            let mapRun = fst tmd.MapSize
+            let tileSetRun = fst tmd.TileSetSize
+            let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+            let tile = tl.Tiles.[tileIndex]
+            let gid = tile.Gid - tmd.TileSet.FirstGid
+            let gidPosition = gid * fst tmd.TileSize
+            let gid2 = (gid % tileSetRun, gid / tileSetRun)
+            let tileMapPosition = tileMap.Position
+            let tilePosition = (
+                int tileMapPosition.X + fst tmd.TileSize * i,
+                int tileMapPosition.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
+            let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
+            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
     type [<Sealed>] TileMapDispatcher () =
         inherit Entity2dDispatcher ()
@@ -578,7 +630,7 @@ module DispatchersModule =
             { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
 
         let registerTilePhysics tm tmd (tl : TmxLayer) tli address ti world _ =
-            let td = World.makeTileData tm tmd tl ti
+            let td = Entity.makeTileData tm tmd tl ti
             match td.OptTileSetTile with
             | None -> world
             | Some tileSetTile ->
@@ -613,21 +665,21 @@ module DispatchersModule =
                     tileLayer.Tiles
 
         let registerTileMapPhysics address (tileMap : Entity) world =
-            let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
+            let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (registerTileLayerPhysics address tileMap tileMapData)
                 world
                 tileMapData.Map.Layers
 
         let unregisterTileMapPhysics (_ : Address) (tileMap : Entity) world =
-            let tileMapData = World.makeTileMapData tileMap.TileMapAsset world
+            let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
                     if not <| tileLayer.Properties.ContainsKey CollisionProperty then world
                     else
                         Seq.foldi
                             (fun tileIndex world _ ->
-                                let tileData = World.makeTileData tileMap tileMapData tileLayer tileIndex
+                                let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex
                                 match tileData.OptTileSetTile with
                                 | None -> world
                                 | Some tileSetTile ->
@@ -724,5 +776,6 @@ module DispatchersModule =
         default dispatcher.Unregister (_, address, world) = World.clearGroups address world
 
     type GameDispatcher () =
+        
         abstract member Register : Game * World -> World
         default dispatcher.Register (_, world) = world
