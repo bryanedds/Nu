@@ -30,9 +30,7 @@ module BlazeDispatchersModule =
 
         let collisionHandler message world =
             match message.Data with
-            | CollisionData (_, _, _) ->
-                let world = World.removeEntity message.Subscriber world
-                (Unhandled, world)
+            | CollisionData (_, _, _) -> (Unhandled, World.removeEntity message.Subscriber world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (bullet, dispatcherContainer) =
