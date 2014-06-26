@@ -11,75 +11,6 @@ module World = WorldPrims
 [<AutoOpen>]
 module DispatchersModule =
 
-    type Entity with
-        
-        (* button xfields *)
-        [<XField>] member this.IsDown with get () = this?IsDown () : bool
-        member this.SetIsDown (value : bool) : Entity = this?IsDown <- value
-        [<XField>] member this.UpSprite with get () = this?UpSprite () : Sprite
-        member this.SetUpSprite (value : Sprite) : Entity = this?UpSprite <- value
-        [<XField>] member this.DownSprite with get () = this?DownSprite () : Sprite
-        member this.SetDownSprite (value : Sprite) : Entity = this?DownSprite <- value
-        [<XField>] member this.ClickSound with get () = this?ClickSound () : Sound
-        member this.SetClickSound (value : Sound) : Entity = this?ClickSound <- value
-
-        (* label xfields *)
-        [<XField>] member this.LabelSprite with get () = this?LabelSprite () : Sprite
-        member this.SetLabelSprite (value : Sprite) : Entity = this?LabelSprite <- value
-
-        (* text box xfields *)
-        [<XField>] member this.BoxSprite with get () = this?BoxSprite () : Sprite
-        member this.SetBoxSprite (value : Sprite) : Entity = this?BoxSprite <- value
-        [<XField>] member this.Text with get () = this?Text () : string
-        member this.SetText (value : string) : Entity = this?Text <- value
-        [<XField>] member this.TextFont with get () = this?TextFont () : Font
-        member this.SetTextFont (value : Font) : Entity = this?TextFont <- value
-        [<XField>] member this.TextOffset with get () = this?TextOffset () : Vector2
-        member this.SetTextOffset (value : Vector2) : Entity = this?TextOffset <- value
-        [<XField>] member this.TextColor with get () = this?TextColor () : Vector4
-        member this.SetTextColor (value : Vector4) : Entity = this?TextColor <- value
-
-        (* toggle xfields *)
-        [<XField>] member this.IsOn with get () = this?IsOn () : bool
-        member this.SetIsOn (value : bool) : Entity = this?IsOn <- value
-        [<XField>] member this.IsPressed with get () = this?IsPressed () : bool
-        member this.SetIsPressed (value : bool) : Entity = this?IsPressed <- value
-        [<XField>] member this.OffSprite with get () = this?OffSprite () : Sprite
-        member this.SetOffSprite (value : Sprite) : Entity = this?OffSprite <- value
-        [<XField>] member this.OnSprite with get () = this?OnSprite () : Sprite
-        member this.SetOnSprite (value : Sprite) : Entity = this?OnSprite <- value
-        [<XField>] member this.ToggleSound with get () = this?ToggleSound () : Sound
-        member this.SetToggleSound (value : Sound) : Entity = this?ToggleSound <- value
-
-        (* feeler xfields *)
-        [<XField>] member this.IsTouched with get () = this?IsTouched () : bool
-        member this.SetIsTouched (value : bool) : Entity = this?IsTouched <- value
-
-        (* fill bar xfields *)
-        [<XField>] member this.Fill with get () = this?Fill () : single
-        member this.SetFill (value : single) : Entity = this?Fill <- value
-        [<XField>] member this.FillInset with get () = this?FillInset () : single
-        member this.SetFillInset (value : single) : Entity = this?FillInset <- value
-        [<XField>] member this.FillSprite with get () = this?FillSprite () : Sprite
-        member this.SetFillSprite (value : Sprite) : Entity = this?FillSprite <- value
-        [<XField>] member this.BorderSprite with get () = this?BorderSprite () : Sprite
-        member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
-
-        (* block xfields *)
-        // all xfields already declared
-
-        (* avatar xfields *)
-        // all xfields already declared
-
-        (* character xfields *)
-        // all xfields already declared
-
-        (* tile map xfields *)
-        [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
-        member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
-        [<XField>] member this.Parallax with get () = this?Parallax () : single
-        member this.SetParallax (value : single) : Entity = this?Parallax <- value
-
     type EntityDispatcher () =
 
         abstract member Init : Entity * IXDispatcherContainer -> Entity
@@ -93,11 +24,9 @@ module DispatchersModule =
 
     type Entity2dDispatcher () =
         inherit EntityDispatcher ()
-            
+
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
-            // perhaps a nice 'with' syntax macro would work better here -
-            // http://fslang.uservoice.com/forums/245727-f-language/suggestions/5674940-implement-syntactic-macros
             entity2d
                 .SetPosition(Vector2.Zero)
                 .SetDepth(0.0f)
@@ -119,115 +48,57 @@ module DispatchersModule =
         abstract member IsTransformRelative : Entity * World -> bool
         default dispatcher.IsTransformRelative (_, _) = true
 
-    type EntityGuiDispatcher () =
+    type Entity with
+
+        [<XField>] member this.Enabled with get () = this?Enabled () : bool
+        member this.SetEnabled (value : bool) : Entity = this?Enabled <- value
+
+    type GuiDispatcher () =
         inherit Entity2dDispatcher ()
-            
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            entity.SetEnabled(true)
-
-    type [<AbstractClass>] Entity2dWithSimplePhysicsDispatcher () =
-        inherit Entity2dDispatcher ()
-
-        abstract member MakeBodyShape : Entity -> BodyShape
-
-        member dispatcher.MakeCreateBodyMessage (entity : Entity, address : Address) =
-            { EntityAddress = address
-              PhysicsId = entity.PhysicsId
-              Position = entity.Position + entity.Size * 0.5f
-              Rotation = entity.Rotation
-              BodyProperties =
-                { Shape = dispatcher.MakeBodyShape entity
-                  BodyType = entity.BodyType
-                  Density = entity.Density
-                  Friction = entity.Friction
-                  Restitution = entity.Restitution
-                  FixedRotation = entity.FixedRotation
-                  LinearDamping = entity.LinearDamping
-                  AngularDamping = entity.AngularDamping
-                  GravityScale = entity.GravityScale
-                  CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
-                  CollisionMask = Physics.toCollisionCategories entity.CollisionMask
-                  IsBullet = entity.IsBullet
-                  IsSensor = entity.IsSensor }}
-
-        member dispatcher.RegisterCharacterPhysics (entity : Entity, address, world) =
-            let createBodyMessage = dispatcher.MakeCreateBodyMessage (entity, address)
-            { world with PhysicsMessages = CreateBodyMessage createBodyMessage :: world.PhysicsMessages }
-
-        member dispatcher.UnregisterCharacterPhysics (entity : Entity, world) =
-            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = entity.PhysicsId }
-            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            entity
-                .SetPhysicsId(Physics.getId entity.Id)
-                .SetBodyType(BodyType.Dynamic)
-                .SetDensity(NormalDensity)
-                .SetFriction(0.0f)
-                .SetRestitution(0.0f)
-                .SetFixedRotation(false)
-                .SetLinearDamping(1.0f)
-                .SetAngularDamping(1.0f)
-                .SetGravityScale(1.0f)
-                .SetCollisionCategories("1")
-                .SetCollisionMask("*")
-                .SetIsBullet(false)
-                .SetIsSensor(false)
+            entity.SetEnabled true
+
+    type SimpleBodyDispatcher (makeBodyShape, getImageOptInset) =
+        inherit Entity2dDispatcher ()
+
+        override dispatcher.Init (entity, world) =
+            let entity = base.Init (entity, world)
+            let entity = SimplePhysicsFacet.init entity
+            SimpleRenderFacet.init entity
 
         override dispatcher.Register (entity, address, world) =
-            dispatcher.RegisterCharacterPhysics (entity, address, world)
+            SimplePhysicsFacet.registerPhysics makeBodyShape entity address world
 
         override dispatcher.Unregister (entity, _, world) =
-            dispatcher.UnregisterCharacterPhysics (entity, world)
+            SimplePhysicsFacet.unregisterPhysics entity world
             
         override dispatcher.PropagatePhysics (entity, address, world) =
-            let world = dispatcher.UnregisterCharacterPhysics (entity, world)
-            dispatcher.RegisterCharacterPhysics (entity, address, world)
+            SimplePhysicsFacet.propagatePhysics makeBodyShape entity address world
 
         override dispatcher.HandleBodyTransformMessage (entity, _, message, world) =
-            let entity =
-                entity
-                    .SetPosition(message.Position - entity.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                    .SetRotation(message.Rotation)
-            World.setEntity message.EntityAddress entity world
-
-    type [<AbstractClass>] Entity2dWithSimplePhysicsAndRenderingDispatcher () =
-        inherit Entity2dWithSimplePhysicsDispatcher ()
-
-        abstract GetImageSprite : unit -> Sprite
-
-        abstract GetImageOptInset : Entity * World -> Vector4 option
-        default dispatcher.GetImageOptInset (_, _) = None
-
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            let sprite = dispatcher.GetImageSprite ()
-            entity.SetImageSprite sprite
+            SimplePhysicsFacet.handleBodyTransformMessage entity message world
 
         override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) =
-            if not entity.Visible then []
-            else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
-                            { Position = entity.Position * viewRelative
-                              Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
-                              Rotation = entity.Rotation
-                              OptInset = dispatcher.GetImageOptInset (entity, world)
-                              Sprite = entity.ImageSprite
-                              Color = Vector4.One }
-                          Depth = entity.Depth }]
+            SimpleRenderFacet.getRenderDescriptors getImageOptInset entity viewAbsolute viewRelative world
 
         override dispatcher.GetQuickSize (entity, world) =
-            let sprite = entity.ImageSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
-            | Some size -> size
+            SimpleRenderFacet.getQuickSize entity world
 
-    type ButtonDispatcher () =
-        inherit EntityGuiDispatcher ()
+    type Entity with
+
+        [<XField>] member this.IsDown with get () = this?IsDown () : bool
+        member this.SetIsDown (value : bool) : Entity = this?IsDown <- value
+        [<XField>] member this.UpSprite with get () = this?UpSprite () : Sprite
+        member this.SetUpSprite (value : Sprite) : Entity = this?UpSprite <- value
+        [<XField>] member this.DownSprite with get () = this?DownSprite () : Sprite
+        member this.SetDownSprite (value : Sprite) : Entity = this?DownSprite <- value
+        [<XField>] member this.ClickSound with get () = this?ClickSound () : Sound
+        member this.SetClickSound (value : Sound) : Entity = this?ClickSound <- value
+
+    type [<Sealed>] ButtonDispatcher () =
+        inherit GuiDispatcher ()
 
         let handleButtonEventDownMouseLeft message world =
             match message.Data with
@@ -299,8 +170,13 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
-    type LabelDispatcher () =
-        inherit EntityGuiDispatcher ()
+    type Entity with
+
+        [<XField>] member this.LabelSprite with get () = this?LabelSprite () : Sprite
+        member this.SetLabelSprite (value : Sprite) : Entity = this?LabelSprite <- value
+
+    type [<Sealed>] LabelDispatcher () =
+        inherit GuiDispatcher ()
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
@@ -329,8 +205,21 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
-    type TextBoxDispatcher () =
-        inherit EntityGuiDispatcher ()
+    type Entity with
+
+        [<XField>] member this.BoxSprite with get () = this?BoxSprite () : Sprite
+        member this.SetBoxSprite (value : Sprite) : Entity = this?BoxSprite <- value
+        [<XField>] member this.Text with get () = this?Text () : string
+        member this.SetText (value : string) : Entity = this?Text <- value
+        [<XField>] member this.TextFont with get () = this?TextFont () : Font
+        member this.SetTextFont (value : Font) : Entity = this?TextFont <- value
+        [<XField>] member this.TextOffset with get () = this?TextOffset () : Vector2
+        member this.SetTextOffset (value : Vector2) : Entity = this?TextOffset <- value
+        [<XField>] member this.TextColor with get () = this?TextColor () : Vector4
+        member this.SetTextColor (value : Vector4) : Entity = this?TextColor <- value
+
+    type [<Sealed>] TextBoxDispatcher () =
+        inherit GuiDispatcher ()
             
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox = base.Init (textBox, dispatcherContainer)
@@ -373,8 +262,21 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
-    type ToggleDispatcher () =
-        inherit EntityGuiDispatcher ()
+    type Entity with
+
+        [<XField>] member this.IsOn with get () = this?IsOn () : bool
+        member this.SetIsOn (value : bool) : Entity = this?IsOn <- value
+        [<XField>] member this.IsPressed with get () = this?IsPressed () : bool
+        member this.SetIsPressed (value : bool) : Entity = this?IsPressed <- value
+        [<XField>] member this.OffSprite with get () = this?OffSprite () : Sprite
+        member this.SetOffSprite (value : Sprite) : Entity = this?OffSprite <- value
+        [<XField>] member this.OnSprite with get () = this?OnSprite () : Sprite
+        member this.SetOnSprite (value : Sprite) : Entity = this?OnSprite <- value
+        [<XField>] member this.ToggleSound with get () = this?ToggleSound () : Sound
+        member this.SetToggleSound (value : Sound) : Entity = this?ToggleSound <- value
+
+    type [<Sealed>] ToggleDispatcher () =
+        inherit GuiDispatcher ()
 
         let handleToggleEventDownMouseLeft message world =
             match message.Data with
@@ -448,8 +350,13 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
-    type FeelerDispatcher () =
-        inherit EntityGuiDispatcher ()
+    type Entity with
+
+        [<XField>] member this.IsTouched with get () = this?IsTouched () : bool
+        member this.SetIsTouched (value : bool) : Entity = this?IsTouched <- value
+
+    type [<Sealed>] FeelerDispatcher () =
+        inherit GuiDispatcher ()
 
         let handleFeelerEventDownMouseLeft message world =
             match message.Data with
@@ -493,8 +400,19 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
-    type FillBarDispatcher () =
-        inherit EntityGuiDispatcher ()
+    type Entity with
+    
+        [<XField>] member this.Fill with get () = this?Fill () : single
+        member this.SetFill (value : single) : Entity = this?Fill <- value
+        [<XField>] member this.FillInset with get () = this?FillInset () : single
+        member this.SetFillInset (value : single) : Entity = this?FillInset <- value
+        [<XField>] member this.FillSprite with get () = this?FillSprite () : Sprite
+        member this.SetFillSprite (value : Sprite) : Entity = this?FillSprite <- value
+        [<XField>] member this.BorderSprite with get () = this?BorderSprite () : Sprite
+        member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
+
+    type [<Sealed>] FillBarDispatcher () =
+        inherit GuiDispatcher ()
 
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
@@ -545,47 +463,48 @@ module DispatchersModule =
         override dispatcher.IsTransformRelative (_, _) =
             false
 
-    type BlockDispatcher () =
-        inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
+    type [<Sealed>] BlockDispatcher () =
+        inherit SimpleBodyDispatcher
+            ((fun (block : Entity) -> BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }),
+             (fun _ _ -> None))
 
-        override dispatcher.MakeBodyShape (block : Entity) =
-            BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
+        override dispatcher.Init (block, world) =
+            let block = base.Init (block, world)
+            block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } 
-    
-    type AvatarDispatcher () =
-        inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
-        
-        override dispatcher.MakeBodyShape (avatar : Entity) =
-            CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
+    type [<Sealed>] AvatarDispatcher () =
+        inherit SimpleBodyDispatcher
+            ((fun (avatar : Entity) -> CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }),
+             (fun _ _ -> None))
 
-        override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-
-        override dispatcher.Init (avatar, dispatcherContainer) =
-            let avatar = base.Init (avatar, dispatcherContainer)
+        override dispatcher.Init (avatar, world) =
+            let avatar = base.Init (avatar, world)
             avatar
                 .SetFixedRotation(true)
                 .SetLinearDamping(10.0f)
                 .SetGravityScale(0.0f)
+                .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-    type CharacterDispatcher () =
-        inherit Entity2dWithSimplePhysicsAndRenderingDispatcher ()
-        
-        override dispatcher.MakeBodyShape (character : Entity) =
-            CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }
+    type [<Sealed>] CharacterDispatcher () =
+        inherit SimpleBodyDispatcher
+            ((fun (character : Entity) -> CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }),
+             (fun _ _ -> None))
 
-        override dispatcher.GetImageSprite () =
-            { SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-
-        override dispatcher.Init (character, dispatcherContainer) =
-            let character = base.Init (character, dispatcherContainer)
+        override dispatcher.Init (character, world) =
+            let character = base.Init (character, world)
             character
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
+                .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-    type TileMapDispatcher () =
+    type Entity with
+
+        [<XField>] member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
+        member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
+        [<XField>] member this.Parallax with get () = this?Parallax () : single
+        member this.SetParallax (value : single) : Entity = this?Parallax <- value
+
+    type [<Sealed>] TileMapDispatcher () =
         inherit Entity2dDispatcher ()
 
         let getTilePhysicsId tmid (tli : int) (ti : int) =
