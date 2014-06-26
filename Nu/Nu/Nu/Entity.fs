@@ -17,7 +17,6 @@ open Nu.NuConstants
 module EntityModule =
 
     type Entity with
-
         [<XField>] member this.Position with get () = this?Position () : Vector2
         member this.SetPosition (value : Vector2) : Entity = this?Position <- value
         [<XField>] member this.Depth with get () = this?Depth () : single
@@ -26,37 +25,6 @@ module EntityModule =
         member this.SetRotation (value : single) : Entity = this?Rotation <- value
         [<XField>] member this.Size with get () = this?Size () : Vector2
         member this.SetSize (value : Vector2) : Entity = this?Size <- value
-        [<XField>] member this.Enabled with get () = this?Enabled () : bool
-        member this.SetEnabled (value : bool) : Entity = this?Enabled <- value
-        [<XField>] member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
-        member this.SetPhysicsId (value : PhysicsId) : Entity = this?PhysicsId <- value
-        [<XField>] member this.BodyType with get () = this?BodyType () : BodyType
-        member this.SetBodyType (value : BodyType) : Entity = this?BodyType <- value
-        [<XField>] member this.Density with get () = this?Density () : single
-        member this.SetDensity (value : single) : Entity = this?Density <- value
-        [<XField>] member this.Friction with get () = this?Friction () : single
-        member this.SetFriction (value : single) : Entity = this?Friction <- value
-        [<XField>] member this.Restitution with get () = this?Restitution () : single
-        member this.SetRestitution (value : single) : Entity = this?Restitution <- value
-        [<XField>] member this.FixedRotation with get () = this?FixedRotation () : bool
-        member this.SetFixedRotation (value : bool) : Entity = this?FixedRotation <- value
-        [<XField>] member this.LinearDamping with get () = this?LinearDamping () : single
-        member this.SetLinearDamping (value : single) : Entity = this?LinearDamping <- value
-        [<XField>] member this.AngularDamping with get () = this?AngularDamping () : single
-        member this.SetAngularDamping (value : single) : Entity = this?AngularDamping <- value
-        [<XField>] member this.GravityScale with get () = this?GravityScale () : single
-        member this.SetGravityScale (value : single) : Entity = this?GravityScale <- value
-        [<XField>] member this.CollisionCategories with get () = this?CollisionCategories () : string
-        member this.SetCollisionCategories (value : string) : Entity = this?CollisionCategories <- value
-        [<XField>] member this.CollisionMask with get () = this?CollisionMask () : string
-        member this.SetCollisionMask (value : string) : Entity = this?CollisionMask <- value
-        [<XField>] member this.IsBullet with get () = this?IsBullet () : bool
-        member this.SetIsBullet (value : bool) : Entity = this?IsBullet <- value
-        [<XField>] member this.IsSensor with get () = this?IsSensor () : bool
-        member this.SetIsSensor (value : bool) : Entity = this?IsSensor <- value
-        [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
-        member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
-
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init dispatcherContainer
         member this.Register (address : Address, world : World) : World = this?Register (address, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
