@@ -26,6 +26,7 @@
     <asset name="ExitButtonDown" fileName="Assets/BlazeVector/Gui/ExitButtonDown.png" associations="Rendering"/>
     <asset name="PlayButtonUp" fileName="Assets/BlazeVector/Gui/PlayButtonUp.png" associations="Rendering"/>
     <asset name="PlayButtonDown" fileName="Assets/BlazeVector/Gui/PlayButtonDown.png" associations="Rendering"/>
+    <asset name="Machinery" fileName="Assets/BlazeVector/Gui/Machinery.ogg" associations="Audio"/>
   </package>
   <package name="BlazeStages">
     <asset name="Player" fileName="Assets/BlazeVector/Stages/Player.png" associations="Rendering"/>
@@ -40,5 +41,6 @@
     <asset name="Section3" fileName="Assets/BlazeVector/Stages/Section3.tmx" associations=""/>
     <asset name="BackgroundA" fileName="Assets/BlazeVector/Stages/BackgroundA.tmx" associations=""/>
     <asset name="BackgroundB" fileName="Assets/BlazeVector/Stages/BackgroundB.tmx" associations=""/>
+    <asset name="DeadBlaze" fileName="Assets/BlazeVector/Stages/DeadBlaze.ogg" associations="Audio"/>
   </package>
 </root>

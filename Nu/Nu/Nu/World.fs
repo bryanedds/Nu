@@ -296,7 +296,7 @@ module World =
                     // TODO: see if we can reflectively generate this array
                     [|typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                       typeof<Entity2dDispatcher>.Name, Entity2dDispatcher () :> obj
-                      typeof<EntityUiDispatcher>.Name, EntityUiDispatcher () :> obj
+                      typeof<EntityGuiDispatcher>.Name, EntityGuiDispatcher () :> obj
                       typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
                       typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
                       typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj

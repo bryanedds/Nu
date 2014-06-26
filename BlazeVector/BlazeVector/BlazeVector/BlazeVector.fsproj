@@ -86,7 +86,7 @@
     <None Include="Assets\BlazeVector\Groups\Section1.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Groups\StageUi.nugroup">
+    <None Include="Assets\BlazeVector\Groups\StageGui.nugroup">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\BlazeVector\Gui\BackButtonUp.png">
@@ -111,6 +111,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\BlazeVector\Gui\PlayButtonDown.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\BlazeVector\Gui\Machinery.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\BlazeVector\Stages\EnemyBullet.png">
@@ -150,6 +153,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Assets\BlazeVector\Stages\Enemy.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Assets\BlazeVector\Stages\DeadBlaze.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Content Include="AssetGraph.xml">
