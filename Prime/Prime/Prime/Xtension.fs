@@ -89,7 +89,7 @@ module XtensionModule =
             Xtension.dispatchesAs dispatcherTargetType xtension dispatcherContainer
 
         /// The dynamic dispatch operator.
-        static member (?) (target, xtension, memberName) : 'a -> 'r =
+        static member (?) (xtension, memberName) : 'a -> 'r =
 
             // NOTE: I think the explicit args abstraction is required here to satisfy the signature
             // for op_Dynamic... maybe.
@@ -120,18 +120,13 @@ module XtensionModule =
                         match Array.last argArray with
                         | :? IXDispatcherContainer as context ->
 
-                            // include 'target' context as first arg
-                            // NOTE: array appending is a linear-time operation, but is currently required to satisfy
-                            // the MethodInfo.Invoke interface.
-                            let args = Array.append [|target :> obj|] argArray                            
-
                             // attempt to dispatch method
                             let dispatcher = Xtension.getDispatcher xtension context
                             let dispatcherType = dispatcher.GetType ()
                             match dispatcherType.GetMethod memberName with
                             | null -> failwith <| "Could not find method '" + memberName + "' on XDispatcher '" + dispatcherType.Name + "'."
                             | aMethod ->
-                                try aMethod.Invoke (dispatcher, args) :?> 'r with
+                                try aMethod.Invoke (dispatcher, argArray) :?> 'r with
                                 | exn when exn.InnerException <> null -> raise exn.InnerException
                                 | exn ->
                                     debug <| "Unknown failure during XDispatch invocation'" + string exn + "'."
@@ -144,10 +139,6 @@ module XtensionModule =
                     match field with
                     | :? 'r as fieldValue -> fieldValue
                     | _ -> Xtension.tryGetDefaultValue xtension memberName
-
-        /// The dynamic dispatch operator for use on raw Xtension values.
-        static member (?) (xtension, memberName) : 'a -> 'r =
-            Xtension.(?) (xtension, xtension, memberName)
 
         static member (?<-) (xtension, fieldName, value) =
     #if DEBUG

@@ -46,10 +46,11 @@ module BlazeBulletDispatcherModule =
                 .SetImageSprite({ SpriteAssetName = "PlayerBullet"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
                 .SetBirthTime(0L)
 
-        override dispatcher.Register (bullet, address, world) =
-            let world = base.Register (bullet, address, world)
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
             let world = World.observe TickEvent address (CustomSub tickHandler) world
             let world = World.observe (CollisionEvent @ address) address (CustomSub collisionHandler) world
+            let bullet = World.getEntity address world
             let bullet = bullet.SetBirthTime world.Ticks
             let world = World.setEntity address bullet world
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
@@ -120,8 +121,8 @@ module BlazeEnemyDispatcherModule =
                 .SetImageSprite({ SpriteAssetName = "Enemy"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
                 .SetHealth(6)
 
-        override dispatcher.Register (enemy, address, world) =
-            let world = base.Register (enemy, address, world)
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
             world |>
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe (CollisionEvent @ address) address -<| CustomSub collisionHandler
@@ -193,8 +194,8 @@ module BlazePlayerDispatcherModule =
                 .SetTileSize(Vector2 (48.0f, 96.0f))
                 .SetImageSprite({ SpriteAssetName = "Player"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.Register (player, address, world) =
-            let world = base.Register (player, address, world)
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
             world |>
                 World.observe TickEvent address -<| CustomSub spawnBulletHandler |>
                 World.observe TickEvent address -<| CustomSub movementHandler |>
@@ -224,8 +225,8 @@ module BlazeStagePlayDispatcherModule =
         let adjustCameraHandler message world =
             (Unhandled, adjustCamera message.Subscriber world)
 
-        override dispatcher.Register (group, address, entities, world) =
-            let world = base.Register (group, address, entities, world)
+        override dispatcher.Register (address, entities, world) =
+            let world = base.Register (address, entities, world)
             let world = World.observe TickEvent address (CustomSub adjustCameraHandler) world
             adjustCamera address world
 
@@ -276,8 +277,8 @@ module BlazeStageScreenModule =
             let world = World.removeGroups message.Subscriber sectionNames world
             (Unhandled, world)
 
-        override dispatcher.Register (screen, address, groupDescriptors, world) =
-            let world = base.Register (screen, address, groupDescriptors, world)
+        override dispatcher.Register (address, groupDescriptors, world) =
+            let world = base.Register (address, groupDescriptors, world)
             world |>
                 World.observe (SelectedEvent @ address) address -<| CustomSub beginPlayHandler |>
                 World.observe (DeselectedEvent @ address) address -<| CustomSub endPlayHandler
@@ -289,7 +290,7 @@ module BlazeVectorDispatcherModule =
     type BlazeVectorDispatcher () =
         inherit GameDispatcher ()
 
-        override dispatcher.Register (_, world) =
+        override dispatcher.Register world =
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany

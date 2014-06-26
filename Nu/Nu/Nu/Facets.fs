@@ -24,9 +24,9 @@ module Entity2dFacetModule =
 
         member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
         member this.HandleBodyTransformMessage (address : Address, message : BodyTransformMessage, world : World) : World = this?HandleBodyTransformMessage (address, message, world)
-        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (viewAbsolute, viewRelative, world)
-        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize world
-        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative world
+        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (this, viewAbsolute, viewRelative, world)
+        member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
+        member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative (this, world)
 
         static member private sortFstDesc (priority, _) (priority2, _) =
             if priority = priority2 then 0
@@ -172,19 +172,22 @@ module SimpleBodyFacet =
             .SetIsBullet(false)
             .SetIsSensor(false)
 
-    let registerPhysics makeBodyShape (entity : Entity) address world =
+    let registerPhysics makeBodyShape address world =
+        let entity = World.getEntity address world
         let createBodyMessage = makeCreateBodyMessage makeBodyShape entity address
         { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
 
-    let unregisterPhysics (entity : Entity) world =
+    let unregisterPhysics address world =
+        let entity = World.getEntity address world
         let destroyBodyMessage = DestroyBodyMessage { PhysicsId = entity.PhysicsId }
         { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
-    let propagatePhysics makeBodyShape entity address world =
-        let world = unregisterPhysics entity world
-        registerPhysics makeBodyShape entity address world
+    let propagatePhysics makeBodyShape address world =
+        let world = unregisterPhysics address world
+        registerPhysics makeBodyShape address world
 
-    let handleBodyTransformMessage (entity : Entity) (message : BodyTransformMessage) world =
+    let handleBodyTransformMessage address (message : BodyTransformMessage) world =
+        let entity = World.getEntity address world
         let entity =
             entity
                 .SetPosition(message.Position - entity.Size * 0.5f) // TODO: see if this center-offsetting can be encapsulated within the Physics module!
@@ -205,7 +208,7 @@ module SimpleSpriteFacet =
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-    let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) =
+    let getRenderDescriptors entity (viewAbsolute : Matrix3) (viewRelative : Matrix3) =
         if not entity.Visible then []
         else
             [LayerableDescriptor <|
@@ -219,7 +222,7 @@ module SimpleSpriteFacet =
                           Color = Vector4.One }
                       Depth = entity.Depth }]
 
-    let getQuickSize (entity : Entity) (world : World) =
+    let getQuickSize (entity : Entity) world =
         let sprite = entity.ImageSprite
         match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
         | None -> DefaultEntitySize
