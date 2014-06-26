@@ -14,7 +14,7 @@ module Tests =
 
         static member (?) (this : TestXtended, memberName) =
             fun args ->
-                Xtension.(?) (this, this.Xtension, memberName) args
+                Xtension.(?) (this.Xtension, memberName) args
 
         static member (?<-) (this : TestXtended, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)

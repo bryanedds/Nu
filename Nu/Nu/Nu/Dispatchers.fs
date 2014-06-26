@@ -9,6 +9,23 @@ open Nu.NuConstants
 module World = WorldPrims
 
 [<AutoOpen>]
+module EntityDispatcherModule =
+
+    type EntityDispatcher () =
+
+        abstract member Init : Entity * IXDispatcherContainer -> Entity
+        default dispatcher.Init (entity, _) = entity
+
+        abstract member Register : Address * World -> World
+        default dispatcher.Register (_, world) = world
+
+        abstract member Unregister : Address * World -> World
+        default dispatcher.Unregister (_, world) = world
+
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (_, _) = 0.0f
+
+[<AutoOpen>]
 module Entity2dDispatcherModule =
 
     type [<AbstractClass>] Entity2dDispatcher () =
@@ -23,14 +40,14 @@ module Entity2dDispatcherModule =
                 .SetSize(DefaultEntitySize)
                 .SetRotation(0.0f)
 
-        override dispatcher.GetPickingPriority (entity2d, _) =
-            Entity2dFacet.getPickingPriority entity2d
+        override dispatcher.GetPickingPriority (entity, _) =
+            Entity2dFacet.getPickingPriority entity
 
-        abstract member PropagatePhysics : Entity * Address * World -> World
-        default dispatcher.PropagatePhysics (_, _, world) = world
+        abstract member PropagatePhysics : Address * World -> World
+        default dispatcher.PropagatePhysics (_, world) = world
 
-        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
-        default dispatcher.HandleBodyTransformMessage (_, _, _, world) = world
+        abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
+        default dispatcher.HandleBodyTransformMessage (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (_, _, _, _) = []
@@ -61,17 +78,17 @@ module SimpleBodyDispatcherModule =
             let entity = base.Init (entity, dispatcherContainer)
             SimpleBodyFacet.init entity dispatcherContainer
 
-        override dispatcher.Register (entity, address, world) =
-            SimpleBodyFacet.registerPhysics makeBodyShape entity address world
+        override dispatcher.Register (address, world) =
+            SimpleBodyFacet.registerPhysics makeBodyShape address world
 
-        override dispatcher.Unregister (entity, _, world) =
-            SimpleBodyFacet.unregisterPhysics entity world
+        override dispatcher.Unregister (address, world) =
+            SimpleBodyFacet.unregisterPhysics address world
             
-        override dispatcher.PropagatePhysics (entity, address, world) =
-            SimpleBodyFacet.propagatePhysics makeBodyShape entity address world
+        override dispatcher.PropagatePhysics (address, world) =
+            SimpleBodyFacet.propagatePhysics makeBodyShape address world
 
-        override dispatcher.HandleBodyTransformMessage (entity, _, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage entity message world
+        override dispatcher.HandleBodyTransformMessage (address, message, world) =
+            SimpleBodyFacet.handleBodyTransformMessage address message world
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -132,7 +149,7 @@ module ButtonDispatcherModule =
                 .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetClickSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.Register (_, address, world) =
+        override dispatcher.Register (address, world) =
             world |>
                 World.observe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
                 World.observe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
@@ -321,7 +338,7 @@ module ToggleDispatcherModule =
                 .SetOnSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetToggleSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.Register (_, address, world) =
+        override dispatcher.Register (address, world) =
             world |>
                 World.observe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
                 World.observe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
@@ -391,7 +408,7 @@ module FeelerDispatcherModule =
             let feeler = base.Init (feeler, dispatcherContainer)
             feeler.SetIsTouched false
 
-        override dispatcher.Register (_, address, world) =
+        override dispatcher.Register (address, world) =
             world |>
                 World.observe DownMouseLeftEvent address -<| CustomSub handleFeelerEventDownMouseLeft |>
                 World.observe UpMouseLeftEvent address -<| CustomSub handleFeelerEventUpMouseLeft
@@ -433,7 +450,7 @@ module FillBarDispatcherModule =
                 .SetFillInset(0.0f)
                 .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-
+                
         override dispatcher.GetRenderDescriptors (fillBar, viewAbsolute, _, _) =
             if not fillBar.Visible then []
             else
@@ -664,14 +681,16 @@ module TileMapDispatcherModule =
                     world
                     tileLayer.Tiles
 
-        let registerTileMapPhysics address (tileMap : Entity) world =
+        let registerTileMapPhysics address world =
+            let tileMap = World.getEntity address world
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (registerTileLayerPhysics address tileMap tileMapData)
                 world
                 tileMapData.Map.Layers
 
-        let unregisterTileMapPhysics (_ : Address) (tileMap : Entity) world =
+        let unregisterTileMapPhysics address world =
+            let tileMap = World.getEntity address world
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
@@ -704,16 +723,16 @@ module TileMapDispatcherModule =
                 .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetParallax(0.0f)
 
-        override dispatcher.Register (tileMap, address, world) =
-            registerTileMapPhysics address tileMap world
+        override dispatcher.Register (address, world) =
+            registerTileMapPhysics address world
 
-        override dispatcher.Unregister (tileMap, address, world) =
-            unregisterTileMapPhysics address tileMap world
+        override dispatcher.Unregister (address, world) =
+            unregisterTileMapPhysics address world
             
-        override dispatcher.PropagatePhysics (tileMap, address, world) =
+        override dispatcher.PropagatePhysics (address, world) =
             world |>
-                unregisterTileMapPhysics address tileMap |>
-                registerTileMapPhysics address tileMap
+                unregisterTileMapPhysics address |>
+                registerTileMapPhysics address
 
         override dispatcher.GetRenderDescriptors (tileMap, _, viewRelative, world) =
             if not tileMap.Visible then []
@@ -758,24 +777,24 @@ module TileMapDispatcherModule =
         abstract member Init : Group * IXDispatcherContainer -> Group
         default dispatcher.Init (group, _) = group
         
-        abstract member Register : Group * Address * Entity list * World -> World
-        default dispatcher.Register (_, address, entities, world) = World.addEntities address entities world
+        abstract member Register : Address * Entity list * World -> World
+        default dispatcher.Register (address, entities, world) = World.addEntities address entities world
 
-        abstract member Unregister : Group * Address * World -> World
-        default dispatcher.Unregister (_, address, world) = World.clearEntities address world
+        abstract member Unregister : Address * World -> World
+        default dispatcher.Unregister (address, world) = World.clearEntities address world
 
     type TransitionDispatcher () =
         class end
 
     type ScreenDispatcher () =
 
-        abstract member Register : Screen * Address * GroupDescriptor list * World -> World
-        default dispatcher.Register (_, address, groupDescriptors, world) = World.addGroups address groupDescriptors world
+        abstract member Register : Address * GroupDescriptor list * World -> World
+        default dispatcher.Register (address, groupDescriptors, world) = World.addGroups address groupDescriptors world
 
-        abstract member Unregister : Screen * Address * World -> World
-        default dispatcher.Unregister (_, address, world) = World.clearGroups address world
+        abstract member Unregister : Address * World -> World
+        default dispatcher.Unregister (address, world) = World.clearGroups address world
 
     type GameDispatcher () =
         
-        abstract member Register : Game * World -> World
-        default dispatcher.Register (_, world) = world
+        abstract member Register : World -> World
+        default dispatcher.Register world = world
