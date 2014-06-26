@@ -82,8 +82,8 @@ module Tests =
 
     let [<Fact>] dispatchingWorks () =
         let xtn = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
-        let xtn = xtn?Init tdc : Xtension
-        let dispatchResult = xtn?Test tdc
+        let xtn = xtn?Init (xtn, tdc) : Xtension
+        let dispatchResult = xtn?Test (xtn, tdc)
         Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
