@@ -9,7 +9,7 @@ open Nu.NuConstants
 module World = WorldPrims
 
 [<AutoOpen>]
-module SimplePhysicsFacetModule =
+module SimpleBodyFacetModule =
 
     type Entity with
 
@@ -40,7 +40,7 @@ module SimplePhysicsFacetModule =
         [<XField>] member this.IsSensor with get () = this?IsSensor () : bool
         member this.SetIsSensor (value : bool) : Entity = this?IsSensor <- value
 
-module SimplePhysicsFacet =
+module SimpleBodyFacet =
 
     let private makeCreateBodyMessage makeBodyShape (entity : Entity) (address : Address) =
         CreateBodyMessage 
@@ -99,19 +99,74 @@ module SimplePhysicsFacet =
         World.setEntity message.EntityAddress entity world
 
 [<AutoOpen>]
-module SimpleRenderFacetModule =
+module SimpleSpriteFacetModule =
 
     type Entity with
 
         [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
         member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
 
-module SimpleRenderFacet =
+module SimpleSpriteFacet =
 
     let init (entity : Entity) =
         entity.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-    let getRenderDescriptors getImageOptInset (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) (world : World) =
+    let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) =
+        if not entity.Visible then []
+        else
+            [LayerableDescriptor <|
+                LayeredSpriteDescriptor
+                    { Descriptor =
+                        { Position = entity.Position * viewRelative
+                          Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
+                          Rotation = entity.Rotation
+                          OptInset = None
+                          Sprite = entity.ImageSprite
+                          Color = Vector4.One }
+                      Depth = entity.Depth }]
+
+    let getQuickSize (entity : Entity) (world : World) =
+        let sprite = entity.ImageSprite
+        match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+        | None -> DefaultEntitySize
+        | Some size -> size
+
+[<AutoOpen>]
+module SimpleAnimatedSpriteFacetModule =
+
+    type Entity with
+
+        [<XField>] member this.Stutter with get () = this?Stutter () : int
+        member this.SetStutter (value : int) : Entity = this?Stutter <- value
+        [<XField>] member this.TileCount with get () = this?TileCount () : int
+        member this.SetTileCount (value : int) : Entity = this?TileCount <- value
+        [<XField>] member this.TileRun with get () = this?TileRun () : int
+        member this.SetTileRun (value : int) : Entity = this?TileRun <- value
+        [<XField>] member this.TileSize with get () = this?TileSize () : Vector2
+        member this.SetTileSize (value : Vector2) : Entity = this?TileSize <- value
+        [<XField>] member this.ImageSprite with get () = this?ImageSprite () : Sprite
+        member this.SetImageSprite (value : Sprite) : Entity = this?ImageSprite <- value
+
+module SimpleAnimatedSpriteFacet =
+
+    let private getImageOptInset (entity : Entity) world =
+        let tile = (int world.Ticks / entity.Stutter) % entity.TileCount
+        let tileI = tile % entity.TileRun
+        let tileJ = tile / entity.TileRun
+        let tileX = single tileI * entity.TileSize.X
+        let tileY = single tileJ * entity.TileSize.Y
+        let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
+        Some inset
+
+    let init (entity : Entity) =
+        entity
+            .SetStutter(4)
+            .SetTileCount(16)
+            .SetTileRun(4)
+            .SetTileSize(Vector2 (16.0f, 16.0f))
+            .SetImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+
+    let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) (world : World) =
         if not entity.Visible then []
         else
             [LayerableDescriptor <|
@@ -125,40 +180,5 @@ module SimpleRenderFacet =
                           Color = Vector4.One }
                       Depth = entity.Depth }]
 
-    let getQuickSize (entity : Entity) (world : World) =
-        let sprite = entity.ImageSprite
-        match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
-        | None -> DefaultEntitySize
-        | Some size -> size
-
-[<AutoOpen>]
-module TileSheetAnimationFacetModule =
-
-    type Entity with
-
-        [<XField>] member this.Stutter with get () = this?Stutter () : int
-        member this.SetStutter (value : int) : Entity = this?Stutter <- value
-        [<XField>] member this.TileCount with get () = this?TileCount () : int
-        member this.SetTileCount (value : int) : Entity = this?TileCount <- value
-        [<XField>] member this.TileRun with get () = this?TileRun () : int
-        member this.SetTileRun (value : int) : Entity = this?TileRun <- value
-        [<XField>] member this.TileSize with get () = this?TileSize () : Vector2
-        member this.SetTileSize (value : Vector2) : Entity = this?TileSize <- value
-
-module TileSheetAnimationFacet =
-
-    let init (entity : Entity) stutter tileCount tileRun tileSize =
-        entity
-            .SetStutter(stutter)
-            .SetTileCount(tileCount)
-            .SetTileRun(tileRun)
-            .SetTileSize(tileSize)
-
-    let getImageOptInset (entity : Entity) world =
-        let tile = (int world.Ticks / entity.Stutter) % entity.TileCount
-        let tileI = tile % entity.TileRun
-        let tileJ = tile / entity.TileRun
-        let tileX = single tileI * entity.TileSize.X
-        let tileY = single tileJ * entity.TileSize.Y
-        let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
-        Some inset
+    let getQuickSize (entity : Entity) =
+        entity.TileSize

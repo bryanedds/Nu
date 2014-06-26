@@ -60,31 +60,24 @@ module DispatchersModule =
             let entity = base.Init (entity, dispatcherContainer)
             entity.SetEnabled true
 
-    type SimpleBodyDispatcher (makeBodyShape, getImageOptInset) =
+    type SimpleBodyDispatcher (makeBodyShape) =
         inherit Entity2dDispatcher ()
 
         override dispatcher.Init (entity, world) =
             let entity = base.Init (entity, world)
-            let entity = SimplePhysicsFacet.init entity
-            SimpleRenderFacet.init entity
+            SimpleBodyFacet.init entity
 
         override dispatcher.Register (entity, address, world) =
-            SimplePhysicsFacet.registerPhysics makeBodyShape entity address world
+            SimpleBodyFacet.registerPhysics makeBodyShape entity address world
 
         override dispatcher.Unregister (entity, _, world) =
-            SimplePhysicsFacet.unregisterPhysics entity world
+            SimpleBodyFacet.unregisterPhysics entity world
             
         override dispatcher.PropagatePhysics (entity, address, world) =
-            SimplePhysicsFacet.propagatePhysics makeBodyShape entity address world
+            SimpleBodyFacet.propagatePhysics makeBodyShape entity address world
 
         override dispatcher.HandleBodyTransformMessage (entity, _, message, world) =
-            SimplePhysicsFacet.handleBodyTransformMessage entity message world
-
-        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, world) =
-            SimpleRenderFacet.getRenderDescriptors getImageOptInset entity viewAbsolute viewRelative world
-
-        override dispatcher.GetQuickSize (entity, world) =
-            SimpleRenderFacet.getQuickSize entity world
+            SimpleBodyFacet.handleBodyTransformMessage entity message world
 
     type Entity with
 
@@ -465,37 +458,55 @@ module DispatchersModule =
 
     type [<Sealed>] BlockDispatcher () =
         inherit SimpleBodyDispatcher
-            ((fun (block : Entity) -> BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }),
-             (fun _ _ -> None))
+            (fun (block : Entity) -> BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero })
 
         override dispatcher.Init (block, world) =
             let block = base.Init (block, world)
+            let block = SimpleSpriteFacet.init block
             block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+
+        override dispatcher.GetRenderDescriptors (entity, viewAbsolute, viewRelative, _) =
+            SimpleSpriteFacet.getRenderDescriptors entity viewAbsolute viewRelative
+
+        override dispatcher.GetQuickSize (entity, world) =
+            SimpleSpriteFacet.getQuickSize entity world
 
     type [<Sealed>] AvatarDispatcher () =
         inherit SimpleBodyDispatcher
-            ((fun (avatar : Entity) -> CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }),
-             (fun _ _ -> None))
+            (fun (avatar : Entity) -> CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero })
 
         override dispatcher.Init (avatar, world) =
             let avatar = base.Init (avatar, world)
+            let avatar = SimpleSpriteFacet.init avatar
             avatar
                 .SetFixedRotation(true)
                 .SetLinearDamping(10.0f)
                 .SetGravityScale(0.0f)
                 .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
+        override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, _) =
+            SimpleSpriteFacet.getRenderDescriptors avatar viewAbsolute viewRelative
+
+        override dispatcher.GetQuickSize (avatar, world) =
+            SimpleSpriteFacet.getQuickSize avatar world
+
     type [<Sealed>] CharacterDispatcher () =
         inherit SimpleBodyDispatcher
-            ((fun (character : Entity) -> CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }),
-             (fun _ _ -> None))
+            (fun (character : Entity) -> CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero })
 
         override dispatcher.Init (character, world) =
             let character = base.Init (character, world)
+            let character = SimpleSpriteFacet.init character
             character
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
                 .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+
+        override dispatcher.GetRenderDescriptors (character, viewAbsolute, viewRelative, _) =
+            SimpleSpriteFacet.getRenderDescriptors character viewAbsolute viewRelative
+
+        override dispatcher.GetQuickSize (character, world) =
+            SimpleSpriteFacet.getQuickSize character world
 
     type Entity with
 
