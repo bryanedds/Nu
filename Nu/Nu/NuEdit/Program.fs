@@ -54,6 +54,12 @@ module Program =
     let DefaultCreationDepth = 0.0f
     let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
+    let getPickableEntities world =
+        World.getEntities EditorGroupAddress world |>
+            Map.toValueSeq |>
+            Seq.filter (fun entity -> Entity.dispatchesAs typeof<Entity2dDispatcher> entity world) |>
+            Seq.toList
+
     let pushPastWorld pastWorld world =
         let editorState = world.ExtData :?> EditorState
         let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] }
@@ -66,7 +72,7 @@ module Program =
 
     let populateEntityDispatcherComboBox (form : NuEditForm) =
         form.createEntityComboBox.Items.Clear ()
-        let entityDispatcherType = typeof<EntityDispatcher>
+        let entityDispatcherType = typeof<Entity2dDispatcher>
         for assembly in AppDomain.CurrentDomain.GetAssemblies () do
             for aType in assembly.DefinedTypes do
                 if aType.IsSubclassOf entityDispatcherType && not aType.IsAbstract then
@@ -191,9 +197,9 @@ module Program =
         | MouseButtonData _ ->
             if form.interactButton.Checked then (Unhandled, world)
             else
-                let entities = Map.toValueList <| World.getEntities EditorGroupAddress world
+                let entities = getPickableEntities world
                 let mousePosition = world.MouseState.MousePosition
-                let optPicked = World.tryPickEntity mousePosition entities world
+                let optPicked = Entity.tryPick mousePosition entities world
                 match optPicked with
                 | None -> (Handled, world)
                 | Some entity ->
