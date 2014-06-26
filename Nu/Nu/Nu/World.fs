@@ -24,21 +24,14 @@ module World =
     (* Function forwarding for WorldPrims in lieu of an F# export feature. *)
 
     // Entity forwarders.
-    let worldEntity = WorldPrims.worldEntity
-    let worldOptEntity = WorldPrims.worldOptEntity
-    let worldEntities = WorldPrims.worldEntities
     let getEntity = WorldPrims.getEntity
     let setEntity = WorldPrims.setEntity
     let withEntity = WorldPrims.withEntity
     let withEntityAndWorld = WorldPrims.withEntityAndWorld
     let getOptEntity = WorldPrims.getOptEntity
-    let setOptEntity = WorldPrims.setOptEntity
-    let withOptEntity = WorldPrims.withOptEntity
-    let withOptEntityAndWorld = WorldPrims.withOptEntityAndWorld
     let tryWithEntity = WorldPrims.tryWithEntity
     let tryWithEntityAndWorld = WorldPrims.tryWithEntityAndWorld
     let getEntities = WorldPrims.getEntities
-    let setEntities = WorldPrims.setEntities
     let registerEntity = WorldPrims.registerEntity
     let unregisterEntity = WorldPrims.unregisterEntity
     let removeEntity = WorldPrims.removeEntity
@@ -48,21 +41,14 @@ module World =
     let addEntities = WorldPrims.addEntities
     
     // Group forwarders.
-    let worldGroup = WorldPrims.worldGroup
-    let worldOptGroup = WorldPrims.worldOptGroup
-    let worldGroups = WorldPrims.worldGroups
     let getGroup = WorldPrims.getGroup
     let setGroup = WorldPrims.setGroup
     let withGroup = WorldPrims.withGroup
     let withGroupAndWorld = WorldPrims.withGroupAndWorld
     let getOptGroup = WorldPrims.getOptGroup
-    let setOptGroup = WorldPrims.setOptGroup
-    let withOptGroup = WorldPrims.withOptGroup
-    let withOptGroupAndWorld = WorldPrims.withOptGroupAndWorld
     let tryWithGroup = WorldPrims.tryWithGroup
     let tryWithGroupAndWorld = WorldPrims.tryWithGroupAndWorld
     let getGroups = WorldPrims.getGroups
-    let setGroups = WorldPrims.setGroups
     let registerGroup = WorldPrims.registerGroup
     let unregisterGroup = WorldPrims.unregisterGroup
     let removeGroup = WorldPrims.removeGroup
@@ -72,29 +58,20 @@ module World =
     let addGroups = WorldPrims.addGroups
     
     // Screen forwarders.
-    let worldScreen = WorldPrims.worldScreen
-    let worldOptScreen = WorldPrims.worldOptScreen
-    let worldScreens = WorldPrims.worldScreens
     let getScreen = WorldPrims.getScreen
     let setScreen = WorldPrims.setScreen
     let withScreen = WorldPrims.withScreen
     let withScreenAndWorld = WorldPrims.withScreenAndWorld
     let getOptScreen = WorldPrims.getOptScreen
-    let setOptScreen = WorldPrims.setOptScreen
-    let withOptScreen = WorldPrims.withOptScreen
-    let withOptScreenAndWorld = WorldPrims.withOptScreenAndWorld
     let tryWithScreen = WorldPrims.tryWithScreen
     let tryWithScreenAndWorld = WorldPrims.tryWithScreenAndWorld
     let getScreens = WorldPrims.getScreens
-    let setScreens = WorldPrims.setScreens
     let registerScreen = WorldPrims.registerScreen
     let unregisterScreen = WorldPrims.unregisterScreen
     let removeScreen = WorldPrims.removeScreen
     let addScreen = WorldPrims.addScreen
 
     // Game forwarders.
-    let worldOptSelectedScreenAddress = WorldPrims.worldOptSelectedScreenAddress
-    let worldOptSelectedScreen = WorldPrims.worldOptSelectedScreen
     let getOptSelectedScreenAddress = WorldPrims.getOptSelectedScreenAddress
     let setOptSelectedScreenAddress = WorldPrims.setOptSelectedScreenAddress
     let getOptSelectedScreen = WorldPrims.getOptSelectedScreen

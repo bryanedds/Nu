@@ -37,14 +37,14 @@ module BlazeBulletDispatcherModule =
             let bullet = base.Init (bullet, dispatcherContainer)
             let bullet = SimpleSpriteFacet.init bullet dispatcherContainer
             bullet
+                .SetSize(Vector2 (24.0f, 24.0f))
+                .SetDensity(0.25f)
+                .SetRestitution(0.5f)
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
-                .SetBirthTime(0L)
-                .SetSize(Vector2 (24.0f, 24.0f))
-                .SetRestitution(0.5f)
-                .SetDensity(0.25f)
                 .SetIsBullet(true)
                 .SetImageSprite({ SpriteAssetName = "PlayerBullet"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
+                .SetBirthTime(0L)
 
         override dispatcher.Register (bullet, address, world) =
             let world = base.Register (bullet, address, world)
@@ -137,15 +137,15 @@ module BlazePlayerDispatcherModule =
 
     type BlazePlayerDispatcher () =
         inherit SimpleBodyDispatcher
-            (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
+            (fun (player : Entity) -> CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero })
              
-        let createBullet (player : Entity) playerAddress world =
+        let createBullet (player : Entity) address world =
             let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
             let bullet =
                 bullet
                     .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
                     .SetDepth(player.Depth + 1.0f)
-            let bulletAddress = List.allButLast playerAddress @ [bullet.Name]
+            let bulletAddress = List.allButLast address @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
         let spawnBulletHandler message world =
@@ -209,7 +209,6 @@ module BlazePlayerDispatcherModule =
 [<AutoOpen>]
 module BlazeStagePlayDispatcherModule =
 
-    /// TODO document.
     type BlazeStagePlayDispatcher () =
         inherit GroupDispatcher ()
 
