@@ -76,7 +76,7 @@ module Entity2dFacetModule =
 [<RequireQualifiedAccess>]
 module Entity2dFacet =
 
-    let init (entity2d : Entity) =
+    let init (entity2d : Entity) (_ : IXDispatcherContainer) =
         entity2d
             .SetPosition(Vector2.Zero)
             .SetDepth(0.0f)
@@ -97,7 +97,7 @@ module GuiFacetModule =
 [<RequireQualifiedAccess>]
 module GuiFacet =
 
-    let init (entity : Entity) =
+    let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity.SetEnabled true
 
 [<AutoOpen>]
@@ -136,7 +136,7 @@ module SimpleBodyFacetModule =
 module SimpleBodyFacet =
 
     let private makeCreateBodyMessage makeBodyShape (entity : Entity) (address : Address) =
-        CreateBodyMessage 
+        CreateBodyMessage
             { EntityAddress = address
               PhysicsId = entity.PhysicsId
               Position = entity.Position + entity.Size * 0.5f
@@ -156,7 +156,7 @@ module SimpleBodyFacet =
                   IsBullet = entity.IsBullet
                   IsSensor = entity.IsSensor }}
 
-    let init (entity : Entity) =
+    let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity
             .SetPhysicsId(Physics.getId entity.Id)
             .SetBodyType(BodyType.Dynamic)
@@ -202,7 +202,7 @@ module SimpleSpriteFacetModule =
 [<RequireQualifiedAccess>]
 module SimpleSpriteFacet =
 
-    let init (entity : Entity) =
+    let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
     let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) =
@@ -253,7 +253,7 @@ module SimpleAnimatedSpriteFacet =
         let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
         Some inset
 
-    let init (entity : Entity) =
+    let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity
             .SetStutter(4)
             .SetTileCount(16)

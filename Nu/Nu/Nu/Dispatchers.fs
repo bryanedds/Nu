@@ -16,7 +16,7 @@ module Entity2dDispatcherModule =
 
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
-            let entity2d = Entity2dFacet.init entity2d
+            let entity2d = Entity2dFacet.init entity2d dispatcherContainer
             entity2d
                 .SetPosition(Vector2.Zero)
                 .SetDepth(0.0f)
@@ -49,7 +49,7 @@ module GuiDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            GuiFacet.init entity
+            GuiFacet.init entity dispatcherContainer
 
 [<AutoOpen>]
 module SimpleBodyDispatcherModule =
@@ -57,9 +57,9 @@ module SimpleBodyDispatcherModule =
     type [<AbstractClass>] SimpleBodyDispatcher (makeBodyShape) =
         inherit Entity2dDispatcher ()
 
-        override dispatcher.Init (entity, world) =
-            let entity = base.Init (entity, world)
-            SimpleBodyFacet.init entity
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            SimpleBodyFacet.init entity dispatcherContainer
 
         override dispatcher.Register (entity, address, world) =
             SimpleBodyFacet.registerPhysics makeBodyShape entity address world
@@ -475,9 +475,9 @@ module BlockDispatcherModule =
         inherit SimpleBodyDispatcher
             (fun (block : Entity) -> BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero })
 
-        override dispatcher.Init (block, world) =
-            let block = base.Init (block, world)
-            let block = SimpleSpriteFacet.init block
+        override dispatcher.Init (block, dispatcherContainer) =
+            let block = base.Init (block, dispatcherContainer)
+            let block = SimpleSpriteFacet.init block dispatcherContainer
             block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, _) =
@@ -493,9 +493,9 @@ module AvatarDispatcherModule =
         inherit SimpleBodyDispatcher
             (fun (avatar : Entity) -> CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero })
 
-        override dispatcher.Init (avatar, world) =
-            let avatar = base.Init (avatar, world)
-            let avatar = SimpleSpriteFacet.init avatar
+        override dispatcher.Init (avatar, dispatcherContainer) =
+            let avatar = base.Init (avatar, dispatcherContainer)
+            let avatar = SimpleSpriteFacet.init avatar dispatcherContainer
             avatar
                 .SetFixedRotation(true)
                 .SetLinearDamping(10.0f)
@@ -515,9 +515,9 @@ module CharacterDispatcherModule =
         inherit SimpleBodyDispatcher
             (fun (character : Entity) -> CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero })
 
-        override dispatcher.Init (character, world) =
-            let character = base.Init (character, world)
-            let character = SimpleSpriteFacet.init character
+        override dispatcher.Init (character, dispatcherContainer) =
+            let character = base.Init (character, dispatcherContainer)
+            let character = SimpleSpriteFacet.init character dispatcherContainer
             character
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
