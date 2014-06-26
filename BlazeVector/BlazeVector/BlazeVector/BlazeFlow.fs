@@ -54,7 +54,7 @@ module BlazeFlow =
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
             
             // specify a song to play for the duration of the game via the audio message system
-            let gameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let gameSong = { SongAssetName = "Machinery"; PackageName = BlazeGuiPackageName; PackageFileName = AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
 
