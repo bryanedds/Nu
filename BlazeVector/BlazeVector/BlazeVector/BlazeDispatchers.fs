@@ -21,8 +21,7 @@ module BlazeDispatchersModule =
 
     type BlazeBulletDispatcher () =
         inherit SimpleBodyDispatcher
-            ((fun (bullet : Entity) -> CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }),
-             (fun _ _ -> None))
+            (fun (bullet : Entity) -> CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero })
 
         let tickHandler message world =
             let bullet = World.getEntity message.Subscriber world
@@ -38,6 +37,7 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
+            let bullet = SimpleSpriteFacet.init bullet
             bullet
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
@@ -57,6 +57,12 @@ module BlazeDispatchersModule =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
+        override dispatcher.GetRenderDescriptors (bullet, viewAbsolute, viewRelative, _) =
+            SimpleSpriteFacet.getRenderDescriptors bullet viewAbsolute viewRelative
+
+        override dispatcher.GetQuickSize (bullet, world) =
+            SimpleSpriteFacet.getQuickSize bullet world
+
     type Entity with
 
         [<XField>] member this.Health with get () = this?Health () : int
@@ -64,8 +70,7 @@ module BlazeDispatchersModule =
 
     type BlazeEnemyDispatcher () =
         inherit SimpleBodyDispatcher
-            ((fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }),
-             TileSheetAnimationFacet.getImageOptInset)
+            (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
 
         let movementHandler message world =
             if not world.Interactive then (Unhandled, world)
@@ -102,10 +107,14 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            let enemy = TileSheetAnimationFacet.init enemy 8 6 4 <| Vector2 (48.0f, 96.0f)
+            let enemy = SimpleAnimatedSpriteFacet.init enemy
             enemy
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
+                .SetStutter(8)
+                .SetTileCount(6)
+                .SetTileRun(4)
+                .SetTileSize(Vector2 (48.0f, 96.0f))
                 .SetImageSprite({ SpriteAssetName = "Enemy"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
                 .SetHealth(6)
 
@@ -115,10 +124,15 @@ module BlazeDispatchersModule =
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe (CollisionEvent @ address) address -<| CustomSub collisionHandler
 
+        override dispatcher.GetRenderDescriptors (enemy, viewAbsolute, viewRelative, world) =
+            SimpleAnimatedSpriteFacet.getRenderDescriptors enemy viewAbsolute viewRelative world
+
+        override dispatcher.GetQuickSize (enemy, _) =
+            SimpleAnimatedSpriteFacet.getQuickSize enemy
+
     type BlazePlayerDispatcher () =
         inherit SimpleBodyDispatcher
-            ((fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }),
-             TileSheetAnimationFacet.getImageOptInset)
+            (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
              
         let createBullet (player : Entity) playerAddress world =
             let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
@@ -163,11 +177,15 @@ module BlazeDispatchersModule =
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
-            let player = TileSheetAnimationFacet.init player 3 16 4 <| Vector2 (48.0f, 96.0f)
+            let player = SimpleAnimatedSpriteFacet.init player
             player
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
                 .SetGravityScale(0.0f)
+                .SetStutter(3)
+                .SetTileCount(16)
+                .SetTileRun(4)
+                .SetTileSize(Vector2 (48.0f, 96.0f))
                 .SetImageSprite({ SpriteAssetName = "Player"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
 
         override dispatcher.Register (player, address, world) =
@@ -177,8 +195,11 @@ module BlazeDispatchersModule =
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe DownMouseRightEvent address -<| CustomSub jumpHandler
 
-        override dispatcher.Unregister (player, address, world) =
-            base.Unregister (player, address, world)
+        override dispatcher.GetRenderDescriptors (player, viewAbsolute, viewRelative, world) =
+            SimpleAnimatedSpriteFacet.getRenderDescriptors player viewAbsolute viewRelative world
+
+        override dispatcher.GetQuickSize (player, _) =
+            SimpleAnimatedSpriteFacet.getQuickSize player
 
     /// TODO document.
     type BlazeStagePlayDispatcher () =
