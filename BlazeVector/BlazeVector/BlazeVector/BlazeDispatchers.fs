@@ -35,7 +35,7 @@ module BlazeBulletDispatcherModule =
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
-            let bullet = SimpleSpriteFacet.init bullet
+            let bullet = SimpleSpriteFacet.init bullet dispatcherContainer
             bullet
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
@@ -108,7 +108,7 @@ module BlazeEnemyDispatcherModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            let enemy = SimpleAnimatedSpriteFacet.init enemy
+            let enemy = SimpleAnimatedSpriteFacet.init enemy dispatcherContainer
             enemy
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
@@ -182,7 +182,7 @@ module BlazePlayerDispatcherModule =
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
-            let player = SimpleAnimatedSpriteFacet.init player
+            let player = SimpleAnimatedSpriteFacet.init player dispatcherContainer
             player
                 .SetFixedRotation(true)
                 .SetLinearDamping(3.0f)
