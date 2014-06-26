@@ -97,15 +97,15 @@ module WorldPrims =
                 let groupMap = Map.add (List.at 1 address) entityMap groupMap
                 { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
 
-    let worldEntity address =
+    let private worldEntity address =
         { Get = fun world -> Option.get <| optEntityFinder address world
           Set = fun entity world -> entityFinder address world entity }
 
-    let worldOptEntity address =
+    let private worldOptEntity address =
         { Get = fun world -> optEntityFinder address world
           Set = fun optEntity world -> match optEntity with None -> entityRemover address world | Some entity -> entityFinder address world entity }
 
-    let worldEntities address =
+    let private worldEntities address =
         { Get = fun world ->
             match address with
             | [screenStr; groupStr] ->
@@ -133,15 +133,12 @@ module WorldPrims =
     let withEntityAndWorld fn address world = Sim.withSimulantAndWorld worldEntity fn address world
 
     let getOptEntity address world = get world <| worldOptEntity address
-    let setOptEntity address optEntity world = set optEntity world <| worldOptEntity address
-    let withOptEntity fn address world = Sim.withOptSimulant worldOptEntity fn address world
-    let withOptEntityAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptEntity fn address world
-
+    let private setOptEntity address optEntity world = set optEntity world <| worldOptEntity address
     let tryWithEntity fn address world = Sim.tryWithSimulant worldOptEntity worldEntity fn address world
     let tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptEntity worldEntity fn address world
     
     let getEntities address world = get world <| worldEntities address
-    let setEntities address entities world = set entities world <| worldEntities address
+    let private setEntities address entities world = set entities world <| worldEntities address
 
     let registerEntity address (entity : Entity) world =
         entity.Register (address, world)
@@ -208,15 +205,15 @@ module WorldPrims =
             let groupMap = Map.remove (List.at 1 address) groupMap
             { world with Groups = Map.add (List.at 0 address) groupMap world.Groups }
 
-    let worldGroup address =
+    let private worldGroup address =
         { Get = fun world -> Option.get <| optGroupFinder address world
           Set = fun group world -> groupAdder address world group }
 
-    let worldOptGroup address =
+    let private worldOptGroup address =
         { Get = fun world -> optGroupFinder address world
           Set = fun optGroup world -> match optGroup with None -> groupRemover address world | Some group -> groupAdder address world group }
 
-    let worldGroups address =
+    let private worldGroups address =
         { Get = fun world ->
             match address with
             | [screenStr] ->
@@ -238,15 +235,12 @@ module WorldPrims =
     let withGroupAndWorld fn address world = Sim.withSimulantAndWorld worldGroup fn address world
 
     let getOptGroup address world = get world <| worldOptGroup address
-    let setOptGroup address optGroup world = set optGroup world <| worldOptGroup address
-    let withOptGroup fn address world = Sim.withOptSimulant worldOptGroup fn address world
-    let withOptGroupAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptGroup fn address world
-
+    let private setOptGroup address optGroup world = set optGroup world <| worldOptGroup address
     let tryWithGroup fn address world = Sim.tryWithSimulant worldOptGroup worldGroup fn address world
     let tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptGroup worldGroup fn address world
     
     let getGroups address world = get world <| worldGroups address
-    let setGroups address groups world = set groups world <| worldGroups address
+    let private setGroups address groups world = set groups world <| worldGroups address
 
     let registerGroup address entities (group : Group) world =
         group.Register (address, entities, world)
@@ -299,15 +293,15 @@ module WorldPrims =
     let private screenRemover (address : Address) world =
         { world with Screens = Map.remove (List.at 0 address) world.Screens }
 
-    let worldScreen address =
+    let private worldScreen address =
         { Get = fun world -> Option.get <| optScreenFinder address world
           Set = fun screen world -> screenAdder address world screen }
 
-    let worldOptScreen address =
+    let private worldOptScreen address =
         { Get = fun world -> optScreenFinder address world
           Set = fun optScreen world -> match optScreen with None -> screenRemover address world | Some screen -> screenAdder address world screen }
 
-    let worldScreens address =
+    let private worldScreens address =
         { Get = fun world ->
             match address with
             | [] -> world.Screens
@@ -326,15 +320,12 @@ module WorldPrims =
     let withScreenAndWorld fn address world = Sim.withSimulantAndWorld worldScreen fn address world
     
     let getOptScreen address world = get world <| worldOptScreen address
-    let setOptScreen address optScreen world = set optScreen world <| worldOptScreen address
-    let withOptScreen fn address world = Sim.withOptSimulant worldOptScreen fn address world
-    let withOptScreenAndWorld fn address world = Sim.withOptSimulantAndWorld worldOptScreen fn address world
-
+    let private setOptScreen address optScreen world = set optScreen world <| worldOptScreen address
     let tryWithScreen fn address world = Sim.tryWithSimulant worldOptScreen worldScreen fn address world
     let tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptScreen worldScreen fn address world
 
     let getScreens address world = get world <| worldScreens address
-    let setScreens address screens world = set screens world <| worldScreens address
+    let private setScreens address screens world = set screens world <| worldScreens address
 
     let registerScreen address (screen : Screen) groupDescriptors world =
         screen.Register (address, groupDescriptors, world)
@@ -359,14 +350,14 @@ module WorldPrims =
 
     (* Game functions. *)
 
-    let worldGame =
+    let private worldGame =
         { Get = fun world -> world.Game
           Set = fun game world -> { world with Game = game }}
 
-    let worldOptSelectedScreenAddress =
+    let private worldOptSelectedScreenAddress =
         worldGame >>| Game.gameOptSelectedScreenAddress
 
-    let worldOptSelectedScreen =
+    let private worldOptSelectedScreen =
         { Get = fun world ->
             let optSelectedScreenAddress = get world worldOptSelectedScreenAddress
             match optSelectedScreenAddress with

@@ -241,16 +241,6 @@ module Sim =
         let (simulant, world) = fn simulant
         set simulant world <| worldSimulantLens address
 
-    let withOptSimulant worldOptSimulantLens fn address world =
-        let optSimulant = get world <| worldOptSimulantLens address
-        let optSimulant = fn optSimulant
-        set optSimulant world <| worldOptSimulantLens address
-
-    let withOptSimulantAndWorld worldOptSimulantLens fn address world =
-        let optSimulant = get world <| worldOptSimulantLens address
-        let (optSimulant, world) = fn optSimulant
-        set optSimulant world <| worldOptSimulantLens address
-
     let tryWithSimulant worldOptSimulantLens worldSimulantLens fn address world =
         let optSimulant = get world <| worldOptSimulantLens address
         match optSimulant with
