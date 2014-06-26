@@ -38,7 +38,7 @@ module BlazeConstants =
 
     // stage constants
     let StageAddress = addr "Stage"
-    let StageGroupFileName = "Assets/BlazeVector/Groups/StageUi.nugroup"
+    let StageGroupFileName = "Assets/BlazeVector/Groups/StageGui.nugroup"
     let StageGroupAddress = addr "Stage/Group"
     let ClickStageBackEvent = addr "Click/Stage/Group/Back"
 

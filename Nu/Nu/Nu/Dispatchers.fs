@@ -119,7 +119,7 @@ module DispatchersModule =
         abstract member IsTransformRelative : Entity * World -> bool
         default dispatcher.IsTransformRelative (_, _) = true
 
-    type EntityUiDispatcher () =
+    type EntityGuiDispatcher () =
         inherit Entity2dDispatcher ()
             
         override dispatcher.Init (entity, dispatcherContainer) =
@@ -227,7 +227,7 @@ module DispatchersModule =
             | Some size -> size
 
     type ButtonDispatcher () =
-        inherit EntityUiDispatcher ()
+        inherit EntityGuiDispatcher ()
 
         let handleButtonEventDownMouseLeft message world =
             match message.Data with
@@ -300,7 +300,7 @@ module DispatchersModule =
             false
 
     type LabelDispatcher () =
-        inherit EntityUiDispatcher ()
+        inherit EntityGuiDispatcher ()
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
@@ -330,7 +330,7 @@ module DispatchersModule =
             false
 
     type TextBoxDispatcher () =
-        inherit EntityUiDispatcher ()
+        inherit EntityGuiDispatcher ()
             
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox = base.Init (textBox, dispatcherContainer)
@@ -374,7 +374,7 @@ module DispatchersModule =
             false
 
     type ToggleDispatcher () =
-        inherit EntityUiDispatcher ()
+        inherit EntityGuiDispatcher ()
 
         let handleToggleEventDownMouseLeft message world =
             match message.Data with
@@ -449,7 +449,7 @@ module DispatchersModule =
             false
 
     type FeelerDispatcher () =
-        inherit EntityUiDispatcher ()
+        inherit EntityGuiDispatcher ()
 
         let handleFeelerEventDownMouseLeft message world =
             match message.Data with
@@ -494,7 +494,7 @@ module DispatchersModule =
             false
 
     type FillBarDispatcher () =
-        inherit EntityUiDispatcher ()
+        inherit EntityGuiDispatcher ()
 
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
