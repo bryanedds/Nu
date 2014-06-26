@@ -173,7 +173,7 @@ module DispatchersModule =
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
-            label.SetLabelSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            label.SetLabelSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (label, viewAbsolute, _, _) =
             if not label.Visible then []
@@ -380,7 +380,7 @@ module DispatchersModule =
         
         override dispatcher.Init (feeler, dispatcherContainer) =
             let feeler = base.Init (feeler, dispatcherContainer)
-            feeler.SetIsTouched(false)
+            feeler.SetIsTouched false
 
         override dispatcher.Register (_, address, world) =
             world |>
@@ -647,10 +647,10 @@ module DispatchersModule =
                 .SetDensity(NormalDensity)
                 .SetFriction(0.0f)
                 .SetRestitution(0.0f)
-                .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetParallax(0.0f)
                 .SetCollisionCategories("1")
                 .SetCollisionMask("*")
+                .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+                .SetParallax(0.0f)
 
         override dispatcher.Register (tileMap, address, world) =
             registerTileMapPhysics address tileMap world
