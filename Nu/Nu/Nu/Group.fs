@@ -12,7 +12,7 @@ open Nu
 module GroupModule =
 
     type Group with
-        member this.Init (dispatcherContainer : IXDispatcherContainer) : Group = this?Init dispatcherContainer
+        member this.Init (dispatcherContainer : IXDispatcherContainer) : Group = this?Init (this, dispatcherContainer)
         member this.Register (address : Address, entities : Entity list, world : World) : World = this?Register (address, entities, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
 
