@@ -23,13 +23,12 @@ module BlazeFlow =
     // this function adds the BlazeVector title screen to the world
     let addTitleScreen world =
 
-        // this adds a dissolve screen from the specified file with the given parameters. Note that
-        // the 'seal' parameter is set to true as no XFields will be added to the title screen
+        // this adds a dissolve screen from the specified file with the given parameters
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
 
         // this subscribes to the event that is raised when the Title screen is selected for
         // display and interaction, and handles the event by playing the song "Machinery"
-        let world = World.observe SelectedTitleEvent [] (CustomSub handlePlaySongMachinery) world
+        let world = World.observe SelectTitleEvent [] (CustomSub handlePlaySongMachinery) world
 
         // this subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
