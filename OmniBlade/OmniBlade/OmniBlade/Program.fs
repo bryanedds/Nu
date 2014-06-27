@@ -14,8 +14,8 @@ module Program =
         let sdlViewConfig =
             NewWindow
                 { WindowTitle = "OmniBlade"
-                  WindowX = 32
-                  WindowY = 32
+                  WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
+                  WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
                   
         let sdlRendererFlags =
