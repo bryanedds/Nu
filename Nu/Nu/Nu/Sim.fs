@@ -168,6 +168,10 @@ module SimModule =
     /// A reference type due to the reference-typeness of Subscription.
     and Subscriptions = Map<Address, (Address * Subscription) list>
 
+    and [<ReferenceEquality>] Task =
+        { Time : int64
+          Operation : World -> World }
+
     /// The world, in a functional programming sense.
     /// A reference type with some value semantics.
     and [<ReferenceEquality>] World =
@@ -180,6 +184,7 @@ module SimModule =
           Interactive : bool
           Camera : Camera
           Subscriptions : Subscriptions
+          Tasks : Task list
           MouseState : MouseState
           AudioPlayer : AudioPlayer
           Renderer : Renderer

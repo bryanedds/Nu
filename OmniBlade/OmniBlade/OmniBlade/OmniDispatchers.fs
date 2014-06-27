@@ -35,11 +35,11 @@ module FieldGroupDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
         
-        override dispatcher.Register (address, entities, world) =
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
             let world = World.observe TickEvent address (CustomSub moveFieldAvatarHandler) world
             let world = World.observe TickEvent address (CustomSub adjustFieldCameraHandler) world
             let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-            let world = base.Register (address, entities, world)
             adjustFieldCamera address world
 
 [<AutoOpen>]
@@ -48,9 +48,9 @@ module BattleGroupDispatcherModule =
     type BattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        override dispatcher.Register (address, entities, world) =
-            let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-            base.Register (address, entities, world)
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
+            { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
 
         override dispatcher.Unregister (address, world) =
             base.Unregister (address, world)
@@ -62,6 +62,7 @@ module OmniBladeDispatcherModule =
         inherit GameDispatcher ()
         
         override dispatcher.Register world =
+            let world = base.Register world
             let dispatchers =
                 Map.addMany
                     [|typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj

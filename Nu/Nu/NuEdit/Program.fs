@@ -125,7 +125,7 @@ module Program =
                         else
                             // TODO: factor out a renameEntity function
                             let entity = World.getEntity entityTds.Address world
-                            let world = World.removeEntity entityTds.Address world
+                            let world = World.removeEntityImmediate entityTds.Address world
                             let entity = { entity with Name = valueStr }
                             let entityAddress = addrstr EditorGroupAddress valueStr
                             let world = World.addEntity entityAddress entity world
