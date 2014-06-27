@@ -49,8 +49,8 @@ module Entity2dDispatcherModule =
         abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
         default dispatcher.HandleBodyTransformMessage (_, _, world) = world
 
-        abstract member GetRenderDescriptors : Entity * Matrix3 * Matrix3 * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _, _, _) = []
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors (_, _) = []
 
         abstract member GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
@@ -154,16 +154,17 @@ module ButtonDispatcherModule =
                 World.observe DownMouseLeftEvent address -<| CustomSub handleButtonEventDownMouseLeft |>
                 World.observe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
 
-        override dispatcher.GetRenderDescriptors (button, viewAbsolute, _, _) =
+        override dispatcher.GetRenderDescriptors (button, _) =
             if not button.Visible then []
             else
                 [LayerableDescriptor
                     { Depth = button.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = button.Position * viewAbsolute
+                            { Position = button.Position
                               Size = button.Size
                               Rotation = 0.0f
+                              ViewType = Absolute
                               OptInset = None
                               Sprite = if button.IsDown then button.DownSprite else button.UpSprite
                               Color = Vector4.One }}]
@@ -192,16 +193,17 @@ module LabelDispatcherModule =
             let label = base.Init (label, dispatcherContainer)
             label.SetLabelSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetRenderDescriptors (label, viewAbsolute, _, _) =
+        override dispatcher.GetRenderDescriptors (label, _) =
             if not label.Visible then []
             else
                 [LayerableDescriptor
                     { Depth = label.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = label.Position * viewAbsolute
+                            { Position = label.Position
                               Size = label.Size
                               Rotation = 0.0f
+                              ViewType = Absolute
                               OptInset = None
                               Sprite = label.LabelSprite
                               Color = Vector4.One }}]
@@ -243,16 +245,17 @@ module TextBoxDispatcherModule =
                 .SetTextOffset(Vector2.Zero)
                 .SetTextColor(Vector4.One)
 
-        override dispatcher.GetRenderDescriptors (textBox, viewAbsolute, _, _) =
+        override dispatcher.GetRenderDescriptors (textBox, _) =
             if not textBox.Visible then []
             else
                 [LayerableDescriptor
                     { Depth = textBox.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = textBox.Position * viewAbsolute
+                            { Position = textBox.Position
                               Size = textBox.Size
                               Rotation = 0.0f
+                              ViewType = Absolute
                               OptInset = None
                               Sprite = textBox.BoxSprite
                               Color = Vector4.One }}
@@ -261,8 +264,9 @@ module TextBoxDispatcherModule =
                       LayeredDescriptor =
                         TextDescriptor
                             { Text = textBox.Text
-                              Position = (textBox.Position + textBox.TextOffset) * viewAbsolute
+                              Position = (textBox.Position + textBox.TextOffset)
                               Size = textBox.Size - textBox.TextOffset
+                              ViewType = Absolute
                               Font = textBox.TextFont
                               Color = textBox.TextColor }}]
 
@@ -343,16 +347,17 @@ module ToggleDispatcherModule =
                 World.observe DownMouseLeftEvent address -<| CustomSub handleToggleEventDownMouseLeft |>
                 World.observe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
 
-        override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, _, _) =
+        override dispatcher.GetRenderDescriptors (toggle, _) =
             if not toggle.Visible then []
             else
                 [LayerableDescriptor
                     { Depth = toggle.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = toggle.Position * viewAbsolute
+                            { Position = toggle.Position
                               Size = toggle.Size
                               Rotation = 0.0f
+                              ViewType = Absolute
                               OptInset = None
                               Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
                               Color = Vector4.One }}]
@@ -451,7 +456,7 @@ module FillBarDispatcherModule =
                 .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 
-        override dispatcher.GetRenderDescriptors (fillBar, viewAbsolute, _, _) =
+        override dispatcher.GetRenderDescriptors (fillBar, _) =
             if not fillBar.Visible then []
             else
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
@@ -459,9 +464,10 @@ module FillBarDispatcherModule =
                     { Depth = fillBar.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = fillBarSpritePosition * viewAbsolute
+                            { Position = fillBarSpritePosition
                               Size = fillBarSpriteSize
                               Rotation = 0.0f
+                              ViewType = Absolute
                               OptInset = None
                               Sprite = fillBar.FillSprite
                               Color = Vector4.One }}
@@ -469,9 +475,10 @@ module FillBarDispatcherModule =
                     { Depth = fillBar.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = fillBar.Position * viewAbsolute
+                            { Position = fillBar.Position
                               Size = fillBar.Size
                               Rotation = 0.0f
+                              ViewType = Absolute
                               OptInset = None
                               Sprite = fillBar.BorderSprite
                               Color = Vector4.One }}]
@@ -497,8 +504,8 @@ module BlockDispatcherModule =
             let block = SimpleSpriteFacet.init block dispatcherContainer
             block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, world) =
-            SimpleSpriteFacet.getRenderDescriptors block viewAbsolute viewRelative world
+        override dispatcher.GetRenderDescriptors (block, world) =
+            SimpleSpriteFacet.getRenderDescriptors block Relative world
 
         override dispatcher.GetQuickSize (block, world) =
             SimpleSpriteFacet.getQuickSize block world
@@ -519,8 +526,8 @@ module AvatarDispatcherModule =
                 .SetGravityScale(0.0f)
                 .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, world) =
-            SimpleSpriteFacet.getRenderDescriptors avatar viewAbsolute viewRelative world
+        override dispatcher.GetRenderDescriptors (avatar, world) =
+            SimpleSpriteFacet.getRenderDescriptors avatar Relative world
 
         override dispatcher.GetQuickSize (avatar, world) =
             SimpleSpriteFacet.getQuickSize avatar world
@@ -540,8 +547,8 @@ module CharacterDispatcherModule =
                 .SetLinearDamping(3.0f)
                 .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (character, viewAbsolute, viewRelative, world) =
-            SimpleSpriteFacet.getRenderDescriptors character viewAbsolute viewRelative world
+        override dispatcher.GetRenderDescriptors (character, world) =
+            SimpleSpriteFacet.getRenderDescriptors character Relative world
 
         override dispatcher.GetQuickSize (character, world) =
             SimpleSpriteFacet.getQuickSize character world
@@ -734,7 +741,7 @@ module TileMapDispatcherModule =
                 unregisterTileMapPhysics address |>
                 registerTileMapPhysics address
 
-        override dispatcher.GetRenderDescriptors (tileMap, _, viewRelative, world) =
+        override dispatcher.GetRenderDescriptors (tileMap, world) =
             if not tileMap.Visible then []
             else
                 let tileMapAsset = tileMap.TileMapAsset
@@ -742,14 +749,13 @@ module TileMapDispatcherModule =
                 | None -> []
                 | Some (_, sprites, map) ->
                     let layers = List.ofSeq map.Layers
-                    let viewScale = Matrix3.getScaleMatrix viewRelative
                     let tileSourceSize = (map.TileWidth, map.TileHeight)
-                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight) * viewScale
+                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                     let optDescriptors =
                         List.mapi
                             (fun i (layer : TmxLayer) ->
                                 let depth = tileMap.Depth + single i * 2.0f
-                                let parallaxTranslation = tileMap.Parallax * depth * Matrix3.getTranslation viewRelative
+                                let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
                                 let parallaxPosition = tileMap.Position + parallaxTranslation
                                 let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                                 if not <| Camera.inView3 parallaxPosition size world.Camera then None
@@ -758,9 +764,10 @@ module TileMapDispatcherModule =
                                         { Depth = depth // MAGIC_VALUE: assumption
                                           LayeredDescriptor =
                                             TileLayerDescriptor
-                                                { Position = parallaxPosition * viewRelative
+                                                { Position = parallaxPosition
                                                   Size = size
                                                   Rotation = tileMap.Rotation
+                                                  ViewType = Relative
                                                   MapSize = (map.Width, map.Height)
                                                   Tiles = layer.Tiles
                                                   TileSourceSize = tileSourceSize
