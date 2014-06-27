@@ -108,38 +108,42 @@ module ButtonDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleButtonEventDownMouseLeft message world =
-            match message.Data with
-            | MouseButtonData (mousePosition, _) ->
-                let button = World.getEntity message.Subscriber world
-                let mousePositionButton = Entity.mouseToEntity mousePosition world button
-                if button.Enabled && button.Visible then
-                    if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
-                        let button = button.SetIsDown true
-                        let world = World.setEntity message.Subscriber button world
-                        let world = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
-                        (Handled, world)
+            if World.isAddressSelected message.Subscriber world then
+                match message.Data with
+                | MouseButtonData (mousePosition, _) ->
+                    let button = World.getEntity message.Subscriber world
+                    let mousePositionButton = Entity.mouseToEntity mousePosition world button
+                    if button.Enabled && button.Visible then
+                        if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
+                            let button = button.SetIsDown true
+                            let world = World.setEntity message.Subscriber button world
+                            let world = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
+                            (Handled, world)
+                        else (Unhandled, world)
                     else (Unhandled, world)
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+                | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            else (Unhandled, world)
 
         let handleButtonEventUpMouseLeft message world =
-            match message.Data with
-            | MouseButtonData (mousePosition, _) ->
-                let button = World.getEntity message.Subscriber world
-                let mousePositionButton = Entity.mouseToEntity mousePosition world button
-                if button.Enabled && button.Visible then
-                    let world =
-                        let button = button.SetIsDown false
-                        let world = World.setEntity message.Subscriber button world
-                        World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
-                    if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
-                        let world = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
-                        let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
-                        let world = { world with AudioMessages = sound :: world.AudioMessages }
-                        (Handled, world)
+            if World.isAddressSelected message.Subscriber world then
+                match message.Data with
+                | MouseButtonData (mousePosition, _) ->
+                    let button = World.getEntity message.Subscriber world
+                    let mousePositionButton = Entity.mouseToEntity mousePosition world button
+                    if button.Enabled && button.Visible then
+                        let world =
+                            let button = button.SetIsDown false
+                            let world = World.setEntity message.Subscriber button world
+                            World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
+                        if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
+                            let world = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
+                            let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
+                            let world = { world with AudioMessages = sound :: world.AudioMessages }
+                            (Handled, world)
+                        else (Unhandled, world)
                     else (Unhandled, world)
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+                | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            else (Unhandled, world)
 
         override dispatcher.Init (button, dispatcherContainer) =
             let button = base.Init (button, dispatcherContainer)
@@ -155,8 +159,7 @@ module ButtonDispatcherModule =
                 World.observe UpMouseLeftEvent address -<| CustomSub handleButtonEventUpMouseLeft
 
         override dispatcher.GetRenderDescriptors (button, _) =
-            if not button.Visible then []
-            else
+            if button.Visible then
                 [LayerableDescriptor
                     { Depth = button.Depth
                       LayeredDescriptor =
@@ -168,6 +171,7 @@ module ButtonDispatcherModule =
                               OptInset = None
                               Sprite = if button.IsDown then button.DownSprite else button.UpSprite
                               Color = Vector4.One }}]
+            else []
 
         override dispatcher.GetQuickSize (button, world) =
             let sprite = button.UpSprite
@@ -194,8 +198,7 @@ module LabelDispatcherModule =
             label.SetLabelSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (label, _) =
-            if not label.Visible then []
-            else
+            if label.Visible then
                 [LayerableDescriptor
                     { Depth = label.Depth
                       LayeredDescriptor =
@@ -207,6 +210,7 @@ module LabelDispatcherModule =
                               OptInset = None
                               Sprite = label.LabelSprite
                               Color = Vector4.One }}]
+            else []
 
         override dispatcher.GetQuickSize (label, world) =
             let sprite = label.LabelSprite
@@ -246,8 +250,7 @@ module TextBoxDispatcherModule =
                 .SetTextColor(Vector4.One)
 
         override dispatcher.GetRenderDescriptors (textBox, _) =
-            if not textBox.Visible then []
-            else
+            if textBox.Visible then
                 [LayerableDescriptor
                     { Depth = textBox.Depth
                       LayeredDescriptor =
@@ -269,6 +272,7 @@ module TextBoxDispatcherModule =
                               ViewType = Absolute
                               Font = textBox.TextFont
                               Color = textBox.TextColor }}]
+            else []
 
         override dispatcher.GetQuickSize (textBox, world) =
             let sprite = textBox.BoxSprite
@@ -299,39 +303,42 @@ module ToggleDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleToggleEventDownMouseLeft message world =
-            match message.Data with
-            | MouseButtonData (mousePosition, _) ->
-                let toggle = World.getEntity message.Subscriber world
-                let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
-                if toggle.Enabled && toggle.Visible then
-                    if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                        let toggle = toggle.SetIsPressed true
-                        let world = World.setEntity message.Subscriber toggle world
-                        (Handled, world)
+            if World.isAddressSelected message.Subscriber world then
+                match message.Data with
+                | MouseButtonData (mousePosition, _) ->
+                    let toggle = World.getEntity message.Subscriber world
+                    let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
+                    if toggle.Enabled && toggle.Visible then
+                        if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
+                            let toggle = toggle.SetIsPressed true
+                            let world = World.setEntity message.Subscriber toggle world
+                            (Handled, world)
+                        else (Unhandled, world)
                     else (Unhandled, world)
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+                | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            else (Unhandled, world)
     
         let handleToggleEventUpMouseLeft message world =
-            match message.Data with
-            | MouseButtonData (mousePosition, _) ->
-                let toggle = World.getEntity message.Subscriber world
-                let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
-                if toggle.Enabled && toggle.Visible && toggle.IsPressed then
-                    let toggle = toggle.SetIsPressed false
-                    if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                        let toggle = toggle.SetIsOn <| not toggle.IsOn
+            if World.isAddressSelected message.Subscriber world then
+                match message.Data with
+                | MouseButtonData (mousePosition, _) ->
+                    let toggle = World.getEntity message.Subscriber world
+                    let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
+                    if toggle.Enabled && toggle.Visible && toggle.IsPressed then
+                        let toggle = toggle.SetIsPressed false
                         let world = World.setEntity message.Subscriber toggle world
-                        let messageType = if toggle.IsOn then "On" else "Off"
-                        let world = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
-                        let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
-                        let world = { world with AudioMessages = sound :: world.AudioMessages }
-                        (Handled, world)
-                    else
-                        let world = World.setEntity message.Subscriber toggle world
-                        (Unhandled, world) // TODO: make sure message should actually be Unhandled!
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+                        if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
+                            let toggle = toggle.SetIsOn <| not toggle.IsOn
+                            let world = World.setEntity message.Subscriber toggle world
+                            let messageType = if toggle.IsOn then "On" else "Off"
+                            let world = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
+                            let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
+                            let world = { world with AudioMessages = sound :: world.AudioMessages }
+                            (Handled, world)
+                        else (Unhandled, world)
+                    else (Unhandled, world)
+                | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            else (Unhandled, world)
         
         override dispatcher.Init (toggle, dispatcherContainer) =
             let toggle = base.Init (toggle, dispatcherContainer)
@@ -348,8 +355,7 @@ module ToggleDispatcherModule =
                 World.observe UpMouseLeftEvent address -<| CustomSub handleToggleEventUpMouseLeft
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
-            if not toggle.Visible then []
-            else
+            if toggle.Visible then
                 [LayerableDescriptor
                     { Depth = toggle.Depth
                       LayeredDescriptor =
@@ -361,6 +367,7 @@ module ToggleDispatcherModule =
                               OptInset = None
                               Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
                               Color = Vector4.One }}]
+            else []
 
         override dispatcher.GetQuickSize (toggle, world) =
             let sprite = toggle.OffSprite
@@ -383,31 +390,35 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleFeelerEventDownMouseLeft message world =
-            match message.Data with
-            | MouseButtonData (mousePosition, _) as mouseButtonData ->
-                let feeler = World.getEntity message.Subscriber world
-                let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
-                if feeler.Enabled && feeler.Visible then
-                    if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
-                        let feeler = feeler.SetIsTouched true
-                        let world = World.setEntity message.Subscriber feeler world
-                        let world = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
-                        (Handled, world)
+            if World.isAddressSelected message.Subscriber world then
+                match message.Data with
+                | MouseButtonData (mousePosition, _) as mouseButtonData ->
+                    let feeler = World.getEntity message.Subscriber world
+                    let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
+                    if feeler.Enabled && feeler.Visible then
+                        if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
+                            let feeler = feeler.SetIsTouched true
+                            let world = World.setEntity message.Subscriber feeler world
+                            let world = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
+                            (Handled, world)
+                        else (Unhandled, world)
                     else (Unhandled, world)
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+                | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            else (Unhandled, world)
     
         let handleFeelerEventUpMouseLeft message world =
-            match message.Data with
-            | MouseButtonData _ ->
-                let feeler = World.getEntity message.Subscriber world
-                if feeler.Enabled && feeler.Visible then
-                    let feeler = feeler.SetIsTouched false
-                    let world = World.setEntity message.Subscriber feeler world
-                    let world = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
-                    (Handled, world)
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            if World.isAddressSelected message.Subscriber world then
+                match message.Data with
+                | MouseButtonData _ ->
+                    let feeler = World.getEntity message.Subscriber world
+                    if feeler.Enabled && feeler.Visible then
+                        let feeler = feeler.SetIsTouched false
+                        let world = World.setEntity message.Subscriber feeler world
+                        let world = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
+                        (Handled, world)
+                    else (Unhandled, world)
+                | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."
+            else (Unhandled, world)
         
         override dispatcher.Init (feeler, dispatcherContainer) =
             let feeler = base.Init (feeler, dispatcherContainer)
@@ -457,8 +468,7 @@ module FillBarDispatcherModule =
                 .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
                 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
-            if not fillBar.Visible then []
-            else
+            if fillBar.Visible then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
                 [LayerableDescriptor
                     { Depth = fillBar.Depth
@@ -482,6 +492,7 @@ module FillBarDispatcherModule =
                               OptInset = None
                               Sprite = fillBar.BorderSprite
                               Color = Vector4.One }}]
+            else []
 
         override dispatcher.GetQuickSize (fillBar, world) =
             let sprite = fillBar.BorderSprite
@@ -659,8 +670,7 @@ module TileMapDispatcherModule =
             | None -> world
             | Some tileSetTile ->
                 let collisionProperty = ref Unchecked.defaultof<string>
-                if not <| tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then world
-                else
+                if tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then
                     let collisionExpr = string collisionProperty.Value
                     let collisionTerms = List.ofArray <| collisionExpr.Split '?'
                     let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
@@ -679,14 +689,15 @@ module TileMapDispatcherModule =
                     | _ ->
                         trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
                         world
+                else world
 
         let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world (tileLayer : TmxLayer) =
-            if not <| tileLayer.Properties.ContainsKey CollisionProperty then world
-            else
+            if tileLayer.Properties.ContainsKey CollisionProperty then
                 Seq.foldi
                     (registerTilePhysics tileMap tileMapData tileLayer tileLayerIndex address)
                     world
                     tileLayer.Tiles
+            else world
 
         let registerTileMapPhysics address world =
             let tileMap = World.getEntity address world
@@ -701,21 +712,21 @@ module TileMapDispatcherModule =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                    if not <| tileLayer.Properties.ContainsKey CollisionProperty then world
-                    else
+                    if tileLayer.Properties.ContainsKey CollisionProperty then
                         Seq.foldi
                             (fun tileIndex world _ ->
                                 let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex
                                 match tileData.OptTileSetTile with
                                 | None -> world
                                 | Some tileSetTile ->
-                                    if not <| tileSetTile.Properties.ContainsKey CollisionProperty then world
-                                    else
+                                    if tileSetTile.Properties.ContainsKey CollisionProperty then
                                         let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
                                         let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-                                        { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages })
+                                        { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+                                    else world)
                             world
-                            tileLayer.Tiles)
+                            tileLayer.Tiles
+                    else world)
                 world
                 tileMapData.Map.Layers
         
@@ -758,8 +769,7 @@ module TileMapDispatcherModule =
                                 let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
                                 let parallaxPosition = tileMap.Position + parallaxTranslation
                                 let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                                if not <| Camera.inView3 parallaxPosition size world.Camera then None
-                                else
+                                if Camera.inView3 parallaxPosition size world.Camera then
                                     let layeredTileLayerDescriptor =
                                         { Depth = depth // MAGIC_VALUE: assumption
                                           LayeredDescriptor =
@@ -774,7 +784,8 @@ module TileMapDispatcherModule =
                                                   TileSize = tileSize
                                                   TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                                   TileSetSprite = List.head sprites }} // MAGIC_VALUE: for same reason as above
-                                    Some <| LayerableDescriptor layeredTileLayerDescriptor)
+                                    Some <| LayerableDescriptor layeredTileLayerDescriptor
+                                else None)
                             layers
                     List.definitize optDescriptors
 
@@ -789,22 +800,22 @@ module TileMapDispatcherModule =
         abstract member Init : Group * IXDispatcherContainer -> Group
         default dispatcher.Init (group, _) = group
         
-        abstract member Register : Address * Entity list * World -> World
-        default dispatcher.Register (address, entities, world) = World.addEntities address entities world
+        abstract member Register : Address * World -> World
+        default dispatcher.Register (_, world) = world
 
         abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (address, world) = World.clearEntities address world
+        default dispatcher.Unregister (_, world) = world
 
     type TransitionDispatcher () =
         class end
 
     type ScreenDispatcher () =
 
-        abstract member Register : Address * GroupDescriptor list * World -> World
-        default dispatcher.Register (address, groupDescriptors, world) = World.addGroups address groupDescriptors world
+        abstract member Register : Address * World -> World
+        default dispatcher.Register (_, world) = world
 
         abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (address, world) = World.clearGroups address world
+        default dispatcher.Unregister (_, world) = world
 
     type GameDispatcher () =
         
