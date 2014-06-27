@@ -440,7 +440,6 @@ module Program =
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition; Depth = getCreationDepth form }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let entity = entity.ResetPhysics
                 let address = addrstr EditorGroupAddress entity.Name
                 let world = pushPastWorld world world
                 World.addEntity address entity world)
