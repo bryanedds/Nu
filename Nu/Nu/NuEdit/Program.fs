@@ -440,6 +440,7 @@ module Program =
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition; Depth = getCreationDepth form }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
+                let entity = entity.ResetPhysics
                 let address = addrstr EditorGroupAddress entity.Name
                 let world = pushPastWorld world world
                 World.addEntity address entity world)
@@ -456,6 +457,7 @@ module Program =
                 let entity = World.getEntity entityTds.Address world
                 let entity = entity.SetSize <| entity.GetQuickSize world
                 let world = World.setEntity entityTds.Address entity world
+                let world = entity.PropagatePhysics (entityTds.Address, world)
                 refWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world)
