@@ -125,11 +125,9 @@ module World =
         let world = { world with AudioMessages = [] }
         { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
-    let private getGroupRenderDescriptors camera dispatcherContainer entities =
-        let entityValues = Map.toValueSeq entities
-        let viewAbsolute = Camera.getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
-        let viewRelative = Camera.getViewRelativeI camera |> Matrix3.getInverseViewMatrix
-        Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors (viewAbsolute, viewRelative, dispatcherContainer)) entityValues
+    let private getGroupRenderDescriptors dispatcherContainer entities =
+        let entities = Map.toValueSeq entities
+        Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors dispatcherContainer) entities
 
     let private getTransitionRenderDescriptors camera transition =
         match transition.OptDissolveSprite with
@@ -145,6 +143,7 @@ module World =
                         { Position = -camera.EyeSize * 0.5f // negation for right-handedness
                           Size = camera.EyeSize
                           Rotation = 0.0f
+                          ViewType = Absolute
                           OptInset = None
                           Sprite = dissolveSprite
                           Color = color }}]
@@ -158,7 +157,7 @@ module World =
             | None -> []
             | Some groupMap ->
                 let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupRenderDescriptors world.Camera world) entityMaps
+                let descriptorSeqs = List.map (getGroupRenderDescriptors world) entityMaps
                 let descriptorSeq = Seq.concat descriptorSeqs
                 let descriptors = List.concat descriptorSeq
                 let selectedScreen = getScreen selectedScreenAddress world

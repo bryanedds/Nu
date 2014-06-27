@@ -24,7 +24,7 @@ module Entity2dFacetModule =
 
         member this.PropagatePhysics (address : Address, world : World) : World = this?PropagatePhysics (address, world)
         member this.HandleBodyTransformMessage (address : Address, message : BodyTransformMessage, world : World) : World = this?HandleBodyTransformMessage (address, message, world)
-        member this.GetRenderDescriptors (viewAbsolute : Matrix3, viewRelative : Matrix3, world : World) : RenderDescriptor list = this?GetRenderDescriptors (this, viewAbsolute, viewRelative, world)
+        member this.GetRenderDescriptors (world : World) : RenderDescriptor list = this?GetRenderDescriptors (this, world)
         member this.GetQuickSize (world : World) : Vector2 = this?GetQuickSize (this, world)
         member this.IsTransformRelative (world : World) : bool = this?IsTransformRelative (this, world)
 
@@ -210,16 +210,17 @@ module SimpleSpriteFacet =
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-    let getRenderDescriptors entity (viewAbsolute : Matrix3) (viewRelative : Matrix3) world =
+    let getRenderDescriptors entity viewType world =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
             [LayerableDescriptor
                 { Depth = entity.Depth
                   LayeredDescriptor =
                     SpriteDescriptor
-                        { Position = entity.Position * viewRelative
-                          Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
+                        { Position = entity.Position
+                          Size = entity.Size
                           Rotation = entity.Rotation
+                          ViewType = viewType
                           OptInset = None
                           Sprite = entity.ImageSprite
                           Color = Vector4.One }}]
@@ -266,16 +267,17 @@ module SimpleAnimatedSpriteFacet =
             .SetTileSize(Vector2 (16.0f, 16.0f))
             .SetImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-    let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) (world : World) =
+    let getRenderDescriptors (entity : Entity) viewType (world : World) =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
             [LayerableDescriptor
                 { Depth = entity.Depth
                   LayeredDescriptor =
                     SpriteDescriptor
-                        { Position = entity.Position * viewRelative
-                          Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
+                        { Position = entity.Position
+                          Size = entity.Size
                           Rotation = entity.Rotation
+                          ViewType = viewType
                           OptInset = getImageOptInset entity world
                           Sprite = entity.ImageSprite
                           Color = Vector4.One }}]

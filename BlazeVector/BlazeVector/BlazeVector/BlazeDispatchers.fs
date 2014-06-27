@@ -60,8 +60,8 @@ module BulletDispatcherModule =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId bullet; LinearImpulse = Vector2 (50.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
-        override dispatcher.GetRenderDescriptors (bullet, viewAbsolute, viewRelative, world) =
-            SimpleSpriteFacet.getRenderDescriptors bullet viewAbsolute viewRelative world
+        override dispatcher.GetRenderDescriptors (bullet, world) =
+            SimpleSpriteFacet.getRenderDescriptors bullet Relative world
 
         override dispatcher.GetQuickSize (bullet, world) =
             SimpleSpriteFacet.getQuickSize bullet world
@@ -131,8 +131,8 @@ module EnemyDispatcherModule =
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe (CollisionEvent @ address) address -<| CustomSub collisionHandler
 
-        override dispatcher.GetRenderDescriptors (enemy, viewAbsolute, viewRelative, world) =
-            SimpleAnimatedSpriteFacet.getRenderDescriptors enemy viewAbsolute viewRelative world
+        override dispatcher.GetRenderDescriptors (enemy, world) =
+            SimpleAnimatedSpriteFacet.getRenderDescriptors enemy Relative world
 
         override dispatcher.GetQuickSize (enemy, _) =
             SimpleAnimatedSpriteFacet.getQuickSize enemy
@@ -226,8 +226,8 @@ module PlayerDispatcherModule =
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe DownMouseRightEvent address -<| CustomSub jumpHandler
 
-        override dispatcher.GetRenderDescriptors (player, viewAbsolute, viewRelative, world) =
-            SimpleAnimatedSpriteFacet.getRenderDescriptors player viewAbsolute viewRelative world
+        override dispatcher.GetRenderDescriptors (player, world) =
+            SimpleAnimatedSpriteFacet.getRenderDescriptors player Relative world
 
         override dispatcher.GetQuickSize (player, _) =
             SimpleAnimatedSpriteFacet.getQuickSize player
