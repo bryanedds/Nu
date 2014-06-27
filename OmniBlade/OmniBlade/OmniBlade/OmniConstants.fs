@@ -16,7 +16,7 @@ module OmniConstants =
     let IncomingTime = 20L
     let IdlingTime = 60L
     let OutgoingTimeSplash = 40L
-    let OutgoingTime = 20L
+    let OutgoingTime = 30L
 
     // splash constants
     let SplashAddress = addr "Splash"

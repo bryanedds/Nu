@@ -82,6 +82,7 @@ module World =
     let handleEventAsScreenTransition = WorldPrims.handleEventAsScreenTransition
     let handleEventAsSwallow = WorldPrims.handleEventAsSwallow
     let initTypeConverters = WorldPrims.initTypeConverters
+    let selectScreen = WorldPrims.selectScreen
     let transitionScreen = WorldPrims.transitionScreen
     let publish = WorldPrims.publish
     let subscribe = WorldPrims.subscribe
