@@ -7,21 +7,32 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 module BlazeFlow =
 
+    // this function handles playing the song "Machinery"
+    let handlePlayMachinery _ world =
+        let gameSong = { SongAssetName = "Machinery"; PackageName = BlazeGuiPackageName; PackageFileName = AssetGraphFileName }
+        let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
+        let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
+        (Unhandled, world)
+
     // this function adds the BlazeVector title screen to the world
     let addTitleScreen world =
-        
+
         // this adds a dissolve screen from the specified file with the given parameters. Note that
         // the 'seal' parameter is set to true as no XFields will be added to the title screen
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
-        
+
+        // this subscribes to the event that is raised when the Title screen is selected for
+        // display and interaction, and handles the event by playing the song "Machinery"
+        let world = World.observe SelectedTitleEvent [] (CustomSub handlePlayMachinery) world
+
         // this subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
         let world = World.subscribe ClickTitlePlayEvent [] (ScreenTransitionSub StageAddress) world
-        
+
         // subscribes to the event that is raised when the Title screen's Credits button is
         // clicked, and handles the event by transitioning to the Credits screen
         let world = World.subscribe ClickTitleCreditsEvent [] (ScreenTransitionSub CreditsAddress) world
-        
+
         // subscribes to the event that is raised when the Title screen's Exit button is clicked,
         // and handles the event by exiting the game
         World.subscribe ClickTitleExitEvent [] ExitSub world
@@ -52,11 +63,6 @@ module BlazeFlow =
             // hint to the renderer that the BlazeGui package should be loaded up front
             let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = BlazeGuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
-            
-            // specify a song to play for the duration of the game via the audio message system
-            let gameSong = { SongAssetName = "Machinery"; PackageName = BlazeGuiPackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
-            let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }

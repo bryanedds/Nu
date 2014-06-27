@@ -283,21 +283,12 @@ module BlazeStageScreenModule =
                  makeSectionFromFile Section3FileName Section3Name 6144.0f world]
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
-            
-            // specify a song to play for the duration of the game via the audio message system
             let gameSong = { SongAssetName = "DeadBlaze"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
+            let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
-
             (Unhandled, world)
 
         let endPlayHandler message world =
-    
-            // specify a song to play for the duration of the game via the audio message system
-            let gameSong = { SongAssetName = "Machinery"; PackageName = BlazeGuiPackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySong { Song = gameSong; FadeOutCurrentSong = true }
-            let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
-
             let sectionNames = [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
             let world = World.removeGroups message.Subscriber sectionNames world
             (Unhandled, world)
