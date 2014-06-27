@@ -25,7 +25,7 @@ module BulletDispatcherModule =
 
         let tickHandler message world =
             let bullet = World.getEntity message.Subscriber world
-            if world.Ticks < bullet.BirthTime + 90L then (Unhandled, world)
+            if world.Ticks < bullet.BirthTime + 28L then (Unhandled, world)
             else
                 let world = World.removeEntity message.Subscriber world
                 (Unhandled, world)
