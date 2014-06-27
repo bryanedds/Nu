@@ -571,7 +571,7 @@ module Program =
         form
 
     let tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
-        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name typeof<TransitionDispatcher>.Name 100L 100L
+        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name 100L 100L
         let editorState =
             { DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
