@@ -58,11 +58,11 @@ module OmniDataModule =
           ExperienceRewarded : int
           GoldRewarded : int }
 
-    type [<StructuralEquality; NoComparison>] OmniFieldData =
+    type [<StructuralEquality; NoComparison>] FieldData =
         { Name : string
           GroupFileName : string }
 
-    type [<StructuralEquality; NoComparison>] OmniBattleData =
+    type [<StructuralEquality; NoComparison>] BattleData =
         { Name : string
           BossEnemy : OmniCharacterData
           BossEnemyDefeatEndsBattle : bool

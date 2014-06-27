@@ -7,9 +7,9 @@ open OmniBlade
 open OmniBlade.OmniConstants
 
 [<AutoOpen>]
-module OmniFieldGroupDispatcherModule =
+module FieldGroupDispatcherModule =
 
-    type OmniFieldGroupDispatcher () =
+    type FieldGroupDispatcher () =
         inherit GroupDispatcher ()
 
         let adjustFieldCamera groupAddress world =
@@ -43,9 +43,9 @@ module OmniFieldGroupDispatcherModule =
             adjustFieldCamera address world
 
 [<AutoOpen>]
-module OmniBattleGroupDispatcherModule =
+module BattleGroupDispatcherModule =
 
-    type OmniBattleGroupDispatcher () =
+    type BattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
         override dispatcher.Register (address, entities, world) =
@@ -64,7 +64,7 @@ module OmniBladeDispatcherModule =
         override dispatcher.Register world =
             let dispatchers =
                 Map.addMany
-                    [|typeof<OmniBattleGroupDispatcher>.Name, OmniBattleGroupDispatcher () :> obj
-                      typeof<OmniFieldGroupDispatcher>.Name, OmniFieldGroupDispatcher () :> obj|]
+                    [|typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj
+                      typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> obj|]
                     world.Dispatchers
             { world with Dispatchers = dispatchers }
