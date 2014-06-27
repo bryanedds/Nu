@@ -238,8 +238,8 @@ module Rendering =
         | SpriteDescriptor spriteDescriptor ->
             let view = match spriteDescriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let sprite = spriteDescriptor.Sprite
-            let position = spriteDescriptor.Position * view
-            let size = spriteDescriptor.Size * Matrix3.getScaleMatrix view
+            let positionView = spriteDescriptor.Position * view
+            let sizeView = spriteDescriptor.Size * Matrix3.getScaleMatrix view
             let color = spriteDescriptor.Color
             let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
@@ -267,14 +267,14 @@ module Rendering =
                         sourceRect.w <- int <| inset.Z - inset.X
                         sourceRect.h <- int <| inset.W - inset.Y
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int <| position.X + camera.EyeSize.X * 0.5f
-                    destRect.y <- int <| -position.Y + camera.EyeSize.Y * 0.5f - size.Y // negation for right-handedness
-                    destRect.w <- int size.X
-                    destRect.h <- int size.Y
+                    destRect.x <- int <| positionView.X + camera.EyeSize.X * 0.5f
+                    destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
+                    destRect.w <- int sizeView.X
+                    destRect.h <- int sizeView.Y
                     let rotation = double -spriteDescriptor.Rotation * RadiansToDegrees // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int <| size.X * 0.5f
-                    rotationCenter.y <- int <| size.Y * 0.5f
+                    rotationCenter.x <- int <| sizeView.X * 0.5f
+                    rotationCenter.y <- int <| sizeView.Y * 0.5f
                     ignore <| SDL.SDL_SetTextureColorMod (texture, byte <| 255.0f * color.X, byte <| 255.0f * color.Y, byte <| 255.0f * color.Z)
                     ignore <| SDL.SDL_SetTextureAlphaMod (texture, byte <| 255.0f * color.W)
                     let renderResult =
@@ -293,8 +293,8 @@ module Rendering =
                     renderer
         | TileLayerDescriptor descriptor ->
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let position = descriptor.Position * view
-            let size = descriptor.Size * Matrix3.getScaleMatrix view
+            let positionView = descriptor.Position * view
+            let sizeView = descriptor.Size * Matrix3.getScaleMatrix view
             let tileRotation = descriptor.Rotation
             let mapSize = descriptor.MapSize
             let tiles = descriptor.Tiles
@@ -322,8 +322,8 @@ module Rendering =
                             let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
                                 Vector2 (
-                                    position.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
-                                    -(position.Y - tileSize.Y * single j + size.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
+                                    positionView.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
+                                    -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
                             if NuMath.isBoundsInBounds3 tilePosition tileSize <| Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
                                 let gid = tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * fst tileSourceSize
@@ -362,8 +362,8 @@ module Rendering =
                     renderer
         | TextDescriptor textDescriptor ->
             let view = match textDescriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let position = textDescriptor.Position * view
-            let size = textDescriptor.Size * Matrix3.getScaleMatrix view
+            let positionView = textDescriptor.Position * view
+            let sizeView = textDescriptor.Size * Matrix3.getScaleMatrix view
             let text = textDescriptor.Text
             let font = textDescriptor.Font
             let color = textDescriptor.Color
@@ -384,7 +384,7 @@ module Rendering =
                     // TODO: the resource implications (perf and vram fragmentation?) of creating and destroying a
                     // texture one or more times a frame must be understood! Although, maybe it all happens in software
                     // and vram frag would not be a concern in the first place... perf could still be, however.
-                    let textSizeX = int size.X
+                    let textSizeX = int sizeView.X
                     let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
@@ -399,8 +399,8 @@ module Rendering =
                         sourceRect.w <- !textureSizeX
                         sourceRect.h <- !textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int <| position.X + camera.EyeSize.X * 0.5f
-                        destRect.y <- int <| -position.Y + camera.EyeSize.Y * 0.5f - single !textureSizeY // negation for right-handedness
+                        destRect.x <- int <| positionView.X + camera.EyeSize.X * 0.5f
+                        destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - single !textureSizeY // negation for right-handedness
                         destRect.w <- !textureSizeX
                         destRect.h <- !textureSizeY
                         if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
