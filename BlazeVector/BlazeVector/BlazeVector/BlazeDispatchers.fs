@@ -250,9 +250,17 @@ module BlazeStagePlayDispatcherModule =
         let adjustCameraHandler message world =
             (Unhandled, adjustCamera message.Subscriber world)
 
+        let playerFallHandler message world =
+            let player = getPlayer message.Subscriber world
+            let world = if player.Position.Y > -700.0f then world else World.transitionScreen TitleAddress world
+            (Unhandled, adjustCamera message.Subscriber world)
+
         override dispatcher.Register (address, entities, world) =
             let world = base.Register (address, entities, world)
-            let world = World.observe TickEvent address (CustomSub adjustCameraHandler) world
+            let world =
+                world |>
+                World.observe TickEvent address -<| CustomSub adjustCameraHandler |>
+                World.observe TickEvent address -<| CustomSub playerFallHandler
             adjustCamera address world
 
 [<AutoOpen>]
