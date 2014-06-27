@@ -13,6 +13,10 @@ open Nu.NuConstants
 [<AutoOpen>]
 module RenderingModule =
 
+    type ViewType =
+        | Relative
+        | Absolute
+
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSpriteValue)>] Sprite =
         { SpriteAssetName : string
           PackageName : string
@@ -22,6 +26,7 @@ module RenderingModule =
         { Position : Vector2
           Size : Vector2
           Rotation : single
+          ViewType : ViewType
           OptInset : Vector4 option
           Sprite : Sprite
           Color : Vector4 }
@@ -35,6 +40,7 @@ module RenderingModule =
         { Position : Vector2
           Size : Vector2
           Rotation : single
+          ViewType : ViewType
           MapSize : int * int // TODO: replace int * ints with Vector2I.
           Tiles : TmxLayerTile List
           TileSourceSize : int * int
@@ -48,9 +54,10 @@ module RenderingModule =
           PackageFileName : string }
 
     type [<StructuralEquality; NoComparison>] TextDescriptor =
-        { Text : string
-          Position : Vector2
+        { Position : Vector2
           Size : Vector2
+          ViewType : ViewType
+          Text : string
           Font : Font
           Color : Vector4 }
 
@@ -226,10 +233,13 @@ module Rendering =
         List.fold handleRenderMessage renderer (List.rev renderMessages)
 
     // TODO: factor out with extraction when available from the IDE
-    let private renderLayerableDescriptor camera renderer layerableDescriptor =
+    let private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
         match layerableDescriptor with
         | SpriteDescriptor spriteDescriptor ->
+            let view = match spriteDescriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let sprite = spriteDescriptor.Sprite
+            let position = spriteDescriptor.Position * view
+            let size = spriteDescriptor.Size * Matrix3.getScaleMatrix view
             let color = spriteDescriptor.Color
             let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
@@ -257,14 +267,14 @@ module Rendering =
                         sourceRect.w <- int <| inset.Z - inset.X
                         sourceRect.h <- int <| inset.W - inset.Y
                     let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int <| spriteDescriptor.Position.X + camera.EyeSize.X * 0.5f
-                    destRect.y <- int <| -spriteDescriptor.Position.Y + camera.EyeSize.Y * 0.5f - spriteDescriptor.Size.Y // negation for right-handedness
-                    destRect.w <- int spriteDescriptor.Size.X
-                    destRect.h <- int spriteDescriptor.Size.Y
+                    destRect.x <- int <| position.X + camera.EyeSize.X * 0.5f
+                    destRect.y <- int <| -position.Y + camera.EyeSize.Y * 0.5f - size.Y // negation for right-handedness
+                    destRect.w <- int size.X
+                    destRect.h <- int size.Y
                     let rotation = double -spriteDescriptor.Rotation * RadiansToDegrees // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int <| spriteDescriptor.Size.X * 0.5f
-                    rotationCenter.y <- int <| spriteDescriptor.Size.Y * 0.5f
+                    rotationCenter.x <- int <| size.X * 0.5f
+                    rotationCenter.y <- int <| size.Y * 0.5f
                     ignore <| SDL.SDL_SetTextureColorMod (texture, byte <| 255.0f * color.X, byte <| 255.0f * color.Y, byte <| 255.0f * color.Z)
                     ignore <| SDL.SDL_SetTextureAlphaMod (texture, byte <| 255.0f * color.W)
                     let renderResult =
@@ -282,8 +292,9 @@ module Rendering =
                     trace "Cannot render sprite with a non-texture asset."
                     renderer
         | TileLayerDescriptor descriptor ->
-            let position = descriptor.Position
-            let size = descriptor.Size
+            let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
+            let position = descriptor.Position * view
+            let size = descriptor.Size * Matrix3.getScaleMatrix view
             let tileRotation = descriptor.Rotation
             let mapSize = descriptor.MapSize
             let tiles = descriptor.Tiles
@@ -350,7 +361,12 @@ module Rendering =
                     trace "Cannot render tile with a non-texture asset."
                     renderer
         | TextDescriptor textDescriptor ->
+            let view = match textDescriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
+            let position = textDescriptor.Position * view
+            let size = textDescriptor.Size * Matrix3.getScaleMatrix view
+            let text = textDescriptor.Text
             let font = textDescriptor.Font
+            let color = textDescriptor.Color
             let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
             match optRenderAsset with
             | None ->
@@ -359,17 +375,17 @@ module Rendering =
             | Some renderAsset ->
                 match renderAsset with
                 | FontAsset (font, _) ->
-                    let mutable color = SDL.SDL_Color ()
-                    let textSizeX = int textDescriptor.Size.X
-                    color.r <- byte <| textDescriptor.Color.X * 255.0f
-                    color.g <- byte <| textDescriptor.Color.Y * 255.0f
-                    color.b <- byte <| textDescriptor.Color.Z * 255.0f
-                    color.a <- byte <| textDescriptor.Color.W * 255.0f
+                    let mutable renderColor = SDL.SDL_Color ()
+                    renderColor.r <- byte <| color.X * 255.0f
+                    renderColor.g <- byte <| color.Y * 255.0f
+                    renderColor.b <- byte <| color.Z * 255.0f
+                    renderColor.a <- byte <| color.W * 255.0f
                     // NOTE: the following code is not exception safe!
                     // TODO: the resource implications (perf and vram fragmentation?) of creating and destroying a
                     // texture one or more times a frame must be understood! Although, maybe it all happens in software
                     // and vram frag would not be a concern in the first place... perf could still be, however.
-                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, textDescriptor.Text, color, uint32 textSizeX)
+                    let textSizeX = int size.X
+                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
                         let textureFormat = ref 0u
@@ -383,8 +399,8 @@ module Rendering =
                         sourceRect.w <- !textureSizeX
                         sourceRect.h <- !textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int <| textDescriptor.Position.X + camera.EyeSize.X * 0.5f
-                        destRect.y <- int <| -textDescriptor.Position.Y + camera.EyeSize.Y * 0.5f - single !textureSizeY // negation for right-handedness
+                        destRect.x <- int <| position.X + camera.EyeSize.X * 0.5f
+                        destRect.y <- int <| -position.Y + camera.EyeSize.Y * 0.5f - single !textureSizeY // negation for right-handedness
                         destRect.w <- !textureSizeX
                         destRect.h <- !textureSizeY
                         if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
@@ -403,7 +419,9 @@ module Rendering =
             ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
             let renderDescriptorsSorted = Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
             let layeredDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-            Seq.fold (renderLayerableDescriptor camera) renderer layeredDescriptors
+            let viewAbsolute = Camera.getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
+            let viewRelative = Camera.getViewRelativeI camera |> Matrix3.getInverseViewMatrix
+            Seq.fold (renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
