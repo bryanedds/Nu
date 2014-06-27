@@ -8,10 +8,16 @@ open BlazeVector.BlazeConstants
 module BlazeFlow =
 
     // this function handles playing the song "Machinery"
-    let handlePlayMachinery _ world =
+    let handlePlaySongMachinery _ world =
         let gameSong = { SongAssetName = "Machinery"; PackageName = BlazeGuiPackageName; PackageFileName = AssetGraphFileName }
         let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
         let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
+        (Unhandled, world)
+
+    // this function handles playing the stage
+    let handlePlayStage _ world =
+        let world = { world with AudioMessages = FadeOutSong DefaultTimeToFadeOutSongMs :: world.AudioMessages }
+        let world = World.transitionScreen StageAddress world
         (Unhandled, world)
 
     // this function adds the BlazeVector title screen to the world
@@ -23,11 +29,11 @@ module BlazeFlow =
 
         // this subscribes to the event that is raised when the Title screen is selected for
         // display and interaction, and handles the event by playing the song "Machinery"
-        let world = World.observe SelectedTitleEvent [] (CustomSub handlePlayMachinery) world
+        let world = World.observe SelectedTitleEvent [] (CustomSub handlePlaySongMachinery) world
 
         // this subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
-        let world = World.subscribe ClickTitlePlayEvent [] (ScreenTransitionSub StageAddress) world
+        let world = World.subscribe ClickTitlePlayEvent [] (CustomSub handlePlayStage) world
 
         // subscribes to the event that is raised when the Title screen's Credits button is
         // clicked, and handles the event by transitioning to the Credits screen
@@ -73,8 +79,8 @@ module BlazeFlow =
             let world = addCreditsScreen world
             let world = addStageScreen world
             
-            // transition the world to splash screen
-            let world = World.transitionScreen SplashAddress world
+            // select the splash screen for viewing
+            let world = World.selectScreen SplashAddress world
 
             // return our world within the expected Either type, and we're off!
             Right world

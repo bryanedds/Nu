@@ -43,5 +43,5 @@ module OmniFlow =
             let world = addLoadGameScreen world
             let world = addCreditsScreen world
             let world = addFieldScreen world
-            let world = World.transitionScreen SplashAddress world
+            let world = World.selectScreen SplashAddress world
             Right world

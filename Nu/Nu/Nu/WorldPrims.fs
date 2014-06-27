@@ -453,9 +453,22 @@ module WorldPrims =
                 subscribe (DownMouseEvent @ AnyEvent) address SwallowSub |>
                 subscribe (UpMouseEvent @ AnyEvent) address SwallowSub
 
-    let transitionScreen destination world =
+    let selectScreen destination world =
         let world = setScreenStatePlus destination IncomingState world
         setOptSelectedScreenAddress (Some destination) world
+
+    let transitionScreen destination world =
+        match getOptSelectedScreenAddress world with
+        | None ->
+            trace "Program Error: Could not handle screen transition due to no selected screen."
+            { world with Liveness = Exiting }
+        | Some selectedScreenAddress ->
+            let sub = CustomSub (fun _ world ->
+                let world = unsubscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
+                let world = selectScreen destination world
+                Unhandled, world)
+            let world = setScreenStatePlus selectedScreenAddress OutgoingState world
+            subscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
 
     let private updateTransition1 (transition : Transition) =
         if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -531,26 +544,16 @@ module WorldPrims =
 
     let private handleFinishedScreenOutgoing destination message world =
         let world = unsubscribe message.Event message.Subscriber world
-        let world = transitionScreen destination world
+        let world = selectScreen destination world
         (Handled, world)
 
     let handleEventAsScreenTransitionFromSplash destination world =
-        let world = transitionScreen destination world
+        let world = selectScreen destination world
         (Unhandled, world)
 
     let handleEventAsScreenTransition destination world =
-        match getOptSelectedScreenAddress world with
-        | None ->
-            trace "Program Error: Could not handle screen transition due to no selected screen."
-            (Handled, { world with Liveness = Exiting })
-        | Some selectedScreenAddress ->
-            let sub = CustomSub (fun _ world ->
-                let world = unsubscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
-                let world = transitionScreen destination world
-                (Unhandled, world))
-            let world = setScreenStatePlus selectedScreenAddress OutgoingState world
-            let world = subscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
-            (Unhandled, world)
+        let world = transitionScreen destination world
+        (Unhandled, world)
 
     /// Publish a message for the given event.
     let rec publishDefinition event publisher messageData world =
