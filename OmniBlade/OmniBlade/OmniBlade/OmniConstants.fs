@@ -7,7 +7,7 @@ open Nu
 module OmniConstants =
 
     // misc constants
-    let OmniGuiPackageName = "OmniGui"
+    let GuiPackageName = "Gui"
     let FieldFeelerName = "Feeler"
     let FieldAvatarName = "Avatar"
 

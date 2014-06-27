@@ -17,7 +17,7 @@
     <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
     <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
   </package>
-  <package name="OmniGui">
+  <package name="Gui">
     <asset name="BackButtonUp" fileName="Assets/OmniBlade/Gui/BackButtonUp.png" associations="Rendering"/>
     <asset name="BackButtonDown" fileName="Assets/OmniBlade/Gui/BackButtonDown.png" associations="Rendering"/>
     <asset name="ExitButtonUp" fileName="Assets/OmniBlade/Gui/ExitButtonUp.png" associations="Rendering"/>
@@ -29,7 +29,7 @@
     <asset name="CreditsButtonUp" fileName="Assets/OmniBlade/Gui/CreditsButtonUp.png" associations="Rendering"/>
     <asset name="CreditsButtonDown" fileName="Assets/OmniBlade/Gui/CreditsButtonDown.png" associations="Rendering"/>
   </package>
-  <package name="OmniBattle">
+  <package name="Battle">
     <asset name="Ally" fileName="Assets/OmniBlade/Battle/Placeholder/Ally.png" associations="Rendering"/>
     <asset name="AllyDamage" fileName="Assets/OmniBlade/Battle/Placeholder/AllyDamage.png" associations="Rendering"/>
     <asset name="AllyMove" fileName="Assets/OmniBlade/Battle/Placeholder/AllyMove.png" associations="Rendering"/>
