@@ -113,7 +113,7 @@ module ButtonDispatcherModule =
                 let button = World.getEntity message.Subscriber world
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
-                    if NuMath.inBox3 mousePositionButton button.Position button.Size then
+                    if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
                         let button = button.SetIsDown true
                         let world = World.setEntity message.Subscriber button world
                         let world = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
@@ -132,7 +132,7 @@ module ButtonDispatcherModule =
                         let button = button.SetIsDown false
                         let world = World.setEntity message.Subscriber button world
                         World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
-                    if NuMath.inBox3 mousePositionButton button.Position button.Size && button.IsDown then
+                    if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
                         let world = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
@@ -300,7 +300,7 @@ module ToggleDispatcherModule =
                 let toggle = World.getEntity message.Subscriber world
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
-                    if NuMath.inBox3 mousePositionToggle toggle.Position toggle.Size then
+                    if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsPressed true
                         let world = World.setEntity message.Subscriber toggle world
                         (Handled, world)
@@ -315,7 +315,7 @@ module ToggleDispatcherModule =
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle = toggle.SetIsPressed false
-                    if NuMath.inBox3 mousePositionToggle toggle.Position toggle.Size then
+                    if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsOn <| not toggle.IsOn
                         let world = World.setEntity message.Subscriber toggle world
                         let messageType = if toggle.IsOn then "On" else "Off"
@@ -383,7 +383,7 @@ module FeelerDispatcherModule =
                 let feeler = World.getEntity message.Subscriber world
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
-                    if NuMath.inBox3 mousePositionFeeler feeler.Position feeler.Size then
+                    if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler = feeler.SetIsTouched true
                         let world = World.setEntity message.Subscriber feeler world
                         let world = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world

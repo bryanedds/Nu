@@ -46,10 +46,10 @@ module Camera =
              camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
     let inView (bounds : Vector4) camera =
-        NuMath.inBounds bounds <| getBounds camera
+        NuMath.isBoundsInBounds bounds <| getBounds camera
 
     let inView3 (position : Vector2) (size : Vector2) camera =
-        NuMath.inBounds3 position size <| getBounds camera
+        NuMath.isBoundsInBounds3 position size <| getBounds camera
 
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =

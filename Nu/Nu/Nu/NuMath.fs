@@ -216,23 +216,19 @@ module NuMath =
         let transform = { transform with Position = snap2F positionSnap transform.Position }
         { transform with Rotation = snapR rotationSnap transform.Rotation }
 
-    let inBox3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
-        point.X >= boxPos.X &&
-        point.X < boxPos.X + boxSize.X &&
-        point.Y >= boxPos.Y &&
-        point.Y < boxPos.Y + boxSize.Y
+    let isPointInBounds (point : Vector2) (bounds : Vector4) =
+        not
+            (point.X > bounds.Z || point.X < bounds.X ||
+             point.Y > bounds.W || point.Y < bounds.Y)
 
-    let inBox (point : Vector2) (box : Box2) = // TODO: remove use of Box2 type
-        inBox3
-            point
-            (Vector2 (box.Left, box.Top))
-            (Vector2 (box.Right, box.Bottom))
+    let isPointInBounds3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =
+        isPointInBounds point <| Vector4 (boxPos.X, boxPos.Y, boxPos.X + boxSize.X, boxPos.Y + boxSize.Y)
 
-    let inBounds (bounds : Vector4) (bounds2 : Vector4) =
+    let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
         not
             (bounds.X > bounds2.Z || bounds.Z < bounds2.X ||
              bounds.Y > bounds2.W || bounds.W < bounds2.Y)
 
-    let inBounds3 (position : Vector2) (size : Vector2) bounds =
+    let isBoundsInBounds3 (position : Vector2) (size : Vector2) bounds =
         let bounds2 = Vector4 (position.X, position.Y, position.X + size.X, position.Y + size.Y)
-        inBounds bounds2 bounds
+        isBoundsInBounds bounds2 bounds
