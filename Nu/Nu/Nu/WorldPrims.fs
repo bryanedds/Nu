@@ -475,23 +475,35 @@ module WorldPrims =
                     match world.Liveness with
                     | Exiting -> world
                     | Running ->
-                        let (finished, incoming) = updateTransition1 selectedScreen.Incoming
-                        let selectedScreen = { selectedScreen with Incoming = incoming }
-                        let world = setScreen selectedScreenAddress selectedScreen world
-                        let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
-                        if not finished then world
-                        else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
-                | OutgoingState ->
-                    let (finished, outgoing) = updateTransition1 selectedScreen.Outgoing
-                    let selectedScreen = { selectedScreen with Outgoing = outgoing }
-                    let world = setScreen selectedScreenAddress selectedScreen world
-                    let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else OutgoingState) world
-                    if not finished then world
-                    else
-                        let world = publish (DeselectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        let world =
+                            if selectedScreen.Incoming.TransitionTicks <> 0L then world
+                            else publish (StartedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                         match world.Liveness with
                         | Exiting -> world
-                        | Running -> publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        | Running ->
+                            let (finished, incoming) = updateTransition1 selectedScreen.Incoming
+                            let selectedScreen = { selectedScreen with Incoming = incoming }
+                            let world = setScreen selectedScreenAddress selectedScreen world
+                            let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
+                            if not finished then world
+                            else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                | OutgoingState ->
+                    let world =
+                        if selectedScreen.Outgoing.TransitionTicks <> 0L then world
+                        else publish (StartedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                    match world.Liveness with
+                    | Exiting -> world
+                    | Running ->
+                        let (finished, outgoing) = updateTransition1 selectedScreen.Outgoing
+                        let selectedScreen = { selectedScreen with Outgoing = outgoing }
+                        let world = setScreen selectedScreenAddress selectedScreen world
+                        let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else OutgoingState) world
+                        if not finished then world
+                        else
+                            let world = publish (DeselectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            match world.Liveness with
+                            | Exiting -> world
+                            | Running -> publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | IdlingState -> world
         match world.Liveness with
         | Exiting -> world
