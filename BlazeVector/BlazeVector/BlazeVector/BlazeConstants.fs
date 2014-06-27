@@ -32,6 +32,7 @@ module BlazeConstants =
     let TitleAddress = addr "Title"
     let TitleGroupFileName = "Assets/BlazeVector/Groups/Title.nugroup"
     let TitleGroupAddress = addr "Title/Group"
+    let SelectedTitleEvent = addr "Selected/Title"
     let ClickTitlePlayEvent = addr "Click/Title/Group/Play"
     let ClickTitleCreditsEvent = addr "Click/Title/Group/Credits"
     let ClickTitleExitEvent = addr "Click/Title/Group/Exit"

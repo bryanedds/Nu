@@ -22,7 +22,7 @@ module AudioModule =
 
     type [<StructuralEquality; NoComparison>] PlaySong =
         { Song : Song
-          FadeOutCurrentSong : bool }
+          TimeToFadeOutSongMs : int }
 
     type [<StructuralEquality; NoComparison>] PlaySound =
         { Volume : single
@@ -41,7 +41,7 @@ module AudioModule =
         | HintAudioPackageDisuse of HintAudioPackageDisuse
         | PlaySound of PlaySound
         | PlaySong of PlaySong
-        | FadeOutSong
+        | FadeOutSong of int
         | StopSong
 
     type [<ReferenceEquality>] AudioAsset =
@@ -52,7 +52,7 @@ module AudioModule =
         { AudioContext : unit // audio context, interestingly, is global
           AudioAssetMap : AudioAsset AssetMap
           OptCurrentSong : Song option
-          OptNextSong : Song option }
+          OptNextPlaySong : PlaySong option }
 
     type SoundTypeConverter () =
         inherit TypeConverter ()
@@ -150,24 +150,6 @@ module Audio =
         | Some (OggAsset oggAsset) -> ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
         { audioPlayer' with OptCurrentSong = Some song }
 
-    let private tryUpdateCurrentSong audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
-        else { audioPlayer with OptCurrentSong = None }
-
-    let private tryUpdateNextSong audioPlayer =
-        match audioPlayer.OptNextSong with
-        | None -> audioPlayer
-        | Some nextSong ->
-            if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
-            else
-                let audioPlayer = playSong nextSong audioPlayer
-                { audioPlayer with OptNextSong = None }
-
-    let private updateAudioPlayer audioPlayer =
-        audioPlayer |>
-            tryUpdateCurrentSong |>
-            tryUpdateNextSong
-
     let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer =
         tryLoadAudioPackage hintPackageUse.PackageName hintPackageUse.FileName audioPlayer
 
@@ -197,16 +179,23 @@ module Audio =
 
     let private handlePlaySong playSongValue audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
-            if  playSongValue.FadeOutCurrentSong &&
-                not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-                ignore <| SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs
-            { audioPlayer with OptNextSong = Some playSongValue.Song }
+            if audioPlayer.OptCurrentSong = Some playSongValue.Song then audioPlayer
+            else
+                if  playSongValue.TimeToFadeOutSongMs <> 0 &&
+                    not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
+                    ignore <| SDL_mixer.Mix_FadeOutMusic playSongValue.TimeToFadeOutSongMs
+                else
+                    ignore <| SDL_mixer.Mix_HaltMusic ()
+                { audioPlayer with OptNextPlaySong = Some playSongValue }
         else playSong playSongValue.Song audioPlayer
 
-    let private handleFadeOutSong audioPlayer =
-        if  SDL_mixer.Mix_PlayingMusic () = 1 &&
-            not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
-            ignore <| SDL_mixer.Mix_FadeOutMusic TimeToFadeOutSongMs
+    let private handleFadeOutSong timeToFadeOutSongMs audioPlayer =
+        if SDL_mixer.Mix_PlayingMusic () = 1 then
+            if  timeToFadeOutSongMs <> 0 &&
+                not (SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT) then
+                ignore <| SDL_mixer.Mix_FadeOutMusic timeToFadeOutSongMs
+            else
+                ignore <| SDL_mixer.Mix_HaltMusic ()
         audioPlayer
 
     let private handleStopSong audioPlayer =
@@ -219,11 +208,29 @@ module Audio =
         | HintAudioPackageDisuse hintPackageDisuse -> handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
         | PlaySound playSound -> handlePlaySound playSound audioPlayer
         | PlaySong playSongValue -> handlePlaySong playSongValue audioPlayer
-        | FadeOutSong -> handleFadeOutSong audioPlayer
+        | FadeOutSong timeToFadeSongMs -> handleFadeOutSong timeToFadeSongMs audioPlayer
         | StopSong -> handleStopSong audioPlayer
 
     let private handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)
+
+    let private tryUpdateCurrentSong audioPlayer =
+        if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
+        else { audioPlayer with OptCurrentSong = None }
+
+    let private tryUpdateNextSong audioPlayer =
+        match audioPlayer.OptNextPlaySong with
+        | None -> audioPlayer
+        | Some nextPlaySong ->
+            if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
+            else
+                let audioPlayer = handlePlaySong nextPlaySong audioPlayer
+                { audioPlayer with OptNextPlaySong = None }
+
+    let private updateAudioPlayer audioPlayer =
+        audioPlayer |>
+            tryUpdateCurrentSong |>
+            tryUpdateNextSong
 
     let play audioMessages audioPlayer =
         let audioPlayer = handleAudioMessages audioMessages audioPlayer
@@ -233,4 +240,4 @@ module Audio =
         { AudioContext = ()
           AudioAssetMap = Map.empty
           OptCurrentSong = None
-          OptNextSong = None }
+          OptNextPlaySong = None }
