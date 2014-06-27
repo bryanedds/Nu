@@ -321,7 +321,7 @@ module Rendering =
                                 Vector2 (
                                     position.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
                                     -(position.Y - tileSize.Y * single j + size.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
-                            if NuMath.inBounds3 tilePosition tileSize <| Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
+                            if NuMath.isBoundsInBounds3 tilePosition tileSize <| Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
                                 let gid = tiles.[n].Gid - tileSet.FirstGid
                                 let gidPosition = gid * fst tileSourceSize
                                 let tileSourcePosition =

@@ -69,7 +69,7 @@ module Entity2dFacetModule =
                 (fun entity ->
                     let positionEntity = Entity.mouseToEntity position world entity
                     let transform = Entity.getTransform entity
-                    let picked = NuMath.inBox3 positionEntity transform.Position transform.Size
+                    let picked = NuMath.isPointInBounds3 positionEntity transform.Position transform.Size
                     picked)
                 entitiesSorted
 
