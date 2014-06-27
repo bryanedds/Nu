@@ -237,9 +237,9 @@ module Rendering =
         match layerableDescriptor with
         | SpriteDescriptor spriteDescriptor ->
             let view = match spriteDescriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let sprite = spriteDescriptor.Sprite
             let positionView = spriteDescriptor.Position * view
             let sizeView = spriteDescriptor.Size * Matrix3.getScaleMatrix view
+            let sprite = spriteDescriptor.Sprite
             let color = spriteDescriptor.Color
             let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
             match optRenderAsset with
