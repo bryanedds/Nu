@@ -105,8 +105,8 @@ module SimpleBodyFacetModule =
 
     type Entity with
 
-        [<XField>] member this.PhysicsId with get () = this?PhysicsId () : PhysicsId
-        member this.SetPhysicsId (value : PhysicsId) : Entity = this?PhysicsId <- value
+        [<XField>] member this.MinorId with get () = this?MinorId () : Guid
+        member this.SetMinorId (value : Guid) : Entity = this?MinorId <- value
         [<XField>] member this.BodyType with get () = this?BodyType () : BodyType
         member this.SetBodyType (value : BodyType) : Entity = this?BodyType <- value
         [<XField>] member this.Density with get () = this?Density () : single
@@ -131,6 +131,8 @@ module SimpleBodyFacetModule =
         member this.SetIsBullet (value : bool) : Entity = this?IsBullet <- value
         [<XField>] member this.IsSensor with get () = this?IsSensor () : bool
         member this.SetIsSensor (value : bool) : Entity = this?IsSensor <- value
+        
+        static member getPhysicsId (this : Entity) = PhysicsId (this.Id, this.MinorId)
 
 [<RequireQualifiedAccess>]
 module SimpleBodyFacet =
@@ -138,7 +140,7 @@ module SimpleBodyFacet =
     let private makeCreateBodyMessage makeBodyShape (entity : Entity) (address : Address) =
         CreateBodyMessage
             { EntityAddress = address
-              PhysicsId = entity.PhysicsId
+              PhysicsId = Entity.getPhysicsId entity
               Position = entity.Position + entity.Size * 0.5f
               Rotation = entity.Rotation
               BodyProperties =
@@ -158,7 +160,7 @@ module SimpleBodyFacet =
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity
-            .SetPhysicsId(Physics.getId entity.Id)
+            .SetMinorId(NuCore.getId ())
             .SetBodyType(BodyType.Dynamic)
             .SetDensity(NormalDensity)
             .SetFriction(0.0f)
@@ -179,7 +181,7 @@ module SimpleBodyFacet =
 
     let unregisterPhysics address world =
         let entity = World.getEntity address world
-        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = entity.PhysicsId }
+        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = Entity.getPhysicsId entity }
         { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
     let propagatePhysics makeBodyShape address world =
