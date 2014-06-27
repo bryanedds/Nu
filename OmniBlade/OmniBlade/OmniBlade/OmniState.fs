@@ -51,29 +51,29 @@ module OmniStateModule =
         | OmniCharacterUseItem of OmniCharacterUseItemState
         | OmniCharacterUseSpecial of OmniCharacterUseSpecialState
 
-    type [<StructuralEquality; NoComparison>] OmniBattleActionState =
+    type [<StructuralEquality; NoComparison>] BattleActionState =
         | OmniIdleAction
         | OmniCharacterAction of OmniCharacterActionState
 
-    type [<StructuralEquality; NoComparison>] OmniBattleInputState =
+    type [<StructuralEquality; NoComparison>] BattleInputState =
         | OmniGoInput of Id Set
         | OmniCrossInput of Id * Id Set
         | OmniTargetableInput of OmniTargetingInputType
         | OmniTargetInput of OmniTargetingInputType
 
-    type [<StructuralEquality; NoComparison>] OmniBattleState =
-        | OmniBattleBegin
-        | OmniBattleAdvance of OmniBattleInputState * OmniCharacterActionState
-        | OmniBattleEnding of bool
+    type [<StructuralEquality; NoComparison>] BattleState =
+        | BattleBegin
+        | BattleAdvance of BattleInputState * OmniCharacterActionState
+        | BattleEnding of bool
 
     type [<StructuralEquality; NoComparison>] OmniMove =
         { Data : OmniMoveData
           ParticipantIds : Id list // characters participating in the move
           TargetIds : Id list } // characters targetted by the move
 
-    type [<StructuralEquality; NoComparison>] OmniBattle =
-        { Data : OmniBattleData
-          State : OmniBattleState
+    type [<StructuralEquality; NoComparison>] Battle =
+        { Data : BattleData
+          State : BattleState
           MoveQueue : OmniMove rQueue
           Enemies : OmniCharacter list
           MinorEnemySpawns : int }

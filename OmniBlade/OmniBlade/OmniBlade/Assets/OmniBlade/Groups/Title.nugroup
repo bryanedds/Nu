@@ -8,13 +8,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">CreditsButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">CreditsButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-160</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">CreditsButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">CreditsButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
@@ -23,13 +23,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-224</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">ExitButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">ExitButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
@@ -38,13 +38,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">LoadGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">LoadGameButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-96</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">LoadGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">LoadGameButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
@@ -53,13 +53,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">NewGameButtonDown;OmniGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">NewGameButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-32</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">NewGameButtonUp;OmniGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">NewGameButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>

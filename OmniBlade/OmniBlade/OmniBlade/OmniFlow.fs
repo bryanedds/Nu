@@ -32,7 +32,7 @@ module OmniFlow =
         match optWorld with
         | Left _ as left -> left
         | Right world ->
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = OmniGuiPackageName } 
+            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
             let gameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = DefaultTimeToFadeOutSongMs }
