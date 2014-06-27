@@ -113,7 +113,7 @@ module ButtonDispatcherModule =
                 let button = World.getEntity message.Subscriber world
                 let mousePositionButton = Entity.mouseToEntity mousePosition world button
                 if button.Enabled && button.Visible then
-                    if NuMath.isInBox3 mousePositionButton button.Position button.Size then
+                    if NuMath.inBox3 mousePositionButton button.Position button.Size then
                         let button = button.SetIsDown true
                         let world = World.setEntity message.Subscriber button world
                         let world = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
@@ -132,7 +132,7 @@ module ButtonDispatcherModule =
                         let button = button.SetIsDown false
                         let world = World.setEntity message.Subscriber button world
                         World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
-                    if NuMath.isInBox3 mousePositionButton button.Position button.Size && button.IsDown then
+                    if NuMath.inBox3 mousePositionButton button.Position button.Size && button.IsDown then
                         let world = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
                         let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
                         let world = { world with AudioMessages = sound :: world.AudioMessages }
@@ -300,7 +300,7 @@ module ToggleDispatcherModule =
                 let toggle = World.getEntity message.Subscriber world
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible then
-                    if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
+                    if NuMath.inBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsPressed true
                         let world = World.setEntity message.Subscriber toggle world
                         (Handled, world)
@@ -315,7 +315,7 @@ module ToggleDispatcherModule =
                 let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle = toggle.SetIsPressed false
-                    if NuMath.isInBox3 mousePositionToggle toggle.Position toggle.Size then
+                    if NuMath.inBox3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = toggle.SetIsOn <| not toggle.IsOn
                         let world = World.setEntity message.Subscriber toggle world
                         let messageType = if toggle.IsOn then "On" else "Off"
@@ -383,7 +383,7 @@ module FeelerDispatcherModule =
                 let feeler = World.getEntity message.Subscriber world
                 let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                 if feeler.Enabled && feeler.Visible then
-                    if NuMath.isInBox3 mousePositionFeeler feeler.Position feeler.Size then
+                    if NuMath.inBox3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler = feeler.SetIsTouched true
                         let world = World.setEntity message.Subscriber feeler world
                         let world = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
@@ -497,8 +497,8 @@ module BlockDispatcherModule =
             let block = SimpleSpriteFacet.init block dispatcherContainer
             block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-        override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, _) =
-            SimpleSpriteFacet.getRenderDescriptors block viewAbsolute viewRelative
+        override dispatcher.GetRenderDescriptors (block, viewAbsolute, viewRelative, world) =
+            SimpleSpriteFacet.getRenderDescriptors block viewAbsolute viewRelative world
 
         override dispatcher.GetQuickSize (block, world) =
             SimpleSpriteFacet.getQuickSize block world
@@ -519,8 +519,8 @@ module AvatarDispatcherModule =
                 .SetGravityScale(0.0f)
                 .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, _) =
-            SimpleSpriteFacet.getRenderDescriptors avatar viewAbsolute viewRelative
+        override dispatcher.GetRenderDescriptors (avatar, viewAbsolute, viewRelative, world) =
+            SimpleSpriteFacet.getRenderDescriptors avatar viewAbsolute viewRelative world
 
         override dispatcher.GetQuickSize (avatar, world) =
             SimpleSpriteFacet.getQuickSize avatar world
@@ -540,8 +540,8 @@ module CharacterDispatcherModule =
                 .SetLinearDamping(3.0f)
                 .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
 
-        override dispatcher.GetRenderDescriptors (character, viewAbsolute, viewRelative, _) =
-            SimpleSpriteFacet.getRenderDescriptors character viewAbsolute viewRelative
+        override dispatcher.GetRenderDescriptors (character, viewAbsolute, viewRelative, world) =
+            SimpleSpriteFacet.getRenderDescriptors character viewAbsolute viewRelative world
 
         override dispatcher.GetQuickSize (character, world) =
             SimpleSpriteFacet.getQuickSize character world
@@ -745,26 +745,31 @@ module TileMapDispatcherModule =
                     let viewScale = Matrix3.getScaleMatrix viewRelative
                     let tileSourceSize = (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight) * viewScale
-                    List.mapi
-                        (fun i (layer : TmxLayer) ->
-                            let depth = tileMap.Depth + single i * 2.0f
-                            let parallaxTranslation = tileMap.Parallax * depth * Matrix3.getTranslation viewRelative
-                            let layeredTileLayerDescriptor =
-                                LayeredTileLayerDescriptor
-                                    { Descriptor =
-                                        { Position = (tileMap.Position + parallaxTranslation) * viewRelative
-                                          Size = Vector2.Zero
-                                          Rotation = tileMap.Rotation
-                                          MapSize = (map.Width, map.Height)
-                                          Tiles = layer.Tiles
-                                          TileSourceSize = tileSourceSize
-                                          TileSize = tileSize
-                                          TileMapSize = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                                          TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                          TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
-                                      Depth = depth } // MAGIC_VALUE: assumption
-                            LayerableDescriptor layeredTileLayerDescriptor)
-                        layers
+                    let optDescriptors =
+                        List.mapi
+                            (fun i (layer : TmxLayer) ->
+                                let depth = tileMap.Depth + single i * 2.0f
+                                let parallaxTranslation = tileMap.Parallax * depth * Matrix3.getTranslation viewRelative
+                                let parallaxPosition = tileMap.Position + parallaxTranslation
+                                let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
+                                if not <| Camera.inView3 parallaxPosition size world.Camera then None
+                                else
+                                    let layeredTileLayerDescriptor =
+                                        LayeredTileLayerDescriptor
+                                            { Descriptor =
+                                                { Position = parallaxPosition * viewRelative
+                                                  Size = size
+                                                  Rotation = tileMap.Rotation
+                                                  MapSize = (map.Width, map.Height)
+                                                  Tiles = layer.Tiles
+                                                  TileSourceSize = tileSourceSize
+                                                  TileSize = tileSize
+                                                  TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                                  TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
+                                              Depth = depth } // MAGIC_VALUE: assumption
+                                    Some <| LayerableDescriptor layeredTileLayerDescriptor)
+                            layers
+                    List.definitize optDescriptors
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset
