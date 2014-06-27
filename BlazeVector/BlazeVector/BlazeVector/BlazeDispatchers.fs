@@ -288,6 +288,10 @@ module BlazeStageScreenModule =
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             (Unhandled, world)
 
+        let endingPlayHandler _ world =
+            let world = { world with AudioMessages = FadeOutSong DefaultTimeToFadeOutSongMs :: world.AudioMessages }
+            (Unhandled, world)
+
         let endPlayHandler message world =
             let sectionNames = [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
             let world = World.removeGroups message.Subscriber sectionNames world
@@ -297,6 +301,7 @@ module BlazeStageScreenModule =
             let world = base.Register (address, groupDescriptors, world)
             world |>
                 World.observe (SelectedEvent @ address) address -<| CustomSub beginPlayHandler |>
+                World.observe (StartedOutgoingEvent @ address) address -<| CustomSub endingPlayHandler |>
                 World.observe (DeselectedEvent @ address) address -<| CustomSub endPlayHandler
 
 [<AutoOpen>]
