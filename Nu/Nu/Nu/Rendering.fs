@@ -54,14 +54,14 @@ module RenderingModule =
           Font : Font
           Color : Vector4 }
 
-    type [<StructuralEquality; NoComparison>] 'a LayeredDescriptor =
-        { Descriptor : 'a
-          Depth : single }
+    type [<StructuralEquality; NoComparison>] LayeredDescriptor =
+        | SpriteDescriptor of SpriteDescriptor
+        | TileLayerDescriptor of TileLayerDescriptor
+        | TextDescriptor of TextDescriptor
 
     type [<StructuralEquality; NoComparison>] LayerableDescriptor =
-        | LayeredSpriteDescriptor of SpriteDescriptor LayeredDescriptor
-        | LayeredTileLayerDescriptor of TileLayerDescriptor LayeredDescriptor
-        | LayeredTextDescriptor of TextDescriptor LayeredDescriptor
+        { Depth : single
+          LayeredDescriptor : LayeredDescriptor }
 
     /// Describes a rendering asset.
     /// A serializable value type.
@@ -144,12 +144,6 @@ module Rendering =
         assignTypeConverter<Sprite, SpriteTypeConverter> ()
         assignTypeConverter<Font, FontTypeConverter> ()
         assignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
-
-    let private getLayerableDepth layerable =
-        match layerable with
-        | LayeredSpriteDescriptor descriptor -> descriptor.Depth
-        | LayeredTileLayerDescriptor descriptor -> descriptor.Depth
-        | LayeredTextDescriptor descriptor -> descriptor.Depth
 
     let private freeRenderAsset renderAsset =
         match renderAsset with
@@ -234,8 +228,7 @@ module Rendering =
     // TODO: factor out with extraction when available from the IDE
     let private renderLayerableDescriptor camera renderer layerableDescriptor =
         match layerableDescriptor with
-        | LayeredSpriteDescriptor lsd ->
-            let spriteDescriptor = lsd.Descriptor
+        | SpriteDescriptor spriteDescriptor ->
             let sprite = spriteDescriptor.Sprite
             let color = spriteDescriptor.Color
             let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
@@ -288,8 +281,7 @@ module Rendering =
                 | _ ->
                     trace "Cannot render sprite with a non-texture asset."
                     renderer
-        | LayeredTileLayerDescriptor ltd ->
-            let descriptor = ltd.Descriptor
+        | TileLayerDescriptor descriptor ->
             let position = descriptor.Position
             let size = descriptor.Size
             let tileRotation = descriptor.Rotation
@@ -357,8 +349,7 @@ module Rendering =
                 | _ ->
                     trace "Cannot render tile with a non-texture asset."
                     renderer
-        | LayeredTextDescriptor ltd ->
-            let textDescriptor = ltd.Descriptor
+        | TextDescriptor textDescriptor ->
             let font = textDescriptor.Font
             let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
             match optRenderAsset with
@@ -410,9 +401,9 @@ module Rendering =
         match targetResult with
         | 0 ->
             ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
-            let layerableDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor) renderDescriptorsValue
-            let sortedDescriptors = Seq.sortBy getLayerableDepth layerableDescriptors
-            Seq.fold (renderLayerableDescriptor camera) renderer sortedDescriptors
+            let renderDescriptorsSorted = Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
+            let layeredDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
+            Seq.fold (renderLayerableDescriptor camera) renderer layeredDescriptors
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
