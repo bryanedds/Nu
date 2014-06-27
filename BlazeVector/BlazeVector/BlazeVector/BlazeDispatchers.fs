@@ -12,14 +12,14 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
-module BlazeBulletDispatcherModule =
+module BulletDispatcherModule =
 
     type Entity with
 
         [<XField>] member this.BirthTime with get () = this?BirthTime () : int64
         member this.SetBirthTime (value : int64) : Entity = this?BirthTime <- value
 
-    type BlazeBulletDispatcher () =
+    type BulletDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (bullet : Entity) -> CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero })
 
@@ -47,7 +47,7 @@ module BlazeBulletDispatcherModule =
                 .SetLinearDamping(0.0f)
                 .SetGravityScale(0.0f)
                 .SetIsBullet(true)
-                .SetImageSprite({ SpriteAssetName = "PlayerBullet"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
+                .SetImageSprite({ SpriteAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName })
                 .SetBirthTime(0L)
 
         override dispatcher.Register (address, world) =
@@ -67,14 +67,14 @@ module BlazeBulletDispatcherModule =
             SimpleSpriteFacet.getQuickSize bullet world
 
 [<AutoOpen>]
-module BlazeEnemyDispatcherModule =
+module EnemyDispatcherModule =
 
     type Entity with
 
         [<XField>] member this.Health with get () = this?Health () : int
         member this.SetHealth (value : int) : Entity = this?Health <- value
 
-    type BlazeEnemyDispatcher () =
+    type EnemyDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
 
@@ -100,7 +100,7 @@ module BlazeEnemyDispatcherModule =
                 let isBullet =
                     match World.getOptEntity colliderAddress world with
                     | None -> true // HACK: assume collider is bullet if entity was just removed. TODO: implement a way to schedule simulant removal at end of frame
-                    | Some collider -> Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world
+                    | Some collider -> Entity.dispatchesAs typeof<BulletDispatcher> collider world
                 if not isBullet then (Unhandled, world)
                 else
                     let enemy = World.getEntity message.Subscriber world
@@ -122,7 +122,7 @@ module BlazeEnemyDispatcherModule =
                 .SetTileCount(6)
                 .SetTileRun(4)
                 .SetTileSize(Vector2 (48.0f, 96.0f))
-                .SetImageSprite({ SpriteAssetName = "Enemy"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
+                .SetImageSprite({ SpriteAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName })
                 .SetHealth(6)
 
         override dispatcher.Register (address, world) =
@@ -138,7 +138,7 @@ module BlazeEnemyDispatcherModule =
             SimpleAnimatedSpriteFacet.getQuickSize enemy
 
 [<AutoOpen>]
-module BlazePlayerDispatcherModule =
+module PlayerDispatcherModule =
 
     type Entity with
 
@@ -147,12 +147,12 @@ module BlazePlayerDispatcherModule =
         [<XField>] member this.LastTimeJump with get () = this?LastTimeJump () : int64
         member this.SetLastTimeJump (value : int64) : Entity = this?LastTimeJump <- value
 
-    type BlazePlayerDispatcher () =
+    type PlayerDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (player : Entity) -> CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero })
              
         let createBullet (player : Entity) address world =
-            let bullet = Entity.makeDefault typeof<BlazeBulletDispatcher>.Name None world
+            let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name None world
             let bullet =
                 bullet
                     .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
@@ -215,7 +215,7 @@ module BlazePlayerDispatcherModule =
                 .SetTileCount(16)
                 .SetTileRun(4)
                 .SetTileSize(Vector2 (48.0f, 96.0f))
-                .SetImageSprite({ SpriteAssetName = "Player"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
+                .SetImageSprite({ SpriteAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName })
                 .SetLastTimeOnGround(Int64.MinValue)
                 .SetLastTimeJump(Int64.MinValue)
 
@@ -233,9 +233,9 @@ module BlazePlayerDispatcherModule =
             SimpleAnimatedSpriteFacet.getQuickSize player
 
 [<AutoOpen>]
-module BlazeStagePlayDispatcherModule =
+module StagePlayDispatcherModule =
 
-    type BlazeStagePlayDispatcher () =
+    type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
         let getPlayer groupAddress world =
@@ -264,9 +264,9 @@ module BlazeStagePlayDispatcherModule =
             adjustCamera address world
 
 [<AutoOpen>]
-module BlazeStageScreenModule =
+module StageScreenModule =
 
-    type BlazeStageScreenDispatcher () =
+    type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
         let shiftEntities xShift entities world =
@@ -291,7 +291,7 @@ module BlazeStageScreenModule =
                  makeSectionFromFile Section3FileName Section3Name 6144.0f world]
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
-            let gameSong = { SongAssetName = "DeadBlaze"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName }
+            let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             (Unhandled, world)
@@ -323,10 +323,10 @@ module BlazeVectorDispatcherModule =
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany
-                    [typeof<BlazeBulletDispatcher>.Name, BlazeBulletDispatcher () :> obj
-                     typeof<BlazePlayerDispatcher>.Name, BlazePlayerDispatcher () :> obj
-                     typeof<BlazeEnemyDispatcher>.Name, BlazeEnemyDispatcher () :> obj
-                     typeof<BlazeStagePlayDispatcher>.Name, BlazeStagePlayDispatcher () :> obj
-                     typeof<BlazeStageScreenDispatcher>.Name, BlazeStageScreenDispatcher () :> obj]
+                    [typeof<BulletDispatcher>.Name, BulletDispatcher () :> obj
+                     typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> obj
+                     typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> obj
+                     typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> obj
+                     typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> obj]
                     world.Dispatchers
             { world with Dispatchers = dispatchers }

@@ -14,7 +14,7 @@
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;BlazeStages;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
@@ -29,7 +29,7 @@
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;BlazeStages;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
@@ -44,7 +44,7 @@
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section2;BlazeStages;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section2;Stage;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
   </Group>
