@@ -65,7 +65,7 @@ module WorldPrims =
             | None -> None
             | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
 
-    let private entityFinder (address : Address) world (child : Entity) =
+    let private entityAdder (address : Address) world (child : Entity) =
         let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
         match optGroupMap with
         | None ->
@@ -99,11 +99,11 @@ module WorldPrims =
 
     let private worldEntity address =
         { Get = fun world -> Option.get <| optEntityFinder address world
-          Set = fun entity world -> entityFinder address world entity }
+          Set = fun entity world -> entityAdder address world entity }
 
     let private worldOptEntity address =
         { Get = fun world -> optEntityFinder address world
-          Set = fun optEntity world -> match optEntity with None -> entityRemover address world | Some entity -> entityFinder address world entity }
+          Set = fun optEntity world -> match optEntity with None -> entityRemover address world | Some entity -> entityAdder address world entity }
 
     let private worldEntities address =
         { Get = fun world ->
@@ -133,6 +133,7 @@ module WorldPrims =
     let withEntityAndWorld fn address world = Sim.withSimulantAndWorld worldEntity fn address world
 
     let getOptEntity address world = get world <| worldOptEntity address
+    let containsEntity address world = Option.isSome <| getOptEntity address world
     let private setOptEntity address optEntity world = set optEntity world <| worldOptEntity address
     let tryWithEntity fn address world = Sim.tryWithSimulant worldOptEntity worldEntity fn address world
     let tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptEntity worldEntity fn address world
@@ -147,10 +148,23 @@ module WorldPrims =
         let entity = getEntity address world
         entity.Unregister (address, world)
 
-    let removeEntity address world =
+    let removeEntityImmediate (address : Address) world =
         let world = publish (RemovingEvent @ address) address NoData world
         let world = unregisterEntity address world
         setOptEntity address None world
+
+    let removeEntity address world =
+        let task =
+            { Time = world.Ticks
+              Operation = fun world -> if containsEntity address world then removeEntityImmediate address world else world }
+        { world with Tasks = task :: world.Tasks }
+
+    let clearEntitiesImmediate (address : Address) world =
+        let entities = getEntities address world
+        Map.fold
+            (fun world entityName _ -> removeEntityImmediate (address @ [entityName]) world)
+            world
+            entities
 
     let clearEntities (address : Address) world =
         let entities = getEntities address world
@@ -158,6 +172,12 @@ module WorldPrims =
             (fun world entityName _ -> removeEntity (address @ [entityName]) world)
             world
             entities
+
+    let removeEntitiesImmediate (screenAddress : Address) entityNames world =
+        List.fold
+            (fun world entityName -> removeEntityImmediate (screenAddress @ [entityName]) world)
+            world
+            entityNames
 
     let removeEntities (screenAddress : Address) entityNames world =
         List.fold
@@ -169,7 +189,7 @@ module WorldPrims =
         let world =
             match getOptEntity address world with
             | None -> world
-            | Some _ -> removeEntity address world
+            | Some _ -> removeEntityImmediate address world
         let world = setEntity address entity world
         let world = registerEntity address entity world
         publish (AddedEvent @ address) address NoData world
@@ -235,6 +255,7 @@ module WorldPrims =
     let withGroupAndWorld fn address world = Sim.withSimulantAndWorld worldGroup fn address world
 
     let getOptGroup address world = get world <| worldOptGroup address
+    let containsGroup address world = Option.isSome <| getOptGroup address world
     let private setOptGroup address optGroup world = set optGroup world <| worldOptGroup address
     let tryWithGroup fn address world = Sim.tryWithSimulant worldOptGroup worldGroup fn address world
     let tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptGroup worldGroup fn address world
@@ -242,17 +263,31 @@ module WorldPrims =
     let getGroups address world = get world <| worldGroups address
     let private setGroups address groups world = set groups world <| worldGroups address
 
-    let registerGroup address entities (group : Group) world =
-        group.Register (address, entities, world)
+    let registerGroup address (group : Group) world =
+        group.Register (address, world)
 
     let unregisterGroup address world =
         let group = getGroup address world
         group.Unregister (address, world)
 
-    let removeGroup address world =
+    let removeGroupImmediate (address : Address) world =
         let world = publish (RemovingEvent @ address) address NoData world
         let world = unregisterGroup address world
+        let world = clearEntitiesImmediate address world
         setOptGroup address None world
+
+    let removeGroup address world =
+        let task =
+            { Time = world.Ticks
+              Operation = fun world -> if containsGroup address world then removeGroupImmediate address world else world }
+        { world with Tasks = task :: world.Tasks }
+
+    let clearGroupsImmediate (address : Address) world =
+        let groups = getGroups address world
+        Map.fold
+            (fun world groupName _ -> removeGroupImmediate (address @ [groupName]) world)
+            world
+            groups
 
     let clearGroups (address : Address) world =
         let groups = getGroups address world
@@ -260,6 +295,12 @@ module WorldPrims =
             (fun world groupName _ -> removeGroup (address @ [groupName]) world)
             world
             groups
+
+    let removeGroupsImmediate (screenAddress : Address) groupNames world =
+        List.fold
+            (fun world groupName -> removeGroupImmediate (screenAddress @ [groupName]) world)
+            world
+            groupNames
 
     let removeGroups (screenAddress : Address) groupNames world =
         List.fold
@@ -271,9 +312,10 @@ module WorldPrims =
         let world =
             match getOptGroup address world with
             | None -> world
-            | Some _ -> removeGroup address world
+            | Some _ -> removeGroupImmediate address world
         let world = setGroup address group world
-        let world = registerGroup address entities group world
+        let world = addEntities address entities world
+        let world = registerGroup address group world
         publish (AddedEvent @ address) address NoData world
 
     let addGroups screenAddress groupDescriptors world =
@@ -320,6 +362,7 @@ module WorldPrims =
     let withScreenAndWorld fn address world = Sim.withSimulantAndWorld worldScreen fn address world
     
     let getOptScreen address world = get world <| worldOptScreen address
+    let containsScreen address world = Option.isSome <| getOptScreen address world
     let private setOptScreen address optScreen world = set optScreen world <| worldOptScreen address
     let tryWithScreen fn address world = Sim.tryWithSimulant worldOptScreen worldScreen fn address world
     let tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld worldOptScreen worldScreen fn address world
@@ -327,25 +370,33 @@ module WorldPrims =
     let getScreens address world = get world <| worldScreens address
     let private setScreens address screens world = set screens world <| worldScreens address
 
-    let registerScreen address (screen : Screen) groupDescriptors world =
-        screen.Register (address, groupDescriptors, world)
+    let registerScreen address (screen : Screen) world =
+        screen.Register (address, world)
 
     let unregisterScreen address world =
         let screen = getScreen address world
         screen.Unregister (address, world)
 
-    let removeScreen address world =
+    let removeScreenImmediate (address : Address) world =
         let world = publish (RemovingEvent @ address) address NoData world
+        let world = clearGroupsImmediate address world
         let world = unregisterScreen address world
         setOptScreen address None world
+
+    let removeScreen address world =
+        let task =
+            { Time = world.Ticks
+              Operation = fun world -> if containsScreen address world then removeScreenImmediate address world else world }
+        { world with Tasks = task :: world.Tasks }
 
     let addScreen address screen groupDescriptors world =
         let world =
             match getOptScreen address world with
             | None -> world
-            | Some _ -> removeScreen address world
+            | Some _ -> removeScreenImmediate address world
         let world = setScreen address screen world
-        let world = registerScreen address screen groupDescriptors world
+        let world = addGroups address groupDescriptors world
+        let world = registerScreen address screen world
         publish (AddedEvent @ address) address NoData world
 
     (* Game functions. *)
@@ -384,6 +435,14 @@ module WorldPrims =
         Audio.initTypeConverters ()
         Rendering.initTypeConverters ()
 
+    let isAddressSelected address world =
+        let optScreenAddress = getOptSelectedScreenAddress world
+        match (address, optScreenAddress) with
+        | ([], _) -> true
+        | (_, None) -> false
+        | (_, Some []) -> false
+        | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
+
     let private getSimulant address world =
         match address with
         | [] -> Game <| world.Game
@@ -399,14 +458,6 @@ module WorldPrims =
         | [_; _] as groupAddress -> Option.map Group <| getOptGroup groupAddress world
         | [_; _; _] as entityAddress -> Option.map Entity <| getOptEntity entityAddress world
         | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
-
-    let private isAddressSelected address world =
-        let optScreenAddress = getOptSelectedScreenAddress world
-        match (address, optScreenAddress) with
-        | ([], _) -> true
-        | (_, None) -> false
-        | (_, Some []) -> false
-        | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
     let private getPublishingPriority simulant world =
         match simulant with
@@ -563,7 +614,6 @@ module WorldPrims =
                 (fun (messageHandled, world) (subscriber, subscription) ->
                     let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
                     if messageHandled = Handled || world.Liveness = Exiting then None
-                    elif not <| isAddressSelected subscriber world then Some (messageHandled, world)
                     else
                         let result =
                             match subscription with

@@ -28,14 +28,18 @@ module World =
     let setEntity = WorldPrims.setEntity
     let withEntity = WorldPrims.withEntity
     let withEntityAndWorld = WorldPrims.withEntityAndWorld
+    let containsEntity = WorldPrims.containsEntity
     let getOptEntity = WorldPrims.getOptEntity
     let tryWithEntity = WorldPrims.tryWithEntity
     let tryWithEntityAndWorld = WorldPrims.tryWithEntityAndWorld
     let getEntities = WorldPrims.getEntities
     let registerEntity = WorldPrims.registerEntity
     let unregisterEntity = WorldPrims.unregisterEntity
+    let removeEntityImmediate = WorldPrims.removeEntityImmediate
     let removeEntity = WorldPrims.removeEntity
+    let clearEntitiesImmediate = WorldPrims.clearEntitiesImmediate
     let clearEntities = WorldPrims.clearEntities
+    let removeEntitiesImmediate = WorldPrims.removeEntitiesImmediate
     let removeEntities = WorldPrims.removeEntities
     let addEntity = WorldPrims.addEntity
     let addEntities = WorldPrims.addEntities
@@ -45,15 +49,19 @@ module World =
     let setGroup = WorldPrims.setGroup
     let withGroup = WorldPrims.withGroup
     let withGroupAndWorld = WorldPrims.withGroupAndWorld
+    let containsGroup = WorldPrims.containsGroup
     let getOptGroup = WorldPrims.getOptGroup
     let tryWithGroup = WorldPrims.tryWithGroup
     let tryWithGroupAndWorld = WorldPrims.tryWithGroupAndWorld
     let getGroups = WorldPrims.getGroups
     let registerGroup = WorldPrims.registerGroup
     let unregisterGroup = WorldPrims.unregisterGroup
+    let removeGroupImmediate = WorldPrims.removeGroupImmediate
     let removeGroup = WorldPrims.removeGroup
     let clearGroups = WorldPrims.clearGroups
+    let clearGroupsImmediate = WorldPrims.clearGroupsImmediate
     let removeGroups = WorldPrims.removeGroups
+    let removeGroupsImmediate = WorldPrims.removeGroupsImmediate
     let addGroup = WorldPrims.addGroup
     let addGroups = WorldPrims.addGroups
     
@@ -62,12 +70,14 @@ module World =
     let setScreen = WorldPrims.setScreen
     let withScreen = WorldPrims.withScreen
     let withScreenAndWorld = WorldPrims.withScreenAndWorld
+    let containsScreen = WorldPrims.containsScreen
     let getOptScreen = WorldPrims.getOptScreen
     let tryWithScreen = WorldPrims.tryWithScreen
     let tryWithScreenAndWorld = WorldPrims.tryWithScreenAndWorld
     let getScreens = WorldPrims.getScreens
     let registerScreen = WorldPrims.registerScreen
     let unregisterScreen = WorldPrims.unregisterScreen
+    let removeScreenImmediate = WorldPrims.removeScreenImmediate
     let removeScreen = WorldPrims.removeScreen
     let addScreen = WorldPrims.addScreen
 
@@ -78,6 +88,7 @@ module World =
     let setOptSelectedScreen = WorldPrims.setOptSelectedScreen
     
     // Other forwarders.
+    let isAddressSelected = WorldPrims.isAddressSelected
     let handleEventAsExit = WorldPrims.handleEventAsExit
     let handleEventAsScreenTransition = WorldPrims.handleEventAsScreenTransition
     let handleEventAsSwallow = WorldPrims.handleEventAsSwallow
@@ -198,6 +209,16 @@ module World =
         let world = { world with PhysicsMessages = [] }
         handleIntegrationMessages integrationMessages world
 
+    let private runNextTask world =
+        let task = List.head world.Tasks
+        if task.Time <> world.Ticks then world
+        else
+            let world = task.Operation world
+            { world with Tasks = List.tail world.Tasks }
+
+    let private runTasks world =
+        List.fold (fun world _ -> runNextTask world) world world.Tasks
+
     let run4 tryMakeWorld handleUpdate handleRender sdlConfig =
         Sdl.run
             (fun sdlDeps -> tryMakeWorld sdlDeps)
@@ -236,7 +257,13 @@ module World =
                     let world = publish TickEvent [] NoData world
                     match world.Liveness with
                     | Exiting -> (Exiting, world)
-                    | Running -> (Running, WorldPrims.updateTransition handleUpdate world))
+                    | Running ->
+                        let world = WorldPrims.updateTransition handleUpdate world
+                        match world.Liveness with
+                        | Exiting -> (Exiting, world)
+                        | Running ->
+                            let world = runTasks world
+                            (world.Liveness, world))
             (fun world -> let world = render world in handleRender world)
             (fun world -> let world = play world in { world with Ticks = world.Ticks + 1L })
             (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
@@ -296,6 +323,7 @@ module World =
                   Interactive = interactive
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
+                  Tasks = []
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = Audio.makeAudioPlayer ()
                   Renderer = Rendering.makeRenderer sdlDeps.RenderContext

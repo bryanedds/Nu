@@ -25,10 +25,10 @@ module BulletDispatcherModule =
 
         let tickHandler message world =
             let bullet = World.getEntity message.Subscriber world
-            if world.Ticks < bullet.BirthTime + 28L then (Unhandled, world)
-            else
+            if world.Ticks = bullet.BirthTime + 28L then
                 let world = World.removeEntity message.Subscriber world
                 (Unhandled, world)
+            else (Unhandled, world)
 
         let collisionHandler message world =
             match message.Data with
@@ -79,12 +79,10 @@ module EnemyDispatcherModule =
             (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
 
         let movementHandler message world =
-            if not world.Interactive then (Unhandled, world)
-            else
+            if world.Interactive then
                 let enemy = World.getEntity message.Subscriber world
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
-                if not hasAppeared then (Unhandled, world)
-                else
+                if hasAppeared then
                     let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
                     let force =
                         match optGroundTangent with
@@ -93,22 +91,22 @@ module EnemyDispatcherModule =
                     let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
                     let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                     (Unhandled, world)
+                else (Unhandled, world)
+            else (Unhandled, world)
 
         let collisionHandler message world =
             match message.Data with
             | CollisionData (_, _, colliderAddress) ->
-                let isBullet =
-                    match World.getOptEntity colliderAddress world with
-                    | None -> true // HACK: assume collider is bullet if entity was just removed. TODO: implement a way to schedule simulant removal at end of frame
-                    | Some collider -> Entity.dispatchesAs typeof<BulletDispatcher> collider world
-                if not isBullet then (Unhandled, world)
-                else
+                let collider = World.getEntity colliderAddress world
+                let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collider world
+                if isBullet then
                     let enemy = World.getEntity message.Subscriber world
                     let enemy = enemy.SetHealth <| enemy.Health - 1
                     let world =
                         if enemy.Health <> 0 then World.setEntity message.Subscriber enemy world
                         else World.removeEntity message.Subscriber world 
                     (Unhandled, world)
+                else (Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (enemy, dispatcherContainer) =
@@ -130,6 +128,9 @@ module EnemyDispatcherModule =
             world |>
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe (CollisionEvent @ address) address -<| CustomSub collisionHandler
+
+        override dispatcher.Unregister (address, world) =
+            base.Unregister (address, world)
 
         override dispatcher.GetRenderDescriptors (enemy, world) =
             SimpleAnimatedSpriteFacet.getRenderDescriptors enemy Relative world
@@ -161,13 +162,13 @@ module PlayerDispatcherModule =
             World.addEntity bulletAddress bullet world
 
         let spawnBulletHandler message world =
-            if not world.Interactive then (Unhandled, world)
-            else
-                if world.Ticks % 6L <> 0L then (Unhandled, world)
-                else
+            if world.Interactive then
+                if world.Ticks % 6L = 0L then
                     let player = World.getEntity message.Subscriber world
                     let world = createBullet player message.Subscriber world
                     (Unhandled, world)
+                else (Unhandled, world)
+            else (Unhandled, world)
 
         let getLastTimeOnGround (player : Entity) world =
             if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
@@ -175,8 +176,7 @@ module PlayerDispatcherModule =
             else world.Ticks
 
         let movementHandler message world =
-            if not world.Interactive then (Unhandled, world)
-            else
+            if world.Interactive then
                 let player = World.getEntity message.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = player.SetLastTimeOnGround lastTimeOnGround
@@ -189,20 +189,20 @@ module PlayerDispatcherModule =
                 let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (Unhandled, world)
+            else (Unhandled, world)
 
         let jumpHandler message world =
-            if not world.Interactive then (Unhandled, world)
-            else
+            if world.Interactive then
                 let player = World.getEntity message.Subscriber world
-                if  world.Ticks < player.LastTimeJump + 10L ||
-                    world.Ticks > player.LastTimeOnGround + 8L then
-                    (Unhandled, world)
-                else
+                if  world.Ticks >= player.LastTimeJump + 12L &&
+                    world.Ticks <= player.LastTimeOnGround + 10L then
                     let player = player.SetLastTimeJump world.Ticks
                     let world = World.setEntity message.Subscriber player world
                     let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     (Unhandled, world)
+                else (Unhandled, world)
+            else (Unhandled, world)
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
@@ -225,6 +225,9 @@ module PlayerDispatcherModule =
                 World.observe TickEvent address -<| CustomSub spawnBulletHandler |>
                 World.observe TickEvent address -<| CustomSub movementHandler |>
                 World.observe DownMouseRightEvent address -<| CustomSub jumpHandler
+
+        override dispatcher.Unregister (address, world) =
+            base.Unregister (address, world)
 
         override dispatcher.GetRenderDescriptors (player, world) =
             SimpleAnimatedSpriteFacet.getRenderDescriptors player Relative world
@@ -255,8 +258,8 @@ module StagePlayDispatcherModule =
             let world = if player.Position.Y > -700.0f then world else World.transitionScreen TitleAddress world
             (Unhandled, adjustCamera message.Subscriber world)
 
-        override dispatcher.Register (address, entities, world) =
-            let world = base.Register (address, entities, world)
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
             let world =
                 world |>
                 World.observe TickEvent address -<| CustomSub adjustCameraHandler |>
@@ -277,8 +280,9 @@ module StageScreenModule =
         let shiftEntities xShift entities world =
             List.map
                 (fun (entity : Entity) ->
-                    if not <| Entity.dispatchesAs typeof<Entity2dDispatcher> entity world then entity
-                    else entity.SetPosition <| entity.Position + Vector2 (xShift, 0.0f))
+                    if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world
+                    then entity.SetPosition <| entity.Position + Vector2 (xShift, 0.0f)
+                    else entity)
                 entities
 
         let makeSectionFromFile fileName sectionName xShift world =
@@ -288,11 +292,10 @@ module StageScreenModule =
             (sectionName, sectionGroup, sectionEntities)
 
         let startPlayHandler message world =
-            let stagePlay = World.loadGroupFromFile StagePlayFileName world
-            let stagePlayDescriptor = Triple.prepend StagePlayName stagePlay
             let shift = 2048.0f
-            let sectionDescriptors =
-                [makeSectionFromFile Section0FileName Section0Name (shift * 0.0f) world
+            let groupDescriptors =
+                [Triple.prepend StagePlayName <| World.loadGroupFromFile StagePlayFileName world
+                 makeSectionFromFile Section0FileName Section0Name (shift * 0.0f) world
                  makeSectionFromFile Section1FileName Section1Name (shift * 1.0f) world
                  makeSectionFromFile Section2FileName Section2Name (shift * 2.0f) world
                  makeSectionFromFile Section3FileName Section3Name (shift * 3.0f) world
@@ -308,7 +311,6 @@ module StageScreenModule =
                  makeSectionFromFile Section1FileName Section13Name (shift * 13.0f) world
                  makeSectionFromFile Section2FileName Section14Name (shift * 14.0f) world
                  makeSectionFromFile Section0FileName Section15Name (shift * 15.0f) world]
-            let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
             let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
             let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
@@ -341,8 +343,8 @@ module StageScreenModule =
             let world = World.removeGroups message.Subscriber sectionNames world
             (Unhandled, world)
 
-        override dispatcher.Register (address, groupDescriptors, world) =
-            let world = base.Register (address, groupDescriptors, world)
+        override dispatcher.Register (address, world) =
+            let world = base.Register (address, world)
             world |>
                 World.observe (SelectEvent @ address) address -<| CustomSub startPlayHandler |>
                 World.observe (StartOutgoingEvent @ address) address -<| CustomSub stoppingPlayHandler |>
@@ -356,6 +358,7 @@ module BlazeVectorDispatcherModule =
         inherit GameDispatcher ()
 
         override dispatcher.Register world =
+            let world = base.Register world
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany
