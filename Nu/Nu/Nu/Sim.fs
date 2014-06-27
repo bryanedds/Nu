@@ -97,26 +97,10 @@ module SimModule =
         | Outgoing
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
-        { Id : Guid
-          TransitionLifetime : int64
+        { TransitionLifetime : int64
           TransitionTicks : int64
           TransitionType : TransitionType
-          OptDissolveSprite : Sprite option
-          Xtension : Xtension }
-
-        static member (?) (this : Transition, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Transition, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType transition dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType transition.Xtension dispatcherContainer
-
-        static member dispatchesAsByName dispatcherTargetName transition dispatcherContainer =
-            Xtension.dispatchesAsByName dispatcherTargetName transition.Xtension dispatcherContainer
+          OptDissolveSprite : Sprite option }
 
     type [<StructuralEquality; NoComparison>] ScreenState =
         | IncomingState
