@@ -26,11 +26,15 @@ module BlazeBulletDispatcherModule =
         let tickHandler message world =
             let bullet = World.getEntity message.Subscriber world
             if world.Ticks < bullet.BirthTime + 90L then (Unhandled, world)
-            else (Unhandled, World.removeEntity message.Subscriber world)
+            else
+                let world = World.removeEntity message.Subscriber world
+                (Unhandled, world)
 
         let collisionHandler message world =
             match message.Data with
-            | CollisionData (_, _, _) -> (Unhandled, World.removeEntity message.Subscriber world)
+            | CollisionData (_, _, _) ->
+                let world = World.removeEntity message.Subscriber world
+                (Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
         override dispatcher.Init (bullet, dispatcherContainer) =
@@ -95,7 +99,7 @@ module BlazeEnemyDispatcherModule =
             | CollisionData (_, _, colliderAddress) ->
                 let isBullet =
                     match World.getOptEntity colliderAddress world with
-                    | None -> true // HACK: assume is bullet if entity was just removed. TODO: implement a way to schedule simulant removal at end of frame
+                    | None -> true // HACK: assume collider is bullet if entity was just removed. TODO: implement a way to schedule simulant removal at end of frame
                     | Some collider -> Entity.dispatchesAs typeof<BlazeBulletDispatcher> collider world
                 if not isBullet then (Unhandled, world)
                 else
@@ -136,6 +140,13 @@ module BlazeEnemyDispatcherModule =
 [<AutoOpen>]
 module BlazePlayerDispatcherModule =
 
+    type Entity with
+
+        [<XField>] member this.LastTimeOnGround with get () = this?LastTimeOnGround () : int64
+        member this.SetLastTimeOnGround (value : int64) : Entity = this?LastTimeOnGround <- value
+        [<XField>] member this.LastTimeJump with get () = this?LastTimeJump () : int64
+        member this.SetLastTimeJump (value : int64) : Entity = this?LastTimeJump <- value
+
     type BlazePlayerDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (player : Entity) -> CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero })
@@ -158,10 +169,18 @@ module BlazePlayerDispatcherModule =
                     let world = createBullet player message.Subscriber world
                     (Unhandled, world)
 
+        let getLastTimeOnGround (player : Entity) world =
+            if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
+            then player.LastTimeOnGround
+            else world.Ticks
+
         let movementHandler message world =
             if not world.Interactive then (Unhandled, world)
             else
                 let player = World.getEntity message.Subscriber world
+                let lastTimeOnGround = getLastTimeOnGround player world
+                let player = player.SetLastTimeOnGround lastTimeOnGround
+                let world = World.setEntity message.Subscriber player world
                 let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
@@ -175,8 +194,12 @@ module BlazePlayerDispatcherModule =
             if not world.Interactive then (Unhandled, world)
             else
                 let player = World.getEntity message.Subscriber world
-                if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator then (Unhandled, world)
+                if  world.Ticks < player.LastTimeJump + 10L ||
+                    world.Ticks > player.LastTimeOnGround + 10L then
+                    (Unhandled, world)
                 else
+                    let player = player.SetLastTimeJump world.Ticks
+                    let world = World.setEntity message.Subscriber player world
                     let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     (Unhandled, world)
@@ -193,6 +216,8 @@ module BlazePlayerDispatcherModule =
                 .SetTileRun(4)
                 .SetTileSize(Vector2 (48.0f, 96.0f))
                 .SetImageSprite({ SpriteAssetName = "Player"; PackageName = BlazeStagesPackageName; PackageFileName = AssetGraphFileName })
+                .SetLastTimeOnGround(Int64.MinValue)
+                .SetLastTimeJump(Int64.MinValue)
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
