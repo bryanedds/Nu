@@ -17,7 +17,7 @@
     <asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
     <asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
   </package>
-  <package name="BlazeGui">
+  <package name="Gui">
     <asset name="BackButtonUp" fileName="Assets/BlazeVector/Gui/BackButtonUp.png" associations="Rendering"/>
     <asset name="BackButtonDown" fileName="Assets/BlazeVector/Gui/BackButtonDown.png" associations="Rendering"/>
     <asset name="CreditsButtonUp" fileName="Assets/BlazeVector/Gui/CreditsButtonUp.png" associations="Rendering"/>
@@ -28,19 +28,19 @@
     <asset name="PlayButtonDown" fileName="Assets/BlazeVector/Gui/PlayButtonDown.png" associations="Rendering"/>
     <asset name="Machinery" fileName="Assets/BlazeVector/Gui/Machinery.ogg" associations="Audio"/>
   </package>
-  <package name="BlazeStages">
-    <asset name="Player" fileName="Assets/BlazeVector/Stages/Player.png" associations="Rendering"/>
-    <asset name="PlayerBullet" fileName="Assets/BlazeVector/Stages/PlayerBullet.png" associations="Rendering"/>
-    <asset name="Enemy" fileName="Assets/BlazeVector/Stages/Enemy.png" associations="Rendering"/>
-    <asset name="EnemyBullet" fileName="Assets/BlazeVector/Stages/EnemyBullet.png" associations="Rendering"/>
-    <asset name="RoadTileSet" fileName="Assets/BlazeVector/Stages/RoadTileSet.png" associations="Rendering"/>
-    <asset name="SkylineTileSet" fileName="Assets/BlazeVector/Stages/SkylineTileSet.png" associations="Rendering"/>
-    <asset name="Section0" fileName="Assets/BlazeVector/Stages/Section0.tmx" associations=""/>
-    <asset name="Section1" fileName="Assets/BlazeVector/Stages/Section1.tmx" associations=""/>
-    <asset name="Section2" fileName="Assets/BlazeVector/Stages/Section2.tmx" associations=""/>
-    <asset name="Section3" fileName="Assets/BlazeVector/Stages/Section3.tmx" associations=""/>
-    <asset name="BackgroundA" fileName="Assets/BlazeVector/Stages/BackgroundA.tmx" associations=""/>
-    <asset name="BackgroundB" fileName="Assets/BlazeVector/Stages/BackgroundB.tmx" associations=""/>
-    <asset name="DeadBlaze" fileName="Assets/BlazeVector/Stages/DeadBlaze.ogg" associations="Audio"/>
+  <package name="Stage">
+    <asset name="Player" fileName="Assets/BlazeVector/Stage/Player.png" associations="Rendering"/>
+    <asset name="PlayerBullet" fileName="Assets/BlazeVector/Stage/PlayerBullet.png" associations="Rendering"/>
+    <asset name="Enemy" fileName="Assets/BlazeVector/Stage/Enemy.png" associations="Rendering"/>
+    <asset name="EnemyBullet" fileName="Assets/BlazeVector/Stage/EnemyBullet.png" associations="Rendering"/>
+    <asset name="RoadTileSet" fileName="Assets/BlazeVector/Stage/RoadTileSet.png" associations="Rendering"/>
+    <asset name="SkylineTileSet" fileName="Assets/BlazeVector/Stage/SkylineTileSet.png" associations="Rendering"/>
+    <asset name="Section0" fileName="Assets/BlazeVector/Stage/Section0.tmx" associations=""/>
+    <asset name="Section1" fileName="Assets/BlazeVector/Stage/Section1.tmx" associations=""/>
+    <asset name="Section2" fileName="Assets/BlazeVector/Stage/Section2.tmx" associations=""/>
+    <asset name="Section3" fileName="Assets/BlazeVector/Stage/Section3.tmx" associations=""/>
+    <asset name="BackgroundA" fileName="Assets/BlazeVector/Stage/BackgroundA.tmx" associations=""/>
+    <asset name="BackgroundB" fileName="Assets/BlazeVector/Stage/BackgroundB.tmx" associations=""/>
+    <asset name="DeadBlaze" fileName="Assets/BlazeVector/Stage/DeadBlaze.ogg" associations="Audio"/>
   </package>
 </root>

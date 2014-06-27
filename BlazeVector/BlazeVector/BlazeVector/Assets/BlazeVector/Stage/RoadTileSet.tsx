@@ -2,7 +2,7 @@
 <tileset name="RoadTileSet" tilewidth="64" tileheight="64">
  <properties>
   <property name="PackageFileName" value="AssetGraph.xml"/>
-  <property name="PackageName" value="BlazeStages"/>
+  <property name="PackageName" value="Stage"/>
   <property name="SpriteAssetName" value="RoadTileSet"/>
  </properties>
  <image source="RoadTileSet.png" width="1024" height="1024"/>

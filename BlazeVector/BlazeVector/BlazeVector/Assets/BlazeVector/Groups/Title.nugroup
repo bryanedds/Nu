@@ -8,13 +8,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">CreditsButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">CreditsButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-160</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">CreditsButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">CreditsButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
@@ -23,13 +23,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">ExitButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-224</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">ExitButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">ExitButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
@@ -38,13 +38,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">PlayButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">PlayButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-96</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">PlayButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">PlayButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>

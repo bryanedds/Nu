@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -116,46 +116,46 @@
     <None Include="Assets\BlazeVector\Gui\Machinery.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\EnemyBullet.png">
+    <None Include="Assets\BlazeVector\Stage\EnemyBullet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\RoadTileSet.png">
+    <None Include="Assets\BlazeVector\Stage\RoadTileSet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\RoadTileSet.tsx">
+    <None Include="Assets\BlazeVector\Stage\RoadTileSet.tsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\Section2.tmx">
+    <None Include="Assets\BlazeVector\Stage\Section2.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\Section3.tmx">
+    <None Include="Assets\BlazeVector\Stage\Section3.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\SkylineTileSet.png">
+    <None Include="Assets\BlazeVector\Stage\SkylineTileSet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\BackgroundA.tmx">
+    <None Include="Assets\BlazeVector\Stage\BackgroundA.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\BackgroundB.tmx">
+    <None Include="Assets\BlazeVector\Stage\BackgroundB.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\Section0.tmx">
+    <None Include="Assets\BlazeVector\Stage\Section0.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\Section1.tmx">
+    <None Include="Assets\BlazeVector\Stage\Section1.tmx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\PlayerBullet.png">
+    <None Include="Assets\BlazeVector\Stage\PlayerBullet.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\Player.png">
+    <None Include="Assets\BlazeVector\Stage\Player.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\Enemy.png">
+    <None Include="Assets\BlazeVector\Stage\Enemy.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Assets\BlazeVector\Stages\DeadBlaze.ogg">
+    <None Include="Assets\BlazeVector\Stage\DeadBlaze.ogg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Content Include="AssetGraph.xml">
