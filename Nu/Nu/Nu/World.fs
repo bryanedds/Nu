@@ -138,16 +138,16 @@ module World =
             let progress = single transition.TransitionTicks / single transition.TransitionLifetime
             let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
             let color = Vector4 (Vector3.One, alpha)
-            [LayerableDescriptor <|
-                LayeredSpriteDescriptor
-                    { Descriptor =
+            [LayerableDescriptor
+                { Depth = Single.MaxValue
+                  LayeredDescriptor =
+                    SpriteDescriptor
                         { Position = -camera.EyeSize * 0.5f // negation for right-handedness
                           Size = camera.EyeSize
                           Rotation = 0.0f
                           OptInset = None
                           Sprite = dissolveSprite
-                          Color = color }
-                      Depth = Single.MaxValue }]
+                          Color = color }}]
 
     let private getRenderDescriptors world =
         match getOptSelectedScreenAddress world with
