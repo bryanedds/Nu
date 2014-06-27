@@ -16,13 +16,13 @@
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section0;BlazeStages;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section0;Stage;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeEnemyDispatcher">
+      <Xtension xDispatcher="EnemyDispatcher">
         <AngularDamping type="System.Single">1</AngularDamping>
         <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
         <CollisionCategories type="System.String">1</CollisionCategories>
@@ -33,7 +33,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -46,7 +46,7 @@
     <Entity>
       <Name>33293c93-3553-4875-9efd-3a2ba917c33a</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeEnemyDispatcher">
+      <Xtension xDispatcher="EnemyDispatcher">
         <AngularDamping type="System.Single">1</AngularDamping>
         <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
         <CollisionCategories type="System.String">1</CollisionCategories>
@@ -57,7 +57,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -81,13 +81,13 @@
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;BlazeStages;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>3a26e4d1-0257-4755-8074-5a5810a8d6d0</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeEnemyDispatcher">
+      <Xtension xDispatcher="EnemyDispatcher">
         <AngularDamping type="System.Single">1</AngularDamping>
         <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
         <CollisionCategories type="System.String">1</CollisionCategories>
@@ -98,7 +98,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -111,7 +111,7 @@
     <Entity>
       <Name>642996a9-b2dd-48f5-a76a-25f6d457ef69</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeEnemyDispatcher">
+      <Xtension xDispatcher="EnemyDispatcher">
         <AngularDamping type="System.Single">1</AngularDamping>
         <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
         <CollisionCategories type="System.String">1</CollisionCategories>
@@ -122,7 +122,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -135,7 +135,7 @@
     <Entity>
       <Name>705dc3f2-8678-426e-8a7a-10c523bb4521</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeEnemyDispatcher">
+      <Xtension xDispatcher="EnemyDispatcher">
         <AngularDamping type="System.Single">1</AngularDamping>
         <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
         <CollisionCategories type="System.String">1</CollisionCategories>
@@ -146,7 +146,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -159,7 +159,7 @@
     <Entity>
       <Name>cf1aabf7-258b-49c3-abaa-84d6479fa1a0</Name>
       <Visible>True</Visible>
-      <Xtension xDispatcher="BlazeEnemyDispatcher">
+      <Xtension xDispatcher="EnemyDispatcher">
         <AngularDamping type="System.Single">1</AngularDamping>
         <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
         <CollisionCategories type="System.String">1</CollisionCategories>
@@ -170,7 +170,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">1</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;BlazeStages;AssetGraph.xml</ImageSprite>
+        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -194,7 +194,7 @@
         <Restitution type="System.Single">0</Restitution>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;BlazeStages;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
   </Group>

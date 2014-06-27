@@ -9,7 +9,7 @@ module BlazeFlow =
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
-        let gameSong = { SongAssetName = "Machinery"; PackageName = BlazeGuiPackageName; PackageFileName = AssetGraphFileName }
+        let gameSong = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
         let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
         let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
         (Unhandled, world)
@@ -49,7 +49,7 @@ module BlazeFlow =
 
     // and so on.
     let addStageScreen world =
-        let world = World.addDissolveScreenFromFile typeof<BlazeStageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
+        let world = World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
@@ -65,8 +65,8 @@ module BlazeFlow =
         | Left _ as left -> left
         | Right world ->
 
-            // hint to the renderer that the BlazeGui package should be loaded up front
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = BlazeGuiPackageName } 
+            // hint to the renderer that the Gui package should be loaded up front
+            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
 
             // add to the world a splash screen that automatically transitions to the Title screen

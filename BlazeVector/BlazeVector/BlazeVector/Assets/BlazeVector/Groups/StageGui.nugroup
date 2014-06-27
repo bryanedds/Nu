@@ -8,13 +8,13 @@
       <Xtension xDispatcher="ButtonDispatcher">
         <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">10</Depth>
-        <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;BlazeGui;AssetGraph.xml</DownSprite>
+        <DownSprite type="Nu.RenderingModule+Sprite">BackButtonDown;Gui;AssetGraph.xml</DownSprite>
         <Enabled type="System.Boolean">True</Enabled>
         <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-224</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;BlazeGui;AssetGraph.xml</UpSprite>
+        <UpSprite type="Nu.RenderingModule+Sprite">BackButtonUp;Gui;AssetGraph.xml</UpSprite>
       </Xtension>
     </Entity>
     <Entity>
