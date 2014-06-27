@@ -131,8 +131,8 @@ module SimpleBodyFacetModule =
         member this.SetIsBullet (value : bool) : Entity = this?IsBullet <- value
         [<XField>] member this.IsSensor with get () = this?IsSensor () : bool
         member this.SetIsSensor (value : bool) : Entity = this?IsSensor <- value
-        
-        static member getPhysicsId (this : Entity) = PhysicsId (this.Id, this.MinorId)
+
+        [<XField>] member this.PhysicsId with get () = PhysicsId (this.Id, this.MinorId)
 
 [<RequireQualifiedAccess>]
 module SimpleBodyFacet =
@@ -140,7 +140,7 @@ module SimpleBodyFacet =
     let private makeCreateBodyMessage makeBodyShape (entity : Entity) (address : Address) =
         CreateBodyMessage
             { EntityAddress = address
-              PhysicsId = Entity.getPhysicsId entity
+              PhysicsId = entity.PhysicsId
               Position = entity.Position + entity.Size * 0.5f
               Rotation = entity.Rotation
               BodyProperties =
@@ -181,7 +181,7 @@ module SimpleBodyFacet =
 
     let unregisterPhysics address world =
         let entity = World.getEntity address world
-        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = Entity.getPhysicsId entity }
+        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = entity.PhysicsId }
         { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
     let propagatePhysics makeBodyShape address world =
