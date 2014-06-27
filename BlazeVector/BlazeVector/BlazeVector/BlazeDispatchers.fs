@@ -195,7 +195,7 @@ module PlayerDispatcherModule =
             else
                 let player = World.getEntity message.Subscriber world
                 if  world.Ticks < player.LastTimeJump + 10L ||
-                    world.Ticks > player.LastTimeOnGround + 10L then
+                    world.Ticks > player.LastTimeOnGround + 8L then
                     (Unhandled, world)
                 else
                     let player = player.SetLastTimeJump world.Ticks
