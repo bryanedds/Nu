@@ -60,8 +60,8 @@ module BulletDispatcherModule =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId bullet; LinearImpulse = Vector2 (50.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
-        override dispatcher.GetRenderDescriptors (bullet, viewAbsolute, viewRelative, _) =
-            SimpleSpriteFacet.getRenderDescriptors bullet viewAbsolute viewRelative
+        override dispatcher.GetRenderDescriptors (bullet, viewAbsolute, viewRelative, world) =
+            SimpleSpriteFacet.getRenderDescriptors bullet viewAbsolute viewRelative world
 
         override dispatcher.GetQuickSize (bullet, world) =
             SimpleSpriteFacet.getQuickSize bullet world
@@ -269,6 +269,11 @@ module StageScreenModule =
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
 
+        let anonymizeEntities entities =
+            List.map
+                (fun (entity : Entity) -> let id = NuCore.getId () in { entity with Id = id; Name = string id })
+                entities
+
         let shiftEntities xShift entities world =
             List.map
                 (fun (entity : Entity) ->
@@ -278,17 +283,31 @@ module StageScreenModule =
 
         let makeSectionFromFile fileName sectionName xShift world =
             let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName world
+            let sectionEntities = anonymizeEntities sectionEntities
             let sectionEntities = shiftEntities xShift sectionEntities world
             (sectionName, sectionGroup, sectionEntities)
 
         let startPlayHandler message world =
             let stagePlay = World.loadGroupFromFile StagePlayFileName world
             let stagePlayDescriptor = Triple.prepend StagePlayName stagePlay
+            let shift = 2048.0f
             let sectionDescriptors =
-                [makeSectionFromFile Section0FileName Section0Name 0.0f world
-                 makeSectionFromFile Section1FileName Section1Name 2048.0f world
-                 makeSectionFromFile Section2FileName Section2Name 4096.0f world
-                 makeSectionFromFile Section3FileName Section3Name 6144.0f world]
+                [makeSectionFromFile Section0FileName Section0Name (shift * 0.0f) world
+                 makeSectionFromFile Section1FileName Section1Name (shift * 1.0f) world
+                 makeSectionFromFile Section2FileName Section2Name (shift * 2.0f) world
+                 makeSectionFromFile Section3FileName Section3Name (shift * 3.0f) world
+                 makeSectionFromFile Section2FileName Section4Name (shift * 4.0f) world
+                 makeSectionFromFile Section1FileName Section5Name (shift * 5.0f) world
+                 makeSectionFromFile Section3FileName Section6Name (shift * 6.0f) world
+                 makeSectionFromFile Section0FileName Section7Name (shift * 7.0f) world
+                 makeSectionFromFile Section1FileName Section8Name (shift * 8.0f) world
+                 makeSectionFromFile Section0FileName Section9Name (shift * 9.0f) world
+                 makeSectionFromFile Section3FileName Section10Name (shift * 10.0f) world
+                 makeSectionFromFile Section2FileName Section11Name (shift * 11.0f) world
+                 makeSectionFromFile Section3FileName Section12Name (shift * 12.0f) world
+                 makeSectionFromFile Section1FileName Section13Name (shift * 13.0f) world
+                 makeSectionFromFile Section2FileName Section14Name (shift * 14.0f) world
+                 makeSectionFromFile Section0FileName Section15Name (shift * 15.0f) world]
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
             let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
@@ -301,7 +320,24 @@ module StageScreenModule =
             (Unhandled, world)
 
         let stopPlayHandler message world =
-            let sectionNames = [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
+            let sectionNames =
+                [StagePlayName
+                 Section0Name
+                 Section1Name
+                 Section2Name
+                 Section3Name
+                 Section4Name
+                 Section5Name
+                 Section6Name
+                 Section7Name
+                 Section8Name
+                 Section9Name
+                 Section10Name
+                 Section11Name
+                 Section12Name
+                 Section13Name
+                 Section14Name
+                 Section15Name]
             let world = World.removeGroups message.Subscriber sectionNames world
             (Unhandled, world)
 

@@ -10,8 +10,6 @@ open Prime
 open Nu
 open Nu.NuConstants
 
-// TODO: profiler seem to reveal a need for render culling generally.
-
 [<AutoOpen>]
 module RenderingModule =
 
@@ -41,7 +39,6 @@ module RenderingModule =
           Tiles : TmxLayerTile List
           TileSourceSize : int * int
           TileSize : Vector2
-          TileMapSize : Vector2
           TileSet : TmxTileset
           TileSetSprite : Sprite }
 
@@ -82,7 +79,7 @@ module RenderingModule =
     type [<StructuralEquality; NoComparison>] RenderMessage =
         | HintRenderingPackageUse of HintRenderingPackageUse
         | HintRenderingPackageDisuse of HintRenderingPackageDisuse
-        | ScreenFlash // of ...
+        //| ScreenFlash of ...
 
     type [<ReferenceEquality>] RenderAsset =
         | TextureAsset of nativeint
@@ -230,7 +227,6 @@ module Rendering =
         match renderMessage with
         | HintRenderingPackageUse hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
         | HintRenderingPackageDisuse hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
-        | ScreenFlash -> renderer // TODO: render screen flash for one frame
 
     let private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
         List.fold handleRenderMessage renderer (List.rev renderMessages)
@@ -294,20 +290,25 @@ module Rendering =
                     renderer
         | LayeredTileLayerDescriptor ltd ->
             let descriptor = ltd.Descriptor
-            let tiles = descriptor.Tiles
-            let tileSet = descriptor.TileSet
+            let position = descriptor.Position
+            let size = descriptor.Size
+            let tileRotation = descriptor.Rotation
             let mapSize = descriptor.MapSize
+            let tiles = descriptor.Tiles
             let tileSourceSize = descriptor.TileSourceSize
             let tileSize = descriptor.TileSize
-            let tileMapSize = descriptor.TileMapSize
-            let tileRotation = descriptor.Rotation
-            let sprite = descriptor.TileSetSprite
+            let tileSet = descriptor.TileSet
+            let tileSetSprite = descriptor.TileSetSprite
             let optTileSetWidth = tileSet.Image.Width
             let tileSetWidth = optTileSetWidth.Value
-            let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+            let (renderer, optRenderAsset) =
+                tryLoadRenderAsset
+                    tileSetSprite.PackageName
+                    tileSetSprite.PackageFileName
+                    tileSetSprite.SpriteAssetName renderer
             match optRenderAsset with
             | None ->
-                debug <| "LayeredTileLayerDescriptor failed due to unloadable assets for '" + string sprite + "'."
+                debug <| "LayeredTileLayerDescriptor failed due to unloadable assets for '" + string tileSetSprite + "'."
                 renderer
             | Some renderAsset ->
                 match renderAsset with
@@ -318,38 +319,39 @@ module Rendering =
                             let (i, j) = (n % mapRun, n / mapRun)
                             let tilePosition =
                                 Vector2 (
-                                    descriptor.Position.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
-                                    -(descriptor.Position.Y - tileSize.Y * single j + tileMapSize.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
-                            let gid = tiles.[n].Gid - tileSet.FirstGid
-                            let gidPosition = gid * fst tileSourceSize
-                            let tileSourcePosition =
-                                Vector2 (
-                                    single <| gidPosition % tileSetWidth,
-                                    single <| gidPosition / tileSetWidth * snd tileSourceSize)
-                            let mutable sourceRect = SDL.SDL_Rect ()
-                            sourceRect.x <- int tileSourcePosition.X
-                            sourceRect.y <- int tileSourcePosition.Y
-                            sourceRect.w <- fst tileSourceSize
-                            sourceRect.h <- snd tileSourceSize
-                            let mutable destRect = SDL.SDL_Rect ()
-                            destRect.x <- int tilePosition.X
-                            destRect.y <- int tilePosition.Y
-                            destRect.w <- int tileSize.X
-                            destRect.h <- int tileSize.Y
-                            let rotation = double -tileRotation * RadiansToDegrees // negation for right-handedness
-                            let mutable rotationCenter = SDL.SDL_Point ()
-                            rotationCenter.x <- int <| tileSize.X * 0.5f
-                            rotationCenter.y <- int <| tileSize.Y * 0.5f
-                            let renderResult =
-                                SDL.SDL_RenderCopyEx (
-                                    renderer.RenderContext,
-                                    texture,
-                                    ref sourceRect,
-                                    ref destRect,
-                                    rotation,
-                                    ref rotationCenter,
-                                    SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                            if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                                    position.X + tileSize.X * single i + camera.EyeSize.X * 0.5f,
+                                    -(position.Y - tileSize.Y * single j + size.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
+                            if NuMath.inBounds3 tilePosition tileSize <| Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
+                                let gid = tiles.[n].Gid - tileSet.FirstGid
+                                let gidPosition = gid * fst tileSourceSize
+                                let tileSourcePosition =
+                                    Vector2 (
+                                        single <| gidPosition % tileSetWidth,
+                                        single <| gidPosition / tileSetWidth * snd tileSourceSize)
+                                let mutable sourceRect = SDL.SDL_Rect ()
+                                sourceRect.x <- int tileSourcePosition.X
+                                sourceRect.y <- int tileSourcePosition.Y
+                                sourceRect.w <- fst tileSourceSize
+                                sourceRect.h <- snd tileSourceSize
+                                let mutable destRect = SDL.SDL_Rect ()
+                                destRect.x <- int tilePosition.X
+                                destRect.y <- int tilePosition.Y
+                                destRect.w <- int tileSize.X
+                                destRect.h <- int tileSize.Y
+                                let rotation = double -tileRotation * RadiansToDegrees // negation for right-handedness
+                                let mutable rotationCenter = SDL.SDL_Point ()
+                                rotationCenter.x <- int <| tileSize.X * 0.5f
+                                rotationCenter.y <- int <| tileSize.Y * 0.5f
+                                let renderResult =
+                                    SDL.SDL_RenderCopyEx (
+                                        renderer.RenderContext,
+                                        texture,
+                                        ref sourceRect,
+                                        ref destRect,
+                                        rotation,
+                                        ref rotationCenter,
+                                        SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                                if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
                     renderer
                 | _ ->
@@ -409,7 +411,6 @@ module Rendering =
         | 0 ->
             ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
             let layerableDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor) renderDescriptorsValue
-            //let (spriteDescriptors, renderDescriptorsValue) = List.partitionPlus (fun descriptor -> match descriptor with SpriteDescriptor spriteDescriptor -> Some spriteDescriptor (*| _ -> None*)) renderDescriptorsValue
             let sortedDescriptors = Seq.sortBy getLayerableDepth layerableDescriptors
             Seq.fold (renderLayerableDescriptor camera) renderer sortedDescriptors
         | _ ->

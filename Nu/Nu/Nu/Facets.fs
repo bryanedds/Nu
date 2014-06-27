@@ -69,7 +69,7 @@ module Entity2dFacetModule =
                 (fun entity ->
                     let positionEntity = Entity.mouseToEntity position world entity
                     let transform = Entity.getTransform entity
-                    let picked = NuMath.isInBox3 positionEntity transform.Position transform.Size
+                    let picked = NuMath.inBox3 positionEntity transform.Position transform.Size
                     picked)
                 entitiesSorted
 
@@ -210,8 +210,8 @@ module SimpleSpriteFacet =
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-    let getRenderDescriptors entity (viewAbsolute : Matrix3) (viewRelative : Matrix3) =
-        if not entity.Visible then []
+    let getRenderDescriptors entity (viewAbsolute : Matrix3) (viewRelative : Matrix3) world =
+        if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
             [LayerableDescriptor <|
                 LayeredSpriteDescriptor
@@ -267,7 +267,7 @@ module SimpleAnimatedSpriteFacet =
             .SetImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
     let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) (world : World) =
-        if not entity.Visible then []
+        if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
             [LayerableDescriptor <|
                 LayeredSpriteDescriptor
