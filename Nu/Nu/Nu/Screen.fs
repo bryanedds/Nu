@@ -24,16 +24,16 @@ module Screen =
         { Get = fun screen -> screen.Outgoing
           Set = fun value screen -> { screen with Outgoing = value }}
 
-    let makeDefault dispatcherName transitionDispatcherName =
+    let makeDefault dispatcherName =
         { Id = NuCore.getId ()
           State = IdlingState
-          Incoming = Transition.makeDefault transitionDispatcherName Incoming
-          Outgoing = Transition.makeDefault transitionDispatcherName Outgoing
+          Incoming = Transition.makeDefault Incoming
+          Outgoing = Transition.makeDefault Outgoing
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDissolve dispatcherName transitionDispatcherName incomingTime outgoingTime =
+    let makeDissolve dispatcherName incomingTime outgoingTime =
         let optDissolveSprite = Some <| { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-        let incomingDissolve = { Transition.makeDefault transitionDispatcherName Incoming with TransitionLifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
-        let outgoingDissolve = { Transition.makeDefault transitionDispatcherName Outgoing with TransitionLifetime = outgoingTime; OptDissolveSprite = optDissolveSprite }
-        let screen = makeDefault dispatcherName transitionDispatcherName
+        let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
+        let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveSprite = optDissolveSprite }
+        let screen = makeDefault dispatcherName
         { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

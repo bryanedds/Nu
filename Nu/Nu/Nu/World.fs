@@ -246,7 +246,7 @@ module World =
         run4 tryMakeWorld handleUpdate id sdlConfig
 
     let addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
-        let splashScreen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
+        let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
         let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
         let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
         let splashLabel = splashLabel.SetSize world.Camera.EyeSize
@@ -257,7 +257,7 @@ module World =
         subscribe (FinishedOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
-        let screen = Screen.makeDissolve screenDispatcherName typeof<TransitionDispatcher>.Name incomingTime outgoingTime
+        let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
         let (group, entities) = loadGroupFromFile groupFileName world
         let world = addScreen screenAddress screen [(groupName, group, entities)] world
         world

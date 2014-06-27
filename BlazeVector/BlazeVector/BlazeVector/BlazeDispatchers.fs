@@ -273,7 +273,7 @@ module BlazeStageScreenModule =
             let sectionEntities = shiftEntities xShift sectionEntities world
             (sectionName, sectionGroup, sectionEntities)
 
-        let beginPlayHandler message world =
+        let startPlayHandler message world =
             let stagePlay = World.loadGroupFromFile StagePlayFileName world
             let stagePlayDescriptor = Triple.prepend StagePlayName stagePlay
             let sectionDescriptors =
@@ -288,11 +288,11 @@ module BlazeStageScreenModule =
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             (Unhandled, world)
 
-        let endingPlayHandler _ world =
+        let stoppingPlayHandler _ world =
             let world = { world with AudioMessages = FadeOutSong DefaultTimeToFadeOutSongMs :: world.AudioMessages }
             (Unhandled, world)
 
-        let endPlayHandler message world =
+        let stopPlayHandler message world =
             let sectionNames = [StagePlayName; Section0Name; Section1Name; Section2Name; Section3Name]
             let world = World.removeGroups message.Subscriber sectionNames world
             (Unhandled, world)
@@ -300,9 +300,9 @@ module BlazeStageScreenModule =
         override dispatcher.Register (address, groupDescriptors, world) =
             let world = base.Register (address, groupDescriptors, world)
             world |>
-                World.observe (SelectedEvent @ address) address -<| CustomSub beginPlayHandler |>
-                World.observe (StartedOutgoingEvent @ address) address -<| CustomSub endingPlayHandler |>
-                World.observe (DeselectedEvent @ address) address -<| CustomSub endPlayHandler
+                World.observe (SelectedEvent @ address) address -<| CustomSub startPlayHandler |>
+                World.observe (StartedOutgoingEvent @ address) address -<| CustomSub stoppingPlayHandler |>
+                World.observe (DeselectedEvent @ address) address -<| CustomSub stopPlayHandler
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =
