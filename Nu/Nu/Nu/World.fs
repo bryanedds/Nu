@@ -254,8 +254,8 @@ module World =
         let splashLabel = splashLabel.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel = splashLabel.SetLabelSprite (sprite : Sprite)
         let world = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
-        let world = subscribe (FinishedIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
-        subscribe (FinishedOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
+        let world = subscribe (FinishIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
+        subscribe (FinishOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime

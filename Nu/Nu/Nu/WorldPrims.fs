@@ -464,11 +464,11 @@ module WorldPrims =
             { world with Liveness = Exiting }
         | Some selectedScreenAddress ->
             let sub = CustomSub (fun _ world ->
-                let world = unsubscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
+                let world = unsubscribe (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
                 let world = selectScreen destination world
                 Unhandled, world)
             let world = setScreenStatePlus selectedScreenAddress OutgoingState world
-            subscribe (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
+            subscribe (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
 
     let private updateTransition1 (transition : Transition) =
         if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -484,13 +484,13 @@ module WorldPrims =
                 | IncomingState ->
                     let world =
                         if selectedScreen.Incoming.TransitionTicks <> 0L then world
-                        else publish (SelectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        else publish (SelectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                     match world.Liveness with
                     | Exiting -> world
                     | Running ->
                         let world =
                             if selectedScreen.Incoming.TransitionTicks <> 0L then world
-                            else publish (StartedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else publish (StartIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                         match world.Liveness with
                         | Exiting -> world
                         | Running ->
@@ -499,11 +499,11 @@ module WorldPrims =
                             let world = setScreen selectedScreenAddress selectedScreen world
                             let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
                             if not finished then world
-                            else publish (FinishedIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else publish (FinishIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | OutgoingState ->
                     let world =
                         if selectedScreen.Outgoing.TransitionTicks <> 0L then world
-                        else publish (StartedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        else publish (StartOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                     match world.Liveness with
                     | Exiting -> world
                     | Running ->
@@ -513,10 +513,10 @@ module WorldPrims =
                         let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else OutgoingState) world
                         if not finished then world
                         else
-                            let world = publish (DeselectedEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            let world = publish (DeselectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                             match world.Liveness with
                             | Exiting -> world
-                            | Running -> publish (FinishedOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            | Running -> publish (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | IdlingState -> world
         match world.Liveness with
         | Exiting -> world
@@ -540,11 +540,6 @@ module WorldPrims =
     let internal handleSplashScreenIdle idlingTime message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0L
         let world = subscribe TickEvent message.Subscriber subscription world
-        (Handled, world)
-
-    let private handleFinishedScreenOutgoing destination message world =
-        let world = unsubscribe message.Event message.Subscriber world
-        let world = selectScreen destination world
         (Handled, world)
 
     let handleEventAsScreenTransitionFromSplash destination world =

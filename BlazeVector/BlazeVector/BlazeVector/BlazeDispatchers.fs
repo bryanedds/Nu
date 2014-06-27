@@ -300,9 +300,9 @@ module BlazeStageScreenModule =
         override dispatcher.Register (address, groupDescriptors, world) =
             let world = base.Register (address, groupDescriptors, world)
             world |>
-                World.observe (SelectedEvent @ address) address -<| CustomSub startPlayHandler |>
-                World.observe (StartedOutgoingEvent @ address) address -<| CustomSub stoppingPlayHandler |>
-                World.observe (DeselectedEvent @ address) address -<| CustomSub stopPlayHandler
+                World.observe (SelectEvent @ address) address -<| CustomSub startPlayHandler |>
+                World.observe (StartOutgoingEvent @ address) address -<| CustomSub stoppingPlayHandler |>
+                World.observe (DeselectEvent @ address) address -<| CustomSub stopPlayHandler
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =
