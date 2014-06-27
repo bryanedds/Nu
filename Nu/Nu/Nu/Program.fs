@@ -15,13 +15,12 @@ module Program =
         World.initTypeConverters ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
-        // window is created with a title of "Nu Game Engine" and is placed at (32, 32) pixels from
-        // the top left of the screen.
+        // window is created with a title of "Nu Game Engine".
         let sdlViewConfig =
             NewWindow
                 { WindowTitle = "Nu Game Engine"
-                  WindowX = 32
-                  WindowY = 32
+                  WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
+                  WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
                   
         // this specifies the manner in which the game's rendering takes place. With this
