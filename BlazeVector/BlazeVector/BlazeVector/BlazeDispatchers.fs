@@ -57,7 +57,7 @@ module BulletDispatcherModule =
             let bullet = World.getEntity address world
             let bullet = bullet.SetBirthTime world.Ticks
             let world = World.setEntity address bullet world
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId bullet; LinearImpulse = Vector2 (50.0f, 0.0f) }
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
         override dispatcher.GetRenderDescriptors (bullet, world) =
@@ -85,12 +85,12 @@ module EnemyDispatcherModule =
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
                 if not hasAppeared then (Unhandled, world)
                 else
-                    let optGroundTangent = Physics.getOptGroundContactTangent (Entity.getPhysicsId enemy) world.Integrator
+                    let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
                     let force =
                         match optGroundTangent with
                         | None -> Vector2 (-2000.0f, -30000.0f)
                         | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
-                    let applyForceMessage = ApplyForceMessage { PhysicsId = Entity.getPhysicsId enemy; Force = force }
+                    let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
                     let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                     (Unhandled, world)
 
@@ -170,7 +170,7 @@ module PlayerDispatcherModule =
                     (Unhandled, world)
 
         let getLastTimeOnGround (player : Entity) world =
-            if not <| Physics.isBodyOnGround (Entity.getPhysicsId player) world.Integrator
+            if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
             then player.LastTimeOnGround
             else world.Ticks
 
@@ -181,12 +181,12 @@ module PlayerDispatcherModule =
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = player.SetLastTimeOnGround lastTimeOnGround
                 let world = World.setEntity message.Subscriber player world
-                let optGroundTangent = Physics.getOptGroundContactTangent (Entity.getPhysicsId player) world.Integrator
+                let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
                 let force =
                     match optGroundTangent with
                     | None -> Vector2 (8000.0f, -30000.0f)
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
-                let applyForceMessage = ApplyForceMessage { PhysicsId = Entity.getPhysicsId player; Force = force }
+                let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (Unhandled, world)
 
@@ -200,7 +200,7 @@ module PlayerDispatcherModule =
                 else
                     let player = player.SetLastTimeJump world.Ticks
                     let world = World.setEntity message.Subscriber player world
-                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId player; LinearImpulse = Vector2 (0.0f, 18000.0f) }
+                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     (Unhandled, world)
 
