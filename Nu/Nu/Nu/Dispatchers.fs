@@ -157,16 +157,16 @@ module ButtonDispatcherModule =
         override dispatcher.GetRenderDescriptors (button, viewAbsolute, _, _) =
             if not button.Visible then []
             else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
+                [LayerableDescriptor
+                    { Depth = button.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
                             { Position = button.Position * viewAbsolute
                               Size = button.Size
                               Rotation = 0.0f
                               OptInset = None
                               Sprite = if button.IsDown then button.DownSprite else button.UpSprite
-                              Color = Vector4.One }
-                          Depth = button.Depth }]
+                              Color = Vector4.One }}]
 
         override dispatcher.GetQuickSize (button, world) =
             let sprite = button.UpSprite
@@ -195,16 +195,16 @@ module LabelDispatcherModule =
         override dispatcher.GetRenderDescriptors (label, viewAbsolute, _, _) =
             if not label.Visible then []
             else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
+                [LayerableDescriptor
+                    { Depth = label.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
                             { Position = label.Position * viewAbsolute
                               Size = label.Size
                               Rotation = 0.0f
                               OptInset = None
                               Sprite = label.LabelSprite
-                              Color = Vector4.One }
-                          Depth = label.Depth }]
+                              Color = Vector4.One }}]
 
         override dispatcher.GetQuickSize (label, world) =
             let sprite = label.LabelSprite
@@ -246,25 +246,25 @@ module TextBoxDispatcherModule =
         override dispatcher.GetRenderDescriptors (textBox, viewAbsolute, _, _) =
             if not textBox.Visible then []
             else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
+                [LayerableDescriptor
+                    { Depth = textBox.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
                             { Position = textBox.Position * viewAbsolute
                               Size = textBox.Size
                               Rotation = 0.0f
                               OptInset = None
                               Sprite = textBox.BoxSprite
-                              Color = Vector4.One }
-                          Depth = textBox.Depth }
-                 LayerableDescriptor <|
-                    LayeredTextDescriptor
-                        { Descriptor =
+                              Color = Vector4.One }}
+                 LayerableDescriptor
+                    { Depth = textBox.Depth
+                      LayeredDescriptor =
+                        TextDescriptor
                             { Text = textBox.Text
                               Position = (textBox.Position + textBox.TextOffset) * viewAbsolute
                               Size = textBox.Size - textBox.TextOffset
                               Font = textBox.TextFont
-                              Color = textBox.TextColor }
-                          Depth = textBox.Depth }]
+                              Color = textBox.TextColor }}]
 
         override dispatcher.GetQuickSize (textBox, world) =
             let sprite = textBox.BoxSprite
@@ -346,16 +346,16 @@ module ToggleDispatcherModule =
         override dispatcher.GetRenderDescriptors (toggle, viewAbsolute, _, _) =
             if not toggle.Visible then []
             else
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
+                [LayerableDescriptor
+                    { Depth = toggle.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
                             { Position = toggle.Position * viewAbsolute
                               Size = toggle.Size
                               Rotation = 0.0f
                               OptInset = None
                               Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
-                              Color = Vector4.One }
-                          Depth = toggle.Depth }]
+                              Color = Vector4.One }}]
 
         override dispatcher.GetQuickSize (toggle, world) =
             let sprite = toggle.OffSprite
@@ -455,26 +455,26 @@ module FillBarDispatcherModule =
             if not fillBar.Visible then []
             else
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
-                [LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
+                [LayerableDescriptor
+                    { Depth = fillBar.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
                             { Position = fillBarSpritePosition * viewAbsolute
                               Size = fillBarSpriteSize
                               Rotation = 0.0f
                               OptInset = None
                               Sprite = fillBar.FillSprite
-                              Color = Vector4.One }
-                          Depth = fillBar.Depth }
-                    LayerableDescriptor <|
-                    LayeredSpriteDescriptor
-                        { Descriptor =
+                              Color = Vector4.One }}
+                 LayerableDescriptor
+                    { Depth = fillBar.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
                             { Position = fillBar.Position * viewAbsolute
                               Size = fillBar.Size
                               Rotation = 0.0f
                               OptInset = None
                               Sprite = fillBar.BorderSprite
-                              Color = Vector4.One }
-                          Depth = fillBar.Depth }]
+                              Color = Vector4.One }}]
 
         override dispatcher.GetQuickSize (fillBar, world) =
             let sprite = fillBar.BorderSprite
@@ -755,8 +755,9 @@ module TileMapDispatcherModule =
                                 if not <| Camera.inView3 parallaxPosition size world.Camera then None
                                 else
                                     let layeredTileLayerDescriptor =
-                                        LayeredTileLayerDescriptor
-                                            { Descriptor =
+                                        { Depth = depth // MAGIC_VALUE: assumption
+                                          LayeredDescriptor =
+                                            TileLayerDescriptor
                                                 { Position = parallaxPosition * viewRelative
                                                   Size = size
                                                   Rotation = tileMap.Rotation
@@ -765,8 +766,7 @@ module TileMapDispatcherModule =
                                                   TileSourceSize = tileSourceSize
                                                   TileSize = tileSize
                                                   TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                  TileSetSprite = List.head sprites } // MAGIC_VALUE: for same reason as above
-                                              Depth = depth } // MAGIC_VALUE: assumption
+                                                  TileSetSprite = List.head sprites }} // MAGIC_VALUE: for same reason as above
                                     Some <| LayerableDescriptor layeredTileLayerDescriptor)
                             layers
                     List.definitize optDescriptors

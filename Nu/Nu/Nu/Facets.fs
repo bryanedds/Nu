@@ -213,16 +213,16 @@ module SimpleSpriteFacet =
     let getRenderDescriptors entity (viewAbsolute : Matrix3) (viewRelative : Matrix3) world =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
-            [LayerableDescriptor <|
-                LayeredSpriteDescriptor
-                    { Descriptor =
+            [LayerableDescriptor
+                { Depth = entity.Depth
+                  LayeredDescriptor =
+                    SpriteDescriptor
                         { Position = entity.Position * viewRelative
                           Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
                           Rotation = entity.Rotation
                           OptInset = None
                           Sprite = entity.ImageSprite
-                          Color = Vector4.One }
-                      Depth = entity.Depth }]
+                          Color = Vector4.One }}]
 
     let getQuickSize (entity : Entity) world =
         let sprite = entity.ImageSprite
@@ -269,16 +269,16 @@ module SimpleAnimatedSpriteFacet =
     let getRenderDescriptors (entity : Entity) (viewAbsolute : Matrix3) (viewRelative : Matrix3) (world : World) =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
-            [LayerableDescriptor <|
-                LayeredSpriteDescriptor
-                    { Descriptor =
+            [LayerableDescriptor
+                { Depth = entity.Depth
+                  LayeredDescriptor =
+                    SpriteDescriptor
                         { Position = entity.Position * viewRelative
                           Size = entity.Size * Matrix3.getScaleMatrix viewAbsolute
                           Rotation = entity.Rotation
                           OptInset = getImageOptInset entity world
                           Sprite = entity.ImageSprite
-                          Color = Vector4.One }
-                      Depth = entity.Depth }]
+                          Color = Vector4.One }}]
 
     let getQuickSize (entity : Entity) =
         entity.TileSize
