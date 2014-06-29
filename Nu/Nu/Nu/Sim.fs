@@ -68,9 +68,6 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
 
-        static member dispatchesAsByName dispatcherTargetName entity dispatcherContainer =
-            Xtension.dispatchesAsByName dispatcherTargetName entity.Xtension dispatcherContainer
-
     type [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
           Xtension : Xtension }
@@ -85,9 +82,6 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
-
-        static member dispatchesAsByName dispatcherTargetName group dispatcherContainer =
-            Xtension.dispatchesAsByName dispatcherTargetName group.Xtension dispatcherContainer
 
     type GroupDescriptor =
         string * Group * Entity list
@@ -125,9 +119,6 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
 
-        static member dispatchesAsByName dispatcherTargetName screen dispatcherContainer =
-            Xtension.dispatchesAsByName dispatcherTargetName screen.Xtension dispatcherContainer
-
     type [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           OptSelectedScreenAddress : Address option
@@ -143,9 +134,6 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
-
-        static member dispatchesAsByName dispatcherTargetName game dispatcherContainer =
-            Xtension.dispatchesAsByName dispatcherTargetName game.Xtension dispatcherContainer
 
     type [<StructuralEquality; NoComparison>] Simulant =
         | Game of Game
