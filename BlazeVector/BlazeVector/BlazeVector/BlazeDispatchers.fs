@@ -16,7 +16,7 @@ module BulletDispatcherModule =
 
     type Entity with
 
-        [<XField>] member this.BirthTime with get () = this?BirthTime () : int64
+        member this.BirthTime with get () = this?BirthTime () : int64
         member this.SetBirthTime (value : int64) : Entity = this?BirthTime <- value
 
     type BulletDispatcher () =
@@ -71,7 +71,7 @@ module EnemyDispatcherModule =
 
     type Entity with
 
-        [<XField>] member this.Health with get () = this?Health () : int
+        member this.Health with get () = this?Health () : int
         member this.SetHealth (value : int) : Entity = this?Health <- value
 
     type EnemyDispatcher () =
@@ -157,12 +157,12 @@ module PlayerDispatcherModule =
 
     type Entity with
 
-        [<XField>] member this.LastTimeOnGround with get () = this?LastTimeOnGround () : int64
+        member this.LastTimeOnGround with get () = this?LastTimeOnGround () : int64
         member this.SetLastTimeOnGround (value : int64) : Entity = this?LastTimeOnGround <- value
-        [<XField>] member this.LastTimeJump with get () = this?LastTimeJump () : int64
+        member this.LastTimeJump with get () = this?LastTimeJump () : int64
         member this.SetLastTimeJump (value : int64) : Entity = this?LastTimeJump <- value
         
-        [<XField>] member this.HasFallen with get () = this.Position.Y < -600.0f
+        member this.HasFallen with get () = this.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit SimpleBodyDispatcher
@@ -183,7 +183,7 @@ module PlayerDispatcherModule =
             let bullet =
                 bullet
                     .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
-                    .SetDepth(player.Depth + 1.0f)
+                    .SetDepth(player.Depth)
             let bulletAddress = List.allButLast address @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
@@ -291,12 +291,11 @@ module StagePlayDispatcherModule =
 
         let playerFallHandler message world =
             let player = getPlayer message.Subscriber world
-            let world =
-                if player.HasFallen && (World.getSelectedScreen world).State = IdlingState then
-                    let world = playDeathSound world
-                    World.transitionScreen TitleAddress world
-                else world
-            (Unhandled, world)
+            if player.HasFallen && (World.getSelectedScreen world).State = IdlingState then
+                let world = playDeathSound world
+                let world = World.transitionScreen TitleAddress world
+                (Unhandled, world)
+            else (Unhandled, world)
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
@@ -325,6 +324,11 @@ module StageScreenModule =
                     else entity)
                 entities
 
+        let playDeadBlazeSong world =
+            let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = 0 }
+            { world with AudioMessages = playSongMessage :: world.AudioMessages }
+
         let makeSectionFromFile fileName sectionName xShift world =
             let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName world
             let sectionEntities = anonymizeEntities sectionEntities
@@ -332,29 +336,17 @@ module StageScreenModule =
             (sectionName, sectionGroup, sectionEntities)
 
         let startPlayHandler message world =
-            let shift = 2048.0f
-            let groupDescriptors =
-                [Triple.prepend StagePlayName <| World.loadGroupFromFile StagePlayFileName world
-                 makeSectionFromFile Section0FileName Section0Name (shift * 0.0f) world
-                 makeSectionFromFile Section1FileName Section1Name (shift * 1.0f) world
-                 makeSectionFromFile Section2FileName Section2Name (shift * 2.0f) world
-                 makeSectionFromFile Section3FileName Section3Name (shift * 3.0f) world
-                 makeSectionFromFile Section2FileName Section4Name (shift * 4.0f) world
-                 makeSectionFromFile Section1FileName Section5Name (shift * 5.0f) world
-                 makeSectionFromFile Section3FileName Section6Name (shift * 6.0f) world
-                 makeSectionFromFile Section0FileName Section7Name (shift * 7.0f) world
-                 makeSectionFromFile Section1FileName Section8Name (shift * 8.0f) world
-                 makeSectionFromFile Section0FileName Section9Name (shift * 9.0f) world
-                 makeSectionFromFile Section3FileName Section10Name (shift * 10.0f) world
-                 makeSectionFromFile Section2FileName Section11Name (shift * 11.0f) world
-                 makeSectionFromFile Section3FileName Section12Name (shift * 12.0f) world
-                 makeSectionFromFile Section1FileName Section13Name (shift * 13.0f) world
-                 makeSectionFromFile Section2FileName Section14Name (shift * 14.0f) world
-                 makeSectionFromFile Section0FileName Section15Name (shift * 15.0f) world]
+            let random = Random ()
+            let sectionFileNames = List.toArray SectionFileNames
+            let sectionDescriptors =
+                [for i in 0 .. SectionCount do
+                    let xShift = 2048.0f
+                    let sectionFileNameIndex = if i = 0 then 0 else random.Next () % sectionFileNames.Length
+                    yield makeSectionFromFile sectionFileNames.[sectionFileNameIndex] (SectionName + string i) (xShift * single i) world]
+            let stagePlayDescriptor = Triple.prepend StagePlayName <| World.loadGroupFromFile StagePlayFileName world
+            let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = World.addGroups message.Subscriber groupDescriptors world
-            let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = 0 }
-            let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
+            let world = playDeadBlazeSong world
             (Unhandled, world)
 
         let stoppingPlayHandler _ world =
@@ -362,25 +354,9 @@ module StageScreenModule =
             (Unhandled, world)
 
         let stopPlayHandler message world =
-            let sectionNames =
-                [StagePlayName
-                 Section0Name
-                 Section1Name
-                 Section2Name
-                 Section3Name
-                 Section4Name
-                 Section5Name
-                 Section6Name
-                 Section7Name
-                 Section8Name
-                 Section9Name
-                 Section10Name
-                 Section11Name
-                 Section12Name
-                 Section13Name
-                 Section14Name
-                 Section15Name]
-            let world = World.removeGroups message.Subscriber sectionNames world
+            let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
+            let groupNames = StagePlayName :: sectionNames
+            let world = World.removeGroups message.Subscriber groupNames world
             (Unhandled, world)
 
         override dispatcher.Register (address, world) =

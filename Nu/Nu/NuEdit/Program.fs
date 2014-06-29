@@ -11,6 +11,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Reflection
+open System.Runtime.CompilerServices
 open System.Windows.Forms
 open System.ComponentModel
 open System.Xml
@@ -135,7 +136,7 @@ module Program =
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
         static member GetPropertyDescriptors (aType : Type) optSource =
             let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<XFieldAttribute> ()) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let optProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor) properties
             let propertyDescriptors =
@@ -429,7 +430,7 @@ module Program =
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entity = { entity with Id = id; Name = string id }
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
-                let entityTransform = { Entity.getTransform entity with Position = entityPosition; Depth = getCreationDepth form }
+                let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let address = addrstr EditorGroupAddress entity.Name
                 let world = pushPastWorld world world
