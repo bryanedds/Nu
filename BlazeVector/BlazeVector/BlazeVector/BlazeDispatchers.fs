@@ -161,6 +161,8 @@ module PlayerDispatcherModule =
         member this.SetLastTimeOnGround (value : int64) : Entity = this?LastTimeOnGround <- value
         [<XField>] member this.LastTimeJump with get () = this?LastTimeJump () : int64
         member this.SetLastTimeJump (value : int64) : Entity = this?LastTimeJump <- value
+        
+        [<XField>] member this.HasFallen with get () = this.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit SimpleBodyDispatcher
@@ -187,11 +189,14 @@ module PlayerDispatcherModule =
 
         let spawnBulletHandler message world =
             if world.Interactive then
-                if world.Ticks % 6L = 0L then
-                    let player = World.getEntity message.Subscriber world
-                    let world = createBullet player message.Subscriber world
-                    let world = playShotSound world
-                    (Unhandled, world)
+                let player = World.getEntity message.Subscriber world
+                if not player.HasFallen then
+                    if world.Ticks % 6L = 0L then
+                        let player = World.getEntity message.Subscriber world
+                        let world = createBullet player message.Subscriber world
+                        let world = playShotSound world
+                        (Unhandled, world)
+                    else (Unhandled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
 
@@ -287,7 +292,7 @@ module StagePlayDispatcherModule =
         let playerFallHandler message world =
             let player = getPlayer message.Subscriber world
             let world =
-                if player.Position.Y < -700.0f && (World.getSelectedScreen world).State = IdlingState then
+                if player.HasFallen && (World.getSelectedScreen world).State = IdlingState then
                     let world = playDeathSound world
                     World.transitionScreen TitleAddress world
                 else world
