@@ -70,14 +70,6 @@ module Program =
         let editorState = { editorState with PastWorlds = []; FutureWorlds = [] }
         { world with ExtData = editorState }
 
-    let populateEntityDispatcherComboBox (form : NuEditForm) =
-        form.createEntityComboBox.Items.Clear ()
-        let entityDispatcherType = typeof<Entity2dDispatcher>
-        for assembly in AppDomain.CurrentDomain.GetAssemblies () do
-            for aType in assembly.DefinedTypes do
-                if aType.IsSubclassOf entityDispatcherType && not aType.IsAbstract then
-                    ignore <| form.createEntityComboBox.Items.Add aType.Name
-
     type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
         { Address : Address
           Form : NuEditForm
@@ -352,7 +344,6 @@ module Program =
             let changer = (fun world ->
                 let world = loadFile form.openFileDialog.FileName world
                 let world = clearOtherWorlds world
-                populateEntityDispatcherComboBox form
                 form.propertyGrid.SelectedObject <- null
                 form.interactButton.Checked <- false
                 world)
@@ -567,7 +558,6 @@ module Program =
         form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
         form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
         form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
-        populateEntityDispatcherComboBox form
         form.Show ()
         form
 
@@ -592,6 +582,23 @@ module Program =
             refWorld := World.subscribe UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
             refWorld := World.subscribe (RemovingEvent @ AnyEvent) [] (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
+
+    let populateCreateEntityComboBox (form : NuEditForm) world =
+        form.createEntityComboBox.Items.Clear ()
+        let entity2dDispatcherType = typeof<Entity2dDispatcher>
+        for dispatcherKvp in world.Dispatchers do
+            if Xtension.dispatchesAs2 entity2dDispatcherType dispatcherKvp.Value then
+                ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
+        world
+
+    let tryCreateEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
+        match tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps with
+        | Left _ as left -> left
+        | Right _ -> Right <| populateCreateEntityComboBox form !refWorld
+
+    let invalidateDisplayPanel (form : NuEditForm) world =
+        form.displayPanel.Invalidate ()
+        world
 
     // TODO: remove code duplication with below
     let updateUndo (form : NuEditForm) world =
@@ -652,7 +659,7 @@ module Program =
               RendererFlags = sdlRendererFlags
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
-            (tryMakeEditorWorld gameDispatcher form worldChangers refWorld)
+            (tryCreateEditorWorld gameDispatcher form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)
-            (fun world -> form.displayPanel.Invalidate (); world)
+            (invalidateDisplayPanel form)
             sdlConfig
