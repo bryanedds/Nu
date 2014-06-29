@@ -82,8 +82,12 @@ module World =
     let addScreen = WorldPrims.addScreen
 
     // Game forwarders.
+    let getSelectedScreenAddress = WorldPrims.getSelectedScreenAddress
+    let setSelectedScreenAddress = WorldPrims.setSelectedScreenAddress
     let getOptSelectedScreenAddress = WorldPrims.getOptSelectedScreenAddress
     let setOptSelectedScreenAddress = WorldPrims.setOptSelectedScreenAddress
+    let getSelectedScreen = WorldPrims.getSelectedScreen
+    let setSelectedScreen = WorldPrims.setSelectedScreen
     let getOptSelectedScreen = WorldPrims.getOptSelectedScreen
     let setOptSelectedScreen = WorldPrims.setOptSelectedScreen
     

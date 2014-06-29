@@ -80,12 +80,12 @@ module EnemyDispatcherModule =
             
         let playHitSound world =
             let soundAsset = { SoundAssetName = "Hit"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let sound = PlaySoundMessage { Volume = 0.2f; Sound = soundAsset }
+            let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
             { world with AudioMessages = sound :: world.AudioMessages }
 
         let playEnemyExplosionSound world =
             let soundAsset = { SoundAssetName = "Explosion"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let sound = PlaySoundMessage { Volume = 0.2f; Sound = soundAsset }
+            let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
             { world with AudioMessages = sound :: world.AudioMessages }
 
         let movementHandler message world =
@@ -168,12 +168,12 @@ module PlayerDispatcherModule =
 
         let playShotSound world =
             let shotAsset = { SoundAssetName = "Shot"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let shot = PlaySoundMessage { Volume = 0.2f; Sound = shotAsset }
+            let shot = PlaySoundMessage { Volume = 1.0f; Sound = shotAsset }
             { world with AudioMessages = shot :: world.AudioMessages }
 
         let playJumpSound world =
             let jumpAsset = { SoundAssetName = "Jump"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let jump = PlaySoundMessage { Volume = 0.2f; Sound = jumpAsset }
+            let jump = PlaySoundMessage { Volume = 1.0f; Sound = jumpAsset }
             { world with AudioMessages = jump :: world.AudioMessages }
 
         let createBullet (player : Entity) address world =
@@ -269,7 +269,7 @@ module StagePlayDispatcherModule =
 
         let playDeathSound world =
             let deathAsset = { SoundAssetName = "Death"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let death = PlaySoundMessage { Volume = 0.2f; Sound = deathAsset }
+            let death = PlaySoundMessage { Volume = 1.0f; Sound = deathAsset }
             { world with AudioMessages = death :: world.AudioMessages }
 
         let getPlayer groupAddress world =
@@ -287,7 +287,7 @@ module StagePlayDispatcherModule =
         let playerFallHandler message world =
             let player = getPlayer message.Subscriber world
             let world =
-                if player.Position.Y < -700.0f then
+                if player.Position.Y < -700.0f && (World.getSelectedScreen world).State = IdlingState then
                     let world = playDeathSound world
                     World.transitionScreen TitleAddress world
                 else world
