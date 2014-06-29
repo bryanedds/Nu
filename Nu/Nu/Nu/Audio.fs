@@ -20,29 +20,29 @@ module AudioModule =
           PackageName : string
           PackageFileName : string }
 
-    type [<StructuralEquality; NoComparison>] PlaySong =
+    type [<StructuralEquality; NoComparison>] PlaySongMessage =
         { Song : Song
           TimeToFadeOutSongMs : int }
 
-    type [<StructuralEquality; NoComparison>] PlaySound =
+    type [<StructuralEquality; NoComparison>] PlaySoundMessage =
         { Volume : single
           Sound : Sound }
 
-    type [<StructuralEquality; NoComparison>] HintAudioPackageUse =
+    type [<StructuralEquality; NoComparison>] HintAudioPackageUseMessage =
         { FileName : string
           PackageName : string }
 
-    type [<StructuralEquality; NoComparison>] HintAudioPackageDisuse =
+    type [<StructuralEquality; NoComparison>] HintAudioPackageDisuseMessage =
         { FileName : string
           PackageName : string }
 
     type [<StructuralEquality; NoComparison>] AudioMessage =
-        | HintAudioPackageUse of HintAudioPackageUse
-        | HintAudioPackageDisuse of HintAudioPackageDisuse
-        | PlaySound of PlaySound
-        | PlaySong of PlaySong
-        | FadeOutSong of int
-        | StopSong
+        | HintAudioPackageUseMessage of HintAudioPackageUseMessage
+        | HintAudioPackageDisuseMessage of HintAudioPackageDisuseMessage
+        | PlaySoundMessage of PlaySoundMessage
+        | PlaySongMessage of PlaySongMessage
+        | FadeOutSongMessage of int
+        | StopSongMessage
 
     type [<ReferenceEquality>] AudioAsset =
         | WavAsset of nativeint
@@ -52,7 +52,7 @@ module AudioModule =
         { AudioContext : unit // audio context, interestingly, is global
           AudioAssetMap : AudioAsset AssetMap
           OptCurrentSong : Song option
-          OptNextPlaySong : PlaySong option }
+          OptNextPlaySong : PlaySongMessage option }
 
     type SoundTypeConverter () =
         inherit TypeConverter ()
@@ -106,18 +106,24 @@ module Audio =
         | ".wav" ->
             let optWav = SDL_mixer.Mix_LoadWAV asset.FileName
             if optWav <> IntPtr.Zero then Some (asset.Name, WavAsset optWav)
-            else trace <| "Could not load wav '" + asset.FileName + "'."; None
+            else
+                let errorMsg = SDL.SDL_GetError ()
+                trace <| "Could not load wav '" + asset.FileName + "' due to '" + errorMsg + "'."
+                None
         | ".ogg" ->
             let optOgg = SDL_mixer.Mix_LoadMUS asset.FileName
             if optOgg <> IntPtr.Zero then Some (asset.Name, OggAsset optOgg)
-            else trace <| "Could not load ogg '" + asset.FileName + "'."; None
+            else
+                let errorMsg = SDL.SDL_GetError ()
+                trace <| "Could not load ogg '" + asset.FileName + "' due to '" + errorMsg + "'."
+                None
         | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
     let private tryLoadAudioPackage packageName fileName audioPlayer =
         let optAssets = Assets.tryLoadAssets "Audio" packageName fileName
         match optAssets with
         | Left error ->
-            trace <| "HintAudioPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
+            trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
             audioPlayer
         | Right assets ->
             let optAudioAssets = List.map tryLoadAudioAsset2 assets
@@ -145,15 +151,15 @@ module Audio =
     let private playSong (song : Song) audioPlayer =
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
         match optAudioAsset with
-        | None -> debug <| "PlaySong failed due to unloadable assets for '" + string song + "'."
+        | None -> debug <| "PlaySongMessage failed due to unloadable assets for '" + string song + "'."
         | Some (WavAsset _) -> debug <| "Cannot play wav file as song '" + string song + "'."
         | Some (OggAsset oggAsset) -> ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
         { audioPlayer' with OptCurrentSong = Some song }
 
-    let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUse) audioPlayer =
+    let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
         tryLoadAudioPackage hintPackageUse.PackageName hintPackageUse.FileName audioPlayer
 
-    let private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuse) audioPlayer =
+    let private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
         let packageName = hintPackageDisuse.PackageName
         let optAssets = Map.tryFind packageName audioPlayer.AudioAssetMap
         match optAssets with
@@ -172,8 +178,10 @@ module Audio =
         let sound = playSound.Sound
         let (audioPlayer, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
         match optAudioAsset with
-        | None -> debug <| "PlaySound failed due to unloadable assets for '" + string sound + "'."
-        | Some (WavAsset wavAsset) -> ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
+        | None -> debug <| "PlaySoundMessage failed due to unloadable assets for '" + string sound + "'."
+        | Some (WavAsset wavAsset) ->
+            ignore <| SDL_mixer.Mix_VolumeChunk (wavAsset, int <| playSound.Volume * single SDL_mixer.MIX_MAX_VOLUME)
+            ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
         | Some (OggAsset _) -> debug <| "Cannot play ogg file as sound '" + string sound + "'."
         audioPlayer
 
@@ -204,12 +212,12 @@ module Audio =
 
     let private handleAudioMessage audioPlayer audioMessage =
         match audioMessage with
-        | HintAudioPackageUse hintPackageUse -> handleHintAudioPackageUse hintPackageUse audioPlayer
-        | HintAudioPackageDisuse hintPackageDisuse -> handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
-        | PlaySound playSound -> handlePlaySound playSound audioPlayer
-        | PlaySong playSongValue -> handlePlaySong playSongValue audioPlayer
-        | FadeOutSong timeToFadeSongMs -> handleFadeOutSong timeToFadeSongMs audioPlayer
-        | StopSong -> handleStopSong audioPlayer
+        | HintAudioPackageUseMessage hintPackageUse -> handleHintAudioPackageUse hintPackageUse audioPlayer
+        | HintAudioPackageDisuseMessage hintPackageDisuse -> handleHintAudioPackageDisuse hintPackageDisuse audioPlayer
+        | PlaySoundMessage playSound -> handlePlaySound playSound audioPlayer
+        | PlaySongMessage playSongValue -> handlePlaySong playSongValue audioPlayer
+        | FadeOutSongMessage timeToFadeSongMs -> handleFadeOutSong timeToFadeSongMs audioPlayer
+        | StopSongMessage -> handleStopSong audioPlayer
 
     let private handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)

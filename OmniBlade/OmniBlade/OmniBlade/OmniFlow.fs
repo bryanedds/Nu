@@ -32,10 +32,10 @@ module OmniFlow =
         match optWorld with
         | Left _ as left -> left
         | Right world ->
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
+            let hintRenderPackageUse = HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
             let gameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = DefaultTimeToFadeOutSongMs }
+            let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = DefaultTimeToFadeOutSongMs }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world

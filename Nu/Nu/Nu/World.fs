@@ -329,8 +329,8 @@ module World =
                   Renderer = Rendering.makeRenderer sdlDeps.RenderContext
                   Integrator = Physics.makeIntegrator Gravity
                   AssetMetadataMap = assetMetadataMap
-                  AudioMessages = [HintAudioPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
-                  RenderMessages = [HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
+                  AudioMessages = [HintAudioPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
+                  RenderMessages = [HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
                   PhysicsMessages = []
                   Dispatchers = dispatchers
                   ExtData = extData }
