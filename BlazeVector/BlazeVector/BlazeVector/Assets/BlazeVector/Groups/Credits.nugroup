@@ -43,7 +43,7 @@
         <Position type="OpenTK.Vector2">-320;0</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">640;64</Size>
-        <Text type="System.String">Code: Bryan Edds</Text>
+        <Text type="System.String">Code + Music + SFX: Bryan Edds</Text>
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
