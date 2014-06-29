@@ -137,7 +137,7 @@ module ButtonDispatcherModule =
                             World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
                         if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
                             let world = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
-                            let sound = PlaySound { Volume = 1.0f; Sound = button.ClickSound }
+                            let sound = PlaySoundMessage { Volume = 1.0f; Sound = button.ClickSound }
                             let world = { world with AudioMessages = sound :: world.AudioMessages }
                             (Handled, world)
                         else (Unhandled, world)
@@ -332,7 +332,7 @@ module ToggleDispatcherModule =
                             let world = World.setEntity message.Subscriber toggle world
                             let messageType = if toggle.IsOn then "On" else "Off"
                             let world = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
-                            let sound = PlaySound { Volume = 1.0f; Sound = toggle.ToggleSound }
+                            let sound = PlaySoundMessage { Volume = 1.0f; Sound = toggle.ToggleSound }
                             let world = { world with AudioMessages = sound :: world.AudioMessages }
                             (Handled, world)
                         else (Unhandled, world)

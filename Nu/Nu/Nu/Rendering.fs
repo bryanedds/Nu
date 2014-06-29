@@ -75,18 +75,18 @@ module RenderingModule =
     type [<StructuralEquality; NoComparison>] RenderDescriptor =
         | LayerableDescriptor of LayerableDescriptor
 
-    type [<StructuralEquality; NoComparison>] HintRenderingPackageUse =
+    type [<StructuralEquality; NoComparison>] HintRenderingPackageUseMessage =
         { FileName : string
           PackageName : string }
 
-    type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuse =
+    type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuseMessage =
         { FileName : string
           PackageName : string }
 
     type [<StructuralEquality; NoComparison>] RenderMessage =
-        | HintRenderingPackageUse of HintRenderingPackageUse
-        | HintRenderingPackageDisuse of HintRenderingPackageDisuse
-        //| ScreenFlash of ...
+        | HintRenderingPackageUseMessage of HintRenderingPackageUseMessage
+        | HintRenderingPackageDisuseMessage of HintRenderingPackageDisuseMessage
+        //| ScreenFlashMessage of ...
 
     type [<ReferenceEquality>] RenderAsset =
         | TextureAsset of nativeint
@@ -165,7 +165,8 @@ module Rendering =
             let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FileName)
             if optTexture <> IntPtr.Zero then Some (asset.Name, TextureAsset optTexture)
             else
-                trace <| "Could not load texture '" + asset.FileName + "'."
+                let errorMsg = SDL.SDL_GetError ()
+                trace <| "Could not load texture '" + asset.FileName + "' due to '" + errorMsg + "'."
                 None
         | ".ttf" ->
             let fileFirstName = Path.GetFileNameWithoutExtension asset.FileName
@@ -187,7 +188,7 @@ module Rendering =
         let optAssets = Assets.tryLoadAssets "Rendering" packageName fileName
         match optAssets with
         | Left error ->
-            note <| "HintRenderingPackageUse failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
+            note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
             renderer
         | Right assets ->
             let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -212,10 +213,10 @@ module Rendering =
             | Some _ -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
         (renderer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
-    let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUse) renderer =
+    let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUseMessage) renderer =
         tryLoadRenderPackage hintPackageUse.PackageName hintPackageUse.FileName renderer
     
-    let private handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuse) renderer =
+    let private handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuseMessage) renderer =
         let packageName = hintPackageDisuse.PackageName
         let optAssets = Map.tryFind packageName renderer.RenderAssetMap
         match optAssets with
@@ -226,8 +227,8 @@ module Rendering =
 
     let private handleRenderMessage renderer renderMessage =
         match renderMessage with
-        | HintRenderingPackageUse hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
-        | HintRenderingPackageDisuse hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
+        | HintRenderingPackageUseMessage hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
+        | HintRenderingPackageDisuseMessage hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
 
     let private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
         List.fold handleRenderMessage renderer (List.rev renderMessages)

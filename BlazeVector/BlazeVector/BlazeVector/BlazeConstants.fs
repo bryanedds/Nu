@@ -36,6 +36,7 @@ module BlazeConstants =
     let IdlingTime = 60L
     let OutgoingTimeSplash = 40L
     let OutgoingTime = 30L
+    let StageOutgoingTime = 90L
 
     // splash constants
     let SplashAddress = addr "Splash"

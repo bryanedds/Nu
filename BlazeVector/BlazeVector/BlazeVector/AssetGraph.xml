@@ -27,6 +27,7 @@
     <asset name="PlayButtonUp" fileName="Assets/BlazeVector/Gui/PlayButtonUp.png" associations="Rendering"/>
     <asset name="PlayButtonDown" fileName="Assets/BlazeVector/Gui/PlayButtonDown.png" associations="Rendering"/>
     <asset name="Machinery" fileName="Assets/BlazeVector/Gui/Machinery.ogg" associations="Audio"/>
+    <asset name="Nu" fileName="Assets/BlazeVector/Gui/Nu.wav" associations="Audio"/>
   </package>
   <package name="Stage">
     <asset name="Player" fileName="Assets/BlazeVector/Stage/Player.png" associations="Rendering"/>
@@ -42,5 +43,10 @@
     <asset name="BackgroundA" fileName="Assets/BlazeVector/Stage/BackgroundA.tmx" associations=""/>
     <asset name="BackgroundB" fileName="Assets/BlazeVector/Stage/BackgroundB.tmx" associations=""/>
     <asset name="DeadBlaze" fileName="Assets/BlazeVector/Stage/DeadBlaze.ogg" associations="Audio"/>
+    <asset name="Shot" fileName="Assets/BlazeVector/Stage/Shot.wav" associations="Audio"/>
+    <asset name="Jump" fileName="Assets/BlazeVector/Stage/Jump.wav" associations="Audio"/>
+    <asset name="Hit" fileName="Assets/BlazeVector/Stage/Hit.wav" associations="Audio"/>
+    <asset name="Explosion" fileName="Assets/BlazeVector/Stage/Explosion.wav" associations="Audio"/>
+    <asset name="Death" fileName="Assets/BlazeVector/Stage/Death.wav" associations="Audio"/>
   </package>
 </root>

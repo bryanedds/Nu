@@ -10,13 +10,13 @@ module BlazeFlow =
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
         let gameSong = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-        let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
+        let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = 0 }
         let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
         (Unhandled, world)
 
     // this function handles playing the stage
     let handlePlayStage _ world =
-        let world = { world with AudioMessages = FadeOutSong DefaultTimeToFadeOutSongMs :: world.AudioMessages }
+        let world = { world with AudioMessages = FadeOutSongMessage DefaultTimeToFadeOutSongMs :: world.AudioMessages }
         let world = World.transitionScreen StageAddress world
         (Unhandled, world)
 
@@ -49,7 +49,7 @@ module BlazeFlow =
 
     // and so on.
     let addStageScreen world =
-        let world = World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime OutgoingTime StageAddress world
+        let world = World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime StageOutgoingTime StageAddress world
         World.subscribe ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
@@ -66,18 +66,23 @@ module BlazeFlow =
         | Right world ->
 
             // hint to the renderer that the Gui package should be loaded up front
-            let hintRenderPackageUse = HintRenderingPackageUse { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
+            let hintRenderPackageUse = HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
             let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
+            
+            // add our UI screens to the world
+            let world = addTitleScreen world
+            let world = addCreditsScreen world
+            let world = addStageScreen world
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
 
-            // add our UI screens to the world
-            let world = addTitleScreen world
-            let world = addCreditsScreen world
-            let world = addStageScreen world
-            
+            // play a neat sound effect during the splash screen
+            let soundAsset = { SoundAssetName = "Nu"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
+            let sound = PlaySoundMessage { Volume = 0.2f; Sound = soundAsset }
+            let world = { world with AudioMessages = sound :: world.AudioMessages }
+
             // select the splash screen for viewing
             let world = World.selectScreen SplashAddress world
 

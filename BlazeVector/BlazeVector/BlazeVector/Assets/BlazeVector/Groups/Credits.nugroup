@@ -71,7 +71,7 @@
         <Position type="OpenTK.Vector2">-320;-96</Position>
         <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">640;64</Size>
-        <Text type="System.String">Art: Dan Rivera</Text>
+        <Text type="System.String">Art: MindChamber</Text>
         <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
         <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
         <TextOffset type="OpenTK.Vector2">0;0</TextOffset>

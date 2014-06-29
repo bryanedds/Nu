@@ -77,6 +77,16 @@ module EnemyDispatcherModule =
     type EnemyDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
+            
+        let playHitSound world =
+            let soundAsset = { SoundAssetName = "Hit"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let sound = PlaySoundMessage { Volume = 0.2f; Sound = soundAsset }
+            { world with AudioMessages = sound :: world.AudioMessages }
+
+        let playEnemyExplosionSound world =
+            let soundAsset = { SoundAssetName = "Explosion"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let sound = PlaySoundMessage { Volume = 0.2f; Sound = soundAsset }
+            { world with AudioMessages = sound :: world.AudioMessages }
 
         let movementHandler message world =
             if world.Interactive then
@@ -102,10 +112,14 @@ module EnemyDispatcherModule =
                 if isBullet then
                     let enemy = World.getEntity message.Subscriber world
                     let enemy = enemy.SetHealth <| enemy.Health - 1
-                    let world =
-                        if enemy.Health <> 0 then World.setEntity message.Subscriber enemy world
-                        else World.removeEntity message.Subscriber world 
-                    (Unhandled, world)
+                    let world = World.setEntity message.Subscriber enemy world
+                    if enemy.Health = 0 then
+                        let world = World.removeEntity message.Subscriber world
+                        let world = playEnemyExplosionSound world
+                        (Unhandled, world)
+                    else
+                        let world = playHitSound world
+                        (Unhandled, world)
                 else (Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
 
@@ -151,7 +165,17 @@ module PlayerDispatcherModule =
     type PlayerDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (player : Entity) -> CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero })
-             
+
+        let playShotSound world =
+            let shotAsset = { SoundAssetName = "Shot"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let shot = PlaySoundMessage { Volume = 0.2f; Sound = shotAsset }
+            { world with AudioMessages = shot :: world.AudioMessages }
+
+        let playJumpSound world =
+            let jumpAsset = { SoundAssetName = "Jump"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let jump = PlaySoundMessage { Volume = 0.2f; Sound = jumpAsset }
+            { world with AudioMessages = jump :: world.AudioMessages }
+
         let createBullet (player : Entity) address world =
             let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name None world
             let bullet =
@@ -166,6 +190,7 @@ module PlayerDispatcherModule =
                 if world.Ticks % 6L = 0L then
                     let player = World.getEntity message.Subscriber world
                     let world = createBullet player message.Subscriber world
+                    let world = playShotSound world
                     (Unhandled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
@@ -200,6 +225,7 @@ module PlayerDispatcherModule =
                     let world = World.setEntity message.Subscriber player world
                     let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+                    let world = playJumpSound world
                     (Unhandled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
@@ -224,7 +250,7 @@ module PlayerDispatcherModule =
             world |>
                 World.observe TickEvent address -<| CustomSub spawnBulletHandler |>
                 World.observe TickEvent address -<| CustomSub movementHandler |>
-                World.observe DownMouseRightEvent address -<| CustomSub jumpHandler
+                World.observe DownMouseLeftEvent address -<| CustomSub jumpHandler
 
         override dispatcher.Unregister (address, world) =
             base.Unregister (address, world)
@@ -241,6 +267,11 @@ module StagePlayDispatcherModule =
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
+        let playDeathSound world =
+            let deathAsset = { SoundAssetName = "Death"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let death = PlaySoundMessage { Volume = 0.2f; Sound = deathAsset }
+            { world with AudioMessages = death :: world.AudioMessages }
+
         let getPlayer groupAddress world =
             let playerAddress = groupAddress @ [StagePlayerName]
             World.getEntity playerAddress world
@@ -255,8 +286,12 @@ module StagePlayDispatcherModule =
 
         let playerFallHandler message world =
             let player = getPlayer message.Subscriber world
-            let world = if player.Position.Y > -700.0f then world else World.transitionScreen TitleAddress world
-            (Unhandled, adjustCamera message.Subscriber world)
+            let world =
+                if player.Position.Y < -700.0f then
+                    let world = playDeathSound world
+                    World.transitionScreen TitleAddress world
+                else world
+            (Unhandled, world)
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
@@ -313,12 +348,12 @@ module StageScreenModule =
                  makeSectionFromFile Section0FileName Section15Name (shift * 15.0f) world]
             let world = World.addGroups message.Subscriber groupDescriptors world
             let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySong { Song = gameSong; TimeToFadeOutSongMs = 0 }
+            let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = 0 }
             let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
             (Unhandled, world)
 
         let stoppingPlayHandler _ world =
-            let world = { world with AudioMessages = FadeOutSong DefaultTimeToFadeOutSongMs :: world.AudioMessages }
+            let world = { world with AudioMessages = FadeOutSongMessage DefaultTimeToFadeOutSongMs :: world.AudioMessages }
             (Unhandled, world)
 
         let stopPlayHandler message world =
