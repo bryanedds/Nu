@@ -414,13 +414,11 @@
             // openFileDialog
             // 
             this.openFileDialog.DefaultExt = "nugroup";
-            this.openFileDialog.FileName = "*.nugroup";
             this.openFileDialog.Filter = "Nu Groups|*.nugroup|All files|*.*";
             // 
             // saveFileDialog
             // 
             this.saveFileDialog.DefaultExt = "nugroup";
-            this.saveFileDialog.FileName = "Document.nugroup";
             this.saveFileDialog.Filter = "Nu Groups|*.nugroup|All files|*.*";
             // 
             // toolStrip
