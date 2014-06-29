@@ -17,11 +17,6 @@ module XtensionModule =
         inherit Attribute ()
         member this.DefaultValue = defaultValue
         
-    /// An attribute to specify a property extension as an XField.
-    [<AttributeUsage (AttributeTargets.Property)>]
-    type XFieldAttribute () =
-        inherit Attribute ()
-
     /// Describes an XField.
     type XFieldDescriptor =
         { FieldName : string
