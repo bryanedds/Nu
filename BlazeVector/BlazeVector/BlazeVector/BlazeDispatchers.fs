@@ -325,8 +325,8 @@ module StageScreenModule =
                 entities
 
         let playDeadBlazeSong world =
-            let gameSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-            let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = 0 }
+            let song = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+            let playSongMessage = PlaySongMessage { Song = song; Volume = 1.0f; TimeToFadeOutSongMs = 0 }
             { world with AudioMessages = playSongMessage :: world.AudioMessages }
 
         let makeSectionFromFile fileName sectionName xShift world =

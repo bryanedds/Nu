@@ -9,8 +9,8 @@ module BlazeFlow =
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
-        let gameSong = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-        let playSongMessage = PlaySongMessage { Song = gameSong; TimeToFadeOutSongMs = 0 }
+        let song = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
+        let playSongMessage = PlaySongMessage { Song = song; Volume = 1.0f; TimeToFadeOutSongMs = 0 }
         let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
         (Unhandled, world)
 
