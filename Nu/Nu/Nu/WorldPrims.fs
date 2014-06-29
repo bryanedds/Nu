@@ -420,9 +420,21 @@ module WorldPrims =
             | None -> failwith "Cannot set a non-existent screen."
             | Some selectedScreenAddress -> set screen.Value world <| worldScreen selectedScreenAddress }
 
+    let private worldSelectedScreenAddress =
+        { Get = fun world -> Option.get <| get world worldOptSelectedScreenAddress
+          Set = fun address world -> set (Some address) world worldOptSelectedScreenAddress }
+
+    let private worldSelectedScreen =
+        { Get = fun world -> Option.get <| get world worldOptSelectedScreen
+          Set = fun screen world -> set (Some screen) world worldOptSelectedScreen }
+
+    let getSelectedScreenAddress world = get world worldSelectedScreenAddress
+    let setSelectedScreenAddress address world = set address world worldSelectedScreenAddress
     let getOptSelectedScreenAddress world = get world worldOptSelectedScreenAddress
     let setOptSelectedScreenAddress optAddress world = set optAddress world worldOptSelectedScreenAddress
 
+    let getSelectedScreen world = get world worldSelectedScreen
+    let setSelectedScreen screen world = set screen world worldSelectedScreen
     let getOptSelectedScreen world = get world worldOptSelectedScreen
     let setOptSelectedScreen optScreen world = set optScreen world worldOptSelectedScreen
 

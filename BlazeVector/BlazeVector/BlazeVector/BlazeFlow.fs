@@ -80,7 +80,7 @@ module BlazeFlow =
 
             // play a neat sound effect during the splash screen
             let soundAsset = { SoundAssetName = "Nu"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-            let sound = PlaySoundMessage { Volume = 0.2f; Sound = soundAsset }
+            let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
             let world = { world with AudioMessages = sound :: world.AudioMessages }
 
             // select the splash screen for viewing
