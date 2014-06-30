@@ -89,7 +89,7 @@ module EnemyDispatcherModule =
             { world with AudioMessages = sound :: world.AudioMessages }
 
         let movementHandler message world =
-            if world.Interactive then
+            if World.gamePlaying world then
                 let enemy = World.getEntity message.Subscriber world
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
                 if hasAppeared then
@@ -188,7 +188,7 @@ module PlayerDispatcherModule =
             World.addEntity bulletAddress bullet world
 
         let spawnBulletHandler message world =
-            if world.Interactive then
+            if World.gamePlaying world then
                 let player = World.getEntity message.Subscriber world
                 if not player.HasFallen then
                     if world.Ticks % 6L = 0L then
@@ -206,7 +206,7 @@ module PlayerDispatcherModule =
             else world.Ticks
 
         let movementHandler message world =
-            if world.Interactive then
+            if World.gamePlaying world then
                 let player = World.getEntity message.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = player.SetLastTimeOnGround lastTimeOnGround
@@ -222,7 +222,7 @@ module PlayerDispatcherModule =
             else (Unhandled, world)
 
         let jumpHandler message world =
-            if world.Interactive then
+            if World.gamePlaying world then
                 let player = World.getEntity message.Subscriber world
                 if  world.Ticks >= player.LastTimeJump + 12L &&
                     world.Ticks <= player.LastTimeOnGround + 10L then

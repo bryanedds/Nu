@@ -23,6 +23,28 @@ open Nu
 // need for complex intermediate states (albeit against a physics state that is one frame old).
 
 [<AutoOpen>]
+module InterativityModule =
+
+    type Interactivity =
+        | Gui
+        | GuiAndPhysics
+        | GuiAndPhysicsAndGamePlay
+
+module Interactivity =
+
+    let gamePlaying interactivity =
+        match interactivity with
+        | Gui -> false
+        | GuiAndPhysics -> false
+        | GuiAndPhysicsAndGamePlay -> true
+
+    let physicsRunning interactivity =
+        match interactivity with
+        | Gui -> false
+        | GuiAndPhysics -> true
+        | GuiAndPhysicsAndGamePlay -> true
+
+[<AutoOpen>]
 module MessageDataModule =
 
     /// Describes data relevant to specific event messages.
@@ -169,7 +191,7 @@ module SimModule =
           Entities : Map<string, Map<string, Map<string, Entity>>>
           Ticks : int64
           Liveness : Liveness
-          Interactive : bool
+          Interactivity : Interactivity
           Camera : Camera
           Subscriptions : Subscriptions
           Tasks : Task list

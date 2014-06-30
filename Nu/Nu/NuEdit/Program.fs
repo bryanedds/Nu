@@ -30,7 +30,7 @@ module ProgramModule =
 
     type WorldChanger = World -> World
 
-    type WorldChangers = WorldChanger List
+    type WorldChangers = WorldChanger LinkedList
 
     type DragEntityState =
         | DragEntityNone
@@ -131,7 +131,7 @@ module Program =
                         entity.PropagatePhysics (entityTds.Address, world)
                 pushPastWorld pastWorld world)
             entityTds.RefWorld := changer !entityTds.RefWorld
-            entityTds.WorldChangers.Add changer
+            ignore <| entityTds.WorldChangers.AddLast changer
 
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
         static member GetPropertyDescriptors (aType : Type) optSource =
@@ -188,39 +188,35 @@ module Program =
         let pastWorld = world
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, world)
-            else
-                let entities = getPickableEntities world
-                let mousePosition = world.MouseState.MousePosition
-                let optPicked = Entity.tryPick mousePosition entities world
-                match optPicked with
-                | None -> (Handled, world)
-                | Some entity ->
-                    let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                    let entityAddress = addrstr EditorGroupAddress entity.Name
-                    let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
-                    let editorState = world.ExtData :?> EditorState
-                    let editorState = { editorState with DragEntityState = dragState }
-                    let world = { world with ExtData = editorState }
-                    let world = pushPastWorld pastWorld world
-                    refWorld := world // must be set for property grid
-                    form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                    (Handled, world)
+            let entities = getPickableEntities world
+            let mousePosition = world.MouseState.MousePosition
+            let optPicked = Entity.tryPick mousePosition entities world
+            match optPicked with
+            | None -> (Handled, world)
+            | Some entity ->
+                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
+                let entityAddress = addrstr EditorGroupAddress entity.Name
+                let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
+                let editorState = world.ExtData :?> EditorState
+                let editorState = { editorState with DragEntityState = dragState }
+                let world = { world with ExtData = editorState }
+                let world = pushPastWorld pastWorld world
+                refWorld := world // must be set for property grid
+                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                (Handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endEntityDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, world)
-            else
-                let editorState = world.ExtData :?> EditorState
-                match editorState.DragEntityState with
-                | DragEntityNone -> (Handled, world)
-                | DragEntityPosition _
-                | DragEntityRotation _ ->
-                    let editorState = { editorState with DragEntityState = DragEntityNone }
-                    form.propertyGrid.Refresh ()
-                    (Handled, { world with ExtData = editorState })
+            let editorState = world.ExtData :?> EditorState
+            match editorState.DragEntityState with
+            | DragEntityNone -> (Handled, world)
+            | DragEntityPosition _
+            | DragEntityRotation _ ->
+                let editorState = { editorState with DragEntityState = DragEntityNone }
+                form.propertyGrid.Refresh ()
+                (Handled, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
@@ -241,31 +237,27 @@ module Program =
             world
         | DragEntityRotation _ -> world
 
-    let beginCameraDrag (form : NuEditForm) message world =
+    let beginCameraDrag (_ : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, world)
-            else
-                let mousePosition = world.MouseState.MousePosition
-                let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
-                let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
-                let editorState = world.ExtData :?> EditorState
-                let editorState = { editorState with DragCameraState = dragState }
-                let world = { world with ExtData = editorState }
-                (Handled, world)
+            let mousePosition = world.MouseState.MousePosition
+            let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
+            let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
+            let editorState = world.ExtData :?> EditorState
+            let editorState = { editorState with DragCameraState = dragState }
+            let world = { world with ExtData = editorState }
+            (Handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
-    let endCameraDrag (form : NuEditForm) message world =
+    let endCameraDrag (_ : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
-            if form.interactButton.Checked then (Unhandled, world)
-            else
-                let editorState = world.ExtData :?> EditorState
-                match editorState.DragCameraState with
-                | DragCameraNone -> (Handled, world)
-                | DragCameraPosition _ ->
-                    let editorState = { editorState with DragCameraState = DragCameraNone }
-                    (Handled, { world with ExtData = editorState })
+            let editorState = world.ExtData :?> EditorState
+            match editorState.DragCameraState with
+            | DragCameraNone -> (Handled, world)
+            | DragCameraPosition _ ->
+                let editorState = { editorState with DragCameraState = DragCameraNone }
+                (Handled, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let simulantRemovedHandler (form : NuEditForm) message world =
@@ -299,7 +291,7 @@ module Program =
         let world = !refWorld
         let entityXDispatcherName = form.createEntityComboBox.Text
         try let entity = Entity.makeDefault entityXDispatcherName None world
-            worldChangers.Add (fun world ->
+            ignore <| worldChangers.AddLast (fun world ->
                 let pastWorld = world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
@@ -317,7 +309,7 @@ module Program =
 
     let handleDelete (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
         let selectedObject = form.propertyGrid.SelectedObject
-        worldChangers.Add (fun world ->
+        ignore <| worldChangers.AddLast (fun world ->
             let pastWorld = world
             match selectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
@@ -338,16 +330,16 @@ module Program =
         let openFileResult = form.openFileDialog.ShowDialog form
         match openFileResult with
         | DialogResult.OK ->
-            worldChangers.Add (fun world ->
+            ignore <| worldChangers.AddLast (fun world ->
                 let world = loadFile form.openFileDialog.FileName world
                 let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
-                form.interactButton.Checked <- false
+                form.interactivityButton.Checked <- false
                 world)
         | _ -> ()
 
     let handleUndo (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
-        worldChangers.Add (fun world ->
+        ignore <| worldChangers.AddLast (fun world ->
             let editorState = world.ExtData :?> EditorState
             match editorState.PastWorlds with
             | [] -> world
@@ -356,12 +348,12 @@ module Program =
                 let world = World.rebuildPhysicsHack EditorGroupAddress pastWorld
                 let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
                 let world = { world with ExtData = editorState }
-                if form.interactButton.Checked then form.interactButton.Checked <- false
+                if form.interactivityButton.Checked then form.interactivityButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
                 world)
 
     let handleRedo (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
-        worldChangers.Add (fun world ->
+        ignore <| worldChangers.AddLast (fun world ->
             let editorState = world.ExtData :?> EditorState
             match editorState.FutureWorlds with
             | [] -> world
@@ -370,23 +362,25 @@ module Program =
                 let world = World.rebuildPhysicsHack EditorGroupAddress futureWorld
                 let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
                 let world = { world with ExtData = editorState }
-                if form.interactButton.Checked then form.interactButton.Checked <- false
+                if form.interactivityButton.Checked then form.interactivityButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
                 world)
 
-    let handleInteractChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
-        let interactive = form.interactButton.Checked
-        worldChangers.Add (fun world ->
+    let handleInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
+        // TODO: enable disabling of physics as well
+        let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
+        ignore <| worldChangers.AddLast (fun world ->
             let pastWorld = world
-            let world = { world with Interactive = interactive }
-            if interactive then pushPastWorld pastWorld world else world)
+            let world = { world with Interactivity = interactivity }
+            if Interactivity.gamePlaying interactivity then pushPastWorld pastWorld world
+            else world)
 
     let handleCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
         let optEntityTds = form.propertyGrid.SelectedObject
         match optEntityTds with
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
-            worldChangers.Add (fun world ->
+            ignore <| worldChangers.AddLast (fun world ->
                 let editorState = world.ExtData :?> EditorState
                 let entity = World.getEntity entityTds.Address world
                 let world = World.removeEntity entityTds.Address world
@@ -410,7 +404,7 @@ module Program =
         match !editorState.Clipboard with
         | None -> ()
         | Some entity ->
-            worldChangers.Add (fun world ->
+            ignore <| worldChangers.AddLast (fun world ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = NuCore.getId ()
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
@@ -428,7 +422,7 @@ module Program =
         match optEntityTds with
         | null -> ()
         | :? EntityTypeDescriptorSource as entityTds ->
-            worldChangers.Add (fun world ->
+            ignore <| worldChangers.AddLast (fun world ->
                 let entity = World.getEntity entityTds.Address world
                 let entity = entity.SetSize <| entity.GetQuickSize world
                 let world = World.setEntity entityTds.Address entity world
@@ -439,7 +433,7 @@ module Program =
         | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEdit)."
 
     let handleResetCamera (_ : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
-        worldChangers.Add (fun world ->
+        ignore <| worldChangers.AddLast (fun world ->
             let camera = { world.Camera with EyeCenter = Vector2.Zero }
             { world with Camera = camera })
 
@@ -454,7 +448,7 @@ module Program =
                 let selectedObject = form.propertyGrid.SelectedObject
                 match selectedObject with
                 | :? EntityTypeDescriptorSource as entityTds ->
-                    worldChangers.Add (fun world ->
+                    ignore <| worldChangers.AddLast (fun world ->
                         let pastWorld = world
                         let entity = World.getEntity entityTds.Address world
                         let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
@@ -476,7 +470,7 @@ module Program =
             match form.propertyGrid.SelectedGridItem.Label with
             | "" -> ignore <| MessageBox.Show "Select an XField."
             | xFieldName ->
-                worldChangers.Add (fun world ->
+                ignore <| worldChangers.AddLast (fun world ->
                     let pastWorld = world
                     let entity = World.getEntity entityTds.Address world
                     let xFields = Map.remove xFieldName entity.Xtension.XFields
@@ -492,7 +486,7 @@ module Program =
         let selectedObject = form.propertyGrid.SelectedObject
         match selectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
-            worldChangers.Add (fun world ->
+            ignore <| worldChangers.AddLast (fun world ->
                 let pastWorld = world
                 let entity = World.getEntity entityTds.Address world
                 let entity = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
@@ -522,7 +516,7 @@ module Program =
         form.undoToolStripMenuItem.Click.Add (handleUndo form worldChangers refWorld)
         form.redoButton.Click.Add (handleRedo form worldChangers refWorld)
         form.redoToolStripMenuItem.Click.Add (handleRedo form worldChangers refWorld)
-        form.interactButton.CheckedChanged.Add (handleInteractChanged form worldChangers refWorld)
+        form.interactivityButton.CheckedChanged.Add (handleInteractivityChanged form worldChangers refWorld)
         form.cutToolStripMenuItem.Click.Add (handleCut form worldChangers refWorld)
         form.cutContextMenuItem.Click.Add (handleCut form worldChangers refWorld)
         form.copyToolStripMenuItem.Click.Add (handleCopy form worldChangers refWorld)
@@ -544,7 +538,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher false editorState
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->
@@ -599,8 +593,9 @@ module Program =
     let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
         refWorld := updateEntityDrag form world
         refWorld := updateCameraDrag form !refWorld
-        refWorld := Array.fold (fun world changer -> changer world) !refWorld (worldChangers.ToArray ())
-        worldChangers.Clear ()
+        while worldChangers.Count <> 0 do
+            refWorld := worldChangers.First.Value !refWorld
+            worldChangers.RemoveFirst ()
         updateUndo form !refWorld
         updateRedo form !refWorld
         refWorld := { !refWorld with Liveness = if form.IsDisposed then Exiting else Running }
