@@ -347,8 +347,8 @@ module Program =
                 let futureWorld = world
                 let world = World.rebuildPhysicsHack EditorGroupAddress pastWorld
                 let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
-                let world = { world with ExtData = editorState }
-                if form.interactivityButton.Checked then form.interactivityButton.Checked <- false
+                let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
+                form.interactivityButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
                 world)
 
@@ -361,8 +361,8 @@ module Program =
                 let pastWorld = world
                 let world = World.rebuildPhysicsHack EditorGroupAddress futureWorld
                 let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
-                let world = { world with ExtData = editorState }
-                if form.interactivityButton.Checked then form.interactivityButton.Checked <- false
+                let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
+                form.interactivityButton.Checked <- false
                 form.propertyGrid.SelectedObject <- null
                 world)
 
