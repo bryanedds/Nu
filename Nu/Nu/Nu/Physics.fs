@@ -260,7 +260,7 @@ module Physics =
         body.IsSensor <- bodyProperties.IsSensor
         body.SleepingAllowed <- true
 
-    let private makeBoxBody (createBodyMessage : CreateBodyMessage) boxShape integrator =
+    let private createBoxBody (createBodyMessage : CreateBodyMessage) boxShape integrator =
         let body =
             Factories.BodyFactory.CreateRectangle (
                 integrator.PhysicsContext,
@@ -270,11 +270,11 @@ module Physics =
                 toPhysicsV2 boxShape.Center,
                 0.0f,
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
-                createBodyMessage.EntityAddress)
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
+                createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+        body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
         body
 
-    let private makeCircleBody (createBodyMessage : CreateBodyMessage) (circleShape : CircleShape) integrator =
+    let private createCircleBody (createBodyMessage : CreateBodyMessage) (circleShape : CircleShape) integrator =
         let body =
             Factories.BodyFactory.CreateCircle (
                 integrator.PhysicsContext,
@@ -284,10 +284,9 @@ module Physics =
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
-    let private makeCapsuleBody (createBodyMessage : CreateBodyMessage) capsuleShape integrator =
+    let private createCapsuleBody (createBodyMessage : CreateBodyMessage) capsuleShape integrator =
         let body =
             Factories.BodyFactory.CreateCapsule (
                 integrator.PhysicsContext,
@@ -299,15 +298,12 @@ module Physics =
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
-        
         // scale in the capsule's box to stop sticking
         let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
         ignore <| capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
-
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
-    let private makePolygonBody (createBodyMessage : CreateBodyMessage) polygonShape integrator =
+    let private createPolygonBody (createBodyMessage : CreateBodyMessage) polygonShape integrator =
         let body =
             Factories.BodyFactory.CreatePolygon (
                 integrator.PhysicsContext,
@@ -318,17 +314,17 @@ module Physics =
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
                 createBodyMessage.EntityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
-        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body
 
     // TODO: remove code duplication here
     let private createBody createBodyMessage integrator =
         let body =
             match createBodyMessage.BodyProperties.Shape with
-            | BoxShape boxShape -> makeBoxBody createBodyMessage boxShape integrator
-            | CircleShape circleShape -> makeCircleBody createBodyMessage circleShape integrator
-            | CapsuleShape capsuleShape -> makeCapsuleBody createBodyMessage capsuleShape integrator
-            | PolygonShape polygonShape -> makePolygonBody createBodyMessage polygonShape integrator
+            | BoxShape boxShape -> createBoxBody createBodyMessage boxShape integrator
+            | CircleShape circleShape -> createCircleBody createBodyMessage circleShape integrator
+            | CapsuleShape capsuleShape -> createCapsuleBody createBodyMessage capsuleShape integrator
+            | PolygonShape polygonShape -> createPolygonBody createBodyMessage polygonShape integrator
+        configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body.add_OnCollision (fun fn fn2 collision -> handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
         integrator.Bodies.Add (createBodyMessage.PhysicsId, body)
 
