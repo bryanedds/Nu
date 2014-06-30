@@ -86,7 +86,7 @@
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.interactButton = new System.Windows.Forms.ToolStripButton();
+            this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -241,7 +241,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1001, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1002, 585);
             this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
@@ -307,7 +307,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1001;
+            this.splitContainer1.SplitterDistance = 1002;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -330,7 +330,7 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(380, 585);
+            this.splitContainer2.Size = new System.Drawing.Size(379, 585);
             this.splitContainer2.SplitterDistance = 79;
             this.splitContainer2.SplitterWidth = 3;
             this.splitContainer2.TabIndex = 0;
@@ -346,7 +346,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(380, 79);
+            this.groupBox1.Size = new System.Drawing.Size(379, 79);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -408,7 +408,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(380, 503);
+            this.propertyGrid.Size = new System.Drawing.Size(379, 503);
             this.propertyGrid.TabIndex = 0;
             // 
             // openFileDialog
@@ -445,10 +445,10 @@
             this.toolStripSeparator5,
             this.resetCameraButton,
             this.toolStripSeparator7,
-            this.interactButton});
+            this.interactivityButton});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(927, 25);
+            this.toolStrip.Size = new System.Drawing.Size(949, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -584,15 +584,15 @@
             this.toolStripSeparator7.Name = "toolStripSeparator7";
             this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
             // 
-            // interactButton
+            // interactivityButton
             // 
-            this.interactButton.CheckOnClick = true;
-            this.interactButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.interactButton.Image = ((System.Drawing.Image)(resources.GetObject("interactButton.Image")));
-            this.interactButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.interactButton.Name = "interactButton";
-            this.interactButton.Size = new System.Drawing.Size(51, 22);
-            this.interactButton.Text = "&Interact";
+            this.interactivityButton.CheckOnClick = true;
+            this.interactivityButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.interactivityButton.Image = ((System.Drawing.Image)(resources.GetObject("interactivityButton.Image")));
+            this.interactivityButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.interactivityButton.Name = "interactivityButton";
+            this.interactivityButton.Size = new System.Drawing.Size(73, 22);
+            this.interactivityButton.Text = "&Interactivity";
             // 
             // NuEditForm
             // 
@@ -661,7 +661,7 @@
         public System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
         public System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem;
-        public System.Windows.Forms.ToolStripButton interactButton;
+        public System.Windows.Forms.ToolStripButton interactivityButton;
         public System.Windows.Forms.ToolStripMenuItem createContextMenuItem;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         public System.Windows.Forms.ToolStripButton resetCameraButton;

@@ -107,6 +107,12 @@ module World =
 
     (* Normal functions. *)
 
+    let physicsRunning world =
+        Interactivity.physicsRunning world.Interactivity
+
+    let gamePlaying world =
+        Interactivity.gamePlaying world.Interactivity
+
     let activateGameDispatcher assemblyFileName gameDispatcherFullName world =
         let assembly = Assembly.LoadFrom assemblyFileName
         let gameDispatcherType = assembly.GetType gameDispatcherFullName
@@ -209,16 +215,18 @@ module World =
         List.fold handleIntegrationMessage world integrationMessages
 
     let private integrate world =
-        let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
-        let world = { world with PhysicsMessages = [] }
-        handleIntegrationMessages integrationMessages world
+        if physicsRunning world then
+            let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
+            let world = { world with PhysicsMessages = [] }
+            handleIntegrationMessages integrationMessages world
+        else world
 
     let private runNextTask world =
         let task = List.head world.Tasks
-        if task.Time <> world.Ticks then world
-        else
+        if task.Time = world.Ticks then
             let world = task.Operation world
             { world with Tasks = List.tail world.Tasks }
+        else world
 
     let private runTasks world =
         List.fold (fun world _ -> runNextTask world) world world.Tasks
@@ -293,7 +301,7 @@ module World =
         let world = addScreen screenAddress screen [(groupName, group, entities)] world
         world
 
-    let tryMakeEmpty sdlDeps gameDispatcher interactive extData =
+    let tryMakeEmpty sdlDeps gameDispatcher interactivity extData =
         match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
         | Left errorMsg -> Left errorMsg
         | Right assetMetadataMap ->
@@ -324,7 +332,7 @@ module World =
                   Entities = Map.empty
                   Ticks = 0L
                   Liveness = Running
-                  Interactive = interactive
+                  Interactivity = interactivity
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
                   Tasks = []
