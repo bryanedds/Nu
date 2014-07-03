@@ -38,11 +38,20 @@ module WorldPrimsModule =
 [<RequireQualifiedAccess>]
 module WorldPrims =
 
+    (* Message functions. *)
+
+    /// Make a subscription key.
+    let makeSubscriptionKey =
+        Guid.NewGuid
+
     let mutable publish =
         Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
 
     let mutable subscribe =
         Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
+
+    let subscribe4 event subscriber message world =
+        subscribe (makeSubscriptionKey ()) event subscriber message world
 
     let mutable unsubscribe =
         Unchecked.defaultof<Guid -> World -> World>
@@ -440,10 +449,6 @@ module WorldPrims =
 
     (* Normal functions. *)
 
-    /// Make a subscription key.
-    let makeSubscriptionKey =
-        Guid.NewGuid
-
     let private ScreenTransitionKeys =
         (makeSubscriptionKey (), makeSubscriptionKey ())
 
@@ -686,14 +691,18 @@ module WorldPrims =
 
     /// Subscribe to messages for the given event during the lifetime of the subscriber.
     and observeDefinition event subscriber subscription world =
-        let observationKey = makeSubscriptionKey ()
-        let removalKey = makeSubscriptionKey ()
-        let world = subscribe observationKey event subscriber subscription world
-        let sub = CustomSub (fun _ world ->
-            let world = unsubscribe removalKey world
-            let world = unsubscribe observationKey world
-            (Unhandled, world))
-        subscribe removalKey (RemovingEvent @ subscriber) subscriber sub world
+        if List.isEmpty subscriber then
+            debug "Cannot observe events with an anonymous subscriber."
+            world
+        else
+            let observationKey = makeSubscriptionKey ()
+            let removalKey = makeSubscriptionKey ()
+            let world = subscribe observationKey event subscriber subscription world
+            let sub = CustomSub (fun _ world ->
+                let world = unsubscribe removalKey world
+                let world = unsubscribe observationKey world
+                (Unhandled, world))
+            subscribe removalKey (RemovingEvent @ subscriber) subscriber sub world
 
     publish <- publishDefinition
     subscribe <- subscribeDefinition

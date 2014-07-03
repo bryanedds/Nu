@@ -102,6 +102,7 @@ module World =
     let transitionScreen = WorldPrims.transitionScreen
     let publish = WorldPrims.publish
     let subscribe = WorldPrims.subscribe
+    let subscribe4 = WorldPrims.subscribe4
     let observe = WorldPrims.observe
     let unsubscribe = WorldPrims.unsubscribe
     let withSubscription = WorldPrims.withSubscription

@@ -605,7 +605,7 @@ module Reader =
             let! value = readPrefixedExpr
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
-            let specialId = getNextSpecialId ()
+            let specialId = makeSpecialId ()
             return Prefixed (makePrefixedRecord prefixType value specialId optPositions) }
 
     /// Read a prefixed procedural expression.
@@ -1084,7 +1084,7 @@ module Reader =
             do! closeBracketForm
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
-            let specialId = getNextSpecialId ()
+            let specialId = makeSpecialId ()
             return SpecialSeries (makeSpecialSeriesRecord DeclarativeExpr exprs exprCount specialId optPositions) }
 
     /// Read a special meta series.
@@ -1098,7 +1098,7 @@ module Reader =
             do! closeCurlyForm
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
-            let specialId = getNextSpecialId ()
+            let specialId = makeSpecialId ()
             return SpecialSeries (makeSpecialSeriesRecord MetaExpr exprs exprCount specialId optPositions) }
 
     let skipBy pred (terminatorChars : string) (stream : _ CharStream) (start : _ CharStreamState) =
