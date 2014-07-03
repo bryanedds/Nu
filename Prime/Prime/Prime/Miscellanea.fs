@@ -54,14 +54,14 @@ module Miscellanea =
     /// Make a function that gets a unique number.
     /// TODO: place a mutex lock in this
     /// TODO: see if returned function can be optimized by minimizing dereferences
-    let makeGetNextId () =
-        let nextId = ref InvalidId
-        let getNextId =
+    let makeIdMaker () =
+        let id = ref InvalidId
+        let makeId =
             (fun () ->
-                nextId := !nextId + 1L
-                if !nextId = 0L then Debug.Fail "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
-                !nextId)
-        getNextId
+                id := !id + 1L
+                if !id = 0L then Debug.Fail "Id counter overflowed (flipped back to zero). Big trouble likely ahead!"
+                !id)
+        makeId
 
     /// Add a custom TypeConverter to an existing type.
     let assignTypeConverter<'t, 'c> () =
