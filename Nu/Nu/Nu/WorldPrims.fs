@@ -45,13 +45,16 @@ module WorldPrims =
         Guid.NewGuid
 
     let mutable publish =
+        Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> MessageData -> World -> World>
+
+    let mutable publish4 =
         Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
 
     let mutable subscribe =
         Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
 
-    let subscribe4 event subscriber message world =
-        subscribe (makeSubscriptionKey ()) event subscriber message world
+    let mutable subscribe4 =
+        Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
 
     let mutable unsubscribe =
         Unchecked.defaultof<Guid -> World -> World>
@@ -158,7 +161,7 @@ module WorldPrims =
         entity.Unregister (address, world)
 
     let removeEntityImmediate (address : Address) world =
-        let world = publish (RemovingEvent @ address) address NoData world
+        let world = publish4 (RemovingEvent @ address) address NoData world
         let world = unregisterEntity address world
         setOptEntity address None world
 
@@ -201,7 +204,7 @@ module WorldPrims =
             | Some _ -> removeEntityImmediate address world
         let world = setEntity address entity world
         let world = registerEntity address entity world
-        publish (AddedEvent @ address) address NoData world
+        publish4 (AddedEvent @ address) address NoData world
 
     let addEntities groupAddress entities world =
         List.fold
@@ -280,7 +283,7 @@ module WorldPrims =
         group.Unregister (address, world)
 
     let removeGroupImmediate (address : Address) world =
-        let world = publish (RemovingEvent @ address) address NoData world
+        let world = publish4 (RemovingEvent @ address) address NoData world
         let world = unregisterGroup address world
         let world = clearEntitiesImmediate address world
         setOptGroup address None world
@@ -325,7 +328,7 @@ module WorldPrims =
         let world = setGroup address group world
         let world = addEntities address entities world
         let world = registerGroup address group world
-        publish (AddedEvent @ address) address NoData world
+        publish4 (AddedEvent @ address) address NoData world
 
     let addGroups screenAddress groupDescriptors world =
         List.fold
@@ -387,7 +390,7 @@ module WorldPrims =
         screen.Unregister (address, world)
 
     let removeScreenImmediate (address : Address) world =
-        let world = publish (RemovingEvent @ address) address NoData world
+        let world = publish4 (RemovingEvent @ address) address NoData world
         let world = clearGroupsImmediate address world
         let world = unregisterScreen address world
         setOptScreen address None world
@@ -406,7 +409,7 @@ module WorldPrims =
         let world = setScreen address screen world
         let world = addGroups address groupDescriptors world
         let world = registerScreen address screen world
-        publish (AddedEvent @ address) address NoData world
+        publish4 (AddedEvent @ address) address NoData world
 
     (* Game functions. *)
 
@@ -462,55 +465,13 @@ module WorldPrims =
         Audio.initTypeConverters ()
         Rendering.initTypeConverters ()
 
-    let isAddressSelected address world =
+    let isAddressSelected (address : Address) world =
         let optScreenAddress = getOptSelectedScreenAddress world
         match (address, optScreenAddress) with
         | ([], _) -> true
         | (_, None) -> false
         | (_, Some []) -> false
         | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
-
-    let private getSimulant address world =
-        match address with
-        | [] -> Game <| world.Game
-        | [_] as screenAddress -> Screen <| getScreen screenAddress world
-        | [_; _] as groupAddress -> Group <| getGroup groupAddress world
-        | [_; _; _] as entityAddress -> Entity <| getEntity entityAddress world
-        | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
-
-    let private getOptSimulant address world =
-        match address with
-        | [] -> Some <| Game world.Game
-        | [_] as screenAddress -> Option.map Screen <| getOptScreen screenAddress world
-        | [_; _] as groupAddress -> Option.map Group <| getOptGroup groupAddress world
-        | [_; _; _] as entityAddress -> Option.map Entity <| getOptEntity entityAddress world
-        | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
-
-    let private getPublishingPriority simulant world =
-        match simulant with
-        | Game _ -> GamePublishingPriority
-        | Screen _ -> ScreenPublishingPriority
-        | Group _ -> GroupPublishingPriority
-        | Entity entity -> entity.GetPublishingPriority world
-
-    let private sortFstDesc (priority, _) (priority2, _) =
-        if priority = priority2 then 0
-        elif priority > priority2 then -1
-        else 1
-
-    let private getSubscriptionDescriptors subscriptions world =
-        let optSimulants =
-            List.map
-                (fun (key, address, subscription) ->
-                    let optSimulant = getOptSimulant address world
-                    Option.map (fun simulant -> (getPublishingPriority simulant world, (key, address, subscription))) optSimulant)
-                subscriptions
-        List.definitize optSimulants
-
-    let private subscriptionSort subscriptions world =
-        let subscriptionDescriptors = getSubscriptionDescriptors subscriptions world
-        let subscriptionDescriptors = List.sortWith sortFstDesc subscriptionDescriptors
-        List.map snd subscriptionDescriptors
     
     let handleEventAsSwallow (world : World) =
         (Handled, world)
@@ -563,13 +524,13 @@ module WorldPrims =
                 | IncomingState ->
                     let world =
                         if selectedScreen.Incoming.TransitionTicks <> 0L then world
-                        else publish (SelectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        else publish4 (SelectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                     match world.Liveness with
                     | Exiting -> world
                     | Running ->
                         let world =
                             if selectedScreen.Incoming.TransitionTicks <> 0L then world
-                            else publish (StartIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else publish4 (StartIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                         match world.Liveness with
                         | Exiting -> world
                         | Running ->
@@ -578,11 +539,11 @@ module WorldPrims =
                             let world = setScreen selectedScreenAddress selectedScreen world
                             let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else IncomingState) world
                             if not finished then world
-                            else publish (FinishIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else publish4 (FinishIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | OutgoingState ->
                     let world =
                         if selectedScreen.Outgoing.TransitionTicks <> 0L then world
-                        else publish (StartOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        else publish4 (StartOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                     match world.Liveness with
                     | Exiting -> world
                     | Running ->
@@ -592,10 +553,10 @@ module WorldPrims =
                         let world = setScreenStatePlus selectedScreenAddress (if finished then IdlingState else OutgoingState) world
                         if not finished then world
                         else
-                            let world = publish (DeselectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            let world = publish4 (DeselectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                             match world.Liveness with
                             | Exiting -> world
-                            | Running -> publish (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            | Running -> publish4 (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
                 | IdlingState -> world
         match world.Liveness with
         | Exiting -> world
@@ -629,14 +590,62 @@ module WorldPrims =
         let world = transitionScreen destination world
         (Unhandled, world)
 
+    let private sortFstDesc (priority, _) (priority2, _) =
+        if priority = priority2 then 0
+        elif priority > priority2 then -1
+        else 1
+
+    let getSimulant (address : Address) world =
+        match address with
+        | [] -> Game <| world.Game
+        | [_] as screenAddress -> Screen <| getScreen screenAddress world
+        | [_; _] as groupAddress -> Group <| getGroup groupAddress world
+        | [_; _; _] as entityAddress -> Entity <| getEntity entityAddress world
+        | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
+
+    let getOptSimulant (address : Address) world =
+        match address with
+        | [] -> Some <| Game world.Game
+        | [_] as screenAddress -> Option.map Screen <| getOptScreen screenAddress world
+        | [_; _] as groupAddress -> Option.map Group <| getOptGroup groupAddress world
+        | [_; _; _] as entityAddress -> Option.map Entity <| getOptEntity entityAddress world
+        | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
+
+    let getPublishingPriority getEntityPublishingPriority simulant world =
+        match simulant with
+        | Game _ -> GamePublishingPriority
+        | Screen _ -> ScreenPublishingPriority
+        | Group _ -> GroupPublishingPriority
+        | Entity entity -> getEntityPublishingPriority entity world
+
+    let getSubscriptionSortables getEntityPublishingPriority subscriptions world =
+        let optSimulants =
+            List.map
+                (fun (key, address, subscription) ->
+                    let optSimulant = getOptSimulant address world
+                    Option.map (fun simulant -> (getPublishingPriority getEntityPublishingPriority simulant world, (key, address, subscription))) optSimulant)
+                subscriptions
+        List.definitize optSimulants
+
+    let sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
+        let subscriptions = getSubscriptionSortables getEntityPublishingPriority subscriptions world
+        let subscriptions = List.sortWith sortFstDesc subscriptions
+        List.map snd subscriptions
+
+    let sortSubscriptionsByDepth subscriptions world =
+        sortSubscriptionsBy (fun (entity : Entity) world -> entity.GetPickingPriority world) subscriptions world
+
+    let sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
+        sortSubscriptionsBy (fun _ _ -> EntityPublishingPriority) subscriptions world
+
     /// Publish a message for the given event.
-    let rec publishDefinition event publisher messageData world =
+    let rec publishDefinition publishSort event publisher messageData world =
         let events = List.collapseLeft event
         let optSubLists = List.map (fun event -> Map.tryFind (event @ AnyEvent) world.Subscriptions) events
         let optSubLists = Map.tryFind event world.Subscriptions :: optSubLists
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
-        let subListSorted = subscriptionSort subList world
+        let subListSorted = publishSort subList world
         let (_, world) =
             List.foldWhile
                 (fun (messageHandled, world) (_, subscriber, subscription) ->
@@ -658,6 +667,10 @@ module WorldPrims =
                 subListSorted
         world
 
+    /// Publish a message for the given event.
+    and publish4Definition event publisher messageData world =
+        publish sortSubscriptionsByHierarchy event publisher messageData world
+
     /// Subscribe to messages for the given event.
     and subscribeDefinition subscriptionKey event subscriber subscription world =
         let subscriptions = 
@@ -666,6 +679,10 @@ module WorldPrims =
             | Some subscriptionList -> Map.add event ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
         let unsubscriptions = Map.add subscriptionKey (event, subscriber) world.Unsubscriptions
         { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+
+    /// Subscribe to messages for the given event.
+    and subscribe4Definition event subscriber subscription world =
+        subscribe (makeSubscriptionKey ()) event subscriber subscription world
 
     /// Unsubscribe to messages for the given event.
     and unsubscribeDefinition subscriptionKey world =
@@ -705,7 +722,9 @@ module WorldPrims =
             subscribe removalKey (RemovingEvent @ subscriber) subscriber sub world
 
     publish <- publishDefinition
+    publish4 <- publish4Definition
     subscribe <- subscribeDefinition
+    subscribe4 <- subscribe4Definition
     unsubscribe <- unsubscribeDefinition
     withSubscription <- withSubscriptionDefinition
     observe <- observeDefinition
