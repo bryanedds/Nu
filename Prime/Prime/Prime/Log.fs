@@ -27,6 +27,7 @@ module Log =
         Debug.Fail message
         note message
 #else
+        let _ = message
         ()
 #endif
 
@@ -37,5 +38,6 @@ module Log =
             Debug.Fail message
             note message
 #else
+        let _ = (predicate, message)
         ()
 #endif

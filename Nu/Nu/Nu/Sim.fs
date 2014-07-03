@@ -176,7 +176,10 @@ module SimModule =
 
     /// A map of game message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
-    and Subscriptions = Map<Address, (Address * Subscription) list>
+    and Subscriptions = Map<Address, (Guid * Address * Subscription) list>
+
+    /// A map of subscription keys to unsubscription data.
+    and Unsubscriptions = Map<Guid, Address * Address>
 
     and [<ReferenceEquality>] Task =
         { Time : int64
@@ -194,6 +197,7 @@ module SimModule =
           Interactivity : Interactivity
           Camera : Camera
           Subscriptions : Subscriptions
+          Unsubscriptions : Unsubscriptions
           Tasks : Task list
           MouseState : MouseState
           AudioPlayer : AudioPlayer

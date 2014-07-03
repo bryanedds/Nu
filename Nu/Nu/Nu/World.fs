@@ -91,7 +91,8 @@ module World =
     let getOptSelectedScreen = WorldPrims.getOptSelectedScreen
     let setOptSelectedScreen = WorldPrims.setOptSelectedScreen
     
-    // Other forwarders.
+    // Normal forwarders.
+    let makeSubscriptionKey = WorldPrims.makeSubscriptionKey
     let isAddressSelected = WorldPrims.isAddressSelected
     let handleEventAsExit = WorldPrims.handleEventAsExit
     let handleEventAsScreenTransition = WorldPrims.handleEventAsScreenTransition
@@ -292,8 +293,8 @@ module World =
         let splashLabel = splashLabel.SetPosition <| -world.Camera.EyeSize * 0.5f
         let splashLabel = splashLabel.SetLabelSprite (sprite : Sprite)
         let world = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
-        let world = subscribe (FinishIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
-        subscribe (FinishOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
+        let world = observe (FinishIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
+        observe (FinishOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
 
     let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
         let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
@@ -326,7 +327,7 @@ module World =
                      typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                      gameDispatcherName, gameDispatcher]
             let world =
-                { Game = { Id = NuCore.getId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty
@@ -335,6 +336,7 @@ module World =
                   Interactivity = interactivity
                   Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                   Subscriptions = Map.empty
+                  Unsubscriptions = Map.empty
                   Tasks = []
                   MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                   AudioPlayer = Audio.makeAudioPlayer ()
