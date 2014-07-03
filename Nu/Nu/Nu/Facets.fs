@@ -57,14 +57,14 @@ module Entity2dFacetModule =
                 Entity.setSize transform.Size |>
                 Entity.setRotation transform.Rotation
 
-        static member pickingSort entities =
-            let priorities = List.map (fun (entity : Entity) -> entity.Depth) entities
+        static member pickingSort entities world =
+            let priorities = List.map (fun (entity : Entity) -> entity.GetPickingPriority world) entities
             let prioritiesAndEntities = List.zip priorities entities
             let prioritiesAndEntitiesSorted = List.sortWith Entity.sortFstDesc prioritiesAndEntities
             List.map snd prioritiesAndEntitiesSorted
 
         static member tryPick position entities world =
-            let entitiesSorted = Entity.pickingSort entities
+            let entitiesSorted = Entity.pickingSort entities world
             List.tryFind
                 (fun entity ->
                     let positionEntity = Entity.mouseToEntity position world entity
@@ -83,7 +83,7 @@ module Entity2dFacet =
             Entity.setSize DefaultEntitySize |>
             Entity.setRotation 0.0f
 
-    let getPublishingPriority (entity2d : Entity) =
+    let getPickingPriority (entity2d : Entity) =
         entity2d.Depth
 
 [<AutoOpen>]

@@ -100,7 +100,12 @@ module World =
     let initTypeConverters = WorldPrims.initTypeConverters
     let selectScreen = WorldPrims.selectScreen
     let transitionScreen = WorldPrims.transitionScreen
+    let getSubscriptionSortables = WorldPrims.getSubscriptionSortables
+    let sortSubscriptionsBy = WorldPrims.sortSubscriptionsBy
+    let sortSubscriptionsByHierarchy = WorldPrims.sortSubscriptionsByHierarchy
+    let sortSubscriptionsByDepth = WorldPrims.sortSubscriptionsByDepth
     let publish = WorldPrims.publish
+    let publish4 = WorldPrims.publish4
     let subscribe = WorldPrims.subscribe
     let subscribe4 = WorldPrims.subscribe4
     let observe = WorldPrims.observe
@@ -211,7 +216,7 @@ module World =
                 | Some _ ->
                     let collisionAddress = CollisionEvent @ bodyCollisionMessage.EntityAddress
                     let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
-                    publish collisionAddress [] collisionData world
+                    publish4 collisionAddress [] collisionData world
 
     let private handleIntegrationMessages integrationMessages world =
         List.fold handleIntegrationMessage world integrationMessages
@@ -244,14 +249,15 @@ module World =
                     | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                         let mousePosition = Vector2 (single event.button.x, single event.button.y)
                         let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                        if Set.contains MouseLeft world.MouseState.MouseDowns then publish MouseDragEvent [] (MouseMoveData mousePosition) world
-                        else publish MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
+                        if Set.contains MouseLeft world.MouseState.MouseDowns
+                        then publish sortSubscriptionsByDepth MouseDragEvent [] (MouseMoveData mousePosition) world
+                        else publish sortSubscriptionsByDepth MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
                     | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                         let mouseButton = Sdl.makeNuMouseButton event.button.button
                         let mouseEvent = addrstr DownMouseEvent <| string mouseButton
                         let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                         let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                        publish mouseEvent [] messageData world
+                        publish sortSubscriptionsByDepth mouseEvent [] messageData world
                     | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                         let mouseState = world.MouseState
                         let mouseButton = Sdl.makeNuMouseButton event.button.button
@@ -259,7 +265,7 @@ module World =
                         if Set.contains mouseButton mouseState.MouseDowns then
                             let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                             let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                            publish mouseEvent [] messageData world
+                            publish sortSubscriptionsByDepth mouseEvent [] messageData world
                         else world
                     | _ -> world
                 (world.Liveness, world))
@@ -268,7 +274,7 @@ module World =
                 match world.Liveness with
                 | Exiting -> (Exiting, world)
                 | Running ->
-                    let world = publish TickEvent [] NoData world
+                    let world = publish4 TickEvent [] NoData world
                     match world.Liveness with
                     | Exiting -> (Exiting, world)
                     | Running ->
