@@ -491,7 +491,7 @@ module WorldPrims =
         | Game _ -> GamePublishingPriority
         | Screen _ -> ScreenPublishingPriority
         | Group _ -> GroupPublishingPriority
-        | Entity entity -> entity.GetPickingPriority world
+        | Entity entity -> entity.GetPublishingPriority world
 
     let private sortFstDesc (priority, _) (priority2, _) =
         if priority = priority2 then 0
