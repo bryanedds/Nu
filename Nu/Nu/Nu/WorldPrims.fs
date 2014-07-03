@@ -632,7 +632,7 @@ module WorldPrims =
         let subscriptions = List.sortWith sortFstDesc subscriptions
         List.map snd subscriptions
 
-    let sortSubscriptionsByDepth subscriptions world =
+    let sortSubscriptionsByPickingPriority subscriptions world =
         sortSubscriptionsBy (fun (entity : Entity) world -> entity.GetPickingPriority world) subscriptions world
 
     let sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =

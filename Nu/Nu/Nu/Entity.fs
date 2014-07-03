@@ -18,10 +18,10 @@ module EntityModule =
 
     type Entity with
 
-        member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
-        member this.Register (address : Address, world : World) : World = this?Register (address, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
-        member this.GetPickingPriority (world : World) : single = this?GetPickingPriority (this, world)
+        member entity.Init (dispatcherContainer : IXDispatcherContainer) : Entity = entity?Init (entity, dispatcherContainer)
+        member entity.Register (address : Address, world : World) : World = entity?Register (address, world)
+        member entity.Unregister (address : Address, world : World) : World = entity?Unregister (address, world)
+        member entity.GetPickingPriority (world : World) : single = entity?GetPickingPriority (entity, world)
 
 [<RequireQualifiedAccess>]
 module Entity =
