@@ -59,10 +59,10 @@ module XtensionModule =
             else Xtension.getDefaultValue ()
 
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
-                let dispatchers = dispatcherContainer.GetDispatchers ()
-                match Map.tryFind dispatcherName dispatchers with
-                | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
-                | Some dispatcher -> dispatcher
+            let dispatchers = dispatcherContainer.GetDispatchers ()
+            match Map.tryFind dispatcherName dispatchers with
+            | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
+            | Some dispatcher -> dispatcher
 
         static member getDispatcher xtension (dispatcherContainer : IXDispatcherContainer) =
             let optXDispatcherName = xtension.OptXDispatcherName

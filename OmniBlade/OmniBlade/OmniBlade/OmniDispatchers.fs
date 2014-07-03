@@ -30,7 +30,7 @@ module FieldGroupDispatcherModule =
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
-                let applyLinearImpulseMessage = { PhysicsId = avatar.PhysicsId; LinearImpulse = impulseVector }
+                let applyLinearImpulseMessage = { PhysicsId = Entity.getPhysicsId avatar; LinearImpulse = impulseVector }
                 let world = { world with PhysicsMessages = ApplyLinearImpulseMessage applyLinearImpulseMessage :: world.PhysicsMessages }
                 (Unhandled, world)
             else (Unhandled, world)

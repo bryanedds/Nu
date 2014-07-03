@@ -426,7 +426,7 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             ignore <| worldChangers.AddLast (fun world ->
                 let entity = World.getEntity entityTds.Address world
-                let entity = entity.SetSize <| entity.GetQuickSize world
+                let entity = Entity.setSize (entity.GetQuickSize world) entity
                 let world = World.setEntity entityTds.Address entity world
                 let world = entity.PropagatePhysics (entityTds.Address, world)
                 refWorld := world // must be set for property grid

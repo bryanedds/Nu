@@ -16,8 +16,8 @@ module BulletDispatcherModule =
 
     type Entity with
 
-        member this.BirthTime with get () = this?BirthTime () : int64
-        member this.SetBirthTime (value : int64) : Entity = this?BirthTime <- value
+        member entity.BirthTime with get () = entity?BirthTime () : int64
+        static member setBirthTime (value : int64) (entity : Entity) : Entity = entity?BirthTime <- value
 
     type BulletDispatcher () =
         inherit SimpleBodyDispatcher
@@ -40,24 +40,24 @@ module BulletDispatcherModule =
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
             let bullet = SimpleSpriteFacet.init bullet dispatcherContainer
-            bullet
-                .SetSize(Vector2 (24.0f, 24.0f))
-                .SetDensity(0.25f)
-                .SetRestitution(0.5f)
-                .SetLinearDamping(0.0f)
-                .SetGravityScale(0.0f)
-                .SetIsBullet(true)
-                .SetImageSprite({ SpriteAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName })
-                .SetBirthTime(0L)
+            bullet |>
+                Entity.setSize -<| Vector2 (24.0f, 24.0f) |>
+                Entity.setDensity 0.25f |>
+                Entity.setRestitution 0.5f |>
+                Entity.setLinearDamping 0.0f |>
+                Entity.setGravityScale 0.0f |>
+                Entity.setIsBullet true |>
+                Entity.setImageSprite { SpriteAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setBirthTime 0L
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             let world = World.observe TickEvent address (CustomSub tickHandler) world
             let world = World.observe (CollisionEvent @ address) address (CustomSub collisionHandler) world
             let bullet = World.getEntity address world
-            let bullet = bullet.SetBirthTime world.Ticks
+            let bullet = Entity.setBirthTime world.Ticks bullet
             let world = World.setEntity address bullet world
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = bullet.PhysicsId; LinearImpulse = Vector2 (50.0f, 0.0f) }
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId bullet; LinearImpulse = Vector2 (50.0f, 0.0f) }
             { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
 
         override dispatcher.GetRenderDescriptors (bullet, world) =
@@ -71,8 +71,8 @@ module EnemyDispatcherModule =
 
     type Entity with
 
-        member this.Health with get () = this?Health () : int
-        member this.SetHealth (value : int) : Entity = this?Health <- value
+        member entity.Health with get () = entity?Health () : int
+        static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
 
     type EnemyDispatcher () =
         inherit SimpleBodyDispatcher
@@ -93,12 +93,13 @@ module EnemyDispatcherModule =
                 let enemy = World.getEntity message.Subscriber world
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
                 if hasAppeared then
-                    let optGroundTangent = Physics.getOptGroundContactTangent enemy.PhysicsId world.Integrator
+                    let physicsId = Entity.getPhysicsId enemy
+                    let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
                     let force =
                         match optGroundTangent with
                         | None -> Vector2 (-2000.0f, -30000.0f)
                         | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
-                    let applyForceMessage = ApplyForceMessage { PhysicsId = enemy.PhysicsId; Force = force }
+                    let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
                     let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                     (Unhandled, world)
                 else (Unhandled, world)
@@ -111,7 +112,7 @@ module EnemyDispatcherModule =
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collider world
                 if isBullet then
                     let enemy = World.getEntity message.Subscriber world
-                    let enemy = enemy.SetHealth <| enemy.Health - 1
+                    let enemy = Entity.setHealth (enemy.Health - 1) enemy
                     let world = World.setEntity message.Subscriber enemy world
                     if enemy.Health = 0 then
                         let world = World.removeEntity message.Subscriber world
@@ -126,16 +127,16 @@ module EnemyDispatcherModule =
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
             let enemy = SimpleAnimatedSpriteFacet.init enemy dispatcherContainer
-            enemy
-                .SetFixedRotation(true)
-                .SetLinearDamping(3.0f)
-                .SetGravityScale(0.0f)
-                .SetStutter(8)
-                .SetTileCount(6)
-                .SetTileRun(4)
-                .SetTileSize(Vector2 (48.0f, 96.0f))
-                .SetImageSprite({ SpriteAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName })
-                .SetHealth(6)
+            enemy |>
+                Entity.setFixedRotation true |>
+                Entity.setLinearDamping 3.0f |>
+                Entity.setGravityScale 0.0f |>
+                Entity.setStutter 8 |>
+                Entity.setTileCount 6 |>
+                Entity.setTileRun 4 |>
+                Entity.setTileSize -<| Vector2 (48.0f, 96.0f) |>
+                Entity.setImageSprite { SpriteAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setHealth 6
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
@@ -157,12 +158,12 @@ module PlayerDispatcherModule =
 
     type Entity with
 
-        member this.LastTimeOnGround with get () = this?LastTimeOnGround () : int64
-        member this.SetLastTimeOnGround (value : int64) : Entity = this?LastTimeOnGround <- value
-        member this.LastTimeJump with get () = this?LastTimeJump () : int64
-        member this.SetLastTimeJump (value : int64) : Entity = this?LastTimeJump <- value
+        member entity.LastTimeOnGround with get () = entity?LastTimeOnGround () : int64
+        static member setLastTimeOnGround (value : int64) (entity : Entity) : Entity = entity?LastTimeOnGround <- value
+        member entity.LastTimeJump with get () = entity?LastTimeJump () : int64
+        static member setLastTimeJump (value : int64) (entity : Entity) : Entity = entity?LastTimeJump <- value
         
-        member this.HasFallen with get () = this.Position.Y < -600.0f
+        static member hasFallen (entity : Entity) = entity.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit SimpleBodyDispatcher
@@ -181,16 +182,16 @@ module PlayerDispatcherModule =
         let createBullet (player : Entity) address world =
             let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name None world
             let bullet =
-                bullet
-                    .SetPosition(player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f))
-                    .SetDepth(player.Depth)
+                bullet |>
+                    Entity.setPosition (player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f)) |>
+                    Entity.setDepth player.Depth
             let bulletAddress = List.allButLast address @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
         let spawnBulletHandler message world =
             if World.gamePlaying world then
                 let player = World.getEntity message.Subscriber world
-                if not player.HasFallen then
+                if not <| Entity.hasFallen player then
                     if world.Ticks % 6L = 0L then
                         let player = World.getEntity message.Subscriber world
                         let world = createBullet player message.Subscriber world
@@ -201,7 +202,8 @@ module PlayerDispatcherModule =
             else (Unhandled, world)
 
         let getLastTimeOnGround (player : Entity) world =
-            if not <| Physics.isBodyOnGround player.PhysicsId world.Integrator
+            let physicsId = Entity.getPhysicsId player
+            if not <| Physics.isBodyOnGround physicsId world.Integrator
             then player.LastTimeOnGround
             else world.Ticks
 
@@ -209,14 +211,15 @@ module PlayerDispatcherModule =
             if World.gamePlaying world then
                 let player = World.getEntity message.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
-                let player = player.SetLastTimeOnGround lastTimeOnGround
+                let player = Entity.setLastTimeOnGround lastTimeOnGround player
                 let world = World.setEntity message.Subscriber player world
-                let optGroundTangent = Physics.getOptGroundContactTangent player.PhysicsId world.Integrator
+                let physicsId = Entity.getPhysicsId player
+                let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
                 let force =
                     match optGroundTangent with
                     | None -> Vector2 (8000.0f, -30000.0f)
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
-                let applyForceMessage = ApplyForceMessage { PhysicsId = player.PhysicsId; Force = force }
+                let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
                 let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
                 (Unhandled, world)
             else (Unhandled, world)
@@ -226,9 +229,9 @@ module PlayerDispatcherModule =
                 let player = World.getEntity message.Subscriber world
                 if  world.Ticks >= player.LastTimeJump + 12L &&
                     world.Ticks <= player.LastTimeOnGround + 10L then
-                    let player = player.SetLastTimeJump world.Ticks
+                    let player = Entity.setLastTimeJump world.Ticks player
                     let world = World.setEntity message.Subscriber player world
-                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = player.PhysicsId; LinearImpulse = Vector2 (0.0f, 18000.0f) }
+                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId player; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     let world = playJumpSound world
                     (Unhandled, world)
@@ -238,17 +241,17 @@ module PlayerDispatcherModule =
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
             let player = SimpleAnimatedSpriteFacet.init player dispatcherContainer
-            player
-                .SetFixedRotation(true)
-                .SetLinearDamping(3.0f)
-                .SetGravityScale(0.0f)
-                .SetStutter(3)
-                .SetTileCount(16)
-                .SetTileRun(4)
-                .SetTileSize(Vector2 (48.0f, 96.0f))
-                .SetImageSprite({ SpriteAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName })
-                .SetLastTimeOnGround(Int64.MinValue)
-                .SetLastTimeJump(Int64.MinValue)
+            player |>
+                Entity.setFixedRotation true |>
+                Entity.setLinearDamping 3.0f |>
+                Entity.setGravityScale 0.0f |>
+                Entity.setStutter 3 |>
+                Entity.setTileCount 16 |>
+                Entity.setTileRun 4 |>
+                Entity.setTileSize -<| Vector2 (48.0f, 96.0f) |>
+                Entity.setImageSprite { SpriteAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setLastTimeOnGround Int64.MinValue |>
+                Entity.setLastTimeJump Int64.MinValue
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
@@ -291,7 +294,7 @@ module StagePlayDispatcherModule =
 
         let playerFallHandler message world =
             let player = getPlayer message.Subscriber world
-            if player.HasFallen && (World.getSelectedScreen world).State = IdlingState then
+            if Entity.hasFallen player && (World.getSelectedScreen world).State = IdlingState then
                 let world = playDeathSound world
                 let world = World.transitionScreen TitleAddress world
                 (Unhandled, world)
@@ -320,7 +323,7 @@ module StageScreenModule =
             List.map
                 (fun (entity : Entity) ->
                     if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world
-                    then entity.SetPosition <| entity.Position + Vector2 (xShift, 0.0f)
+                    then Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity
                     else entity)
                 entities
 
