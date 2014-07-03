@@ -50,7 +50,7 @@ module NuCore =
     let InvalidId = Guid.Empty
     
     /// Make a Nu Id.
-    let getId = Guid.NewGuid
+    let makeId = Guid.NewGuid
 
     let getResolutionOrDefault isX defaultResolution =
         let resolution = ref 0

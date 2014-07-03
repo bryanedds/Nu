@@ -130,6 +130,8 @@ module Program =
                         let entity = World.getEntity entityTds.Address world
                         entity.PropagatePhysics (entityTds.Address, world)
                 pushPastWorld pastWorld world)
+            // in order to update the view immediately, we have to apply the changer twice, once
+            // now and once in the update function
             entityTds.RefWorld := changer !entityTds.RefWorld
             ignore <| entityTds.WorldChangers.AddLast changer
 
@@ -406,7 +408,7 @@ module Program =
         | Some entity ->
             ignore <| worldChangers.AddLast (fun world ->
                 let (positionSnap, rotationSnap) = getSnaps form
-                let id = NuCore.getId ()
+                let id = NuCore.makeId ()
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entity = { entity with Id = id; Name = string id }
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
@@ -545,11 +547,11 @@ module Program =
             refWorld := world
             refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := World.setOptSelectedScreenAddress (Some EditorScreenAddress) !refWorld 
-            refWorld := World.subscribe DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := World.subscribe UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
-            refWorld := World.subscribe DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
-            refWorld := World.subscribe UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe (RemovingEvent @ AnyEvent) [] (CustomSub <| simulantRemovedHandler form) !refWorld
+            refWorld := World.observe DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := World.observe UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
+            refWorld := World.observe DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
+            refWorld := World.observe UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
+            refWorld := World.observe (RemovingEvent @ AnyEvent) [] (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     let populateCreateEntityComboBox (form : NuEditForm) world =

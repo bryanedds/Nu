@@ -27,7 +27,7 @@ module EntityModule =
 module Entity =
 
     let makeDefaultUninitialized dispatcherName optName =
-        let id = NuCore.getId ()
+        let id = NuCore.makeId ()
         { Id = id
           Name = match optName with None -> string id | Some name -> name
           Visible = true

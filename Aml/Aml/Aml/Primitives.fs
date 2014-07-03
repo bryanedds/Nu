@@ -577,6 +577,7 @@ module Primitives =
     /// Push an environment's expr trace.
     let pushExpr exprTrace env =
 #if AML_OPTIMIZED
+        let _ = exprTrace
         env
 #else
         let envInfo = env.EnvDebugInfo
@@ -595,6 +596,7 @@ module Primitives =
     /// Push a frame on an environment's stack trace.
     let pushStackFrame frame env =
 #if AML_OPTIMIZED
+        let _ = frame
         env
 #else
         let envInfo = env.EnvDebugInfo

@@ -50,6 +50,18 @@ module Triple =
     let inline append c (a, b) =
         (a, b, c)
 
+    /// Replace triple member a.
+    let inline withA a (_, b, c) =
+        (a, b, c)
+
+    /// Replace triple member b.
+    let inline withB b (a, _, c) =
+        (a, b, c)
+
+    /// Replace triple member c.
+    let inline withC c (a, b, _) =
+        (a, b, c)
+
     /// Make a triple.
     let make a b c =
         (a, b, c)

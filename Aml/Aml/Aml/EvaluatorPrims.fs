@@ -27,6 +27,7 @@ module EvaluatorPrims =
     /// Make an evaluation result whose environment has had its repl line configured.
     let configureEvalResultFirstReplLine (result : EvalResult) line =
 #if AML_OPTIMIZED
+        let _ = line
         result
 #else
         let resultEnv = result.Env
