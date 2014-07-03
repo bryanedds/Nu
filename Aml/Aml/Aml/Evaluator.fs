@@ -31,6 +31,7 @@ module Evaluator =
     /// Check a contract.
     let rec checkContract args argCount largs largCount contract env =
 #if AML_OPTIMIZED
+        let _ = (args, argCount, largs, largCount, contract, env)
         (true, None)
 #else
         if isUnit contract then (true, None)
@@ -791,6 +792,7 @@ module Evaluator =
     /// Apply a lambda once its been pushed on the stack frame and its arguments have been unified.
     and applyLambdaPostPushAndUnification args argCount largs largCount cpre body pre post env =
 #if AML_OPTIMIZED
+        let _ = cpre
         let constraintPassed = true
 #else
         let constraintPassed = cpre args

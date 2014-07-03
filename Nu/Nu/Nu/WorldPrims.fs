@@ -42,10 +42,10 @@ module WorldPrims =
         Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
 
     let mutable subscribe =
-        Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+        Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
 
     let mutable unsubscribe =
-        Unchecked.defaultof<Address -> Address -> World -> World>
+        Unchecked.defaultof<Guid -> World -> World>
 
     let mutable withSubscription =
         Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
@@ -440,6 +440,16 @@ module WorldPrims =
 
     (* Normal functions. *)
 
+    /// Make a subscription key.
+    let makeSubscriptionKey =
+        Guid.NewGuid
+
+    let private ScreenTransitionKeys =
+        (makeSubscriptionKey (), makeSubscriptionKey ())
+
+    let private SplashScreenTickKey =
+        makeSubscriptionKey ()
+
     /// Initialize Nu's various type converters.
     /// Must be called for reflection to work in Nu.
     let initTypeConverters () =
@@ -486,9 +496,9 @@ module WorldPrims =
     let private getSubscriptionDescriptors subscriptions world =
         let optSimulants =
             List.map
-                (fun (address, subscription) ->
+                (fun (key, address, subscription) ->
                     let optSimulant = getOptSimulant address world
-                    Option.map (fun simulant -> (getPublishingPriority simulant world, (address, subscription))) optSimulant)
+                    Option.map (fun simulant -> (getPublishingPriority simulant world, (key, address, subscription))) optSimulant)
                 subscriptions
         List.definitize optSimulants
 
@@ -509,12 +519,12 @@ module WorldPrims =
         match state with
         | IdlingState ->
             world |>
-                unsubscribe (DownMouseEvent @ AnyEvent) address |>
-                unsubscribe (UpMouseEvent @ AnyEvent) address
+                unsubscribe -<| fst ScreenTransitionKeys |>
+                unsubscribe -<| snd ScreenTransitionKeys
         | IncomingState | OutgoingState ->
             world |>
-                subscribe (DownMouseEvent @ AnyEvent) address SwallowSub |>
-                subscribe (UpMouseEvent @ AnyEvent) address SwallowSub
+                subscribe (fst ScreenTransitionKeys) (DownMouseEvent @ AnyEvent) address SwallowSub |>
+                subscribe (snd ScreenTransitionKeys) (UpMouseEvent @ AnyEvent) address SwallowSub
 
     let selectScreen destination world =
         let world = setScreenStatePlus destination IncomingState world
@@ -526,12 +536,13 @@ module WorldPrims =
             trace "Program Error: Could not handle screen transition due to no selected screen."
             { world with Liveness = Exiting }
         | Some selectedScreenAddress ->
+            let subscriptionKey = makeSubscriptionKey ()
             let sub = CustomSub (fun _ world ->
-                let world = unsubscribe (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress world
+                let world = unsubscribe subscriptionKey world
                 let world = selectScreen destination world
-                Unhandled, world)
+                (Unhandled, world))
             let world = setScreenStatePlus selectedScreenAddress OutgoingState world
-            subscribe (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
+            subscribe subscriptionKey (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
 
     let private updateTransition1 (transition : Transition) =
         if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -586,10 +597,10 @@ module WorldPrims =
         | Running -> update world
 
     let rec private handleSplashScreenIdleTick idlingTime ticks message world =
-        let world = unsubscribe message.Event message.Subscriber world
+        let world = unsubscribe SplashScreenTickKey world
         if ticks < idlingTime then
             let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime -<| incL ticks
-            let world = subscribe message.Event message.Subscriber subscription world
+            let world = subscribe SplashScreenTickKey message.Event message.Subscriber subscription world
             (Unhandled, world)
         else
             match getOptSelectedScreenAddress world with
@@ -602,7 +613,7 @@ module WorldPrims =
 
     let internal handleSplashScreenIdle idlingTime message world =
         let subscription = CustomSub <| handleSplashScreenIdleTick idlingTime 0L
-        let world = subscribe TickEvent message.Subscriber subscription world
+        let world = subscribe SplashScreenTickKey TickEvent message.Subscriber subscription world
         (Handled, world)
 
     let handleEventAsScreenTransitionFromSplash destination world =
@@ -623,7 +634,7 @@ module WorldPrims =
         let subListSorted = subscriptionSort subList world
         let (_, world) =
             List.foldWhile
-                (fun (messageHandled, world) (subscriber, subscription) ->
+                (fun (messageHandled, world) (_, subscriber, subscription) ->
                     let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
                     if messageHandled = Handled || world.Liveness = Exiting then None
                     else
@@ -643,40 +654,46 @@ module WorldPrims =
         world
 
     /// Subscribe to messages for the given event.
-    and subscribeDefinition event subscriber subscription world =
-        let subs = world.Subscriptions
-        let optSubList = Map.tryFind event subs
-        { world with
-            Subscriptions =
-                match optSubList with
-                | None -> Map.add event [(subscriber, subscription)] subs
-                | Some subList -> Map.add event ((subscriber, subscription) :: subList) subs }
+    and subscribeDefinition subscriptionKey event subscriber subscription world =
+        let subscriptions = 
+            match Map.tryFind event world.Subscriptions with
+            | None -> Map.add event [(subscriptionKey, subscriber, subscription)] world.Subscriptions
+            | Some subscriptionList -> Map.add event ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
+        let unsubscriptions = Map.add subscriptionKey (event, subscriber) world.Unsubscriptions
+        { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
     /// Unsubscribe to messages for the given event.
-    and unsubscribeDefinition event subscriber world =
-        let subs = world.Subscriptions
-        let optSubList = Map.tryFind event subs
-        match optSubList with
-        | None -> world
-        | Some subList ->
-            let subList = List.remove (fun (address, _) -> address = subscriber) subList
-            let subscriptions = Map.add event subList subs
-            { world with Subscriptions = subscriptions }
+    and unsubscribeDefinition subscriptionKey world =
+        match Map.tryFind subscriptionKey world.Unsubscriptions with
+        | None -> world // TODO: consider failure signal
+        | Some (event, subscriber) ->
+            match Map.tryFind event world.Subscriptions with
+            | None -> world // TODO: consider failure signal
+            | Some subscriptionList ->
+                let subscriptionList =
+                    List.remove
+                        (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
+                        subscriptionList
+                let subscriptions = Map.add event subscriptionList world.Subscriptions
+                { world with Subscriptions = subscriptions }
 
     /// Execute a procedure within the context of a given subscription for the given event.
     and withSubscriptionDefinition event subscriber subscription procedure world =
-        let world = subscribe event subscriber subscription world
+        let subscriptionKey = makeSubscriptionKey ()
+        let world = subscribe subscriptionKey event subscriber subscription world
         let world = procedure world
-        unsubscribe event subscriber world
+        unsubscribe subscriptionKey world
 
     /// Subscribe to messages for the given event during the lifetime of the subscriber.
     and observeDefinition event subscriber subscription world =
-        let world = subscribe event subscriber subscription world
+        let observationKey = makeSubscriptionKey ()
+        let removalKey = makeSubscriptionKey ()
+        let world = subscribe observationKey event subscriber subscription world
         let sub = CustomSub (fun _ world ->
-            let world = unsubscribe (RemovingEvent @ subscriber) subscriber world
-            let world = unsubscribe event subscriber world
+            let world = unsubscribe removalKey world
+            let world = unsubscribe observationKey world
             (Unhandled, world))
-        subscribe (RemovingEvent @ subscriber) subscriber sub world
+        subscribe removalKey (RemovingEvent @ subscriber) subscriber sub world
 
     publish <- publishDefinition
     subscribe <- subscribeDefinition

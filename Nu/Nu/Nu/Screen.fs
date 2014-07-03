@@ -25,7 +25,7 @@ module Screen =
           Set = fun value screen -> { screen with Outgoing = value }}
 
     let makeDefault dispatcherName =
-        { Id = NuCore.getId ()
+        { Id = NuCore.makeId ()
           State = IdlingState
           Incoming = Transition.makeDefault Incoming
           Outgoing = Transition.makeDefault Outgoing

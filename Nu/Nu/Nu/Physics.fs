@@ -151,8 +151,8 @@ module Physics =
     let InvalidId =
         PhysicsId (NuCore.InvalidId, NuCore.InvalidId)
 
-    let getId (entityId : Guid) =
-        PhysicsId (entityId, NuCore.getId ())
+    let makeId (entityId : Guid) =
+        PhysicsId (entityId, NuCore.makeId ())
 
     let private toPixel value =
         value * PhysicsToPixelRatio

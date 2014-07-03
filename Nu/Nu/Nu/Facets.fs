@@ -160,7 +160,7 @@ module SimpleBodyFacet =
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity
-            .SetMinorId(NuCore.getId ())
+            .SetMinorId(NuCore.makeId ())
             .SetBodyType(BodyType.Dynamic)
             .SetDensity(NormalDensity)
             .SetFriction(0.0f)
