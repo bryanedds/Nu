@@ -22,8 +22,8 @@ module EntityDispatcherModule =
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
 
-        abstract member GetPublishingPriority : Entity * World -> single
-        default dispatcher.GetPublishingPriority (_, _) = 0.0f
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (_, _) = 0.0f
 
 [<AutoOpen>]
 module Entity2dDispatcherModule =
@@ -40,8 +40,8 @@ module Entity2dDispatcherModule =
                 Entity.setSize DefaultEntitySize |>
                 Entity.setRotation 0.0f
 
-        override dispatcher.GetPublishingPriority (entity, _) =
-            Entity2dFacet.getPublishingPriority entity
+        override dispatcher.GetPickingPriority (entity, _) =
+            Entity2dFacet.getPickingPriority entity
 
         abstract member PropagatePhysics : Address * World -> World
         default dispatcher.PropagatePhysics (_, world) = world
@@ -117,7 +117,7 @@ module ButtonDispatcherModule =
                         if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
                             let button = Entity.setIsDown true button
                             let world = World.setEntity message.Subscriber button world
-                            let world = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
+                            let world = World.publish4 (straddr "Down" message.Subscriber) message.Subscriber NoData world
                             (Handled, world)
                         else (Unhandled, world)
                     else (Unhandled, world)
@@ -134,9 +134,9 @@ module ButtonDispatcherModule =
                         let world =
                             let button = Entity.setIsDown false button
                             let world = World.setEntity message.Subscriber button world
-                            World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
+                            World.publish4 (straddr "Up" message.Subscriber) message.Subscriber NoData world
                         if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
-                            let world = World.publish (straddr "Click" message.Subscriber) message.Subscriber NoData world
+                            let world = World.publish4 (straddr "Click" message.Subscriber) message.Subscriber NoData world
                             let sound = PlaySoundMessage { Volume = 1.0f; Sound = button.ClickSound }
                             let world = { world with AudioMessages = sound :: world.AudioMessages }
                             (Handled, world)
@@ -331,7 +331,7 @@ module ToggleDispatcherModule =
                             let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                             let world = World.setEntity message.Subscriber toggle world
                             let messageType = if toggle.IsOn then "On" else "Off"
-                            let world = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
+                            let world = World.publish4 (straddr messageType message.Subscriber) message.Subscriber NoData world
                             let sound = PlaySoundMessage { Volume = 1.0f; Sound = toggle.ToggleSound }
                             let world = { world with AudioMessages = sound :: world.AudioMessages }
                             (Handled, world)
@@ -399,7 +399,7 @@ module FeelerDispatcherModule =
                         if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
                             let feeler = Entity.setIsTouched true feeler
                             let world = World.setEntity message.Subscriber feeler world
-                            let world = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
+                            let world = World.publish4 (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
                             (Handled, world)
                         else (Unhandled, world)
                     else (Unhandled, world)
@@ -414,7 +414,7 @@ module FeelerDispatcherModule =
                     if feeler.Enabled && feeler.Visible then
                         let feeler = Entity.setIsTouched false feeler
                         let world = World.setEntity message.Subscriber feeler world
-                        let world = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
+                        let world = World.publish4 (straddr "Release" message.Subscriber) message.Subscriber NoData world
                         (Handled, world)
                     else (Unhandled, world)
                 | _ -> failwith <| "Expected MouseButtonData from event '" + addrToStr message.Event + "'."

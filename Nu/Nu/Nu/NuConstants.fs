@@ -59,5 +59,6 @@ module NuConstants =
     let GamePublishingPriority = Single.MaxValue
     let ScreenPublishingPriority = GamePublishingPriority * 0.5f
     let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
+    let EntityPublishingPriority = GroupPublishingPriority * 0.5f
     let ResolutionX = NuCore.getResolutionOrDefault true 960
     let ResolutionY = NuCore.getResolutionOrDefault false 544

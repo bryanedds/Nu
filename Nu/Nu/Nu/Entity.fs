@@ -21,7 +21,7 @@ module EntityModule =
         member this.Init (dispatcherContainer : IXDispatcherContainer) : Entity = this?Init (this, dispatcherContainer)
         member this.Register (address : Address, world : World) : World = this?Register (address, world)
         member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
-        member this.GetPublishingPriority (world : World) : single = this?GetPublishingPriority (this, world)
+        member this.GetPickingPriority (world : World) : single = this?GetPickingPriority (this, world)
 
 [<RequireQualifiedAccess>]
 module Entity =

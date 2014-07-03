@@ -174,12 +174,18 @@ module SimModule =
         | ScreenTransitionFromSplashSub of Address (*desinationScreen*)
         | CustomSub of (Message -> World -> MessageHandled * World)
 
-    /// A map of game message subscriptions.
+    /// TODO: document
+    and SubscriptionEntry = Guid * Address * Subscription
+
+    /// A map of message subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
-    and Subscriptions = Map<Address, (Guid * Address * Subscription) list>
+    and SubscriptionEntries = Map<Address, SubscriptionEntry list>
+
+    /// TODO: document
+    and SubscriptionSorter = SubscriptionEntry list -> World -> SubscriptionEntry list
 
     /// A map of subscription keys to unsubscription data.
-    and Unsubscriptions = Map<Guid, Address * Address>
+    and UnsubscriptionEntries = Map<Guid, Address * Address>
 
     and [<ReferenceEquality>] Task =
         { Time : int64
@@ -196,8 +202,8 @@ module SimModule =
           Liveness : Liveness
           Interactivity : Interactivity
           Camera : Camera
-          Subscriptions : Subscriptions
-          Unsubscriptions : Unsubscriptions
+          Subscriptions : SubscriptionEntries
+          Unsubscriptions : UnsubscriptionEntries
           Tasks : Task list
           MouseState : MouseState
           AudioPlayer : AudioPlayer
