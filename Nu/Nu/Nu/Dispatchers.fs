@@ -34,11 +34,11 @@ module Entity2dDispatcherModule =
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
             let entity2d = Entity2dFacet.init entity2d dispatcherContainer
-            entity2d
-                .SetPosition(Vector2.Zero)
-                .SetDepth(0.0f)
-                .SetSize(DefaultEntitySize)
-                .SetRotation(0.0f)
+            entity2d |>
+                Entity.setPosition Vector2.Zero |>
+                Entity.setDepth 0.0f |>
+                Entity.setSize DefaultEntitySize |>
+                Entity.setRotation 0.0f
 
         override dispatcher.GetPickingPriority (entity, _) =
             Entity2dFacet.getPickingPriority entity
@@ -95,14 +95,14 @@ module ButtonDispatcherModule =
 
     type Entity with
 
-        member this.IsDown with get () = this?IsDown () : bool
-        member this.SetIsDown (value : bool) : Entity = this?IsDown <- value
-        member this.UpSprite with get () = this?UpSprite () : Sprite
-        member this.SetUpSprite (value : Sprite) : Entity = this?UpSprite <- value
-        member this.DownSprite with get () = this?DownSprite () : Sprite
-        member this.SetDownSprite (value : Sprite) : Entity = this?DownSprite <- value
-        member this.ClickSound with get () = this?ClickSound () : Sound
-        member this.SetClickSound (value : Sound) : Entity = this?ClickSound <- value
+        member entity.IsDown with get () = entity?IsDown () : bool
+        static member setIsDown (value : bool) (entity : Entity) : Entity = entity?IsDown <- value
+        member entity.UpSprite with get () = entity?UpSprite () : Sprite
+        static member setUpSprite (value : Sprite) (entity : Entity) : Entity = entity?UpSprite <- value
+        member entity.DownSprite with get () = entity?DownSprite () : Sprite
+        static member setDownSprite (value : Sprite) (entity : Entity) : Entity = entity?DownSprite <- value
+        member entity.ClickSound with get () = entity?ClickSound () : Sound
+        static member setClickSound (value : Sound) (entity : Entity) : Entity = entity?ClickSound <- value
 
     type [<Sealed>] ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -115,7 +115,7 @@ module ButtonDispatcherModule =
                     let mousePositionButton = Entity.mouseToEntity mousePosition world button
                     if button.Enabled && button.Visible then
                         if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
-                            let button = button.SetIsDown true
+                            let button = Entity.setIsDown true button
                             let world = World.setEntity message.Subscriber button world
                             let world = World.publish (straddr "Down" message.Subscriber) message.Subscriber NoData world
                             (Handled, world)
@@ -132,7 +132,7 @@ module ButtonDispatcherModule =
                     let mousePositionButton = Entity.mouseToEntity mousePosition world button
                     if button.Enabled && button.Visible then
                         let world =
-                            let button = button.SetIsDown false
+                            let button = Entity.setIsDown false button
                             let world = World.setEntity message.Subscriber button world
                             World.publish (straddr "Up" message.Subscriber) message.Subscriber NoData world
                         if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
@@ -147,11 +147,11 @@ module ButtonDispatcherModule =
 
         override dispatcher.Init (button, dispatcherContainer) =
             let button = base.Init (button, dispatcherContainer)
-            button
-                .SetIsDown(false)
-                .SetUpSprite({ SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetDownSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetClickSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            button |>
+                Entity.setIsDown false |>
+                Entity.setUpSprite { SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setDownSprite { SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Register (address, world) =
             world |>
@@ -187,15 +187,15 @@ module LabelDispatcherModule =
 
     type Entity with
 
-        member this.LabelSprite with get () = this?LabelSprite () : Sprite
-        member this.SetLabelSprite (value : Sprite) : Entity = this?LabelSprite <- value
+        member entity.LabelSprite with get () = entity?LabelSprite () : Sprite
+        static member setLabelSprite (value : Sprite) (entity : Entity) : Entity = entity?LabelSprite <- value
 
     type [<Sealed>] LabelDispatcher () =
         inherit GuiDispatcher ()
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
-            label.SetLabelSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            Entity.setLabelSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } label
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -226,28 +226,28 @@ module TextBoxDispatcherModule =
 
     type Entity with
 
-        member this.BoxSprite with get () = this?BoxSprite () : Sprite
-        member this.SetBoxSprite (value : Sprite) : Entity = this?BoxSprite <- value
-        member this.Text with get () = this?Text () : string
-        member this.SetText (value : string) : Entity = this?Text <- value
-        member this.TextFont with get () = this?TextFont () : Font
-        member this.SetTextFont (value : Font) : Entity = this?TextFont <- value
-        member this.TextOffset with get () = this?TextOffset () : Vector2
-        member this.SetTextOffset (value : Vector2) : Entity = this?TextOffset <- value
-        member this.TextColor with get () = this?TextColor () : Vector4
-        member this.SetTextColor (value : Vector4) : Entity = this?TextColor <- value
+        member entity.BoxSprite with get () = entity?BoxSprite () : Sprite
+        static member setBoxSprite (value : Sprite) (entity : Entity) : Entity = entity?BoxSprite <- value
+        member entity.Text with get () = entity?Text () : string
+        static member setText (value : string) (entity : Entity) : Entity = entity?Text <- value
+        member entity.TextFont with get () = entity?TextFont () : Font
+        static member setTextFont (value : Font) (entity : Entity) : Entity = entity?TextFont <- value
+        member entity.TextOffset with get () = entity?TextOffset () : Vector2
+        static member setTextOffset (value : Vector2) (entity : Entity) : Entity = entity?TextOffset <- value
+        member entity.TextColor with get () = entity?TextColor () : Vector4
+        static member setTextColor (value : Vector4) (entity : Entity) : Entity = entity?TextColor <- value
 
     type [<Sealed>] TextBoxDispatcher () =
         inherit GuiDispatcher ()
             
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox = base.Init (textBox, dispatcherContainer)
-            textBox
-                .SetBoxSprite({ SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetText(String.Empty)
-                .SetTextFont({ FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetTextOffset(Vector2.Zero)
-                .SetTextColor(Vector4.One)
+            textBox |>
+                Entity.setBoxSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setText String.Empty |>
+                Entity.setTextFont { FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setTextOffset Vector2.Zero |>
+                Entity.setTextColor Vector4.One
 
         override dispatcher.GetRenderDescriptors (textBox, _) =
             if textBox.Visible then
@@ -288,16 +288,16 @@ module ToggleDispatcherModule =
 
     type Entity with
 
-        member this.IsOn with get () = this?IsOn () : bool
-        member this.SetIsOn (value : bool) : Entity = this?IsOn <- value
-        member this.IsPressed with get () = this?IsPressed () : bool
-        member this.SetIsPressed (value : bool) : Entity = this?IsPressed <- value
-        member this.OffSprite with get () = this?OffSprite () : Sprite
-        member this.SetOffSprite (value : Sprite) : Entity = this?OffSprite <- value
-        member this.OnSprite with get () = this?OnSprite () : Sprite
-        member this.SetOnSprite (value : Sprite) : Entity = this?OnSprite <- value
-        member this.ToggleSound with get () = this?ToggleSound () : Sound
-        member this.SetToggleSound (value : Sound) : Entity = this?ToggleSound <- value
+        member entity.IsOn with get () = entity?IsOn () : bool
+        static member setIsOn (value : bool) (entity : Entity) : Entity = entity?IsOn <- value
+        member entity.IsPressed with get () = entity?IsPressed () : bool
+        static member setIsPressed (value : bool) (entity : Entity) : Entity = entity?IsPressed <- value
+        member entity.OffSprite with get () = entity?OffSprite () : Sprite
+        static member setOffSprite (value : Sprite) (entity : Entity) : Entity = entity?OffSprite <- value
+        member entity.OnSprite with get () = entity?OnSprite () : Sprite
+        static member setOnSprite (value : Sprite) (entity : Entity) : Entity = entity?OnSprite <- value
+        member entity.ToggleSound with get () = entity?ToggleSound () : Sound
+        static member setToggleSound (value : Sound) (entity : Entity) : Entity = entity?ToggleSound <- value
 
     type [<Sealed>] ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -310,7 +310,7 @@ module ToggleDispatcherModule =
                     let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                     if toggle.Enabled && toggle.Visible then
                         if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                            let toggle = toggle.SetIsPressed true
+                            let toggle = Entity.setIsPressed true toggle
                             let world = World.setEntity message.Subscriber toggle world
                             (Handled, world)
                         else (Unhandled, world)
@@ -325,10 +325,10 @@ module ToggleDispatcherModule =
                     let toggle = World.getEntity message.Subscriber world
                     let mousePositionToggle = Entity.mouseToEntity mousePosition world toggle
                     if toggle.Enabled && toggle.Visible && toggle.IsPressed then
-                        let toggle = toggle.SetIsPressed false
+                        let toggle = Entity.setIsPressed false toggle
                         let world = World.setEntity message.Subscriber toggle world
                         if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                            let toggle = toggle.SetIsOn <| not toggle.IsOn
+                            let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                             let world = World.setEntity message.Subscriber toggle world
                             let messageType = if toggle.IsOn then "On" else "Off"
                             let world = World.publish (straddr messageType message.Subscriber) message.Subscriber NoData world
@@ -342,12 +342,12 @@ module ToggleDispatcherModule =
         
         override dispatcher.Init (toggle, dispatcherContainer) =
             let toggle = base.Init (toggle, dispatcherContainer)
-            toggle
-                .SetIsOn(false)
-                .SetIsPressed(false)
-                .SetOffSprite({ SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetOnSprite({ SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetToggleSound({ SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            toggle |>
+                Entity.setIsOn false |>
+                Entity.setIsPressed false |>
+                Entity.setOffSprite { SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setOnSprite { SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Register (address, world) =
             world |>
@@ -383,8 +383,8 @@ module FeelerDispatcherModule =
 
     type Entity with
 
-        member this.IsTouched with get () = this?IsTouched () : bool
-        member this.SetIsTouched (value : bool) : Entity = this?IsTouched <- value
+        member entity.IsTouched with get () = entity?IsTouched () : bool
+        static member setIsTouched (value : bool) (entity : Entity) : Entity = entity?IsTouched <- value
 
     type [<Sealed>] FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -397,7 +397,7 @@ module FeelerDispatcherModule =
                     let mousePositionFeeler = Entity.mouseToEntity mousePosition world feeler
                     if feeler.Enabled && feeler.Visible then
                         if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
-                            let feeler = feeler.SetIsTouched true
+                            let feeler = Entity.setIsTouched true feeler
                             let world = World.setEntity message.Subscriber feeler world
                             let world = World.publish (straddr "Touch" message.Subscriber) message.Subscriber mouseButtonData world
                             (Handled, world)
@@ -412,7 +412,7 @@ module FeelerDispatcherModule =
                 | MouseButtonData _ ->
                     let feeler = World.getEntity message.Subscriber world
                     if feeler.Enabled && feeler.Visible then
-                        let feeler = feeler.SetIsTouched false
+                        let feeler = Entity.setIsTouched false feeler
                         let world = World.setEntity message.Subscriber feeler world
                         let world = World.publish (straddr "Release" message.Subscriber) message.Subscriber NoData world
                         (Handled, world)
@@ -422,7 +422,7 @@ module FeelerDispatcherModule =
         
         override dispatcher.Init (feeler, dispatcherContainer) =
             let feeler = base.Init (feeler, dispatcherContainer)
-            feeler.SetIsTouched false
+            Entity.setIsTouched false feeler
 
         override dispatcher.Register (address, world) =
             world |>
@@ -440,14 +440,14 @@ module FillBarDispatcherModule =
 
     type Entity with
     
-        member this.Fill with get () = this?Fill () : single
-        member this.SetFill (value : single) : Entity = this?Fill <- value
-        member this.FillInset with get () = this?FillInset () : single
-        member this.SetFillInset (value : single) : Entity = this?FillInset <- value
-        member this.FillSprite with get () = this?FillSprite () : Sprite
-        member this.SetFillSprite (value : Sprite) : Entity = this?FillSprite <- value
-        member this.BorderSprite with get () = this?BorderSprite () : Sprite
-        member this.SetBorderSprite (value : Sprite) : Entity = this?BorderSprite <- value
+        member entity.Fill with get () = entity?Fill () : single
+        static member setFill (value : single) (entity : Entity) : Entity = entity?Fill <- value
+        member entity.FillInset with get () = entity?FillInset () : single
+        static member setFillInset (value : single) (entity : Entity) : Entity = entity?FillInset <- value
+        member entity.FillSprite with get () = entity?FillSprite () : Sprite
+        static member setFillSprite (value : Sprite) (entity : Entity) : Entity = entity?FillSprite <- value
+        member entity.BorderSprite with get () = entity?BorderSprite () : Sprite
+        static member setBorderSprite (value : Sprite) (entity : Entity) : Entity = entity?BorderSprite <- value
 
     type [<Sealed>] FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -461,11 +461,11 @@ module FillBarDispatcherModule =
 
         override dispatcher.Init (fillBar, dispatcherContainer) =
             let fillBar = base.Init (fillBar, dispatcherContainer)
-            fillBar
-                .SetFill(0.0f)
-                .SetFillInset(0.0f)
-                .SetFillSprite({ SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetBorderSprite({ SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            fillBar |>
+                Entity.setFill 0.0f |>
+                Entity.setFillInset 0.0f |>
+                Entity.setFillSprite { SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setBorderSprite { SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
                 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
@@ -513,7 +513,7 @@ module BlockDispatcherModule =
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
             let block = SimpleSpriteFacet.init block dispatcherContainer
-            block.SetImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            Entity.setImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } block
 
         override dispatcher.GetRenderDescriptors (block, world) =
             SimpleSpriteFacet.getRenderDescriptors block Relative world
@@ -531,11 +531,11 @@ module AvatarDispatcherModule =
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar = base.Init (avatar, dispatcherContainer)
             let avatar = SimpleSpriteFacet.init avatar dispatcherContainer
-            avatar
-                .SetFixedRotation(true)
-                .SetLinearDamping(10.0f)
-                .SetGravityScale(0.0f)
-                .SetImageSprite({ SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            avatar |>
+                Entity.setFixedRotation true |>
+                Entity.setLinearDamping 10.0f |>
+                Entity.setGravityScale 0.0f |>
+                Entity.setImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (avatar, world) =
             SimpleSpriteFacet.getRenderDescriptors avatar Relative world
@@ -553,10 +553,10 @@ module CharacterDispatcherModule =
         override dispatcher.Init (character, dispatcherContainer) =
             let character = base.Init (character, dispatcherContainer)
             let character = SimpleSpriteFacet.init character dispatcherContainer
-            character
-                .SetFixedRotation(true)
-                .SetLinearDamping(3.0f)
-                .SetImageSprite({ SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
+            character |>
+                Entity.setFixedRotation true |>
+                Entity.setLinearDamping 3.0f |>
+                Entity.setImageSprite { SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (character, world) =
             SimpleSpriteFacet.getRenderDescriptors character Relative world
@@ -569,10 +569,10 @@ module TileMapDispatcherModule =
 
     type Entity with
 
-        member this.TileMapAsset with get () = this?TileMapAsset () : TileMapAsset
-        member this.SetTileMapAsset (value : TileMapAsset) : Entity = this?TileMapAsset <- value
-        member this.Parallax with get () = this?Parallax () : single
-        member this.SetParallax (value : single) : Entity = this?Parallax <- value
+        member entity.TileMapAsset with get () = entity?TileMapAsset () : TileMapAsset
+        static member setTileMapAsset (value : TileMapAsset) (entity : Entity) : Entity = entity?TileMapAsset <- value
+        member entity.Parallax with get () = entity?Parallax () : single
+        static member setParallax (value : single) (entity : Entity) : Entity = entity?Parallax <- value
 
         static member makeTileMapData tileMapAsset world =
             let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
@@ -732,14 +732,14 @@ module TileMapDispatcherModule =
         
         override dispatcher.Init (tileMap, dispatcherContainer) =
             let tileMap = base.Init (tileMap, dispatcherContainer)
-            tileMap
-                .SetDensity(NormalDensity)
-                .SetFriction(0.0f)
-                .SetRestitution(0.0f)
-                .SetCollisionCategories("1")
-                .SetCollisionMask("*")
-                .SetTileMapAsset({ TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName })
-                .SetParallax(0.0f)
+            tileMap |>
+                Entity.setDensity NormalDensity |>
+                Entity.setFriction 0.0f |>
+                Entity.setRestitution 0.0f |>
+                Entity.setCollisionCategories "1" |>
+                Entity.setCollisionMask "*" |>
+                Entity.setTileMapAsset { TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setParallax 0.0f
 
         override dispatcher.Register (address, world) =
             registerTileMapPhysics address world
