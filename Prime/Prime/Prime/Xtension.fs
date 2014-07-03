@@ -248,7 +248,7 @@ module Xtension =
                 writer.WriteEndElement ()
 
     /// Write all of a target's properties to Xml.
-    /// TODO: need a vanilla writeProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
+    /// TODO: need a vanilla writeTargetProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
     let writeTargetProperties (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)

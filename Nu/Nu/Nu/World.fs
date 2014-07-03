@@ -103,7 +103,7 @@ module World =
     let getSubscriptionSortables = WorldPrims.getSubscriptionSortables
     let sortSubscriptionsBy = WorldPrims.sortSubscriptionsBy
     let sortSubscriptionsByHierarchy = WorldPrims.sortSubscriptionsByHierarchy
-    let sortSubscriptionsByDepth = WorldPrims.sortSubscriptionsByDepth
+    let sortSubscriptionsByPickingPriority = WorldPrims.sortSubscriptionsByPickingPriority
     let publish = WorldPrims.publish
     let publish4 = WorldPrims.publish4
     let subscribe = WorldPrims.subscribe
@@ -250,14 +250,14 @@ module World =
                         let mousePosition = Vector2 (single event.button.x, single event.button.y)
                         let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
                         if Set.contains MouseLeft world.MouseState.MouseDowns
-                        then publish sortSubscriptionsByDepth MouseDragEvent [] (MouseMoveData mousePosition) world
-                        else publish sortSubscriptionsByDepth MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
+                        then publish sortSubscriptionsByPickingPriority MouseDragEvent [] (MouseMoveData mousePosition) world
+                        else publish sortSubscriptionsByPickingPriority MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
                     | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                         let mouseButton = Sdl.makeNuMouseButton event.button.button
                         let mouseEvent = addrstr DownMouseEvent <| string mouseButton
                         let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                         let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                        publish sortSubscriptionsByDepth mouseEvent [] messageData world
+                        publish sortSubscriptionsByPickingPriority mouseEvent [] messageData world
                     | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                         let mouseState = world.MouseState
                         let mouseButton = Sdl.makeNuMouseButton event.button.button
@@ -265,7 +265,7 @@ module World =
                         if Set.contains mouseButton mouseState.MouseDowns then
                             let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                             let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                            publish sortSubscriptionsByDepth mouseEvent [] messageData world
+                            publish sortSubscriptionsByPickingPriority mouseEvent [] messageData world
                         else world
                     | _ -> world
                 (world.Liveness, world))
