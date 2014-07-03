@@ -290,9 +290,9 @@ module World =
         let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
         let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
         let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
-        let splashLabel = splashLabel.SetSize world.Camera.EyeSize
-        let splashLabel = splashLabel.SetPosition <| -world.Camera.EyeSize * 0.5f
-        let splashLabel = splashLabel.SetLabelSprite (sprite : Sprite)
+        let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
+        let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
+        let splashLabel = Entity.setLabelSprite sprite splashLabel
         let world = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
         let world = observe (FinishIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
         observe (FinishOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
