@@ -22,8 +22,8 @@ module EntityDispatcherModule =
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
 
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (_, _) = 0.0f
+        abstract member GetPublishingPriority : Entity * World -> single
+        default dispatcher.GetPublishingPriority (_, _) = 0.0f
 
 [<AutoOpen>]
 module Entity2dDispatcherModule =
@@ -40,8 +40,8 @@ module Entity2dDispatcherModule =
                 Entity.setSize DefaultEntitySize |>
                 Entity.setRotation 0.0f
 
-        override dispatcher.GetPickingPriority (entity, _) =
-            Entity2dFacet.getPickingPriority entity
+        override dispatcher.GetPublishingPriority (entity, _) =
+            Entity2dFacet.getPublishingPriority entity
 
         abstract member PropagatePhysics : Address * World -> World
         default dispatcher.PropagatePhysics (_, world) = world
