@@ -20,6 +20,9 @@ module Tests =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
+        static member dispatchesAs dispatcherTargetType this dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType this.Xtension dispatcherContainer
+
     type TestDispatcher () =
         member dispatcher.Init (xtn : Xtension, _ : IXDispatcherContainer) =
             xtn?InittedField <- 5
