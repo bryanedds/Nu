@@ -49,14 +49,12 @@ module XtensionModule =
                 | _ as defaultValue ->
                     let converter = TypeDescriptor.GetConverter defaultFieldType
                     let defaultValueType = defaultValue.GetType ()
-                    if not <| converter.CanConvertFrom defaultValueType
-                    then failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
-                    else converter.ConvertFrom defaultValue :?> 'r
+                    if converter.CanConvertFrom defaultValueType then converter.ConvertFrom defaultValue :?> 'r
+                    else failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
 
         static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
-            if not this.CanDefault
-            then failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
-            else Xtension.getDefaultValue ()
+            if this.CanDefault then Xtension.getDefaultValue ()
+            else failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
             let dispatchers = dispatcherContainer.GetDispatchers ()
@@ -91,18 +89,18 @@ module XtensionModule =
                 // check if dynamic member is an existing field
                 match Map.tryFind memberName xtension.XFields with
                 | None ->
-                
+
                     // try to convert method args to an array
                     let optArgArray =
                         if box args = null then null // not sure what this line is meant to do
                         elif FSharpType.IsTuple <| args.GetType () then FSharpValue.GetTupleFields args
                         else [|args|]
-                
+
                     // check if arg array exists - this will tell us if the user is attempting to access a field or a
                     // dispatch
                     match optArgArray with
                     | null ->
-                    
+
                         // presume we're looking for a field that doesn't exist, so try to get the default value
                         Xtension.tryGetDefaultValue xtension memberName
 
@@ -183,9 +181,8 @@ module Xtension =
                 let aType = findType typeName
                 let xValueStr = xNode.InnerText
                 let converter = TypeDescriptor.GetConverter aType
-                if not <| converter.CanConvertFrom typeof<string>
-                then failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."
-                else (xNode.Name, converter.ConvertFrom xValueStr))
+                if converter.CanConvertFrom typeof<string> then (xNode.Name, converter.ConvertFrom xValueStr)
+                else failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'.")
             childNodes
             
     /// Read an Xtension from Xml.
