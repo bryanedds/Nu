@@ -22,6 +22,11 @@ open Nu
 // memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
 // need for complex intermediate states (albeit against a physics state that is one frame old).
 
+// WISDOM: On threading physics...
+//
+// A simulation that would put physics on another thread should likely do so in a different app
+// domain with communication via .NET remoting to make 100% sure that no sharing is happening.
+
 [<AutoOpen>]
 module InterativityModule =
 
@@ -30,6 +35,7 @@ module InterativityModule =
         | GuiAndPhysics
         | GuiAndPhysicsAndGamePlay
 
+[<RequireQualifiedAccess>]
 module Interactivity =
 
     let gamePlaying interactivity =
@@ -66,9 +72,27 @@ module MessageModule =
           Subscriber : Address
           Data : MessageData }
 
+[<AutoOpen>]
+module MessageHandledModule =
+
     type MessageHandled =
         | Handled
         | Unhandled
+
+[<AutoOpen>]
+module TransitionTypeModule =
+
+    type [<StructuralEquality; NoComparison>] TransitionType =
+        | Incoming
+        | Outgoing
+
+[<AutoOpen>]
+module ScreenStateModule =
+
+    type [<StructuralEquality; NoComparison>] ScreenState =
+        | IncomingState
+        | OutgoingState
+        | IdlingState
 
 [<AutoOpen>]
 module SimModule =
@@ -105,23 +129,11 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
 
-    type GroupDescriptor =
-        string * Group * Entity list
-
-    type [<StructuralEquality; NoComparison>] TransitionType =
-        | Incoming
-        | Outgoing
-
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { TransitionLifetime : int64
           TransitionTicks : int64
           TransitionType : TransitionType
           OptDissolveSprite : Sprite option }
-
-    type [<StructuralEquality; NoComparison>] ScreenState =
-        | IncomingState
-        | OutgoingState
-        | IdlingState
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
@@ -163,9 +175,13 @@ module SimModule =
         | Group of Group
         | Entity of Entity
 
+    type [<ReferenceEquality>] Task =
+        { Time : int64
+          Operation : World -> World }
+
     /// Describes a game message subscription.
     /// A reference type.
-    type [<ReferenceEquality>] Subscription =
+    and [<ReferenceEquality>] Subscription =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
@@ -185,10 +201,6 @@ module SimModule =
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, Address * Address>
 
-    and [<ReferenceEquality>] Task =
-        { Time : int64
-          Operation : World -> World }
-
     /// The world, in a functional programming sense.
     /// A reference type with some value semantics.
     and [<ReferenceEquality>] World =
@@ -200,9 +212,9 @@ module SimModule =
           Liveness : Liveness
           Interactivity : Interactivity
           Camera : Camera
+          Tasks : Task list
           Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
-          Tasks : Task list
           MouseState : MouseState
           AudioPlayer : AudioPlayer
           Renderer : Renderer
