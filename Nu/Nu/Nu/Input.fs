@@ -17,12 +17,6 @@ module InputModule =
             | MouseCenter -> "Center"
             | MouseRight -> "Right"
 
-    /// Describes a mouse event.
-    /// A serializable value type.
-    type [<StructuralEquality; NoComparison>] MouseEvent =
-        { Button : MouseButton
-          Position : Vector2 }
-
     type [<StructuralEquality; NoComparison>] MouseState =
         { MousePosition : Vector2
           MouseDowns : MouseButton Set }

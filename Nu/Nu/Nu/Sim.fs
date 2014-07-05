@@ -47,7 +47,7 @@ module Interactivity =
 [<AutoOpen>]
 module MessageDataModule =
 
-    /// Describes data relevant to specific event messages.
+    /// Describes data relevant to specific messages.
     type [<ReferenceEquality>] MessageData =
         | MouseMoveData of Vector2
         | MouseButtonData of Vector2 * MouseButton
@@ -164,8 +164,6 @@ module SimModule =
         | Entity of Entity
 
     /// Describes a game message subscription.
-    /// In addition to CustomSubs, allows for data-driven subscriptions to accomodate a visual event editor should
-    /// one be implemented.
     /// A reference type.
     type [<ReferenceEquality>] Subscription =
         | ExitSub
@@ -265,3 +263,26 @@ module Sim =
         | Some simulant ->
             let (simulant, world) = fn simulant
             set simulant world <| worldSimulantLens address
+
+    // NOTE: these must be defined in a module like this rather than in a World type extension
+    let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> MessageData -> World -> World>
+    let mutable publish4 = Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
+    let mutable subscribe = Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
+    let mutable subscribe4 = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+    let mutable unsubscribe = Unchecked.defaultof<Guid -> World -> World>
+    let mutable withSubscription = Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
+    let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+
+[<AutoOpen>]
+module WorldSimModule =
+
+    type World with
+
+        // NOTE: function forwarding
+        static member publish publishSort event publisher messageData world = Sim.publish publishSort event publisher messageData world
+        static member publish4 event publisher messageData world = Sim.publish4 event publisher messageData world
+        static member subscribe subscriptionKey event subscriber subscription world = Sim.subscribe subscriptionKey event subscriber subscription world
+        static member subscribe4 event subscriber subscription world = Sim.subscribe4 event subscriber subscription world
+        static member unsubscribe subscriptionKey world = Sim.unsubscribe subscriptionKey world
+        static member withSubscription event subscriber subscription procedure world = Sim.withSubscription event subscriber subscription procedure world
+        static member observe event subscriber subscription world = Sim.observe event subscriber subscription world

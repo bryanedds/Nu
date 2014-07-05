@@ -6,7 +6,6 @@ open Prime
 open TiledSharp
 open Nu
 open Nu.NuConstants
-module World = WorldPrims
 
 [<AutoOpen>]
 module Entity2dFacetModule =

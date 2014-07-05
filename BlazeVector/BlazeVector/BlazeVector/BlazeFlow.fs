@@ -26,20 +26,20 @@ module BlazeFlow =
         // this adds a dissolve screen from the specified file with the given parameters
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
 
-        // this subscribes to the event that is raised when the Title screen is selected for
-        // display and interaction, and handles the event by playing the song "Machinery"
+        // this subscribes to the message that is raised when the Title screen is selected for
+        // display and interaction, and handles the message by playing the song "Machinery"
         let world = World.subscribe4 SelectTitleEvent [] (CustomSub handlePlaySongMachinery) world
 
-        // subscribes the event that is raised when the Title screen's Play button is
-        // clicked, and handles the event by transitioning to the Stage screen
+        // subscribes to the message that is raised when the Title screen's Play button is
+        // clicked, and handles the message by transitioning to the Stage screen
         let world = World.subscribe4 ClickTitlePlayEvent [] (CustomSub handlePlayStage) world
 
-        // subscribes the event that is raised when the Title screen's Credits button is
-        // clicked, and handles the event by transitioning to the Credits screen
+        // subscribes to the message that is raised when the Title screen's Credits button is
+        // clicked, and handles the message by transitioning to the Credits screen
         let world = World.subscribe4 ClickTitleCreditsEvent [] (ScreenTransitionSub CreditsAddress) world
 
-        // subscribe4s the event that is raised when the Title screen's Exit button is clicked,
-        // and handles the event by exiting the game
+        // subscribe4s to the message that is raised when the Title screen's Exit button is clicked,
+        // and handles the message by exiting the game
         World.subscribe4 ClickTitleExitEvent [] ExitSub world
 
     // pretty much the same as above, but for the Credits screen
