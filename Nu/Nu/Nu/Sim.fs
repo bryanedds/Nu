@@ -278,6 +278,12 @@ module WorldSimModule =
 
     type World with
 
+        static member physicsRunning world =
+            Interactivity.physicsRunning world.Interactivity
+
+        static member gamePlaying world =
+            Interactivity.gamePlaying world.Interactivity
+
         // NOTE: function forwarding
         static member publish publishSort event publisher messageData world = Sim.publish publishSort event publisher messageData world
         static member publish4 event publisher messageData world = Sim.publish4 event publisher messageData world

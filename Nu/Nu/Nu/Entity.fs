@@ -18,10 +18,10 @@ module EntityModule =
 
     type Entity with
 
-        member entity.Init (dispatcherContainer : IXDispatcherContainer) : Entity = entity?Init (entity, dispatcherContainer)
-        member entity.Register (address : Address, world : World) : World = entity?Register (address, world)
-        member entity.Unregister (address : Address, world : World) : World = entity?Unregister (address, world)
-        member entity.GetPickingPriority (world : World) : single = entity?GetPickingPriority (entity, world)
+        static member init (entity : Entity) (dispatcherContainer : IXDispatcherContainer) : Entity = entity?Init (entity, dispatcherContainer)
+        static member register (address : Address) (entity : Entity) (world : World) : World = entity?Register (address, world)
+        static member unregister (address : Address) (entity : Entity) (world : World) : World = entity?Unregister (address, world)
+        static member getPickingPriority (entity : Entity) (world : World) : single = entity?GetPickingPriority (entity, world)
 
     type EntityDispatcher () =
 
@@ -69,7 +69,7 @@ module Entity =
 
     let makeDefault dispatcherName optName dispatcherContainer =
         let entity = makeDefaultUninitialized dispatcherName optName
-        entity.Init dispatcherContainer
+        Entity.init entity dispatcherContainer
 
     let writeToXml (writer : XmlWriter) entity =
         writer.WriteStartElement typeof<Entity>.Name
@@ -83,7 +83,7 @@ module Entity =
     let readFromXml (entityNode : XmlNode) defaultDispatcherName dispatcherContainer =
         let entity = makeDefaultUninitialized defaultDispatcherName None
         Xtension.readTargetXDispatcher entityNode entity
-        let entity = entity.Init dispatcherContainer
+        let entity = Entity.init entity dispatcherContainer
         Xtension.readTargetProperties entityNode entity
         entity
 
@@ -187,11 +187,11 @@ module WorldEntityModule =
         static member private setEntities address entities world = set entities world <| World.worldEntities address
 
         static member registerEntity address (entity : Entity) world =
-            entity.Register (address, world)
+            Entity.register address entity world
 
         static member unregisterEntity address world =
             let entity = World.getEntity address world
-            entity.Unregister (address, world)
+            Entity.unregister address entity world
 
         static member removeEntityImmediate (address : Address) world =
             let world = World.publish4 (RemovingEvent @ address) address NoData world

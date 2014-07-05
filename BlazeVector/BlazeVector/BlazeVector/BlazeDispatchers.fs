@@ -163,7 +163,8 @@ module PlayerDispatcherModule =
         member entity.LastTimeJump with get () = entity?LastTimeJump () : int64
         static member setLastTimeJump (value : int64) (entity : Entity) : Entity = entity?LastTimeJump <- value
         
-        static member hasFallen (entity : Entity) = entity.Position.Y < -600.0f
+        static member hasFallen (entity : Entity) =
+            entity.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit SimpleBodyDispatcher

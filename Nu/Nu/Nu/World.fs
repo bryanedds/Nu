@@ -40,12 +40,6 @@ module WorldModule =
 
     type World with
 
-        static member physicsRunning world =
-            Interactivity.physicsRunning world.Interactivity
-
-        static member gamePlaying world =
-            Interactivity.gamePlaying world.Interactivity
-
         static member private setScreenStatePlus address state world =
             // TODO: add swallowing for other types of input as well (keys, joy buttons, etc.)
             let world = World.withScreen (fun screen -> { screen with State = state }) address world
@@ -128,7 +122,7 @@ module WorldModule =
             List.map snd subscriptions
 
         static member sortSubscriptionsByPickingPriority subscriptions world =
-            World.sortSubscriptionsBy (fun (entity : Entity) world -> entity.GetPickingPriority world) subscriptions world
+            World.sortSubscriptionsBy (fun (entity : Entity) world -> Entity.getPickingPriority entity world) subscriptions world
 
         static member sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
             World.sortSubscriptionsBy (fun _ _ -> EntityPublishingPriority) subscriptions world
@@ -326,7 +320,7 @@ module WorldModule =
 
         static member private getGroupRenderDescriptors dispatcherContainer entities =
             let entities = Map.toValueSeq entities
-            Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors dispatcherContainer) entities
+            Seq.map (fun (entity : Entity) -> Entity.getRenderDescriptors entity dispatcherContainer) entities
 
         static member private getTransitionRenderDescriptors camera transition =
             match transition.OptDissolveSprite with
@@ -380,7 +374,7 @@ module WorldModule =
                 | BodyTransformMessage bodyTransformMessage ->
                     match World.getOptEntity bodyTransformMessage.EntityAddress world with
                     | None -> world
-                    | Some entity -> entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
+                    | Some entity -> Entity.handleBodyTransformMessage bodyTransformMessage.EntityAddress bodyTransformMessage entity world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match World.getOptEntity bodyCollisionMessage.EntityAddress world with
                     | None -> world
@@ -535,7 +529,7 @@ module WorldModule =
             let entities = World.getEntities groupAddress world
             let world =
                 Map.fold
-                    (fun world _ (entity : Entity) -> entity.PropagatePhysics (groupAddress @ [entity.Name], world))
+                    (fun world _ (entity : Entity) -> Entity.propagatePhysics (groupAddress @ [entity.Name]) entity world)
                     world
                     entities
             { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages @ [RebuildPhysicsHackMessage]}
