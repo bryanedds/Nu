@@ -9,14 +9,6 @@ open Nu.NuConstants
 [<AutoOpen>]
 module GameModule =
 
-    // WISDOM:
-    //
-    // A simulation that would put physics on another thread should likely do so in a different app
-    // domain with communication via .NET remoting to make 100% sure that no sharing is happening.
-    //
-    // NOTE: for simulation types, value semantics are preferred over open semantics as it eases
-    // serialization and other forms of automation. However, perhaps there is a way to get both...
-
     type Game with
 
         member game.Register (world : World) : World = game?Register world

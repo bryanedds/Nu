@@ -507,9 +507,9 @@ module WorldModule =
                       Liveness = Running
                       Interactivity = interactivity
                       Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                      Tasks = []
                       Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
-                      Tasks = []
                       MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                       AudioPlayer = Audio.makeAudioPlayer ()
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext
