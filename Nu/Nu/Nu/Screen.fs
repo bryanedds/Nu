@@ -10,8 +10,9 @@ open Nu.NuConstants
 module ScreenModule =
 
     type Screen with
-        member this.Register (address : Address, world : World) : World = this?Register (address, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
+
+        static member register (address : Address) (screen : Screen) (world : World) : World = screen?Register (address, world)
+        static member unregister (address : Address) (screen : Screen) (world : World) : World = screen?Unregister (address, world)
 
     type ScreenDispatcher () =
 
@@ -96,11 +97,11 @@ module WorldScreenModule =
         static member private setScreens address screens world = set screens world <| World.worldScreens address
 
         static member registerScreen address (screen : Screen) world =
-            screen.Register (address, world)
+            Screen.register address screen world
 
         static member unregisterScreen address world =
             let screen = World.getScreen address world
-            screen.Unregister (address, world)
+            Screen.unregister address screen world
 
         static member removeScreenImmediate (address : Address) world =
             let world = World.publish4 (RemovingEvent @ address) address NoData world

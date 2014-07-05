@@ -128,7 +128,7 @@ module Program =
                     | _ ->
                         let world = setEntityPropertyValue entityTds.Address property value world
                         let entity = World.getEntity entityTds.Address world
-                        entity.PropagatePhysics (entityTds.Address, world)
+                        Entity.propagatePhysics entityTds.Address entity world
                 pushPastWorld pastWorld world)
             // in order to update the view immediately, we have to apply the changer twice, once
             // now and once in the update function
@@ -236,7 +236,7 @@ module Program =
             let world = World.setEntity address entity world
             let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
             let world = { world with ExtData = editorState }
-            let world = entity.PropagatePhysics (address, world)
+            let world = Entity.propagatePhysics address entity world
             form.propertyGrid.Refresh ()
             world
         | DragEntityRotation _ -> world
@@ -428,9 +428,9 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             ignore <| worldChangers.AddLast (fun world ->
                 let entity = World.getEntity entityTds.Address world
-                let entity = Entity.setSize (entity.GetQuickSize world) entity
+                let entity = Entity.setSize (Entity.getQuickSize entity world) entity
                 let world = World.setEntity entityTds.Address entity world
-                let world = entity.PropagatePhysics (entityTds.Address, world)
+                let world = Entity.propagatePhysics entityTds.Address entity world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.Refresh ()
                 world)

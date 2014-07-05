@@ -13,9 +13,10 @@ open Nu.NuConstants
 module GroupModule =
 
     type Group with
-        member this.Init (dispatcherContainer : IXDispatcherContainer) : Group = this?Init (this, dispatcherContainer)
-        member this.Register (address : Address, world : World) : World = this?Register (address, world)
-        member this.Unregister (address : Address, world : World) : World = this?Unregister (address, world)
+        
+        static member init (group : Group) (dispatcherContainer : IXDispatcherContainer) : Group = group?Init (group, dispatcherContainer)
+        static member register (address : Address) (group : Group) (world : World) : World = group?Register (address, world)
+        static member unregister (address : Address) (group : Group) (world : World) : World = group?Unregister (address, world)
 
     type GroupDispatcher () =
 
@@ -37,7 +38,7 @@ module Group =
 
     let makeDefault dispatcherName dispatcherContainer =
         let group = makeDefaultUninitialized dispatcherName
-        group.Init dispatcherContainer
+        Group.init group dispatcherContainer
 
     let writeToXml (writer : XmlWriter) group entities =
         writer.WriteStartElement typeof<Group>.Name
@@ -47,7 +48,7 @@ module Group =
     let readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
         let group = makeDefaultUninitialized defaultDispatcherName
         Xtension.readTargetXDispatcher groupNode group
-        let group = group.Init dispatcherContainer
+        let group = Group.init group dispatcherContainer
         Xtension.readTargetProperties groupNode group
         let entities = Entity.readManyFromXml (groupNode : XmlNode) defaultEntityDispatcherName dispatcherContainer
         (group, entities)
@@ -119,11 +120,11 @@ module WorldGroupModule =
         static member private setGroups address groups world = set groups world <| World.worldGroups address
 
         static member registerGroup address (group : Group) world =
-            group.Register (address, world)
+            Group.register address group world
 
         static member unregisterGroup address world =
             let group = World.getGroup address world
-            group.Unregister (address, world)
+            Group.unregister address group world
 
         static member removeGroupImmediate (address : Address) world =
             let world = World.publish4 (RemovingEvent @ address) address NoData world
