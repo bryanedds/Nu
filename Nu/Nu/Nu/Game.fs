@@ -19,7 +19,7 @@ module GameModule =
 
     type Game with
 
-        member this.Register (world : World) : World = this?Register world
+        member game.Register (world : World) : World = game?Register world
 
     type GameDispatcher () =
         

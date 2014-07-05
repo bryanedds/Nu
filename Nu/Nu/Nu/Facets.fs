@@ -21,11 +21,11 @@ module Entity2dFacetModule =
         member entity.Size with get () = entity?Size () : Vector2
         static member setSize (value : Vector2) (entity : Entity) : Entity = entity?Size <- value
 
-        member entity.PropagatePhysics (address : Address, world : World) : World = entity?PropagatePhysics (address, world)
-        member entity.HandleBodyTransformMessage (address : Address, message : BodyTransformMessage, world : World) : World = entity?HandleBodyTransformMessage (address, message, world)
-        member entity.GetRenderDescriptors (world : World) : RenderDescriptor list = entity?GetRenderDescriptors (entity, world)
-        member entity.GetQuickSize (world : World) : Vector2 = entity?GetQuickSize (entity, world)
-        member entity.IsTransformRelative (world : World) : bool = entity?IsTransformRelative (entity, world)
+        static member propagatePhysics (address : Address) (entity : Entity) (world : World) : World = entity?PropagatePhysics (address, world)
+        static member handleBodyTransformMessage (address : Address) (message : BodyTransformMessage) (entity : Entity) (world : World) : World = entity?HandleBodyTransformMessage (address, message, world)
+        static member getRenderDescriptors (entity : Entity) (world : World) : RenderDescriptor list = entity?GetRenderDescriptors (entity, world)
+        static member getQuickSize  (entity : Entity) (world : World) : Vector2 = entity?GetQuickSize (entity, world)
+        static member isTransformRelative  (entity : Entity) (world : World) : bool = entity?IsTransformRelative (entity, world)
 
         static member private sortFstDesc (priority, _) (priority2, _) =
             if priority = priority2 then 0
@@ -34,7 +34,7 @@ module Entity2dFacetModule =
 
         static member mouseToEntity position world (entity : Entity) =
             let positionScreen = Camera.mouseToScreen position world.Camera
-            let view = (if entity.IsTransformRelative world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
+            let view = (if Entity.isTransformRelative entity world then Camera.getViewRelativeF else Camera.getViewAbsoluteF) world.Camera
             let positionEntity = positionScreen * view
             positionEntity
 
@@ -57,7 +57,7 @@ module Entity2dFacetModule =
                 Entity.setRotation transform.Rotation
 
         static member pickingSort entities world =
-            let priorities = List.map (fun (entity : Entity) -> entity.GetPickingPriority world) entities
+            let priorities = List.map (fun (entity : Entity) -> Entity.getPickingPriority entity world) entities
             let prioritiesAndEntities = List.zip priorities entities
             let prioritiesAndEntitiesSorted = List.sortWith Entity.sortFstDesc prioritiesAndEntities
             List.map snd prioritiesAndEntitiesSorted
