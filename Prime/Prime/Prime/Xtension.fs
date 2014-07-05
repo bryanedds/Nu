@@ -29,7 +29,7 @@ module XtensionModule =
     /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
     /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
     /// 'Entity-Component System'.
-    type [<StructuralEqualityAttribute; NoComparison>] Xtension =
+    type [<StructuralEquality; NoComparison>] Xtension =
         { XFields : XFields
           OptXDispatcherName : string option
           CanDefault : bool

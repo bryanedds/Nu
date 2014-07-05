@@ -77,7 +77,6 @@
     <Compile Include="Transition.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Game.fs" />
-    <Compile Include="WorldPrims.fs" />
     <Compile Include="Facets.fs" />
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />

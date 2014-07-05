@@ -187,14 +187,15 @@ module Program =
         !creationDepth
 
     let beginEntityDrag (form : NuEditForm) worldChangers refWorld message world =
-        let pastWorld = world
         match message.Data with
         | MouseButtonData _ ->
+            let pastWorld = world
+            let handled = if World.gamePlaying world then Unhandled else Handled
             let entities = getPickableEntities world
             let mousePosition = world.MouseState.MousePosition
             let optPicked = Entity.tryPick mousePosition entities world
             match optPicked with
-            | None -> (Handled, world)
+            | None -> (handled, world)
             | Some entity ->
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                 let entityAddress = addrstr EditorGroupAddress entity.Name
@@ -205,12 +206,13 @@ module Program =
                 let world = pushPastWorld pastWorld world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                (Handled, world)
+                (handled, world)
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let endEntityDrag (form : NuEditForm) message world =
         match message.Data with
         | MouseButtonData _ ->
+            let handled = if World.gamePlaying world then Unhandled else Handled
             let editorState = world.ExtData :?> EditorState
             match editorState.DragEntityState with
             | DragEntityNone -> (Handled, world)
@@ -218,7 +220,7 @@ module Program =
             | DragEntityRotation _ ->
                 let editorState = { editorState with DragEntityState = DragEntityNone }
                 form.propertyGrid.Refresh ()
-                (Handled, { world with ExtData = editorState })
+                (handled, { world with ExtData = editorState })
         | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
@@ -617,7 +619,7 @@ module Program =
             | Some aType -> Activator.CreateInstance aType :?> GameDispatcher
 
     let [<EntryPoint; STAThread>] main _ =
-        World.initTypeConverters ()
+        World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
         let gameDispatcher = selectWorkingDirectoryAndMakeGameDispatcher ()

@@ -12,6 +12,9 @@ module TransitionModule =
     type Transition with
         end
 
+    type TransitionDispatcher () =
+        class end
+
 [<RequireQualifiedAccess>]
 module Transition =
 

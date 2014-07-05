@@ -18,353 +18,536 @@ open Prime
 open Nu
 open Nu.NuConstants
 
-[<RequireQualifiedAccess>]
-module World =
+[<AutoOpen>]
+module WorldModule =
 
-    (* Function forwarding for WorldPrims in lieu of an F# export feature. *)
+    type World with
 
-    // Entity forwarders.
-    let getEntity = WorldPrims.getEntity
-    let setEntity = WorldPrims.setEntity
-    let withEntity = WorldPrims.withEntity
-    let withEntityAndWorld = WorldPrims.withEntityAndWorld
-    let containsEntity = WorldPrims.containsEntity
-    let getOptEntity = WorldPrims.getOptEntity
-    let tryWithEntity = WorldPrims.tryWithEntity
-    let tryWithEntityAndWorld = WorldPrims.tryWithEntityAndWorld
-    let getEntities = WorldPrims.getEntities
-    let registerEntity = WorldPrims.registerEntity
-    let unregisterEntity = WorldPrims.unregisterEntity
-    let removeEntityImmediate = WorldPrims.removeEntityImmediate
-    let removeEntity = WorldPrims.removeEntity
-    let clearEntitiesImmediate = WorldPrims.clearEntitiesImmediate
-    let clearEntities = WorldPrims.clearEntities
-    let removeEntitiesImmediate = WorldPrims.removeEntitiesImmediate
-    let removeEntities = WorldPrims.removeEntities
-    let addEntity = WorldPrims.addEntity
-    let addEntities = WorldPrims.addEntities
-    
-    // Group forwarders.
-    let getGroup = WorldPrims.getGroup
-    let setGroup = WorldPrims.setGroup
-    let withGroup = WorldPrims.withGroup
-    let withGroupAndWorld = WorldPrims.withGroupAndWorld
-    let containsGroup = WorldPrims.containsGroup
-    let getOptGroup = WorldPrims.getOptGroup
-    let tryWithGroup = WorldPrims.tryWithGroup
-    let tryWithGroupAndWorld = WorldPrims.tryWithGroupAndWorld
-    let getGroups = WorldPrims.getGroups
-    let registerGroup = WorldPrims.registerGroup
-    let unregisterGroup = WorldPrims.unregisterGroup
-    let removeGroupImmediate = WorldPrims.removeGroupImmediate
-    let removeGroup = WorldPrims.removeGroup
-    let clearGroups = WorldPrims.clearGroups
-    let clearGroupsImmediate = WorldPrims.clearGroupsImmediate
-    let removeGroups = WorldPrims.removeGroups
-    let removeGroupsImmediate = WorldPrims.removeGroupsImmediate
-    let addGroup = WorldPrims.addGroup
-    let addGroups = WorldPrims.addGroups
-    
-    // Screen forwarders.
-    let getScreen = WorldPrims.getScreen
-    let setScreen = WorldPrims.setScreen
-    let withScreen = WorldPrims.withScreen
-    let withScreenAndWorld = WorldPrims.withScreenAndWorld
-    let containsScreen = WorldPrims.containsScreen
-    let getOptScreen = WorldPrims.getOptScreen
-    let tryWithScreen = WorldPrims.tryWithScreen
-    let tryWithScreenAndWorld = WorldPrims.tryWithScreenAndWorld
-    let getScreens = WorldPrims.getScreens
-    let registerScreen = WorldPrims.registerScreen
-    let unregisterScreen = WorldPrims.unregisterScreen
-    let removeScreenImmediate = WorldPrims.removeScreenImmediate
-    let removeScreen = WorldPrims.removeScreen
-    let addScreen = WorldPrims.addScreen
+        static member makeSubscriptionKey =
+            Guid.NewGuid
 
-    // Game forwarders.
-    let getSelectedScreenAddress = WorldPrims.getSelectedScreenAddress
-    let setSelectedScreenAddress = WorldPrims.setSelectedScreenAddress
-    let getOptSelectedScreenAddress = WorldPrims.getOptSelectedScreenAddress
-    let setOptSelectedScreenAddress = WorldPrims.setOptSelectedScreenAddress
-    let getSelectedScreen = WorldPrims.getSelectedScreen
-    let setSelectedScreen = WorldPrims.setSelectedScreen
-    let getOptSelectedScreen = WorldPrims.getOptSelectedScreen
-    let setOptSelectedScreen = WorldPrims.setOptSelectedScreen
-    
-    // Normal forwarders.
-    let makeSubscriptionKey = WorldPrims.makeSubscriptionKey
-    let isAddressSelected = WorldPrims.isAddressSelected
-    let handleEventAsExit = WorldPrims.handleEventAsExit
-    let handleEventAsScreenTransition = WorldPrims.handleEventAsScreenTransition
-    let handleEventAsSwallow = WorldPrims.handleEventAsSwallow
-    let initTypeConverters = WorldPrims.initTypeConverters
-    let selectScreen = WorldPrims.selectScreen
-    let transitionScreen = WorldPrims.transitionScreen
-    let getSubscriptionSortables = WorldPrims.getSubscriptionSortables
-    let sortSubscriptionsBy = WorldPrims.sortSubscriptionsBy
-    let sortSubscriptionsByHierarchy = WorldPrims.sortSubscriptionsByHierarchy
-    let sortSubscriptionsByPickingPriority = WorldPrims.sortSubscriptionsByPickingPriority
-    let publish = WorldPrims.publish
-    let publish4 = WorldPrims.publish4
-    let subscribe = WorldPrims.subscribe
-    let subscribe4 = WorldPrims.subscribe4
-    let observe = WorldPrims.observe
-    let unsubscribe = WorldPrims.unsubscribe
-    let withSubscription = WorldPrims.withSubscription
+        static member handleMessageAsSwallow (world : World) =
+            (Handled, world)
 
-    (* Normal functions. *)
+        static member handleMessageAsExit (world : World) =
+            (Handled, { world with Liveness = Exiting })
 
-    let physicsRunning world =
-        Interactivity.physicsRunning world.Interactivity
+    // NOTE: making these static members of type World causes them to be evaluated each time
+    // they're referenced. I assume this is a bug in F#.
+    let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
+    let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
+    let private SplashScreenTickKey = World.makeSubscriptionKey ()
 
-    let gamePlaying world =
-        Interactivity.gamePlaying world.Interactivity
+    type World with
 
-    let activateGameDispatcher assemblyFileName gameDispatcherFullName world =
-        let assembly = Assembly.LoadFrom assemblyFileName
-        let gameDispatcherType = assembly.GetType gameDispatcherFullName
-        let gameDispatcherShortName = gameDispatcherType.Name
-        let gameDispatcher = Activator.CreateInstance gameDispatcherType
-        let dispatchers = Map.add gameDispatcherShortName gameDispatcher world.Dispatchers
-        let world = { world with Dispatchers = dispatchers }
-        let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
-        world.Game.Register world
+        static member physicsRunning world =
+            Interactivity.physicsRunning world.Interactivity
 
-    let saveGroupToFile group entities fileName (_ : World) =
-        use file = File.Open (fileName, FileMode.Create)
-        let writerSettings = XmlWriterSettings ()
-        writerSettings.Indent <- true
-        use writer = XmlWriter.Create (file, writerSettings)
-        writer.WriteStartDocument ()
-        writer.WriteStartElement "Root"
-        Group.writeToXml writer group entities
-        writer.WriteEndElement ()
-        writer.WriteEndDocument ()
+        static member gamePlaying world =
+            Interactivity.gamePlaying world.Interactivity
 
-    let loadGroupFromFile fileName world =
-        let document = XmlDocument ()
-        document.Load (fileName : string)
-        let rootNode = document.["Root"]
-        let groupNode = rootNode.["Group"]
-        Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+        static member private setScreenStatePlus address state world =
+            // TODO: add swallowing for other types of input as well (keys, joy buttons, etc.)
+            let world = World.withScreen (fun screen -> { screen with State = state }) address world
+            match state with
+            | IdlingState ->
+                world |>
+                    World.unsubscribe -<| ScreenTransitionDownMouseKey |>
+                    World.unsubscribe -<| ScreenTransitionUpMouseKey
+            | IncomingState | OutgoingState ->
+                world |>
+                    World.subscribe ScreenTransitionDownMouseKey (DownMouseEvent @ AnyEvent) address SwallowSub |>
+                    World.subscribe ScreenTransitionUpMouseKey (UpMouseEvent @ AnyEvent) address SwallowSub
 
-    let private play world =
-        let audioMessages = world.AudioMessages
-        let world = { world with AudioMessages = [] }
-        { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
+        static member selectScreen destination world =
+            let world = World.setScreenStatePlus destination IncomingState world
+            World.setOptSelectedScreenAddress (Some destination) world
 
-    let private getGroupRenderDescriptors dispatcherContainer entities =
-        let entities = Map.toValueSeq entities
-        Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors dispatcherContainer) entities
+        static member transitionScreen destination world =
+            match World.getOptSelectedScreenAddress world with
+            | None ->
+                trace "Program Error: Could not handle screen transition due to no selected screen."
+                { world with Liveness = Exiting }
+            | Some selectedScreenAddress ->
+                let subscriptionKey = World.makeSubscriptionKey ()
+                let sub = CustomSub (fun _ world ->
+                    let world = World.unsubscribe subscriptionKey world
+                    let world = World.selectScreen destination world
+                    (Unhandled, world))
+                let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
+                World.subscribe subscriptionKey (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress sub world
 
-    let private getTransitionRenderDescriptors camera transition =
-        match transition.OptDissolveSprite with
-        | None -> []
-        | Some dissolveSprite ->
-            let progress = single transition.TransitionTicks / single transition.TransitionLifetime
-            let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-            let color = Vector4 (Vector3.One, alpha)
-            [LayerableDescriptor
-                { Depth = Single.MaxValue
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = -camera.EyeSize * 0.5f // negation for right-handedness
-                          Size = camera.EyeSize
-                          Rotation = 0.0f
-                          ViewType = Absolute
-                          OptInset = None
-                          Sprite = dissolveSprite
-                          Color = color }}]
+        static member handleMessageAsScreenTransitionFromSplash destination world =
+            let world = World.selectScreen destination world
+            (Unhandled, world)
 
-    let private getRenderDescriptors world =
-        match getOptSelectedScreenAddress world with
-        | None -> []
-        | Some selectedScreenAddress ->
-            let optGroupMap = Map.tryFind selectedScreenAddress.[0] world.Entities
-            match optGroupMap with
+        static member handleMessageAsScreenTransition destination world =
+            let world = World.transitionScreen destination world
+            (Unhandled, world)
+
+        static member private sortFstDesc (priority, _) (priority2, _) =
+            if priority = priority2 then 0
+            elif priority > priority2 then -1
+            else 1
+
+        static member getSimulant (address : Address) world =
+            match address with
+            | [] -> Game <| world.Game
+            | [_] as screenAddress -> Screen <| World.getScreen screenAddress world
+            | [_; _] as groupAddress -> Group <| World.getGroup groupAddress world
+            | [_; _; _] as entityAddress -> Entity <| World.getEntity entityAddress world
+            | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
+
+        static member getOptSimulant (address : Address) world =
+            match address with
+            | [] -> Some <| Game world.Game
+            | [_] as screenAddress -> Option.map Screen <| World.getOptScreen screenAddress world
+            | [_; _] as groupAddress -> Option.map Group <| World.getOptGroup groupAddress world
+            | [_; _; _] as entityAddress -> Option.map Entity <| World.getOptEntity entityAddress world
+            | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
+
+        static member getPublishingPriority getEntityPublishingPriority simulant world =
+            match simulant with
+            | Game _ -> GamePublishingPriority
+            | Screen _ -> ScreenPublishingPriority
+            | Group _ -> GroupPublishingPriority
+            | Entity entity -> getEntityPublishingPriority entity world
+
+        static member getSubscriptionSortables getEntityPublishingPriority subscriptions world =
+            let optSimulants =
+                List.map
+                    (fun (key, address, subscription) ->
+                        let optSimulant = World.getOptSimulant address world
+                        Option.map (fun simulant -> (World.getPublishingPriority getEntityPublishingPriority simulant world, (key, address, subscription))) optSimulant)
+                    subscriptions
+            List.definitize optSimulants
+
+        static member sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
+            let subscriptions = World.getSubscriptionSortables getEntityPublishingPriority subscriptions world
+            let subscriptions = List.sortWith World.sortFstDesc subscriptions
+            List.map snd subscriptions
+
+        static member sortSubscriptionsByPickingPriority subscriptions world =
+            World.sortSubscriptionsBy (fun (entity : Entity) world -> entity.GetPickingPriority world) subscriptions world
+
+        static member sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
+            World.sortSubscriptionsBy (fun _ _ -> EntityPublishingPriority) subscriptions world
+
+        /// Publish a message for the given event.
+        static member publishDefinition publishSort event publisher messageData world =
+            let events = List.collapseLeft event
+            let optSubLists = List.map (fun event -> Map.tryFind (event @ AnyEvent) world.Subscriptions) events
+            let optSubLists = Map.tryFind event world.Subscriptions :: optSubLists
+            let subLists = List.definitize optSubLists
+            let subList = List.concat subLists
+            let subListSorted = publishSort subList world
+            let (_, world) =
+                List.foldWhile
+                    (fun (messageHandled, world) (_, subscriber, subscription) ->
+                        let message = { Event = event; Publisher = publisher; Subscriber = subscriber; Data = messageData }
+                        if messageHandled = Handled || world.Liveness = Exiting then None
+                        else
+                            let result =
+                                match subscription with
+                                | ExitSub -> World.handleMessageAsExit world
+                                | SwallowSub -> World.handleMessageAsSwallow world
+                                | ScreenTransitionSub destination -> World.handleMessageAsScreenTransition destination world
+                                | ScreenTransitionFromSplashSub destination -> World.handleMessageAsScreenTransitionFromSplash destination world
+                                | CustomSub fn ->
+                                    match World.getOptSimulant message.Subscriber world with
+                                    | None -> (Unhandled, world)
+                                    | Some _ -> fn message world
+                            Some result)
+                    (Unhandled, world)
+                    subListSorted
+            world
+
+        /// Publish a message for the given event.
+        static member publish4Definition event publisher messageData world =
+            World.publish World.sortSubscriptionsByHierarchy event publisher messageData world
+
+        /// Subscribe to messages for the given event.
+        static member subscribeDefinition subscriptionKey event subscriber subscription world =
+            let subscriptions = 
+                match Map.tryFind event world.Subscriptions with
+                | None -> Map.add event [(subscriptionKey, subscriber, subscription)] world.Subscriptions
+                | Some subscriptionList -> Map.add event ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
+            let unsubscriptions = Map.add subscriptionKey (event, subscriber) world.Unsubscriptions
+            { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+
+        /// Subscribe to messages for the given event.
+        static member subscribe4Definition event subscriber subscription world =
+            World.subscribe (World.makeSubscriptionKey ()) event subscriber subscription world
+
+        /// Unsubscribe to messages for the given event.
+        static member unsubscribeDefinition subscriptionKey world =
+            match Map.tryFind subscriptionKey world.Unsubscriptions with
+            | None -> world // TODO: consider failure signal
+            | Some (event, subscriber) ->
+                match Map.tryFind event world.Subscriptions with
+                | None -> world // TODO: consider failure signal
+                | Some subscriptionList ->
+                    let subscriptionList =
+                        List.remove
+                            (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
+                            subscriptionList
+                    let subscriptions = Map.add event subscriptionList world.Subscriptions
+                    { world with Subscriptions = subscriptions }
+
+        /// Execute a procedure within the context of a given subscription for the given event.
+        static member withSubscriptionDefinition event subscriber subscription procedure world =
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let world = World.subscribe subscriptionKey event subscriber subscription world
+            let world = procedure world
+            World.unsubscribe subscriptionKey world
+
+        /// Subscribe to messages for the given event during the lifetime of the subscriber.
+        static member observeDefinition event subscriber subscription world =
+            if List.isEmpty subscriber then
+                debug "Cannot observe events with an anonymous subscriber."
+                world
+            else
+                let observationKey = World.makeSubscriptionKey ()
+                let removalKey = World.makeSubscriptionKey ()
+                let world = World.subscribe observationKey event subscriber subscription world
+                let sub = CustomSub (fun _ world ->
+                    let world = World.unsubscribe removalKey world
+                    let world = World.unsubscribe observationKey world
+                    (Unhandled, world))
+                World.subscribe removalKey (RemovingEvent @ subscriber) subscriber sub world
+
+        static member private updateTransition1 (transition : Transition) =
+            if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
+            else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
+
+        static member internal updateTransition update world =
+            let world =
+                match World.getOptSelectedScreenAddress world with
+                | None -> world
+                | Some selectedScreenAddress ->
+                    let selectedScreen = World.getScreen selectedScreenAddress world
+                    match selectedScreen.State with
+                    | IncomingState ->
+                        let world =
+                            if selectedScreen.Incoming.TransitionTicks = 0L
+                            then World.publish4 (SelectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else world
+                        match world.Liveness with
+                        | Exiting -> world
+                        | Running ->
+                            let world =
+                                if selectedScreen.Incoming.TransitionTicks = 0L
+                                then World.publish4 (StartIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                                else world
+                            match world.Liveness with
+                            | Exiting -> world
+                            | Running ->
+                                let (finished, incoming) = World.updateTransition1 selectedScreen.Incoming
+                                let selectedScreen = { selectedScreen with Incoming = incoming }
+                                let world = World.setScreen selectedScreenAddress selectedScreen world
+                                if finished then
+                                    let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
+                                    World.publish4 (FinishIncomingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                                else world
+                    | OutgoingState ->
+                        let world =
+                            if selectedScreen.Outgoing.TransitionTicks <> 0L then world
+                            else World.publish4 (StartOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                        match world.Liveness with
+                        | Exiting -> world
+                        | Running ->
+                            let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
+                            let selectedScreen = { selectedScreen with Outgoing = outgoing }
+                            let world = World.setScreen selectedScreenAddress selectedScreen world
+                            if finished then
+                                let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
+                                let world = World.publish4 (DeselectEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                                match world.Liveness with
+                                | Exiting -> world
+                                | Running -> World.publish4 (FinishOutgoingEvent @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else world
+                    | IdlingState -> world
+            match world.Liveness with
+            | Exiting -> world
+            | Running -> update world
+
+        static member private handleSplashScreenIdleTick idlingTime ticks message world =
+            let world = World.unsubscribe SplashScreenTickKey world
+            if ticks < idlingTime then
+                let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime -<| incL ticks
+                let world = World.subscribe SplashScreenTickKey message.Event message.Subscriber subscription world
+                (Unhandled, world)
+            else
+                match World.getOptSelectedScreenAddress world with
+                | None ->
+                    trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                    (Handled, { world with Liveness = Exiting })
+                | Some selectedScreenAddress ->
+                    let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
+                    (Unhandled, world)
+
+        static member internal handleSplashScreenIdle idlingTime message world =
+            let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime 0L
+            let world = World.subscribe SplashScreenTickKey TickEvent message.Subscriber subscription world
+            (Handled, world)
+
+        static member activateGameDispatcher assemblyFileName gameDispatcherFullName world =
+            let assembly = Assembly.LoadFrom assemblyFileName
+            let gameDispatcherType = assembly.GetType gameDispatcherFullName
+            let gameDispatcherShortName = gameDispatcherType.Name
+            let gameDispatcher = Activator.CreateInstance gameDispatcherType
+            let dispatchers = Map.add gameDispatcherShortName gameDispatcher world.Dispatchers
+            let world = { world with Dispatchers = dispatchers }
+            let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
+            world.Game.Register world
+
+        static member saveGroupToFile group entities fileName (_ : World) =
+            use file = File.Open (fileName, FileMode.Create)
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            use writer = XmlWriter.Create (file, writerSettings)
+            writer.WriteStartDocument ()
+            writer.WriteStartElement "Root"
+            Group.writeToXml writer group entities
+            writer.WriteEndElement ()
+            writer.WriteEndDocument ()
+
+        static member loadGroupFromFile fileName world =
+            let document = XmlDocument ()
+            document.Load (fileName : string)
+            let rootNode = document.["Root"]
+            let groupNode = rootNode.["Group"]
+            Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+
+        static member private play world =
+            let audioMessages = world.AudioMessages
+            let world = { world with AudioMessages = [] }
+            { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
+
+        static member private getGroupRenderDescriptors dispatcherContainer entities =
+            let entities = Map.toValueSeq entities
+            Seq.map (fun (entity : Entity) -> entity.GetRenderDescriptors dispatcherContainer) entities
+
+        static member private getTransitionRenderDescriptors camera transition =
+            match transition.OptDissolveSprite with
             | None -> []
-            | Some groupMap ->
-                let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                let descriptorSeqs = List.map (getGroupRenderDescriptors world) entityMaps
-                let descriptorSeq = Seq.concat descriptorSeqs
-                let descriptors = List.concat descriptorSeq
-                let selectedScreen = getScreen selectedScreenAddress world
-                match selectedScreen.State with
-                | IncomingState -> descriptors @ getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
-                | OutgoingState -> descriptors @ getTransitionRenderDescriptors world.Camera selectedScreen.Outgoing
-                | IdlingState -> descriptors
+            | Some dissolveSprite ->
+                let progress = single transition.TransitionTicks / single transition.TransitionLifetime
+                let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
+                let color = Vector4 (Vector3.One, alpha)
+                [LayerableDescriptor
+                    { Depth = Single.MaxValue
+                      LayeredDescriptor =
+                        SpriteDescriptor
+                            { Position = -camera.EyeSize * 0.5f // negation for right-handedness
+                              Size = camera.EyeSize
+                              Rotation = 0.0f
+                              ViewType = Absolute
+                              OptInset = None
+                              Sprite = dissolveSprite
+                              Color = color }}]
 
-    let private render world =
-        let renderMessages = world.RenderMessages
-        let renderDescriptors = getRenderDescriptors world
-        let renderer = world.Renderer
-        let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
-        { world with RenderMessages = []; Renderer = renderer }
+        static member private getRenderDescriptors world =
+            match World.getOptSelectedScreenAddress world with
+            | None -> []
+            | Some selectedScreenAddress ->
+                let optGroupMap = Map.tryFind selectedScreenAddress.[0] world.Entities
+                match optGroupMap with
+                | None -> []
+                | Some groupMap ->
+                    let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
+                    let descriptorSeqs = List.map (World.getGroupRenderDescriptors world) entityMaps
+                    let descriptorSeq = Seq.concat descriptorSeqs
+                    let descriptors = List.concat descriptorSeq
+                    let selectedScreen = World.getScreen selectedScreenAddress world
+                    match selectedScreen.State with
+                    | IncomingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
+                    | OutgoingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Outgoing
+                    | IdlingState -> descriptors
 
-    let private handleIntegrationMessage world integrationMessage =
-        match world.Liveness with
-        | Exiting -> world
-        | Running ->
-            match integrationMessage with
-            | BodyTransformMessage bodyTransformMessage ->
-                match getOptEntity bodyTransformMessage.EntityAddress world with
-                | None -> world
-                | Some entity -> entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
-            | BodyCollisionMessage bodyCollisionMessage ->
-                match getOptEntity bodyCollisionMessage.EntityAddress world with
-                | None -> world
-                | Some _ ->
-                    let collisionAddress = CollisionEvent @ bodyCollisionMessage.EntityAddress
-                    let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
-                    publish4 collisionAddress [] collisionData world
+        static member private render world =
+            let renderMessages = world.RenderMessages
+            let renderDescriptors = World.getRenderDescriptors world
+            let renderer = world.Renderer
+            let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
+            { world with RenderMessages = []; Renderer = renderer }
 
-    let private handleIntegrationMessages integrationMessages world =
-        List.fold handleIntegrationMessage world integrationMessages
+        static member private handleIntegrationMessage world integrationMessage =
+            match world.Liveness with
+            | Exiting -> world
+            | Running ->
+                match integrationMessage with
+                | BodyTransformMessage bodyTransformMessage ->
+                    match World.getOptEntity bodyTransformMessage.EntityAddress world with
+                    | None -> world
+                    | Some entity -> entity.HandleBodyTransformMessage (bodyTransformMessage.EntityAddress, bodyTransformMessage, world)
+                | BodyCollisionMessage bodyCollisionMessage ->
+                    match World.getOptEntity bodyCollisionMessage.EntityAddress world with
+                    | None -> world
+                    | Some _ ->
+                        let collisionAddress = CollisionEvent @ bodyCollisionMessage.EntityAddress
+                        let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
+                        World.publish4 collisionAddress [] collisionData world
 
-    let private integrate world =
-        if physicsRunning world then
-            let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
-            let world = { world with PhysicsMessages = [] }
-            handleIntegrationMessages integrationMessages world
-        else world
+        static member private handleIntegrationMessages integrationMessages world =
+            List.fold World.handleIntegrationMessage world integrationMessages
 
-    let private runNextTask world =
-        let task = List.head world.Tasks
-        if task.Time = world.Ticks then
-            let world = task.Operation world
-            { world with Tasks = List.tail world.Tasks }
-        else world
+        static member private integrate world =
+            if World.physicsRunning world then
+                let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
+                let world = { world with PhysicsMessages = [] }
+                World.handleIntegrationMessages integrationMessages world
+            else world
 
-    let private runTasks world =
-        List.fold (fun world _ -> runNextTask world) world world.Tasks
+        static member private runNextTask world =
+            let task = List.head world.Tasks
+            if task.Time = world.Ticks then
+                let world = task.Operation world
+                { world with Tasks = List.tail world.Tasks }
+            else world
 
-    let run4 tryMakeWorld handleUpdate handleRender sdlConfig =
-        Sdl.run
-            (fun sdlDeps -> tryMakeWorld sdlDeps)
-            (fun refEvent world ->
-                let event = !refEvent
-                let world =
-                    match event.``type`` with
-                    | SDL.SDL_EventType.SDL_QUIT -> { world with Liveness = Exiting }
-                    | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                        let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                        let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                        if Set.contains MouseLeft world.MouseState.MouseDowns
-                        then publish sortSubscriptionsByPickingPriority MouseDragEvent [] (MouseMoveData mousePosition) world
-                        else publish sortSubscriptionsByPickingPriority MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
-                    | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                        let mouseButton = Sdl.makeNuMouseButton event.button.button
-                        let mouseEvent = addrstr DownMouseEvent <| string mouseButton
-                        let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                        let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                        publish sortSubscriptionsByPickingPriority mouseEvent [] messageData world
-                    | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                        let mouseState = world.MouseState
-                        let mouseButton = Sdl.makeNuMouseButton event.button.button
-                        let mouseEvent = addrstr UpMouseEvent <| string mouseButton
-                        if Set.contains mouseButton mouseState.MouseDowns then
-                            let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
+        static member private runTasks world =
+            List.fold (fun world _ -> World.runNextTask world) world world.Tasks
+
+        static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
+            Sdl.run
+                (fun sdlDeps -> tryMakeWorld sdlDeps)
+                (fun refEvent world ->
+                    let event = !refEvent
+                    let world =
+                        match event.``type`` with
+                        | SDL.SDL_EventType.SDL_QUIT -> { world with Liveness = Exiting }
+                        | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                            let mousePosition = Vector2 (single event.button.x, single event.button.y)
+                            let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
+                            if Set.contains MouseLeft world.MouseState.MouseDowns
+                            then World.publish World.sortSubscriptionsByPickingPriority MouseDragEvent [] (MouseMoveData mousePosition) world
+                            else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEvent [] (MouseButtonData (mousePosition, MouseLeft)) world
+                        | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
+                            let mouseButton = Sdl.makeNuMouseButton event.button.button
+                            let mouseEvent = addrstr DownMouseEvent <| string mouseButton
+                            let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                             let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
-                            publish sortSubscriptionsByPickingPriority mouseEvent [] messageData world
-                        else world
-                    | _ -> world
-                (world.Liveness, world))
-            (fun world ->
-                let world = integrate world
-                match world.Liveness with
-                | Exiting -> (Exiting, world)
-                | Running ->
-                    let world = publish4 TickEvent [] NoData world
+                            World.publish World.sortSubscriptionsByPickingPriority mouseEvent [] messageData world
+                        | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
+                            let mouseState = world.MouseState
+                            let mouseButton = Sdl.makeNuMouseButton event.button.button
+                            let mouseEvent = addrstr UpMouseEvent <| string mouseButton
+                            if Set.contains mouseButton mouseState.MouseDowns then
+                                let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
+                                let messageData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                                World.publish World.sortSubscriptionsByPickingPriority mouseEvent [] messageData world
+                            else world
+                        | _ -> world
+                    (world.Liveness, world))
+                (fun world ->
+                    let world = World.integrate world
                     match world.Liveness with
                     | Exiting -> (Exiting, world)
                     | Running ->
-                        let world = WorldPrims.updateTransition handleUpdate world
+                        let world = World.publish4 TickEvent [] NoData world
                         match world.Liveness with
                         | Exiting -> (Exiting, world)
                         | Running ->
-                            let world = runTasks world
-                            (world.Liveness, world))
-            (fun world -> let world = render world in handleRender world)
-            (fun world -> let world = play world in { world with Ticks = world.Ticks + 1L })
-            (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
-            sdlConfig
+                            let world = World.updateTransition handleUpdate world
+                            match world.Liveness with
+                            | Exiting -> (Exiting, world)
+                            | Running ->
+                                let world = World.runTasks world
+                                (world.Liveness, world))
+                (fun world -> let world = World.render world in handleRender world)
+                (fun world -> let world = World.play world in { world with Ticks = world.Ticks + 1L })
+                (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
+                sdlConfig
 
-    let run tryMakeWorld handleUpdate sdlConfig =
-        run4 tryMakeWorld handleUpdate id sdlConfig
+        static member run tryMakeWorld handleUpdate sdlConfig =
+            World.run4 tryMakeWorld handleUpdate id sdlConfig
 
-    let addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
-        let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
-        let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
-        let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
-        let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
-        let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
-        let splashLabel = Entity.setLabelSprite sprite splashLabel
-        let world = addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
-        let world = observe (FinishIncomingEvent @ address) address (CustomSub <| WorldPrims.handleSplashScreenIdle idlingTime) world
-        observe (FinishOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
+        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
+            let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
+            let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
+            let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
+            let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
+            let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
+            let splashLabel = Entity.setLabelSprite sprite splashLabel
+            let world = World.addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
+            let world = World.observe (FinishIncomingEvent @ address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
+            World.observe (FinishOutgoingEvent @ address) address (ScreenTransitionFromSplashSub destination) world
 
-    let addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
-        let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
-        let (group, entities) = loadGroupFromFile groupFileName world
-        let world = addScreen screenAddress screen [(groupName, group, entities)] world
-        world
+        static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
+            let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
+            let (group, entities) = World.loadGroupFromFile groupFileName world
+            let world = World.addScreen screenAddress screen [(groupName, group, entities)] world
+            world
 
-    let tryMakeEmpty sdlDeps gameDispatcher interactivity extData =
-        match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
-        | Left errorMsg -> Left errorMsg
-        | Right assetMetadataMap ->
-            let gameDispatcherName = (gameDispatcher.GetType ()).Name
-            let dispatchers =
-                Map.ofList
-                    // TODO: see if we can reflectively generate this array
-                    [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
-                     typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
-                     typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
-                     typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
-                     typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
-                     typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
-                     typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
-                     typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
-                     typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
-                     typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
-                     typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
-                     typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
-                     typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
-                     typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
-                     typeof<GameDispatcher>.Name, GameDispatcher () :> obj
-                     gameDispatcherName, gameDispatcher]
+        static member tryMakeEmpty sdlDeps gameDispatcher interactivity extData =
+            match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
+            | Left errorMsg -> Left errorMsg
+            | Right assetMetadataMap ->
+                let gameDispatcherName = (gameDispatcher.GetType ()).Name
+                let dispatchers =
+                    Map.ofList
+                        // TODO: see if we can reflectively generate this array
+                        [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
+                         typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
+                         typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
+                         typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
+                         typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
+                         typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
+                         typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
+                         typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
+                         typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
+                         typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
+                         typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
+                         typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
+                         typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
+                         typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
+                         typeof<GameDispatcher>.Name, GameDispatcher () :> obj
+                         gameDispatcherName, gameDispatcher]
+                let world =
+                    { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                      Screens = Map.empty
+                      Groups = Map.empty
+                      Entities = Map.empty
+                      Ticks = 0L
+                      Liveness = Running
+                      Interactivity = interactivity
+                      Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
+                      Subscriptions = Map.empty
+                      Unsubscriptions = Map.empty
+                      Tasks = []
+                      MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
+                      AudioPlayer = Audio.makeAudioPlayer ()
+                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext
+                      Integrator = Physics.makeIntegrator Gravity
+                      AssetMetadataMap = assetMetadataMap
+                      AudioMessages = [HintAudioPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
+                      RenderMessages = [HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
+                      PhysicsMessages = []
+                      Dispatchers = dispatchers
+                      ExtData = extData }
+                let world = world.Game.Register world
+                Right world
+
+        static member rebuildPhysicsHack groupAddress world =
+            let outstandingMessages = world.PhysicsMessages
+            let world = { world with PhysicsMessages = [] }
+            let entities = World.getEntities groupAddress world
             let world =
-                { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
-                  Screens = Map.empty
-                  Groups = Map.empty
-                  Entities = Map.empty
-                  Ticks = 0L
-                  Liveness = Running
-                  Interactivity = interactivity
-                  Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                  Subscriptions = Map.empty
-                  Unsubscriptions = Map.empty
-                  Tasks = []
-                  MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
-                  AudioPlayer = Audio.makeAudioPlayer ()
-                  Renderer = Rendering.makeRenderer sdlDeps.RenderContext
-                  Integrator = Physics.makeIntegrator Gravity
-                  AssetMetadataMap = assetMetadataMap
-                  AudioMessages = [HintAudioPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
-                  RenderMessages = [HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
-                  PhysicsMessages = []
-                  Dispatchers = dispatchers
-                  ExtData = extData }
-            let world = world.Game.Register world
-            Right world
+                Map.fold
+                    (fun world _ (entity : Entity) -> entity.PropagatePhysics (groupAddress @ [entity.Name], world))
+                    world
+                    entities
+            { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages @ [RebuildPhysicsHackMessage]}
 
-    let rebuildPhysicsHack groupAddress world =
-        let outstandingMessages = world.PhysicsMessages
-        let world = { world with PhysicsMessages = [] }
-        let entities = getEntities groupAddress world
-        let world =
-            Map.fold
-                (fun world _ (entity : Entity) -> entity.PropagatePhysics (groupAddress @ [entity.Name], world))
-                world
-                entities
-        { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages @ [RebuildPhysicsHackMessage]}
+        static member init () =
+            NuMath.initTypeConverters ()
+            Audio.initTypeConverters ()
+            Rendering.initTypeConverters ()
+            Sim.publish <- World.publishDefinition
+            Sim.publish4 <- World.publish4Definition
+            Sim.subscribe <- World.subscribeDefinition
+            Sim.subscribe4 <- World.subscribe4Definition
+            Sim.unsubscribe <- World.unsubscribeDefinition
+            Sim.withSubscription <- World.withSubscriptionDefinition
+            Sim.observe <- World.observeDefinition

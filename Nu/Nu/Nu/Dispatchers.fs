@@ -6,24 +6,6 @@ open Prime
 open TiledSharp
 open Nu
 open Nu.NuConstants
-module World = WorldPrims
-
-[<AutoOpen>]
-module EntityDispatcherModule =
-
-    type EntityDispatcher () =
-
-        abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default dispatcher.Init (entity, _) = entity
-
-        abstract member Register : Address * World -> World
-        default dispatcher.Register (_, world) = world
-
-        abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (_, world) = world
-
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (_, _) = 0.0f
 
 [<AutoOpen>]
 module Entity2dDispatcherModule =
@@ -794,30 +776,3 @@ module TileMapDispatcherModule =
             match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
             | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
-
-    type GroupDispatcher () =
-
-        abstract member Init : Group * IXDispatcherContainer -> Group
-        default dispatcher.Init (group, _) = group
-        
-        abstract member Register : Address * World -> World
-        default dispatcher.Register (_, world) = world
-
-        abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (_, world) = world
-
-    type TransitionDispatcher () =
-        class end
-
-    type ScreenDispatcher () =
-
-        abstract member Register : Address * World -> World
-        default dispatcher.Register (_, world) = world
-
-        abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (_, world) = world
-
-    type GameDispatcher () =
-        
-        abstract member Register : World -> World
-        default dispatcher.Register world = world
