@@ -9,7 +9,7 @@ open OmniBlade
 module Program =
 
     let [<EntryPoint>] main _ =
-        World.initTypeConverters ()
+        World.init ()
 
         let sdlViewConfig =
             NewWindow

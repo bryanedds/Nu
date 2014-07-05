@@ -9,9 +9,9 @@ module Program =
     // this the entry point for the BlazeVector application
     let [<EntryPoint>] main _ =
     
-        // this initializes all the .Net TypeConverters that the game uses for serialization. This
-        // should always be the first line in your game program.
-        World.initTypeConverters ()
+        // this initializes miscellaneous values required by the engine. This should always be the
+        // first line in your game program.
+        World.init ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "BlazeVector".
