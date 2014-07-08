@@ -194,7 +194,7 @@ module WorldEntityModule =
             Entity.unregister address entity world
 
         static member removeEntityImmediate (address : Address) world =
-            let world = World.publish4 (RemovingEvent @ address) address NoData world
+            let world = World.publish4 (RemovingEventName @ address) address NoData world
             let world = World.unregisterEntity address world
             World.setOptEntity address None world
 
@@ -237,7 +237,7 @@ module WorldEntityModule =
                 | Some _ -> World.removeEntityImmediate address world
             let world = World.setEntity address entity world
             let world = World.registerEntity address entity world
-            World.publish4 (AddedEvent @ address) address NoData world
+            World.publish4 (AddedEventName @ address) address NoData world
 
         static member addEntities groupAddress entities world =
             List.fold

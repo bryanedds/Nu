@@ -23,19 +23,19 @@ module BulletDispatcherModule =
         inherit SimpleBodyDispatcher
             (fun (bullet : Entity) -> CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero })
 
-        let tickHandler message world =
-            let bullet = World.getEntity message.Subscriber world
+        let tickHandler event world =
+            let bullet = World.getEntity event.Subscriber world
             if world.Ticks = bullet.BirthTime + 28L then
-                let world = World.removeEntity message.Subscriber world
+                let world = World.removeEntity event.Subscriber world
                 (Unhandled, world)
             else (Unhandled, world)
 
-        let collisionHandler message world =
-            match message.Data with
+        let collisionHandler event world =
+            match event.Data with
             | CollisionData (_, _, _) ->
-                let world = World.removeEntity message.Subscriber world
+                let world = World.removeEntity event.Subscriber world
                 (Unhandled, world)
-            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
+            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr event.Name + "'."
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
@@ -52,8 +52,8 @@ module BulletDispatcherModule =
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
-            let world = World.observe TickEvent address (CustomSub tickHandler) world
-            let world = World.observe (CollisionEvent @ address) address (CustomSub collisionHandler) world
+            let world = World.observe TickEventName address (CustomSub tickHandler) world
+            let world = World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
             let bullet = World.getEntity address world
             let bullet = Entity.setBirthTime world.Ticks bullet
             let world = World.setEntity address bullet world
@@ -88,9 +88,9 @@ module EnemyDispatcherModule =
             let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
             { world with AudioMessages = sound :: world.AudioMessages }
 
-        let movementHandler message world =
+        let movementHandler event world =
             if World.gamePlaying world then
-                let enemy = World.getEntity message.Subscriber world
+                let enemy = World.getEntity event.Subscriber world
                 let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
                 if hasAppeared then
                     let physicsId = Entity.getPhysicsId enemy
@@ -105,24 +105,24 @@ module EnemyDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        let collisionHandler message world =
-            match message.Data with
+        let collisionHandler event world =
+            match event.Data with
             | CollisionData (_, _, colliderAddress) ->
                 let collider = World.getEntity colliderAddress world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collider world
                 if isBullet then
-                    let enemy = World.getEntity message.Subscriber world
+                    let enemy = World.getEntity event.Subscriber world
                     let enemy = Entity.setHealth (enemy.Health - 1) enemy
-                    let world = World.setEntity message.Subscriber enemy world
+                    let world = World.setEntity event.Subscriber enemy world
                     if enemy.Health = 0 then
-                        let world = World.removeEntity message.Subscriber world
+                        let world = World.removeEntity event.Subscriber world
                         let world = playEnemyExplosionSound world
                         (Unhandled, world)
                     else
                         let world = playHitSound world
                         (Unhandled, world)
                 else (Unhandled, world)
-            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr message.Event + "'."
+            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr event.Name + "'."
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
@@ -141,8 +141,8 @@ module EnemyDispatcherModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe TickEvent address -<| CustomSub movementHandler |>
-                World.observe (CollisionEvent @ address) address -<| CustomSub collisionHandler
+                World.observe TickEventName address -<| CustomSub movementHandler |>
+                World.observe (CollisionEventName @ address) address -<| CustomSub collisionHandler
 
         override dispatcher.Unregister (address, world) =
             base.Unregister (address, world)
@@ -189,13 +189,13 @@ module PlayerDispatcherModule =
             let bulletAddress = List.allButLast address @ [bullet.Name]
             World.addEntity bulletAddress bullet world
 
-        let spawnBulletHandler message world =
+        let spawnBulletHandler event world =
             if World.gamePlaying world then
-                let player = World.getEntity message.Subscriber world
+                let player = World.getEntity event.Subscriber world
                 if not <| Entity.hasFallen player then
                     if world.Ticks % 6L = 0L then
-                        let player = World.getEntity message.Subscriber world
-                        let world = createBullet player message.Subscriber world
+                        let player = World.getEntity event.Subscriber world
+                        let world = createBullet player event.Subscriber world
                         let world = playShotSound world
                         (Unhandled, world)
                     else (Unhandled, world)
@@ -208,12 +208,12 @@ module PlayerDispatcherModule =
             then player.LastTimeOnGround
             else world.Ticks
 
-        let movementHandler message world =
+        let movementHandler event world =
             if World.gamePlaying world then
-                let player = World.getEntity message.Subscriber world
+                let player = World.getEntity event.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGround lastTimeOnGround player
-                let world = World.setEntity message.Subscriber player world
+                let world = World.setEntity event.Subscriber player world
                 let physicsId = Entity.getPhysicsId player
                 let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
                 let force =
@@ -225,13 +225,13 @@ module PlayerDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
-        let jumpHandler message world =
+        let jumpHandler event world =
             if World.gamePlaying world then
-                let player = World.getEntity message.Subscriber world
+                let player = World.getEntity event.Subscriber world
                 if  world.Ticks >= player.LastTimeJump + 12L &&
                     world.Ticks <= player.LastTimeOnGround + 10L then
                     let player = Entity.setLastTimeJump world.Ticks player
-                    let world = World.setEntity message.Subscriber player world
+                    let world = World.setEntity event.Subscriber player world
                     let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId player; LinearImpulse = Vector2 (0.0f, 18000.0f) }
                     let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
                     let world = playJumpSound world
@@ -257,9 +257,9 @@ module PlayerDispatcherModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe TickEvent address -<| CustomSub spawnBulletHandler |>
-                World.observe TickEvent address -<| CustomSub movementHandler |>
-                World.observe DownMouseLeftEvent address -<| CustomSub jumpHandler
+                World.observe TickEventName address -<| CustomSub spawnBulletHandler |>
+                World.observe TickEventName address -<| CustomSub movementHandler |>
+                World.observe DownMouseLeftEventName address -<| CustomSub jumpHandler
 
         override dispatcher.Unregister (address, world) =
             base.Unregister (address, world)
@@ -290,11 +290,11 @@ module StagePlayDispatcherModule =
             let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
             { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
 
-        let adjustCameraHandler message world =
-            (Unhandled, adjustCamera message.Subscriber world)
+        let adjustCameraHandler event world =
+            (Unhandled, adjustCamera event.Subscriber world)
 
-        let playerFallHandler message world =
-            let player = getPlayer message.Subscriber world
+        let playerFallHandler event world =
+            let player = getPlayer event.Subscriber world
             if Entity.hasFallen player && (World.getSelectedScreen world).State = IdlingState then
                 let world = playDeathSound world
                 let world = World.transitionScreen TitleAddress world
@@ -305,8 +305,8 @@ module StagePlayDispatcherModule =
             let world = base.Register (address, world)
             let world =
                 world |>
-                World.observe TickEvent address -<| CustomSub adjustCameraHandler |>
-                World.observe TickEvent address -<| CustomSub playerFallHandler
+                World.observe TickEventName address -<| CustomSub adjustCameraHandler |>
+                World.observe TickEventName address -<| CustomSub playerFallHandler
             adjustCamera address world
 
 [<AutoOpen>]
@@ -339,7 +339,7 @@ module StageScreenModule =
             let sectionEntities = shiftEntities xShift sectionEntities world
             (sectionName, sectionGroup, sectionEntities)
 
-        let startPlayHandler message world =
+        let startPlayHandler event world =
             let random = Random ()
             let sectionFileNames = List.toArray SectionFileNames
             let sectionDescriptors =
@@ -349,7 +349,7 @@ module StageScreenModule =
                     yield makeSectionFromFile sectionFileNames.[sectionFileNameIndex] (SectionName + string i) (xShift * single i) world]
             let stagePlayDescriptor = Triple.prepend StagePlayName <| World.loadGroupFromFile StagePlayFileName world
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
-            let world = World.addGroups message.Subscriber groupDescriptors world
+            let world = World.addGroups event.Subscriber groupDescriptors world
             let world = playDeadBlazeSong world
             (Unhandled, world)
 
@@ -357,18 +357,18 @@ module StageScreenModule =
             let world = { world with AudioMessages = FadeOutSongMessage DefaultTimeToFadeOutSongMs :: world.AudioMessages }
             (Unhandled, world)
 
-        let stopPlayHandler message world =
+        let stopPlayHandler event world =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
             let groupNames = StagePlayName :: sectionNames
-            let world = World.removeGroups message.Subscriber groupNames world
+            let world = World.removeGroups event.Subscriber groupNames world
             (Unhandled, world)
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe (SelectEvent @ address) address -<| CustomSub startPlayHandler |>
-                World.observe (StartOutgoingEvent @ address) address -<| CustomSub stoppingPlayHandler |>
-                World.observe (DeselectEvent @ address) address -<| CustomSub stopPlayHandler
+                World.observe (SelectEventName @ address) address -<| CustomSub startPlayHandler |>
+                World.observe (StartOutgoingEventName @ address) address -<| CustomSub stoppingPlayHandler |>
+                World.observe (DeselectEventName @ address) address -<| CustomSub stopPlayHandler
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =

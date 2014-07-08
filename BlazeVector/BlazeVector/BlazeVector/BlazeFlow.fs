@@ -26,31 +26,31 @@ module BlazeFlow =
         // this adds a dissolve screen from the specified file with the given parameters
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (List.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
 
-        // this subscribes to the message that is raised when the Title screen is selected for
-        // display and interaction, and handles the message by playing the song "Machinery"
-        let world = World.subscribe4 SelectTitleEvent [] (CustomSub handlePlaySongMachinery) world
+        // this subscribes to the event that is raised when the Title screen is selected for
+        // display and interaction, and handles the event by playing the song "Machinery"
+        let world = World.subscribe4 SelectTitleEventName [] (CustomSub handlePlaySongMachinery) world
 
-        // subscribes to the message that is raised when the Title screen's Play button is
-        // clicked, and handles the message by transitioning to the Stage screen
-        let world = World.subscribe4 ClickTitlePlayEvent [] (CustomSub handlePlayStage) world
+        // subscribes to the event that is raised when the Title screen's Play button is
+        // clicked, and handles the event by transitioning to the Stage screen
+        let world = World.subscribe4 ClickTitlePlayEventName [] (CustomSub handlePlayStage) world
 
-        // subscribes to the message that is raised when the Title screen's Credits button is
-        // clicked, and handles the message by transitioning to the Credits screen
-        let world = World.subscribe4 ClickTitleCreditsEvent [] (ScreenTransitionSub CreditsAddress) world
+        // subscribes to the event that is raised when the Title screen's Credits button is
+        // clicked, and handles the event by transitioning to the Credits screen
+        let world = World.subscribe4 ClickTitleCreditsEventName [] (ScreenTransitionSub CreditsAddress) world
 
-        // subscribe4s to the message that is raised when the Title screen's Exit button is clicked,
-        // and handles the message by exiting the game
-        World.subscribe4 ClickTitleExitEvent [] ExitSub world
+        // subscribe4s to the event that is raised when the Title screen's Exit button is clicked,
+        // and handles the event by exiting the game
+        World.subscribe4 ClickTitleExitEventName [] ExitSub world
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (List.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress world
-        World.subscribe4 ClickCreditsBackEvent [] (ScreenTransitionSub TitleAddress) world
+        World.subscribe4 ClickCreditsBackEventName [] (ScreenTransitionSub TitleAddress) world
 
     // and so on.
     let addStageScreen world =
         let world = World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFileName (List.last StageGroupAddress) IncomingTime StageOutgoingTime StageAddress world
-        World.subscribe4 ClickStageBackEvent [] (ScreenTransitionSub TitleAddress) world
+        World.subscribe4 ClickStageBackEventName [] (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
     let tryMakeBlazeVectorWorld sdlDeps extData =
