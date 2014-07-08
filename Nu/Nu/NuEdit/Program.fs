@@ -186,8 +186,8 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let beginEntityDrag (form : NuEditForm) worldChangers refWorld message world =
-        match message.Data with
+    let beginEntityDrag (form : NuEditForm) worldChangers refWorld event world =
+        match event.Data with
         | MouseButtonData _ ->
             let pastWorld = world
             let handled = if World.gamePlaying world then Unhandled else Handled
@@ -207,10 +207,10 @@ module Program =
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 (handled, world)
-        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
 
-    let endEntityDrag (form : NuEditForm) message world =
-        match message.Data with
+    let endEntityDrag (form : NuEditForm) event world =
+        match event.Data with
         | MouseButtonData _ ->
             let handled = if World.gamePlaying world then Unhandled else Handled
             let editorState = world.ExtData :?> EditorState
@@ -221,7 +221,7 @@ module Program =
                 let editorState = { editorState with DragEntityState = DragEntityNone }
                 form.propertyGrid.Refresh ()
                 (handled, { world with ExtData = editorState })
-        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
 
     let updateEntityDrag (form : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
@@ -241,8 +241,8 @@ module Program =
             world
         | DragEntityRotation _ -> world
 
-    let beginCameraDrag (_ : NuEditForm) message world =
-        match message.Data with
+    let beginCameraDrag (_ : NuEditForm) event world =
+        match event.Data with
         | MouseButtonData _ ->
             let mousePosition = world.MouseState.MousePosition
             let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
@@ -251,10 +251,10 @@ module Program =
             let editorState = { editorState with DragCameraState = dragState }
             let world = { world with ExtData = editorState }
             (Handled, world)
-        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
 
-    let endCameraDrag (_ : NuEditForm) message world =
-        match message.Data with
+    let endCameraDrag (_ : NuEditForm) event world =
+        match event.Data with
         | MouseButtonData _ ->
             let editorState = world.ExtData :?> EditorState
             match editorState.DragCameraState with
@@ -262,13 +262,13 @@ module Program =
             | DragCameraPosition _ ->
                 let editorState = { editorState with DragCameraState = DragCameraNone }
                 (Handled, { world with ExtData = editorState })
-        | _ -> failwith <| "Expected MouseButtonData in message '" + string message + "'."
+        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
 
-    let simulantRemovedHandler (form : NuEditForm) message world =
+    let simulantRemovedHandler (form : NuEditForm) event world =
         match form.propertyGrid.SelectedObject with
         | null -> (Unhandled, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if message.Publisher <> entityTds.Address then (Unhandled, world)
+            if event.Publisher <> entityTds.Address then (Unhandled, world)
             else
                 form.propertyGrid.SelectedObject <- null
                 let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
@@ -549,11 +549,11 @@ module Program =
             refWorld := world
             refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := World.setOptSelectedScreenAddress (Some EditorScreenAddress) !refWorld 
-            refWorld := World.subscribe4 DownMouseLeftEvent [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := World.subscribe4 UpMouseLeftEvent [] (CustomSub <| endEntityDrag form) !refWorld
-            refWorld := World.subscribe4 DownMouseCenterEvent [] (CustomSub <| beginCameraDrag form) !refWorld
-            refWorld := World.subscribe4 UpMouseCenterEvent [] (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe4 (RemovingEvent @ AnyEvent) [] (CustomSub <| simulantRemovedHandler form) !refWorld
+            refWorld := World.subscribe4 DownMouseLeftEventName [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := World.subscribe4 UpMouseLeftEventName [] (CustomSub <| endEntityDrag form) !refWorld
+            refWorld := World.subscribe4 DownMouseCenterEventName [] (CustomSub <| beginCameraDrag form) !refWorld
+            refWorld := World.subscribe4 UpMouseCenterEventName [] (CustomSub <| endCameraDrag form) !refWorld
+            refWorld := World.subscribe4 (RemovingEventName @ AnyEventName) [] (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     let populateCreateEntityComboBox (form : NuEditForm) world =

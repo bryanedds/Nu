@@ -18,14 +18,14 @@ module FieldGroupDispatcherModule =
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
 
-        let adjustFieldCameraHandler message world =
-            (Unhandled, adjustFieldCamera message.Subscriber world)
+        let adjustFieldCameraHandler event world =
+            (Unhandled, adjustFieldCamera event.Subscriber world)
 
-        let moveFieldAvatarHandler message world =
-            let feelerAddress = message.Subscriber @ [FieldFeelerName]
+        let moveFieldAvatarHandler event world =
+            let feelerAddress = event.Subscriber @ [FieldFeelerName]
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then
-                let avatarAddress = message.Subscriber @ [FieldAvatarName]
+                let avatarAddress = event.Subscriber @ [FieldAvatarName]
                 let avatar = World.getEntity avatarAddress world
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
@@ -37,8 +37,8 @@ module FieldGroupDispatcherModule =
         
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
-            let world = World.observe TickEvent address (CustomSub moveFieldAvatarHandler) world
-            let world = World.observe TickEvent address (CustomSub adjustFieldCameraHandler) world
+            let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
+            let world = World.observe TickEventName address (CustomSub adjustFieldCameraHandler) world
             let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
             adjustFieldCamera address world
 
