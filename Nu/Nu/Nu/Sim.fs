@@ -51,10 +51,10 @@ module Interactivity =
         | GuiAndPhysicsAndGamePlay -> true
 
 [<AutoOpen>]
-module MessageDataModule =
+module EventDataModule =
 
-    /// Describes data relevant to specific messages.
-    type [<ReferenceEquality>] MessageData =
+    /// Describes data relevant to specific events.
+    type [<ReferenceEquality>] EventData =
         | MouseMoveData of Vector2
         | MouseButtonData of Vector2 * MouseButton
         | CollisionData of Vector2 * single * Address
@@ -62,20 +62,20 @@ module MessageDataModule =
         | NoData
 
 [<AutoOpen>]
-module MessageModule =
+module EventModule =
 
-    /// A generic message for the Nu game engine.
+    /// A generic event for the Nu game engine.
     /// A reference type.
-    type [<ReferenceEquality>] Message =
-        { Event : Address
+    type [<ReferenceEquality>] Event =
+        { Name : Address
           Publisher : Address
           Subscriber : Address
-          Data : MessageData }
+          Data : EventData }
 
 [<AutoOpen>]
-module MessageHandledModule =
+module EventHandledModule =
 
-    type MessageHandled =
+    type EventHandled =
         | Handled
         | Unhandled
 
@@ -179,19 +179,19 @@ module SimModule =
         { Time : int64
           Operation : World -> World }
 
-    /// Describes a game message subscription.
+    /// Describes a game event subscription.
     /// A reference type.
     and [<ReferenceEquality>] Subscription =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of Address (*desinationScreen*)
         | ScreenTransitionFromSplashSub of Address (*desinationScreen*)
-        | CustomSub of (Message -> World -> MessageHandled * World)
+        | CustomSub of (Event -> World -> EventHandled * World)
 
     /// TODO: document
     and SubscriptionEntry = Guid * Address * Subscription
 
-    /// A map of message subscriptions.
+    /// A map of event subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
     and SubscriptionEntries = Map<Address, SubscriptionEntry list>
 
@@ -277,8 +277,8 @@ module Sim =
             set simulant world <| worldSimulantLens address
 
     // NOTE: these must be defined in a module like this rather than in a World type extension
-    let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> MessageData -> World -> World>
-    let mutable publish4 = Unchecked.defaultof<Address -> Address -> MessageData -> World -> World>
+    let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
+    let mutable publish4 = Unchecked.defaultof<Address -> Address -> EventData -> World -> World>
     let mutable subscribe = Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
     let mutable subscribe4 = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
     let mutable unsubscribe = Unchecked.defaultof<Guid -> World -> World>
@@ -297,10 +297,10 @@ module WorldSimModule =
             Interactivity.gamePlaying world.Interactivity
 
         // NOTE: function forwarding
-        static member publish publishSort event publisher messageData world = Sim.publish publishSort event publisher messageData world
-        static member publish4 event publisher messageData world = Sim.publish4 event publisher messageData world
-        static member subscribe subscriptionKey event subscriber subscription world = Sim.subscribe subscriptionKey event subscriber subscription world
-        static member subscribe4 event subscriber subscription world = Sim.subscribe4 event subscriber subscription world
+        static member publish publishSort eventName publisher eventData world = Sim.publish publishSort eventName publisher eventData world
+        static member publish4 eventName publisher eventData world = Sim.publish4 eventName publisher eventData world
+        static member subscribe subscriptionKey eventName subscriber subscription world = Sim.subscribe subscriptionKey eventName subscriber subscription world
+        static member subscribe4 eventName subscriber subscription world = Sim.subscribe4 eventName subscriber subscription world
         static member unsubscribe subscriptionKey world = Sim.unsubscribe subscriptionKey world
-        static member withSubscription event subscriber subscription procedure world = Sim.withSubscription event subscriber subscription procedure world
-        static member observe event subscriber subscription world = Sim.observe event subscriber subscription world
+        static member withSubscription eventName subscriber subscription procedure world = Sim.withSubscription eventName subscriber subscription procedure world
+        static member observe eventName subscriber subscription world = Sim.observe eventName subscriber subscription world

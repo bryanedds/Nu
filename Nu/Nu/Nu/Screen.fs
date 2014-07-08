@@ -104,7 +104,7 @@ module WorldScreenModule =
             Screen.unregister address screen world
 
         static member removeScreenImmediate (address : Address) world =
-            let world = World.publish4 (RemovingEvent @ address) address NoData world
+            let world = World.publish4 (RemovingEventName @ address) address NoData world
             let world = World.clearGroupsImmediate address world
             let world = World.unregisterScreen address world
             World.setOptScreen address None world
@@ -123,4 +123,4 @@ module WorldScreenModule =
             let world = World.setScreen address screen world
             let world = World.addGroups address groupDescriptors world
             let world = World.registerScreen address screen world
-            World.publish4 (AddedEvent @ address) address NoData world
+            World.publish4 (AddedEventName @ address) address NoData world

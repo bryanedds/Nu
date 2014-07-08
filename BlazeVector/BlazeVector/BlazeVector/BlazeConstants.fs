@@ -32,19 +32,19 @@ module BlazeConstants =
     let TitleAddress = addr "Title"
     let TitleGroupFileName = "Assets/BlazeVector/Groups/Title.nugroup"
     let TitleGroupAddress = addr "Title/Group"
-    let SelectTitleEvent = addr "Select/Title"
-    let ClickTitlePlayEvent = addr "Click/Title/Group/Play"
-    let ClickTitleCreditsEvent = addr "Click/Title/Group/Credits"
-    let ClickTitleExitEvent = addr "Click/Title/Group/Exit"
+    let SelectTitleEventName = addr "Select/Title"
+    let ClickTitlePlayEventName = addr "Click/Title/Group/Play"
+    let ClickTitleCreditsEventName = addr "Click/Title/Group/Credits"
+    let ClickTitleExitEventName = addr "Click/Title/Group/Exit"
 
     // stage constants
     let StageAddress = addr "Stage"
     let StageGroupFileName = "Assets/BlazeVector/Groups/StageGui.nugroup"
     let StageGroupAddress = addr "Stage/Group"
-    let ClickStageBackEvent = addr "Click/Stage/Group/Back"
+    let ClickStageBackEventName = addr "Click/Stage/Group/Back"
 
     // credits constants
     let CreditsAddress = addr "Credits"
     let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
     let CreditsGroupAddress = addr "Credits/Group"
-    let ClickCreditsBackEvent = addr "Click/Credits/Group/Back"
+    let ClickCreditsBackEventName = addr "Click/Credits/Group/Back"
