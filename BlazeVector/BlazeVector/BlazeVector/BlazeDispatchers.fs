@@ -77,7 +77,10 @@ module EnemyDispatcherModule =
     type EnemyDispatcher () =
         inherit SimpleBodyDispatcher
             (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
-            
+
+        let hasAppeared (entity : Entity) (world : World) =
+            entity.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
+
         let playHitSound world =
             let soundAsset = { SoundAssetName = "Hit"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
             let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
@@ -88,21 +91,26 @@ module EnemyDispatcherModule =
             let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
             { world with AudioMessages = sound :: world.AudioMessages }
 
-        let movementHandler event world =
+        let move enemy world =
+            let physicsId = Entity.getPhysicsId enemy
+            let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
+            let force =
+                match optGroundTangent with
+                | None -> Vector2 (-2000.0f, -30000.0f)
+                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
+            let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
+            { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+
+        let die address world =
+            let world = World.removeEntity address world
+            playEnemyExplosionSound world
+
+        let tickHandler event world =
             if World.gamePlaying world then
                 let enemy = World.getEntity event.Subscriber world
-                let hasAppeared = enemy.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
-                if hasAppeared then
-                    let physicsId = Entity.getPhysicsId enemy
-                    let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
-                    let force =
-                        match optGroundTangent with
-                        | None -> Vector2 (-2000.0f, -30000.0f)
-                        | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
-                    let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
-                    let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-                    (Unhandled, world)
-                else (Unhandled, world)
+                let world = if hasAppeared enemy world then move enemy world else world
+                let world = if enemy.Health <= 0 then die event.Subscriber world else world
+                (Unhandled, world)
             else (Unhandled, world)
 
         let collisionHandler event world =
@@ -111,16 +119,9 @@ module EnemyDispatcherModule =
                 let collider = World.getEntity colliderAddress world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collider world
                 if isBullet then
-                    let enemy = World.getEntity event.Subscriber world
-                    let enemy = Entity.setHealth (enemy.Health - 1) enemy
-                    let world = World.setEntity event.Subscriber enemy world
-                    if enemy.Health = 0 then
-                        let world = World.removeEntity event.Subscriber world
-                        let world = playEnemyExplosionSound world
-                        (Unhandled, world)
-                    else
-                        let world = playHitSound world
-                        (Unhandled, world)
+                    let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
+                    let world = playHitSound world
+                    (Unhandled, world)
                 else (Unhandled, world)
             | _ -> failwith <| "Expected CollisionData from event '" + addrToStr event.Name + "'."
 
@@ -141,7 +142,7 @@ module EnemyDispatcherModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe TickEventName address -<| CustomSub movementHandler |>
+                World.observe TickEventName address -<| CustomSub tickHandler |>
                 World.observe (CollisionEventName @ address) address -<| CustomSub collisionHandler
 
         override dispatcher.Unregister (address, world) =
