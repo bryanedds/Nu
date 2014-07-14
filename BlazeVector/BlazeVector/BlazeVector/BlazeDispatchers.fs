@@ -48,7 +48,7 @@ module BulletDispatcherModule =
                 Entity.setGravityScale 0.0f |>
                 Entity.setIsBullet true |>
                 Entity.setImageSprite { SpriteAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setBirthTime 0L
+                Entity.setBirthTime Int64.MinValue
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
@@ -144,9 +144,6 @@ module EnemyDispatcherModule =
             world |>
                 World.observe TickEventName address -<| CustomSub tickHandler |>
                 World.observe (CollisionEventName @ address) address -<| CustomSub collisionHandler
-
-        override dispatcher.Unregister (address, world) =
-            base.Unregister (address, world)
 
         override dispatcher.GetRenderDescriptors (enemy, world) =
             SimpleAnimatedSpriteFacet.getRenderDescriptors enemy Relative world
@@ -261,9 +258,6 @@ module PlayerDispatcherModule =
                 World.observe TickEventName address -<| CustomSub spawnBulletHandler |>
                 World.observe TickEventName address -<| CustomSub movementHandler |>
                 World.observe DownMouseLeftEventName address -<| CustomSub jumpHandler
-
-        override dispatcher.Unregister (address, world) =
-            base.Unregister (address, world)
 
         override dispatcher.GetRenderDescriptors (player, world) =
             SimpleAnimatedSpriteFacet.getRenderDescriptors player Relative world
