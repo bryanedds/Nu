@@ -14,7 +14,7 @@ module BlazeFlow =
 
     // this function handles playing the stage
     let handlePlayStage _ world =
-        let world = { world with AudioMessages = FadeOutSongMessage DefaultTimeToFadeOutSongMs :: world.AudioMessages }
+        let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
         let world = World.transitionScreen StageAddress world
         (Unhandled, world)
 
