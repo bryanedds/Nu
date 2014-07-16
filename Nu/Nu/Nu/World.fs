@@ -380,7 +380,11 @@ module WorldModule =
                     | None -> world
                     | Some _ ->
                         let collisionAddress = CollisionEventName @ bodyCollisionMessage.EntityAddress
-                        let collisionData = CollisionData (bodyCollisionMessage.Normal, bodyCollisionMessage.Speed, bodyCollisionMessage.EntityAddress2)
+                        let collisionData =
+                            EntityCollisionData
+                                { Normal = bodyCollisionMessage.Normal
+                                  Speed = bodyCollisionMessage.Speed
+                                  Collidee = bodyCollisionMessage.EntityAddress2 }
                         World.publish4 collisionAddress [] collisionData world
 
         static member private handleIntegrationMessages integrationMessages world =
@@ -415,13 +419,13 @@ module WorldModule =
                             let mousePosition = Vector2 (single event.button.x, single event.button.y)
                             let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
                             if Set.contains MouseLeft world.MouseState.MouseDowns
-                            then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName [] (MouseMoveData mousePosition) world
-                            else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName [] (MouseButtonData (mousePosition, MouseLeft)) world
+                            then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName [] (MouseMoveData { Position = mousePosition }) world
+                            else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName [] (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                             let mouseButton = Sdl.makeNuMouseButton event.button.button
                             let mouseEventName = addrstr DownMouseEventName <| string mouseButton
                             let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                            let eventData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                            let eventData = MouseButtonData { Position = world.MouseState.MousePosition; Button = mouseButton }
                             World.publish World.sortSubscriptionsByPickingPriority mouseEventName [] eventData world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                             let mouseState = world.MouseState
@@ -429,7 +433,7 @@ module WorldModule =
                             let mouseEventName = addrstr UpMouseEventName <| string mouseButton
                             if Set.contains mouseButton mouseState.MouseDowns then
                                 let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
-                                let eventData = MouseButtonData (world.MouseState.MousePosition, mouseButton)
+                                let eventData = MouseButtonData { Position = world.MouseState.MousePosition; Button = mouseButton }
                                 World.publish World.sortSubscriptionsByPickingPriority mouseEventName [] eventData world
                             else world
                         | _ -> world
