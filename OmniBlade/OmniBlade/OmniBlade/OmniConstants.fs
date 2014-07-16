@@ -4,12 +4,16 @@
 namespace OmniBlade
 open Prime
 open Nu
+open Nu.NuConstants
 module OmniConstants =
 
     // misc constants
     let GuiPackageName = "Gui"
     let FieldFeelerName = "Feeler"
     let FieldAvatarName = "Avatar"
+
+    // asset constants
+    let GameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
     // transition constants
     let IncomingTimeSplash = 60L

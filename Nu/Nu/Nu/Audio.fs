@@ -10,13 +10,13 @@ open Nu.NuConstants
 [<AutoOpen>]
 module AudioModule =
 
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
-        { SoundAssetName : string
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
+        { SongAssetName : string
           PackageName : string
           PackageFileName : string }
 
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
-        { SongAssetName : string
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
+        { SoundAssetName : string
           PackageName : string
           PackageFileName : string }
 
