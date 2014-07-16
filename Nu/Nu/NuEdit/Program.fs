@@ -186,42 +186,36 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let beginEntityDrag (form : NuEditForm) worldChangers refWorld event world =
-        match event.Data with
-        | MouseButtonData _ ->
-            let pastWorld = world
-            let handled = if World.gamePlaying world then Unhandled else Handled
-            let entities = getPickableEntities world
-            let mousePosition = world.MouseState.MousePosition
-            let optPicked = Entity.tryPick mousePosition entities world
-            match optPicked with
-            | None -> (handled, world)
-            | Some entity ->
-                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                let entityAddress = addrstr EditorGroupAddress entity.Name
-                let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
-                let editorState = world.ExtData :?> EditorState
-                let editorState = { editorState with DragEntityState = dragState }
-                let world = { world with ExtData = editorState }
-                let world = pushPastWorld pastWorld world
-                refWorld := world // must be set for property grid
-                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                (handled, world)
-        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
-
-    let endEntityDrag (form : NuEditForm) event world =
-        match event.Data with
-        | MouseButtonData _ ->
-            let handled = if World.gamePlaying world then Unhandled else Handled
+    let beginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+        let pastWorld = world
+        let handled = if World.gamePlaying world then Unhandled else Handled
+        let entities = getPickableEntities world
+        let mousePosition = world.MouseState.MousePosition
+        let optPicked = Entity.tryPick mousePosition entities world
+        match optPicked with
+        | None -> (handled, world)
+        | Some entity ->
+            let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
+            let entityAddress = addrstr EditorGroupAddress entity.Name
+            let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
             let editorState = world.ExtData :?> EditorState
-            match editorState.DragEntityState with
-            | DragEntityNone -> (Handled, world)
-            | DragEntityPosition _
-            | DragEntityRotation _ ->
-                let editorState = { editorState with DragEntityState = DragEntityNone }
-                form.propertyGrid.Refresh ()
-                (handled, { world with ExtData = editorState })
-        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
+            let editorState = { editorState with DragEntityState = dragState }
+            let world = { world with ExtData = editorState }
+            let world = pushPastWorld pastWorld world
+            refWorld := world // must be set for property grid
+            form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+            (handled, world)
+
+    let endEntityDrag (form : NuEditForm) (_ : Event) world =
+        let handled = if World.gamePlaying world then Unhandled else Handled
+        let editorState = world.ExtData :?> EditorState
+        match editorState.DragEntityState with
+        | DragEntityNone -> (Handled, world)
+        | DragEntityPosition _
+        | DragEntityRotation _ ->
+            let editorState = { editorState with DragEntityState = DragEntityNone }
+            form.propertyGrid.Refresh ()
+            (handled, { world with ExtData = editorState })
 
     let updateEntityDrag (form : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
@@ -241,28 +235,22 @@ module Program =
             world
         | DragEntityRotation _ -> world
 
-    let beginCameraDrag (_ : NuEditForm) event world =
-        match event.Data with
-        | MouseButtonData _ ->
-            let mousePosition = world.MouseState.MousePosition
-            let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
-            let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
-            let editorState = world.ExtData :?> EditorState
-            let editorState = { editorState with DragCameraState = dragState }
-            let world = { world with ExtData = editorState }
-            (Handled, world)
-        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
+    let beginCameraDrag (_ : NuEditForm) (_ : Event) world =
+        let mousePosition = world.MouseState.MousePosition
+        let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
+        let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
+        let editorState = world.ExtData :?> EditorState
+        let editorState = { editorState with DragCameraState = dragState }
+        let world = { world with ExtData = editorState }
+        (Handled, world)
 
-    let endCameraDrag (_ : NuEditForm) event world =
-        match event.Data with
-        | MouseButtonData _ ->
-            let editorState = world.ExtData :?> EditorState
-            match editorState.DragCameraState with
-            | DragCameraNone -> (Handled, world)
-            | DragCameraPosition _ ->
-                let editorState = { editorState with DragCameraState = DragCameraNone }
-                (Handled, { world with ExtData = editorState })
-        | _ -> failwith <| "Expected MouseButtonData in event '" + addrToStr event.Name + "'."
+    let endCameraDrag (_ : NuEditForm) (_ : Event) world =
+        let editorState = world.ExtData :?> EditorState
+        match editorState.DragCameraState with
+        | DragCameraNone -> (Handled, world)
+        | DragCameraPosition _ ->
+            let editorState = { editorState with DragCameraState = DragCameraNone }
+            (Handled, { world with ExtData = editorState })
 
     let simulantRemovedHandler (form : NuEditForm) event world =
         match form.propertyGrid.SelectedObject with
