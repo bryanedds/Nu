@@ -119,8 +119,7 @@ module ButtonDispatcherModule =
                             World.publish4 (straddr "Up" event.Subscriber) event.Subscriber NoData world
                         if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
                             let world = World.publish4 (straddr "Click" event.Subscriber) event.Subscriber NoData world
-                            let sound = PlaySoundMessage { Volume = 1.0f; Sound = button.ClickSound }
-                            let world = { world with AudioMessages = sound :: world.AudioMessages }
+                            let world = World.playSound button.ClickSound 1.0f world
                             (Handled, world)
                         else (Unhandled, world)
                     else (Unhandled, world)
@@ -312,10 +311,9 @@ module ToggleDispatcherModule =
                         if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                             let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                             let world = World.setEntity event.Subscriber toggle world
-                            let eventType = if toggle.IsOn then "On" else "Off"
+                            let eventType = if toggle.IsOn then "On" else "Off" // TODO: make these constants
                             let world = World.publish4 (straddr eventType event.Subscriber) event.Subscriber NoData world
-                            let sound = PlaySoundMessage { Volume = 1.0f; Sound = toggle.ToggleSound }
-                            let world = { world with AudioMessages = sound :: world.AudioMessages }
+                            let world = World.playSound toggle.ToggleSound 1.0f world
                             (Handled, world)
                         else (Unhandled, world)
                     else (Unhandled, world)

@@ -1,5 +1,6 @@
 ﻿namespace BlazeVector
 open Nu
+open Nu.NuConstants
 module BlazeConstants =
 
     // misc constants. These, and the following constants, will be explained in depth later. Just
@@ -16,7 +17,17 @@ module BlazeConstants =
     let Section3FileName = "Assets/BlazeVector/Groups/Section3.nugroup"
     let SectionFileNames = [Section0FileName; Section1FileName; Section2FileName; Section3FileName]
     let SectionCount = 32
-    
+
+    // asset constants
+    let NuSplashSound = { SoundAssetName = "Nu"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
+    let MachinerySong = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
+    let DeadBlazeSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let HitSound = { SoundAssetName = "Hit"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let ExplosionSound = { SoundAssetName = "Explosion"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let ShotSound = { SoundAssetName = "Shot"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let JumpSound = { SoundAssetName = "Jump"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let DeathSound = { SoundAssetName = "Death"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+
     // transition constants
     let IncomingTimeSplash = 60L
     let IncomingTime = 20L

@@ -9,9 +9,7 @@ module BlazeFlow =
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
-        let song = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-        let playSongMessage = PlaySongMessage { Song = song; Volume = 1.0f; TimeToFadeOutSongMs = 0 }
-        let world = { world with AudioMessages = playSongMessage :: world.AudioMessages }
+        let world = World.playSong MachinerySong 1.0f 0 world
         (Unhandled, world)
 
     // this function handles playing the stage
@@ -66,8 +64,7 @@ module BlazeFlow =
         | Right world ->
 
             // hint to the renderer that the Gui package should be loaded up front
-            let hintRenderPackageUse = HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = GuiPackageName } 
-            let world = { world with RenderMessages = hintRenderPackageUse :: world.RenderMessages }
+            let world = World.hintRenderingPackageUse AssetGraphFileName GuiPackageName world
             
             // add our UI screens to the world
             let world = addTitleScreen world
@@ -78,12 +75,8 @@ module BlazeFlow =
             let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
 
-            // play a neat sound effect during the splash screen
-            let soundAsset = { SoundAssetName = "Nu"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-            let sound = PlaySoundMessage { Volume = 1.0f; Sound = soundAsset }
-            let world = { world with AudioMessages = sound :: world.AudioMessages }
-
-            // select the splash screen for viewing
+            // play a neat sound effect, and select the splash screen
+            let world = World.playSound NuSplashSound 1.0f world
             let world = World.selectScreen SplashAddress world
 
             // return our world within the expected Either type, and we're off!

@@ -136,27 +136,6 @@ module SimpleBodyFacetModule =
 [<RequireQualifiedAccess>]
 module SimpleBodyFacet =
 
-    let private makeCreateBodyMessage makeBodyShape (entity : Entity) (address : Address) =
-        CreateBodyMessage
-            { EntityAddress = address
-              PhysicsId = Entity.getPhysicsId entity
-              Position = entity.Position + entity.Size * 0.5f
-              Rotation = entity.Rotation
-              BodyProperties =
-                { Shape = makeBodyShape entity
-                  BodyType = entity.BodyType
-                  Density = entity.Density
-                  Friction = entity.Friction
-                  Restitution = entity.Restitution
-                  FixedRotation = entity.FixedRotation
-                  LinearDamping = entity.LinearDamping
-                  AngularDamping = entity.AngularDamping
-                  GravityScale = entity.GravityScale
-                  CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
-                  CollisionMask = Physics.toCollisionCategories entity.CollisionMask
-                  IsBullet = entity.IsBullet
-                  IsSensor = entity.IsSensor }}
-
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity |>
             Entity.setMinorId -<| NuCore.makeId () |>
@@ -175,13 +154,28 @@ module SimpleBodyFacet =
 
     let registerPhysics makeBodyShape address world =
         let entity = World.getEntity address world
-        let createBodyMessage = makeCreateBodyMessage makeBodyShape entity address
-        { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
+        let bodyProperties = 
+            { Shape = makeBodyShape entity
+              BodyType = entity.BodyType
+              Density = entity.Density
+              Friction = entity.Friction
+              Restitution = entity.Restitution
+              FixedRotation = entity.FixedRotation
+              LinearDamping = entity.LinearDamping
+              AngularDamping = entity.AngularDamping
+              GravityScale = entity.GravityScale
+              CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
+              CollisionMask = Physics.toCollisionCategories entity.CollisionMask
+              IsBullet = entity.IsBullet
+              IsSensor = entity.IsSensor }
+        let physicsId = Entity.getPhysicsId entity
+        let position = entity.Position + entity.Size * 0.5f
+        let rotation = entity.Rotation
+        World.createBody address physicsId position rotation bodyProperties world
 
     let unregisterPhysics address world =
         let entity = World.getEntity address world
-        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = Entity.getPhysicsId entity }
-        { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+        World.destroyBody (Entity.getPhysicsId entity) world
 
     let propagatePhysics makeBodyShape address world =
         let world = unregisterPhysics address world
