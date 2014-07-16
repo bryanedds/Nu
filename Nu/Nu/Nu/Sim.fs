@@ -286,6 +286,80 @@ module Sim =
     let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
 
 [<AutoOpen>]
+module WorldPhysicsModule =
+
+    type World with
+
+        static member createBody entityAddress physicsId position rotation bodyProperties world =
+            let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; PhysicsId = physicsId; Position = position; Rotation = rotation; BodyProperties = bodyProperties }
+            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
+
+        static member destroyBody physicsId world =
+            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
+            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+
+        static member setLinearVelocity linearVelocity physicsId world =
+            let setLinearVelocityMessage = SetLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
+            { world with PhysicsMessages = setLinearVelocityMessage :: world.PhysicsMessages }
+
+        static member applyLinearImpulse linearImpulse physicsId world =
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
+            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+
+        static member applyForce force physicsId world =
+            let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
+            { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+
+[<AutoOpen>]
+module WorldRenderingModule =
+
+    type World with
+
+        static member hintRenderingPackageUse fileName packageName world =
+            let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { FileName = fileName; PackageName = packageName }
+            { world with RenderMessages = hintRenderingPackageUseMessage :: world.RenderMessages }
+
+        static member hintRenderingPackageDisuse fileName packageName world =
+            let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { FileName = fileName; PackageName = packageName }
+            { world with RenderMessages = hintRenderingPackageDisuseMessage :: world.RenderMessages }
+
+[<AutoOpen>]
+module WorldAudioModule =
+
+    type World with
+
+        static member playSong song volume timeToFadeOutSongMs world =
+            let playSongMessage = PlaySongMessage { Song = song; Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs }
+            { world with AudioMessages = playSongMessage :: world.AudioMessages }
+
+        static member playSong6 songAssetName packageName packageFileName volume timeToFadeOutSongMs world =
+            let song = { SongAssetName = songAssetName; PackageName = packageName; PackageFileName = packageFileName }
+            World.playSong song volume timeToFadeOutSongMs world
+
+        static member playSound sound volume world =
+            let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
+            { world with AudioMessages = playSoundMessage :: world.AudioMessages }
+
+        static member playSound5 soundAssetName packageName packageFileName volume world =
+            let sound = { SoundAssetName = soundAssetName; PackageName = packageName; PackageFileName = packageFileName }
+            World.playSound sound volume world
+
+        static member fadeOutSong timeToFadeOutSongMs world =
+            let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
+            { world with AudioMessages = fadeOutSongMessage :: world.AudioMessages }
+
+        static member stopSong world =
+            { world with AudioMessages = StopSongMessage :: world.AudioMessages }
+
+        static member hintAudioPackageUse fileName packageName world =
+            let hintAudioPackageUseMessage = HintAudioPackageUseMessage { FileName = fileName; PackageName = packageName }
+            { world with AudioMessages = hintAudioPackageUseMessage :: world.AudioMessages }
+
+        static member hintAudioPackageDisuse fileName packageName world =
+            let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { FileName = fileName; PackageName = packageName }
+            { world with AudioMessages = hintAudioPackageDisuseMessage :: world.AudioMessages }
+
+[<AutoOpen>]
 module WorldSimModule =
 
     type World with
