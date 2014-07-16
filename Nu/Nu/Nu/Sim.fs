@@ -53,13 +53,36 @@ module Interactivity =
 [<AutoOpen>]
 module EventDataModule =
 
+    type [<StructuralEquality; NoComparison>] MouseMoveData =
+        { Position : Vector2 }
+
+    type [<StructuralEquality; NoComparison>] MouseButtonData =
+        { Position : Vector2
+          Button : MouseButton }
+
+    type [<StructuralEquality; NoComparison>] EntityCollisionData =
+        { Normal : Vector2
+          Speed : single
+          Collidee : Address }
+
+    type [<StructuralEquality; NoComparison>] OtherData =
+        { Obj : obj }
+
     /// Describes data relevant to specific events.
     type [<ReferenceEquality>] EventData =
-        | MouseMoveData of Vector2
-        | MouseButtonData of Vector2 * MouseButton
-        | CollisionData of Vector2 * single * Address
-        | OtherData of obj
+        | MouseMoveData of MouseMoveData
+        | MouseButtonData of MouseButtonData
+        | EntityCollisionData of EntityCollisionData
+        | OtherData of OtherData
         | NoData
+
+[<RequireQualifiedAccess>]
+module EventData =
+
+    let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + string data + "'."
+    let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + string data + "'."
+    let toEntityCollisionData data = match data with EntityCollisionData d -> d | _ -> failwith <| "Expected EntityCollisionData from event data '" + string data + "'."
+    let toOtherData data = match data with OtherData d -> d | _ -> failwith <| "Expected OtherData from event data '" + string data + "'."
 
 [<AutoOpen>]
 module EventModule =

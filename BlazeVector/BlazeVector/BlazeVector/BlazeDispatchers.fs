@@ -31,11 +31,8 @@ module BulletDispatcherModule =
             else (Unhandled, world)
 
         let collisionHandler event world =
-            match event.Data with
-            | CollisionData (_, _, _) ->
-                let world = World.removeEntity event.Subscriber world
-                (Unhandled, world)
-            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr event.Name + "'."
+            let world = World.removeEntity event.Subscriber world
+            (Unhandled, world)
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
@@ -102,16 +99,14 @@ module EnemyDispatcherModule =
             else (Unhandled, world)
 
         let collisionHandler event world =
-            match event.Data with
-            | CollisionData (_, _, colliderAddress) ->
-                let collider = World.getEntity colliderAddress world
-                let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collider world
-                if isBullet then
-                    let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
-                    let world = World.playSound HitSound 1.0f world
-                    (Unhandled, world)
-                else (Unhandled, world)
-            | _ -> failwith <| "Expected CollisionData from event '" + addrToStr event.Name + "'."
+            let collisionData = EventData.toEntityCollisionData event.Data
+            let collidee = World.getEntity collisionData.Collidee world
+            let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world
+            if isBullet then
+                let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
+                let world = World.playSound HitSound 1.0f world
+                (Unhandled, world)
+            else (Unhandled, world)
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
@@ -196,8 +191,7 @@ module PlayerDispatcherModule =
                     match optGroundTangent with
                     | None -> Vector2 (8000.0f, -30000.0f)
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
-                let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
-                let world = { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+                let world = World.applyForce force physicsId world
                 (Unhandled, world)
             else (Unhandled, world)
 
@@ -208,8 +202,7 @@ module PlayerDispatcherModule =
                     world.Ticks <= player.LastTimeOnGround + 10L then
                     let player = Entity.setLastTimeJump world.Ticks player
                     let world = World.setEntity event.Subscriber player world
-                    let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = Entity.getPhysicsId player; LinearImpulse = Vector2 (0.0f, 18000.0f) }
-                    let world = { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+                    let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
                     let world = World.playSound JumpSound 1.0f world
                     (Unhandled, world)
                 else (Unhandled, world)
