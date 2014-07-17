@@ -319,8 +319,7 @@ module WorldModule =
             { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
         static member private getGroupRenderDescriptors dispatcherContainer entities =
-            let entities = Map.toValueSeq entities
-            Seq.map (fun (entity : Entity) -> Entity.getRenderDescriptors entity dispatcherContainer) entities
+            Map.toValueListBy (fun entity -> Entity.getRenderDescriptors entity dispatcherContainer) entities
 
         static member private getTransitionRenderDescriptors camera transition =
             match transition.OptDissolveSprite with
@@ -349,10 +348,11 @@ module WorldModule =
                 match optGroupMap with
                 | None -> []
                 | Some groupMap ->
-                    let entityMaps = List.fold List.flipCons [] <| Map.toValueList groupMap
-                    let descriptorSeqs = List.map (World.getGroupRenderDescriptors world) entityMaps
-                    let descriptorSeq = Seq.concat descriptorSeqs
-                    let descriptors = List.concat descriptorSeq
+                    let groupValues = Map.toValueList groupMap
+                    let entityMaps = List.fold List.flipCons [] groupValues
+                    let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
+                    let descriptors = List.concat descriptors
+                    let descriptors = List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
                     match selectedScreen.State with
                     | IncomingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
