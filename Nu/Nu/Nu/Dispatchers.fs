@@ -739,15 +739,15 @@ module TileMapDispatcherModule =
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                    let optDescriptors =
-                        List.mapi
-                            (fun i (layer : TmxLayer) ->
-                                let depth = tileMap.Depth + single i * 2.0f
-                                let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
-                                let parallaxPosition = tileMap.Position + parallaxTranslation
-                                let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                                if Camera.inView3 parallaxPosition size world.Camera then
-                                    let layeredTileLayerDescriptor =
+                    List.foldi
+                        (fun i descriptors (layer : TmxLayer) ->
+                            let depth = tileMap.Depth + single i * 2.0f
+                            let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
+                            let parallaxPosition = tileMap.Position + parallaxTranslation
+                            let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
+                            if Camera.inView3 parallaxPosition size world.Camera then
+                                let descriptor =
+                                    LayerableDescriptor 
                                         { Depth = depth // MAGIC_VALUE: assumption
                                           LayeredDescriptor =
                                             TileLayerDescriptor
@@ -761,10 +761,10 @@ module TileMapDispatcherModule =
                                                   TileSize = tileSize
                                                   TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                                   TileSetSprite = List.head sprites }} // MAGIC_VALUE: for same reason as above
-                                    Some <| LayerableDescriptor layeredTileLayerDescriptor
-                                else None)
-                            layers
-                    List.definitize optDescriptors
+                                descriptor :: descriptors
+                            else descriptors)
+                        []
+                        layers
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset

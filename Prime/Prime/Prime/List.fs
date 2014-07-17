@@ -185,8 +185,8 @@ let distinct list =
     List.ofSeq results
 
 /// DistinctBy for lists.
-let distinctBy pred list =
-    let results = Seq.distinctBy pred list
+let distinctBy by list =
+    let results = Seq.distinctBy by list
     List.ofSeq results
 
 /// Get the last item from a list.
