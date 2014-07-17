@@ -68,7 +68,8 @@ module Miscellanea =
     let enumerable =
         System.Linq.Enumerable.Cast
 
-    /// Convert 
+    /// Convert a couple of ints to a Guid value.
+    /// It is the user's responsibility to ensure uniqueness when using the resulting Guids.
     let intsToGuid m n =
         let bytes = Array.create<byte> 8 (byte 0)
         Guid (m, int16 (n >>> 16), int16 n, bytes)
