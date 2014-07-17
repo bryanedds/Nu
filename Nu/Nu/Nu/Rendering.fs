@@ -418,11 +418,11 @@ module Rendering =
         match targetResult with
         | 0 ->
             ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
-            let renderDescriptorsSorted = Seq.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
-            let layeredDescriptors = Seq.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
+            let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
+            let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
             let viewAbsolute = Camera.getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
             let viewRelative = Camera.getViewRelativeI camera |> Matrix3.getInverseViewMatrix
-            Seq.fold (renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
+            List.fold (renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
