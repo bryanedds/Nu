@@ -20,8 +20,7 @@ module BulletDispatcherModule =
         static member setBirthTime (value : int64) (entity : Entity) : Entity = entity?BirthTime <- value
 
     type BulletDispatcher () =
-        inherit SimpleBodyDispatcher
-            (fun (bullet : Entity) -> CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero })
+        inherit SimpleBodyDispatcher ()
 
         let tickHandler event world =
             let bullet = World.getEntity event.Subscriber world
@@ -38,7 +37,7 @@ module BulletDispatcherModule =
             let bullet = base.Init (bullet, dispatcherContainer)
             let bullet = SimpleSpriteFacet.init bullet dispatcherContainer
             bullet |>
-                Entity.setSize -<| Vector2 (24.0f, 24.0f) |>
+                Entity.setSize (Vector2 (24.0f, 24.0f)) |>
                 Entity.setDensity 0.25f |>
                 Entity.setRestitution 0.5f |>
                 Entity.setLinearDamping 0.0f |>
@@ -61,6 +60,9 @@ module BulletDispatcherModule =
 
         override dispatcher.GetQuickSize (bullet, world) =
             SimpleSpriteFacet.getQuickSize bullet world
+        
+        override dispatcher.GetBodyShape (bullet, _) =
+            CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module EnemyDispatcherModule =
@@ -71,8 +73,7 @@ module EnemyDispatcherModule =
         static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
 
     type EnemyDispatcher () =
-        inherit SimpleBodyDispatcher
-            (fun (enemy : Entity) -> CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero })
+        inherit SimpleBodyDispatcher ()
 
         let hasAppeared (entity : Entity) (world : World) =
             entity.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
@@ -118,21 +119,24 @@ module EnemyDispatcherModule =
                 Entity.setStutter 8 |>
                 Entity.setTileCount 6 |>
                 Entity.setTileRun 4 |>
-                Entity.setTileSize -<| Vector2 (48.0f, 96.0f) |>
+                Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
                 Entity.setImageSprite { SpriteAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setHealth 6
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe TickEventName address -<| CustomSub tickHandler |>
-                World.observe (CollisionEventName @ address) address -<| CustomSub collisionHandler
+                World.observe TickEventName address (CustomSub tickHandler) |>
+                World.observe (CollisionEventName @ address) address (CustomSub collisionHandler)
 
         override dispatcher.GetRenderDescriptors (enemy, world) =
             SimpleAnimatedSpriteFacet.getRenderDescriptors enemy Relative world
 
         override dispatcher.GetQuickSize (enemy, _) =
             SimpleAnimatedSpriteFacet.getQuickSize enemy
+
+        override dispatcher.GetBodyShape (enemy, _) =
+            CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module PlayerDispatcherModule =
@@ -148,8 +152,7 @@ module PlayerDispatcherModule =
             entity.Position.Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit SimpleBodyDispatcher
-            (fun (player : Entity) -> CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero })
+        inherit SimpleBodyDispatcher ()
 
         let createBullet (player : Entity) address world =
             let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name None world
@@ -218,7 +221,7 @@ module PlayerDispatcherModule =
                 Entity.setStutter 3 |>
                 Entity.setTileCount 16 |>
                 Entity.setTileRun 4 |>
-                Entity.setTileSize -<| Vector2 (48.0f, 96.0f) |>
+                Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
                 Entity.setImageSprite { SpriteAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setLastTimeOnGround Int64.MinValue |>
                 Entity.setLastTimeJump Int64.MinValue
@@ -226,15 +229,18 @@ module PlayerDispatcherModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe TickEventName address -<| CustomSub spawnBulletHandler |>
-                World.observe TickEventName address -<| CustomSub movementHandler |>
-                World.observe DownMouseLeftEventName address -<| CustomSub jumpHandler
+                World.observe TickEventName address (CustomSub spawnBulletHandler) |>
+                World.observe TickEventName address (CustomSub movementHandler) |>
+                World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
 
         override dispatcher.GetRenderDescriptors (player, world) =
             SimpleAnimatedSpriteFacet.getRenderDescriptors player Relative world
 
         override dispatcher.GetQuickSize (player, _) =
             SimpleAnimatedSpriteFacet.getQuickSize player
+
+        override dispatcher.GetBodyShape (player, _) =
+            CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module StagePlayDispatcherModule =
@@ -266,8 +272,8 @@ module StagePlayDispatcherModule =
             let world = base.Register (address, world)
             let world =
                 world |>
-                World.observe TickEventName address -<| CustomSub adjustCameraHandler |>
-                World.observe TickEventName address -<| CustomSub playerFallHandler
+                World.observe TickEventName address (CustomSub adjustCameraHandler) |>
+                World.observe TickEventName address (CustomSub playerFallHandler)
             adjustCamera address world
 
 [<AutoOpen>]
@@ -322,9 +328,9 @@ module StageScreenModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe (SelectEventName @ address) address -<| CustomSub startPlayHandler |>
-                World.observe (StartOutgoingEventName @ address) address -<| CustomSub stoppingPlayHandler |>
-                World.observe (DeselectEventName @ address) address -<| CustomSub stopPlayHandler
+                World.observe (SelectEventName @ address) address (CustomSub startPlayHandler) |>
+                World.observe (StartOutgoingEventName @ address) address (CustomSub stoppingPlayHandler) |>
+                World.observe (DeselectEventName @ address) address (CustomSub stopPlayHandler)
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =
