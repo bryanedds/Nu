@@ -53,21 +53,27 @@ module GuiDispatcherModule =
 [<AutoOpen>]
 module SimpleBodyDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodyDispatcher (makeBodyShape) =
+    type [<AbstractClass>] SimpleBodyDispatcher () =
         inherit Entity2dDispatcher ()
+
+        abstract member GetBodyShape : Entity * World -> BodyShape
+        default dispatcher.GetBodyShape (entity, _) =
+            BoxShape { Extent = entity.Size * 0.5f; Center = Vector2.Zero }
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
             SimpleBodyFacet.init entity dispatcherContainer
 
         override dispatcher.Register (address, world) =
-            SimpleBodyFacet.registerPhysics makeBodyShape address world
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.registerPhysics getBodyShape address world
 
         override dispatcher.Unregister (address, world) =
             SimpleBodyFacet.unregisterPhysics address world
             
         override dispatcher.PropagatePhysics (address, world) =
-            SimpleBodyFacet.propagatePhysics makeBodyShape address world
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.propagatePhysics getBodyShape address world
 
         override dispatcher.HandleBodyTransformMessage (address, message, world) =
             SimpleBodyFacet.handleBodyTransformMessage address message world
@@ -132,8 +138,8 @@ module ButtonDispatcherModule =
 
         override dispatcher.Register (address, world) =
             world |>
-                World.observe DownMouseLeftEventName address -<| CustomSub handleButtonEventDownMouseLeft |>
-                World.observe UpMouseLeftEventName address -<| CustomSub handleButtonEventUpMouseLeft
+                World.observe DownMouseLeftEventName address (CustomSub handleButtonEventDownMouseLeft) |>
+                World.observe UpMouseLeftEventName address (CustomSub handleButtonEventUpMouseLeft)
 
         override dispatcher.GetRenderDescriptors (button, _) =
             if button.Visible then
@@ -323,8 +329,8 @@ module ToggleDispatcherModule =
 
         override dispatcher.Register (address, world) =
             world |>
-                World.observe DownMouseLeftEventName address -<| CustomSub handleToggleEventDownMouseLeft |>
-                World.observe UpMouseLeftEventName address -<| CustomSub handleToggleEventUpMouseLeft
+                World.observe DownMouseLeftEventName address (CustomSub handleToggleEventDownMouseLeft) |>
+                World.observe UpMouseLeftEventName address (CustomSub handleToggleEventUpMouseLeft)
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
             if toggle.Visible then
@@ -393,8 +399,8 @@ module FeelerDispatcherModule =
 
         override dispatcher.Register (address, world) =
             world |>
-                World.observe DownMouseLeftEventName address -<| CustomSub handleFeelerEventDownMouseLeft |>
-                World.observe UpMouseLeftEventName address -<| CustomSub handleFeelerEventUpMouseLeft
+                World.observe DownMouseLeftEventName address (CustomSub handleFeelerEventDownMouseLeft) |>
+                World.observe UpMouseLeftEventName address (CustomSub handleFeelerEventUpMouseLeft)
 
         override dispatcher.GetQuickSize (_, _) =
             Vector2 64.0f
@@ -474,8 +480,7 @@ module FillBarDispatcherModule =
 module BlockDispatcherModule =
 
     type [<Sealed>] BlockDispatcher () =
-        inherit SimpleBodyDispatcher
-            (fun (block : Entity) -> BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero })
+        inherit SimpleBodyDispatcher ()
 
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
@@ -488,12 +493,14 @@ module BlockDispatcherModule =
         override dispatcher.GetQuickSize (block, world) =
             SimpleSpriteFacet.getQuickSize block world
 
+        override dispatcher.GetBodyShape (block, _) =
+            BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
+
 [<AutoOpen>]
 module AvatarDispatcherModule =
 
     type [<Sealed>] AvatarDispatcher () =
-        inherit SimpleBodyDispatcher
-            (fun (avatar : Entity) -> CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero })
+        inherit SimpleBodyDispatcher ()
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar = base.Init (avatar, dispatcherContainer)
@@ -510,12 +517,14 @@ module AvatarDispatcherModule =
         override dispatcher.GetQuickSize (avatar, world) =
             SimpleSpriteFacet.getQuickSize avatar world
 
+        override dispatcher.GetBodyShape (avatar, _) =
+            CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
+
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
     type [<Sealed>] CharacterDispatcher () =
-        inherit SimpleBodyDispatcher
-            (fun (character : Entity) -> CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero })
+        inherit SimpleBodyDispatcher ()
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character = base.Init (character, dispatcherContainer)
@@ -530,6 +539,9 @@ module CharacterDispatcherModule =
 
         override dispatcher.GetQuickSize (character, world) =
             SimpleSpriteFacet.getQuickSize character world
+
+        override dispatcher.GetBodyShape (character, _) =
+            CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
