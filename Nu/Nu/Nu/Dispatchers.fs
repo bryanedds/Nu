@@ -585,9 +585,7 @@ module TileMapDispatcherModule =
         inherit Entity2dDispatcher ()
 
         let getTilePhysicsId tmid (tli : int) (ti : int) =
-            let bytes = Array.create<byte> 8 <| byte 0
-            BitConverter.GetBytes(ti : int).CopyTo(bytes, 0)
-            PhysicsId (tmid, Guid (tli, int16 0, int16 0, bytes))
+            PhysicsId (tmid, intsToGuid tli ti)
 
         let registerTilePhysicsBox address (tm : Entity) tmd tli td ti world =
             let physicsId = getTilePhysicsId tm.Id tli ti

@@ -43,7 +43,7 @@ module Entity2dFacetModule =
             Entity.setPosition snapped entity
 
         static member getTransform (entity : Entity) =
-            { Transform.Position = entity.Position
+            { Position = entity.Position
               Depth = entity.Depth
               Size = entity.Size
               Rotation = entity.Rotation }

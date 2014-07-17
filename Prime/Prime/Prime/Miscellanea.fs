@@ -68,6 +68,11 @@ module Miscellanea =
     let enumerable =
         System.Linq.Enumerable.Cast
 
+    /// Convert 
+    let intsToGuid m n =
+        let bytes = Array.create<byte> 8 (byte 0)
+        Guid (m, int16 (n >>> 16), int16 n, bytes)
+
     /// Try to find a type by its name from all the loaded assemblies. Time-intensive.
     /// TODO: move into TypeExtension.fs.
     let tryFindType typeName =
