@@ -31,7 +31,6 @@ module NuConstants =
     let RadiansToDegreesF = single RadiansToDegrees
     let DegreesToRadiansF = single DegreesToRadians
     let DefaultEntitySize = Vector2 64.0f
-    let DefaultEntityRotation = 0.0f
     let TickEventName = addr "Tick"
     let MouseDragEventName = addr "Mouse/Drag"
     let MouseMoveEventName = addr "Mouse/Move"
