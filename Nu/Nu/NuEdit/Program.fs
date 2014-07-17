@@ -288,7 +288,7 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
-                let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = DefaultEntitySize; Rotation = DefaultEntityRotation }
+                let entityTransform = { Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = addrstr EditorGroupAddress entity.Name
                 let world = World.addEntity entityAddress entity world

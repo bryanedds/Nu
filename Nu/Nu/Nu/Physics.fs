@@ -15,12 +15,18 @@ open Nu.NuConstants
 [<AutoOpen>]
 module PhysicsModule =
 
-    type PhysicsId =
+    type [<CustomEquality; NoComparison>] PhysicsId =
         struct
             val Major : Guid
             val Minor : Guid
             new (major, minor) = { Major = major; PhysicsId.Minor = minor }
+            static member private equals (this : PhysicsId) (that : PhysicsId) = this.Major = that.Major && this.Minor = that.Minor
             override this.ToString () = "{ Major = " + string this.Major + "; Minor = " + string this.Minor + " }"
+            override this.GetHashCode () = let hashCode = this.Major.GetHashCode () ^^^ this.Minor.GetHashCode () in hashCode
+            override this.Equals thatObj = match thatObj with :? PhysicsId as that -> PhysicsId.equals this that | _ -> false
+            end
+        interface IEquatable<PhysicsId> with
+            override this.Equals that = PhysicsId.equals this that
             end
 
     type Vertices = Vector2 list
