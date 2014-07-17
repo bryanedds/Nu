@@ -138,7 +138,7 @@ module SimpleBodyFacet =
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity |>
-            Entity.setMinorId -<| NuCore.makeId () |>
+            Entity.setMinorId (NuCore.makeId ()) |>
             Entity.setBodyType BodyType.Dynamic |>
             Entity.setDensity NormalDensity |>
             Entity.setFriction 0.0f |>
@@ -152,10 +152,10 @@ module SimpleBodyFacet =
             Entity.setIsBullet false |>
             Entity.setIsSensor false
 
-    let registerPhysics makeBodyShape address world =
+    let registerPhysics getBodyShape address world =
         let entity = World.getEntity address world
         let bodyProperties = 
-            { Shape = makeBodyShape entity
+            { Shape = getBodyShape entity world
               BodyType = entity.BodyType
               Density = entity.Density
               Friction = entity.Friction
@@ -177,9 +177,9 @@ module SimpleBodyFacet =
         let entity = World.getEntity address world
         World.destroyBody (Entity.getPhysicsId entity) world
 
-    let propagatePhysics makeBodyShape address world =
+    let propagatePhysics getBodyShape address world =
         let world = unregisterPhysics address world
-        registerPhysics makeBodyShape address world
+        registerPhysics getBodyShape address world
 
     let handleBodyTransformMessage address (message : BodyTransformMessage) world =
         let entity = World.getEntity address world
@@ -255,7 +255,7 @@ module SimpleAnimatedSpriteFacet =
             Entity.setStutter 4 |>
             Entity.setTileCount 16 |>
             Entity.setTileRun 4 |>
-            Entity.setTileSize -<| Vector2 (16.0f, 16.0f) |>
+            Entity.setTileSize (Vector2 (16.0f, 16.0f)) |>
             Entity.setImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
     let getRenderDescriptors (entity : Entity) viewType (world : World) =

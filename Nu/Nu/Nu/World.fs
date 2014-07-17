@@ -46,8 +46,8 @@ module WorldModule =
             match state with
             | IdlingState ->
                 world |>
-                    World.unsubscribe -<| ScreenTransitionDownMouseKey |>
-                    World.unsubscribe -<| ScreenTransitionUpMouseKey
+                    World.unsubscribe ScreenTransitionDownMouseKey |>
+                    World.unsubscribe ScreenTransitionUpMouseKey
             | IncomingState | OutgoingState ->
                 world |>
                     World.subscribe ScreenTransitionDownMouseKey (DownMouseEventName @ AnyEventName) address SwallowSub |>
@@ -268,7 +268,7 @@ module WorldModule =
         static member private handleSplashScreenIdleTick idlingTime ticks event world =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
-                let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime -<| incL ticks
+                let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime (incL ticks)
                 let world = World.subscribe SplashScreenTickKey event.Name event.Subscriber subscription world
                 (Unhandled, world)
             else
