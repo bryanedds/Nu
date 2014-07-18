@@ -85,10 +85,10 @@ module ButtonDispatcherModule =
 
         member entity.IsDown with get () = entity?IsDown () : bool
         static member setIsDown (value : bool) (entity : Entity) : Entity = entity?IsDown <- value
-        member entity.UpSprite with get () = entity?UpSprite () : Sprite
-        static member setUpSprite (value : Sprite) (entity : Entity) : Entity = entity?UpSprite <- value
-        member entity.DownSprite with get () = entity?DownSprite () : Sprite
-        static member setDownSprite (value : Sprite) (entity : Entity) : Entity = entity?DownSprite <- value
+        member entity.UpImage with get () = entity?UpImage () : Image
+        static member setUpImage (value : Image) (entity : Entity) : Entity = entity?UpImage <- value
+        member entity.DownImage with get () = entity?DownImage () : Image
+        static member setDownImage (value : Image) (entity : Entity) : Entity = entity?DownImage <- value
         member entity.ClickSound with get () = entity?ClickSound () : Sound
         static member setClickSound (value : Sound) (entity : Entity) : Entity = entity?ClickSound <- value
 
@@ -132,8 +132,8 @@ module ButtonDispatcherModule =
             let button = base.Init (button, dispatcherContainer)
             button |>
                 Entity.setIsDown false |>
-                Entity.setUpSprite { SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setDownSprite { SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setUpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setDownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Register (address, world) =
@@ -152,13 +152,13 @@ module ButtonDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = if button.IsDown then button.DownSprite else button.UpSprite
+                              Image = if button.IsDown then button.DownImage else button.UpImage
                               Color = Vector4.One }}]
             else []
 
         override dispatcher.GetQuickSize (button, world) =
-            let sprite = button.UpSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            let image = button.UpImage
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -170,15 +170,15 @@ module LabelDispatcherModule =
 
     type Entity with
 
-        member entity.LabelSprite with get () = entity?LabelSprite () : Sprite
-        static member setLabelSprite (value : Sprite) (entity : Entity) : Entity = entity?LabelSprite <- value
+        member entity.LabelImage with get () = entity?LabelImage () : Image
+        static member setLabelImage (value : Image) (entity : Entity) : Entity = entity?LabelImage <- value
 
     type [<Sealed>] LabelDispatcher () =
         inherit GuiDispatcher ()
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
-            Entity.setLabelSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } label
+            Entity.setLabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } label
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -191,13 +191,13 @@ module LabelDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = label.LabelSprite
+                              Image = label.LabelImage
                               Color = Vector4.One }}]
             else []
 
         override dispatcher.GetQuickSize (label, world) =
-            let sprite = label.LabelSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            let image = label.LabelImage
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -209,8 +209,8 @@ module TextBoxDispatcherModule =
 
     type Entity with
 
-        member entity.BoxSprite with get () = entity?BoxSprite () : Sprite
-        static member setBoxSprite (value : Sprite) (entity : Entity) : Entity = entity?BoxSprite <- value
+        member entity.BoxImage with get () = entity?BoxImage () : Image
+        static member setBoxImage (value : Image) (entity : Entity) : Entity = entity?BoxImage <- value
         member entity.Text with get () = entity?Text () : string
         static member setText (value : string) (entity : Entity) : Entity = entity?Text <- value
         member entity.TextFont with get () = entity?TextFont () : Font
@@ -226,7 +226,7 @@ module TextBoxDispatcherModule =
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox = base.Init (textBox, dispatcherContainer)
             textBox |>
-                Entity.setBoxSprite { SpriteAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setBoxImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setText String.Empty |>
                 Entity.setTextFont { FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setTextOffset Vector2.Zero |>
@@ -243,7 +243,7 @@ module TextBoxDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = textBox.BoxSprite
+                              Image = textBox.BoxImage
                               Color = Vector4.One }}
                  LayerableDescriptor
                     { Depth = textBox.Depth
@@ -258,8 +258,8 @@ module TextBoxDispatcherModule =
             else []
 
         override dispatcher.GetQuickSize (textBox, world) =
-            let sprite = textBox.BoxSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            let image = textBox.BoxImage
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -275,10 +275,10 @@ module ToggleDispatcherModule =
         static member setIsOn (value : bool) (entity : Entity) : Entity = entity?IsOn <- value
         member entity.IsPressed with get () = entity?IsPressed () : bool
         static member setIsPressed (value : bool) (entity : Entity) : Entity = entity?IsPressed <- value
-        member entity.OffSprite with get () = entity?OffSprite () : Sprite
-        static member setOffSprite (value : Sprite) (entity : Entity) : Entity = entity?OffSprite <- value
-        member entity.OnSprite with get () = entity?OnSprite () : Sprite
-        static member setOnSprite (value : Sprite) (entity : Entity) : Entity = entity?OnSprite <- value
+        member entity.OffImage with get () = entity?OffImage () : Image
+        static member setOffImage (value : Image) (entity : Entity) : Entity = entity?OffImage <- value
+        member entity.OnImage with get () = entity?OnImage () : Image
+        static member setOnImage (value : Image) (entity : Entity) : Entity = entity?OnImage <- value
         member entity.ToggleSound with get () = entity?ToggleSound () : Sound
         static member setToggleSound (value : Sound) (entity : Entity) : Entity = entity?ToggleSound <- value
 
@@ -323,8 +323,8 @@ module ToggleDispatcherModule =
             toggle |>
                 Entity.setIsOn false |>
                 Entity.setIsPressed false |>
-                Entity.setOffSprite { SpriteAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setOnSprite { SpriteAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setOffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setOnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.Register (address, world) =
@@ -343,13 +343,13 @@ module ToggleDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = if toggle.IsOn || toggle.IsPressed then toggle.OnSprite else toggle.OffSprite
+                              Image = if toggle.IsOn || toggle.IsPressed then toggle.OnImage else toggle.OffImage
                               Color = Vector4.One }}]
             else []
 
         override dispatcher.GetQuickSize (toggle, world) =
-            let sprite = toggle.OffSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            let image = toggle.OffImage
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -417,10 +417,10 @@ module FillBarDispatcherModule =
         static member setFill (value : single) (entity : Entity) : Entity = entity?Fill <- value
         member entity.FillInset with get () = entity?FillInset () : single
         static member setFillInset (value : single) (entity : Entity) : Entity = entity?FillInset <- value
-        member entity.FillSprite with get () = entity?FillSprite () : Sprite
-        static member setFillSprite (value : Sprite) (entity : Entity) : Entity = entity?FillSprite <- value
-        member entity.BorderSprite with get () = entity?BorderSprite () : Sprite
-        static member setBorderSprite (value : Sprite) (entity : Entity) : Entity = entity?BorderSprite <- value
+        member entity.FillImage with get () = entity?FillImage () : Image
+        static member setFillImage (value : Image) (entity : Entity) : Entity = entity?FillImage <- value
+        member entity.BorderImage with get () = entity?BorderImage () : Image
+        static member setBorderImage (value : Image) (entity : Entity) : Entity = entity?BorderImage <- value
 
     type [<Sealed>] FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -437,8 +437,8 @@ module FillBarDispatcherModule =
             fillBar |>
                 Entity.setFill 0.0f |>
                 Entity.setFillInset 0.0f |>
-                Entity.setFillSprite { SpriteAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setBorderSprite { SpriteAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setFillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setBorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
                 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
@@ -452,7 +452,7 @@ module FillBarDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = fillBar.FillSprite
+                              Image = fillBar.FillImage
                               Color = Vector4.One }}
                  LayerableDescriptor
                     { Depth = fillBar.Depth
@@ -463,13 +463,13 @@ module FillBarDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = fillBar.BorderSprite
+                              Image = fillBar.BorderImage
                               Color = Vector4.One }}]
             else []
 
         override dispatcher.GetQuickSize (fillBar, world) =
-            let sprite = fillBar.BorderSprite
-            match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+            let image = fillBar.BorderImage
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
 
@@ -485,7 +485,7 @@ module BlockDispatcherModule =
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
             let block = SimpleSpriteFacet.init block dispatcherContainer
-            Entity.setImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } block
+            Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } block
 
         override dispatcher.GetRenderDescriptors (block, world) =
             SimpleSpriteFacet.getRenderDescriptors block Relative world
@@ -509,7 +509,7 @@ module AvatarDispatcherModule =
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 10.0f |>
                 Entity.setGravityScale 0.0f |>
-                Entity.setImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (avatar, world) =
             SimpleSpriteFacet.getRenderDescriptors avatar Relative world
@@ -532,7 +532,7 @@ module CharacterDispatcherModule =
             character |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
-                Entity.setImageSprite { SpriteAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setSpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
         override dispatcher.GetRenderDescriptors (character, world) =
             SimpleSpriteFacet.getRenderDescriptors character Relative world
@@ -735,7 +735,7 @@ module TileMapDispatcherModule =
                 let tileMapAsset = tileMap.TileMapAsset
                 match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
                 | None -> []
-                | Some (_, sprites, map) ->
+                | Some (_, images, map) ->
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
@@ -760,7 +760,7 @@ module TileMapDispatcherModule =
                                                   TileSourceSize = tileSourceSize
                                                   TileSize = tileSize
                                                   TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                  TileSetSprite = List.head sprites }} // MAGIC_VALUE: for same reason as above
+                                                  TileSetImage = List.head images }} // MAGIC_VALUE: for same reason as above
                                 descriptor :: descriptors
                             else descriptors)
                         []

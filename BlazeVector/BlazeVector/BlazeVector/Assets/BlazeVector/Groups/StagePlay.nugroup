@@ -8,7 +8,7 @@
       <Xtension xDispatcher="PlayerDispatcher">
         <Density type="System.Single">10</Density>
         <Depth type="System.Single">1</Depth>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Player;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Player;Stage;AssetGraph.xml</SpriteImage>
         <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">-356;-175.6805</Position>
         <Rotation type="System.Single">0</Rotation>

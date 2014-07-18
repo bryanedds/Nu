@@ -34,8 +34,8 @@ module OmniFlow =
         | Right world ->
             let world = World.hintRenderingPackageUse AssetGraphFileName GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
-            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
+            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
             let world = addTitleScreen world
             let world = addLoadGameScreen world
             let world = addCreditsScreen world

@@ -27,6 +27,10 @@ module BlazeConstants =
     let ShotSound = { SoundAssetName = "Shot"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
     let JumpSound = { SoundAssetName = "Jump"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
     let DeathSound = { SoundAssetName = "Death"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let EnemyBulletImage = { ImageAssetName = "EnemyBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let PlayerBulletImage = { ImageAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let EnemyImage = { ImageAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let PlayerImage = { ImageAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
 
     // transition constants
     let IncomingTimeSplash = 60L
