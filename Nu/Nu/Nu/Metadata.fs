@@ -16,7 +16,7 @@ module MetadataModule =
 
     type [<StructuralEquality; NoComparison>] AssetMetadata =
         | TextureMetadata of int * int
-        | TileMapMetadata of string * Sprite list * TmxMap
+        | TileMapMetadata of string * Image list * TmxMap
         | SoundMetadata
         | SongMetadata
         | OtherMetadata of obj
@@ -32,11 +32,11 @@ module Metadata =
 
     let getTileSetProperties (tileSet : TmxTileset) =
         let properties = tileSet.Properties
-        try { SpriteAssetName = properties.["SpriteAssetName"]
+        try { ImageAssetName = properties.["ImageAssetName"]
               PackageName = properties.["PackageName"]
               PackageFileName = properties.["PackageFileName"] }
         with :? KeyNotFoundException ->
-            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (SpriteAssetName, PackageName, and / or PackageFileName)."
+            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (ImageAssetName, PackageName, and / or PackageFileName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 
     let tryGenerateAssetMetadataMap assetGraphFileName =
@@ -79,8 +79,8 @@ module Metadata =
                                             | ".tmx" ->
                                                 try let tmxMap = TmxMap asset.FileName
                                                     let tileSets = List.ofSeq tmxMap.Tilesets
-                                                    let tileSetSprites = List.map getTileSetProperties tileSets
-                                                    TileMapMetadata (asset.FileName, tileSetSprites, tmxMap)
+                                                    let tileSetImages = List.map getTileSetProperties tileSets
+                                                    TileMapMetadata (asset.FileName, tileSetImages, tmxMap)
                                                 with _ as e ->
                                                     let errorMessage = "Failed to load TmxMap '" + asset.FileName + "' due to '" + string e + "'."
                                                     trace errorMessage
@@ -126,7 +126,7 @@ module Metadata =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
         | None -> None
-        | Some (TileMapMetadata (fileName, sprites, tmxMap)) -> Some (fileName, sprites, tmxMap)
+        | Some (TileMapMetadata (fileName, images, tmxMap)) -> Some (fileName, images, tmxMap)
         | _ -> None
 
     let getTileMapMetadata assetName packageName assetMetadataMap =

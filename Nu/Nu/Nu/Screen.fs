@@ -33,9 +33,9 @@ module Screen =
           Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     let makeDissolve dispatcherName incomingTime outgoingTime =
-        let optDissolveSprite = Some <| { SpriteAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-        let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveSprite = optDissolveSprite }
-        let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveSprite = optDissolveSprite }
+        let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+        let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
+        let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
         let screen = makeDefault dispatcherName
         { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 

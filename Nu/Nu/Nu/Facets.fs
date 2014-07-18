@@ -194,18 +194,17 @@ module SimpleSpriteFacetModule =
 
     type Entity with
 
-        member entity.ImageSprite with get () = entity?ImageSprite () : Sprite
-        static member setImageSprite (value : Sprite) (entity : Entity) : Entity = entity?ImageSprite <- value
+        member entity.SpriteImage with get () = entity?SpriteImage () : Image
+        static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
 
 [<RequireQualifiedAccess>]
 module SimpleSpriteFacet =
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
-        Entity.setImageSprite { SpriteAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } entity
+        Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } entity
 
     let getRenderDescriptors entity viewType world =
-        if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
-        else
+        if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
             [LayerableDescriptor
                 { Depth = entity.Depth
                   LayeredDescriptor =
@@ -215,12 +214,13 @@ module SimpleSpriteFacet =
                           Rotation = entity.Rotation
                           ViewType = viewType
                           OptInset = None
-                          Sprite = entity.ImageSprite
+                          Image = entity.SpriteImage
                           Color = Vector4.One }}]
+        else []
 
     let getQuickSize (entity : Entity) world =
-        let sprite = entity.ImageSprite
-        match Metadata.tryGetTextureSizeAsVector2 sprite.SpriteAssetName sprite.PackageName world.AssetMetadataMap with
+        let image = entity.SpriteImage
+        match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
         | None -> DefaultEntitySize
         | Some size -> size
 
@@ -241,7 +241,7 @@ module SimpleAnimatedSpriteFacetModule =
 [<RequireQualifiedAccess>]
 module SimpleAnimatedSpriteFacet =
 
-    let private getImageOptInset (entity : Entity) world =
+    let private getSpriteOptInset (entity : Entity) world =
         let tile = (int world.Ticks / entity.Stutter) % entity.TileCount
         let tileI = tile % entity.TileRun
         let tileJ = tile / entity.TileRun
@@ -256,7 +256,7 @@ module SimpleAnimatedSpriteFacet =
             Entity.setTileCount 16 |>
             Entity.setTileRun 4 |>
             Entity.setTileSize (Vector2 (16.0f, 16.0f)) |>
-            Entity.setImageSprite { SpriteAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
     let getRenderDescriptors (entity : Entity) viewType (world : World) =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
@@ -269,8 +269,8 @@ module SimpleAnimatedSpriteFacet =
                           Size = entity.Size
                           Rotation = entity.Rotation
                           ViewType = viewType
-                          OptInset = getImageOptInset entity world
-                          Sprite = entity.ImageSprite
+                          OptInset = getSpriteOptInset entity world
+                          Image = entity.SpriteImage
                           Color = Vector4.One }}]
 
     let getQuickSize (entity : Entity) =

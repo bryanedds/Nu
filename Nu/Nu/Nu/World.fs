@@ -322,9 +322,9 @@ module WorldModule =
             Map.toValueListBy (fun entity -> Entity.getRenderDescriptors entity dispatcherContainer) entities
 
         static member private getTransitionRenderDescriptors camera transition =
-            match transition.OptDissolveSprite with
+            match transition.OptDissolveImage with
             | None -> []
-            | Some dissolveSprite ->
+            | Some dissolveImage ->
                 let progress = single transition.TransitionTicks / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Vector4 (Vector3.One, alpha)
@@ -337,7 +337,7 @@ module WorldModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Sprite = dissolveSprite
+                              Image = dissolveImage
                               Color = color }}]
 
         static member private getRenderDescriptors world =
@@ -461,13 +461,13 @@ module WorldModule =
         static member run tryMakeWorld handleUpdate sdlConfig =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
-        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime sprite world =
+        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
             let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
             let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
             let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
-            let splashLabel = Entity.setLabelSprite sprite splashLabel
+            let splashLabel = Entity.setLabelImage image splashLabel
             let world = World.addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
             let world = World.observe (FinishIncomingEventName @ address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
             World.observe (FinishOutgoingEventName @ address) address (ScreenTransitionFromSplashSub destination) world

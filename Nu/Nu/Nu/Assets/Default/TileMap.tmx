@@ -4,7 +4,7 @@
   <properties>
    <property name="PackageFileName" value="AssetGraph.xml"/>
    <property name="PackageName" value="Default"/>
-   <property name="SpriteAssetName" value="TileSet"/>
+   <property name="ImageAssetName" value="TileSet"/>
   </properties>
   <image source="TileSet.png" trans="ff00ff" width="192" height="217"/>
   <tile id="0">

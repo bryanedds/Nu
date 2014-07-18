@@ -10,7 +10,7 @@ module NuConstants =
 
     let [<Literal>] AssetGraphFileName = "AssetGraph.xml"
     let [<Literal>] DefaultPackageName = "Default"
-    let [<Literal>] DefaultSpriteValue = "Image;Default;AssetGraph.xml"
+    let [<Literal>] DefaultImageValue = "Image;Default;AssetGraph.xml"
     let [<Literal>] DefaultTileMapAssetValue = "TileMap;Default;AssetGraph.xml"
     let [<Literal>] DefaultFontValue = "Font;Default;AssetGraph.xml"
     let [<Literal>] DefaultSoundValue = "Sound;Default;AssetGraph.xml"

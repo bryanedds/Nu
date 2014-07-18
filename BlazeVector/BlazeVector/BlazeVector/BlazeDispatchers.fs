@@ -43,7 +43,7 @@ module BulletDispatcherModule =
                 Entity.setLinearDamping 0.0f |>
                 Entity.setGravityScale 0.0f |>
                 Entity.setIsBullet true |>
-                Entity.setImageSprite { SpriteAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setSpriteImage PlayerBulletImage |>
                 Entity.setBirthTime Int64.MinValue
 
         override dispatcher.Register (address, world) =
@@ -53,6 +53,7 @@ module BulletDispatcherModule =
             let bullet = World.getEntity address world
             let bullet = Entity.setBirthTime world.Ticks bullet
             let world = World.setEntity address bullet world
+            let world = World.playSound ShotSound 1.0f world
             World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) (Entity.getPhysicsId bullet) world
 
         override dispatcher.GetRenderDescriptors (bullet, world) =
@@ -120,7 +121,7 @@ module EnemyDispatcherModule =
                 Entity.setTileCount 6 |>
                 Entity.setTileRun 4 |>
                 Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
-                Entity.setImageSprite { SpriteAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setSpriteImage EnemyImage |>
                 Entity.setHealth 6
 
         override dispatcher.Register (address, world) =
@@ -170,7 +171,6 @@ module PlayerDispatcherModule =
                     if world.Ticks % 6L = 0L then
                         let player = World.getEntity event.Subscriber world
                         let world = createBullet player event.Subscriber world
-                        let world = World.playSound ShotSound 1.0f world
                         (Unhandled, world)
                     else (Unhandled, world)
                 else (Unhandled, world)
@@ -222,7 +222,7 @@ module PlayerDispatcherModule =
                 Entity.setTileCount 16 |>
                 Entity.setTileRun 4 |>
                 Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
-                Entity.setImageSprite { SpriteAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setSpriteImage PlayerImage |>
                 Entity.setLastTimeOnGround Int64.MinValue |>
                 Entity.setLastTimeJump Int64.MinValue
 
