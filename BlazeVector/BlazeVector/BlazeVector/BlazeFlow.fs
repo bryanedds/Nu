@@ -72,8 +72,8 @@ module BlazeFlow =
             let world = addStageScreen world
 
             // add to the world a splash screen that automatically transitions to the Title screen
-            let splashScreenSprite = { SpriteAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenSprite world
+            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
 
             // play a neat sound effect, and select the splash screen
             let world = World.playSound NuSplashSound 1.0f world

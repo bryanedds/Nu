@@ -16,7 +16,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -44,7 +44,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -106,7 +106,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -134,7 +134,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -179,7 +179,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>
@@ -207,7 +207,7 @@
         <Friction type="System.Single">0</Friction>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
-        <ImageSprite type="Nu.RenderingModule+Sprite">Enemy;Stage;AssetGraph.xml</ImageSprite>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
         <IsBullet type="System.Boolean">False</IsBullet>
         <IsSensor type="System.Boolean">False</IsSensor>
         <LinearDamping type="System.Single">3</LinearDamping>

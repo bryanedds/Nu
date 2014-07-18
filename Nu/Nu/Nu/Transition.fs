@@ -22,4 +22,4 @@ module Transition =
         { TransitionLifetime = 0L
           TransitionTicks = 0L
           TransitionType = transitionType
-          OptDissolveSprite = None }
+          OptDissolveImage = None }

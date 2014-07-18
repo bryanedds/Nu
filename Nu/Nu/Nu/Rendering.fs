@@ -17,8 +17,8 @@ module RenderingModule =
         | Relative
         | Absolute
 
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSpriteValue)>] Sprite =
-        { SpriteAssetName : string
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
+        { ImageAssetName : string
           PackageName : string
           PackageFileName : string }
 
@@ -28,7 +28,7 @@ module RenderingModule =
           Rotation : single
           ViewType : ViewType
           OptInset : Vector4 option
-          Sprite : Sprite
+          Image : Image
           Color : Vector4 }
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
@@ -46,7 +46,7 @@ module RenderingModule =
           TileSourceSize : int * int
           TileSize : Vector2
           TileSet : TmxTileset
-          TileSetSprite : Sprite }
+          TileSetImage : Image }
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
         { FontAssetName : string
@@ -96,21 +96,21 @@ module RenderingModule =
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap }
 
-    type SpriteTypeConverter () =
+    type ImageTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
         override this.ConvertTo (_, culture, obj, _) =
-            let s = obj :?> Sprite
-            String.Format (culture, "{0};{1};{2}", s.SpriteAssetName, s.PackageName, s.PackageFileName) :> obj
+            let s = obj :?> Image
+            String.Format (culture, "{0};{1};{2}", s.ImageAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Sprite> || sourceType = typeof<string>
+            sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
-            if sourceType = typeof<Sprite> then obj
+            if sourceType = typeof<Image> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { SpriteAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
+                { ImageAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
 
     type TileMapAssetTypeConverter () =
         inherit TypeConverter ()
@@ -120,7 +120,7 @@ module RenderingModule =
             let s = obj :?> TileMapAsset
             String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Sprite> || sourceType = typeof<string>
+            sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
             let sourceType = obj.GetType ()
             if sourceType = typeof<TileMapAsset> then obj
@@ -148,7 +148,7 @@ module RenderingModule =
 module Rendering =
 
     let initTypeConverters () =
-        assignTypeConverter<Sprite, SpriteTypeConverter> ()
+        assignTypeConverter<Image, ImageTypeConverter> ()
         assignTypeConverter<Font, FontTypeConverter> ()
         assignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
 
@@ -240,12 +240,12 @@ module Rendering =
             let view = match spriteDescriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let positionView = spriteDescriptor.Position * view
             let sizeView = spriteDescriptor.Size * Matrix3.getScaleMatrix view
-            let sprite = spriteDescriptor.Sprite
+            let image = spriteDescriptor.Image
             let color = spriteDescriptor.Color
-            let (renderer, optRenderAsset) = tryLoadRenderAsset sprite.PackageName sprite.PackageFileName sprite.SpriteAssetName renderer
+            let (renderer, optRenderAsset) = tryLoadRenderAsset image.PackageName image.PackageFileName image.ImageAssetName renderer
             match optRenderAsset with
             | None ->
-                debug <| "LayeredSpriteDescriptor failed due to unloadable assets for '" + string sprite + "'."
+                debug <| "SpriteDescriptor failed due to unloadable assets for '" + string image + "'."
                 renderer
             | Some renderAsset ->
                 match renderAsset with
@@ -302,17 +302,17 @@ module Rendering =
             let tileSourceSize = descriptor.TileSourceSize
             let tileSize = descriptor.TileSize
             let tileSet = descriptor.TileSet
-            let tileSetSprite = descriptor.TileSetSprite
+            let tileSetImage = descriptor.TileSetImage
             let optTileSetWidth = tileSet.Image.Width
             let tileSetWidth = optTileSetWidth.Value
             let (renderer, optRenderAsset) =
                 tryLoadRenderAsset
-                    tileSetSprite.PackageName
-                    tileSetSprite.PackageFileName
-                    tileSetSprite.SpriteAssetName renderer
+                    tileSetImage.PackageName
+                    tileSetImage.PackageFileName
+                    tileSetImage.ImageAssetName renderer
             match optRenderAsset with
             | None ->
-                debug <| "LayeredTileLayerDescriptor failed due to unloadable assets for '" + string tileSetSprite + "'."
+                debug <| "TileLayerDescriptor failed due to unloadable assets for '" + string tileSetImage + "'."
                 renderer
             | Some renderAsset ->
                 match renderAsset with
@@ -371,7 +371,7 @@ module Rendering =
             let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
             match optRenderAsset with
             | None ->
-                debug <| "LayeredTextDescriptor failed due to unloadable assets for '" + string font + "'."
+                debug <| "TextDescriptor failed due to unloadable assets for '" + string font + "'."
                 renderer
             | Some renderAsset ->
                 match renderAsset with

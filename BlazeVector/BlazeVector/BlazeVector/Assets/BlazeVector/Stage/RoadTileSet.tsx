@@ -3,7 +3,7 @@
  <properties>
   <property name="PackageFileName" value="AssetGraph.xml"/>
   <property name="PackageName" value="Stage"/>
-  <property name="SpriteAssetName" value="RoadTileSet"/>
+  <property name="ImageAssetName" value="RoadTileSet"/>
  </properties>
  <image source="RoadTileSet.png" width="1024" height="1024"/>
  <tile id="4">

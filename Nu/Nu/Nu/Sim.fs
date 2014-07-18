@@ -156,7 +156,7 @@ module SimModule =
         { TransitionLifetime : int64
           TransitionTicks : int64
           TransitionType : TransitionType
-          OptDissolveSprite : Sprite option }
+          OptDissolveImage : Image option }
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
