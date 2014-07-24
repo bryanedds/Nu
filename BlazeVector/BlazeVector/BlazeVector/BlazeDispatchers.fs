@@ -50,11 +50,7 @@ module BulletDispatcherModule =
             let world = base.Register (address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
-            let bullet = World.getEntity address world
-            let bullet = Entity.setBirthTime world.Ticks bullet
-            let world = World.setEntity address bullet world
-            let world = World.playSound ShotSound 1.0f world
-            World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) (Entity.getPhysicsId bullet) world
+            World.withEntity (Entity.setBirthTime world.Ticks) address world
 
         override dispatcher.GetRenderDescriptors (bullet, world) =
             SimpleSpriteFacet.getRenderDescriptors bullet Relative world
@@ -101,13 +97,15 @@ module EnemyDispatcherModule =
             else (Unhandled, world)
 
         let collisionHandler event world =
-            let collisionData = EventData.toEntityCollisionData event.Data
-            let collidee = World.getEntity collisionData.Collidee world
-            let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world
-            if isBullet then
-                let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
-                let world = World.playSound HitSound 1.0f world
-                (Unhandled, world)
+            if World.gamePlaying world then
+                let collisionData = EventData.toEntityCollisionData event.Data
+                let collidee = World.getEntity collisionData.Collidee world
+                let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world
+                if isBullet then
+                    let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
+                    let world = World.playSound HitSound 1.0f world
+                    (Unhandled, world)
+                else (Unhandled, world)
             else (Unhandled, world)
 
         override dispatcher.Init (enemy, dispatcherContainer) =
@@ -155,22 +153,31 @@ module PlayerDispatcherModule =
     type PlayerDispatcher () =
         inherit SimpleBodyDispatcher ()
 
-        let createBullet (player : Entity) address world =
-            let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name None world
+        let createBullet bulletAddress (playerTransform : Transform) world =
+            let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| List.last bulletAddress) world
             let bullet =
                 bullet |>
-                    Entity.setPosition (player.Position + Vector2 (player.Size.X * 0.9f, player.Size.Y * 0.4f)) |>
-                    Entity.setDepth player.Depth
-            let bulletAddress = List.allButLast address @ [bullet.Name]
+                    Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>
+                    Entity.setDepth playerTransform.Depth
             World.addEntity bulletAddress bullet world
+
+        let propelBullet bulletAddress world =
+            let bullet = World.getEntity bulletAddress world
+            let world = World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) (Entity.getPhysicsId bullet) world
+            World.playSound ShotSound 1.0f world
+
+        let shootBullet address world =
+            let bulletAddress = List.allButLast address @ [string <| NuCore.makeId ()]
+            let playerTransform = world |> World.getEntity address |> Entity.getTransform
+            let world = createBullet bulletAddress playerTransform world
+            propelBullet bulletAddress world
 
         let spawnBulletHandler event world =
             if World.gamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 if not <| Entity.hasFallen player then
                     if world.Ticks % 6L = 0L then
-                        let player = World.getEntity event.Subscriber world
-                        let world = createBullet player event.Subscriber world
+                        let world = shootBullet event.Subscriber world
                         (Unhandled, world)
                     else (Unhandled, world)
                 else (Unhandled, world)
