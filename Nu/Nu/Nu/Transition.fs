@@ -15,11 +15,10 @@ module TransitionModule =
     type TransitionDispatcher () =
         class end
 
-[<RequireQualifiedAccess>]
-module Transition =
-
-    let makeDefault transitionType =
-        { TransitionLifetime = 0L
-          TransitionTicks = 0L
-          TransitionType = transitionType
-          OptDissolveImage = None }
+    type Transition with
+    
+        static member makeDefault transitionType =
+            { TransitionLifetime = 0L
+              TransitionTicks = 0L
+              TransitionType = transitionType
+              OptDissolveImage = None }
