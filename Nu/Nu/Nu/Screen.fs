@@ -22,22 +22,21 @@ module ScreenModule =
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
 
-[<RequireQualifiedAccess>]
-module Screen =
+    type Screen with
 
-    let makeDefault dispatcherName =
-        { Id = NuCore.makeId ()
-          State = IdlingState
-          Incoming = Transition.makeDefault Incoming
-          Outgoing = Transition.makeDefault Outgoing
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+        static member makeDefault dispatcherName =
+            { Id = NuCore.makeId ()
+              State = IdlingState
+              Incoming = Transition.makeDefault Incoming
+              Outgoing = Transition.makeDefault Outgoing
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
-    let makeDissolve dispatcherName incomingTime outgoingTime =
-        let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-        let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
-        let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
-        let screen = makeDefault dispatcherName
-        { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+        static member makeDissolve dispatcherName incomingTime outgoingTime =
+            let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
+            let screen = Screen.makeDefault dispatcherName
+            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 
 [<AutoOpen>]
 module WorldScreenModule =
