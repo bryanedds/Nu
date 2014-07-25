@@ -57,43 +57,42 @@ module EntityModule =
           OptTileSetTile : TmxTilesetTile option
           TilePosition : int * int }
 
-[<RequireQualifiedAccess>]
-module Entity =
-
-    let makeDefaultUninitialized dispatcherName optName =
-        let id = NuCore.makeId ()
-        { Id = id
-          Name = match optName with None -> string id | Some name -> name
-          Visible = true
-          Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-
-    let makeDefault dispatcherName optName dispatcherContainer =
-        let entity = makeDefaultUninitialized dispatcherName optName
-        Entity.init entity dispatcherContainer
-
-    let writeToXml (writer : XmlWriter) entity =
-        writer.WriteStartElement typeof<Entity>.Name
-        Xtension.writeTargetProperties writer entity
-        writer.WriteEndElement ()
-
-    let writeManyToXml (writer : XmlWriter) (entities : Map<_, _>) =
-        for entityKvp in entities do
-            writeToXml writer entityKvp.Value
-
-    let readFromXml (entityNode : XmlNode) defaultDispatcherName dispatcherContainer =
-        let entity = makeDefaultUninitialized defaultDispatcherName None
-        Xtension.readTargetXDispatcher entityNode entity
-        let entity = Entity.init entity dispatcherContainer
-        Xtension.readTargetProperties entityNode entity
-        entity
-
-    let readManyFromXml (parentNode : XmlNode) defaultDispatcherName dispatcherContainer =
-        let entityNodes = parentNode.SelectNodes "Entity"
-        let entities =
-            Seq.map
-                (fun entityNode -> readFromXml entityNode defaultDispatcherName dispatcherContainer)
-                (enumerable entityNodes)
-        Seq.toList entities
+    type Entity with
+    
+        static member makeDefaultUninitialized dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
+              Visible = true
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+    
+        static member makeDefault dispatcherName optName dispatcherContainer =
+            let entity = Entity.makeDefaultUninitialized dispatcherName optName
+            Entity.init entity dispatcherContainer
+    
+        static member writeToXml (writer : XmlWriter) entity =
+            writer.WriteStartElement typeof<Entity>.Name
+            Xtension.writeTargetProperties writer entity
+            writer.WriteEndElement ()
+    
+        static member writeManyToXml (writer : XmlWriter) (entities : Map<_, _>) =
+            for entityKvp in entities do
+                Entity.writeToXml writer entityKvp.Value
+    
+        static member readFromXml (entityNode : XmlNode) defaultDispatcherName dispatcherContainer =
+            let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
+            Xtension.readTargetXDispatcher entityNode entity
+            let entity = Entity.init entity dispatcherContainer
+            Xtension.readTargetProperties entityNode entity
+            entity
+    
+        static member readManyFromXml (parentNode : XmlNode) defaultDispatcherName dispatcherContainer =
+            let entityNodes = parentNode.SelectNodes "Entity"
+            let entities =
+                Seq.map
+                    (fun entityNode -> Entity.readFromXml entityNode defaultDispatcherName dispatcherContainer)
+                    (enumerable entityNodes)
+            Seq.toList entities
 
 [<AutoOpen>]
 module WorldEntityModule =

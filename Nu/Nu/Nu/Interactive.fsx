@@ -29,7 +29,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Transition.fs"
 #load "Screen.fs"
 #load "Game.fs"
-#load "WorldPrims.fs"
+#load "Facets.fs"
 #load "Dispatchers.fs"
 #load "World.fs"
 
@@ -38,3 +38,4 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
+open NuConstants

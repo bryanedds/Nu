@@ -26,3 +26,4 @@
 #load "Log.fs"
 
 open System
+open Prime
