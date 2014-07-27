@@ -337,9 +337,10 @@ module Physics =
         body.add_OnCollision (fun fn fn2 collision -> handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
         
         // make a very hack-assed attempt to keep to bodies from being created in the same position
-        for existingBodyKvp in integrator.Bodies do
-            if existingBodyKvp.Value.Position = body.Position then
-                body.Position <- body.Position + Framework.Vector2 (single <| System.Random().NextDouble())
+        if integrator.Bodies |> Seq.exists (fun kvp -> kvp.Value.Position = body.Position)  then
+            let random = System.Random ()
+            let randomOffset = Framework.Vector2 (single <| random.NextDouble (), single <| random.NextDouble ())
+            body.Position <- body.Position + randomOffset
         
         integrator.Bodies.Add (createBodyMessage.PhysicsId, body)
 
