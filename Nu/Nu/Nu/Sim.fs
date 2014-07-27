@@ -321,6 +321,14 @@ module WorldPhysicsModule =
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
 
+        static member setPosition position physicsId world =
+            let setPositionMessage = SetPositionMessage { PhysicsId = physicsId; Position = position }
+            { world with PhysicsMessages = setPositionMessage :: world.PhysicsMessages }
+
+        static member setRotation rotation physicsId world =
+            let setRotationMessage = SetRotationMessage { PhysicsId = physicsId; Rotation = rotation }
+            { world with PhysicsMessages = setRotationMessage :: world.PhysicsMessages }
+
         static member setLinearVelocity linearVelocity physicsId world =
             let setLinearVelocityMessage = SetLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
             { world with PhysicsMessages = setLinearVelocityMessage :: world.PhysicsMessages }
