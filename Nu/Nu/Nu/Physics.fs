@@ -326,7 +326,6 @@ module Physics =
         body.UserData <- createBodyMessage.EntityAddress // BUG: ...so I set it again here :/
         body
 
-    // TODO: remove code duplication here
     let private createBody createBodyMessage integrator =
         let body =
             match createBodyMessage.BodyProperties.Shape with
@@ -336,6 +335,12 @@ module Physics =
             | PolygonShape polygonShape -> createPolygonBody createBodyMessage polygonShape integrator
         configureBodyProperties createBodyMessage.Position createBodyMessage.Rotation createBodyMessage.BodyProperties body
         body.add_OnCollision (fun fn fn2 collision -> handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
+        
+        // make a very hack-assed attempt to keep to bodies from being created in the same position
+        for existingBodyKvp in integrator.Bodies do
+            if existingBodyKvp.Value.Position = body.Position then
+                body.Position <- body.Position + Framework.Vector2 (single <| System.Random().NextDouble())
+        
         integrator.Bodies.Add (createBodyMessage.PhysicsId, body)
 
     let private destroyBody (destroyBodyMessage : DestroyBodyMessage) integrator =
