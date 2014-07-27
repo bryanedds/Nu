@@ -100,6 +100,14 @@ module PhysicsModule =
     type [<StructuralEquality; NoComparison>] DestroyBodyMessage =
         { PhysicsId : PhysicsId }
 
+    type [<StructuralEquality; NoComparison>] SetPositionMessage =
+        { PhysicsId : PhysicsId
+          Position : Vector2 }
+
+    type [<StructuralEquality; NoComparison>] SetRotationMessage =
+        { PhysicsId : PhysicsId
+          Rotation : single }
+
     type [<StructuralEquality; NoComparison>] SetLinearVelocityMessage =
         { PhysicsId : PhysicsId
           LinearVelocity : Vector2 }
@@ -129,6 +137,8 @@ module PhysicsModule =
     type [<StructuralEquality; NoComparison>] PhysicsMessage =
         | CreateBodyMessage of CreateBodyMessage
         | DestroyBodyMessage of DestroyBodyMessage
+        | SetPositionMessage of SetPositionMessage
+        | SetRotationMessage of SetRotationMessage
         | SetLinearVelocityMessage of SetLinearVelocityMessage
         | ApplyLinearImpulseMessage of ApplyLinearImpulseMessage
         | ApplyForceMessage of ApplyForceMessage
@@ -336,6 +346,18 @@ module Physics =
         elif not integrator.RebuildingHack then
              debug <| "Could not destroy non-existent body with PhysicsId = " + string destroyBodyMessage.PhysicsId + "'."
 
+    let private setPosition (setPositionMessage : SetPositionMessage) integrator =
+        let body = ref Unchecked.defaultof<Dynamics.Body>
+        if  integrator.Bodies.TryGetValue (setPositionMessage.PhysicsId, body) then
+            (!body).Position <- toPhysicsV2 setPositionMessage.Position
+        else debug <| "Could not set position of non-existent body with PhysicsId = " + string setPositionMessage.PhysicsId + "'."
+
+    let private setRotation (setRotationMessage : SetRotationMessage) integrator =
+        let body = ref Unchecked.defaultof<Dynamics.Body>
+        if  integrator.Bodies.TryGetValue (setRotationMessage.PhysicsId, body) then
+            (!body).Rotation <- setRotationMessage.Rotation
+        else debug <| "Could not set rotation of non-existent body with PhysicsId = " + string setRotationMessage.PhysicsId + "'."
+
     let private setLinearVelocity (setLinearVelocityMessage : SetLinearVelocityMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
         if  integrator.Bodies.TryGetValue (setLinearVelocityMessage.PhysicsId, body) then
@@ -358,6 +380,8 @@ module Physics =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> createBody createBodyMessage integrator
         | DestroyBodyMessage destroyBodyMessage -> destroyBody destroyBodyMessage integrator
+        | SetPositionMessage setPositionMessage -> setPosition setPositionMessage integrator
+        | SetRotationMessage setRotationMessage -> setRotation setRotationMessage integrator
         | SetLinearVelocityMessage setLinearVelocityMessage -> setLinearVelocity setLinearVelocityMessage integrator
         | ApplyLinearImpulseMessage applyLinearImpulseMessage -> applyLinearImpulse applyLinearImpulseMessage integrator
         | ApplyForceMessage applyForceMessage -> applyForce applyForceMessage integrator
