@@ -399,7 +399,7 @@ module WorldModule =
 
         static member private runNextTask world =
             let task = List.head world.Tasks
-            if task.Time = world.Ticks then
+            if task.ScheduledTime = world.TickTime then
                 let world = task.Operation world
                 { world with Tasks = List.tail world.Tasks }
             else world
@@ -454,7 +454,7 @@ module WorldModule =
                                 let world = World.runTasks world
                                 (world.Liveness, world))
                 (fun world -> let world = World.render world in handleRender world)
-                (fun world -> let world = World.play world in { world with Ticks = world.Ticks + 1L })
+                (fun world -> let world = World.play world in { world with TickTime = world.TickTime + 1L })
                 (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
                 sdlConfig
 
@@ -498,7 +498,6 @@ module WorldModule =
                          typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
                          typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
                          typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
-                         typeof<TransitionDispatcher>.Name, TransitionDispatcher () :> obj
                          typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                          typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                          gameDispatcherName, gameDispatcher]
@@ -507,7 +506,7 @@ module WorldModule =
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
-                      Ticks = 0L
+                      TickTime = 0L
                       Liveness = Running
                       Interactivity = interactivity
                       Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
