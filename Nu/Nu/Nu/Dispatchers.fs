@@ -79,6 +79,44 @@ module SimpleBodyDispatcherModule =
             SimpleBodyFacet.handleBodyTransformMessage address message world
 
 [<AutoOpen>]
+module SimpleBodySpriteDispatcherModule =
+
+    type [<AbstractClass>] SimpleBodySpriteDispatcher () =
+        inherit SimpleBodyDispatcher ()
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            SimpleSpriteFacet.init entity dispatcherContainer
+
+        override dispatcher.GetRenderDescriptors (entity, world) =
+            SimpleSpriteFacet.getRenderDescriptors entity Relative world
+
+        override dispatcher.GetQuickSize (entity, world) =
+            SimpleSpriteFacet.getQuickSize entity world
+
+        override dispatcher.GetBodyShape (entity, _) =
+            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
+
+[<AutoOpen>]
+module SimpleBodyAnimatedSpriteDispatcherModule =
+
+    type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher () =
+        inherit SimpleBodyDispatcher ()
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            SimpleAnimatedSpriteFacet.init entity dispatcherContainer
+
+        override dispatcher.GetRenderDescriptors (entity, world) =
+            SimpleAnimatedSpriteFacet.getRenderDescriptors entity Relative world
+
+        override dispatcher.GetQuickSize (entity, world) =
+            SimpleAnimatedSpriteFacet.getQuickSize entity world
+
+        override dispatcher.GetBodyShape (entity, _) =
+            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
+
+[<AutoOpen>]
 module ButtonDispatcherModule =
 
     type Entity with
@@ -480,18 +518,11 @@ module FillBarDispatcherModule =
 module BlockDispatcherModule =
 
     type [<Sealed>] BlockDispatcher () =
-        inherit SimpleBodyDispatcher ()
+        inherit SimpleBodySpriteDispatcher ()
 
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
-            let block = SimpleSpriteFacet.init block dispatcherContainer
             Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } block
-
-        override dispatcher.GetRenderDescriptors (block, world) =
-            SimpleSpriteFacet.getRenderDescriptors block Relative world
-
-        override dispatcher.GetQuickSize (block, world) =
-            SimpleSpriteFacet.getQuickSize block world
 
         override dispatcher.GetBodyShape (block, _) =
             BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }

@@ -110,7 +110,7 @@ module WorldScreenModule =
 
         static member removeScreen address world =
             let task =
-                { Time = world.Ticks
+                { ScheduledTime = world.TickTime
                   Operation = fun world -> if World.containsScreen address world then World.removeScreenImmediate address world else world }
             { world with Tasks = task :: world.Tasks }
 

@@ -133,7 +133,7 @@ module WorldGroupModule =
 
         static member removeGroup address world =
             let task =
-                { Time = world.Ticks
+                { ScheduledTime = world.TickTime
                   Operation = fun world -> if World.containsGroup address world then World.removeGroupImmediate address world else world }
             { world with Tasks = task :: world.Tasks }
 

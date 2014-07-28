@@ -10,12 +10,6 @@ open Nu.NuConstants
 module TransitionModule =
 
     type Transition with
-        end
-
-    type TransitionDispatcher () =
-        class end
-
-    type Transition with
     
         static member makeDefault transitionType =
             { TransitionLifetime = 0L

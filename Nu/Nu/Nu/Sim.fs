@@ -199,7 +199,7 @@ module SimModule =
         | Entity of Entity
 
     type [<ReferenceEquality>] Task =
-        { Time : int64
+        { ScheduledTime : int64
           Operation : World -> World }
 
     /// Describes a game event subscription.
@@ -231,7 +231,7 @@ module SimModule =
           Screens : Map<string, Screen>
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
-          Ticks : int64
+          TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
           Camera : Camera
