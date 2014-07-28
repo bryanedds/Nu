@@ -54,6 +54,9 @@ module BulletDispatcherModule =
             let world = World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
             World.withEntity (Entity.setBirthTime world.TickTime) address world
 
+        override dispatcher.GetBodyShape (entity, _) =
+            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
+
 [<AutoOpen>]
 module EnemyDispatcherModule =
 
