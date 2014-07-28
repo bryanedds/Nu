@@ -21,7 +21,6 @@ module EntityModule =
         static member init (entity : Entity) (dispatcherContainer : IXDispatcherContainer) : Entity = entity?Init (entity, dispatcherContainer)
         static member register (address : Address) (entity : Entity) (world : World) : World = entity?Register (address, world)
         static member unregister (address : Address) (entity : Entity) (world : World) : World = entity?Unregister (address, world)
-        static member getPickingPriority (entity : Entity) (world : World) : single = entity?GetPickingPriority (entity, world)
 
     type EntityDispatcher () =
 
@@ -33,9 +32,6 @@ module EntityModule =
 
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
-
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (_, _) = 0.0f
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap

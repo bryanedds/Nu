@@ -21,9 +21,9 @@ module Entity2dDispatcherModule =
                 Entity.setDepth 0.0f |>
                 Entity.setSize DefaultEntitySize |>
                 Entity.setRotation 0.0f
-
-        override dispatcher.GetPickingPriority (entity, _) =
-            Entity2dFacet.getPickingPriority entity
+                
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (entity, world) = Entity2dFacet.getPickingPriority entity world
 
         abstract member PropagatePhysics : Address * World -> World
         default dispatcher.PropagatePhysics (_, world) = world

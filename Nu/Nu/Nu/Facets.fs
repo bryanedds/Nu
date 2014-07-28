@@ -25,6 +25,7 @@ module Entity2dFacetModule =
         static member handleBodyTransformMessage (address : Address) (message : BodyTransformMessage) (entity : Entity) (world : World) : World = entity?HandleBodyTransformMessage (address, message, world)
         static member getRenderDescriptors (entity : Entity) (world : World) : RenderDescriptor list = entity?GetRenderDescriptors (entity, world)
         static member getQuickSize  (entity : Entity) (world : World) : Vector2 = entity?GetQuickSize (entity, world)
+        static member getPickingPriority (entity : Entity) (world : World) : single = entity?GetPickingPriority (entity, world)
         static member isTransformRelative  (entity : Entity) (world : World) : bool = entity?IsTransformRelative (entity, world)
 
         static member private sortFstDesc (priority, _) (priority2, _) =
@@ -82,7 +83,7 @@ module Entity2dFacet =
             Entity.setSize DefaultEntitySize |>
             Entity.setRotation 0.0f
 
-    let getPickingPriority (entity2d : Entity) =
+    let getPickingPriority (entity2d : Entity) (_ : World) =
         entity2d.Depth
 
 [<AutoOpen>]
