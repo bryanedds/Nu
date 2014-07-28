@@ -19,12 +19,15 @@ module BulletDispatcherModule =
         member entity.BirthTime with get () = entity?BirthTime () : int64
         static member setBirthTime (value : int64) (entity : Entity) : Entity = entity?BirthTime <- value
 
+        static member getAge (entity : Entity) world =
+            world.TickTime - entity.BirthTime
+
     type BulletDispatcher () =
-        inherit SimpleBodyDispatcher ()
+        inherit SimpleBodySpriteDispatcher ()
 
         let tickHandler event world =
             let bullet = World.getEntity event.Subscriber world
-            if world.Ticks = bullet.BirthTime + 28L then
+            if Entity.getAge bullet world > 28L then
                 let world = World.removeEntity event.Subscriber world
                 (Unhandled, world)
             else (Unhandled, world)
@@ -35,7 +38,6 @@ module BulletDispatcherModule =
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
-            let bullet = SimpleSpriteFacet.init bullet dispatcherContainer
             bullet |>
                 Entity.setSize (Vector2 (24.0f, 24.0f)) |>
                 Entity.setDensity 0.25f |>
@@ -50,16 +52,7 @@ module BulletDispatcherModule =
             let world = base.Register (address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
-            World.withEntity (Entity.setBirthTime world.Ticks) address world
-
-        override dispatcher.GetRenderDescriptors (bullet, world) =
-            SimpleSpriteFacet.getRenderDescriptors bullet Relative world
-
-        override dispatcher.GetQuickSize (bullet, world) =
-            SimpleSpriteFacet.getQuickSize bullet world
-        
-        override dispatcher.GetBodyShape (bullet, _) =
-            CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
+            World.withEntity (Entity.setBirthTime world.TickTime) address world
 
 [<AutoOpen>]
 module EnemyDispatcherModule =
@@ -70,7 +63,7 @@ module EnemyDispatcherModule =
         static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
 
     type EnemyDispatcher () =
-        inherit SimpleBodyDispatcher ()
+        inherit SimpleBodyAnimatedSpriteDispatcher ()
 
         let hasAppeared (entity : Entity) (world : World) =
             entity.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
@@ -110,7 +103,6 @@ module EnemyDispatcherModule =
 
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            let enemy = SimpleAnimatedSpriteFacet.init enemy dispatcherContainer
             enemy |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
@@ -127,12 +119,6 @@ module EnemyDispatcherModule =
             world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
                 World.observe (CollisionEventName @ address) address (CustomSub collisionHandler)
-
-        override dispatcher.GetRenderDescriptors (enemy, world) =
-            SimpleAnimatedSpriteFacet.getRenderDescriptors enemy Relative world
-
-        override dispatcher.GetQuickSize (enemy, _) =
-            SimpleAnimatedSpriteFacet.getQuickSize enemy
 
         override dispatcher.GetBodyShape (enemy, _) =
             CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }
@@ -151,7 +137,7 @@ module PlayerDispatcherModule =
             entity.Position.Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit SimpleBodyDispatcher ()
+        inherit SimpleBodyAnimatedSpriteDispatcher ()
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| List.last bulletAddress) world
@@ -176,7 +162,7 @@ module PlayerDispatcherModule =
             if World.gamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 if not <| Entity.hasFallen player then
-                    if world.Ticks % 6L = 0L then
+                    if world.TickTime % 6L = 0L then
                         let world = shootBullet event.Subscriber world
                         (Unhandled, world)
                     else (Unhandled, world)
@@ -187,7 +173,7 @@ module PlayerDispatcherModule =
             let physicsId = Entity.getPhysicsId player
             if not <| Physics.isBodyOnGround physicsId world.Integrator
             then player.LastTimeOnGround
-            else world.Ticks
+            else world.TickTime
 
         let movementHandler event world =
             if World.gamePlaying world then
@@ -208,9 +194,9 @@ module PlayerDispatcherModule =
         let jumpHandler event world =
             if World.gamePlaying world then
                 let player = World.getEntity event.Subscriber world
-                if  world.Ticks >= player.LastTimeJump + 12L &&
-                    world.Ticks <= player.LastTimeOnGround + 10L then
-                    let player = Entity.setLastTimeJump world.Ticks player
+                if  world.TickTime >= player.LastTimeJump + 12L &&
+                    world.TickTime <= player.LastTimeOnGround + 10L then
+                    let player = Entity.setLastTimeJump world.TickTime player
                     let world = World.setEntity event.Subscriber player world
                     let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
                     let world = World.playSound JumpSound 1.0f world
@@ -220,7 +206,6 @@ module PlayerDispatcherModule =
 
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
-            let player = SimpleAnimatedSpriteFacet.init player dispatcherContainer
             player |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
@@ -239,12 +224,6 @@ module PlayerDispatcherModule =
                 World.observe TickEventName address (CustomSub spawnBulletHandler) |>
                 World.observe TickEventName address (CustomSub movementHandler) |>
                 World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
-
-        override dispatcher.GetRenderDescriptors (player, world) =
-            SimpleAnimatedSpriteFacet.getRenderDescriptors player Relative world
-
-        override dispatcher.GetQuickSize (player, _) =
-            SimpleAnimatedSpriteFacet.getQuickSize player
 
         override dispatcher.GetBodyShape (player, _) =
             CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero }

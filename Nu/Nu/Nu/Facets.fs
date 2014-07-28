@@ -242,7 +242,7 @@ module SimpleAnimatedSpriteFacetModule =
 module SimpleAnimatedSpriteFacet =
 
     let private getSpriteOptInset (entity : Entity) world =
-        let tile = (int world.Ticks / entity.Stutter) % entity.TileCount
+        let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
         let tileI = tile % entity.TileRun
         let tileJ = tile / entity.TileRun
         let tileX = single tileI * entity.TileSize.X
@@ -273,5 +273,5 @@ module SimpleAnimatedSpriteFacet =
                           Image = entity.SpriteImage
                           Color = Vector4.One }}]
 
-    let getQuickSize (entity : Entity) =
+    let getQuickSize (entity : Entity) (_ : World) =
         entity.TileSize

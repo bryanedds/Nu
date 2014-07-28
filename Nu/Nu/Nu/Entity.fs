@@ -199,7 +199,7 @@ module WorldEntityModule =
 
         static member removeEntity address world =
             let task =
-                { Time = world.Ticks
+                { ScheduledTime = world.TickTime
                   Operation = fun world -> if World.containsEntity address world then World.removeEntityImmediate address world else world }
             { world with Tasks = task :: world.Tasks }
 
