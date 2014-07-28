@@ -132,7 +132,8 @@ module SimpleBodyFacetModule =
         member entity.IsSensor with get () = entity?IsSensor () : bool
         static member setIsSensor (value : bool) (entity : Entity) : Entity = entity?IsSensor <- value
 
-        static member getPhysicsId (entity : Entity) = PhysicsId (entity.Id, entity.MinorId)
+        static member getPhysicsId (entity : Entity) =
+            PhysicsId (entity.Id, entity.MinorId)
 
 [<RequireQualifiedAccess>]
 module SimpleBodyFacet =
