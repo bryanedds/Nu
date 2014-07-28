@@ -501,6 +501,11 @@ module WorldModule =
                          typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                          typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                          gameDispatcherName, gameDispatcher]
+                let aType = typeof<Entity>
+                let ctorParams = [|typeof<Guid>; typeof<string>; typeof<bool>; typeof<Xtension>|]
+                let constructors =
+                    Map.ofList
+                        [typeof<Entity>.Name, typeof<Entity>.GetConstructor ctorParams]
                 let world =
                     { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                       Screens = Map.empty
@@ -522,6 +527,7 @@ module WorldModule =
                       RenderMessages = [HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
                       PhysicsMessages = []
                       Dispatchers = dispatchers
+                      Constructors = constructors
                       ExtData = extData }
                 let world = world.Game.Register world
                 Right world

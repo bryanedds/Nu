@@ -203,7 +203,7 @@ module SimpleSpriteFacet =
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } entity
 
-    let getRenderDescriptors entity viewType world =
+    let getRenderDescriptors (entity : Entity) viewType world =
         if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
             [LayerableDescriptor
                 { Depth = entity.Depth

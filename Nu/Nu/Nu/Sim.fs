@@ -120,84 +120,6 @@ module ScreenStateModule =
 [<AutoOpen>]
 module SimModule =
 
-    type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
-        { Id : Guid
-          Name : string
-          Visible : bool
-          Xtension : Xtension }
-
-        static member (?) (this : Entity, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Entity, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
-
-    type [<CLIMutable; StructuralEquality; NoComparison>] Group =
-        { Id : Guid
-          Xtension : Xtension }
-
-        static member (?) (this : Group, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Group, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType group dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
-
-    type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
-        { TransitionLifetime : int64
-          TransitionTicks : int64
-          TransitionType : TransitionType
-          OptDissolveImage : Image option }
-
-    type [<CLIMutable; StructuralEquality; NoComparison>] Screen =
-        { Id : Guid
-          State : ScreenState
-          Incoming : Transition
-          Outgoing : Transition
-          Xtension : Xtension }
-
-        static member (?) (this : Screen, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Screen, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
-
-    type [<CLIMutable; StructuralEquality; NoComparison>] Game =
-        { Id : Guid
-          OptSelectedScreenAddress : Address option
-          Xtension : Xtension }
-
-        static member (?) (this : Game, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Game, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType game dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
-
-    type [<StructuralEquality; NoComparison>] Simulant =
-        | Game of Game
-        | Screen of Screen
-        | Group of Group
-        | Entity of Entity
-
     type [<ReferenceEquality>] Task =
         { ScheduledTime : int64
           Operation : World -> World }
@@ -223,6 +145,105 @@ module SimModule =
 
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, Address * Address>
+    
+    and Entity
+        (id : Guid,
+         name : string,
+         visible : bool,
+         xtension : Xtension) =
+
+        let mutable id = id
+        let mutable name = name
+        let mutable visible = visible
+        let mutable xtension = xtension
+
+        member this.Id with get () = id and private set value = id <- value
+        member this.Name with get () = name and private set value = name <- value
+        member this.Visible with get () = visible and private set value = visible <- value
+        member this.Xtension with get () = xtension and private set value = xtension <- value
+
+        static member setId value (entity : Entity) = Entity (value, entity.Name, entity.Visible, entity.Xtension)
+        static member setName value (entity : Entity) = Entity (entity.Id, value, entity.Visible, entity.Xtension)
+        static member setVisible value (entity : Entity) = Entity (entity.Id, entity.Name, value, entity.Xtension)
+        static member setXtension value (entity : Entity) = Entity (entity.Id, entity.Name, entity.Visible, value)
+
+        abstract member Init : IXDispatcherContainer -> Entity
+        default this.Init _ = this
+
+        abstract member Register : Address * World -> World
+        default this.Register (_, world) = world
+
+        abstract member Unregister : Address * World -> World
+        default this.Unregister (_, world) = world
+
+        abstract member GetPickingPriority : World -> single
+        default this.GetPickingPriority _ = 0.0f
+
+        static member (?) (this : Entity, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Entity, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            Entity.setXtension xtension this
+
+        static member dispatchesAs dispatcherTargetType (this : Entity) dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType this.Xtension dispatcherContainer
+
+    and [<CLIMutable; StructuralEquality; NoComparison>] Group =
+        { Id : Guid
+          Xtension : Xtension }
+
+        static member (?) (this : Group, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Group, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType group dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
+
+    and [<CLIMutable; StructuralEquality; NoComparison>] Transition =
+        { TransitionLifetime : int64
+          TransitionTicks : int64
+          TransitionType : TransitionType
+          OptDissolveImage : Image option }
+
+    and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
+        { Id : Guid
+          State : ScreenState
+          Incoming : Transition
+          Outgoing : Transition
+          Xtension : Xtension }
+
+        static member (?) (this : Screen, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Screen, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
+
+    and [<CLIMutable; StructuralEquality; NoComparison>] Game =
+        { Id : Guid
+          OptSelectedScreenAddress : Address option
+          Xtension : Xtension }
+
+        static member (?) (this : Game, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Game, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType game dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
 
     /// The world, in a functional programming sense.
     /// A reference type with some value semantics.
@@ -247,11 +268,18 @@ module SimModule =
           RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue
           Dispatchers : XDispatchers
+          Constructors : Map<string, ConstructorInfo>
           ExtData : obj } // TODO: consider if this is still the right approach in the context of the new Xtension stuff
 
         interface IXDispatcherContainer with
             member this.GetDispatchers () = this.Dispatchers
             end
+
+    type [<StructuralEquality; NoComparison>] Simulant =
+        | Game of Game
+        | Screen of Screen
+        | Group of Group
+        | Entity of Entity
 
 [<RequireQualifiedAccess>]
 module Sim =
