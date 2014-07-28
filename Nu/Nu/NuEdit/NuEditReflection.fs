@@ -35,10 +35,10 @@ module NuEditReflection =
         match property with
         | EntityXFieldDescriptor x ->
             let xFields = Map.add x.FieldName value entity.Xtension.XFields
-            let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+            let entity = Entity.setXtension { entity.Xtension with XFields = xFields } entity
             World.setEntity address entity world
         | EntityPropertyInfo p ->
-            let entity = { entity with Id = entity.Id } // NOTE: hacky copy
+            let entity = Entity.setId entity.Id entity // NOTE: hacky copy
             p.SetValue (entity, value)
             World.setEntity address entity world
 

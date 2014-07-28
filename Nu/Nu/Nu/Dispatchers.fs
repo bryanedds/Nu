@@ -8,22 +8,22 @@ open Nu
 open Nu.NuConstants
 
 [<AutoOpen>]
-module Entity2dDispatcherModule =
+module Entity2dModule =
 
-    type [<AbstractClass>] Entity2dDispatcher () =
-        inherit EntityDispatcher ()
+    type [<AbstractClass>] Entity2d (id, name, visible, xtension) =
+        inherit Entity (id, name, visible, xtension)
 
-        override dispatcher.Init (entity2d, dispatcherContainer) =
-            let entity2d = base.Init (entity2d, dispatcherContainer)
-            let entity2d = Entity2dFacet.init entity2d dispatcherContainer
-            entity2d |>
+        override this.Init dispatcherContainer =
+            let this = base.Init dispatcherContainer
+            let this = Entity2dFacet.init this dispatcherContainer
+            this |>
                 Entity.setPosition Vector2.Zero |>
                 Entity.setDepth 0.0f |>
                 Entity.setSize DefaultEntitySize |>
                 Entity.setRotation 0.0f
 
-        override dispatcher.GetPickingPriority (entity, _) =
-            Entity2dFacet.getPickingPriority entity
+        override this.GetPickingPriority _ =
+            Entity2dFacet.getPickingPriority this
 
         abstract member PropagatePhysics : Address * World -> World
         default dispatcher.PropagatePhysics (_, world) = world
@@ -31,14 +31,14 @@ module Entity2dDispatcherModule =
         abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
         default dispatcher.HandleBodyTransformMessage (_, _, world) = world
 
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _) = []
+        abstract member GetRenderDescriptors : World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors _ = []
 
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
+        abstract member GetQuickSize : World -> Vector2
+        default dispatcher.GetQuickSize _ = DefaultEntitySize
 
-        abstract member IsTransformRelative : Entity * World -> bool
-        default dispatcher.IsTransformRelative (_, _) = true
+        abstract member IsTransformRelative : World -> bool
+        default dispatcher.IsTransformRelative _ = true
 
 [<AutoOpen>]
 module GuiDispatcherModule =

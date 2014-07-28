@@ -119,7 +119,7 @@ module Program =
                             // TODO: factor out a renameEntity function
                             let entity = World.getEntity entityTds.Address world
                             let world = World.removeEntityImmediate entityTds.Address world
-                            let entity = { entity with Name = valueStr }
+                            let entity = Entity.setName valueStr entity
                             let entityAddress = addrstr EditorGroupAddress valueStr
                             let world = World.addEntity entityAddress entity world
                             entityTds.RefWorld := world // must be set for property grid
@@ -400,7 +400,7 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = NuCore.makeId ()
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
-                let entity = { entity with Id = id; Name = string id }
+                let entity = entity |> Entity.setId id |> Entity.setName (string id)
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
@@ -445,7 +445,7 @@ module Program =
                         let entity = World.getEntity entityTds.Address world
                         let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
                         let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
-                        let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+                        let entity = Entity.setXtension { entity.Xtension with XFields = xFields } entity
                         let world = World.setEntity entityTds.Address entity world
                         let world = pushPastWorld pastWorld world
                         refWorld := world // must be set for property grid
@@ -466,7 +466,7 @@ module Program =
                     let pastWorld = world
                     let entity = World.getEntity entityTds.Address world
                     let xFields = Map.remove xFieldName entity.Xtension.XFields
-                    let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+                    let entity = Entity.setXtension { entity.Xtension with XFields = xFields } entity
                     let world = World.setEntity entityTds.Address entity world
                     let world = pushPastWorld pastWorld world
                     refWorld := world // must be set for property grid
@@ -481,7 +481,7 @@ module Program =
             ignore <| worldChangers.AddLast (fun world ->
                 let pastWorld = world
                 let entity = World.getEntity entityTds.Address world
-                let entity = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
+                let entity = Entity.setXtension { entity.Xtension with XFields = Map.empty } entity
                 let world = World.setEntity entityTds.Address entity world
                 let world = pushPastWorld pastWorld world
                 refWorld := world // must be set for property grid

@@ -59,16 +59,17 @@ module EntityModule =
 
     type Entity with
     
-        static member makeDefaultUninitialized dispatcherName optName =
+        static member makeDefaultUninitialized dispatcherName (ctor : ConstructorInfo) optName =
             let id = NuCore.makeId ()
-            { Id = id
-              Name = match optName with None -> string id | Some name -> name
-              Visible = true
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+            let name = match optName with None -> string id | Some name -> name
+            let visible = true
+            let xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }
+            ctor.Invoke [|id; name; visible; xtension|] :?> Entity
     
-        static member makeDefault dispatcherName optName dispatcherContainer =
-            let entity = Entity.makeDefaultUninitialized dispatcherName optName
-            Entity.init entity dispatcherContainer
+        static member makeDefault dispatcherName typeName optName world =
+            let ctor = Map.find typeName world.Constructors // TODO: consider using tryFind
+            let entity = Entity.makeDefaultUninitialized dispatcherName ctor optName
+            Entity.init entity world
     
         static member writeToXml (writer : XmlWriter) entity =
             writer.WriteStartElement typeof<Entity>.Name
@@ -240,6 +241,6 @@ module WorldEntityModule =
 
         static member addEntities groupAddress entities world =
             List.fold
-                (fun world entity -> World.addEntity (addrstr groupAddress entity.Name) entity world)
+                (fun world (entity : Entity) -> World.addEntity (addrstr groupAddress entity.Name) entity world)
                 world
                 entities

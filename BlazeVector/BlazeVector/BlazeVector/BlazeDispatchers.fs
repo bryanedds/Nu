@@ -270,7 +270,7 @@ module StageScreenModule =
 
         let anonymizeEntities entities =
             List.map
-                (fun (entity : Entity) -> let id = NuCore.makeId () in { entity with Id = id; Name = string id })
+                (fun (entity : Entity) -> let id = NuCore.makeId () in entity |> Entity.setId id |> Entity.setName (string id))
                 entities
 
         let shiftEntities xShift entities world =
