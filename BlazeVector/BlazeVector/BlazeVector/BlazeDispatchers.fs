@@ -22,8 +22,8 @@ module BulletDispatcherModule =
         static member getAge (entity : Entity) world =
             world.TickTime - entity.BirthTime
 
-    type BulletDispatcher () =
-        inherit SimpleBodySpriteDispatcher ()
+    type [<Sealed>] BulletDispatcher () =
+        inherit SimpleBodySpriteDispatcher (Set.empty)
 
         let tickHandler event world =
             let bullet = World.getEntity event.Subscriber world
@@ -65,8 +65,8 @@ module EnemyDispatcherModule =
         member entity.Health with get () = entity?Health () : int
         static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
 
-    type EnemyDispatcher () =
-        inherit SimpleBodyAnimatedSpriteDispatcher ()
+    type [<Sealed>] EnemyDispatcher () =
+        inherit SimpleBodyAnimatedSpriteDispatcher (Set.empty)
 
         let hasAppeared (entity : Entity) (world : World) =
             entity.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
@@ -139,8 +139,8 @@ module PlayerDispatcherModule =
         static member hasFallen (entity : Entity) =
             entity.Position.Y < -600.0f
 
-    type PlayerDispatcher () =
-        inherit SimpleBodyAnimatedSpriteDispatcher ()
+    type [<Sealed>] PlayerDispatcher () =
+        inherit SimpleBodyAnimatedSpriteDispatcher (Set.empty)
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| List.last bulletAddress) world
@@ -278,8 +278,8 @@ module StageScreenModule =
 
         let shiftEntities xShift entities world =
             List.map
-                (fun (entity : Entity) ->
-                    if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world
+                (fun entity ->
+                    if Entity.usesFacet Entity2dFacet.name entity world
                     then Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity
                     else entity)
                 entities

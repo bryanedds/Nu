@@ -21,8 +21,11 @@ module EntityModule =
         static member init (entity : Entity) (dispatcherContainer : IXDispatcherContainer) : Entity = entity?Init (entity, dispatcherContainer)
         static member register (address : Address) (entity : Entity) (world : World) : World = entity?Register (address, world)
         static member unregister (address : Address) (entity : Entity) (world : World) : World = entity?Unregister (address, world)
+        static member usesFacet (facetName : string) (entity : Entity) (world : World) : bool = entity?UsesFacet (facetName, world)
 
-    type EntityDispatcher () =
+    type EntityDispatcher (facetNames : Set<string>) =
+
+        new () = EntityDispatcher (Set.empty)
 
         abstract member Init : Entity * IXDispatcherContainer -> Entity
         default dispatcher.Init (entity, _) = entity
@@ -32,6 +35,9 @@ module EntityModule =
 
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
+
+        member dispatcher.UsesFacet (facetName, _ : World) =
+            Set.contains facetName facetNames
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
