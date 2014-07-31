@@ -10,8 +10,8 @@ open Nu.NuConstants
 [<AutoOpen>]
 module Entity2dDispatcherModule =
 
-    type [<AbstractClass>] Entity2dDispatcher () =
-        inherit EntityDispatcher ()
+    type [<AbstractClass>] Entity2dDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.add Entity2dFacet.name facetNames)
 
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
@@ -43,8 +43,8 @@ module Entity2dDispatcherModule =
 [<AutoOpen>]
 module GuiDispatcherModule =
 
-    type [<AbstractClass>] GuiDispatcher () =
-        inherit Entity2dDispatcher ()
+    type [<AbstractClass>] GuiDispatcher (facetNames) =
+        inherit Entity2dDispatcher (Set.add GuiFacet.name facetNames)
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
@@ -53,8 +53,8 @@ module GuiDispatcherModule =
 [<AutoOpen>]
 module SimpleBodyDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodyDispatcher () =
-        inherit Entity2dDispatcher ()
+    type [<AbstractClass>] SimpleBodyDispatcher (facetNames) =
+        inherit Entity2dDispatcher (Set.add SimpleBodyFacet.name facetNames)
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
@@ -81,8 +81,8 @@ module SimpleBodyDispatcherModule =
 [<AutoOpen>]
 module SimpleBodySpriteDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodySpriteDispatcher () =
-        inherit SimpleBodyDispatcher ()
+    type [<AbstractClass>] SimpleBodySpriteDispatcher (facetNames) =
+        inherit SimpleBodyDispatcher (Set.add SimpleSpriteFacet.name facetNames)
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
@@ -100,8 +100,8 @@ module SimpleBodySpriteDispatcherModule =
 [<AutoOpen>]
 module SimpleBodyAnimatedSpriteDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher () =
-        inherit SimpleBodyDispatcher ()
+    type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher (facetNames) =
+        inherit SimpleBodyDispatcher (Set.add SimpleAnimatedSpriteFacet.name facetNames)
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
@@ -131,7 +131,7 @@ module ButtonDispatcherModule =
         static member setClickSound (value : Sound) (entity : Entity) : Entity = entity?ClickSound <- value
 
     type [<Sealed>] ButtonDispatcher () =
-        inherit GuiDispatcher ()
+        inherit GuiDispatcher (Set.empty)
 
         let handleButtonEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -212,7 +212,7 @@ module LabelDispatcherModule =
         static member setLabelImage (value : Image) (entity : Entity) : Entity = entity?LabelImage <- value
 
     type [<Sealed>] LabelDispatcher () =
-        inherit GuiDispatcher ()
+        inherit GuiDispatcher (Set.empty)
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
@@ -259,7 +259,7 @@ module TextBoxDispatcherModule =
         static member setTextColor (value : Vector4) (entity : Entity) : Entity = entity?TextColor <- value
 
     type [<Sealed>] TextBoxDispatcher () =
-        inherit GuiDispatcher ()
+        inherit GuiDispatcher (Set.empty)
             
         override dispatcher.Init (textBox, dispatcherContainer) =
             let textBox = base.Init (textBox, dispatcherContainer)
@@ -321,7 +321,7 @@ module ToggleDispatcherModule =
         static member setToggleSound (value : Sound) (entity : Entity) : Entity = entity?ToggleSound <- value
 
     type [<Sealed>] ToggleDispatcher () =
-        inherit GuiDispatcher ()
+        inherit GuiDispatcher (Set.empty)
 
         let handleToggleEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -403,7 +403,7 @@ module FeelerDispatcherModule =
         static member setIsTouched (value : bool) (entity : Entity) : Entity = entity?IsTouched <- value
 
     type [<Sealed>] FeelerDispatcher () =
-        inherit GuiDispatcher ()
+        inherit GuiDispatcher (Set.empty)
 
         let handleFeelerEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -461,7 +461,7 @@ module FillBarDispatcherModule =
         static member setBorderImage (value : Image) (entity : Entity) : Entity = entity?BorderImage <- value
 
     type [<Sealed>] FillBarDispatcher () =
-        inherit GuiDispatcher ()
+        inherit GuiDispatcher (Set.empty)
 
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
@@ -518,7 +518,7 @@ module FillBarDispatcherModule =
 module BlockDispatcherModule =
 
     type [<Sealed>] BlockDispatcher () =
-        inherit SimpleBodySpriteDispatcher ()
+        inherit SimpleBodySpriteDispatcher (Set.empty)
 
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
@@ -531,22 +531,15 @@ module BlockDispatcherModule =
 module AvatarDispatcherModule =
 
     type [<Sealed>] AvatarDispatcher () =
-        inherit SimpleBodyDispatcher ()
+        inherit SimpleBodySpriteDispatcher (Set.empty)
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar = base.Init (avatar, dispatcherContainer)
-            let avatar = SimpleSpriteFacet.init avatar dispatcherContainer
             avatar |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 10.0f |>
                 Entity.setGravityScale 0.0f |>
                 Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-
-        override dispatcher.GetRenderDescriptors (avatar, world) =
-            SimpleSpriteFacet.getRenderDescriptors avatar Relative world
-
-        override dispatcher.GetQuickSize (avatar, world) =
-            SimpleSpriteFacet.getQuickSize avatar world
 
         override dispatcher.GetBodyShape (avatar, _) =
             CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
@@ -555,21 +548,14 @@ module AvatarDispatcherModule =
 module CharacterDispatcherModule =
 
     type [<Sealed>] CharacterDispatcher () =
-        inherit SimpleBodyDispatcher ()
+        inherit SimpleBodySpriteDispatcher (Set.empty)
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character = base.Init (character, dispatcherContainer)
-            let character = SimpleSpriteFacet.init character dispatcherContainer
             character |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
                 Entity.setSpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
-
-        override dispatcher.GetRenderDescriptors (character, world) =
-            SimpleSpriteFacet.getRenderDescriptors character Relative world
-
-        override dispatcher.GetQuickSize (character, world) =
-            SimpleSpriteFacet.getQuickSize character world
 
         override dispatcher.GetBodyShape (character, _) =
             CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }
@@ -613,7 +599,7 @@ module TileMapDispatcherModule =
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
     type [<Sealed>] TileMapDispatcher () =
-        inherit Entity2dDispatcher ()
+        inherit Entity2dDispatcher (Set.empty)
 
         let getTilePhysicsId tmid (tli : int) (ti : int) =
             PhysicsId (tmid, intsToGuid tli ti)
