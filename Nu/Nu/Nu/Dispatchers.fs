@@ -121,13 +121,13 @@ module ButtonDispatcherModule =
 
     type Entity with
 
-        member entity.IsDown with get () = entity?IsDown () : bool
+        member entity.IsDown = entity?IsDown () : bool
         static member setIsDown (value : bool) (entity : Entity) : Entity = entity?IsDown <- value
-        member entity.UpImage with get () = entity?UpImage () : Image
+        member entity.UpImage = entity?UpImage () : Image
         static member setUpImage (value : Image) (entity : Entity) : Entity = entity?UpImage <- value
-        member entity.DownImage with get () = entity?DownImage () : Image
+        member entity.DownImage = entity?DownImage () : Image
         static member setDownImage (value : Image) (entity : Entity) : Entity = entity?DownImage <- value
-        member entity.ClickSound with get () = entity?ClickSound () : Sound
+        member entity.ClickSound = entity?ClickSound () : Sound
         static member setClickSound (value : Sound) (entity : Entity) : Entity = entity?ClickSound <- value
 
     type [<Sealed>] ButtonDispatcher () =
@@ -208,7 +208,7 @@ module LabelDispatcherModule =
 
     type Entity with
 
-        member entity.LabelImage with get () = entity?LabelImage () : Image
+        member entity.LabelImage = entity?LabelImage () : Image
         static member setLabelImage (value : Image) (entity : Entity) : Entity = entity?LabelImage <- value
 
     type [<Sealed>] LabelDispatcher () =
@@ -247,15 +247,15 @@ module TextBoxDispatcherModule =
 
     type Entity with
 
-        member entity.BoxImage with get () = entity?BoxImage () : Image
+        member entity.BoxImage = entity?BoxImage () : Image
         static member setBoxImage (value : Image) (entity : Entity) : Entity = entity?BoxImage <- value
-        member entity.Text with get () = entity?Text () : string
+        member entity.Text = entity?Text () : string
         static member setText (value : string) (entity : Entity) : Entity = entity?Text <- value
-        member entity.TextFont with get () = entity?TextFont () : Font
+        member entity.TextFont = entity?TextFont () : Font
         static member setTextFont (value : Font) (entity : Entity) : Entity = entity?TextFont <- value
-        member entity.TextOffset with get () = entity?TextOffset () : Vector2
+        member entity.TextOffset = entity?TextOffset () : Vector2
         static member setTextOffset (value : Vector2) (entity : Entity) : Entity = entity?TextOffset <- value
-        member entity.TextColor with get () = entity?TextColor () : Vector4
+        member entity.TextColor = entity?TextColor () : Vector4
         static member setTextColor (value : Vector4) (entity : Entity) : Entity = entity?TextColor <- value
 
     type [<Sealed>] TextBoxDispatcher () =
@@ -309,15 +309,15 @@ module ToggleDispatcherModule =
 
     type Entity with
 
-        member entity.IsOn with get () = entity?IsOn () : bool
+        member entity.IsOn = entity?IsOn () : bool
         static member setIsOn (value : bool) (entity : Entity) : Entity = entity?IsOn <- value
-        member entity.IsPressed with get () = entity?IsPressed () : bool
+        member entity.IsPressed = entity?IsPressed () : bool
         static member setIsPressed (value : bool) (entity : Entity) : Entity = entity?IsPressed <- value
-        member entity.OffImage with get () = entity?OffImage () : Image
+        member entity.OffImage = entity?OffImage () : Image
         static member setOffImage (value : Image) (entity : Entity) : Entity = entity?OffImage <- value
-        member entity.OnImage with get () = entity?OnImage () : Image
+        member entity.OnImage = entity?OnImage () : Image
         static member setOnImage (value : Image) (entity : Entity) : Entity = entity?OnImage <- value
-        member entity.ToggleSound with get () = entity?ToggleSound () : Sound
+        member entity.ToggleSound = entity?ToggleSound () : Sound
         static member setToggleSound (value : Sound) (entity : Entity) : Entity = entity?ToggleSound <- value
 
     type [<Sealed>] ToggleDispatcher () =
@@ -399,7 +399,7 @@ module FeelerDispatcherModule =
 
     type Entity with
 
-        member entity.IsTouched with get () = entity?IsTouched () : bool
+        member entity.IsTouched = entity?IsTouched () : bool
         static member setIsTouched (value : bool) (entity : Entity) : Entity = entity?IsTouched <- value
 
     type [<Sealed>] FeelerDispatcher () =
@@ -451,13 +451,13 @@ module FillBarDispatcherModule =
 
     type Entity with
     
-        member entity.Fill with get () = entity?Fill () : single
+        member entity.Fill = entity?Fill () : single
         static member setFill (value : single) (entity : Entity) : Entity = entity?Fill <- value
-        member entity.FillInset with get () = entity?FillInset () : single
+        member entity.FillInset = entity?FillInset () : single
         static member setFillInset (value : single) (entity : Entity) : Entity = entity?FillInset <- value
-        member entity.FillImage with get () = entity?FillImage () : Image
+        member entity.FillImage = entity?FillImage () : Image
         static member setFillImage (value : Image) (entity : Entity) : Entity = entity?FillImage <- value
-        member entity.BorderImage with get () = entity?BorderImage () : Image
+        member entity.BorderImage = entity?BorderImage () : Image
         static member setBorderImage (value : Image) (entity : Entity) : Entity = entity?BorderImage <- value
 
     type [<Sealed>] FillBarDispatcher () =
@@ -565,9 +565,9 @@ module TileMapDispatcherModule =
 
     type Entity with
 
-        member entity.TileMapAsset with get () = entity?TileMapAsset () : TileMapAsset
+        member entity.TileMapAsset = entity?TileMapAsset () : TileMapAsset
         static member setTileMapAsset (value : TileMapAsset) (entity : Entity) : Entity = entity?TileMapAsset <- value
-        member entity.Parallax with get () = entity?Parallax () : single
+        member entity.Parallax = entity?Parallax () : single
         static member setParallax (value : single) (entity : Entity) : Entity = entity?Parallax <- value
 
         static member makeTileMapData tileMapAsset world =
