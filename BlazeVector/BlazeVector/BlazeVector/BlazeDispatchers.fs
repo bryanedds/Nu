@@ -16,7 +16,7 @@ module BulletDispatcherModule =
 
     type Entity with
 
-        member entity.BirthTime with get () = entity?BirthTime () : int64
+        member entity.BirthTime = entity?BirthTime () : int64
         static member setBirthTime (value : int64) (entity : Entity) : Entity = entity?BirthTime <- value
 
         static member getAge (entity : Entity) world =
@@ -62,7 +62,7 @@ module EnemyDispatcherModule =
 
     type Entity with
 
-        member entity.Health with get () = entity?Health () : int
+        member entity.Health = entity?Health () : int
         static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
 
     type [<Sealed>] EnemyDispatcher () =
@@ -131,9 +131,9 @@ module PlayerDispatcherModule =
 
     type Entity with
 
-        member entity.LastTimeOnGround with get () = entity?LastTimeOnGround () : int64
+        member entity.LastTimeOnGround = entity?LastTimeOnGround () : int64
         static member setLastTimeOnGround (value : int64) (entity : Entity) : Entity = entity?LastTimeOnGround <- value
-        member entity.LastTimeJump with get () = entity?LastTimeJump () : int64
+        member entity.LastTimeJump = entity?LastTimeJump () : int64
         static member setLastTimeJump (value : int64) (entity : Entity) : Entity = entity?LastTimeJump <- value
         
         static member hasFallen (entity : Entity) =

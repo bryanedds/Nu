@@ -84,8 +84,8 @@ module Program =
         let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName | EntityPropertyInfo p -> p.PropertyType
         let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
 
-        override this.ComponentType with get () = propertyType.DeclaringType
-        override this.PropertyType with get () = propertyType
+        override this.ComponentType = propertyType.DeclaringType
+        override this.PropertyType = propertyType
         override this.CanResetValue _ = false
         override this.ResetValue _ = ()
         override this.ShouldSerializeValue _ = true

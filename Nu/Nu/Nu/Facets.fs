@@ -12,13 +12,13 @@ module Entity2dFacetModule =
 
     type Entity with
 
-        member entity.Position with get () = entity?Position () : Vector2
+        member entity.Position = entity?Position () : Vector2
         static member setPosition (value : Vector2) (entity : Entity) : Entity = entity?Position <- value
-        member entity.Depth with get () = entity?Depth () : single
+        member entity.Depth = entity?Depth () : single
         static member setDepth (value : single) (entity : Entity) : Entity = entity?Depth <- value
-        member entity.Rotation with get () = entity?Rotation () : single
+        member entity.Rotation = entity?Rotation () : single
         static member setRotation (value : single) (entity : Entity) : Entity = entity?Rotation <- value
-        member entity.Size with get () = entity?Size () : Vector2
+        member entity.Size = entity?Size () : Vector2
         static member setSize (value : Vector2) (entity : Entity) : Entity = entity?Size <- value
 
         static member propagatePhysics (address : Address) (entity : Entity) (world : World) : World = entity?PropagatePhysics (address, world)
@@ -93,7 +93,7 @@ module GuiFacetModule =
 
     type Entity with
 
-        member entity.Enabled with get () = entity?Enabled () : bool
+        member entity.Enabled = entity?Enabled () : bool
         static member setEnabled (value : bool) (entity : Entity) : Entity = entity?Enabled <- value
 
 [<RequireQualifiedAccess>]
@@ -109,31 +109,31 @@ module SimpleBodyFacetModule =
 
     type Entity with
 
-        member entity.MinorId with get () = entity?MinorId () : Guid
+        member entity.MinorId = entity?MinorId () : Guid
         static member setMinorId (value : Guid) (entity : Entity) : Entity = entity?MinorId <- value
-        member entity.BodyType with get () = entity?BodyType () : BodyType
+        member entity.BodyType = entity?BodyType () : BodyType
         static member setBodyType (value : BodyType) (entity : Entity) : Entity = entity?BodyType <- value
-        member entity.Density with get () = entity?Density () : single
+        member entity.Density = entity?Density () : single
         static member setDensity (value : single) (entity : Entity) : Entity = entity?Density <- value
-        member entity.Friction with get () = entity?Friction () : single
+        member entity.Friction = entity?Friction () : single
         static member setFriction (value : single) (entity : Entity) : Entity = entity?Friction <- value
-        member entity.Restitution with get () = entity?Restitution () : single
+        member entity.Restitution = entity?Restitution () : single
         static member setRestitution (value : single) (entity : Entity) : Entity = entity?Restitution <- value
-        member entity.FixedRotation with get () = entity?FixedRotation () : bool
+        member entity.FixedRotation = entity?FixedRotation () : bool
         static member setFixedRotation (value : bool) (entity : Entity) : Entity = entity?FixedRotation <- value
-        member entity.LinearDamping with get () = entity?LinearDamping () : single
+        member entity.LinearDamping = entity?LinearDamping () : single
         static member setLinearDamping (value : single) (entity : Entity) : Entity = entity?LinearDamping <- value
-        member entity.AngularDamping with get () = entity?AngularDamping () : single
+        member entity.AngularDamping = entity?AngularDamping () : single
         static member setAngularDamping (value : single) (entity : Entity) : Entity = entity?AngularDamping <- value
-        member entity.GravityScale with get () = entity?GravityScale () : single
+        member entity.GravityScale = entity?GravityScale () : single
         static member setGravityScale (value : single) (entity : Entity) : Entity = entity?GravityScale <- value
-        member entity.CollisionCategories with get () = entity?CollisionCategories () : string
+        member entity.CollisionCategories = entity?CollisionCategories () : string
         static member setCollisionCategories (value : string) (entity : Entity) : Entity = entity?CollisionCategories <- value
-        member entity.CollisionMask with get () = entity?CollisionMask () : string
+        member entity.CollisionMask = entity?CollisionMask () : string
         static member setCollisionMask (value : string) (entity : Entity) : Entity = entity?CollisionMask <- value
-        member entity.IsBullet with get () = entity?IsBullet () : bool
+        member entity.IsBullet = entity?IsBullet () : bool
         static member setIsBullet (value : bool) (entity : Entity) : Entity = entity?IsBullet <- value
-        member entity.IsSensor with get () = entity?IsSensor () : bool
+        member entity.IsSensor = entity?IsSensor () : bool
         static member setIsSensor (value : bool) (entity : Entity) : Entity = entity?IsSensor <- value
 
         static member getPhysicsId (entity : Entity) =
@@ -202,7 +202,7 @@ module SimpleSpriteFacetModule =
 
     type Entity with
 
-        member entity.SpriteImage with get () = entity?SpriteImage () : Image
+        member entity.SpriteImage = entity?SpriteImage () : Image
         static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
 
 [<RequireQualifiedAccess>]
@@ -239,13 +239,13 @@ module SimpleAnimatedSpriteFacetModule =
 
     type Entity with
 
-        member entity.Stutter with get () = entity?Stutter () : int
+        member entity.Stutter = entity?Stutter () : int
         static member setStutter (value : int) (entity : Entity) : Entity = entity?Stutter <- value
-        member entity.TileCount with get () = entity?TileCount () : int
+        member entity.TileCount = entity?TileCount () : int
         static member setTileCount (value : int) (entity : Entity) : Entity = entity?TileCount <- value
-        member entity.TileRun with get () = entity?TileRun () : int
+        member entity.TileRun = entity?TileRun () : int
         static member setTileRun (value : int) (entity : Entity) : Entity = entity?TileRun <- value
-        member entity.TileSize with get () = entity?TileSize () : Vector2
+        member entity.TileSize = entity?TileSize () : Vector2
         static member setTileSize (value : Vector2) (entity : Entity) : Entity = entity?TileSize <- value
 
 [<RequireQualifiedAccess>]
