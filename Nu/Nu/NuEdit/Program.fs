@@ -58,7 +58,7 @@ module Program =
     let getPickableEntities world =
         World.getEntities EditorGroupAddress world |>
             Map.toValueSeq |>
-            Seq.filter (fun entity -> Entity.usesFacet Entity2dFacet.name entity world) |>
+            Seq.filter (fun entity -> Entity.dispatchesAs typeof<Entity2dDispatcher> entity world) |>
             Seq.toList
 
     let pushPastWorld pastWorld world =
@@ -547,9 +547,8 @@ module Program =
     let populateCreateEntityComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in world.Dispatchers do
-            match dispatcherKvp.Value with
-            | :? EntityDispatcher as ed when ed.UsesFacet (Entity2dFacet.name, world) -> ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
-            | _ -> ()
+            if Xtension.dispatchesAs2 typeof<Entity2dDispatcher> dispatcherKvp.Value then
+                ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
         world
 
     let tryCreateEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
