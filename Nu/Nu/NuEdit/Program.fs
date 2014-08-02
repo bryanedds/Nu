@@ -90,10 +90,9 @@ module Program =
         override this.ResetValue _ = ()
         override this.ShouldSerializeValue _ = true
 
-        override this.IsReadOnly
-            with get () =
-                not propertyCanWrite ||
-                not <| Xtension.isPropertyNameWriteable propertyName
+        override this.IsReadOnly =
+            not propertyCanWrite ||
+            not <| Xtension.isPropertyNameWriteable propertyName
 
         override this.GetValue optSource =
             match optSource with
