@@ -80,6 +80,7 @@
     <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
+    <Compile Include="ImmutableSubclass.fs" />
     <Compile Include="Tests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
