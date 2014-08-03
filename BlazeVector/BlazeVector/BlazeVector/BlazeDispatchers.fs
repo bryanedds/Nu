@@ -65,11 +65,11 @@ module EnemyDispatcherModule =
         member entity.Health = entity?Health () : int
         static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
 
+        static member hasAppeared camera (entity : Entity) =
+            entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
+
     type [<Sealed>] EnemyDispatcher () =
         inherit SimpleBodyAnimatedSpriteDispatcher (Set.empty)
-
-        let hasAppeared (entity : Entity) (world : World) =
-            entity.Position.X - (world.Camera.EyeCenter.X + world.Camera.EyeSize.X * 0.5f) < 0.0f
 
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
@@ -87,7 +87,7 @@ module EnemyDispatcherModule =
         let tickHandler event world =
             if World.gamePlaying world then
                 let enemy = World.getEntity event.Subscriber world
-                let world = if hasAppeared enemy world then move enemy world else world
+                let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die event.Subscriber world else world
                 (Unhandled, world)
             else (Unhandled, world)
