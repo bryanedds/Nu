@@ -76,7 +76,7 @@ module Entity2dFacetModule =
 [<RequireQualifiedAccess>]
 module Entity2dFacet =
 
-    let name = "Entity2dFacet"
+    let [<Literal>] Name = "Entity2dFacet"
 
     let init (entity2d : Entity) (_ : IXDispatcherContainer) =
         entity2d |>
@@ -99,7 +99,7 @@ module GuiFacetModule =
 [<RequireQualifiedAccess>]
 module GuiFacet =
 
-    let name = "GuiFacet"
+    let [<Literal>] Name = "GuiFacet"
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         Entity.setEnabled true entity
@@ -142,7 +142,7 @@ module SimpleBodyFacetModule =
 [<RequireQualifiedAccess>]
 module SimpleBodyFacet =
 
-    let name = "SimpleBodyFacet"
+    let [<Literal>] Name = "SimpleBodyFacet"
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity |>
@@ -208,7 +208,7 @@ module SimpleSpriteFacetModule =
 [<RequireQualifiedAccess>]
 module SimpleSpriteFacet =
 
-    let name = "SimpleSpriteFacet"
+    let [<Literal>] Name = "SimpleSpriteFacet"
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } entity
@@ -251,7 +251,7 @@ module SimpleAnimatedSpriteFacetModule =
 [<RequireQualifiedAccess>]
 module SimpleAnimatedSpriteFacet =
 
-    let name = "SimpleAnimatedSpriteFacet"
+    let [<Literal>] Name = "SimpleAnimatedSpriteFacet"
 
     let private getSpriteOptInset (entity : Entity) world =
         let tile = (int world.TickTime / entity.Stutter) % entity.TileCount

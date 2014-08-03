@@ -11,7 +11,7 @@ open Nu.NuConstants
 module Entity2dDispatcherModule =
 
     type [<AbstractClass>] Entity2dDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.add Entity2dFacet.name facetNames)
+        inherit EntityDispatcher (Set.add Entity2dFacet.Name facetNames)
 
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
@@ -44,7 +44,7 @@ module Entity2dDispatcherModule =
 module GuiDispatcherModule =
 
     type [<AbstractClass>] GuiDispatcher (facetNames) =
-        inherit Entity2dDispatcher (Set.add GuiFacet.name facetNames)
+        inherit Entity2dDispatcher (Set.add GuiFacet.Name facetNames)
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
@@ -54,7 +54,7 @@ module GuiDispatcherModule =
 module SimpleBodyDispatcherModule =
 
     type [<AbstractClass>] SimpleBodyDispatcher (facetNames) =
-        inherit Entity2dDispatcher (Set.add SimpleBodyFacet.name facetNames)
+        inherit Entity2dDispatcher (Set.add SimpleBodyFacet.Name facetNames)
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
@@ -82,7 +82,7 @@ module SimpleBodyDispatcherModule =
 module SimpleBodySpriteDispatcherModule =
 
     type [<AbstractClass>] SimpleBodySpriteDispatcher (facetNames) =
-        inherit SimpleBodyDispatcher (Set.add SimpleSpriteFacet.name facetNames)
+        inherit SimpleBodyDispatcher (Set.add SimpleSpriteFacet.Name facetNames)
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
@@ -101,7 +101,7 @@ module SimpleBodySpriteDispatcherModule =
 module SimpleBodyAnimatedSpriteDispatcherModule =
 
     type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher (facetNames) =
-        inherit SimpleBodyDispatcher (Set.add SimpleAnimatedSpriteFacet.name facetNames)
+        inherit SimpleBodyDispatcher (Set.add SimpleAnimatedSpriteFacet.Name facetNames)
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
