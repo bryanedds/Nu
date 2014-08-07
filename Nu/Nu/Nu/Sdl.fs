@@ -44,8 +44,8 @@ module Sdl =
         elif sdlMouseButton = byte SDL.SDL_BUTTON_MIDDLE then MouseCenter
         else MouseRight
 
-    let makeSdlMouseButton mouseButton =
-        match mouseButton with
+    let makeSdlMouseButton nuMouseButton =
+        match nuMouseButton with
         | MouseLeft -> byte SDL.SDL_BUTTON_LEFT
         | MouseCenter -> byte SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> byte SDL.SDL_BUTTON_RIGHT

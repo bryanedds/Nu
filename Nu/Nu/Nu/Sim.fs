@@ -225,7 +225,6 @@ module SimModule =
     and UnsubscriptionEntries = Map<Guid, Address * Address>
 
     /// The world, in a functional programming sense.
-    /// A reference type with some value semantics.
     and [<ReferenceEquality>] World =
         { Game : Game
           Screens : Map<string, Screen>
