@@ -16,25 +16,27 @@ module BulletDispatcherModule =
 
     type Entity with
 
-        member entity.BirthTime = entity?BirthTime () : int64
-        static member setBirthTime (value : int64) (entity : Entity) : Entity = entity?BirthTime <- value
-
-        static member getAge (entity : Entity) world =
-            world.TickTime - entity.BirthTime
+        member entity.Age = entity?Age () : int64
+        static member setAge (value : int64) (entity : Entity) : Entity = entity?Age <- value
 
     type [<Sealed>] BulletDispatcher () =
         inherit SimpleBodySpriteDispatcher (Set.empty)
 
         let tickHandler event world =
-            let bullet = World.getEntity event.Subscriber world
-            if Entity.getAge bullet world > 28L then
-                let world = World.removeEntity event.Subscriber world
+            if World.gamePlaying world then
+                let bullet = World.getEntity event.Subscriber world
+                let bullet = Entity.setAge (bullet.Age + 1L) bullet
+                let world =
+                    if bullet.Age <= 28L then World.setEntity event.Subscriber bullet world
+                    else World.removeEntity event.Subscriber world
                 (Unhandled, world)
             else (Unhandled, world)
 
         let collisionHandler event world =
-            let world = World.removeEntity event.Subscriber world
-            (Unhandled, world)
+            if World.gamePlaying world then
+                let world = World.removeEntity event.Subscriber world
+                (Unhandled, world)
+            else (Unhandled, world)
 
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
@@ -46,13 +48,12 @@ module BulletDispatcherModule =
                 Entity.setGravityScale 0.0f |>
                 Entity.setIsBullet true |>
                 Entity.setSpriteImage PlayerBulletImage |>
-                Entity.setBirthTime Int64.MinValue
+                Entity.setAge 0L
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
-            let world = World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
-            World.withEntity (Entity.setBirthTime world.TickTime) address world
+            World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
 
         override dispatcher.GetBodyShape (entity, _) =
             CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
