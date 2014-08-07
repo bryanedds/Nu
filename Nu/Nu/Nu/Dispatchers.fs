@@ -758,14 +758,14 @@ module TileMapDispatcherModule =
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                     List.foldi
                         (fun i descriptors (layer : TmxLayer) ->
-                            let depth = tileMap.Depth + single i * 2.0f
+                            let depth = tileMap.Depth + single i * 2.0f // MAGIC_VALUE: assumption
                             let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
                             let parallaxPosition = tileMap.Position + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                             if Camera.inView3 parallaxPosition size world.Camera then
                                 let descriptor =
                                     LayerableDescriptor 
-                                        { Depth = depth // MAGIC_VALUE: assumption
+                                        { Depth = depth
                                           LayeredDescriptor =
                                             TileLayerDescriptor
                                                 { Position = parallaxPosition

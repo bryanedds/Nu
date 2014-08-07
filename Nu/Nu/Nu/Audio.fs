@@ -135,8 +135,8 @@ module Audio =
                 let audioAssetMap = Map.ofSeq audioAssets
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
             | Some audioAssetMap ->
-                let audioAssetMap' = Map.addMany audioAssets audioAssetMap
-                { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap' audioPlayer.AudioAssetMap }
+                let audioAssetMap = Map.addMany audioAssets audioAssetMap
+                { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
 
     let private tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
         let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
