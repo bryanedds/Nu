@@ -1,3 +1,3 @@
 ﻿namespace Prime
 open System
-module Program = ignore ignore
+module Program = ()
