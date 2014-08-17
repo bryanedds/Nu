@@ -230,6 +230,7 @@
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="System.Xml" />
     <Reference Include="TiledSharp">
       <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
     </Reference>
