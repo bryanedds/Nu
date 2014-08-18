@@ -43,6 +43,8 @@ module WorldScreenModule =
 
     type World with
 
+        // TODO: remove all lenses
+
         static member private optScreenFinder (address : Address) world =
             Map.tryFind (List.at 0 address) world.Screens
 

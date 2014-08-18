@@ -57,6 +57,8 @@ module WorldGroupModule =
 
     type World with
 
+        // TODO: remove all lenses
+
         static member private optGroupFinder (address : Address) world =
             let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
             match optGroupMap with
