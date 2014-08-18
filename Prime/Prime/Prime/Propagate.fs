@@ -31,3 +31,35 @@ module Propagate =
     /// Propagator with an initial state.
     let propagate state =
         Propagation (state, [])
+
+    (*module Program
+    open System
+    open Propagate
+
+    type Data =
+      { A : int
+        B : byte }
+
+    type DataRecording =
+        | ARecording of int
+        | BRecording of byte
+
+    let setA setter =
+        ((fun data -> let a = setter data.A in { data with A = a }),
+         (fun data -> ARecording data.A))
+
+    let setB setter =
+        ((fun data -> let b = setter data.B in { data with B = b }),
+         (fun data -> BRecording data.B))
+
+    let [<EntryPoint>] main _ =
+
+        Console.WriteLine (
+            propagate 0 >.
+            plus 2 >.
+            mul 5)
+
+        let propagatedData =
+            propagate { A = 0; B = 0uy } >>.
+            setA incI >>.
+            setB incUy*)
