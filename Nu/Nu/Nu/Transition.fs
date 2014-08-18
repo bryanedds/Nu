@@ -1,7 +1,5 @@
 ﻿namespace Nu
 open System
-open FSharpx
-open FSharpx.Lens.Operators
 open Prime
 open Nu
 open Nu.NuConstants

@@ -1,7 +1,5 @@
 ﻿namespace Nu
 open System
-open FSharpx
-open FSharpx.Lens.Operators
 open Prime
 open Nu
 open Nu.NuConstants
@@ -43,8 +41,6 @@ module WorldScreenModule =
 
     type World with
 
-        // TODO: remove all lenses
-
         static member private optScreenFinder (address : Address) world =
             Map.tryFind (List.at 0 address) world.Screens
 
@@ -54,27 +50,19 @@ module WorldScreenModule =
         static member private screenRemover (address : Address) world =
             { world with Screens = Map.remove (List.at 0 address) world.Screens }
 
-        static member private worldScreen address =
-            { Get = fun world -> Option.get <| World.optScreenFinder address world
-              Set = fun screen world -> World.screenAdder address world screen }
-
-        static member private worldOptScreen address =
-            { Get = fun world -> World.optScreenFinder address world
-              Set = fun optScreen world ->
-                match optScreen with
-                | None -> World.screenRemover address world
-                | Some screen -> set screen world <| World.worldScreen address }
-
-        static member getScreen address world = get world <| World.worldScreen address
-        static member setScreen address screen world = set screen world <| World.worldScreen address
-        static member withScreen fn address world = Sim.withSimulant World.worldScreen fn address world
-        static member withScreenAndWorld fn address world = Sim.withSimulantAndWorld World.worldScreen fn address world
-    
-        static member getOptScreen address world = get world <| World.worldOptScreen address
+        static member getScreen address world = Option.get <| World.optScreenFinder address world
+        static member setScreen address screen world = World.screenAdder address world screen
+        static member getOptScreen address world = World.optScreenFinder address world
         static member containsScreen address world = Option.isSome <| World.getOptScreen address world
-        static member private setOptScreen address optScreen world = set optScreen world <| World.worldOptScreen address
-        static member tryWithScreen fn address world = Sim.tryWithSimulant World.worldOptScreen World.worldScreen fn address world
-        static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptScreen World.worldScreen fn address world
+        static member private setOptScreen address optScreen world =
+            match optScreen with
+            | None -> World.screenRemover address world
+            | Some screen -> World.setScreen address screen world
+            
+        static member withScreen fn address world = Sim.withSimulant World.getScreen World.setScreen fn address world
+        static member withScreenAndWorld fn address world = Sim.withSimulantAndWorld World.getScreen World.setScreen fn address world
+        static member tryWithScreen fn address world = Sim.tryWithSimulant World.getOptScreen World.setScreen fn address world
+        static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptScreen World.setScreen fn address world
 
         static member getScreens address world =
             match address with

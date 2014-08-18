@@ -3,8 +3,6 @@ open System
 open System.IO
 open System.Xml
 open System.Reflection
-open FSharpx
-open FSharpx.Lens.Operators
 open Prime
 open Nu
 open Nu.NuConstants
@@ -57,8 +55,6 @@ module WorldGroupModule =
 
     type World with
 
-        // TODO: remove all lenses
-
         static member private optGroupFinder (address : Address) world =
             let optGroupMap = Map.tryFind (List.at 0 address) world.Groups
             match optGroupMap with
@@ -82,27 +78,19 @@ module WorldGroupModule =
                 let groupMap = Map.remove (List.at 1 address) groupMap
                 { world with Groups = Map.add (List.at 0 address) groupMap world.Groups }
 
-        static member private worldGroup address =
-            { Get = fun world -> Option.get <| World.optGroupFinder address world
-              Set = fun group world -> World.groupAdder address world group }
-
-        static member private worldOptGroup address =
-            { Get = fun world -> World.optGroupFinder address world
-              Set = fun optGroup world ->
-                match optGroup with
-                | None -> World.groupRemover address world
-                | Some group -> set group world <| World.worldGroup address }
-
-        static member getGroup address world = get world <| World.worldGroup address
-        static member setGroup address group world = set group world <| World.worldGroup address
-        static member withGroup fn address world = Sim.withSimulant World.worldGroup fn address world
-        static member withGroupAndWorld fn address world = Sim.withSimulantAndWorld World.worldGroup fn address world
-
-        static member getOptGroup address world = get world <| World.worldOptGroup address
+        static member getGroup address world = Option.get <| World.optGroupFinder address world
+        static member setGroup address group world = World.groupAdder address world group
+        static member getOptGroup address world = World.optGroupFinder address world
         static member containsGroup address world = Option.isSome <| World.getOptGroup address world
-        static member private setOptGroup address optGroup world = set optGroup world <| World.worldOptGroup address
-        static member tryWithGroup fn address world = Sim.tryWithSimulant World.worldOptGroup World.worldGroup fn address world
-        static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptGroup World.worldGroup fn address world
+        static member private setOptGroup address optGroup world =
+            match optGroup with
+            | None -> World.groupRemover address world
+            | Some group -> World.setGroup address group world
+            
+        static member withGroup fn address world = Sim.withSimulant World.getGroup World.setGroup fn address world
+        static member withGroupAndWorld fn address world = Sim.withSimulantAndWorld World.getGroup World.setGroup fn address world
+        static member tryWithGroup fn address world = Sim.tryWithSimulant World.getOptGroup World.setGroup fn address world
+        static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptGroup World.setGroup fn address world
     
         static member getGroups address world =
             match address with

@@ -273,31 +273,31 @@ module Sim =
     let setChild childAdder childRemover address parent child =
         setOptChild childAdder childRemover address parent (Some child)
 
-    let withSimulant worldSimulantLens fn address world =
-        let simulant = get world <| worldSimulantLens address
+    let withSimulant getSimulant setSimulant fn address world : World =
+        let simulant = getSimulant address world
         let simulant = fn simulant
-        set simulant world <| worldSimulantLens address
+        setSimulant address simulant world
 
-    let withSimulantAndWorld worldSimulantLens fn address world =
-        let simulant = get world <| worldSimulantLens address
+    let withSimulantAndWorld getSimulant setSimulant fn address world : World =
+        let simulant = getSimulant address world
         let (simulant, world) = fn simulant
-        set simulant world <| worldSimulantLens address
+        setSimulant address simulant world
 
-    let tryWithSimulant worldOptSimulantLens worldSimulantLens fn address world =
-        let optSimulant = get world <| worldOptSimulantLens address
+    let tryWithSimulant getOptSimulant setSimulant fn address world : World =
+        let optSimulant = getOptSimulant address world
         match optSimulant with
         | None -> world
         | Some simulant ->
             let simulant = fn simulant
-            set simulant world <| worldSimulantLens address
+            setSimulant address simulant world
 
-    let tryWithSimulantAndWorld worldOptSimulantLens worldSimulantLens fn address world =
-        let optSimulant = get world <| worldOptSimulantLens address
+    let tryWithSimulantAndWorld getOptSimulant setSimulant fn address world : World =
+        let optSimulant = getOptSimulant address world
         match optSimulant with
         | None -> world
         | Some simulant ->
             let (simulant, world) = fn simulant
-            set simulant world <| worldSimulantLens address
+            setSimulant address simulant world
 
     // NOTE: these must be defined in a module like this rather than in a World type extension
     let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
