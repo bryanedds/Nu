@@ -66,17 +66,17 @@ module WorldScreenModule =
 
         static member private worldOptScreen address =
             { Get = fun world -> World.optScreenFinder address world
-              Set = fun optScreen world -> match optScreen with None -> World.screenRemover address world | Some screen -> World.screenAdder address world screen }
+              Set = fun optScreen world ->
+                match optScreen with
+                | None -> World.screenRemover address world
+                | Some screen -> set screen world <| World.worldScreen address }
 
         static member private worldScreens address =
             { Get = fun world ->
                 match address with
                 | [] -> world.Screens
                 | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'."
-              Set = fun screens world ->
-                match address with
-                | [] -> { world with Screens = Map.addMany (Map.toSeq screens) world.Screens }
-                | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'." }
+              Set = fun _ _ -> failwith "World.worldScreens setter not intended to be called." }
 
         static member worldScreenIncoming address = World.worldScreen address >>| World.screenIncoming
         static member worldScreenOutgoing address = World.worldScreen address >>| World.screenOutgoing
@@ -93,7 +93,6 @@ module WorldScreenModule =
         static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptScreen World.worldScreen fn address world
 
         static member getScreens address world = get world <| World.worldScreens address
-        static member private setScreens address screens world = set screens world <| World.worldScreens address
 
         static member registerScreen address (screen : Screen) world =
             Screen.register address screen world
@@ -122,4 +121,4 @@ module WorldScreenModule =
             let world = World.setScreen address screen world
             let world = World.addGroups address groupDescriptors world
             let world = World.registerScreen address screen world
-            World.publish4 (AddedEventName @ address) address NoData world
+            World.publish4 (AddEventName @ address) address NoData world
