@@ -51,58 +51,6 @@ module Interactivity =
         | GuiAndPhysicsAndGamePlay -> true
 
 [<AutoOpen>]
-module EventDataModule =
-
-    type [<StructuralEquality; NoComparison>] MouseMoveData =
-        { Position : Vector2 }
-
-    type [<StructuralEquality; NoComparison>] MouseButtonData =
-        { Position : Vector2
-          Button : MouseButton }
-
-    type [<StructuralEquality; NoComparison>] EntityCollisionData =
-        { Normal : Vector2
-          Speed : single
-          Collidee : Address }
-
-    type [<StructuralEquality; NoComparison>] OtherData =
-        { Obj : obj }
-
-    /// Describes data relevant to specific events.
-    type [<ReferenceEquality>] EventData =
-        | MouseMoveData of MouseMoveData
-        | MouseButtonData of MouseButtonData
-        | EntityCollisionData of EntityCollisionData
-        | OtherData of OtherData
-        | NoData
-
-[<RequireQualifiedAccess>]
-module EventData =
-
-    let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + string data + "'."
-    let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + string data + "'."
-    let toEntityCollisionData data = match data with EntityCollisionData d -> d | _ -> failwith <| "Expected EntityCollisionData from event data '" + string data + "'."
-    let toOtherData data = match data with OtherData d -> d | _ -> failwith <| "Expected OtherData from event data '" + string data + "'."
-
-[<AutoOpen>]
-module EventModule =
-
-    /// A generic event for the Nu game engine.
-    /// A reference type.
-    type [<ReferenceEquality>] Event =
-        { Name : Address
-          Publisher : Address
-          Subscriber : Address
-          Data : EventData }
-
-[<AutoOpen>]
-module EventHandledModule =
-
-    type EventHandled =
-        | Handled
-        | Unhandled
-
-[<AutoOpen>]
 module TransitionTypeModule =
 
     type [<StructuralEquality; NoComparison>] TransitionType =
@@ -202,6 +150,51 @@ module SimModule =
         { ScheduledTime : int64
           Operation : World -> World }
 
+    and [<StructuralEquality; NoComparison>] MouseMoveData =
+        { Position : Vector2 }
+
+    and [<StructuralEquality; NoComparison>] MouseButtonData =
+        { Position : Vector2
+          Button : MouseButton }
+
+    and [<StructuralEquality; NoComparison>] EntityCollisionData =
+        { Normal : Vector2
+          Speed : single
+          Collidee : Address }
+
+    and [<StructuralEquality; NoComparison>] EntityChangeData =
+        { OldEntity : Entity }
+
+    and [<StructuralEquality; NoComparison>] GroupChangeData =
+        { OldGroup : Group }
+
+    and [<StructuralEquality; NoComparison>] ScreenChangeData =
+        { OldScreen : Screen }
+
+    and [<StructuralEquality; NoComparison>] OtherData =
+        { Obj : obj }
+
+    /// Describes data relevant to specific events.
+    and [<ReferenceEquality>] EventData =
+        | MouseMoveData of MouseMoveData
+        | MouseButtonData of MouseButtonData
+        | EntityCollisionData of EntityCollisionData
+        | EntityChangeData of EntityChangeData
+        | OtherData of OtherData
+        | NoData
+
+    /// A generic event for the Nu game engine.
+    /// A reference type.
+    and [<ReferenceEquality>] Event =
+        { Name : Address
+          Publisher : Address
+          Subscriber : Address
+          Data : EventData }
+
+    and EventHandled =
+        | Handled
+        | Unhandled
+
     /// Describes a game event subscription.
     /// A reference type.
     and [<ReferenceEquality>] Subscription =
@@ -251,6 +244,14 @@ module SimModule =
         interface IXDispatcherContainer with
             member this.GetDispatchers () = this.Dispatchers
             end
+
+[<RequireQualifiedAccess>]
+module EventData =
+
+    let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + string data + "'."
+    let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + string data + "'."
+    let toEntityCollisionData data = match data with EntityCollisionData d -> d | _ -> failwith <| "Expected EntityCollisionData from event data '" + string data + "'."
+    let toOtherData data = match data with OtherData d -> d | _ -> failwith <| "Expected OtherData from event data '" + string data + "'."
 
 [<RequireQualifiedAccess>]
 module Sim =

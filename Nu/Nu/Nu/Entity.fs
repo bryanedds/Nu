@@ -101,6 +101,8 @@ module WorldEntityModule =
 
     type World with
 
+        // TODO: remove all lenses
+
         static member private optEntityFinder (address : Address) world =
             let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
             match optGroupMap with
@@ -143,13 +145,30 @@ module WorldEntityModule =
                     let groupMap = Map.add (List.at 1 address) entityMap groupMap
                     { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
 
-        static member private worldEntity address =
+        static member private worldEntityWithoutEvent address =
             { Get = fun world -> Option.get <| World.optEntityFinder address world
               Set = fun entity world -> World.entityAdder address world entity }
 
+        static member private worldEntity address =
+            { Get = fun world -> Option.get <| World.optEntityFinder address world
+              Set = fun entity world ->
+                let oldEntity = Option.get <| World.optEntityFinder address world
+                let world = World.entityAdder address world entity
+                World.publish4 (ChangeEventName @ address) address (EntityChangeData { OldEntity = oldEntity }) world }
+
         static member private worldOptEntity address =
             { Get = fun world -> World.optEntityFinder address world
-              Set = fun optEntity world -> match optEntity with None -> World.entityRemover address world | Some entity -> World.entityAdder address world entity }
+              Set = fun optEntity world ->
+                match optEntity with
+                | None -> World.entityRemover address world
+                | Some entity -> set entity world <| World.worldEntity address }
+
+        static member private worldOptEntityWithoutEvent address =
+            { Get = fun world -> World.optEntityFinder address world
+              Set = fun optEntity world ->
+                match optEntity with
+                | None -> World.entityRemover address world
+                | Some entity -> set entity world <| World.worldEntityWithoutEvent address }
 
         static member private worldEntities address =
             { Get = fun world ->
@@ -162,30 +181,21 @@ module WorldEntityModule =
                         | None -> Map.empty
                         | Some entityMap -> entityMap
                 | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
-              Set = fun entities world ->
-                match address with
-                | [screenStr; groupStr] ->
-                    match Map.tryFind screenStr world.Entities with
-                    | None -> { world with Entities = Map.add screenStr (Map.singleton groupStr entities) world.Entities }
-                    | Some groupMap ->
-                        match Map.tryFind groupStr groupMap with
-                        | None -> { world with Entities = Map.add screenStr (Map.add groupStr entities groupMap) world.Entities }
-                        | Some entityMap -> { world with Entities = Map.add screenStr (Map.add groupStr (Map.addMany (Map.toSeq entities) entityMap) groupMap) world.Entities }
-                | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'." }
+              Set = fun _ _ -> failwith "World.worldEntities setter not intended to be called." }
 
         static member getEntity address world = get world <| World.worldEntity address
+        static member private setEntityWithoutEvent address entity world = set entity world <| World.worldEntityWithoutEvent address
         static member setEntity address entity world = set entity world <| World.worldEntity address
         static member withEntity fn address world = Sim.withSimulant World.worldEntity fn address world
         static member withEntityAndWorld fn address world = Sim.withSimulantAndWorld World.worldEntity fn address world
 
         static member getOptEntity address world = get world <| World.worldOptEntity address
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
-        static member private setOptEntity address optEntity world = set optEntity world <| World.worldOptEntity address
+        static member private setOptEntityWithoutEvent address optEntity world = set optEntity world <| World.worldOptEntityWithoutEvent address
         static member tryWithEntity fn address world = Sim.tryWithSimulant World.worldOptEntity World.worldEntity fn address world
         static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptEntity World.worldEntity fn address world
     
         static member getEntities address world = get world <| World.worldEntities address
-        static member private setEntities address entities world = set entities world <| World.worldEntities address
 
         static member registerEntity address (entity : Entity) world =
             Entity.register address entity world
@@ -197,7 +207,7 @@ module WorldEntityModule =
         static member removeEntityImmediate (address : Address) world =
             let world = World.publish4 (RemovingEventName @ address) address NoData world
             let world = World.unregisterEntity address world
-            World.setOptEntity address None world
+            World.setOptEntityWithoutEvent address None world
 
         static member removeEntity address world =
             let task =
@@ -236,12 +246,12 @@ module WorldEntityModule =
                 match World.getOptEntity address world with
                 | None -> world
                 | Some _ -> World.removeEntityImmediate address world
-            let world = World.setEntity address entity world
+            let world = World.setEntityWithoutEvent address entity world
             let world = World.registerEntity address entity world
-            World.publish4 (AddedEventName @ address) address NoData world
+            World.publish4 (AddEventName @ address) address NoData world
 
         static member addEntities groupAddress entities world =
             List.fold
-                (fun world entity -> World.addEntity (addrstr groupAddress entity.Name) entity world)
+                (fun world (entity : Entity) -> World.addEntity (addrstr groupAddress entity.Name) entity world)
                 world
                 entities

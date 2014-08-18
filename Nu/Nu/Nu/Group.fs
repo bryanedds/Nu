@@ -86,7 +86,10 @@ module WorldGroupModule =
 
         static member private worldOptGroup address =
             { Get = fun world -> World.optGroupFinder address world
-              Set = fun optGroup world -> match optGroup with None -> World.groupRemover address world | Some group -> World.groupAdder address world group }
+              Set = fun optGroup world ->
+                match optGroup with
+                | None -> World.groupRemover address world
+                | Some group -> set group world <| World.worldGroup address }
 
         static member private worldGroups address =
             { Get = fun world ->
@@ -96,13 +99,7 @@ module WorldGroupModule =
                     | None -> Map.empty
                     | Some groupMap -> groupMap
                 | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
-              Set = fun groups world ->
-                match address with
-                | [screenStr] ->
-                    match Map.tryFind screenStr world.Groups with
-                    | None -> { world with Groups = Map.add screenStr groups world.Groups }
-                    | Some groupMap -> { world with Groups = Map.add screenStr (Map.addMany (Map.toSeq groups) groupMap) world.Groups }
-                | _ -> failwith <| "Invalid group address '" + addrToStr address + "'." }
+              Set = fun _ _ -> failwith "World.worldGroups setter not intended to be called." }
             
         static member getGroup address world = get world <| World.worldGroup address
         static member setGroup address group world = set group world <| World.worldGroup address
@@ -116,7 +113,6 @@ module WorldGroupModule =
         static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptGroup World.worldGroup fn address world
     
         static member getGroups address world = get world <| World.worldGroups address
-        static member private setGroups address groups world = set groups world <| World.worldGroups address
 
         static member registerGroup address (group : Group) world =
             Group.register address group world
@@ -171,7 +167,7 @@ module WorldGroupModule =
             let world = World.setGroup address group world
             let world = World.addEntities address entities world
             let world = World.registerGroup address group world
-            Sim.publish4 (AddedEventName @ address) address NoData world
+            Sim.publish4 (AddEventName @ address) address NoData world
 
         static member addGroups screenAddress groupDescriptors world =
             List.fold

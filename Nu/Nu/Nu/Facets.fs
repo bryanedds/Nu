@@ -190,12 +190,16 @@ module SimpleBodyFacet =
         registerPhysics getBodyShape address world
 
     let handleBodyTransformMessage address (message : BodyTransformMessage) world =
+        // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
         let entity = World.getEntity address world
-        let entity =
-            entity |>
-                Entity.setPosition (message.Position - entity.Size * 0.5f) |> // TODO: see if this center-offsetting can be encapsulated within the Physics module!
-                Entity.setRotation message.Rotation
-        World.setEntity message.EntityAddress entity world
+        if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
+            let entity =
+                entity |>
+                    // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
+                    Entity.setPosition (message.Position - entity.Size * 0.5f) |>
+                    Entity.setRotation message.Rotation
+            World.setEntity message.EntityAddress entity world
+        else world
 
 [<AutoOpen>]
 module SimpleSpriteFacetModule =
