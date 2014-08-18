@@ -54,14 +54,6 @@ module WorldScreenModule =
         static member private screenRemover (address : Address) world =
             { world with Screens = Map.remove (List.at 0 address) world.Screens }
 
-        static member private screenIncoming =
-            { Get = fun screen -> screen.Incoming
-              Set = fun value screen -> { screen with Incoming = value }}
-
-        static member private screenOutgoing =
-            { Get = fun screen -> screen.Outgoing
-              Set = fun value screen -> { screen with Outgoing = value }}
-
         static member private worldScreen address =
             { Get = fun world -> Option.get <| World.optScreenFinder address world
               Set = fun screen world -> World.screenAdder address world screen }
@@ -72,16 +64,6 @@ module WorldScreenModule =
                 match optScreen with
                 | None -> World.screenRemover address world
                 | Some screen -> set screen world <| World.worldScreen address }
-
-        static member private worldScreens address =
-            { Get = fun world ->
-                match address with
-                | [] -> world.Screens
-                | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'."
-              Set = fun _ _ -> failwith "World.worldScreens setter not intended to be called." }
-
-        static member worldScreenIncoming address = World.worldScreen address >>| World.screenIncoming
-        static member worldScreenOutgoing address = World.worldScreen address >>| World.screenOutgoing
 
         static member getScreen address world = get world <| World.worldScreen address
         static member setScreen address screen world = set screen world <| World.worldScreen address
@@ -94,7 +76,10 @@ module WorldScreenModule =
         static member tryWithScreen fn address world = Sim.tryWithSimulant World.worldOptScreen World.worldScreen fn address world
         static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptScreen World.worldScreen fn address world
 
-        static member getScreens address world = get world <| World.worldScreens address
+        static member getScreens address world =
+            match address with
+            | [] -> world.Screens
+            | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'."
 
         static member registerScreen address (screen : Screen) world =
             Screen.register address screen world

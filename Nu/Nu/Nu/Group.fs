@@ -93,16 +93,6 @@ module WorldGroupModule =
                 | None -> World.groupRemover address world
                 | Some group -> set group world <| World.worldGroup address }
 
-        static member private worldGroups address =
-            { Get = fun world ->
-                match address with
-                | [screenStr] ->
-                    match Map.tryFind screenStr world.Groups with
-                    | None -> Map.empty
-                    | Some groupMap -> groupMap
-                | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
-              Set = fun _ _ -> failwith "World.worldGroups setter not intended to be called." }
-            
         static member getGroup address world = get world <| World.worldGroup address
         static member setGroup address group world = set group world <| World.worldGroup address
         static member withGroup fn address world = Sim.withSimulant World.worldGroup fn address world
@@ -114,7 +104,13 @@ module WorldGroupModule =
         static member tryWithGroup fn address world = Sim.tryWithSimulant World.worldOptGroup World.worldGroup fn address world
         static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptGroup World.worldGroup fn address world
     
-        static member getGroups address world = get world <| World.worldGroups address
+        static member getGroups address world =
+            match address with
+            | [screenStr] ->
+                match Map.tryFind screenStr world.Groups with
+                | None -> Map.empty
+                | Some groupMap -> groupMap
+            | _ -> failwith <| "Invalid group address '" + addrToStr address + "'."
 
         static member registerGroup address (group : Group) world =
             Group.register address group world
