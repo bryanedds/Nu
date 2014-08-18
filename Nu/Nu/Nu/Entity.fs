@@ -170,19 +170,6 @@ module WorldEntityModule =
                 | None -> World.entityRemover address world
                 | Some entity -> set entity world <| World.worldEntityWithoutEvent address }
 
-        static member private worldEntities address =
-            { Get = fun world ->
-                match address with
-                | [screenStr; groupStr] ->
-                    match Map.tryFind screenStr world.Entities with
-                    | None -> Map.empty
-                    | Some groupMap ->
-                        match Map.tryFind groupStr groupMap with
-                        | None -> Map.empty
-                        | Some entityMap -> entityMap
-                | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
-              Set = fun _ _ -> failwith "World.worldEntities setter not intended to be called." }
-
         static member getEntity address world = get world <| World.worldEntity address
         static member private setEntityWithoutEvent address entity world = set entity world <| World.worldEntityWithoutEvent address
         static member setEntity address entity world = set entity world <| World.worldEntity address
@@ -195,7 +182,16 @@ module WorldEntityModule =
         static member tryWithEntity fn address world = Sim.tryWithSimulant World.worldOptEntity World.worldEntity fn address world
         static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptEntity World.worldEntity fn address world
     
-        static member getEntities address world = get world <| World.worldEntities address
+        static member getEntities address world =
+            match address with
+            | [screenStr; groupStr] ->
+                match Map.tryFind screenStr world.Entities with
+                | None -> Map.empty
+                | Some groupMap ->
+                    match Map.tryFind groupStr groupMap with
+                    | None -> Map.empty
+                    | Some entityMap -> entityMap
+            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
 
         static member registerEntity address (entity : Entity) world =
             Entity.register address entity world
