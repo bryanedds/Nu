@@ -78,7 +78,6 @@
     <Compile Include="RduTree.fs" />
     <Compile Include="TypeExtension.fs" />
     <Compile Include="Log.fs" />
-    <Compile Include="Propagate.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
