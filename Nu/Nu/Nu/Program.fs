@@ -80,35 +80,3 @@ module Program =
     1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
     ? gain - avoid rendering clear tiles! *)
-
-    (*moduleProgram
-    open System
-    open Propagate
-
-    type Data =
-      { A : int
-        B : byte }
-
-    type DataRecording =
-        | ARecording of int
-        | BRecording of byte
-
-    let setA setter =
-        ((fun data -> let a2 = setter data.A in { data with A = a2 }),
-         (fun data -> ARecording data.A))
-
-    let setB setter =
-        ((fun data -> let b2 = setter data.B in { data with B = b2 }),
-         (fun data -> BRecording data.B))
-
-    let [<EntryPoint>] main _ =
-
-        Console.WriteLine (
-            propagate 0 >.
-            plus 2 >.
-            mul 5)
-
-        let propagatedData =
-            propagate { A = 0; B = 0uy } >>.
-            setA incI >>.
-            setB incUy*)
