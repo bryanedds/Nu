@@ -1,7 +1,5 @@
 ﻿namespace Nu
 open System
-open FSharpx
-open FSharpx.Lens.Operators
 open Prime
 open Nu
 open Nu.NuConstants
@@ -42,7 +40,6 @@ module WorldGameModule =
 
         static member getSelectedScreen world = Option.get <| World.getOptSelectedScreen world
         static member setSelectedScreen screen world = World.setOptSelectedScreen (Some screen) world
-
         static member isAddressSelected (address : Address) world =
             let optScreenAddress = World.getOptSelectedScreenAddress world
             match (address, optScreenAddress) with

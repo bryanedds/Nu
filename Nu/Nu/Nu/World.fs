@@ -9,8 +9,6 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open System.Xml.Serialization
-open FSharpx
-open FSharpx.Lens.Operators
 open SDL2
 open OpenTK
 open TiledSharp

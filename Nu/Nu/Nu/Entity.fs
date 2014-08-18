@@ -5,8 +5,6 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open System.Xml.Serialization
-open FSharpx
-open FSharpx.Lens.Operators
 open OpenTK
 open TiledSharp
 open Prime
@@ -101,8 +99,6 @@ module WorldEntityModule =
 
     type World with
 
-        // TODO: remove all lenses
-
         static member private optEntityFinder (address : Address) world =
             let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
             match optGroupMap with
@@ -145,42 +141,24 @@ module WorldEntityModule =
                     let groupMap = Map.add (List.at 1 address) entityMap groupMap
                     { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
 
-        static member private worldEntityWithoutEvent address =
-            { Get = fun world -> Option.get <| World.optEntityFinder address world
-              Set = fun entity world -> World.entityAdder address world entity }
-
-        static member private worldEntity address =
-            { Get = fun world -> Option.get <| World.optEntityFinder address world
-              Set = fun entity world ->
+        static member getEntity address world = Option.get <| World.optEntityFinder address world
+        static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity
+        static member setEntity address entity world = 
                 let oldEntity = Option.get <| World.optEntityFinder address world
                 let world = World.entityAdder address world entity
-                World.publish4 (ChangeEventName @ address) address (EntityChangeData { OldEntity = oldEntity }) world }
+                World.publish4 (ChangeEventName @ address) address (EntityChangeData { OldEntity = oldEntity }) world
 
-        static member private worldOptEntity address =
-            { Get = fun world -> World.optEntityFinder address world
-              Set = fun optEntity world ->
-                match optEntity with
-                | None -> World.entityRemover address world
-                | Some entity -> set entity world <| World.worldEntity address }
-
-        static member private worldOptEntityWithoutEvent address =
-            { Get = fun world -> World.optEntityFinder address world
-              Set = fun optEntity world ->
-                match optEntity with
-                | None -> World.entityRemover address world
-                | Some entity -> set entity world <| World.worldEntityWithoutEvent address }
-
-        static member getEntity address world = get world <| World.worldEntity address
-        static member private setEntityWithoutEvent address entity world = set entity world <| World.worldEntityWithoutEvent address
-        static member setEntity address entity world = set entity world <| World.worldEntity address
-        static member withEntity fn address world = Sim.withSimulant World.worldEntity fn address world
-        static member withEntityAndWorld fn address world = Sim.withSimulantAndWorld World.worldEntity fn address world
-
-        static member getOptEntity address world = get world <| World.worldOptEntity address
+        static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
-        static member private setOptEntityWithoutEvent address optEntity world = set optEntity world <| World.worldOptEntityWithoutEvent address
-        static member tryWithEntity fn address world = Sim.tryWithSimulant World.worldOptEntity World.worldEntity fn address world
-        static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.worldOptEntity World.worldEntity fn address world
+        static member private setOptEntityWithoutEvent address optEntity world =
+            match optEntity with 
+            | None -> World.entityRemover address world
+            | Some entity -> World.entityAdder address world entity
+
+        static member withEntity fn address world = Sim.withSimulant World.getEntity World.setEntity fn address world
+        static member withEntityAndWorld fn address world = Sim.withSimulantAndWorld World.getEntity World.setEntity fn address world
+        static member tryWithEntity fn address world = Sim.tryWithSimulant World.getOptEntity World.setEntity fn address world
+        static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
     
         static member getEntities address world =
             match address with
