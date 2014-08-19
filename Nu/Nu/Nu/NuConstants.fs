@@ -9,6 +9,7 @@ open Nu
 module NuConstants =
 
     let [<Literal>] AssetGraphFileName = "AssetGraph.xml"
+    let [<Literal>] OverlayFileName = "Overlay.xml"
     let [<Literal>] DefaultPackageName = "Default"
     let [<Literal>] DefaultImageValue = "Image;Default;AssetGraph.xml"
     let [<Literal>] DefaultTileMapAssetValue = "TileMap;Default;AssetGraph.xml"

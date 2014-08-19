@@ -165,7 +165,7 @@ module Xtension =
     let isPropertyNameWriteable (propertyName : string) =
         not <| propertyName.EndsWith "Id" && // don't write an Id
         not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
-        not <| propertyName.EndsWith "Ns" // 'Ns' stands for 'Not serializable'.
+        not <| propertyName.EndsWith "Ns" // 'Ns' stands for 'Not serializable'
 
     /// Is the given property writable?
     let isPropertyWriteable (property : PropertyInfo) =
@@ -186,7 +186,7 @@ module Xtension =
             childNodes
             
     /// Read an Xtension from Xml.
-    let read (valueNode : XmlNode) =
+    let read valueNode =
         let xFields = Map.ofSeq <| readXFields valueNode
         let optXDispatcherName = match valueNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
         { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
@@ -213,12 +213,12 @@ module Xtension =
         | Some property -> tryReadTargetProperty property fieldNode target
 
     /// Read all of a target's properties from Xml.
-    let readTargetProperties (targetNode : XmlNode) (target : 'a) =
+    let readTargetProperties (targetNode : XmlNode) target =
         for node in targetNode.ChildNodes do
             readTargetProperty node target
 
     /// Read just the target's XDispatcher from Xml.
-    let readTargetXDispatcher (targetNode : XmlNode) (target : 'a) =
+    let readTargetXDispatcher (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
         let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyWriteable property) targetProperties
@@ -230,11 +230,12 @@ module Xtension =
 
     /// Write an Xtension to Xml.
     /// TODO: need a vanilla write function that writes to an XmlDocument rather than directly to an XmlWriter stream.
-    let write (writer : XmlWriter) xtension =
+    let write shouldWrite (writer : XmlWriter) xtension =
         writer.WriteAttributeString ("xDispatcher", match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
-            if isPropertyNameWriteable xFieldName then
+            if  isPropertyNameWriteable xFieldName &&
+                shouldWrite xFieldName then
                 let xValue = xField.Value
                 let xDispatcher = xValue.GetType ()
                 let xConverter = TypeDescriptor.GetConverter xDispatcher
@@ -246,7 +247,7 @@ module Xtension =
 
     /// Write all of a target's properties to Xml.
     /// TODO: need a vanilla writeTargetProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
-    let writeTargetProperties (writer : XmlWriter) (source : 'a) =
+    let writeTargetProperties shouldWrite (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
         for property in properties do
@@ -255,9 +256,10 @@ module Xtension =
                 match propertyValue with
                 | :? Xtension as xtension ->
                     writer.WriteStartElement property.Name
-                    write writer xtension
+                    write shouldWrite writer xtension
                     writer.WriteEndElement ()
                 | _ ->
-                    let converter = TypeDescriptor.GetConverter property.PropertyType
-                    let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
-                    writer.WriteElementString (property.Name, valueStr)
+                    if shouldWrite property.Name then
+                        let converter = TypeDescriptor.GetConverter property.PropertyType
+                        let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
+                        writer.WriteElementString (property.Name, valueStr)

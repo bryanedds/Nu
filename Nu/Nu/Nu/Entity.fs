@@ -64,33 +64,55 @@ module EntityModule =
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               Visible = true
+              OptOverlayName = Some dispatcherName
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-    
+
         static member makeDefault dispatcherName optName dispatcherContainer =
             let entity = Entity.makeDefaultUninitialized dispatcherName optName
             Entity.init entity dispatcherContainer
-    
-        static member writeToXml (writer : XmlWriter) entity =
+
+        static member shouldWriteProperty overlayer entity propertyName =
+            match entity.OptOverlayName with
+            | None -> true
+            | Some overlayName ->
+                match Overlayer.trySelectNode overlayName propertyName overlayer with
+                | None -> true
+                | Some overlayNode ->
+                    let propertyValue =
+                        match (entity.GetType ()).GetProperty (propertyName, BindingFlags.Public ||| BindingFlags.Instance) with
+                        | null -> Map.find propertyName entity.Xtension.XFields
+                        | entityProperty -> entityProperty.GetValue entity
+                    let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
+                    if converter.CanConvertFrom typeof<string> then
+                        let overlayValue = converter.ConvertFrom overlayNode.InnerText
+                        overlayValue <> propertyValue
+                    else true
+
+        static member writeToXml overlayer (writer : XmlWriter) entity =
             writer.WriteStartElement typeof<Entity>.Name
-            Xtension.writeTargetProperties writer entity
+            Xtension.writeTargetProperties (Entity.shouldWriteProperty overlayer entity) writer entity
             writer.WriteEndElement ()
-    
-        static member writeManyToXml (writer : XmlWriter) (entities : Map<_, _>) =
+
+        static member writeManyToXml overlayer writer (entities : Map<_, _>) =
             for entityKvp in entities do
-                Entity.writeToXml writer entityKvp.Value
-    
-        static member readFromXml (entityNode : XmlNode) defaultDispatcherName dispatcherContainer =
+                Entity.writeToXml overlayer writer entityKvp.Value
+
+        static member readFromXml (entityNode : XmlNode) defaultDispatcherName world =
             let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
             Xtension.readTargetXDispatcher entityNode entity
-            let entity = Entity.init entity dispatcherContainer
+            let entity = { entity with OptOverlayName = entity.Xtension.OptXDispatcherName }
+            let entity = Entity.init entity world
             Xtension.readTargetProperties entityNode entity
+            match entity.OptOverlayName with
+            | None -> ()
+            | Some overlayName -> Overlayer.applyOverlay overlayName entity world.Overlayer
             entity
-    
-        static member readManyFromXml (parentNode : XmlNode) defaultDispatcherName dispatcherContainer =
+
+        static member readManyFromXml (parentNode : XmlNode) defaultDispatcherName world =
             let entityNodes = parentNode.SelectNodes "Entity"
             let entities =
                 Seq.map
-                    (fun entityNode -> Entity.readFromXml entityNode defaultDispatcherName dispatcherContainer)
+                    (fun entityNode -> Entity.readFromXml entityNode defaultDispatcherName world)
                     (enumerable entityNodes)
             Seq.toList entities
 

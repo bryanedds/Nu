@@ -15,12 +15,7 @@ module Entity2dDispatcherModule =
 
         override dispatcher.Init (entity2d, dispatcherContainer) =
             let entity2d = base.Init (entity2d, dispatcherContainer)
-            let entity2d = Entity2dFacet.init entity2d dispatcherContainer
-            entity2d |>
-                Entity.setPosition Vector2.Zero |>
-                Entity.setDepth 0.0f |>
-                Entity.setSize DefaultEntitySize |>
-                Entity.setRotation 0.0f
+            Entity2dFacet.init entity2d dispatcherContainer
                 
         abstract member GetPickingPriority : Entity * World -> single
         default dispatcher.GetPickingPriority (entity, world) = Entity2dFacet.getPickingPriority entity world

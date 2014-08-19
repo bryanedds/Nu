@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Root>
+  <!-- Facet overlays. -->
+  
+  <Entity2dFacet>
+    <Position>0; 0</Position>
+    <Size>64; 64</Size>
+    <Depth>0</Depth>
+    <Rotation>0</Rotation>
+  </Entity2dFacet>
+
+  <GuiFacet>
+    <Enabled>True</Enabled>
+  </GuiFacet>
+
+  <SimpleBodyFacet>
+    <BodyType>Dynamic</BodyType>
+    <Density>10</Density>
+    <Friction>0</Friction>
+    <Restitution>0</Restitution>
+    <FixedRotation>False</FixedRotation>
+    <LinearDamping>1</LinearDamping>
+    <AngularDamping>1</AngularDamping>
+    <GravityScale>1</GravityScale>
+    <CollisionCategories>1</CollisionCategories>
+    <CollisionMask>*</CollisionMask>
+    <IsBullet>False</IsBullet>
+    <IsSensor>False</IsSensor>
+  </SimpleBodyFacet>
+
+  <SimpleSpriteFacet/>
+
+  <SimpleAnimatedSpriteFacet/>
+
+  <!-- Dispatcher overlays. -->
+
+  <EntityDispatcher>
+    <Visible>True</Visible>
+  </EntityDispatcher>
+
+  <Entity2dDispatcher>
+    <Parentage>EntityDispatcher; Entity2dFacet</Parentage>
+  </Entity2dDispatcher>
+
+  <GuiDispatcher>
+    <Parentage>Entity2dDispatcher; GuiFacet</Parentage>
+  </GuiDispatcher>
+
+  <SimpleBodyDispatcher>
+    <Parentage>Entity2dDispatcher; SimpleBodyFacet</Parentage>
+  </SimpleBodyDispatcher>
+
+  <SimpleBodySpriteDispatcher>
+    <Parentage>SimpleBodyDispatcher; SimpleSpriteFacet</Parentage>
+  </SimpleBodySpriteDispatcher>
+
+  <SimpleBodyAnimatedSpriteDispatcher>
+    <Parentage>SimpleBodyDispatcher; SimpleAnimatedSpriteFacet</Parentage>
+  </SimpleBodyAnimatedSpriteDispatcher>
+  
+  <ButtonDispatcher>
+    <Parentage>GuiDispatcher</Parentage>
+    <IsDown>False</IsDown>
+    <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+  </ButtonDispatcher>
+
+  <LabelDispatcher>
+    <Parentage>GuiDispatcher</Parentage>
+  </LabelDispatcher>
+
+  <TextBoxDispatcher>
+    <Parentage>GuiDispatcher</Parentage>
+    <TextColor>1; 1; 1; 1</TextColor>
+    <TextFont>Font;Default;AssetGraph.xml</TextFont>
+    <TextOffset>0;0</TextOffset>
+  </TextBoxDispatcher>
+
+  <ToggleDispatcher>
+    <Parentage>GuiDispatcher</Parentage>
+    <IsPressed>False</IsPressed>
+  </ToggleDispatcher>
+
+  <FeelerDispatcher>
+    <Parentage>GuiDispatcher</Parentage>
+    <IsTouched>False</IsTouched>
+  </FeelerDispatcher>
+
+  <FillBarDispatcher>
+    <Parentage>GuiDispatcher</Parentage>
+    <Fill>0</Fill>
+    <FillInset>0</FillInset>
+  </FillBarDispatcher>
+
+  <BlockDispatcher>
+    <Parentage>SimpleBodySpriteDispatcher</Parentage>
+  </BlockDispatcher>
+
+  <AvatarDispatcher>
+    <Parentage>SimpleBodySpriteDispatcher</Parentage>
+    <FixedRotation>True</FixedRotation>
+    <LinearDamping>10</LinearDamping>
+    <GravityScale>0</GravityScale>
+  </AvatarDispatcher>
+
+  <CharacterDispatcher>
+    <Parentage>SimpleBodySpriteDispatcher</Parentage>
+    <FixedRotation>True</FixedRotation>
+    <LinearDamping>3</LinearDamping>
+  </CharacterDispatcher>
+
+  <TileMapDispatcher>
+    <Parentage>Entity2dDispatcher</Parentage>
+  </TileMapDispatcher>
+  
+</Root>

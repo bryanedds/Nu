@@ -72,6 +72,7 @@ module SimModule =
         { Id : Guid
           Name : string
           Visible : bool
+          OptOverlayName : string option
           Xtension : Xtension }
 
         static member (?) (this : Entity, memberName) =
@@ -235,6 +236,7 @@ module SimModule =
           Renderer : Renderer
           Integrator : Integrator
           AssetMetadataMap : AssetMetadataMap
+          Overlayer : Overlayer
           AudioMessages : AudioMessage rQueue
           RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue

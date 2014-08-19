@@ -37,10 +37,10 @@ module GroupModule =
             let group = Group.makeDefaultUninitialized dispatcherName
             Group.init group dispatcherContainer
     
-        static member writeToXml (writer : XmlWriter) group entities =
+        static member writeToXml overlayer (writer : XmlWriter) group entities =
             writer.WriteStartElement typeof<Group>.Name
-            Xtension.writeTargetProperties writer group
-            Entity.writeManyToXml writer entities
+            Xtension.writeTargetProperties tautology writer group
+            Entity.writeManyToXml overlayer writer entities
     
         static member readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
             let group = Group.makeDefaultUninitialized defaultDispatcherName
