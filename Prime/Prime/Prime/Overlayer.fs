@@ -56,3 +56,22 @@ module Overlayer =
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
         for property in targetProperties do
             applyOverlayToProperty overlayName property target overlayer
+
+    let inline shouldWriteProperty propertyName target overlayer =
+        let targetOptOverlayName = (^a : (member OptOverlayName : string option) target)
+        let targetXtension = (^a : (member Xtension : Xtension) target)
+        match targetOptOverlayName with
+        | None -> true
+        | Some overlayName ->
+            match trySelectNode overlayName propertyName overlayer with
+            | None -> true
+            | Some overlayNode ->
+                let propertyValue =
+                    match (target.GetType ()).GetProperty (propertyName, BindingFlags.Public ||| BindingFlags.Instance) with
+                    | null -> Map.find propertyName targetXtension.XFields
+                    | targetProperty -> targetProperty.GetValue target
+                let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
+                if converter.CanConvertFrom typeof<string> then
+                    let overlayValue = converter.ConvertFrom overlayNode.InnerText
+                    overlayValue <> propertyValue
+                else true

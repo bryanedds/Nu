@@ -230,12 +230,12 @@ module Xtension =
 
     /// Write an Xtension to Xml.
     /// TODO: need a vanilla write function that writes to an XmlDocument rather than directly to an XmlWriter stream.
-    let write shouldWrite (writer : XmlWriter) xtension =
+    let write shouldWriteProperty (writer : XmlWriter) xtension =
         writer.WriteAttributeString ("xDispatcher", match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
             if  isPropertyNameWriteable xFieldName &&
-                shouldWrite xFieldName then
+                shouldWriteProperty xFieldName then
                 let xValue = xField.Value
                 let xDispatcher = xValue.GetType ()
                 let xConverter = TypeDescriptor.GetConverter xDispatcher
@@ -247,19 +247,19 @@ module Xtension =
 
     /// Write all of a target's properties to Xml.
     /// TODO: need a vanilla writeTargetProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
-    let writeTargetProperties shouldWrite (writer : XmlWriter) (source : 'a) =
+    let writeTargetProperties shouldWriteProperty (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
         for property in properties do
-            if isPropertyWriteable property then
-                let propertyValue = property.GetValue source
-                match propertyValue with
-                | :? Xtension as xtension ->
-                    writer.WriteStartElement property.Name
-                    write shouldWrite writer xtension
-                    writer.WriteEndElement ()
-                | _ ->
-                    if shouldWrite property.Name then
-                        let converter = TypeDescriptor.GetConverter property.PropertyType
-                        let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
-                        writer.WriteElementString (property.Name, valueStr)
+            let propertyValue = property.GetValue source
+            match propertyValue with
+            | :? Xtension as xtension ->
+                writer.WriteStartElement property.Name
+                write shouldWriteProperty writer xtension
+                writer.WriteEndElement ()
+            | _ ->
+                if  isPropertyWriteable property &&
+                    shouldWriteProperty property.Name then
+                    let converter = TypeDescriptor.GetConverter property.PropertyType
+                    let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
+                    writer.WriteElementString (property.Name, valueStr)
