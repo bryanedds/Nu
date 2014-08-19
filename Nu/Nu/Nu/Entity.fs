@@ -71,26 +71,9 @@ module EntityModule =
             let entity = Entity.makeDefaultUninitialized dispatcherName optName
             Entity.init entity dispatcherContainer
 
-        static member shouldWriteProperty overlayer entity propertyName =
-            match entity.OptOverlayName with
-            | None -> true
-            | Some overlayName ->
-                match Overlayer.trySelectNode overlayName propertyName overlayer with
-                | None -> true
-                | Some overlayNode ->
-                    let propertyValue =
-                        match (entity.GetType ()).GetProperty (propertyName, BindingFlags.Public ||| BindingFlags.Instance) with
-                        | null -> Map.find propertyName entity.Xtension.XFields
-                        | entityProperty -> entityProperty.GetValue entity
-                    let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
-                    if converter.CanConvertFrom typeof<string> then
-                        let overlayValue = converter.ConvertFrom overlayNode.InnerText
-                        overlayValue <> propertyValue
-                    else true
-
-        static member writeToXml overlayer (writer : XmlWriter) entity =
+        static member writeToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
-            Xtension.writeTargetProperties (Entity.shouldWriteProperty overlayer entity) writer entity
+            Xtension.writeTargetProperties (fun propertyName -> Overlayer.shouldWriteProperty propertyName entity overlayer) writer entity
             writer.WriteEndElement ()
 
         static member writeManyToXml overlayer writer (entities : Map<_, _>) =

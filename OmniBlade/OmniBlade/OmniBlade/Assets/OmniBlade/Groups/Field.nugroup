@@ -4,76 +4,49 @@
     <Xtension xDispatcher="FieldGroupDispatcher" />
     <Entity>
       <Name>Avatar</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(AvatarDispatcher)</OptOverlayName>
       <Xtension xDispatcher="AvatarDispatcher">
-        <AngularDamping type="System.Single">1</AngularDamping>
-        <BodyType type="Nu.PhysicsModule+BodyType">Dynamic</BodyType>
-        <Density type="System.Single">10</Density>
         <Depth type="System.Single">2</Depth>
-        <FixedRotation type="System.Boolean">True</FixedRotation>
-        <Friction type="System.Single">0</Friction>
-        <GravityScale type="System.Single">0</GravityScale>
+        <Position type="OpenTK.Vector2">600.3199;600</Position>
         <SpriteImage type="Nu.RenderingModule+Image">Image7;Default;AssetGraph.xml</SpriteImage>
-        <IsBullet type="System.Boolean">False</IsBullet>
-        <IsSensor type="System.Boolean">False</IsSensor>
-        <LinearDamping type="System.Single">10</LinearDamping>
-        <Position type="OpenTK.Vector2">600.3195;600</Position>
-        <Restitution type="System.Single">0</Restitution>
-        <Rotation type="System.Single">0</Rotation>
-        <Size type="OpenTK.Vector2">64;64</Size>
       </Xtension>
     </Entity>
     <Entity>
       <Name>Back</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
       <Xtension xDispatcher="ButtonDispatcher">
-        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">10</Depth>
         <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui;AssetGraph.xml</DownImage>
-        <Enabled type="System.Boolean">True</Enabled>
-        <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-224</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
         <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui;AssetGraph.xml</UpImage>
       </Xtension>
     </Entity>
     <Entity>
       <Name>Feeler</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(FeelerDispatcher)</OptOverlayName>
       <Xtension xDispatcher="FeelerDispatcher">
         <Depth type="System.Single">-5</Depth>
-        <Enabled type="System.Boolean">True</Enabled>
-        <IsTouched type="System.Boolean">False</IsTouched>
         <Position type="OpenTK.Vector2">-480;-272</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">960;544</Size>
       </Xtension>
     </Entity>
     <Entity>
       <Name>be5eff5e-18e8-4ec9-9370-0994fb4d6565</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
       <Xtension xDispatcher="TileMapDispatcher">
-        <Density type="System.Single">10</Density>
         <Depth type="System.Single">1</Depth>
-        <Friction type="System.Single">0</Friction>
-        <Parallax type="System.Single">0</Parallax>
-        <Position type="OpenTK.Vector2">0;0</Position>
-        <Restitution type="System.Single">0</Restitution>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">1200;1200</Size>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">TileMap;Default;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
       <Xtension xDispatcher="LabelDispatcher">
         <Depth type="System.Single">-1</Depth>
-        <Enabled type="System.Boolean">True</Enabled>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>
         <Position type="OpenTK.Vector2">-480;-272</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">960;544</Size>
       </Xtension>
     </Entity>
