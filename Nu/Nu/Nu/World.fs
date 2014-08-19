@@ -293,14 +293,14 @@ module WorldModule =
             let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
             world.Game.Register world
 
-        static member saveGroupToFile group entities fileName (_ : World) =
+        static member saveGroupToFile group entities fileName world =
             use file = File.Open (fileName, FileMode.Create)
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             use writer = XmlWriter.Create (file, writerSettings)
             writer.WriteStartDocument ()
             writer.WriteStartElement "Root"
-            Group.writeToXml writer group entities
+            Group.writeToXml world.Overlayer writer group entities
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
 
@@ -516,6 +516,7 @@ module WorldModule =
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext
                       Integrator = Physics.makeIntegrator Gravity
                       AssetMetadataMap = assetMetadataMap
+                      Overlayer = Overlayer.make OverlayFileName
                       AudioMessages = [HintAudioPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
                       RenderMessages = [HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
                       PhysicsMessages = []

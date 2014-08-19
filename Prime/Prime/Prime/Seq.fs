@@ -33,7 +33,7 @@ let fornone pred seq =
     let notPred = not << pred
     Seq.forall notPred seq
 
-/// Implement a fold while a predicate passes.
+/// Implement a fold while fn results in Some.
 /// Implementation thanks to Tomas Petricek!
 let foldWhile fn initial input =
     input |>

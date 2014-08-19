@@ -130,6 +130,9 @@
     <None Include="AssetGraph.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Overlay.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="App.config" />
     <None Include="libfreetype-6.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
