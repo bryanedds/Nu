@@ -29,16 +29,16 @@ module Overlayer =
                 let optLeaf = branch.SelectSingleNode propertyName
                 match optLeaf with
                 | null ->
-                    let optParentNames = branch.SelectSingleNode "Parentage"
-                    match optParentNames with
+                    let optIncludeNames = branch.SelectSingleNode "Include"
+                    match optIncludeNames with
                     | null -> None
-                    | parentNames ->
-                        let parentNames = parentNames.InnerText.Split ';'
+                    | includeNames ->
+                        let includeNames = includeNames.InnerText.Split ';'
                         let mutable optNode = None
-                        let mutable enr = parentNames.GetEnumerator ()
+                        let mutable enr = includeNames.GetEnumerator ()
                         while enr.MoveNext () && Option.isNone optNode do
-                            let parentName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
-                            optNode <- trySelectNode (parentName.Trim ()) propertyName overlayer
+                            let includeName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
+                            optNode <- trySelectNode (includeName.Trim ()) propertyName overlayer
                         optNode
                 | leaf -> Some leaf
         else None

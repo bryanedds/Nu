@@ -39,77 +39,83 @@
   </EntityDispatcher>
 
   <Entity2dDispatcher>
-    <Parentage>EntityDispatcher; Entity2dFacet</Parentage>
+    <Include>EntityDispatcher; Entity2dFacet</Include>
   </Entity2dDispatcher>
 
   <GuiDispatcher>
-    <Parentage>Entity2dDispatcher; GuiFacet</Parentage>
+    <Include>Entity2dDispatcher; GuiFacet</Include>
   </GuiDispatcher>
 
   <SimpleBodyDispatcher>
-    <Parentage>Entity2dDispatcher; SimpleBodyFacet</Parentage>
+    <Include>Entity2dDispatcher; SimpleBodyFacet</Include>
   </SimpleBodyDispatcher>
 
   <SimpleBodySpriteDispatcher>
-    <Parentage>SimpleBodyDispatcher; SimpleSpriteFacet</Parentage>
+    <Include>SimpleBodyDispatcher; SimpleSpriteFacet</Include>
   </SimpleBodySpriteDispatcher>
 
   <SimpleBodyAnimatedSpriteDispatcher>
-    <Parentage>SimpleBodyDispatcher; SimpleAnimatedSpriteFacet</Parentage>
+    <Include>SimpleBodyDispatcher; SimpleAnimatedSpriteFacet</Include>
   </SimpleBodyAnimatedSpriteDispatcher>
   
   <ButtonDispatcher>
-    <Parentage>GuiDispatcher</Parentage>
+    <Include>GuiDispatcher</Include>
     <IsDown>False</IsDown>
     <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
   </ButtonDispatcher>
 
   <LabelDispatcher>
-    <Parentage>GuiDispatcher</Parentage>
+    <Include>GuiDispatcher</Include>
   </LabelDispatcher>
 
   <TextBoxDispatcher>
-    <Parentage>GuiDispatcher</Parentage>
+    <Include>GuiDispatcher</Include>
     <TextColor>1; 1; 1; 1</TextColor>
     <TextFont>Font;Default;AssetGraph.xml</TextFont>
     <TextOffset>0;0</TextOffset>
   </TextBoxDispatcher>
 
   <ToggleDispatcher>
-    <Parentage>GuiDispatcher</Parentage>
+    <Include>GuiDispatcher</Include>
     <IsPressed>False</IsPressed>
   </ToggleDispatcher>
 
   <FeelerDispatcher>
-    <Parentage>GuiDispatcher</Parentage>
+    <Include>GuiDispatcher</Include>
     <IsTouched>False</IsTouched>
   </FeelerDispatcher>
 
   <FillBarDispatcher>
-    <Parentage>GuiDispatcher</Parentage>
+    <Include>GuiDispatcher</Include>
     <Fill>0</Fill>
     <FillInset>0</FillInset>
   </FillBarDispatcher>
 
   <BlockDispatcher>
-    <Parentage>SimpleBodySpriteDispatcher</Parentage>
+    <Include>SimpleBodySpriteDispatcher</Include>
   </BlockDispatcher>
 
   <AvatarDispatcher>
-    <Parentage>SimpleBodySpriteDispatcher</Parentage>
+    <Include>SimpleBodySpriteDispatcher</Include>
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
   </AvatarDispatcher>
 
   <CharacterDispatcher>
-    <Parentage>SimpleBodySpriteDispatcher</Parentage>
+    <Include>SimpleBodySpriteDispatcher</Include>
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
   </CharacterDispatcher>
 
   <TileMapDispatcher>
-    <Parentage>Entity2dDispatcher</Parentage>
+    <Include>Entity2dDispatcher</Include>
+    <Density>10</Density>
+    <Friction>0</Friction>
+    <Restitution>0</Restitution>
+    <CollisionCategories>1</CollisionCategories>
+    <CollisionMask>*</CollisionMask>
+    <Parallax>0</Parallax>
   </TileMapDispatcher>
   
 </Root>
