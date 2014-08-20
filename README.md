@@ -1,7 +1,7 @@
 FP Works Repository
 ===================
 
-![Screenshot](BlazeVector/Media/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
+![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
 
 This repository hosts several projects, including -
 
@@ -17,15 +17,15 @@ Here is some media on the Nu Game Engine -
 Blasting away in BlazeVector!
 
 
-![Screenshot](BlazeVector/Media/EditingASectionOfABlazeVectorStage.png?raw=true)
+![Screenshot](BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
 Editing a section of a BlazeVector stage.
 
 
-![Screenshot](BlazeVector/Media/EditingACreditsScreen.png?raw=true)
+![Screenshot](BlazeVector/Promotional/EditingACreditsScreen.png?raw=true)
 Editing BlazeVector's Credits screen.
 
 
-Finally, here's a video of some of BlazeVector's gameplay - https://github.com/bryanedds/FPWorks/blob/master/BlazeVector/Media/BlazeVector.mp4?raw=true
+Finally, here's a video of some of BlazeVector's gameplay - https://github.com/bryanedds/FPWorks/blob/master/BlazeVector/Promotional/BlazeVector.mp4?raw=true
 
 Getting Started
 ===============
