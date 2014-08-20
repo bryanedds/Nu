@@ -4,14 +4,11 @@
     <Xtension xDispatcher="StagePlayDispatcher" />
     <Entity>
       <Name>Player</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension xDispatcher="PlayerDispatcher">
-        <Density type="System.Single">10</Density>
         <Depth type="System.Single">1</Depth>
         <SpriteImage type="Nu.RenderingModule+Image">Player;Stage;AssetGraph.xml</SpriteImage>
-        <LinearDamping type="System.Single">3</LinearDamping>
         <Position type="OpenTK.Vector2">-356;-175.6805</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
