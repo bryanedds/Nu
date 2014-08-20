@@ -4,16 +4,18 @@
     <Xtension xDispatcher="FieldGroupDispatcher" />
     <Entity>
       <Name>Avatar</Name>
-      <OptOverlayName>Some(AvatarDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(AvatarOverlay)</OptOverlayName>
       <Xtension xDispatcher="AvatarDispatcher">
         <Depth type="System.Single">2</Depth>
         <Position type="OpenTK.Vector2">600.3199;600</Position>
+        <Rotation type="System.Single">0</Rotation>
+        <Size type="OpenTK.Vector2">64;64</Size>
         <SpriteImage type="Nu.RenderingModule+Image">Image7;Default;AssetGraph.xml</SpriteImage>
       </Xtension>
     </Entity>
     <Entity>
       <Name>Back</Name>
-      <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(ButtonOverlay)</OptOverlayName>
       <Xtension xDispatcher="ButtonDispatcher">
         <Depth type="System.Single">10</Depth>
         <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui;AssetGraph.xml</DownImage>
@@ -24,7 +26,7 @@
     </Entity>
     <Entity>
       <Name>Feeler</Name>
-      <OptOverlayName>Some(FeelerDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(FeelerOverlay)</OptOverlayName>
       <Xtension xDispatcher="FeelerDispatcher">
         <Depth type="System.Single">-5</Depth>
         <Position type="OpenTK.Vector2">-480;-272</Position>
@@ -33,16 +35,18 @@
     </Entity>
     <Entity>
       <Name>be5eff5e-18e8-4ec9-9370-0994fb4d6565</Name>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(TileMapOverlay)</OptOverlayName>
       <Xtension xDispatcher="TileMapDispatcher">
         <Depth type="System.Single">1</Depth>
+        <Position type="OpenTK.Vector2">0;0</Position>
+        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">1200;1200</Size>
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">TileMap;Default;AssetGraph.xml</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(LabelOverlay)</OptOverlayName>
       <Xtension xDispatcher="LabelDispatcher">
         <Depth type="System.Single">-1</Depth>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>

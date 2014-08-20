@@ -4,7 +4,7 @@
     <Xtension xDispatcher="GroupDispatcher" />
     <Entity>
       <Name>Back</Name>
-      <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(ButtonOverlay)</OptOverlayName>
       <Xtension xDispatcher="ButtonDispatcher">
         <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui;AssetGraph.xml</DownImage>
         <Position type="OpenTK.Vector2">-128;-224</Position>
@@ -14,7 +14,7 @@
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(TextBoxOverlay)</OptOverlayName>
       <Xtension xDispatcher="TextBoxDispatcher">
         <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
         <Position type="OpenTK.Vector2">-320;96</Position>
@@ -24,7 +24,7 @@
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+      <OptOverlayName>Some(LabelOverlay)</OptOverlayName>
       <Xtension xDispatcher="LabelDispatcher">
         <Depth type="System.Single">-1</Depth>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>
