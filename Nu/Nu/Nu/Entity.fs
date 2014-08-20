@@ -64,7 +64,7 @@ module EntityModule =
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               Visible = true
-              OptOverlayName = Some dispatcherName
+              OptOverlayName = None
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
         static member makeDefault dispatcherName optName dispatcherContainer =
@@ -83,7 +83,6 @@ module EntityModule =
         static member readFromXml (entityNode : XmlNode) defaultDispatcherName world =
             let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
             Xtension.readTargetXDispatcher entityNode entity
-            let entity = { entity with OptOverlayName = entity.Xtension.OptXDispatcherName }
             let entity = Entity.init entity world
             Xtension.readTargetProperties entityNode entity
             match entity.OptOverlayName with

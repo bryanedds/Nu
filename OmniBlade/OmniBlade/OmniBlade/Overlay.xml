@@ -1,14 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
-  <!-- Facet overlays. -->
-  
-  <Entity2dFacet />
 
-  <GuiFacet>
+  <EntityOverlay>
+    <Visible>True</Visible>
+  </EntityOverlay>
+
+  <Entity2dOverlay>
+    <Include>EntityOverlay</Include>
+  </Entity2dOverlay>
+
+  <GuiOverlay>
+    <Include>Entity2dOverlay</Include>
     <Enabled>True</Enabled>
-  </GuiFacet>
+    <Rotation>0</Rotation>
+  </GuiOverlay>
 
-  <SimpleBodyFacet>
+  <SimpleBodyOverlay>
+    <Include>Entity2dOverlay</Include>
     <BodyType>Dynamic</BodyType>
     <Density>10</Density>
     <Friction>0</Friction>
@@ -21,97 +29,82 @@
     <CollisionMask>*</CollisionMask>
     <IsBullet>False</IsBullet>
     <IsSensor>False</IsSensor>
-  </SimpleBodyFacet>
+  </SimpleBodyOverlay>
 
-  <SimpleSpriteFacet/>
+  <SimpleSpriteOverlay>
+    <Include>Entity2dOverlay</Include>
+  </SimpleSpriteOverlay>
 
-  <SimpleAnimatedSpriteFacet/>
+  <SimpleAnimatedSpriteOverlay>
+    <Include>Entity2dOverlay</Include>
+  </SimpleAnimatedSpriteOverlay>
 
-  <!-- Dispatcher overlays. -->
+  <SimpleBodySpriteOverlay>
+    <Include>SimpleBodyOverlay; SimpleSpriteOverlay</Include>
+  </SimpleBodySpriteOverlay>
 
-  <EntityDispatcher>
-    <Visible>True</Visible>
-  </EntityDispatcher>
+  <SimpleBodyAnimatedSpriteOverlay>
+    <Include>SimpleBodyOverlay; SimpleAnimatedSpriteOverlay</Include>
+  </SimpleBodyAnimatedSpriteOverlay>
 
-  <Entity2dDispatcher>
-    <Include>EntityDispatcher; Entity2dFacet</Include>
-  </Entity2dDispatcher>
-
-  <GuiDispatcher>
-    <Include>Entity2dDispatcher; GuiFacet</Include>
-    <Rotation>0</Rotation>
-  </GuiDispatcher>
-
-  <SimpleBodyDispatcher>
-    <Include>Entity2dDispatcher; SimpleBodyFacet</Include>
-  </SimpleBodyDispatcher>
-
-  <SimpleBodySpriteDispatcher>
-    <Include>SimpleBodyDispatcher; SimpleSpriteFacet</Include>
-  </SimpleBodySpriteDispatcher>
-
-  <SimpleBodyAnimatedSpriteDispatcher>
-    <Include>SimpleBodyDispatcher; SimpleAnimatedSpriteFacet</Include>
-  </SimpleBodyAnimatedSpriteDispatcher>
-  
-  <ButtonDispatcher>
-    <Include>GuiDispatcher</Include>
+  <ButtonOverlay>
+    <Include>GuiOverlay</Include>
     <IsDown>False</IsDown>
     <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
-  </ButtonDispatcher>
+  </ButtonOverlay>
 
-  <LabelDispatcher>
-    <Include>GuiDispatcher</Include>
-  </LabelDispatcher>
+  <LabelOverlay>
+    <Include>GuiOverlay</Include>
+  </LabelOverlay>
 
-  <TextBoxDispatcher>
-    <Include>GuiDispatcher</Include>
+  <TextBoxOverlay>
+    <Include>GuiOverlay</Include>
     <TextColor>1; 1; 1; 1</TextColor>
     <TextFont>Font;Default;AssetGraph.xml</TextFont>
     <TextOffset>0;0</TextOffset>
-  </TextBoxDispatcher>
+  </TextBoxOverlay>
 
-  <ToggleDispatcher>
-    <Include>GuiDispatcher</Include>
+  <ToggleOverlay>
+    <Include>GuiOverlay</Include>
     <IsPressed>False</IsPressed>
-  </ToggleDispatcher>
+  </ToggleOverlay>
 
-  <FeelerDispatcher>
-    <Include>GuiDispatcher</Include>
+  <FeelerOverlay>
+    <Include>GuiOverlay</Include>
     <IsTouched>False</IsTouched>
-  </FeelerDispatcher>
+  </FeelerOverlay>
 
-  <FillBarDispatcher>
-    <Include>GuiDispatcher</Include>
+  <FillBarOverlay>
+    <Include>GuiOverlay</Include>
     <Fill>0</Fill>
     <FillInset>0</FillInset>
-  </FillBarDispatcher>
+  </FillBarOverlay>
 
-  <BlockDispatcher>
-    <Include>SimpleBodySpriteDispatcher</Include>
-  </BlockDispatcher>
+  <BlockOverlay>
+    <Include>SimpleBodySpriteOverlay</Include>
+  </BlockOverlay>
 
-  <AvatarDispatcher>
-    <Include>SimpleBodySpriteDispatcher</Include>
+  <AvatarOverlay>
+    <Include>SimpleBodySpriteOverlay</Include>
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
-  </AvatarDispatcher>
+  </AvatarOverlay>
 
-  <CharacterDispatcher>
-    <Include>SimpleBodySpriteDispatcher</Include>
+  <CharacterOverlay>
+    <Include>SimpleBodySpriteOverlay</Include>
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
-  </CharacterDispatcher>
+  </CharacterOverlay>
 
-  <TileMapDispatcher>
-    <Include>Entity2dDispatcher</Include>
+  <TileMapOverlay>
+    <Include>Entity2dOverlay</Include>
     <Density>10</Density>
     <Friction>0</Friction>
     <Restitution>0</Restitution>
     <CollisionCategories>1</CollisionCategories>
     <CollisionMask>*</CollisionMask>
     <Parallax>0</Parallax>
-  </TileMapDispatcher>
-  
+  </TileMapOverlay>
+
 </Root>
