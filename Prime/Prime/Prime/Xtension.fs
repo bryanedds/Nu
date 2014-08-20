@@ -229,7 +229,8 @@ module Xtension =
         xtensionProperty.SetValue (target, xtension)
 
     /// Write an Xtension to Xml.
-    /// TODO: need a vanilla write function that writes to an XmlDocument rather than directly to an XmlWriter stream.
+    /// NOTE: XmlWriter can also write to an XmlDocument instance by using
+    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let write shouldWriteProperty (writer : XmlWriter) xtension =
         writer.WriteAttributeString ("xDispatcher", match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
         for xField in xtension.XFields do
@@ -246,7 +247,8 @@ module Xtension =
                 writer.WriteEndElement ()
 
     /// Write all of a target's properties to Xml.
-    /// TODO: need a vanilla writeTargetProperties function that writes to an XmlDocument rather than directly to an XmlWriter stream.
+    /// NOTE: XmlWriter can also write to an XmlDocument instance by using
+    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let writeTargetProperties shouldWriteProperty (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
         let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
