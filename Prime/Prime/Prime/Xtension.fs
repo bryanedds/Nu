@@ -7,6 +7,8 @@ open System.Reflection
 open System.ComponentModel
 open System.Xml
 open Microsoft.FSharp.Reflection
+open Prime
+open Prime.PrimeConstants
 
 [<AutoOpen>]
 module XtensionModule =
@@ -177,7 +179,7 @@ module Xtension =
         let childNodes = enumerable valueNode.ChildNodes
         Seq.map
             (fun (xNode : XmlNode) ->
-                let typeName = xNode.Attributes.["type"].InnerText
+                let typeName = xNode.Attributes.[TypeAttributeName].InnerText
                 let aType = findType typeName
                 let xValueStr = xNode.InnerText
                 let converter = TypeDescriptor.GetConverter aType
@@ -188,7 +190,7 @@ module Xtension =
     /// Read an Xtension from Xml.
     let read valueNode =
         let xFields = Map.ofSeq <| readXFields valueNode
-        let optXDispatcherName = match valueNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
+        let optXDispatcherName = match valueNode.Attributes.[XDispatcherAttributeName].InnerText with "" -> None | str -> Some str
         { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
 
     /// Attempt to read a target's property from Xml.
@@ -196,7 +198,7 @@ module Xtension =
         if property.PropertyType = typeof<Xtension> then
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
-            let optXDispatcherName = match valueNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
+            let optXDispatcherName = match valueNode.Attributes.[XDispatcherAttributeName].InnerText with "" -> None | str -> Some str
             let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields; OptXDispatcherName = optXDispatcherName }
             property.SetValue (target, xtension)
         else
@@ -223,7 +225,7 @@ module Xtension =
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
         let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyWriteable property) targetProperties
         let xtensionNode = targetNode.[xtensionProperty.Name]
-        let optXDispatcherName = match xtensionNode.Attributes.["xDispatcher"].InnerText with "" -> None | str -> Some str
+        let optXDispatcherName = match xtensionNode.Attributes.[XDispatcherAttributeName].InnerText with "" -> None | str -> Some str
         let xtension = xtensionProperty.GetValue target :?> Xtension
         let xtension = { xtension with OptXDispatcherName = optXDispatcherName }
         xtensionProperty.SetValue (target, xtension)
@@ -242,7 +244,7 @@ module Xtension =
                 let xConverter = TypeDescriptor.GetConverter xDispatcher
                 let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
                 writer.WriteStartElement xFieldName
-                writer.WriteAttributeString ("type", xDispatcher.FullName)
+                writer.WriteAttributeString (TypeAttributeName, xDispatcher.FullName)
                 writer.WriteString xValueStr
                 writer.WriteEndElement ()
 
