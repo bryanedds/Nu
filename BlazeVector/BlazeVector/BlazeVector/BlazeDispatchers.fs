@@ -280,7 +280,7 @@ module StageScreenModule =
         let shiftEntities xShift entities world =
             List.map
                 (fun entity ->
-                    if Entity.usesFacet Entity2dFacet.Name entity world
+                    if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world
                     then Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity
                     else entity)
                 entities

@@ -39,11 +39,11 @@ module Camera =
         Matrix3.makeFromTranslation translationI
 
     let getBounds camera =
-        Vector4
-            (camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
-             camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
-             camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
-             camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
+        Vector4 (
+            camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
+            camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
+            camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
+            camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
     let inView (bounds : Vector4) camera =
         NuMath.isBoundsInBounds bounds <| getBounds camera

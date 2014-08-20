@@ -70,6 +70,7 @@
     <Compile Include="Array.fs" />
     <Compile Include="String.fs" />
     <Compile Include="List.fs" />
+    <Compile Include="Set.fs" />
     <Compile Include="Map.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
