@@ -2,12 +2,7 @@
 <Root>
   <!-- Facet overlays. -->
   
-  <Entity2dFacet>
-    <Position>0; 0</Position>
-    <Size>64; 64</Size>
-    <Depth>0</Depth>
-    <Rotation>0</Rotation>
-  </Entity2dFacet>
+  <Entity2dFacet />
 
   <GuiFacet>
     <Enabled>True</Enabled>
@@ -44,6 +39,7 @@
 
   <GuiDispatcher>
     <Include>Entity2dDispatcher; GuiFacet</Include>
+    <Rotation>0</Rotation>
   </GuiDispatcher>
 
   <SimpleBodyDispatcher>
