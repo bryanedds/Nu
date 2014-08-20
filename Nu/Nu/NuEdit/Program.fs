@@ -108,14 +108,12 @@ module Program =
                 let pastWorld = world
                 let world =
                     match propertyName with
-                    | "Name" -> // MAGIC_VALUE
-                        // handle special case for an entity's Name field change
+                    | "Name" ->
                         let valueStr = string value
                         if Int64.TryParse (valueStr, ref 0L) then
                             trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                             world
                         else
-                            // TODO: factor out a renameEntity function
                             let entity = World.getEntity entityTds.Address world
                             let world = World.removeEntityImmediate entityTds.Address world
                             let entity = { entity with Name = valueStr }
@@ -125,9 +123,23 @@ module Program =
                             entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                             world
                     | _ ->
-                        let world = setEntityPropertyValue entityTds.Address property value world
                         let entity = World.getEntity entityTds.Address world
-                        Entity.propagatePhysics entityTds.Address entity world
+                        let entity = setEntityPropertyValue property value entity
+                        let entity =
+                            match propertyName with
+                            | "OptOverlayName" ->
+                                match entity.OptOverlayName with
+                                | None -> entity
+                                | Some overlayName ->
+                                    let entity = { entity with Id = entity.Id } // hacky copy
+                                    Overlayer.applyOverlay overlayName entity world.Overlayer
+                                    entity
+                            | _ -> entity
+                        let world = World.setEntity entityTds.Address entity world
+                        let world = Entity.propagatePhysics entityTds.Address entity world
+                        entityTds.RefWorld := world // must be set for property grid
+                        entityTds.Form.propertyGrid.Refresh ()
+                        world
                 pushPastWorld pastWorld world)
             // in order to update the view immediately, we have to apply the changer twice, once
             // now and once in the update function

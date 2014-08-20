@@ -68,6 +68,30 @@ module NuMathModule =
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
+    // TODO: find a better place for this?
+    type StringOptionTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, _, obj, _) =
+            let optValue = obj :?> string option
+            match optValue with
+            | None -> "None" :> obj
+            | Some value -> "Some(" + string value + ")" :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<string option> || sourceType = typeof<string>
+        override this.ConvertFrom (_, _, obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<string option> then obj
+            else
+                let str = obj :?> string
+                match str with
+                | "None" -> None :> obj
+                | _ ->
+                    let innerStr = str.Substring (5, str.Length - 6)
+                    let innerStr = innerStr.Trim ()
+                    Some innerStr :> obj
+
     /// A very shitty, poorly tested Matrix3 I hacked up when I realized OpenTK didn't have one. Since I only use it
     /// for 2D view manipulation with SDL, it doesn't have any convenient rotation features. Then there's the very
     /// hacky getInverseViewMatrix function below...
@@ -183,6 +207,7 @@ module NuMath =
         assignTypeConverter<Vector2, Vector2TypeConverter> ()
         assignTypeConverter<Vector3, Vector3TypeConverter> ()
         assignTypeConverter<Vector4, Vector4TypeConverter> ()
+        assignTypeConverter<string option, StringOptionTypeConverter> ()
 
     let transformIdentity =
         { Position = Vector2.Zero
