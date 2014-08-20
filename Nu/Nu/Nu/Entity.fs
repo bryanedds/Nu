@@ -91,7 +91,7 @@ module EntityModule =
             entity
 
         static member readManyFromXml (parentNode : XmlNode) defaultDispatcherName world =
-            let entityNodes = parentNode.SelectNodes "Entity"
+            let entityNodes = parentNode.SelectNodes EntityNodeName
             let entities =
                 Seq.map
                     (fun entityNode -> Entity.readFromXml entityNode defaultDispatcherName world)

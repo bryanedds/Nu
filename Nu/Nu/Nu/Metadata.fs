@@ -10,6 +10,7 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
+open Nu.NuConstants
 
 [<AutoOpen>]
 module MetadataModule =
@@ -42,16 +43,16 @@ module Metadata =
     let tryGenerateAssetMetadataMap assetGraphFileName =
         try let document = XmlDocument ()
             document.Load (assetGraphFileName : string) 
-            let optRootNode = document.["root"]
+            let optRootNode = document.[RootNodeName]
             match optRootNode with
             | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFileName + "'."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| rootNode.OfType<XmlNode> ()
-                let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = "package") possiblePackageNodes
+                let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = PackageNodeName) possiblePackageNodes
                 let assetMetadataMap =
                     List.fold
                         (fun assetMetadataMap (packageNode : XmlNode) ->
-                            let packageName = (packageNode.Attributes.GetNamedItem "name").InnerText
+                            let packageName = (packageNode.Attributes.GetNamedItem NameAttributeName).InnerText
                             let optAssets =
                                 List.map
                                     (fun assetNode -> Assets.tryLoadAsset packageName assetNode)

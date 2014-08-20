@@ -7,6 +7,7 @@ open System.IO
 open System.Xml
 open Xunit
 open Prime
+open Prime.PrimeConstants
 module Tests =
 
     type [<CLIMutable; NoComparison>] TestXtended =
@@ -40,7 +41,7 @@ module Tests =
         let xmlWriterSettings = XmlWriterSettings ()
         let xmlWriter = XmlWriter.Create (memoryStream, xmlWriterSettings)
         xmlWriter.WriteStartDocument ()
-        xmlWriter.WriteStartElement "Root"
+        xmlWriter.WriteStartElement RootNodeName
         write xmlWriter source
         xmlWriter.WriteEndElement ()
         xmlWriter.WriteEndDocument ()
@@ -50,7 +51,7 @@ module Tests =
     let readFromStream read (stream : Stream) target =
         let xmlReader = XmlReader.Create stream
         let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
-        let result = read (xmlDocument.SelectSingleNode "Root") target
+        let result = read (xmlDocument.SelectSingleNode RootNodeName) target
         result
 
     // globalization is fine since this object is stateless.

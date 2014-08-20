@@ -301,7 +301,7 @@ module WorldModule =
             // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
             use writer = XmlWriter.Create (file, writerSettings)
             writer.WriteStartDocument ()
-            writer.WriteStartElement "Root"
+            writer.WriteStartElement RootNodeName
             Group.writeToXml world.Overlayer writer group entities
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
@@ -309,8 +309,8 @@ module WorldModule =
         static member loadGroupFromFile fileName world =
             let document = XmlDocument ()
             document.Load (fileName : string)
-            let rootNode = document.["Root"]
-            let groupNode = rootNode.["Group"]
+            let rootNode = document.[RootNodeName]
+            let groupNode = rootNode.[GroupNodeName]
             Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         static member private play world =

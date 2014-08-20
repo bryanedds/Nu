@@ -3,6 +3,7 @@ open System
 open System.Linq
 open System.Xml
 open Prime
+open Nu.NuConstants
 
 [<AutoOpen>]
 module AssetsModule =
@@ -45,15 +46,15 @@ module Assets =
 
     let tryLoadAsset packageName (xmlNode : XmlNode) =
         let xmlAttributes = xmlNode.Attributes
-        let optName = xmlAttributes.GetNamedItem "name"
+        let optName = xmlAttributes.GetNamedItem NameAttributeName
         match optName with
         | null -> None
         | name ->
-            let optFileName = xmlAttributes.GetNamedItem "fileName"
+            let optFileName = xmlAttributes.GetNamedItem FileNameAttributeName
             match optFileName with
             | null -> None
             | fileName ->
-                let optAssociations = xmlAttributes.GetNamedItem "associations"
+                let optAssociations = xmlAttributes.GetNamedItem AssociationsAttributeName
                 match optAssociations with
                 | null -> None
                 | associations ->
@@ -63,12 +64,17 @@ module Assets =
     let tryLoadAssets association packageName assetGraphFileName =
         try let document = XmlDocument ()
             document.Load (assetGraphFileName : string)
-            let optRootNode = document.["root"]
+            let optRootNode = document.[RootNodeName]
             match optRootNode with
             | null -> Left ("Root node is missing from asset graph file '" + assetGraphFileName + "'.")
             | rootNode ->
                 let possiblePackageNodes = rootNode.OfType<XmlNode> ()
-                let packageNodes = Seq.filter (fun (node : XmlNode) -> node.Name = "package" && (node.Attributes.GetNamedItem "name").InnerText = packageName) possiblePackageNodes
+                let packageNodes =
+                    Seq.filter
+                        (fun (node : XmlNode) ->
+                            node.Name = PackageNodeName &&
+                            (node.Attributes.GetNamedItem NameAttributeName).InnerText = packageName)
+                        possiblePackageNodes
                 let optPackageNode = Seq.tryHead packageNodes
                 match optPackageNode with
                 | None -> Left ("Package node '" + packageName + "' is missing from asset graph file '" + assetGraphFileName + "'.")
