@@ -1,14 +1,34 @@
 FP Works Repository
 ===================
 
-This repository hosts several projects, including -
+![Screenshot](BlazeVector/Media/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
 
+This repository hosts several projects, including -
 
 - ![Alt text](Nu/Promotional/Nu Icon.png?raw=true "Nu Game Engine"), the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
 - the programming language **Aml**, a common language for building DSLs on top of using F#.
 - the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
 - the sample game **BlazeVector**.
 - the game **OmniBlade** that I just barely started on (currently working to get funding for this).
+
+Here is some media on the Nu Game Engine -
+
+![Screenshot](BlazeVector/Media/PlayingABitOfBlazeVector.png?raw=true)
+Blasting away in BlazeVector!
+
+
+![Screenshot](BlazeVector/Media/EditingASectionOfABlazeVectorStage.png?raw=true)
+Editing a section of a BlazeVector stage.
+
+
+![Screenshot](BlazeVector/Media/EditingACreditsScreen.png?raw=true)
+Editing BlazeVector's Credits screen.
+
+
+Finally, here's a video of some of BlazeVector's gameplay - https://github.com/bryanedds/FPWorks/blob/master/BlazeVector/Media/BlazeVector.mp4?raw=true
+
+Getting Started
+===============
 
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
 
