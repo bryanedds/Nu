@@ -19,6 +19,9 @@ Here is some media on the Nu Game Engine -
 
 Finally, here's a video of some of BlazeVector's gameplay - https://github.com/bryanedds/FPWorks/blob/master/BlazeVector/Media/BlazeVector.mp4?raw=true
 
+Getting Started
+===============
+
 The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
 
 The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/FPWorks/blob/master/Nu/Documentation/Nu%20Game%20Engine.pdf?raw=true
