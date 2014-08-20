@@ -84,10 +84,10 @@ module EntityModule =
             let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
             Xtension.readTargetXDispatcher entityNode entity
             let entity = Entity.init entity world
-            Xtension.readTargetProperties entityNode entity
             match entity.OptOverlayName with
             | None -> ()
             | Some overlayName -> Overlayer.applyOverlay overlayName entity world.Overlayer
+            Xtension.readTargetProperties entityNode entity
             entity
 
         static member readManyFromXml (parentNode : XmlNode) defaultDispatcherName world =

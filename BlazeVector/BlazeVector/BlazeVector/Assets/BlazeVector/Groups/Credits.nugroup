@@ -4,77 +4,56 @@
     <Xtension xDispatcher="GroupDispatcher" />
     <Entity>
       <Name>Back</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
       <Xtension xDispatcher="ButtonDispatcher">
-        <ClickSound type="Nu.AudioModule+Sound">Sound;Default;AssetGraph.xml</ClickSound>
         <Depth type="System.Single">0</Depth>
         <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui;AssetGraph.xml</DownImage>
-        <Enabled type="System.Boolean">True</Enabled>
-        <IsDown type="System.Boolean">False</IsDown>
         <Position type="OpenTK.Vector2">-128;-224</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">256;64</Size>
         <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui;AssetGraph.xml</UpImage>
       </Xtension>
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
       <Xtension xDispatcher="TextBoxDispatcher">
         <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
         <Depth type="System.Single">0</Depth>
-        <Enabled type="System.Boolean">True</Enabled>
         <Position type="OpenTK.Vector2">-320;96</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">640;128</Size>
         <Text type="System.String">Credits</Text>
-        <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
-        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
-        <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>bc8f4d0f-66cb-4523-abb1-fca6564b9d1d</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
       <Xtension xDispatcher="TextBoxDispatcher">
         <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
         <Depth type="System.Single">0</Depth>
-        <Enabled type="System.Boolean">True</Enabled>
         <Position type="OpenTK.Vector2">-320;0</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">640;64</Size>
         <Text type="System.String">Code + Music + SFX: Bryan Edds</Text>
-        <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
-        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
-        <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
       </Xtension>
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
       <Xtension xDispatcher="LabelDispatcher">
         <Depth type="System.Single">-1</Depth>
-        <Enabled type="System.Boolean">True</Enabled>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>
         <Position type="OpenTK.Vector2">-480;-272</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">960;544</Size>
       </Xtension>
     </Entity>
     <Entity>
       <Name>fee813fa-620b-4f74-843e-bcc9e6e96193</Name>
-      <Visible>True</Visible>
+      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
       <Xtension xDispatcher="TextBoxDispatcher">
         <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
         <Depth type="System.Single">0</Depth>
-        <Enabled type="System.Boolean">True</Enabled>
         <Position type="OpenTK.Vector2">-320;-96</Position>
-        <Rotation type="System.Single">0</Rotation>
         <Size type="OpenTK.Vector2">640;64</Size>
         <Text type="System.String">Art: MindChamber</Text>
-        <TextColor type="OpenTK.Vector4">1;1;1;1</TextColor>
-        <TextFont type="Nu.RenderingModule+Font">Font;Default;AssetGraph.xml</TextFont>
-        <TextOffset type="OpenTK.Vector2">0;0</TextOffset>
       </Xtension>
     </Entity>
   </Group>
