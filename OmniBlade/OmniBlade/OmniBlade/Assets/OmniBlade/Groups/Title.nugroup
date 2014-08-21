@@ -5,7 +5,7 @@
     <Entity>
       <Name>Credits</Name>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(ButtonDispatcher">
+      <Xtension optXDispatcherName="Some(ButtonDispatcher)">
         <DownImage type="Nu.RenderingModule+Image">CreditsButtonDown;Gui;AssetGraph.xml</DownImage>
         <Position type="OpenTK.Vector2">-128;-160</Position>
         <Size type="OpenTK.Vector2">256;64</Size>
@@ -15,7 +15,7 @@
     <Entity>
       <Name>Exit</Name>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(ButtonDispatcher">
+      <Xtension optXDispatcherName="Some(ButtonDispatcher)">
         <DownImage type="Nu.RenderingModule+Image">ExitButtonDown;Gui;AssetGraph.xml</DownImage>
         <Position type="OpenTK.Vector2">-128;-224</Position>
         <Size type="OpenTK.Vector2">256;64</Size>
@@ -25,7 +25,7 @@
     <Entity>
       <Name>LoadGame</Name>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(ButtonDispatcher">
+      <Xtension optXDispatcherName="Some(ButtonDispatcher)">
         <DownImage type="Nu.RenderingModule+Image">LoadGameButtonDown;Gui;AssetGraph.xml</DownImage>
         <Position type="OpenTK.Vector2">-128;-96</Position>
         <Size type="OpenTK.Vector2">256;64</Size>
@@ -35,7 +35,7 @@
     <Entity>
       <Name>NewGame</Name>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(ButtonDispatcher">
+      <Xtension optXDispatcherName="Some(ButtonDispatcher)">
         <DownImage type="Nu.RenderingModule+Image">NewGameButtonDown;Gui;AssetGraph.xml</DownImage>
         <Position type="OpenTK.Vector2">-128;-32</Position>
         <Size type="OpenTK.Vector2">256;64</Size>
@@ -45,7 +45,7 @@
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
       <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TextBoxDispatcher">
+      <Xtension optXDispatcherName="Some(TextBoxDispatcher)">
         <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
         <Position type="OpenTK.Vector2">-320;96</Position>
         <Size type="OpenTK.Vector2">640;128</Size>
@@ -55,7 +55,7 @@
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
       <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(LabelDispatcher">
+      <Xtension optXDispatcherName="Some(LabelDispatcher)">
         <Depth type="System.Single">-1</Depth>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>
         <Position type="OpenTK.Vector2">-480;-272</Position>
