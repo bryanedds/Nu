@@ -64,7 +64,7 @@ module EntityModule =
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               Visible = true
-              OptOverlayName = None
+              OptOverlayName = Some dispatcherName
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
         static member makeDefault dispatcherName optName dispatcherContainer =

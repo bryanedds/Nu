@@ -25,7 +25,7 @@ module Overlayer =
     let rec trySelectNode overlayName propertyName overlayer =
         let optBranch = overlayer.RootNode.SelectSingleNode overlayName
         match optBranch with
-        | null -> failwith <| "Could not find overlay '" + overlayName + "'."
+        | null -> None
         | branch ->
             let optLeaf = branch.SelectSingleNode propertyName
             match optLeaf with
