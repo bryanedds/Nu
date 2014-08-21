@@ -245,7 +245,7 @@ module Xtension =
     // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let write shouldWriteProperty (writer : XmlWriter) xtension =
-        writer.WriteAttributeString (OptXDispatcherNameAttributeName, match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
+        writer.WriteAttributeString (OptXDispatcherNameAttributeName, string xtension.OptXDispatcherName)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
             if  isPropertyNameWriteable xFieldName &&
