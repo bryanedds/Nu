@@ -120,10 +120,16 @@ module WorldModule =
             List.map snd subscriptions
 
         static member sortSubscriptionsByPickingPriority subscriptions world =
-            World.sortSubscriptionsBy (fun (entity : Entity) world -> Entity.getPickingPriority entity world) subscriptions world
+            World.sortSubscriptionsBy
+                (fun (entity : Entity) world -> Entity.getPickingPriority entity world)
+                subscriptions
+                world
 
         static member sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
-            World.sortSubscriptionsBy (fun _ _ -> EntityPublishingPriority) subscriptions world
+            World.sortSubscriptionsBy
+                (fun _ _ -> EntityPublishingPriority)
+                subscriptions
+                world
 
         /// Publish an event.
         static member publishDefinition publishSort eventName publisher eventData world =
@@ -320,7 +326,9 @@ module WorldModule =
             { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
         static member private getGroupRenderDescriptors dispatcherContainer entities =
-            Map.toValueListBy (fun entity -> Entity.getRenderDescriptors entity dispatcherContainer) entities
+            Map.toValueListBy
+                (fun entity -> Entity.getRenderDescriptors entity dispatcherContainer)
+                entities
 
         static member private getTransitionRenderDescriptors camera transition =
             match transition.OptDissolveImage with
