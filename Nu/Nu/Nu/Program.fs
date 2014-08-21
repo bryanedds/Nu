@@ -65,7 +65,9 @@ module Program =
         // after some configuration it is time to run Nu. We're off and running!
         World.run tryMakeWorld updateWorld sdlConfig
 
-    (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)
+    (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
+    scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
+    buffer of a static size and then blit that with scaling to the back-buffer. *)
 
     (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 75% to 90%
     decrease in speed as compared to the dev machine. However, this can be mitigated in a few ways with
@@ -80,3 +82,5 @@ module Program =
     1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
     ? gain - avoid rendering clear tiles! *)
+
+    (* WISDOM: Program types and behavior should be closed where possible and open where necessary. *)

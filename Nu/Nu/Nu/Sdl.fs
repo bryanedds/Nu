@@ -10,10 +10,6 @@ open Nu.NuConstants
 [<AutoOpen>]
 module SdlModule =
 
-    (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
-    scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
-    buffer of a static size and then blit that with scaling to the back-buffer. *)
-
     type SdlWindowConfig =
         { WindowTitle : string
           WindowX : int

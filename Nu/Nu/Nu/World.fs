@@ -212,6 +212,7 @@ module WorldModule =
             if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
             else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
 
+        // TODO: split this function up...
         static member internal updateTransition update world =
             let world =
                 match World.getOptSelectedScreenAddress world with
