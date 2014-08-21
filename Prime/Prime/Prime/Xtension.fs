@@ -82,6 +82,8 @@ module XtensionModule =
             Xtension.dispatchesAs2 dispatcherTargetType dispatcher
 
         /// The dynamic dispatch operator.
+        /// TODO: search for a way to effectively optimize this function, especially in regard
+        /// to its use of MethodInfo.Invoke.
         static member (?) (xtension, memberName) : 'a -> 'r =
 
             // NOTE: I think the explicit args abstraction is required here to satisfy the signature
