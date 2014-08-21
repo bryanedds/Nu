@@ -14,9 +14,9 @@
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TextBoxDispatcher)">
-        <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
+      <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
         <Position type="OpenTK.Vector2">-320;96</Position>
         <Size type="OpenTK.Vector2">640;128</Size>
         <Text type="System.String">Credits</Text>
@@ -24,9 +24,9 @@
     </Entity>
     <Entity>
       <Name>bc8f4d0f-66cb-4523-abb1-fca6564b9d1d</Name>
-      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TextBoxDispatcher)">
-        <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
+      <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
         <Position type="OpenTK.Vector2">-320;0</Position>
         <Size type="OpenTK.Vector2">640;64</Size>
         <Text type="System.String">Code: Bryan Edds</Text>
@@ -44,9 +44,9 @@
     </Entity>
     <Entity>
       <Name>fee813fa-620b-4f74-843e-bcc9e6e96193</Name>
-      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TextBoxDispatcher)">
-        <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
+      <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
         <Position type="OpenTK.Vector2">-320;-96</Position>
         <Size type="OpenTK.Vector2">640;64</Size>
         <Text type="System.String">Art: Dan Rivera</Text>

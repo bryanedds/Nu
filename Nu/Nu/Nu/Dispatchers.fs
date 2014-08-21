@@ -530,12 +530,12 @@ module LabelDispatcherModule =
             false
 
 [<AutoOpen>]
-module TextBoxDispatcherModule =
+module TextDispatcherModule =
 
     type Entity with
 
-        member entity.BoxImage = entity?BoxImage () : Image
-        static member setBoxImage (value : Image) (entity : Entity) : Entity = entity?BoxImage <- value
+        member entity.BackgroundImage = entity?BackgroundImage () : Image
+        static member setBackgroundImage (value : Image) (entity : Entity) : Entity = entity?BackgroundImage <- value
         member entity.Text = entity?Text () : string
         static member setText (value : string) (entity : Entity) : Entity = entity?Text <- value
         member entity.TextFont = entity?TextFont () : Font
@@ -545,45 +545,45 @@ module TextBoxDispatcherModule =
         member entity.TextColor = entity?TextColor () : Vector4
         static member setTextColor (value : Vector4) (entity : Entity) : Entity = entity?TextColor <- value
 
-    type [<Sealed>] TextBoxDispatcher () =
+    type [<Sealed>] TextDispatcher () =
         inherit GuiDispatcher (Set.empty)
-            
-        override dispatcher.Init (textBox, dispatcherContainer) =
-            let textBox = base.Init (textBox, dispatcherContainer)
-            textBox |>
-                Entity.setBoxImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+
+        override dispatcher.Init (text, dispatcherContainer) =
+            let text = base.Init (text, dispatcherContainer)
+            text |>
+                Entity.setBackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setText String.Empty |>
                 Entity.setTextFont { FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
                 Entity.setTextOffset Vector2.Zero |>
                 Entity.setTextColor Vector4.One
 
-        override dispatcher.GetRenderDescriptors (textBox, _) =
-            if textBox.Visible then
+        override dispatcher.GetRenderDescriptors (text, _) =
+            if text.Visible then
                 [LayerableDescriptor
-                    { Depth = textBox.Depth
+                    { Depth = text.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = textBox.Position
-                              Size = textBox.Size
+                            { Position = text.Position
+                              Size = text.Size
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Image = textBox.BoxImage
+                              Image = text.BackgroundImage
                               Color = Vector4.One }}
                  LayerableDescriptor
-                    { Depth = textBox.Depth
+                    { Depth = text.Depth
                       LayeredDescriptor =
                         TextDescriptor
-                            { Text = textBox.Text
-                              Position = (textBox.Position + textBox.TextOffset)
-                              Size = textBox.Size - textBox.TextOffset
+                            { Text = text.Text
+                              Position = (text.Position + text.TextOffset)
+                              Size = text.Size - text.TextOffset
                               ViewType = Absolute
-                              Font = textBox.TextFont
-                              Color = textBox.TextColor }}]
+                              Font = text.TextFont
+                              Color = text.TextColor }}]
             else []
 
-        override dispatcher.GetQuickSize (textBox, world) =
-            let image = textBox.BoxImage
+        override dispatcher.GetQuickSize (text, world) =
+            let image = text.BackgroundImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
             | None -> DefaultEntitySize
             | Some size -> size
