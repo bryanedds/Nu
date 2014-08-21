@@ -27,80 +27,62 @@
     <Visible>True</Visible>
   </EntityDispatcher>
 
-  <Entity2dDispatcher>
-    <Include>EntityDispatcher</Include>
+  <Entity2dDispatcher include="EntityDispatcher">
     <Rotation>0</Rotation>
   </Entity2dDispatcher>
 
-  <GuiDispatcher>
-    <Include>Entity2dDispatcher</Include>
+  <GuiDispatcher include="Entity2dDispatcher">
     <Enabled>True</Enabled>
   </GuiDispatcher>
 
-  <SimpleBodyDispatcher>
-    <Include>Entity2dDispatcher; SimpleBodyFacet</Include>
-  </SimpleBodyDispatcher>
+  <SimpleBodyDispatcher include="Entity2dDispatcher;SimpleBodyFacet" />
 
-  <SimpleBodySpriteDispatcher>
-    <Include>SimpleBodyDispatcher; SimpleSpriteFacet</Include>
-  </SimpleBodySpriteDispatcher>
+  <SimpleBodySpriteDispatcher include="SimpleBodyDispatcher;SimpleSpriteFacet" />
 
-  <SimpleBodyAnimatedSpriteDispatcher>
-    <Include>SimpleBodyDispatcher; SimpleAnimatedSpriteFacet</Include>
-  </SimpleBodyAnimatedSpriteDispatcher>
+  <SimpleBodyAnimatedSpriteDispatcher include="SimpleBodyDispatcher;SimpleAnimatedSpriteFacet" />
 
-  <ButtonDispatcher>
-    <Include>GuiDispatcher</Include>
+  <ButtonDispatcher include="GuiDispatcher">
     <IsDown>False</IsDown>
     <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
   </ButtonDispatcher>
 
-  <LabelDispatcher>
-    <Include>GuiDispatcher</Include>
-  </LabelDispatcher>
+  <LabelDispatcher include="GuiDispatcher" />
 
-  <TextBoxDispatcher>
-    <Include>GuiDispatcher</Include>
-    <TextColor>1; 1; 1; 1</TextColor>
+  <TextBoxDispatcher include="GuiDispatcher">
+    <TextColor>1;1;1;1</TextColor>
     <TextFont>Font;Default;AssetGraph.xml</TextFont>
     <TextOffset>0;0</TextOffset>
   </TextBoxDispatcher>
 
-  <ToggleDispatcher>
-    <Include>GuiDispatcher</Include>
+  <ToggleDispatcher include="GuiDispatcher">
     <IsPressed>False</IsPressed>
   </ToggleDispatcher>
 
-  <FeelerDispatcher>
-    <Include>GuiDispatcher</Include>
+  <FeelerDispatcher include="GuiDispatcher">
+    <Include></Include>
     <IsTouched>False</IsTouched>
   </FeelerDispatcher>
 
-  <FillBarDispatcher>
-    <Include>GuiDispatcher</Include>
+  <FillBarDispatcher include="GuiDispatcher">
     <Fill>0</Fill>
     <FillInset>0</FillInset>
   </FillBarDispatcher>
 
-  <BlockDispatcher>
-    <Include>SimpleBodySpriteDispatcher</Include>
+  <BlockDispatcher include="SimpleBodySpriteDispatcher">
   </BlockDispatcher>
 
-  <AvatarDispatcher>
-    <Include>SimpleBodySpriteDispatcher</Include>
+  <AvatarDispatcher include="SimpleBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
   </AvatarDispatcher>
 
-  <CharacterDispatcher>
-    <Include>SimpleBodySpriteDispatcher</Include>
+  <CharacterDispatcher include="SimpleBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
   </CharacterDispatcher>
 
-  <TileMapDispatcher>
-    <Include>Entity2dDispatcher</Include>
+  <TileMapDispatcher include="Entity2dDispatcher">
     <Density>10</Density>
     <Friction>0</Friction>
     <Restitution>0</Restitution>
