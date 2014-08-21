@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Xtension xDispatcher="GroupDispatcher" />
+    <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entity>
       <Name>Back</Name>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="ButtonDispatcher">
+      <Xtension optXDispatcherName="Some(ButtonDispatcher)">
         <Depth type="System.Single">10</Depth>
         <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui;AssetGraph.xml</DownImage>
         <Position type="OpenTK.Vector2">-128;-224</Position>
@@ -16,7 +16,7 @@
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
       <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="LabelDispatcher">
+      <Xtension optXDispatcherName="Some(LabelDispatcher)">
         <Depth type="System.Single">-100</Depth>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>
         <Position type="OpenTK.Vector2">-480;-272</Position>

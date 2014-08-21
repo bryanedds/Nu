@@ -186,11 +186,20 @@ module Xtension =
                 if converter.CanConvertFrom typeof<string> then (xNode.Name, converter.ConvertFrom xValueStr)
                 else failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'.")
             childNodes
-            
+
+    /// Read an optXDispatcherName from an xml node.
+    let readOptXDispatcherName (node : XmlNode) =
+        match node.Attributes.[OptXDispatcherNameAttributeName] with
+        | null -> None
+        | optXDispatcherNameAttribute ->
+            let optXDispatcherNameStr = optXDispatcherNameAttribute.InnerText
+            let optStrConverter = TypeDescriptor.GetConverter typeof<string option>
+            optStrConverter.ConvertFrom optXDispatcherNameStr :?> string option
+
     /// Read an Xtension from Xml.
     let read valueNode =
         let xFields = Map.ofSeq <| readXFields valueNode
-        let optXDispatcherName = match valueNode.Attributes.[XDispatcherAttributeName].InnerText with "" -> None | str -> Some str
+        let optXDispatcherName = readOptXDispatcherName valueNode
         { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
 
     /// Attempt to read a target's property from Xml.
@@ -198,7 +207,7 @@ module Xtension =
         if property.PropertyType = typeof<Xtension> then
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
-            let optXDispatcherName = match valueNode.Attributes.[XDispatcherAttributeName].InnerText with "" -> None | str -> Some str
+            let optXDispatcherName = readOptXDispatcherName valueNode
             let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields; OptXDispatcherName = optXDispatcherName }
             property.SetValue (target, xtension)
         else
@@ -225,7 +234,7 @@ module Xtension =
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
         let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyWriteable property) targetProperties
         let xtensionNode = targetNode.[xtensionProperty.Name]
-        let optXDispatcherName = match xtensionNode.Attributes.[XDispatcherAttributeName].InnerText with "" -> None | str -> Some str
+        let optXDispatcherName = readOptXDispatcherName xtensionNode
         let xtension = xtensionProperty.GetValue target :?> Xtension
         let xtension = { xtension with OptXDispatcherName = optXDispatcherName }
         xtensionProperty.SetValue (target, xtension)
@@ -234,7 +243,7 @@ module Xtension =
     /// NOTE: XmlWriter can also write to an XmlDocument instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let write shouldWriteProperty (writer : XmlWriter) xtension =
-        writer.WriteAttributeString ("xDispatcher", match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
+        writer.WriteAttributeString (OptXDispatcherNameAttributeName, match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
             if  isPropertyNameWriteable xFieldName &&

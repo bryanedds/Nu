@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Xtension xDispatcher="StagePlayDispatcher" />
+    <Xtension optXDispatcherName="Some(StagePlayDispatcher)" />
     <Entity>
       <Name>Player</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="PlayerDispatcher">
+      <Xtension optXDispatcherName="Some(PlayerDispatcher)">
         <Depth type="System.Single">1</Depth>
         <SpriteImage type="Nu.RenderingModule+Image">Player;Stage;AssetGraph.xml</SpriteImage>
         <Position type="OpenTK.Vector2">-356;-175.6805</Position>

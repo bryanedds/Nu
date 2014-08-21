@@ -4,6 +4,7 @@ open System.Xml
 open System.Reflection
 open System.ComponentModel
 open System.Collections.Generic
+open Prime.PrimeConstants
 
 [<AutoOpen>]
 module OverlayerModule =
@@ -18,7 +19,7 @@ module Overlayer =
     let make (fileName : string) =
         let document = XmlDocument ()
         document.Load fileName
-        let root = document.SelectSingleNode "Root"
+        let root = document.SelectSingleNode RootNodeName
         { OverlayDocument = document; RootNode = root }
 
     let rec trySelectNode overlayName propertyName overlayer =
@@ -29,7 +30,7 @@ module Overlayer =
             let optLeaf = branch.SelectSingleNode propertyName
             match optLeaf with
             | null ->
-                let optIncludeNames = branch.SelectSingleNode "Include"
+                let optIncludeNames = branch.Attributes.[IncludeAttributeName]
                 match optIncludeNames with
                 | null -> None
                 | includeNames ->
@@ -38,7 +39,8 @@ module Overlayer =
                     let mutable enr = includeNames.GetEnumerator ()
                     while enr.MoveNext () && Option.isNone optNode do
                         let includeName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
-                        optNode <- trySelectNode (includeName.Trim ()) propertyName overlayer
+                        let includeName = includeName.Trim ()
+                        optNode <- trySelectNode includeName propertyName overlayer
                     optNode
             | leaf -> Some leaf
 

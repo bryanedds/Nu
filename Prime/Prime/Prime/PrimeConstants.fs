@@ -5,4 +5,5 @@ module PrimeConstants =
 
     let [<Literal>] RootNodeName = "Root"
     let [<Literal>] TypeAttributeName = "type"
-    let [<Literal>] XDispatcherAttributeName = "xDispatcher"
+    let [<Literal>] OptXDispatcherNameAttributeName = "optXDispatcherName"
+    let [<Literal>] IncludeAttributeName = "include"

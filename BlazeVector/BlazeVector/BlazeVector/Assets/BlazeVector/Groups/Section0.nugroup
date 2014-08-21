@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Xtension xDispatcher="GroupDispatcher" />
+    <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entity>
       <Name>0066be26-b4ad-4fda-ad1f-13aba92657c1</Name>
       <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="TileMapDispatcher">
+      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
         <Depth type="System.Single">0</Depth>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Size type="OpenTK.Vector2">64;64</Size>
@@ -15,7 +15,7 @@
     <Entity>
       <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="EnemyDispatcher">
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
         <Depth type="System.Single">4</Depth>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
@@ -31,7 +31,7 @@
     <Entity>
       <Name>33293c93-3553-4875-9efd-3a2ba917c33a</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="EnemyDispatcher">
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
         <Depth type="System.Single">4</Depth>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
@@ -47,7 +47,7 @@
     <Entity>
       <Name>35d5898e-32ef-4026-995b-a81cfbe7dfd2</Name>
       <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="TileMapDispatcher">
+      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
         <Depth type="System.Single">-8</Depth>
         <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
@@ -58,7 +58,7 @@
     <Entity>
       <Name>3a26e4d1-0257-4755-8074-5a5810a8d6d0</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="EnemyDispatcher">
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
         <Depth type="System.Single">4</Depth>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
@@ -74,7 +74,7 @@
     <Entity>
       <Name>642996a9-b2dd-48f5-a76a-25f6d457ef69</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="EnemyDispatcher">
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
         <Depth type="System.Single">4</Depth>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
@@ -90,7 +90,7 @@
     <Entity>
       <Name>705dc3f2-8678-426e-8a7a-10c523bb4521</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="EnemyDispatcher">
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
         <Depth type="System.Single">4</Depth>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
@@ -106,7 +106,7 @@
     <Entity>
       <Name>cf1aabf7-258b-49c3-abaa-84d6479fa1a0</Name>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="EnemyDispatcher">
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
         <Depth type="System.Single">4</Depth>
         <GravityScale type="System.Single">0</GravityScale>
         <Health type="System.Int32">6</Health>
@@ -122,7 +122,7 @@
     <Entity>
       <Name>f63bf3c3-bb2e-4b09-8c64-1cb9b14aab12</Name>
       <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension xDispatcher="TileMapDispatcher">
+      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
         <Depth type="System.Single">-4</Depth>
         <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
