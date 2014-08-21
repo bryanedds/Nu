@@ -240,7 +240,7 @@ module Xtension =
         xtensionProperty.SetValue (target, xtension)
 
     /// Write an Xtension to Xml.
-    /// NOTE: XmlWriter can also write to an XmlDocument instance by using
+    // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let write shouldWriteProperty (writer : XmlWriter) xtension =
         writer.WriteAttributeString (OptXDispatcherNameAttributeName, match xtension.OptXDispatcherName with None -> String.Empty | Some name -> name)
@@ -258,7 +258,7 @@ module Xtension =
                 writer.WriteEndElement ()
 
     /// Write all of a target's properties to Xml.
-    /// NOTE: XmlWriter can also write to an XmlDocument instance by using
+    // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let writeTargetProperties shouldWriteProperty (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
