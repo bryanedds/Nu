@@ -490,7 +490,7 @@ module WorldModule =
                         [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                          typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
                          typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
-                         typeof<TextBoxDispatcher>.Name, TextBoxDispatcher () :> obj
+                         typeof<TextDispatcher>.Name, TextDispatcher () :> obj
                          typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
                          typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
                          typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj

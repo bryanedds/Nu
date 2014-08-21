@@ -44,9 +44,9 @@
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <OptOverlayName>Some(TextBoxDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TextBoxDispatcher)">
-        <BoxImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BoxImage>
+      <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
         <Position type="OpenTK.Vector2">-320;96</Position>
         <Size type="OpenTK.Vector2">640;128</Size>
         <Text type="System.String">OmniBlade</Text>

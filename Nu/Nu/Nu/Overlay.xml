@@ -48,11 +48,11 @@
 
   <LabelDispatcher include="GuiDispatcher" />
 
-  <TextBoxDispatcher include="GuiDispatcher">
+  <TextDispatcher include="GuiDispatcher">
     <TextColor>1;1;1;1</TextColor>
     <TextFont>Font;Default;AssetGraph.xml</TextFont>
     <TextOffset>0;0</TextOffset>
-  </TextBoxDispatcher>
+  </TextDispatcher>
 
   <ToggleDispatcher include="GuiDispatcher">
     <IsPressed>False</IsPressed>
