@@ -40,6 +40,7 @@ module Metadata =
             let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (ImageAssetName, PackageName, and / or PackageFileName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 
+    // TODO: factor this function into multiple functions...
     let tryGenerateAssetMetadataMap assetGraphFileName =
         try let document = XmlDocument ()
             document.Load (assetGraphFileName : string) 
