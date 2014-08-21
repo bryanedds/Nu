@@ -297,7 +297,7 @@ module WorldModule =
             use file = File.Open (fileName, FileMode.Create)
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
-            // NOTE: XmlWriter can also write to an XmlDocument instance by using
+            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
             // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
             use writer = XmlWriter.Create (file, writerSettings)
             writer.WriteStartDocument ()
