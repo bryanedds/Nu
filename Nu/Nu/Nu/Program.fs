@@ -69,12 +69,13 @@ module Program =
     scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. *)
 
-    (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 25% to 50%
-    decrease in speed as compared to the dev machine. However, this can be mitigated in a few ways with
-    approximate speed-ups -
+    (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 25% to
+    50% decrease in speed as compared to the dev machine. However, this can be mitigated in a few
+    ways with approximate speed-ups -
 
     2x gain - Run app at 30fps instead of 60
     3x gain - put physics and rendering each in another process
+    ? gain - quadtree culling to avoid unecessary render descriptor queries
     1.3x gain - store loaded assets in a Dictionary<Dictionary, ...>> rather than a Map<Map, ...>>, or...
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - optimize locality of address usage

@@ -12,13 +12,13 @@ module Entity2dDispatcherModule =
 
     type Entity with
 
-        member entity.Position = entity?Position () : Vector2
+        member entity.Position = Map.find "Position" entity.Xtension.XFields :?> Vector2 // optimization
         static member setPosition (value : Vector2) (entity : Entity) : Entity = entity?Position <- value
-        member entity.Depth = entity?Depth () : single
+        member entity.Depth = Map.find "Depth" entity.Xtension.XFields :?> single // optimization
         static member setDepth (value : single) (entity : Entity) : Entity = entity?Depth <- value
-        member entity.Rotation = entity?Rotation () : single
+        member entity.Rotation = Map.find "Rotation" entity.Xtension.XFields :?> single // optimization
         static member setRotation (value : single) (entity : Entity) : Entity = entity?Rotation <- value
-        member entity.Size = entity?Size () : Vector2
+        member entity.Size = Map.find "Size" entity.Xtension.XFields :?> Vector2 // optimization
         static member setSize (value : Vector2) (entity : Entity) : Entity = entity?Size <- value
 
     type [<AbstractClass>] Entity2dDispatcher (facetNames) =
