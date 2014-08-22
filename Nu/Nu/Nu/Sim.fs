@@ -403,8 +403,8 @@ module WorldSimModule =
         static member gamePlaying world =
             Interactivity.gamePlaying world.Interactivity
 
-        // NOTE: function forwarding
-        static member publish publishSort eventName publisher eventData world = Sim.publish publishSort eventName publisher eventData world
+        (* The following are function forwarders. *)
+        static member publish publishSorter eventName publisher eventData world = Sim.publish publishSorter eventName publisher eventData world
         static member publish4 eventName publisher eventData world = Sim.publish4 eventName publisher eventData world
         static member subscribe subscriptionKey eventName subscriber subscription world = Sim.subscribe subscriptionKey eventName subscriber subscription world
         static member subscribe4 eventName subscriber subscription world = Sim.subscribe4 eventName subscriber subscription world

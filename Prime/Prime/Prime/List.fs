@@ -314,9 +314,9 @@ let rec remove pred list =
     List.rev listRev
 
 let collapseLeft list =
-    let length = List.length list
-    [for x in List.rev [0 .. length] do yield take x list]
+    [for x in 0 .. List.length list do
+        yield take x list]
 
-let collapseRight list =
-    let length = List.length list
-    [for x in 0 .. length do yield skip x list]
+let collapseLeftNoEmpty list =
+    [for x in 1 .. List.length list - 1 do
+        yield take x list]

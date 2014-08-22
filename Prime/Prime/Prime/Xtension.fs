@@ -4,6 +4,7 @@
 namespace Prime
 open System
 open System.Reflection
+open System.Collections.Generic
 open System.ComponentModel
 open System.Xml
 open Microsoft.FSharp.Reflection
@@ -12,6 +13,13 @@ open Prime.PrimeConstants
 
 [<AutoOpen>]
 module XtensionModule =
+
+    /// The empty dispatcher.
+    /// NOTE: this could instead be a special class with a MethodMissing method
+    let private EmptyDispatcher = new obj ()
+    
+    /// The dispatcher cache.
+    let private DispatcherCache = Dictionary<string, obj> ()
 
     /// An attribute to specify the default value of an XField.
     [<AttributeUsage (AttributeTargets.Class)>]
@@ -37,9 +45,6 @@ module XtensionModule =
           CanDefault : bool
           Sealed : bool }
 
-        // NOTE: this could instead be a special class with a MethodMissing method
-        static member private emptyDispatcher = new obj ()
-
         static member private getDefaultValue () : 'r =
             let defaultFieldType = typeof<'r>
             let optDefaultValueAttribute = Seq.tryHead <| defaultFieldType.GetCustomAttributes<XDefaultValueAttribute> ()
@@ -59,16 +64,22 @@ module XtensionModule =
             else failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
-            // TODO: consider memoizing with a dictionary from xtension.OptXDispatcherName to dispatcher.
-            let dispatchers = dispatcherContainer.GetDispatchers ()
-            match Map.tryFind dispatcherName dispatchers with
-            | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
-            | Some dispatcher -> dispatcher
+            // OPTIMIZATION: uses memoization.
+            let refDispatcher = ref Unchecked.defaultof<obj>
+            if DispatcherCache.TryGetValue (dispatcherName, refDispatcher) then !refDispatcher
+            else
+                let dispatchers = dispatcherContainer.GetDispatchers ()
+                let dispatcher =
+                    match Map.tryFind dispatcherName dispatchers with
+                    | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
+                    | Some dispatcher -> dispatcher
+                DispatcherCache.Add (dispatcherName, dispatcher)
+                dispatcher
 
         static member getDispatcher xtension (dispatcherContainer : IXDispatcherContainer) =
             let optXDispatcherName = xtension.OptXDispatcherName
             match optXDispatcherName with
-            | None -> Xtension.emptyDispatcher
+            | None -> EmptyDispatcher
             | Some dispatcherName -> Xtension.getDispatcherByName dispatcherName dispatcherContainer
 
         static member dispatchesAs2 (dispatcherTargetType : Type) dispatcher =
@@ -149,7 +160,7 @@ module XtensionModule =
             { xtension with XFields = xFields }
 
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
-    /// These are just POFO types, except without any data (the data they use would be in a related
+    /// These are just POFSO types, except without any data (the data they use would be in a related
     /// value's XField).
     and XDispatchers =
         Map<string, obj>

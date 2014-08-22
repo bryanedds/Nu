@@ -52,7 +52,7 @@ module Entity2dDispatcherModule =
 
     type Entity with
     
-        (* The following dispatch forwarders are optimized. *)
+        (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
 
         static member propagatePhysics address (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with

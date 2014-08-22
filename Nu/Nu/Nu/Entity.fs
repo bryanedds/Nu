@@ -31,7 +31,7 @@ module EntityModule =
 
     type Entity with
 
-        (* The following dispatch forwarders are optimized. *)
+        (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
 
         static member init (entity : Entity) dispatcherContainer =
             match Xtension.getDispatcher entity.Xtension dispatcherContainer with
