@@ -59,6 +59,7 @@ module XtensionModule =
             else failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
+            // TODO: consider memoizing with a dictionary from xtension.OptXDispatcherName to dispatcher.
             let dispatchers = dispatcherContainer.GetDispatchers ()
             match Map.tryFind dispatcherName dispatchers with
             | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."

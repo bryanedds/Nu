@@ -21,12 +21,68 @@ module Entity2dDispatcherModule =
         member entity.Size = entity?Size () : Vector2
         static member setSize (value : Vector2) (entity : Entity) : Entity = entity?Size <- value
 
-        static member propagatePhysics (address : Address) (entity : Entity) (world : World) : World = entity?PropagatePhysics (address, world)
-        static member handleBodyTransformMessage (address : Address) (message : BodyTransformMessage) (entity : Entity) (world : World) : World = entity?HandleBodyTransformMessage (address, message, world)
-        static member getRenderDescriptors (entity : Entity) (world : World) : RenderDescriptor list = entity?GetRenderDescriptors (entity, world)
-        static member getQuickSize  (entity : Entity) (world : World) : Vector2 = entity?GetQuickSize (entity, world)
-        static member getPickingPriority (entity : Entity) (world : World) : single = entity?GetPickingPriority (entity, world)
-        static member isTransformRelative  (entity : Entity) (world : World) : bool = entity?IsTransformRelative (entity, world)
+    type [<AbstractClass>] Entity2dDispatcher (facetNames) =
+        inherit EntityDispatcher (facetNames)
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            entity |>
+                Entity.setPosition Vector2.Zero |>
+                Entity.setDepth 0.0f |>
+                Entity.setSize DefaultEntitySize |>
+                Entity.setRotation 0.0f
+                
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+
+        abstract member PropagatePhysics : Address * World -> World
+        default dispatcher.PropagatePhysics (_, world) = world
+
+        abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
+        default dispatcher.HandleBodyTransformMessage (_, _, world) = world
+
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors (_, _) = []
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
+
+        abstract member IsTransformRelative : Entity * World -> bool
+        default dispatcher.IsTransformRelative (_, _) = true
+
+    type Entity with
+    
+        (* The following dispatch forwarders are optimized. *)
+
+        static member propagatePhysics address (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? Entity2dDispatcher as dispatcher -> dispatcher.PropagatePhysics (address, world)
+            | _ -> failwith "Due to optimization in Entity.propagatePhysics, an entity's 2d dispatcher must be an Entity2dDispatcher."
+        
+        static member handleBodyTransformMessage address message (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? Entity2dDispatcher as dispatcher -> dispatcher.HandleBodyTransformMessage (address, message, world)
+            | _ -> failwith "Due to optimization in Entity.handleBodyTransformMessage, an entity's 2d dispatcher must be an Entity2dDispatcher."
+        
+        static member getRenderDescriptors (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? Entity2dDispatcher as dispatcher -> dispatcher.GetRenderDescriptors (entity, world)
+            | _ -> failwith "Due to optimization in Entity.getRenderDescriptors, an entity's 2d dispatcher must be an Entity2dDispatcher."
+        
+        static member getQuickSize  (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? Entity2dDispatcher as dispatcher -> dispatcher.GetQuickSize (entity, world)
+            | _ -> failwith "Due to optimization in Entity.getQuickSize, an entity's 2d dispatcher must be an Entity2dDispatcher."
+        
+        static member getPickingPriority (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? Entity2dDispatcher as dispatcher -> dispatcher.GetPickingPriority (entity, world)
+            | _ -> failwith "Due to optimization in Entity.getPickingPriority, an entity's 2d dispatcher must be an Entity2dDispatcher."
+        
+        static member isTransformRelative  (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? Entity2dDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
+            | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an Entity2dDispatcher."
 
         static member private sortFstDesc (priority, _) (priority2, _) =
             if priority = priority2 then 0
@@ -72,35 +128,6 @@ module Entity2dDispatcherModule =
                     let picked = NuMath.isPointInBounds3 positionEntity transform.Position transform.Size
                     picked)
                 entitiesSorted
-
-    type [<AbstractClass>] Entity2dDispatcher (facetNames) =
-        inherit EntityDispatcher (facetNames)
-
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            entity |>
-                Entity.setPosition Vector2.Zero |>
-                Entity.setDepth 0.0f |>
-                Entity.setSize DefaultEntitySize |>
-                Entity.setRotation 0.0f
-                
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
-
-        abstract member PropagatePhysics : Address * World -> World
-        default dispatcher.PropagatePhysics (_, world) = world
-
-        abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
-        default dispatcher.HandleBodyTransformMessage (_, _, world) = world
-
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _) = []
-
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
-
-        abstract member IsTransformRelative : Entity * World -> bool
-        default dispatcher.IsTransformRelative (_, _) = true
 
 [<AutoOpen>]
 module GuiDispatcherModule =
@@ -287,7 +314,7 @@ module SimpleAnimatedSpriteFacet =
             Entity.setTileSize (Vector2 (16.0f, 16.0f)) |>
             Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
 
-    let getRenderDescriptors (entity : Entity) viewType (world : World) =
+    let getRenderDescriptors (entity : Entity) viewType world =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
         else
             [LayerableDescriptor

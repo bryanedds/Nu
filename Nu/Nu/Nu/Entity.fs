@@ -14,13 +14,6 @@ open Nu.NuConstants
 [<AutoOpen>]
 module EntityModule =
 
-    type Entity with
-
-        static member init (entity : Entity) (dispatcherContainer : IXDispatcherContainer) : Entity = entity?Init (entity, dispatcherContainer)
-        static member register (address : Address) (entity : Entity) (world : World) : World = entity?Register (address, world)
-        static member unregister (address : Address) (entity : Entity) (world : World) : World = entity?Unregister (address, world)
-        static member usesFacet (facetName : string) (entity : Entity) (world : World) : bool = entity?UsesFacet (facetName, world)
-
     type EntityDispatcher (facetNames : Set<string>) =
 
         new () = EntityDispatcher (Set.empty)
@@ -34,8 +27,35 @@ module EntityModule =
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
 
-        member dispatcher.UsesFacet (facetName, _ : World) =
-            Set.contains facetName facetNames
+        member dispatcher.GetFacetNames (_ : World) = facetNames
+
+    type Entity with
+
+        (* The following dispatch forwarders are optimized. *)
+
+        static member init (entity : Entity) dispatcherContainer =
+            match Xtension.getDispatcher entity.Xtension dispatcherContainer with
+            | :? EntityDispatcher as dispatcher -> dispatcher.Init (entity, dispatcherContainer)
+            | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
+        
+        static member register address (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.Register (address, world)
+            | _ -> failwith "Due to optimization in Entity.register, an entity's base dispatcher must be an EntityDispatcher."
+        
+        static member unregister (address : Address) (entity : Entity) (world : World) : World =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.Unregister (address, world)
+            | _ -> failwith "Due to optimization in Entity.unregister, an entity's base dispatcher must be an EntityDispatcher."
+        
+        static member getFacetNames (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.GetFacetNames world
+            | _ -> failwith "Due to optimization in Entity.getFacetNames, an entity's base dispatcher must be an EntityDispatcher."
+
+        static member usesFacet facetName entity world =
+            let facetNames = Entity.getFacetNames entity world
+            facetNames.Contains facetName
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
