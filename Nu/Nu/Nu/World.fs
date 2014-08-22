@@ -21,8 +21,8 @@ module WorldModule =
 
     type World with
 
-        static member makeSubscriptionKey =
-            Guid.NewGuid
+        static member makeSubscriptionKey () =
+            Guid.NewGuid ()
 
         static member handleEventAsSwallow (world : World) =
             (Handled, world)
@@ -35,6 +35,7 @@ module WorldModule =
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
+    let private AnyEventNamesCache = Dictionary<Address, Address list> ()
 
     type World with
 
@@ -131,14 +132,26 @@ module WorldModule =
                 subscriptions
                 world
 
-        /// Publish an event.
-        static member publishDefinition publishSort eventName publisher eventData world =
-            let eventNames = List.collapseLeft eventName
-            let optSubLists = List.map (fun eventName -> Map.tryFind (eventName @ AnyEventName) world.Subscriptions) eventNames
+        static member getAnyEventNames eventName =
+            // OPTIMIZATION: uses memoization.
+            let refAnyEventNames = ref Unchecked.defaultof<Address list>
+            if AnyEventNamesCache.TryGetValue (eventName, refAnyEventNames) then !refAnyEventNames
+            else
+                let anyEventNames = [for i in 0 .. List.length eventName - 1 do yield List.take i eventName @ AnyEventName]
+                AnyEventNamesCache.Add (eventName, anyEventNames)
+                anyEventNames
+
+        static member getSubscriptionsSorted publishSorter eventName world =
+            let anyEventNames = World.getAnyEventNames eventName
+            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName world.Subscriptions) anyEventNames
             let optSubLists = Map.tryFind eventName world.Subscriptions :: optSubLists
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
-            let subListSorted = publishSort subList world
+            publishSorter subList world
+
+        /// Publish an event.
+        static member publishDefinition publishSorter eventName publisher eventData world =
+            let subscriptions = World.getSubscriptionsSorted publishSorter eventName world
             let (_, world) =
                 List.foldWhile
                     (fun (eventHandled, world) (_, subscriber, subscription) ->
@@ -157,7 +170,7 @@ module WorldModule =
                                     | Some _ -> fn event world
                             Some result)
                     (Unhandled, world)
-                    subListSorted
+                    subscriptions
             world
 
         /// Publish an event.

@@ -123,11 +123,6 @@ module NuMathModule =
         static member scale s m =
             { m with M11 = m.M11 * s; M22 = m.M22 * s }
 
-        static member identity =
-            { M11 = 1.0f; M21 = 0.0f; M31 = 0.0f
-              M12 = 0.0f; M22 = 1.0f; M32 = 0.0f
-              M13 = 0.0f; M23 = 0.0f; M33 = 1.0f }
-
         static member make
             m11 m21 m31
             m12 m22 m32
@@ -144,21 +139,6 @@ module NuMathModule =
                 r1.X r1.Y r1.Z
                 r2.X r2.Y r2.Z
                 r3.X r3.Y r3.Z
-
-        static member makeFromTranslation (t : Vector2) =
-            { Matrix3.identity with M13 = t.X; M23 = t.Y }
-
-        static member makeFromScale s =
-            Matrix3.identity |> Matrix3.scale s
-
-        static member getTranslationMatrix m =
-            Matrix3.makeFromTranslation <| Vector2 (m.M13, m.M23)
-
-        static member getScaleMatrix m =
-            { Matrix3.identity with M11 = m.M11; M22 = m.M22; M33 = m.M33 }
-
-        static member getTranslationAndScaleMatrix m =
-            Matrix3.setTranslation <| Matrix3.getTranslation m <| Matrix3.getScaleMatrix m
 
         /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
         /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
@@ -199,6 +179,28 @@ module NuMathModule =
             let y = v.X * m.M21 + v.Y * m.M22 + m.M23
             let z = v.X * m.M31 + v.Y * m.M32 + m.M33
             Vector2 (x / z, y / z)
+
+module Matrix3 =
+
+    let identity =
+        { M11 = 1.0f; M21 = 0.0f; M31 = 0.0f
+          M12 = 0.0f; M22 = 1.0f; M32 = 0.0f
+          M13 = 0.0f; M23 = 0.0f; M33 = 1.0f }
+
+    let makeFromTranslation (t : Vector2) =
+        { identity with M13 = t.X; M23 = t.Y }
+
+    let makeFromScale s =
+        identity |> Matrix3.scale s
+
+    let getTranslationMatrix m =
+        makeFromTranslation <| Vector2 (m.M13, m.M23)
+
+    let getScaleMatrix m =
+        { identity with M11 = m.M11; M22 = m.M22; M33 = m.M33 }
+
+    let getTranslationAndScaleMatrix m =
+        Matrix3.setTranslation <| Matrix3.getTranslation m <| getScaleMatrix m
 
 [<RequireQualifiedAccess>]
 module NuMath =
