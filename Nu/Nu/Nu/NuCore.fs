@@ -4,13 +4,11 @@
 namespace Nu
 open System
 open System.Configuration
+open System.Text
 open Prime
 
 [<AutoOpen>]
 module NuCoreModule =
-
-    /// Specifies the address of an element in a game.
-    type Address = string list
 
     /// Specifies the screen-clearing routine.
     type ScreenClear =
@@ -22,20 +20,63 @@ module NuCoreModule =
         | Exiting
         | Running
 
+    /// Specifies the address of an element in a game.
+    type [<CustomEquality; CustomComparison>] Address =
+        { AddrList : string list
+          AddrStr : string }
+
+        static member private listToString (list : string list) =
+            String.Join ("/", list)
+            
+        static member addressToString (address : Address) =
+            Address.listToString address.AddrList
+
+        static member makeAddress list =
+            { AddrList = list; AddrStr = Address.listToString list }
+
+        static member (@@) (address, address2) =
+            let list = address.AddrList @ address2.AddrList
+            Address.makeAddress list
+
+        override this.Equals that =
+            match that with
+            | :? Address as that -> this.AddrStr = that.AddrStr
+            | _ -> false
+
+        override this.GetHashCode () =
+            this.AddrStr.GetHashCode ()
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Address as that -> String.Compare (this.AddrStr, that.AddrStr)
+                | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
+
+    let addressToString (address : Address) =
+        Address.addressToString address
+
+    let makeAddress =
+        Address.makeAddress
+
     let addr (str : string) : Address =
-        List.ofArray <| str.Split '/'
+        let list = List.ofArray <| str.Split '/'
+        makeAddress list
 
     let straddr str (address : Address) : Address =
-        addr str @ address
+        addr str @@ address
 
     let addrstr (address : Address) str : Address =
-        address @ [str]
+        let list = address.AddrList @ [str]
+        makeAddress list
+
+    let listaddr list (address : Address) : Address =
+        makeAddress <| list @ address.AddrList
+
+    let addrlist (address : Address) list : Address =
+        makeAddress <| address.AddrList @ list
 
     let straddrstr str (address : Address) str2 : Address =
-        addr str @ address @ addr str2
-
-    let addrToStr (address : Address) =
-        List.fold (fun str (sub : string) -> str + sub) String.Empty address
+        addr str @@ address @@ addr str2
 
     let (</>) str str2 =
         str + "/" + str2
@@ -55,3 +96,48 @@ module NuCore =
         let appSetting = ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"]
         if not <| Int32.TryParse (appSetting, resolution) then resolution := defaultResolution
         !resolution
+
+[<RequireQualifiedAccess>]
+module Address =
+
+    let empty =
+        makeAddress []
+
+    let head address =
+        List.head address.AddrList
+        
+    let tail address =
+        makeAddress <| List.tail address.AddrList
+
+    let at index address =
+        List.at index address.AddrList
+
+    let map mapper address =
+        let addrList = List.map mapper address.AddrList
+        makeAddress addrList
+
+    let filter predicate address =
+        let addrList = List.filter predicate address.AddrList
+        makeAddress addrList
+
+    let fold folder state address =
+        List.fold folder state address.AddrList
+
+    let skip n address =
+        makeAddress <| List.skip n address.AddrList
+
+    let take n address =
+        makeAddress <| List.take n address.AddrList
+
+    let last address =
+        List.last address.AddrList
+
+    let allButLast address =
+        makeAddress <| List.allButLast address.AddrList
+
+    let length address =
+        List.length address.AddrList
+
+    let isEmpty address =
+        List.isEmpty address.AddrList
+

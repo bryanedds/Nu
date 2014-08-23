@@ -26,10 +26,8 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Sim.fs"
 #load "Entity.fs"
 #load "Group.fs"
-#load "Transition.fs"
 #load "Screen.fs"
 #load "Game.fs"
-#load "Facets.fs"
 #load "Dispatchers.fs"
 #load "World.fs"
 

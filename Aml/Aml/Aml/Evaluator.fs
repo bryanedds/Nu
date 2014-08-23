@@ -1448,7 +1448,7 @@ module Evaluator =
         List.map (fun expr -> evalExprDropEnv expr env) exprs
     
     /// Evaluate multiple exprs as an array, dropping the environments they produce.
-    /// An optimization for evaluating arrays.
+    /// OPTIMIZATION: An optimization for evaluating arrays.
     and evalExprArrayDropEnv exprs env =
         Array.map (fun expr -> evalExprDropEnv expr env) exprs
 

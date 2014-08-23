@@ -53,7 +53,7 @@ module BulletDispatcherModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
-            World.observe (CollisionEventName @ address) address (CustomSub collisionHandler) world
+            World.observe (CollisionEventName @@ address) address (CustomSub collisionHandler) world
 
         override dispatcher.GetBodyShape (entity, _) =
             CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
@@ -122,7 +122,7 @@ module EnemyDispatcherModule =
             let world = base.Register (address, world)
             world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
-                World.observe (CollisionEventName @ address) address (CustomSub collisionHandler)
+                World.observe (CollisionEventName @@ address) address (CustomSub collisionHandler)
 
         override dispatcher.GetBodyShape (enemy, _) =
             CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }
@@ -144,7 +144,7 @@ module PlayerDispatcherModule =
         inherit SimpleBodyAnimatedSpriteDispatcher (Set.empty)
 
         let createBullet bulletAddress (playerTransform : Transform) world =
-            let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| List.last bulletAddress) world
+            let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
                 bullet |>
                     Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>
@@ -157,7 +157,7 @@ module PlayerDispatcherModule =
             World.playSound ShotSound 1.0f world
 
         let shootBullet address world =
-            let bulletAddress = List.allButLast address @ [string <| NuCore.makeId ()]
+            let bulletAddress = addrlist (Address.allButLast address) [string <| NuCore.makeId ()]
             let playerTransform = world |> World.getEntity address |> Entity.getTransform
             let world = createBullet bulletAddress playerTransform world
             propelBullet bulletAddress world
@@ -189,8 +189,8 @@ module PlayerDispatcherModule =
                 let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
                 let force =
                     match optGroundTangent with
-                    | None -> Vector2 (8000.0f, -30000.0f)
-                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
+                    | None -> Vector2 (800.0f, -30000.0f)
+                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (800.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
                 let world = World.applyForce force physicsId world
                 (Unhandled, world)
             else (Unhandled, world)
@@ -239,7 +239,7 @@ module StagePlayDispatcherModule =
         inherit GroupDispatcher ()
 
         let getPlayer groupAddress world =
-            let playerAddress = groupAddress @ [StagePlayerName]
+            let playerAddress = addrlist groupAddress [StagePlayerName]
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
@@ -318,9 +318,9 @@ module StageScreenModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe (SelectEventName @ address) address (CustomSub startPlayHandler) |>
-                World.observe (StartOutgoingEventName @ address) address (CustomSub stoppingPlayHandler) |>
-                World.observe (DeselectEventName @ address) address (CustomSub stopPlayHandler)
+                World.observe (SelectEventName @@ address) address (CustomSub startPlayHandler) |>
+                World.observe (StartOutgoingEventName @@ address) address (CustomSub stoppingPlayHandler) |>
+                World.observe (DeselectEventName @@ address) address (CustomSub stopPlayHandler)
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =

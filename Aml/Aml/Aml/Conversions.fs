@@ -93,7 +93,7 @@ module Conversions =
     let exprsToViolations exprs = List.choose exprToOptViolation exprs
 
     /// Convert an array of exprs to violations.
-    /// An optimization for evaluating arrays.
+    /// OPTIMIZATION: An optimization for evaluating arrays.
     let exprArrayToViolations exprs = Array.choose exprToOptViolation exprs
 
     // TODO: document
