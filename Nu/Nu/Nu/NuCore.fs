@@ -38,19 +38,33 @@ module NuCoreModule =
             let list = address.AddrList @ address2.AddrList
             Address.makeAddress list
 
-        override this.Equals that =
-            match that with
-            | :? Address as that -> this.AddrStr = that.AddrStr
-            | _ -> false
+        static member private innerCompareTo this that =
+            String.Compare (this.AddrStr, that.AddrStr)
+        
+        static member private innerEquals this that =
+            this.AddrStr = that.AddrStr
 
-        override this.GetHashCode () =
-            this.AddrStr.GetHashCode ()
+        interface Address IComparable with
+            member this.CompareTo that =
+                Address.innerCompareTo this that
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? Address as that -> String.Compare (this.AddrStr, that.AddrStr)
+                | :? Address as that -> Address.innerCompareTo this that
                 | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
+
+        interface Address IEquatable with
+            member this.Equals that =
+                Address.innerEquals this that
+
+        override this.Equals that =
+            match that with
+            | :? Address as that -> Address.innerEquals this that
+            | _ -> false
+
+        override this.GetHashCode () =
+            this.AddrStr.GetHashCode ()
 
     let addressToString (address : Address) =
         Address.addressToString address

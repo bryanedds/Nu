@@ -189,8 +189,8 @@ module PlayerDispatcherModule =
                 let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
                 let force =
                     match optGroundTangent with
-                    | None -> Vector2 (800.0f, -30000.0f)
-                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (800.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
+                    | None -> Vector2 (8000.0f, -30000.0f)
+                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
                 let world = World.applyForce force physicsId world
                 (Unhandled, world)
             else (Unhandled, world)
