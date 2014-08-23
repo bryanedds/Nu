@@ -30,12 +30,9 @@ module WorldModule =
         static member handleEventAsExit (world : World) =
             (Handled, { world with Liveness = Exiting })
 
-    // NOTE: making these static members of type World causes them to be evaluated each time
-    // they're referenced. I assume this is a bug in F#.
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
-    let private AnyEventNamesCache = Dictionary<string, Address list> ()
 
     type World with
 
@@ -132,20 +129,16 @@ module WorldModule =
                 subscriptions
                 world
 
-        static member getAnyEventNames eventName =
-            // OPTIMIZATION: uses memoization.
-            let refAnyEventNames = ref Unchecked.defaultof<Address list>
-            if AnyEventNamesCache.TryGetValue (eventName.AddrStr, refAnyEventNames) then !refAnyEventNames
-            else
-                let anyEventNames =
-                    [for i in 0 .. Address.length eventName - 1 do
-                        yield Address.take i eventName @@ AnyEventName]
-                AnyEventNamesCache.Add (eventName.AddrStr, anyEventNames)
-                anyEventNames
+        static member getAnyEventNameStrs eventName =
+            let eventNameList = eventName.AddrList
+            let anyEventNameList = AnyEventName.AddrList
+            [for i in 0 .. List.length eventNameList - 1 do
+                let subNameList = List.take i eventNameList @ anyEventNameList
+                yield String.Join ("/", subNameList)]
 
         static member getSubscriptionsSorted publishSorter eventName world =
-            let anyEventNames = World.getAnyEventNames eventName
-            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName.AddrStr world.Subscriptions) anyEventNames
+            let anyEventNameStrs = World.getAnyEventNameStrs eventName
+            let optSubLists = List.map (fun anyEventNameStr -> Map.tryFind anyEventNameStr world.Subscriptions) anyEventNameStrs
             let optSubLists = Map.tryFind eventName.AddrStr world.Subscriptions :: optSubLists
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
@@ -204,8 +197,12 @@ module WorldModule =
                         List.remove
                             (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
                             subscriptionList
-                    let subscriptions = Map.add eventName.AddrStr subscriptionList world.Subscriptions
-                    { world with Subscriptions = subscriptions }
+                    let subscriptions = 
+                        match subscriptionList with
+                        | [] -> Map.remove eventName.AddrStr world.Subscriptions
+                        | _ -> Map.add eventName.AddrStr subscriptionList world.Subscriptions
+                    let unsubscriptions = Map.remove subscriptionKey world.Unsubscriptions
+                    { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
         /// Execute a procedure within the context of a given subscription for the given event.
         static member withSubscriptionDefinition eventName subscriber subscription procedure world =
