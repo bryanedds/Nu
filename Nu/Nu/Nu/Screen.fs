@@ -78,7 +78,7 @@ module WorldScreenModule =
         static member getScreens address world =
             match address.AddrList with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid screen address '" + addressToString address + "'."
+            | _ -> failwith <| "Invalid screen address '" + string address + "'."
 
         static member registerScreen address (screen : Screen) world =
             Screen.register address screen world

@@ -27,9 +27,6 @@ module NuCoreModule =
 
         static member private listToString (list : string list) =
             String.Join ("/", list)
-            
-        static member addressToString (address : Address) =
-            Address.listToString address.AddrList
 
         static member makeAddress list =
             { AddrList = list; AddrStr = Address.listToString list }
@@ -66,8 +63,8 @@ module NuCoreModule =
         override this.GetHashCode () =
             this.AddrStr.GetHashCode ()
 
-    let addressToString (address : Address) =
-        Address.addressToString address
+        override this.ToString () =
+            Address.listToString this.AddrList
 
     let makeAddress =
         Address.makeAddress
@@ -83,17 +80,17 @@ module NuCoreModule =
         let list = address.AddrList @ [str]
         makeAddress list
 
+    let straddrstr str (address : Address) str2 : Address =
+        addr str @@ address @@ addr str2
+
     let listaddr list (address : Address) : Address =
         makeAddress <| list @ address.AddrList
 
     let addrlist (address : Address) list : Address =
         makeAddress <| address.AddrList @ list
 
-    let straddrstr str (address : Address) str2 : Address =
-        addr str @@ address @@ addr str2
-
-    let (</>) str str2 =
-        str + "/" + str2
+    let listaddrlist list (address : Address) list2 : Address =
+        makeAddress <| list @ address.AddrList @ list2
 
 [<RequireQualifiedAccess>]
 module NuCore =
@@ -154,4 +151,3 @@ module Address =
 
     let isEmpty address =
         List.isEmpty address.AddrList
-
