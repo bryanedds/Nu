@@ -124,53 +124,49 @@ module WorldEntityModule =
     type World with
 
         static member private optEntityFinder (address : Address) world =
-            let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
-            match optGroupMap with
-            | None -> None
-            | Some groupMap ->
-                let optEntityMap = Map.tryFind (List.at 1 address) groupMap
-                match optEntityMap with
-                | None -> None
-                | Some entityMap -> Map.tryFind (List.at 2 address) entityMap
+            // OPTIMIZATION: entity is looked up in EntitiesByAddress
+            Map.tryFind address.AddrStr world.EntitiesByAddress
 
-        static member private entityAdder (address : Address) world (child : Entity) =
-            let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
+        static member private entityAdder (address : Address) world (entity : Entity) =
+            let world = { world with EntitiesByAddress = Map.add address.AddrStr entity world.EntitiesByAddress }
+            let optGroupMap = Map.tryFind (Address.at 0 address) world.Entities
             match optGroupMap with
             | None ->
-                let entityMap = Map.singleton (List.at 2 address) child
-                let groupMap = Map.singleton (List.at 1 address) entityMap
-                { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
+                let entityMap = Map.singleton (Address.at 2 address) entity
+                let groupMap = Map.singleton (Address.at 1 address) entityMap
+                { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
             | Some groupMap ->
-                let optEntityMap = Map.tryFind (List.at 1 address) groupMap
+                let optEntityMap = Map.tryFind (Address.at 1 address) groupMap
                 match optEntityMap with
                 | None ->
-                    let entityMap = Map.singleton (List.at 2 address) child
-                    let groupMap = Map.add (List.at 1 address) entityMap groupMap
-                    { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
+                    let entityMap = Map.singleton (Address.at 2 address) entity
+                    let groupMap = Map.add (Address.at 1 address) entityMap groupMap
+                    { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
                 | Some entityMap ->
-                    let entityMap = Map.add (List.at 2 address) child entityMap
-                    let groupMap = Map.add (List.at 1 address) entityMap groupMap
-                    { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
+                    let entityMap = Map.add (Address.at 2 address) entity entityMap
+                    let groupMap = Map.add (Address.at 1 address) entityMap groupMap
+                    { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
 
         static member private entityRemover (address : Address) world =
-            let optGroupMap = Map.tryFind (List.at 0 address) world.Entities
+            let world = { world with EntitiesByAddress = Map.remove address.AddrStr world.EntitiesByAddress }
+            let optGroupMap = Map.tryFind (Address.at 0 address) world.Entities
             match optGroupMap with
             | None -> world
             | Some groupMap ->
-                let optEntityMap = Map.tryFind (List.at 1 address) groupMap
+                let optEntityMap = Map.tryFind (Address.at 1 address) groupMap
                 match optEntityMap with
                 | None -> world
                 | Some entityMap ->
-                    let entityMap = Map.remove (List.at 2 address) entityMap
-                    let groupMap = Map.add (List.at 1 address) entityMap groupMap
-                    { world with Entities = Map.add (List.at 0 address) groupMap world.Entities }
+                    let entityMap = Map.remove (Address.at 2 address) entityMap
+                    let groupMap = Map.add (Address.at 1 address) entityMap groupMap
+                    { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
 
         static member getEntity address world = Option.get <| World.optEntityFinder address world
         static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity
         static member setEntity address entity world = 
                 let oldEntity = Option.get <| World.optEntityFinder address world
                 let world = World.entityAdder address world entity
-                World.publish4 (ChangeEventName @ address) address (EntityChangeData { OldEntity = oldEntity }) world
+                World.publish4 (ChangeEventName @@ address) address (EntityChangeData { OldEntity = oldEntity }) world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
@@ -184,8 +180,8 @@ module WorldEntityModule =
         static member tryWithEntity fn address world = Sim.tryWithSimulant World.getOptEntity World.setEntity fn address world
         static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
     
-        static member getEntities address world =
-            match address with
+        static member getEntities (address : Address) world =
+            match address.AddrList with
             | [screenStr; groupStr] ->
                 match Map.tryFind screenStr world.Entities with
                 | None -> Map.empty
@@ -193,7 +189,7 @@ module WorldEntityModule =
                     match Map.tryFind groupStr groupMap with
                     | None -> Map.empty
                     | Some entityMap -> entityMap
-            | _ -> failwith <| "Invalid entity address '" + addrToStr address + "'."
+            | _ -> failwith <| "Invalid entity address '" + addressToString address + "'."
 
         static member registerEntity address (entity : Entity) world =
             Entity.register address entity world
@@ -203,7 +199,7 @@ module WorldEntityModule =
             Entity.unregister address entity world
 
         static member removeEntityImmediate (address : Address) world =
-            let world = World.publish4 (RemovingEventName @ address) address NoData world
+            let world = World.publish4 (RemovingEventName @@ address) address NoData world
             let world = World.unregisterEntity address world
             World.setOptEntityWithoutEvent address None world
 
@@ -216,26 +212,26 @@ module WorldEntityModule =
         static member clearEntitiesImmediate (address : Address) world =
             let entities = World.getEntities address world
             Map.fold
-                (fun world entityName _ -> World.removeEntityImmediate (address @ [entityName]) world)
+                (fun world entityName _ -> World.removeEntityImmediate (addrlist address [entityName]) world)
                 world
                 entities
 
         static member clearEntities (address : Address) world =
             let entities = World.getEntities address world
             Map.fold
-                (fun world entityName _ -> World.removeEntity (address @ [entityName]) world)
+                (fun world entityName _ -> World.removeEntity (addrlist address [entityName]) world)
                 world
                 entities
 
         static member removeEntitiesImmediate (screenAddress : Address) entityNames world =
             List.fold
-                (fun world entityName -> World.removeEntityImmediate (screenAddress @ [entityName]) world)
+                (fun world entityName -> World.removeEntityImmediate (addrlist screenAddress [entityName]) world)
                 world
                 entityNames
 
         static member removeEntities (screenAddress : Address) entityNames world =
             List.fold
-                (fun world entityName -> World.removeEntity (screenAddress @ [entityName]) world)
+                (fun world entityName -> World.removeEntity (addrlist screenAddress [entityName]) world)
                 world
                 entityNames
 
@@ -246,7 +242,7 @@ module WorldEntityModule =
                 | Some _ -> World.removeEntityImmediate address world
             let world = World.setEntityWithoutEvent address entity world
             let world = World.registerEntity address entity world
-            World.publish4 (AddEventName @ address) address NoData world
+            World.publish4 (AddEventName @@ address) address NoData world
 
         static member addEntities groupAddress entities world =
             List.fold

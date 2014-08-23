@@ -551,11 +551,11 @@ module Program =
             refWorld := world
             refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := World.setOptSelectedScreenAddress (Some EditorScreenAddress) !refWorld 
-            refWorld := World.subscribe4 DownMouseLeftEventName [] (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := World.subscribe4 UpMouseLeftEventName [] (CustomSub <| endEntityDrag form) !refWorld
-            refWorld := World.subscribe4 DownMouseCenterEventName [] (CustomSub <| beginCameraDrag form) !refWorld
-            refWorld := World.subscribe4 UpMouseCenterEventName [] (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe4 (RemovingEventName @ AnyEventName) [] (CustomSub <| simulantRemovedHandler form) !refWorld
+            refWorld := World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
+            refWorld := World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| endEntityDrag form) !refWorld
+            refWorld := World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| beginCameraDrag form) !refWorld
+            refWorld := World.subscribe4 UpMouseCenterEventName Address.empty (CustomSub <| endCameraDrag form) !refWorld
+            refWorld := World.subscribe4 (RemovingEventName @@ AnyEventName) Address.empty (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     let populateCreateEntityComboBox (form : NuEditForm) world =

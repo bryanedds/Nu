@@ -17,9 +17,6 @@ module XtensionModule =
     /// The empty dispatcher.
     /// NOTE: this could instead be a special class with a MethodMissing method
     let private EmptyDispatcher = new obj ()
-    
-    /// The dispatcher cache.
-    let private DispatcherCache = Dictionary<string, obj> ()
 
     /// An attribute to specify the default value of an XField.
     [<AttributeUsage (AttributeTargets.Class)>]
@@ -64,17 +61,10 @@ module XtensionModule =
             else failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
-            // OPTIMIZATION: uses memoization.
-            let refDispatcher = ref Unchecked.defaultof<obj>
-            if DispatcherCache.TryGetValue (dispatcherName, refDispatcher) then !refDispatcher
-            else
-                let dispatchers = dispatcherContainer.GetDispatchers ()
-                let dispatcher =
-                    match Map.tryFind dispatcherName dispatchers with
-                    | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
-                    | Some dispatcher -> dispatcher
-                DispatcherCache.Add (dispatcherName, dispatcher)
-                dispatcher
+            let dispatchers = dispatcherContainer.GetDispatchers ()
+            match Map.tryFind dispatcherName dispatchers with
+            | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
+            | Some dispatcher -> dispatcher
 
         static member getDispatcher xtension (dispatcherContainer : IXDispatcherContainer) =
             let optXDispatcherName = xtension.OptXDispatcherName

@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open System.Reflection
 open System.Xml
 open SDL2
@@ -210,7 +211,7 @@ module SimModule =
 
     /// A map of event subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
-    and SubscriptionEntries = Map<Address, SubscriptionEntry list>
+    and SubscriptionEntries = Map<string, SubscriptionEntry list>
 
     /// TODO: document
     and SubscriptionSorter = SubscriptionEntry list -> World -> SubscriptionEntry list
@@ -224,6 +225,7 @@ module SimModule =
           Screens : Map<string, Screen>
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
+          EntitiesByAddress : Map<string, Entity>
           TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity

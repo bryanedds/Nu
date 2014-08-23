@@ -22,7 +22,6 @@
 #load "MapPlus.fs"
 #load "Lensx.fs"
 #load "RduTree.fs"
-#load "Propagate.fs"
 #load "Log.fs"
 
 open System

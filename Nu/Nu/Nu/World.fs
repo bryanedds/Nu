@@ -35,7 +35,7 @@ module WorldModule =
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
-    let private AnyEventNamesCache = Dictionary<Address, Address list> ()
+    let private AnyEventNamesCache = Dictionary<string, Address list> ()
 
     type World with
 
@@ -49,8 +49,8 @@ module WorldModule =
                     World.unsubscribe ScreenTransitionUpMouseKey
             | IncomingState | OutgoingState ->
                 world |>
-                    World.subscribe ScreenTransitionDownMouseKey (DownMouseEventName @ AnyEventName) address SwallowSub |>
-                    World.subscribe ScreenTransitionUpMouseKey (UpMouseEventName @ AnyEventName) address SwallowSub
+                    World.subscribe ScreenTransitionDownMouseKey (DownMouseEventName @@ AnyEventName) address SwallowSub |>
+                    World.subscribe ScreenTransitionUpMouseKey (UpMouseEventName @@ AnyEventName) address SwallowSub
 
         static member selectScreen destination world =
             let world = World.setScreenStatePlus destination IncomingState world
@@ -68,7 +68,7 @@ module WorldModule =
                     let world = World.selectScreen destination world
                     (Unhandled, world))
                 let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
-                World.subscribe subscriptionKey (FinishOutgoingEventName @ selectedScreenAddress) selectedScreenAddress sub world
+                World.subscribe subscriptionKey (FinishOutgoingEventName @@ selectedScreenAddress) selectedScreenAddress sub world
 
         static member handleEventAsScreenTransitionFromSplash destination world =
             let world = World.selectScreen destination world
@@ -84,20 +84,20 @@ module WorldModule =
             else 1
 
         static member getSimulant (address : Address) world =
-            match address with
+            match address.AddrList with
             | [] -> Game <| world.Game
-            | [_] as screenAddress -> Screen <| World.getScreen screenAddress world
-            | [_; _] as groupAddress -> Group <| World.getGroup groupAddress world
-            | [_; _; _] as entityAddress -> Entity <| World.getEntity entityAddress world
-            | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
+            | [_] -> Screen <| World.getScreen address world
+            | [_; _] -> Group <| World.getGroup address world
+            | [_; _; _] -> Entity <| World.getEntity address world
+            | _ -> failwith <| "Invalid simulant address '" + addressToString address + "'."
 
         static member getOptSimulant (address : Address) world =
-            match address with
+            match address.AddrList with
             | [] -> Some <| Game world.Game
-            | [_] as screenAddress -> Option.map Screen <| World.getOptScreen screenAddress world
-            | [_; _] as groupAddress -> Option.map Group <| World.getOptGroup groupAddress world
-            | [_; _; _] as entityAddress -> Option.map Entity <| World.getOptEntity entityAddress world
-            | _ -> failwith <| "Invalid simulant address '" + addrToStr address + "'."
+            | [_] -> Option.map Screen <| World.getOptScreen address world
+            | [_; _] -> Option.map Group <| World.getOptGroup address world
+            | [_; _; _] -> Option.map Entity <| World.getOptEntity address world
+            | _ -> failwith <| "Invalid simulant address '" + addressToString address + "'."
 
         static member getPublishingPriority getEntityPublishingPriority simulant world =
             match simulant with
@@ -135,16 +135,18 @@ module WorldModule =
         static member getAnyEventNames eventName =
             // OPTIMIZATION: uses memoization.
             let refAnyEventNames = ref Unchecked.defaultof<Address list>
-            if AnyEventNamesCache.TryGetValue (eventName, refAnyEventNames) then !refAnyEventNames
+            if AnyEventNamesCache.TryGetValue (eventName.AddrStr, refAnyEventNames) then !refAnyEventNames
             else
-                let anyEventNames = [for i in 0 .. List.length eventName - 1 do yield List.take i eventName @ AnyEventName]
-                AnyEventNamesCache.Add (eventName, anyEventNames)
+                let anyEventNames =
+                    [for i in 0 .. Address.length eventName - 1 do
+                        yield Address.take i eventName @@ AnyEventName]
+                AnyEventNamesCache.Add (eventName.AddrStr, anyEventNames)
                 anyEventNames
 
         static member getSubscriptionsSorted publishSorter eventName world =
             let anyEventNames = World.getAnyEventNames eventName
-            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName world.Subscriptions) anyEventNames
-            let optSubLists = Map.tryFind eventName world.Subscriptions :: optSubLists
+            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName.AddrStr world.Subscriptions) anyEventNames
+            let optSubLists = Map.tryFind eventName.AddrStr world.Subscriptions :: optSubLists
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
             publishSorter subList world
@@ -180,9 +182,9 @@ module WorldModule =
         /// Subscribe to an event.
         static member subscribeDefinition subscriptionKey eventName subscriber subscription world =
             let subscriptions = 
-                match Map.tryFind eventName world.Subscriptions with
-                | None -> Map.add eventName [(subscriptionKey, subscriber, subscription)] world.Subscriptions
-                | Some subscriptionList -> Map.add eventName ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
+                match Map.tryFind eventName.AddrStr world.Subscriptions with
+                | None -> Map.add eventName.AddrStr [(subscriptionKey, subscriber, subscription)] world.Subscriptions
+                | Some subscriptionList -> Map.add eventName.AddrStr ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
             let unsubscriptions = Map.add subscriptionKey (eventName, subscriber) world.Unsubscriptions
             { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
@@ -195,14 +197,14 @@ module WorldModule =
             match Map.tryFind subscriptionKey world.Unsubscriptions with
             | None -> world // TODO: consider failure signal
             | Some (eventName, subscriber) ->
-                match Map.tryFind eventName world.Subscriptions with
+                match Map.tryFind eventName.AddrStr world.Subscriptions with
                 | None -> world // TODO: consider failure signal
                 | Some subscriptionList ->
                     let subscriptionList =
                         List.remove
                             (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
                             subscriptionList
-                    let subscriptions = Map.add eventName subscriptionList world.Subscriptions
+                    let subscriptions = Map.add eventName.AddrStr subscriptionList world.Subscriptions
                     { world with Subscriptions = subscriptions }
 
         /// Execute a procedure within the context of a given subscription for the given event.
@@ -214,7 +216,7 @@ module WorldModule =
 
         /// Subscribe to an event during the lifetime of the subscriber.
         static member observeDefinition eventName subscriber subscription world =
-            if List.isEmpty subscriber then
+            if Address.isEmpty subscriber then
                 debug "Cannot observe events with an anonymous subscriber."
                 world
             else
@@ -225,7 +227,7 @@ module WorldModule =
                     let world = World.unsubscribe removalKey world
                     let world = World.unsubscribe observationKey world
                     (Unhandled, world))
-                World.subscribe removalKey (RemovingEventName @ subscriber) subscriber sub world
+                World.subscribe removalKey (RemovingEventName @@ subscriber) subscriber sub world
 
         static member private updateTransition1 (transition : Transition) =
             if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -242,14 +244,14 @@ module WorldModule =
                     | IncomingState ->
                         let world =
                             if selectedScreen.Incoming.TransitionTicks = 0L
-                            then World.publish4 (SelectEventName @ selectedScreenAddress) selectedScreenAddress NoData world
+                            then World.publish4 (SelectEventName @@ selectedScreenAddress) selectedScreenAddress NoData world
                             else world
                         match world.Liveness with
                         | Exiting -> world
                         | Running ->
                             let world =
                                 if selectedScreen.Incoming.TransitionTicks = 0L
-                                then World.publish4 (StartIncomingEventName @ selectedScreenAddress) selectedScreenAddress NoData world
+                                then World.publish4 (StartIncomingEventName @@ selectedScreenAddress) selectedScreenAddress NoData world
                                 else world
                             match world.Liveness with
                             | Exiting -> world
@@ -259,12 +261,12 @@ module WorldModule =
                                 let world = World.setScreen selectedScreenAddress selectedScreen world
                                 if finished then
                                     let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
-                                    World.publish4 (FinishIncomingEventName @ selectedScreenAddress) selectedScreenAddress NoData world
+                                    World.publish4 (FinishIncomingEventName @@ selectedScreenAddress) selectedScreenAddress NoData world
                                 else world
                     | OutgoingState ->
                         let world =
                             if selectedScreen.Outgoing.TransitionTicks <> 0L then world
-                            else World.publish4 (StartOutgoingEventName @ selectedScreenAddress) selectedScreenAddress NoData world
+                            else World.publish4 (StartOutgoingEventName @@ selectedScreenAddress) selectedScreenAddress NoData world
                         match world.Liveness with
                         | Exiting -> world
                         | Running ->
@@ -273,10 +275,10 @@ module WorldModule =
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
                                 let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
-                                let world = World.publish4 (DeselectEventName @ selectedScreenAddress) selectedScreenAddress NoData world
+                                let world = World.publish4 (DeselectEventName @@ selectedScreenAddress) selectedScreenAddress NoData world
                                 match world.Liveness with
                                 | Exiting -> world
-                                | Running -> World.publish4 (FinishOutgoingEventName @ selectedScreenAddress) selectedScreenAddress NoData world
+                                | Running -> World.publish4 (FinishOutgoingEventName @@ selectedScreenAddress) selectedScreenAddress NoData world
                             else world
                     | IdlingState -> world
             match world.Liveness with
@@ -366,7 +368,7 @@ module WorldModule =
             match World.getOptSelectedScreenAddress world with
             | None -> []
             | Some selectedScreenAddress ->
-                let optGroupMap = Map.tryFind selectedScreenAddress.[0] world.Entities
+                let optGroupMap = Map.tryFind (Address.head selectedScreenAddress) world.Entities
                 match optGroupMap with
                 | None -> []
                 | Some groupMap ->
@@ -401,13 +403,13 @@ module WorldModule =
                     match World.getOptEntity bodyCollisionMessage.EntityAddress world with
                     | None -> world
                     | Some _ ->
-                        let collisionAddress = CollisionEventName @ bodyCollisionMessage.EntityAddress
+                        let collisionAddress = CollisionEventName @@ bodyCollisionMessage.EntityAddress
                         let collisionData =
                             EntityCollisionData
                                 { Normal = bodyCollisionMessage.Normal
                                   Speed = bodyCollisionMessage.Speed
                                   Collidee = bodyCollisionMessage.EntityAddress2 }
-                        World.publish4 collisionAddress [] collisionData world
+                        World.publish4 collisionAddress Address.empty collisionData world
 
         static member private handleIntegrationMessages integrationMessages world =
             List.fold World.handleIntegrationMessage world integrationMessages
@@ -441,14 +443,14 @@ module WorldModule =
                             let mousePosition = Vector2 (single event.button.x, single event.button.y)
                             let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
                             if Set.contains MouseLeft world.MouseState.MouseDowns
-                            then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName [] (MouseMoveData { Position = mousePosition }) world
-                            else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName [] (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
+                            then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName Address.empty (MouseMoveData { Position = mousePosition }) world
+                            else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName Address.empty (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                             let mouseButton = Sdl.makeNuMouseButton event.button.button
                             let mouseEventName = addrstr DownMouseEventName <| string mouseButton
                             let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
                             let eventData = MouseButtonData { Position = world.MouseState.MousePosition; Button = mouseButton }
-                            World.publish World.sortSubscriptionsByPickingPriority mouseEventName [] eventData world
+                            World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                             let mouseState = world.MouseState
                             let mouseButton = Sdl.makeNuMouseButton event.button.button
@@ -456,7 +458,7 @@ module WorldModule =
                             if Set.contains mouseButton mouseState.MouseDowns then
                                 let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
                                 let eventData = MouseButtonData { Position = world.MouseState.MousePosition; Button = mouseButton }
-                                World.publish World.sortSubscriptionsByPickingPriority mouseEventName [] eventData world
+                                World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
                             else world
                         | _ -> world
                     (world.Liveness, world))
@@ -465,7 +467,7 @@ module WorldModule =
                     match world.Liveness with
                     | Exiting -> (Exiting, world)
                     | Running ->
-                        let world = World.publish4 TickEventName [] NoData world
+                        let world = World.publish4 TickEventName Address.empty NoData world
                         match world.Liveness with
                         | Exiting -> (Exiting, world)
                         | Running ->
@@ -491,8 +493,8 @@ module WorldModule =
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage image splashLabel
             let world = World.addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
-            let world = World.observe (FinishIncomingEventName @ address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
-            World.observe (FinishOutgoingEventName @ address) address (ScreenTransitionFromSplashSub destination) world
+            let world = World.observe (FinishIncomingEventName @@ address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
+            World.observe (FinishOutgoingEventName @@ address) address (ScreenTransitionFromSplashSub destination) world
 
         static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
             let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
@@ -528,6 +530,7 @@ module WorldModule =
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
+                      EntitiesByAddress = Map.empty
                       TickTime = 0L
                       Liveness = Running
                       Interactivity = interactivity
@@ -555,7 +558,7 @@ module WorldModule =
             let entities = World.getEntities groupAddress world
             let world =
                 Map.fold
-                    (fun world _ (entity : Entity) -> Entity.propagatePhysics (groupAddress @ [entity.Name]) entity world)
+                    (fun world _ (entity : Entity) -> Entity.propagatePhysics (addrlist groupAddress [entity.Name]) entity world)
                     world
                     entities
             { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages @ [RebuildPhysicsHackMessage]}

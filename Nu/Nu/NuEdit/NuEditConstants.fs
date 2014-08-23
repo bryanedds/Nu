@@ -8,4 +8,4 @@ module NuEditConstants =
 
     let EditorScreenAddress = addr "EditorScreen"
     let EditorGroupName = "EditorGroup"
-    let EditorGroupAddress = EditorScreenAddress @ [EditorGroupName]
+    let EditorGroupAddress = addrlist EditorScreenAddress [EditorGroupName]

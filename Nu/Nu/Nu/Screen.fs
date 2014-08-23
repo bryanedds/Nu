@@ -53,13 +53,13 @@ module WorldScreenModule =
     type World with
 
         static member private optScreenFinder (address : Address) world =
-            Map.tryFind (List.at 0 address) world.Screens
+            Map.tryFind (Address.at 0 address) world.Screens
 
         static member private screenAdder (address : Address) world child =
-            { world with Screens = Map.add (List.at 0 address) child world.Screens }
+            { world with Screens = Map.add (Address.at 0 address) child world.Screens }
 
         static member private screenRemover (address : Address) world =
-            { world with Screens = Map.remove (List.at 0 address) world.Screens }
+            { world with Screens = Map.remove (Address.at 0 address) world.Screens }
 
         static member getScreen address world = Option.get <| World.optScreenFinder address world
         static member setScreen address screen world = World.screenAdder address world screen
@@ -76,9 +76,9 @@ module WorldScreenModule =
         static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptScreen World.setScreen fn address world
 
         static member getScreens address world =
-            match address with
+            match address.AddrList with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid screen address '" + addrToStr address + "'."
+            | _ -> failwith <| "Invalid screen address '" + addressToString address + "'."
 
         static member registerScreen address (screen : Screen) world =
             Screen.register address screen world
@@ -88,7 +88,7 @@ module WorldScreenModule =
             Screen.unregister address screen world
 
         static member removeScreenImmediate (address : Address) world =
-            let world = World.publish4 (RemovingEventName @ address) address NoData world
+            let world = World.publish4 (RemovingEventName @@ address) address NoData world
             let world = World.clearGroupsImmediate address world
             let world = World.unregisterScreen address world
             World.setOptScreen address None world
@@ -107,4 +107,4 @@ module WorldScreenModule =
             let world = World.setScreen address screen world
             let world = World.addGroups address groupDescriptors world
             let world = World.registerScreen address screen world
-            World.publish4 (AddEventName @ address) address NoData world
+            World.publish4 (AddEventName @@ address) address NoData world
