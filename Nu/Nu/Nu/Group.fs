@@ -98,7 +98,7 @@ module WorldGroupModule =
                 match Map.tryFind screenStr world.Groups with
                 | None -> Map.empty
                 | Some groupMap -> groupMap
-            | _ -> failwith <| "Invalid group address '" + addressToString address + "'."
+            | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member registerGroup address (group : Group) world =
             Group.register address group world

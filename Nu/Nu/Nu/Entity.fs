@@ -189,7 +189,7 @@ module WorldEntityModule =
                     match Map.tryFind groupStr groupMap with
                     | None -> Map.empty
                     | Some entityMap -> entityMap
-            | _ -> failwith <| "Invalid entity address '" + addressToString address + "'."
+            | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member registerEntity address (entity : Entity) world =
             Entity.register address entity world

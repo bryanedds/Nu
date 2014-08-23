@@ -86,7 +86,7 @@ module WorldModule =
             | [_] -> Screen <| World.getScreen address world
             | [_; _] -> Group <| World.getGroup address world
             | [_; _; _] -> Entity <| World.getEntity address world
-            | _ -> failwith <| "Invalid simulant address '" + addressToString address + "'."
+            | _ -> failwith <| "Invalid simulant address '" + string address + "'."
 
         static member getOptSimulant (address : Address) world =
             match address.AddrList with
@@ -94,7 +94,7 @@ module WorldModule =
             | [_] -> Option.map Screen <| World.getOptScreen address world
             | [_; _] -> Option.map Group <| World.getOptGroup address world
             | [_; _; _] -> Option.map Entity <| World.getOptEntity address world
-            | _ -> failwith <| "Invalid simulant address '" + addressToString address + "'."
+            | _ -> failwith <| "Invalid simulant address '" + string address + "'."
 
         static member getPublishingPriority getEntityPublishingPriority simulant world =
             match simulant with
