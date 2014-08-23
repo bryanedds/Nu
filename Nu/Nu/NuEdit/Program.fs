@@ -555,7 +555,7 @@ module Program =
             refWorld := World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| endEntityDrag form) !refWorld
             refWorld := World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| beginCameraDrag form) !refWorld
             refWorld := World.subscribe4 UpMouseCenterEventName Address.empty (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe4 (RemovingEventName @@ AnyEventName) Address.empty (CustomSub <| simulantRemovedHandler form) !refWorld
+            refWorld := World.subscribe4 (RemovingEventName + AnyEventName) Address.empty (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
 
     let populateCreateEntityComboBox (form : NuEditForm) world =

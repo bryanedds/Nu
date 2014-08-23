@@ -166,7 +166,7 @@ module WorldEntityModule =
         static member setEntity address entity world = 
                 let oldEntity = Option.get <| World.optEntityFinder address world
                 let world = World.entityAdder address world entity
-                World.publish4 (ChangeEventName @@ address) address (EntityChangeData { OldEntity = oldEntity }) world
+                World.publish4 (ChangeEventName + address) address (EntityChangeData { OldEntity = oldEntity }) world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
@@ -199,7 +199,7 @@ module WorldEntityModule =
             Entity.unregister address entity world
 
         static member removeEntityImmediate (address : Address) world =
-            let world = World.publish4 (RemovingEventName @@ address) address NoData world
+            let world = World.publish4 (RemovingEventName + address) address NoData world
             let world = World.unregisterEntity address world
             World.setOptEntityWithoutEvent address None world
 
@@ -242,7 +242,7 @@ module WorldEntityModule =
                 | Some _ -> World.removeEntityImmediate address world
             let world = World.setEntityWithoutEvent address entity world
             let world = World.registerEntity address entity world
-            World.publish4 (AddEventName @@ address) address NoData world
+            World.publish4 (AddEventName + address) address NoData world
 
         static member addEntities groupAddress entities world =
             List.fold

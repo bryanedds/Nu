@@ -31,7 +31,7 @@ module NuCoreModule =
         static member makeAddress list =
             { AddrList = list; AddrStr = Address.listToString list }
 
-        static member (@@) (address, address2) =
+        static member (+) (address, address2) =
             let list = address.AddrList @ address2.AddrList
             Address.makeAddress list
 
@@ -74,14 +74,14 @@ module NuCoreModule =
         makeAddress list
 
     let straddr str (address : Address) : Address =
-        addr str @@ address
+        addr str + address
 
     let addrstr (address : Address) str : Address =
         let list = address.AddrList @ [str]
         makeAddress list
 
     let straddrstr str (address : Address) str2 : Address =
-        addr str @@ address @@ addr str2
+        addr str + address + addr str2
 
     let listaddr list (address : Address) : Address =
         makeAddress <| list @ address.AddrList
