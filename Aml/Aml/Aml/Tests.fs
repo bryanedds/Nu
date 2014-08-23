@@ -240,7 +240,7 @@ module Tests =
 
     let [<Fact>] applyListAppendTest () = test {
         Expected = "() (list 0 5 10 15 20)"
-        Actual = "[def lst (list 0 5 10)] (t++ lst (list 15 20))" }
+        Actual = "[def lst (list 0 5 10)] (t+ lst (list 15 20))" }
 
     let [<Fact>] applyCharToInt () = test {
         Expected = "65 (violation :v/contract/invalidConversionType)"
@@ -306,11 +306,11 @@ module Tests =
 
     let [<Fact>] appendStringTest () = test {
         Expected = "\"0123\""
-        Actual = "(s++ \"01\" \"23\")" }
+        Actual = "(s+ \"01\" \"23\")" }
 
     let [<Fact>] appendArrayTest () = test {
         Expected = "(array 0 1 2 3)"
-        Actual = "(a++ (array 0 1) (array 2 3))" }
+        Actual = "(a+ (array 0 1) (array 2 3))" }
 
     let [<Fact>] functionTest () = test {
         Expected = "()"

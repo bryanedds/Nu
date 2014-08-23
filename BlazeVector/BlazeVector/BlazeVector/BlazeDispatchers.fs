@@ -53,7 +53,7 @@ module BulletDispatcherModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
-            World.observe (CollisionEventName @@ address) address (CustomSub collisionHandler) world
+            World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
 
         override dispatcher.GetBodyShape (entity, _) =
             CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
@@ -122,7 +122,7 @@ module EnemyDispatcherModule =
             let world = base.Register (address, world)
             world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
-                World.observe (CollisionEventName @@ address) address (CustomSub collisionHandler)
+                World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
 
         override dispatcher.GetBodyShape (enemy, _) =
             CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }
@@ -318,9 +318,9 @@ module StageScreenModule =
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
             world |>
-                World.observe (SelectEventName @@ address) address (CustomSub startPlayHandler) |>
-                World.observe (StartOutgoingEventName @@ address) address (CustomSub stoppingPlayHandler) |>
-                World.observe (DeselectEventName @@ address) address (CustomSub stopPlayHandler)
+                World.observe (SelectEventName + address) address (CustomSub startPlayHandler) |>
+                World.observe (StartOutgoingEventName + address) address (CustomSub stoppingPlayHandler) |>
+                World.observe (DeselectEventName + address) address (CustomSub stopPlayHandler)
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =
