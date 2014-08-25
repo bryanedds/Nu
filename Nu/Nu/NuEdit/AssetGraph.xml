@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Root>
+  <Package name="Default">
+    <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
+    <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
+    <Asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
+    <Asset name="Image3" fileName="Assets/Default/Image3.png" associations="Rendering"/>
+    <Asset name="Image4" fileName="Assets/Default/Image4.png" associations="Rendering"/>
+    <Asset name="Image5" fileName="Assets/Default/Image5.png" associations="Rendering"/>
+    <Asset name="Image6" fileName="Assets/Default/Image6.png" associations="Rendering"/>
+    <Asset name="Image7" fileName="Assets/Default/Image7.png" associations="Rendering"/>
+    <Asset name="Image8" fileName="Assets/Default/Image8.png" associations="Rendering"/>
+    <Asset name="Image9" fileName="Assets/Default/Image9.png" associations="Rendering"/>
+    <Asset name="Image10" fileName="Assets/Default/Image10.png" associations="Rendering"/>
+    <Asset name="Font" fileName="Assets/Default/FreeMonoBold.032.ttf" associations="Rendering"/>
+    <Asset name="TileSet" fileName="Assets/Default/TileSet.png" associations="Rendering"/>
+    <Asset name="Sound" fileName="Assets/Default/Sound.wav" associations="Audio"/>
+    <Asset name="Song" fileName="Assets/Default/Song.ogg" associations="Audio"/>
+    <Asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
+  </Package>
+</Root>
