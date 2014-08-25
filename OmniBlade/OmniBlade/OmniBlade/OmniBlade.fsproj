@@ -67,8 +67,12 @@
     <Compile Include="OmniFlow.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
-    <Content Include="AssetGraph.xml" />
-    <Content Include="Overlay.xml" />
+    <Content Include="AssetGraph.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Overlay.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FarseerPhysics">
