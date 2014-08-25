@@ -1,9 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "OmniBlade", "OmniBlade\OmniBlade.fsproj", "{16AC31ED-12A5-47D9-84A7-C30E1948E8C5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Aml", "..\..\Aml\Aml\Aml\Aml.fsproj", "{6703B97A-6B6D-4E68-BA67-4A29EE72EC42}"
 EndProject
@@ -16,6 +19,16 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Prime", "..\..\Prime\Prime\Prime\Prime.fsproj", "{FE09AE81-B66B-42E0-8192-EADECEFC9893}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BlazeVector", "..\..\BlazeVector\BlazeVector\BlazeVector\BlazeVector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
+	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuPipe", "..\..\Nu\Nu\NuPipe\NuPipe.fsproj", "{85D631A5-821A-4755-A68E-C1FFC64E469A}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuTemplate", "..\..\Nu\Nu\NuTemplate\NuTemplate.fsproj", "{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,6 +79,18 @@ Global
 		{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}.Optimized|Any CPU.Build.0 = Release|Any CPU
 		{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Optimized|Any CPU.Build.0 = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Optimized|Any CPU.Build.0 = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

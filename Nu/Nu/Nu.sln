@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nu", "Nu\Nu.fsproj", "{A7A6F758-E122-4C2C-9525-1F29802D007C}"
 EndProject
@@ -11,6 +11,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NuEditDesign", "NuEditDesign\NuEditDesign.csproj", "{F67217C1-6BB3-4180-916B-B7B4CDC14C2D}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuEdit", "NuEdit\NuEdit.fsproj", "{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuTemplate", "NuTemplate\NuTemplate.fsproj", "{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
+	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuPipe", "NuPipe\NuPipe.fsproj", "{85D631A5-821A-4755-A68E-C1FFC64E469A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +56,18 @@ Global
 		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Optimized|Any CPU.Build.0 = Release|Any CPU
 		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1768F36-9ED3-4C36-9DCE-9535AEFB0732}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Optimized|Any CPU.Build.0 = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Optimized|Any CPU.Build.0 = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85D631A5-821A-4755-A68E-C1FFC64E469A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
