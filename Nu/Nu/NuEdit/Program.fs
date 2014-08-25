@@ -197,54 +197,64 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
+    let canEditWithMouse (form : NuEditForm) world =
+        World.gamePlaying world &&
+        not form.editWhileInteractiveCheckBox.Checked
+
     let beginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
-        let pastWorld = world
-        let handled = if World.gamePlaying world then Unhandled else Handled
-        let entities = getPickableEntities world
-        let mousePosition = world.MouseState.MousePosition
-        let optPicked = Entity.tryPick mousePosition entities world
-        match optPicked with
-        | None -> (handled, world)
-        | Some entity ->
-            let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-            let entityAddress = addrstr EditorGroupAddress entity.Name
-            let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
-            let editorState = world.ExtData :?> EditorState
-            let editorState = { editorState with DragEntityState = dragState }
-            let world = { world with ExtData = editorState }
-            let world = pushPastWorld pastWorld world
-            refWorld := world // must be set for property grid
-            form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-            (handled, world)
+        if canEditWithMouse form world then (Unhandled, world)
+        else
+            let pastWorld = world
+            let handled = if World.gamePlaying world then Unhandled else Handled
+            let entities = getPickableEntities world
+            let mousePosition = world.MouseState.MousePosition
+            let optPicked = Entity.tryPick mousePosition entities world
+            match optPicked with
+            | None -> (handled, world)
+            | Some entity ->
+                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
+                let entityAddress = addrstr EditorGroupAddress entity.Name
+                let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
+                let editorState = world.ExtData :?> EditorState
+                let editorState = { editorState with DragEntityState = dragState }
+                let world = { world with ExtData = editorState }
+                let world = pushPastWorld pastWorld world
+                refWorld := world // must be set for property grid
+                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                (handled, world)
 
     let endEntityDrag (form : NuEditForm) (_ : Event) world =
-        let handled = if World.gamePlaying world then Unhandled else Handled
-        let editorState = world.ExtData :?> EditorState
-        match editorState.DragEntityState with
-        | DragEntityNone -> (Handled, world)
-        | DragEntityPosition _
-        | DragEntityRotation _ ->
-            let editorState = { editorState with DragEntityState = DragEntityNone }
-            form.propertyGrid.Refresh ()
-            (handled, { world with ExtData = editorState })
+        if canEditWithMouse form world then (Unhandled, world)
+        else
+            let handled = if World.gamePlaying world then Unhandled else Handled
+            let editorState = world.ExtData :?> EditorState
+            match editorState.DragEntityState with
+            | DragEntityNone -> (Handled, world)
+            | DragEntityPosition _
+            | DragEntityRotation _ ->
+                let editorState = { editorState with DragEntityState = DragEntityNone }
+                form.propertyGrid.Refresh ()
+                (handled, { world with ExtData = editorState })
 
     let updateEntityDrag (form : NuEditForm) world =
-        let editorState = world.ExtData :?> EditorState
-        match editorState.DragEntityState with
-        | DragEntityNone -> world
-        | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
-            let (positionSnap, _) = getSnaps form
-            let entity = World.getEntity address world
-            let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
-            let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
-            let entity = Entity.setPositionSnapped positionSnap entityPosition entity
-            let world = World.setEntity address entity world
-            let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
-            let world = { world with ExtData = editorState }
-            let world = Entity.propagatePhysics address entity world
-            form.propertyGrid.Refresh ()
-            world
-        | DragEntityRotation _ -> world
+        if canEditWithMouse form world then world
+        else
+            let editorState = world.ExtData :?> EditorState
+            match editorState.DragEntityState with
+            | DragEntityNone -> world
+            | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
+                let (positionSnap, _) = getSnaps form
+                let entity = World.getEntity address world
+                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
+                let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
+                let entity = Entity.setPositionSnapped positionSnap entityPosition entity
+                let world = World.setEntity address entity world
+                let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
+                let world = { world with ExtData = editorState }
+                let world = Entity.propagatePhysics address entity world
+                form.propertyGrid.Refresh ()
+                world
+            | DragEntityRotation _ -> world
 
     let beginCameraDrag (_ : NuEditForm) (_ : Event) world =
         let mousePosition = world.MouseState.MousePosition

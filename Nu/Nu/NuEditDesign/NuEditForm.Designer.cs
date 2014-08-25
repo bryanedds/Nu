@@ -87,6 +87,7 @@
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
+            this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -241,7 +242,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1002, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1003, 585);
             this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
@@ -307,7 +308,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1002;
+            this.splitContainer1.SplitterDistance = 1003;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -330,7 +331,7 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(379, 585);
+            this.splitContainer2.Size = new System.Drawing.Size(378, 585);
             this.splitContainer2.SplitterDistance = 79;
             this.splitContainer2.SplitterWidth = 3;
             this.splitContainer2.TabIndex = 0;
@@ -346,7 +347,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(379, 79);
+            this.groupBox1.Size = new System.Drawing.Size(378, 79);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -408,7 +409,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(379, 503);
+            this.propertyGrid.Size = new System.Drawing.Size(378, 503);
             this.propertyGrid.TabIndex = 0;
             // 
             // openFileDialog
@@ -445,10 +446,11 @@
             this.toolStripSeparator5,
             this.resetCameraButton,
             this.toolStripSeparator7,
-            this.interactivityButton});
+            this.interactivityButton,
+            this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(949, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1069, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -594,6 +596,18 @@
             this.interactivityButton.Size = new System.Drawing.Size(73, 22);
             this.interactivityButton.Text = "&Interactivity";
             // 
+            // editWhileInteractiveCheckBox
+            // 
+            this.editWhileInteractiveCheckBox.Checked = true;
+            this.editWhileInteractiveCheckBox.CheckOnClick = true;
+            this.editWhileInteractiveCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.editWhileInteractiveCheckBox.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.editWhileInteractiveCheckBox.Image = ((System.Drawing.Image)(resources.GetObject("editWhileInteractiveCheckBox.Image")));
+            this.editWhileInteractiveCheckBox.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.editWhileInteractiveCheckBox.Name = "editWhileInteractiveCheckBox";
+            this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(120, 22);
+            this.editWhileInteractiveCheckBox.Text = "Edit while Interactive";
+            // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -685,6 +699,7 @@
         public System.Windows.Forms.TextBox xFieldNameTextBox;
         public System.Windows.Forms.ComboBox typeNameTextBox;
         public System.Windows.Forms.Button removeSelectedXFieldButton;
+        public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
 
     }
 }
