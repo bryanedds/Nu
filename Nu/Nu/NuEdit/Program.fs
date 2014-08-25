@@ -210,10 +210,12 @@ module Program =
                      MessageBoxButtons.OK,
                      MessageBoxIcon.Error)
 
-    let tryLoadFile fileName world =
+    let tryLoadFile fileName (form : NuEditForm) world =
         try let world = World.removeGroupImmediate NuEditConstants.EditorGroupAddress world
             let (group, entities) = World.loadGroupFromFile fileName world
-            World.addGroup NuEditConstants.EditorGroupAddress group entities world
+            let world = World.addGroup NuEditConstants.EditorGroupAddress group entities world
+            form.saveFileDialog.FileName <- Path.GetFileName fileName
+            world
         with exn ->
             ignore <|
                 MessageBox.Show
@@ -374,7 +376,6 @@ module Program =
             | _ -> world)
 
     let handleSave (form : NuEditForm) (_ : WorldChangers) refWorld _ =
-        form.saveFileDialog.FileName <- String.Empty
         let saveFileResult = form.saveFileDialog.ShowDialog form
         match saveFileResult with
         | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName !refWorld
@@ -385,7 +386,7 @@ module Program =
         match openFileResult with
         | DialogResult.OK ->
             ignore <| worldChangers.AddLast (fun world ->
-                let world = tryLoadFile form.openFileDialog.FileName world
+                let world = tryLoadFile form.openFileDialog.FileName form world
                 let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
                 form.interactivityButton.Checked <- false
