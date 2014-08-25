@@ -27,7 +27,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <StartArguments>. "bin"</StartArguments>
+    <StartArguments>. C:\Development\FPWorks\BlazeVector\BlazeVector\BlazeVector\bin\Debug\</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

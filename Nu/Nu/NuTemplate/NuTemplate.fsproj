@@ -1,17 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>16ac31ed-12a5-47d9-84a7-c30e1948e8c5</ProjectGuid>
+    <ProjectGuid>4dbbaa23-56ba-43cb-ab63-c45d5fc1016f</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>OmniBlade</RootNamespace>
-    <AssemblyName>OmniBlade</AssemblyName>
+    <RootNamespace>NuTemplate</RootNamespace>
+    <AssemblyName>NuTemplate</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>OmniBlade</Name>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
+    <Name>NuTemplate</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,13 +21,10 @@
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>5</WarningLevel>
+    <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Debug\OmniBlade.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\NuTemplate.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <OtherFlags>--warnon:1182</OtherFlags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -34,77 +32,61 @@
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>5</WarningLevel>
+    <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Release\OmniBlade.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\NuTemplate.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <OtherFlags>--warnon:1182</OtherFlags>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup>
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
-      <PropertyGroup>
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
+  <Import Project="$(FSharpTargetsPath)" />
+  <PropertyGroup>
+    <PreBuildEvent />
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>$(ProjectDir)../../../Nu/Nu/NuPipe/bin/$(ConfigurationName)/NuPipe.exe $(ProjectDir) $(TargetDir)</PostBuildEvent>
+  </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OmniConstants.fs" />
-    <Compile Include="OmniTypes.fs" />
-    <Compile Include="OmniData.fs" />
-    <Compile Include="OmniState.fs" />
-    <Compile Include="OmniDispatchers.fs" />
-    <Compile Include="OmniFlow.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml" />
     <Content Include="Overlay.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FarseerPhysics">
-      <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
-    </Reference>
+    <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
-    <Reference Include="FSharpx.Core">
-      <HintPath>..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="mscorlib" />
     <Reference Include="SDL2#">
-      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
-      <Name>Nu</Name>
-      <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Prime\Prime\Prime\Prime.fsproj">
       <Name>Prime</Name>
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="System.Xml" />
-    <Reference Include="TiledSharp">
-      <HintPath>..\..\..\Nu\TiledSharp\Release\TiledSharp.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\Nu\Nu.fsproj">
+      <Name>Nu</Name>
+      <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
-  <PropertyGroup>
-    <PostBuildEvent>$(ProjectDir)../../../Nu/Nu/NuPipe/bin/$(ConfigurationName)/NuPipe.exe $(ProjectDir) $(TargetDir)</PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
