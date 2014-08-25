@@ -185,7 +185,7 @@ module Rendering =
             None
 
     let private tryLoadRenderPackage packageName fileName renderer =
-        let optAssets = Assets.tryLoadAssets "Rendering" packageName fileName
+        let optAssets = Assets.tryLoadPackageAssets (Some "Rendering") packageName fileName
         match optAssets with
         | Left error ->
             note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."

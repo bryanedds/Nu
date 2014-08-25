@@ -121,7 +121,7 @@ module Audio =
         | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
     let private tryLoadAudioPackage packageName fileName audioPlayer =
-        let optAssets = Assets.tryLoadAssets "Audio" packageName fileName
+        let optAssets = Assets.tryLoadPackageAssets (Some "Audio") packageName fileName
         match optAssets with
         | Left error ->
             trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
