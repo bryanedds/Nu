@@ -42,7 +42,8 @@ module ProgramModule =
         | DragCameraPosition of Vector2 * Vector2
 
     type EditorState =
-        { DragEntityState : DragEntityState
+        { RightClickPosition : Vector2
+          DragEntityState : DragEntityState
           DragCameraState : DragCameraState
           PastWorlds : World list
           FutureWorlds : World list
@@ -201,26 +202,41 @@ module Program =
         World.gamePlaying world &&
         not form.editWhileInteractiveCheckBox.Checked
 
+    let tryMousePick mousePosition (form : NuEditForm) worldChangers refWorld world =
+        let entities = getPickableEntities world
+        let optPicked = Entity.tryPick mousePosition entities world
+        match optPicked with
+        | None -> None
+        | Some entity ->
+            let entityAddress = addrstr EditorGroupAddress entity.Name
+            refWorld := world // must be set for property grid
+            form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+            Some (entity, entityAddress)
+
+    let rightMouseDown (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+        let handled = if World.gamePlaying world then Unhandled else Handled
+        let mousePosition = world.MouseState.MousePosition
+        ignore <| tryMousePick mousePosition form worldChangers refWorld world
+        let editorState = world.ExtData :?> EditorState
+        let editorState = { editorState with RightClickPosition = mousePosition }
+        let world = { world with ExtData = editorState }
+        (handled, world)
+
     let beginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
         else
-            let pastWorld = world
             let handled = if World.gamePlaying world then Unhandled else Handled
-            let entities = getPickableEntities world
             let mousePosition = world.MouseState.MousePosition
-            let optPicked = Entity.tryPick mousePosition entities world
-            match optPicked with
+            match tryMousePick mousePosition form worldChangers refWorld world with
             | None -> (handled, world)
-            | Some entity ->
+            | Some (entity, entityAddress) ->
+                let pastWorld = world
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                let entityAddress = addrstr EditorGroupAddress entity.Name
                 let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
                 let editorState = world.ExtData :?> EditorState
                 let editorState = { editorState with DragEntityState = dragState }
                 let world = { world with ExtData = editorState }
                 let world = pushPastWorld pastWorld world
-                refWorld := world // must be set for property grid
-                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 (handled, world)
 
     let endEntityDrag (form : NuEditForm) (_ : Event) world =
@@ -420,9 +436,11 @@ module Program =
             ignore <| worldChangers.AddLast (fun world ->
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = NuCore.makeId ()
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entity = { entity with Id = id; Name = string id }
-                let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
+                let entityPosition =
+                    if atMouse
+                    then Entity.mouseToEntity editorState.RightClickPosition world entity
+                    else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let address = addrstr EditorGroupAddress entity.Name
@@ -549,7 +567,8 @@ module Program =
     let tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
         let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name 100L 100L
         let editorState =
-            { DragEntityState = DragEntityNone
+            { RightClickPosition = Vector2.Zero
+              DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
               PastWorlds = []
               FutureWorlds = []
@@ -561,6 +580,7 @@ module Program =
             refWorld := world
             refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
             refWorld := World.setOptSelectedScreenAddress (Some EditorScreenAddress) !refWorld 
+            refWorld := World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| rightMouseDown form worldChangers refWorld) !refWorld
             refWorld := World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
             refWorld := World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| endEntityDrag form) !refWorld
             refWorld := World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| beginCameraDrag form) !refWorld
