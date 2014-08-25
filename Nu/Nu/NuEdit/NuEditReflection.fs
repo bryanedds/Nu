@@ -39,13 +39,3 @@ module NuEditReflection =
             let entity = { entity with Id = entity.Id } // NOTE: hacky copy
             p.SetValue (entity, value)
             entity
-
-    let saveFile fileName world =
-        let editorGroup = World.getGroup NuEditConstants.EditorGroupAddress world
-        let editorEntities = World.getEntities NuEditConstants.EditorGroupAddress world
-        World.saveGroupToFile editorGroup editorEntities fileName world
-
-    let loadFile fileName world =
-        let world = World.removeGroupImmediate NuEditConstants.EditorGroupAddress world
-        let (group, entities) = World.loadGroupFromFile fileName world
-        World.addGroup NuEditConstants.EditorGroupAddress group entities world

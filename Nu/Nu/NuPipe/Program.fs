@@ -31,8 +31,8 @@ module Program =
                 try
                     copyAssetFiles inputDir outputDir assets
                     SuccessCode
-                with e ->
-                    Console.WriteLine (string e)
+                with exn ->
+                    Console.WriteLine (string exn)
                     FailureCode
         | _ ->
             Console.WriteLine "NuPipe.exe requires two parameters (input directory and output directory)."

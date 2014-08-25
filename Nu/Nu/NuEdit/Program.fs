@@ -198,6 +198,31 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
+    let trySaveFile fileName world =
+        try let editorGroup = World.getGroup NuEditConstants.EditorGroupAddress world
+            let editorEntities = World.getEntities NuEditConstants.EditorGroupAddress world
+            World.saveGroupToFile editorGroup editorEntities fileName world
+        with exn ->
+            ignore <|
+                MessageBox.Show
+                    ("Could not save file due to: " + string exn,
+                     "File save error.",
+                     MessageBoxButtons.OK,
+                     MessageBoxIcon.Error)
+
+    let tryLoadFile fileName world =
+        try let world = World.removeGroupImmediate NuEditConstants.EditorGroupAddress world
+            let (group, entities) = World.loadGroupFromFile fileName world
+            World.addGroup NuEditConstants.EditorGroupAddress group entities world
+        with exn ->
+            ignore <|
+                MessageBox.Show
+                    ("Could not load file due to: " + string exn,
+                     "File save error.",
+                     MessageBoxButtons.OK,
+                     MessageBoxIcon.Error)
+            world
+
     let canEditWithMouse (form : NuEditForm) world =
         World.gamePlaying world &&
         not form.editWhileInteractiveCheckBox.Checked
@@ -352,7 +377,7 @@ module Program =
         form.saveFileDialog.FileName <- String.Empty
         let saveFileResult = form.saveFileDialog.ShowDialog form
         match saveFileResult with
-        | DialogResult.OK -> saveFile form.saveFileDialog.FileName !refWorld
+        | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName !refWorld
         | _ -> ()
 
     let handleOpen (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =
@@ -360,7 +385,7 @@ module Program =
         match openFileResult with
         | DialogResult.OK ->
             ignore <| worldChangers.AddLast (fun world ->
-                let world = loadFile form.openFileDialog.FileName world
+                let world = tryLoadFile form.openFileDialog.FileName world
                 let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
                 form.interactivityButton.Checked <- false
