@@ -1,8 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <Package name="Default">
-    <Asset name="AssetGraph" fileName="AssetGraph.xml" associations=""/>
-    <Asset name="Overlay" fileName="Overlay.xml" associations=""/>
     <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
     <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
     <Asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
