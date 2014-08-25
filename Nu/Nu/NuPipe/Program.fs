@@ -5,19 +5,35 @@ open Prime
 open Nu
 open Nu.NuConstants
 module Program =
+
+    let SuccessCode = 0
+    let FailureCode = -1
+
+    let copyAssetFiles inputDir outputDir assets =
+        for asset in assets do
+            let assetFilePath = Path.Combine (inputDir, asset.FileName)
+            let outputFilePath = Path.Combine (outputDir, asset.FileName)
+            let outputDirectory = Path.GetDirectoryName outputFilePath
+            ignore <| Directory.CreateDirectory outputDirectory
+            if  not <| File.Exists outputFilePath ||
+                File.GetLastWriteTimeUtc assetFilePath > File.GetLastWriteTimeUtc outputFilePath then
+                File.Copy (assetFilePath, outputFilePath, true)
     
     let [<EntryPoint>] main argv = 
         match argv with
         | [|inputDir; outputDir|] ->
             let eitherAssets = Assets.tryLoadAssets None <| Path.Combine (inputDir, AssetGraphFileName)
             match eitherAssets with
-            | Left error -> failwith error
+            | Left error ->
+                Console.WriteLine error
+                FailureCode
             | Right assets ->
-                for asset in assets do
-                    let assetFilePath = inputDir + "/" + asset.FileName
-                    let outputFilePath = outputDir + "/" + asset.FileName
-                    let outputDirectory = Path.GetDirectoryName outputFilePath
-                    ignore <| Directory.CreateDirectory outputDirectory
-                    File.Copy (assetFilePath, outputFilePath)
-                0
-        | _ -> failwith "NuPipe.exe requires two parameters"
+                try
+                    copyAssetFiles inputDir outputDir assets
+                    SuccessCode
+                with e ->
+                    Console.WriteLine (string e)
+                    FailureCode
+        | _ ->
+            Console.WriteLine "NuPipe.exe requires two parameters (input directory and output directory)."
+            FailureCode

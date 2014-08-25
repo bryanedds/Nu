@@ -1,6 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <Package name="Default">
+    <Asset name="AssetGraph" fileName="AssetGraph.xml" associations=""/>
+    <Asset name="Overlay" fileName="Overlay.xml" associations=""/>
     <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
     <Asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
     <Asset name="Image3" fileName="Assets/Default/Image3.png" associations="Rendering"/>
@@ -18,6 +20,8 @@
     <Asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations=""/>
   </Package>
   <Package name="Gui">
+    <Asset name="CreditsGroup" fileName="Assets/BlazeVector/Groups/Credits.nugroup" associations=""/>
+    <Asset name="TitleGroup" fileName="Assets/BlazeVector/Groups/Title.nugroup" associations=""/>
     <Asset name="BackButtonUp" fileName="Assets/BlazeVector/Gui/BackButtonUp.png" associations="Rendering"/>
     <Asset name="BackButtonDown" fileName="Assets/BlazeVector/Gui/BackButtonDown.png" associations="Rendering"/>
     <Asset name="CreditsButtonUp" fileName="Assets/BlazeVector/Gui/CreditsButtonUp.png" associations="Rendering"/>
@@ -36,17 +40,26 @@
     <Asset name="EnemyBullet" fileName="Assets/BlazeVector/Stage/EnemyBullet.png" associations="Rendering"/>
     <Asset name="RoadTileSet" fileName="Assets/BlazeVector/Stage/RoadTileSet.png" associations="Rendering"/>
     <Asset name="SkylineTileSet" fileName="Assets/BlazeVector/Stage/SkylineTileSet.png" associations="Rendering"/>
+    <Asset name="Section0Group" fileName="Assets/BlazeVector/Groups/Section0.nugroup" associations=""/>
     <Asset name="Section0" fileName="Assets/BlazeVector/Stage/Section0.tmx" associations=""/>
+    <Asset name="Section1Group" fileName="Assets/BlazeVector/Groups/Section1.nugroup" associations=""/>
     <Asset name="Section1" fileName="Assets/BlazeVector/Stage/Section1.tmx" associations=""/>
+    <Asset name="Section2Group" fileName="Assets/BlazeVector/Groups/Section2.nugroup" associations=""/>
     <Asset name="Section2" fileName="Assets/BlazeVector/Stage/Section2.tmx" associations=""/>
+    <Asset name="Section3Group" fileName="Assets/BlazeVector/Groups/Section3.nugroup" associations=""/>
     <Asset name="Section3" fileName="Assets/BlazeVector/Stage/Section3.tmx" associations=""/>
     <Asset name="BackgroundA" fileName="Assets/BlazeVector/Stage/BackgroundA.tmx" associations=""/>
     <Asset name="BackgroundB" fileName="Assets/BlazeVector/Stage/BackgroundB.tmx" associations=""/>
+    <Asset name="RoadTileSet" fileName="Assets/BlazeVector/Stage/RoadTileSet.tsx" associations=""/>
     <Asset name="DeadBlaze" fileName="Assets/BlazeVector/Stage/DeadBlaze.ogg" associations="Audio"/>
     <Asset name="Shot" fileName="Assets/BlazeVector/Stage/Shot.wav" associations="Audio"/>
     <Asset name="Jump" fileName="Assets/BlazeVector/Stage/Jump.wav" associations="Audio"/>
     <Asset name="Hit" fileName="Assets/BlazeVector/Stage/Hit.wav" associations="Audio"/>
     <Asset name="Explosion" fileName="Assets/BlazeVector/Stage/Explosion.wav" associations="Audio"/>
     <Asset name="Death" fileName="Assets/BlazeVector/Stage/Death.wav" associations="Audio"/>
+    <Asset name="StageGui" fileName="Assets/BlazeVector/Groups/StageGui.nugroup" associations=""/>
+    <Asset name="StagePlay" fileName="Assets/BlazeVector/Groups/StagePlay.nugroup" associations=""/>
+  </Package>
+  <Package name="Group">
   </Package>
 </Root>

@@ -68,7 +68,7 @@ module Assets =
         let assets = List.definitize optAssets
         debugIf
             (fun () -> List.length assets <> List.length optAssets)
-            ("Invalid asset node in '" + node.InnerText + "' in asset graph.")
+            ("Invalid asset node in '" + node.Name + "' in asset graph.")
         let associatedAssets =
             match optAssociation with
             | None -> assets
