@@ -454,7 +454,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1135, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1166, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -620,6 +620,7 @@
             // reloadAssetsButton
             // 
             this.reloadAssetsButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.reloadAssetsButton.Enabled = false;
             this.reloadAssetsButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadAssetsButton.Image")));
             this.reloadAssetsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.reloadAssetsButton.Name = "reloadAssetsButton";
