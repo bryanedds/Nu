@@ -80,7 +80,7 @@ module WorldModule =
             elif priority > priority2 then -1
             else 1
 
-        static member getSimulant (address : Address) world =
+        static member getSimulant address world =
             match address.AddrList with
             | [] -> Game <| world.Game
             | [_] -> Screen <| World.getScreen address world
@@ -88,7 +88,7 @@ module WorldModule =
             | [_; _; _] -> Entity <| World.getEntity address world
             | _ -> failwith <| "Invalid simulant address '" + string address + "'."
 
-        static member getOptSimulant (address : Address) world =
+        static member getOptSimulant address world =
             match address.AddrList with
             | [] -> Some <| Game world.Game
             | [_] -> Option.map Screen <| World.getOptScreen address world
@@ -412,7 +412,7 @@ module WorldModule =
             List.fold World.handleIntegrationMessage world integrationMessages
 
         static member private integrate world =
-            if World.physicsRunning world then
+            if World.isPhysicsRunning world then
                 let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
                 let world = { world with PhysicsMessages = [] }
                 World.handleIntegrationMessages integrationMessages world

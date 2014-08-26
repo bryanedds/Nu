@@ -41,7 +41,7 @@ module WorldGameModule =
         static member getSelectedScreen world = Option.get <| World.getOptSelectedScreen world
         static member setSelectedScreen screen world = World.setOptSelectedScreen (Some screen) world
 
-        static member isAddressSelected (address : Address) world =
+        static member isAddressSelected address world =
             let optScreenAddress = World.getOptSelectedScreenAddress world
             match (address.AddrList, Option.map (fun address -> address.AddrList) optScreenAddress) with
             | ([], _) -> true

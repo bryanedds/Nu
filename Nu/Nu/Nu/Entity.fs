@@ -43,7 +43,7 @@ module EntityModule =
             | :? EntityDispatcher as dispatcher -> dispatcher.Register (address, world)
             | _ -> failwith "Due to optimization in Entity.register, an entity's base dispatcher must be an EntityDispatcher."
         
-        static member unregister (address : Address) (entity : Entity) (world : World) : World =
+        static member unregister address (entity : Entity) (world : World) : World =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.Unregister (address, world)
             | _ -> failwith "Due to optimization in Entity.unregister, an entity's base dispatcher must be an EntityDispatcher."
@@ -93,7 +93,10 @@ module EntityModule =
 
         static member writeToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
-            Xtension.writeTargetProperties (fun propertyName -> Overlayer.shouldWriteProperty propertyName entity overlayer) writer entity
+            Xtension.writeTargetProperties
+                (fun propertyName -> not <| Overlayer.isPropertyOverlaid3 propertyName entity overlayer)
+                writer
+                entity
             writer.WriteEndElement ()
 
         static member writeManyToXml overlayer writer (entities : Map<_, _>) =
@@ -106,7 +109,7 @@ module EntityModule =
             let entity = Entity.init entity world
             match entity.OptOverlayName with
             | None -> ()
-            | Some overlayName -> Overlayer.applyOverlay overlayName entity world.Overlayer
+            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
             Xtension.readTargetProperties entityNode entity
             entity
 
@@ -123,11 +126,11 @@ module WorldEntityModule =
 
     type World with
 
-        static member private optEntityFinder (address : Address) world =
+        static member private optEntityFinder address world =
             // OPTIMIZATION: entity is looked up in EntitiesByAddress
             Map.tryFind address.AddrStr world.EntitiesByAddress
 
-        static member private entityAdder (address : Address) world (entity : Entity) =
+        static member private entityAdder address world (entity : Entity) =
             let world = { world with EntitiesByAddress = Map.add address.AddrStr entity world.EntitiesByAddress }
             let optGroupMap = Map.tryFind (Address.at 0 address) world.Entities
             match optGroupMap with
@@ -147,7 +150,7 @@ module WorldEntityModule =
                     let groupMap = Map.add (Address.at 1 address) entityMap groupMap
                     { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
 
-        static member private entityRemover (address : Address) world =
+        static member private entityRemover address world =
             let world = { world with EntitiesByAddress = Map.remove address.AddrStr world.EntitiesByAddress }
             let optGroupMap = Map.tryFind (Address.at 0 address) world.Entities
             match optGroupMap with
@@ -180,7 +183,7 @@ module WorldEntityModule =
         static member tryWithEntity fn address world = Sim.tryWithSimulant World.getOptEntity World.setEntity fn address world
         static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
     
-        static member getEntities (address : Address) world =
+        static member getEntities address world =
             match address.AddrList with
             | [screenStr; groupStr] ->
                 match Map.tryFind screenStr world.Entities with
@@ -198,7 +201,7 @@ module WorldEntityModule =
             let entity = World.getEntity address world
             Entity.unregister address entity world
 
-        static member removeEntityImmediate (address : Address) world =
+        static member removeEntityImmediate address world =
             let world = World.publish4 (RemovingEventName + address) address NoData world
             let world = World.unregisterEntity address world
             World.setOptEntityWithoutEvent address None world
@@ -209,27 +212,27 @@ module WorldEntityModule =
                   Operation = fun world -> if World.containsEntity address world then World.removeEntityImmediate address world else world }
             { world with Tasks = task :: world.Tasks }
 
-        static member clearEntitiesImmediate (address : Address) world =
+        static member clearEntitiesImmediate address world =
             let entities = World.getEntities address world
             Map.fold
                 (fun world entityName _ -> World.removeEntityImmediate (addrlist address [entityName]) world)
                 world
                 entities
 
-        static member clearEntities (address : Address) world =
+        static member clearEntities address world =
             let entities = World.getEntities address world
             Map.fold
                 (fun world entityName _ -> World.removeEntity (addrlist address [entityName]) world)
                 world
                 entities
 
-        static member removeEntitiesImmediate (screenAddress : Address) entityNames world =
+        static member removeEntitiesImmediate screenAddress entityNames world =
             List.fold
                 (fun world entityName -> World.removeEntityImmediate (addrlist screenAddress [entityName]) world)
                 world
                 entityNames
 
-        static member removeEntities (screenAddress : Address) entityNames world =
+        static member removeEntities screenAddress entityNames world =
             List.fold
                 (fun world entityName -> World.removeEntity (addrlist screenAddress [entityName]) world)
                 world

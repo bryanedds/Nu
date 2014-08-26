@@ -125,6 +125,7 @@ module Program =
                             world
                     | _ ->
                         let entity = World.getEntity entityTds.Address world
+                        let optOldOverlayName = entity.OptOverlayName
                         let entity = setEntityPropertyValue property value entity
                         let entity =
                             match propertyName with
@@ -133,7 +134,7 @@ module Program =
                                 | None -> entity
                                 | Some overlayName ->
                                     let entity = { entity with Id = entity.Id } // hacky copy
-                                    Overlayer.applyOverlay overlayName entity world.Overlayer
+                                    Overlayer.applyOverlay optOldOverlayName overlayName entity world.Overlayer
                                     entity
                             | _ -> entity
                         let world = World.setEntity entityTds.Address entity world
@@ -210,7 +211,7 @@ module Program =
                      MessageBoxButtons.OK,
                      MessageBoxIcon.Error)
 
-    let tryLoadFile fileName (form : NuEditForm) world =
+    let tryLoadFile (form : NuEditForm) fileName world =
         try let world = World.removeGroupImmediate NuEditConstants.EditorGroupAddress world
             let (group, entities) = World.loadGroupFromFile fileName world
             let world = World.addGroup NuEditConstants.EditorGroupAddress group entities world
@@ -220,16 +221,16 @@ module Program =
             ignore <|
                 MessageBox.Show
                     ("Could not load file due to: " + string exn,
-                     "File save error.",
+                     "File load error.",
                      MessageBoxButtons.OK,
                      MessageBoxIcon.Error)
             world
 
     let canEditWithMouse (form : NuEditForm) world =
-        World.gamePlaying world &&
+        World.isGamePlaying world &&
         not form.editWhileInteractiveCheckBox.Checked
 
-    let tryMousePick mousePosition (form : NuEditForm) worldChangers refWorld world =
+    let tryMousePick (form : NuEditForm) mousePosition worldChangers refWorld world =
         let entities = getPickableEntities world
         let optPicked = Entity.tryPick mousePosition entities world
         match optPicked with
@@ -241,9 +242,9 @@ module Program =
             Some (entity, entityAddress)
 
     let rightMouseDown (form : NuEditForm) worldChangers refWorld (_ : Event) world =
-        let handled = if World.gamePlaying world then Unhandled else Handled
+        let handled = if World.isGamePlaying world then Unhandled else Handled
         let mousePosition = world.MouseState.MousePosition
-        ignore <| tryMousePick mousePosition form worldChangers refWorld world
+        ignore <| tryMousePick form mousePosition worldChangers refWorld world
         let editorState = world.ExtData :?> EditorState
         let editorState = { editorState with RightClickPosition = mousePosition }
         let world = { world with ExtData = editorState }
@@ -252,9 +253,9 @@ module Program =
     let beginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
         else
-            let handled = if World.gamePlaying world then Unhandled else Handled
+            let handled = if World.isGamePlaying world then Unhandled else Handled
             let mousePosition = world.MouseState.MousePosition
-            match tryMousePick mousePosition form worldChangers refWorld world with
+            match tryMousePick form mousePosition worldChangers refWorld world with
             | None -> (handled, world)
             | Some (entity, entityAddress) ->
                 let pastWorld = world
@@ -269,7 +270,7 @@ module Program =
     let endEntityDrag (form : NuEditForm) (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
         else
-            let handled = if World.gamePlaying world then Unhandled else Handled
+            let handled = if World.isGamePlaying world then Unhandled else Handled
             let editorState = world.ExtData :?> EditorState
             match editorState.DragEntityState with
             | DragEntityNone -> (Handled, world)
@@ -386,7 +387,7 @@ module Program =
         match openFileResult with
         | DialogResult.OK ->
             ignore <| worldChangers.AddLast (fun world ->
-                let world = tryLoadFile form.openFileDialog.FileName form world
+                let world = tryLoadFile form form.openFileDialog.FileName world
                 let world = clearOtherWorlds world
                 form.propertyGrid.SelectedObject <- null
                 form.interactivityButton.Checked <- false
@@ -427,7 +428,7 @@ module Program =
         ignore <| worldChangers.AddLast (fun world ->
             let pastWorld = world
             let world = { world with Interactivity = interactivity }
-            if Interactivity.gamePlaying interactivity then pushPastWorld pastWorld world
+            if Interactivity.isGamePlaying interactivity then pushPastWorld pastWorld world
             else world)
 
     let handleCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) _ =

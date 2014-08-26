@@ -44,26 +44,65 @@ module Overlayer =
                     optNode
             | leaf -> Some leaf
 
-    let isPropertyOverlaid overlayName propertyName overlayer =
-        Option.isSome <| trySelectNode overlayName propertyName overlayer
+    let isPropertyOverlaid overlayName propertyName target overlayer =
+        match trySelectNode overlayName propertyName overlayer with
+        | None -> false
+        | Some overlayNode -> 
+            let targetType = target.GetType ()
+            let optProperty = targetType.GetProperty (overlayNode.Name, BindingFlags.Public ||| BindingFlags.Instance)
+            let optXtension =
+                match targetType.GetProperty "Xtension" with
+                | null -> None
+                | xtensionProperty ->
+                    match xtensionProperty.GetValue target with
+                    | :? Xtension as xtension -> Some xtension
+                    | _ -> None
+            let optPropertyValue =
+                match (optProperty, optXtension) with
+                | (null, None) -> None
+                | (null, Some xtension) -> Some <| Map.find overlayNode.Name xtension.XFields
+                | (targetProperty, _) -> Some <| targetProperty.GetValue target
+            match optPropertyValue with
+            | None -> false
+            | Some propertyValue ->
+                let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
+                if converter.CanConvertFrom typeof<string> then
+                    let overlayValue = converter.ConvertFrom overlayNode.InnerText
+                    overlayValue = propertyValue
+                else false
 
-    let tryApplyOverlayToDotNetProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
-        if property.PropertyType <> typeof<Xtension> then
+    let isPropertyOverlaid3 propertyName target overlayer =
+        let targetType = target.GetType ()
+        match targetType.GetProperty ("OptOverlayName", BindingFlags.Public ||| BindingFlags.Instance) with
+        | null -> false
+        | optOverlayNameProperty ->
+            match optOverlayNameProperty.GetValue target with
+            | :? (string option) as optOverlayName ->
+                match optOverlayName with
+                | None -> false
+                | Some overlayName -> isPropertyOverlaid overlayName propertyName target overlayer
+            | _ -> false
+
+    let tryApplyOverlayToDotNetProperty (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) overlayer =
+        if property.PropertyType <> typeof<Xtension> &&
+           (match optOldOverlayName with
+            | None -> false
+            | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name target overlayer) then
             let valueStr = valueNode.InnerText
             let converter = TypeDescriptor.GetConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
                 let value = converter.ConvertFrom valueStr
                 property.SetValue (target, value)
 
-    let applyOverlayToDotNetProperties overlayName (target : 'a) overlayer =
+    let applyOverlayToDotNetProperties optOldOverlayName newOverlayName (target : 'a) overlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
         for property in targetProperties do
-            match trySelectNode overlayName property.Name overlayer with
+            match trySelectNode newOverlayName property.Name overlayer with
             | None -> ()
-            | Some fieldNode -> tryApplyOverlayToDotNetProperty property fieldNode target
+            | Some fieldNode -> tryApplyOverlayToDotNetProperty property fieldNode optOldOverlayName target overlayer
 
-    let applyOverlayToXtension overlayName target overlayer =
+    let applyOverlayToXtension optOldOverlayName newOverlayName target overlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> ()
@@ -71,64 +110,33 @@ module Overlayer =
             match xtensionProperty.GetValue target with
             | :? Xtension as xtension ->
                 let optNodes =
-                    Seq.map
-                        (fun (kvp : KeyValuePair<string, obj>) ->
-                            match trySelectNode overlayName kvp.Key overlayer with
-                            | None -> None
-                            | Some node -> Some (kvp.Value.GetType (), node))
+                    Seq.fold
+                        (fun acc (kvp : KeyValuePair<string, obj>) ->
+                            match trySelectNode newOverlayName kvp.Key overlayer with
+                            | None -> acc
+                            | Some node -> (kvp.Value.GetType (), node) :: acc)
+                        []
                         xtension.XFields
-                let nodes = Seq.definitize optNodes
+                let nodes = List.ofSeq optNodes
                 let xFields =
-                    Seq.map
-                        (fun (aType, node : XmlNode) ->
-                            let converter = TypeDescriptor.GetConverter aType
-                            let value = converter.ConvertFrom node.InnerText
-                            (node.Name, value))
+                    List.fold
+                        (fun acc (aType, node : XmlNode) ->
+                            let isOverlaid =
+                                match optOldOverlayName with
+                                | None -> false
+                                | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target overlayer
+                            if isOverlaid then
+                                let converter = TypeDescriptor.GetConverter aType
+                                let value = converter.ConvertFrom node.InnerText
+                                (node.Name, value) :: acc
+                            else acc)
+                        []
                         nodes
                 let xFields = Map.addMany xFields xtension.XFields
                 let xtension = { xtension with XFields = xFields }
                 xtensionProperty.SetValue (target, xtension)
             | _ -> ()
 
-    let applyOverlay overlayName target overlayer =
-        applyOverlayToDotNetProperties overlayName target overlayer
-        applyOverlayToXtension overlayName target overlayer
-
-    let shouldWriteOverlaidProperty (overlayNode : XmlNode) target =
-        let targetType = target.GetType ()
-        let optProperty = targetType.GetProperty (overlayNode.Name, BindingFlags.Public ||| BindingFlags.Instance)
-        let optXtension =
-            match targetType.GetProperty "Xtension" with
-            | null -> None
-            | xtensionProperty ->
-                match xtensionProperty.GetValue target with
-                | :? Xtension as xtension -> Some xtension
-                | _ -> None
-        let optPropertyValue =
-            match (optProperty, optXtension) with
-            | (null, None) -> None
-            | (null, Some xtension) -> Some <| Map.find overlayNode.Name xtension.XFields
-            | (targetProperty, _) -> Some <| targetProperty.GetValue target
-        match optPropertyValue with
-        | None -> true
-        | Some propertyValue ->
-            let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
-            if converter.CanConvertFrom typeof<string> then
-                let overlayValue = converter.ConvertFrom overlayNode.InnerText
-                overlayValue <> propertyValue
-            else true
-
-    let shouldWriteProperty propertyName target overlayer =
-        let targetType = target.GetType ()
-        match targetType.GetProperty "OptOverlayName" with
-        | null -> true
-        | optOverlayNameProperty ->
-            match optOverlayNameProperty.GetValue target with
-            | :? (string option) as optOverlayName ->
-                match optOverlayName with
-                | None -> true
-                | Some overlayName ->
-                    match trySelectNode overlayName propertyName overlayer with
-                    | None -> true
-                    | Some overlayNode -> shouldWriteOverlaidProperty overlayNode target
-            | _ -> true
+    let applyOverlay optOldOverlayName newOverlayName target overlayer =
+        applyOverlayToDotNetProperties optOldOverlayName newOverlayName target overlayer
+        applyOverlayToXtension optOldOverlayName newOverlayName target overlayer
