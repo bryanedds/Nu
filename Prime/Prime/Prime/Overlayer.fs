@@ -111,16 +111,16 @@ module Overlayer =
             | :? Xtension as xtension ->
                 let optNodes =
                     Seq.fold
-                        (fun acc (kvp : KeyValuePair<string, obj>) ->
+                        (fun optNodes (kvp : KeyValuePair<string, obj>) ->
                             match trySelectNode newOverlayName kvp.Key overlayer with
-                            | None -> acc
-                            | Some node -> (kvp.Value.GetType (), node) :: acc)
+                            | None -> optNodes
+                            | Some node -> (kvp.Value.GetType (), node) :: optNodes)
                         []
                         xtension.XFields
                 let nodes = List.ofSeq optNodes
                 let xFields =
                     List.fold
-                        (fun acc (aType, node : XmlNode) ->
+                        (fun xFields (aType, node : XmlNode) ->
                             let isOverlaid =
                                 match optOldOverlayName with
                                 | None -> false
@@ -128,8 +128,8 @@ module Overlayer =
                             if isOverlaid then
                                 let converter = TypeDescriptor.GetConverter aType
                                 let value = converter.ConvertFrom node.InnerText
-                                (node.Name, value) :: acc
-                            else acc)
+                                (node.Name, value) :: xFields
+                            else xFields)
                         []
                         nodes
                 let xFields = Map.addMany xFields xtension.XFields

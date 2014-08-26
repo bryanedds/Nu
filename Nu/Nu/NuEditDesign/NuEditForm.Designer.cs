@@ -88,6 +88,8 @@
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.reloadAssetsButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -445,12 +447,14 @@
             this.deleteEntityButton,
             this.toolStripSeparator5,
             this.resetCameraButton,
+            this.toolStripSeparator8,
+            this.reloadAssetsButton,
             this.toolStripSeparator7,
             this.interactivityButton,
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1069, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1135, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -605,8 +609,22 @@
             this.editWhileInteractiveCheckBox.Image = ((System.Drawing.Image)(resources.GetObject("editWhileInteractiveCheckBox.Image")));
             this.editWhileInteractiveCheckBox.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.editWhileInteractiveCheckBox.Name = "editWhileInteractiveCheckBox";
-            this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(120, 22);
-            this.editWhileInteractiveCheckBox.Text = "Edit while Interactive";
+            this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(128, 22);
+            this.editWhileInteractiveCheckBox.Text = "(Edit while Interactive)";
+            // 
+            // toolStripSeparator8
+            // 
+            this.toolStripSeparator8.Name = "toolStripSeparator8";
+            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
+            // 
+            // reloadAssetsButton
+            // 
+            this.reloadAssetsButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.reloadAssetsButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadAssetsButton.Image")));
+            this.reloadAssetsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.reloadAssetsButton.Name = "reloadAssetsButton";
+            this.reloadAssetsButton.Size = new System.Drawing.Size(83, 22);
+            this.reloadAssetsButton.Text = "Reload Assets";
             // 
             // NuEditForm
             // 
@@ -700,6 +718,8 @@
         public System.Windows.Forms.ComboBox typeNameTextBox;
         public System.Windows.Forms.Button removeSelectedXFieldButton;
         public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
+        private System.Windows.Forms.ToolStripButton reloadAssetsButton;
 
     }
 }
