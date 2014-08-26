@@ -55,13 +55,13 @@ module WorldGroupModule =
 
     type World with
 
-        static member private optGroupFinder (address : Address) world =
+        static member private optGroupFinder address world =
             let optGroupMap = Map.tryFind (Address.at 0 address) world.Groups
             match optGroupMap with
             | None -> None
             | Some groupMap -> Map.tryFind (Address.at 1 address) groupMap
 
-        static member private groupAdder (address : Address) world child =
+        static member private groupAdder address world child =
             let optGroupMap = Map.tryFind (Address.at 0 address) world.Groups
             match optGroupMap with
             | None ->
@@ -70,7 +70,7 @@ module WorldGroupModule =
                 let groupMap = Map.add (Address.at 1 address) child groupMap
                 { world with Groups = Map.add (Address.at 0 address) groupMap world.Groups }
 
-        static member private groupRemover (address : Address) world =
+        static member private groupRemover address world =
             let optGroupMap = Map.tryFind (Address.at 0 address) world.Groups
             match optGroupMap with
             | None -> world
@@ -92,7 +92,7 @@ module WorldGroupModule =
         static member tryWithGroup fn address world = Sim.tryWithSimulant World.getOptGroup World.setGroup fn address world
         static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptGroup World.setGroup fn address world
     
-        static member getGroups (address : Address) world =
+        static member getGroups address world =
             match address.AddrList with
             | [screenStr] ->
                 match Map.tryFind screenStr world.Groups with
@@ -107,7 +107,7 @@ module WorldGroupModule =
             let group = World.getGroup address world
             Group.unregister address group world
 
-        static member removeGroupImmediate (address : Address) world =
+        static member removeGroupImmediate address world =
             let world = World.publish4 (RemovingEventName + address) address NoData world
             let world = World.unregisterGroup address world
             let world = World.clearEntitiesImmediate address world
@@ -119,27 +119,27 @@ module WorldGroupModule =
                   Operation = fun world -> if World.containsGroup address world then World.removeGroupImmediate address world else world }
             { world with Tasks = task :: world.Tasks }
 
-        static member clearGroupsImmediate (address : Address) world =
+        static member clearGroupsImmediate address world =
             let groups = World.getGroups address world
             Map.fold
                 (fun world groupName _ -> World.removeGroupImmediate (addrlist address [groupName]) world)
                 world
                 groups
 
-        static member clearGroups (address : Address) world =
+        static member clearGroups address world =
             let groups = World.getGroups address world
             Map.fold
                 (fun world groupName _ -> World.removeGroup (addrlist address [groupName]) world)
                 world
                 groups
 
-        static member removeGroupsImmediate (screenAddress : Address) groupNames world =
+        static member removeGroupsImmediate screenAddress groupNames world =
             List.fold
                 (fun world groupName -> World.removeGroupImmediate (addrlist screenAddress [groupName]) world)
                 world
                 groupNames
 
-        static member removeGroups (screenAddress : Address) groupNames world =
+        static member removeGroups screenAddress groupNames world =
             List.fold
                 (fun world groupName -> World.removeGroup (addrlist screenAddress [groupName]) world)
                 world

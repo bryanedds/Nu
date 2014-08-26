@@ -52,13 +52,13 @@ module WorldScreenModule =
 
     type World with
 
-        static member private optScreenFinder (address : Address) world =
+        static member private optScreenFinder address world =
             Map.tryFind (Address.at 0 address) world.Screens
 
-        static member private screenAdder (address : Address) world child =
+        static member private screenAdder address world child =
             { world with Screens = Map.add (Address.at 0 address) child world.Screens }
 
-        static member private screenRemover (address : Address) world =
+        static member private screenRemover address world =
             { world with Screens = Map.remove (Address.at 0 address) world.Screens }
 
         static member getScreen address world = Option.get <| World.optScreenFinder address world
@@ -87,7 +87,7 @@ module WorldScreenModule =
             let screen = World.getScreen address world
             Screen.unregister address screen world
 
-        static member removeScreenImmediate (address : Address) world =
+        static member removeScreenImmediate address world =
             let world = World.publish4 (RemovingEventName + address) address NoData world
             let world = World.clearGroupsImmediate address world
             let world = World.unregisterScreen address world

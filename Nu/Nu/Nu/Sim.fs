@@ -39,13 +39,13 @@ module InterativityModule =
 [<RequireQualifiedAccess>]
 module Interactivity =
 
-    let gamePlaying interactivity =
+    let isGamePlaying interactivity =
         match interactivity with
         | Gui -> false
         | GuiAndPhysics -> false
         | GuiAndPhysicsAndGamePlay -> true
 
-    let physicsRunning interactivity =
+    let isPhysicsRunning interactivity =
         match interactivity with
         | Gui -> false
         | GuiAndPhysics -> true
@@ -401,11 +401,11 @@ module WorldSimModule =
 
     type World with
 
-        static member physicsRunning world =
-            Interactivity.physicsRunning world.Interactivity
+        static member isPhysicsRunning world =
+            Interactivity.isPhysicsRunning world.Interactivity
 
-        static member gamePlaying world =
-            Interactivity.gamePlaying world.Interactivity
+        static member isGamePlaying world =
+            Interactivity.isGamePlaying world.Interactivity
 
         (* The following are function forwarders. *)
         static member publish publishSorter eventName publisher eventData world = Sim.publish publishSorter eventName publisher eventData world

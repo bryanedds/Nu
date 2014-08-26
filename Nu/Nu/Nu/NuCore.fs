@@ -73,23 +73,23 @@ module NuCoreModule =
         let list = List.ofArray <| str.Split '/'
         makeAddress list
 
-    let straddr str (address : Address) : Address =
+    let straddr str address =
         addr str + address
 
-    let addrstr (address : Address) str : Address =
+    let addrstr address str =
         let list = address.AddrList @ [str]
         makeAddress list
 
-    let straddrstr str (address : Address) str2 : Address =
+    let straddrstr str address str2 =
         addr str + address + addr str2
 
-    let listaddr list (address : Address) : Address =
+    let listaddr list address =
         makeAddress <| list @ address.AddrList
 
-    let addrlist (address : Address) list : Address =
+    let addrlist address list =
         makeAddress <| address.AddrList @ list
 
-    let listaddrlist list (address : Address) list2 : Address =
+    let listaddrlist list address list2 =
         makeAddress <| list @ address.AddrList @ list2
 
 [<RequireQualifiedAccess>]

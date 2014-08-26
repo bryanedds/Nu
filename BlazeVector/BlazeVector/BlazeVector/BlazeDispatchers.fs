@@ -23,7 +23,7 @@ module BulletDispatcherModule =
         inherit SimpleBodySpriteDispatcher (Set.empty)
 
         let tickHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let bullet = World.getEntity event.Subscriber world
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
@@ -33,7 +33,7 @@ module BulletDispatcherModule =
             else (Unhandled, world)
 
         let collisionHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let world = World.removeEntity event.Subscriber world
                 (Unhandled, world)
             else (Unhandled, world)
@@ -86,7 +86,7 @@ module EnemyDispatcherModule =
             World.playSound ExplosionSound 1.0f world
 
         let tickHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let enemy = World.getEntity event.Subscriber world
                 let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die event.Subscriber world else world
@@ -94,7 +94,7 @@ module EnemyDispatcherModule =
             else (Unhandled, world)
 
         let collisionHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let collisionData = EventData.toEntityCollisionData event.Data
                 let collidee = World.getEntity collisionData.Collidee world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world
@@ -163,7 +163,7 @@ module PlayerDispatcherModule =
             propelBullet bulletAddress world
 
         let spawnBulletHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 if not <| Entity.hasFallen player then
                     if world.TickTime % 6L = 0L then
@@ -180,7 +180,7 @@ module PlayerDispatcherModule =
             else world.TickTime
 
         let movementHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGround lastTimeOnGround player
@@ -196,7 +196,7 @@ module PlayerDispatcherModule =
             else (Unhandled, world)
 
         let jumpHandler event world =
-            if World.gamePlaying world then
+            if World.isGamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 if  world.TickTime >= player.LastTimeJump + 12L &&
                     world.TickTime <= player.LastTimeOnGround + 10L then
