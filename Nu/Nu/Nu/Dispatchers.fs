@@ -255,7 +255,7 @@ module SimpleSpriteFacet =
     let [<Literal>] Name = "SimpleSpriteFacet"
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
-        Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } entity
+        Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName } entity
 
     let getRenderDescriptors entity viewType world =
         if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
@@ -312,7 +312,7 @@ module SimpleAnimatedSpriteFacet =
             Entity.setTileCount 16 |>
             Entity.setTileRun 4 |>
             Entity.setTileSize (Vector2 (16.0f, 16.0f)) |>
-            Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }
 
     let getRenderDescriptors (entity : Entity) viewType world =
         if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
@@ -484,9 +484,9 @@ module ButtonDispatcherModule =
             let button = base.Init (button, dispatcherContainer)
             button |>
                 Entity.setIsDown false |>
-                Entity.setUpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setDownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setUpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName } |>
+                Entity.setDownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName } |>
+                Entity.setClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }
 
         override dispatcher.Register (address, world) =
             world |>
@@ -530,7 +530,7 @@ module LabelDispatcherModule =
             
         override dispatcher.Init (label, dispatcherContainer) =
             let label = base.Init (label, dispatcherContainer)
-            Entity.setLabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } label
+            Entity.setLabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName } label
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -578,9 +578,9 @@ module TextDispatcherModule =
         override dispatcher.Init (text, dispatcherContainer) =
             let text = base.Init (text, dispatcherContainer)
             text |>
-                Entity.setBackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setBackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName } |>
                 Entity.setText String.Empty |>
-                Entity.setTextFont { FontAssetName = "Font"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setTextFont { FontAssetName = "Font"; PackageName = DefaultPackageName } |>
                 Entity.setTextOffset Vector2.Zero |>
                 Entity.setTextColor Vector4.One
 
@@ -675,9 +675,9 @@ module ToggleDispatcherModule =
             toggle |>
                 Entity.setIsOn false |>
                 Entity.setIsPressed false |>
-                Entity.setOffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setOnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setOffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName } |>
+                Entity.setOnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName } |>
+                Entity.setToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }
 
         override dispatcher.Register (address, world) =
             world |>
@@ -789,8 +789,8 @@ module FillBarDispatcherModule =
             fillBar |>
                 Entity.setFill 0.0f |>
                 Entity.setFillInset 0.0f |>
-                Entity.setFillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
-                Entity.setBorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setFillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName } |>
+                Entity.setBorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }
                 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
@@ -836,7 +836,7 @@ module BlockDispatcherModule =
 
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
-            Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } block
+            Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName } block
 
         override dispatcher.GetBodyShape (block, _) =
             BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
@@ -853,7 +853,7 @@ module AvatarDispatcherModule =
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 10.0f |>
                 Entity.setGravityScale 0.0f |>
-                Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }
 
         override dispatcher.GetBodyShape (avatar, _) =
             CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
@@ -869,7 +869,7 @@ module CharacterDispatcherModule =
             character |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
-                Entity.setSpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+                Entity.setSpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }
 
         override dispatcher.GetBodyShape (character, _) =
             CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }
@@ -1046,7 +1046,7 @@ module TileMapDispatcherModule =
                 Entity.setRestitution 0.0f |>
                 Entity.setCollisionCategories "1" |>
                 Entity.setCollisionMask "*" |>
-                Entity.setTileMapAsset { TileMapAssetName = "TileMap"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName } |>
+                Entity.setTileMapAsset { TileMapAssetName = "TileMap"; PackageName = DefaultPackageName } |>
                 Entity.setParallax 0.0f
 
         override dispatcher.Register (address, world) =

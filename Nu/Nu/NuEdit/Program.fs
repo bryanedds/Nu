@@ -510,7 +510,9 @@ module Program =
                     ignore <| worldChangers.AddLast (fun world ->
                         let pastWorld = world
                         let entity = World.getEntity entityTds.Address world
-                        let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
+                        let xFieldValue =
+                            if aType = typeof<string> then String.Empty :> obj
+                            else Activator.CreateInstance aType
                         let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
                         let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
                         let world = World.setEntity entityTds.Address entity world
@@ -560,7 +562,7 @@ module Program =
         ignore <| worldChangers.AddLast (fun world ->
             let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
             let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
-            match World.tryReloadAssets assetSourceDirectory targetDirectory AssetGraphFileName world with
+            match World.tryReloadAssets assetSourceDirectory targetDirectory world with
             | Left error ->
                 ignore <|
                     MessageBox.Show
@@ -618,7 +620,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics editorState
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics AssetGraphFileName OverlayFileName editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->

@@ -245,6 +245,8 @@ module SimModule =
           RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue
           Dispatchers : XDispatchers
+          AssetGraphFileName : string
+          OverlayFileName : string
           ExtData : obj }
         interface IXDispatcherContainer with
             member this.GetDispatchers () = this.Dispatchers
@@ -358,16 +360,16 @@ module WorldRenderingModule =
 
     type World with
 
-        static member hintRenderingPackageUse fileName packageName world =
-            let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { FileName = fileName; PackageName = packageName }
+        static member hintRenderingPackageUse packageName world =
+            let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { PackageName = packageName }
             { world with RenderMessages = hintRenderingPackageUseMessage :: world.RenderMessages }
 
-        static member hintRenderingPackageDisuse fileName packageName world =
-            let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { FileName = fileName; PackageName = packageName }
+        static member hintRenderingPackageDisuse packageName world =
+            let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { PackageName = packageName }
             { world with RenderMessages = hintRenderingPackageDisuseMessage :: world.RenderMessages }
 
-        static member reloadRenderingAssets fileName world =
-            let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage { FileName = fileName }
+        static member reloadRenderingAssets world =
+            let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage
             { world with RenderMessages = reloadRenderingAssetsMessage :: world.RenderMessages }
 
 [<AutoOpen>]
@@ -379,16 +381,16 @@ module WorldAudioModule =
             let playSongMessage = PlaySongMessage { Song = song; Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs }
             { world with AudioMessages = playSongMessage :: world.AudioMessages }
 
-        static member playSong6 songAssetName packageName packageFileName volume timeToFadeOutSongMs world =
-            let song = { SongAssetName = songAssetName; PackageName = packageName; PackageFileName = packageFileName }
+        static member playSong6 songAssetName packageName volume timeToFadeOutSongMs world =
+            let song = { SongAssetName = songAssetName; PackageName = packageName }
             World.playSong song volume timeToFadeOutSongMs world
 
         static member playSound sound volume world =
             let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
             { world with AudioMessages = playSoundMessage :: world.AudioMessages }
 
-        static member playSound5 soundAssetName packageName packageFileName volume world =
-            let sound = { SoundAssetName = soundAssetName; PackageName = packageName; PackageFileName = packageFileName }
+        static member playSound5 soundAssetName packageName volume world =
+            let sound = { SoundAssetName = soundAssetName; PackageName = packageName }
             World.playSound sound volume world
 
         static member fadeOutSong timeToFadeOutSongMs world =
@@ -398,14 +400,14 @@ module WorldAudioModule =
         static member stopSong world =
             { world with AudioMessages = StopSongMessage :: world.AudioMessages }
 
-        static member hintAudioPackageUse fileName packageName world =
-            let hintAudioPackageUseMessage = HintAudioPackageUseMessage { FileName = fileName; PackageName = packageName }
+        static member hintAudioPackageUse packageName world =
+            let hintAudioPackageUseMessage = HintAudioPackageUseMessage { PackageName = packageName }
             { world with AudioMessages = hintAudioPackageUseMessage :: world.AudioMessages }
 
-        static member hintAudioPackageDisuse fileName packageName world =
-            let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { FileName = fileName; PackageName = packageName }
+        static member hintAudioPackageDisuse packageName world =
+            let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { PackageName = packageName }
             { world with AudioMessages = hintAudioPackageDisuseMessage :: world.AudioMessages }
 
-        static member reloadAudioAssets fileName world =
-            let reloadAudioAssetsMessage = ReloadAudioAssetsMessage { FileName = fileName }
+        static member reloadAudioAssets world =
+            let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }

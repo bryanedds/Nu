@@ -51,20 +51,20 @@ module BlazeFlow =
         World.subscribe4 ClickStageBackEventName Address.empty (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
-    let tryMakeBlazeVectorWorld sdlDeps extData =
+    let tryMakeBlazeVectorWorld sdlDeps assetGraphFileName overlayFileName extData =
 
         // our custom game dispatcher here is OmniGameDispatcher
         let gameDispatcher = BlazeVectorDispatcher () :> obj
 
         // we use World.tryMakeEmpty to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay extData
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay assetGraphFileName overlayFileName extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->
 
             // hint to the renderer that the Gui package should be loaded up front
-            let world = World.hintRenderingPackageUse AssetGraphFileName GuiPackageName world
+            let world = World.hintRenderingPackageUse GuiPackageName world
             
             // add our UI screens to the world
             let world = addTitleScreen world
@@ -72,7 +72,7 @@ module BlazeFlow =
             let world = addStageScreen world
 
             // add to the world a splash screen that automatically transitions to the Title screen
-            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
 
             // play a neat sound effect, and select the splash screen

@@ -7,7 +7,7 @@
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(PlayerDispatcher)">
         <Depth type="System.Single">1</Depth>
-        <SpriteImage type="Nu.RenderingModule+Image">Player;Stage;AssetGraph.xml</SpriteImage>
+        <SpriteImage type="Nu.RenderingModule+Image">Player;Stage</SpriteImage>
         <Position type="OpenTK.Vector2">-356;-175.6805</Position>
         <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
