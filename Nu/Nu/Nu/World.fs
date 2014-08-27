@@ -512,8 +512,8 @@ module WorldModule =
             let world = World.addScreen screenAddress screen [(groupName, group, entities)] world
             world
 
-        static member tryMakeEmpty sdlDeps gameDispatcher interactivity assetGraphFileName overlayFileName extData =
-            match Metadata.tryGenerateAssetMetadataMap assetGraphFileName with
+        static member tryMakeEmpty sdlDeps gameDispatcher interactivity extData =
+            match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
             | Left errorMsg -> Left errorMsg
             | Right assetMetadataMap ->
                 let gameDispatcherName = (gameDispatcher.GetType ()).Name
@@ -549,17 +549,17 @@ module WorldModule =
                       Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
                       MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
-                      AudioPlayer = Audio.makeAudioPlayer assetGraphFileName
-                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext assetGraphFileName
+                      AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
+                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
                       Integrator = Physics.makeIntegrator Gravity
                       AssetMetadataMap = assetMetadataMap
-                      Overlayer = Overlayer.make overlayFileName
+                      Overlayer = Overlayer.make OverlayFileName
                       AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
                       RenderMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
                       PhysicsMessages = []
                       Dispatchers = dispatchers
-                      AssetGraphFileName = assetGraphFileName
-                      OverlayFileName = overlayFileName
+                      AssetGraphFileName = AssetGraphFileName
+                      OverlayFileName = OverlayFileName
                       ExtData = extData }
                 let world = world.Game.Register world
                 Right world

@@ -51,14 +51,14 @@ module BlazeFlow =
         World.subscribe4 ClickStageBackEventName Address.empty (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
-    let tryMakeBlazeVectorWorld sdlDeps assetGraphFileName overlayFileName extData =
+    let tryMakeBlazeVectorWorld sdlDeps extData =
 
         // our custom game dispatcher here is OmniGameDispatcher
         let gameDispatcher = BlazeVectorDispatcher () :> obj
 
         // we use World.tryMakeEmpty to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay assetGraphFileName overlayFileName extData
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->

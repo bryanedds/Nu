@@ -26,9 +26,9 @@ module OmniFlow =
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name FieldGroupFileName (Address.last FieldGroupAddress) IncomingTime OutgoingTime FieldAddress world
         World.subscribe4 ClickFieldBackEvent Address.empty (ScreenTransitionSub TitleAddress) world
 
-    let tryMakeOmniBladeWorld sdlDeps assetGraphFileName overlayFileName extData =
+    let tryMakeOmniBladeWorld sdlDeps extData =
         let gameDispatcher = OmniBladeDispatcher () :> obj
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics assetGraphFileName overlayFileName extData
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->
