@@ -20,23 +20,23 @@ module CameraModule =
 module Camera =
 
     let getViewAbsoluteF (_ : Camera) =
-        Matrix3.identity
+        Matrix3.Identity
         
     let getViewAbsoluteI (_ : Camera) =
-        Matrix3.identity
+        Matrix3.Identity
 
     /// The relative view of the camera with original float values. Due to the problems with
     /// SDL_RenderCopyEx as described in NuMath.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelativeF camera =
         let translation = camera.EyeCenter
-        Matrix3.makeFromTranslation translation
+        Matrix3.CreateFromTranslation translation
 
     /// The relative view of the camera with translation sliced on integers. Good for rendering.
     let getViewRelativeI camera =
         let translation = camera.EyeCenter
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
-        Matrix3.makeFromTranslation translationI
+        Matrix3.CreateFromTranslation translationI
 
     let getBounds camera =
         Vector4 (

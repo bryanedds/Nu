@@ -245,8 +245,7 @@ module SimModule =
           RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue
           Dispatchers : XDispatchers
-          ExtData : obj } // TODO: consider if this is still the right approach in the context of the new Xtension stuff
-
+          ExtData : obj }
         interface IXDispatcherContainer with
             member this.GetDispatchers () = this.Dispatchers
             end
