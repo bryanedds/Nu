@@ -81,7 +81,6 @@
     <Compile Include="TypeExtension.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Xtension.fs" />
-    <Compile Include="Overlayer.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
     <Compile Include="ImmutableSubclass.fs" />
