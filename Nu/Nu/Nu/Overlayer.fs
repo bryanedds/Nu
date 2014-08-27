@@ -1,10 +1,11 @@
-﻿namespace Prime
+﻿namespace Nu
 open System
 open System.Xml
 open System.Reflection
 open System.ComponentModel
 open System.Collections.Generic
-open Prime.PrimeConstants
+open Prime
+open Nu.NuConstants
 
 [<AutoOpen>]
 module OverlayerModule =

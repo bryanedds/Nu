@@ -4,11 +4,11 @@
 [<RequireQualifiedAccess>]
 module Set
 
-/// Make a singleton map.
+/// Make a singleton set.
 let singleton value =
     Set.add value Set.empty
 
-/// Add multiple values to a map.
+/// Add multiple values to a set.
 let addMany values set =
     Seq.fold
         (fun set value -> Set.add value set)
