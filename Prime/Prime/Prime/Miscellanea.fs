@@ -75,7 +75,6 @@ module Miscellanea =
         Guid (m, int16 (n >>> 16), int16 n, bytes)
 
     /// Try to find a type by its name from all the loaded assemblies. Time-intensive.
-    /// TODO: move into TypeExtension.fs.
     let tryFindType typeName =
         match Type.GetType typeName with
         | null ->
@@ -88,7 +87,6 @@ module Miscellanea =
         | aType -> Some aType
 
     /// Find a type by its name from all the loaded assemblies. Time-intensive.
-    /// TODO: move into TypeExtension.fs.
     let findType typeName =
         match tryFindType typeName with
         | None -> failwith <| "Could not find type with name '" + typeName + "'."

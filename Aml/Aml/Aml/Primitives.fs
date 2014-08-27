@@ -546,7 +546,7 @@ module Primitives =
     /// Make a type value.
     let makeType typeName optPositions =
         let (typeNameName, typeNameMember) = makeTypeNameMember typeName optPositions
-        let members = Dictionary.singleton (typeNameName, typeNameMember)
+        let members = Dictionary.singleton typeNameName typeNameMember
         Composite (makeCompositeRecord true typeName members UnitValue (Dictionary<string, Expr> ()) (HashSet<string> ()) optPositions)
 
     /// Make a type entry.
@@ -816,4 +816,4 @@ module Primitives =
     /// Make a special content value.
     /// TODO: consider if the function name is strange.
     let makeValueContent name value optPositions =
-        Composite (makeCompositeRecord true name (Dictionary.singleton (name, makeMember name value)) CompositeType null null optPositions)
+        Composite (makeCompositeRecord true name (Dictionary.singleton name (makeMember name value)) CompositeType null null optPositions)
