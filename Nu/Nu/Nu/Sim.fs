@@ -360,6 +360,10 @@ module WorldRenderingModule =
             let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { FileName = fileName; PackageName = packageName }
             { world with RenderMessages = hintRenderingPackageDisuseMessage :: world.RenderMessages }
 
+        static member reloadRenderingAssets fileName world =
+            let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage { FileName = fileName }
+            { world with RenderMessages = reloadRenderingAssetsMessage :: world.RenderMessages }
+
 [<AutoOpen>]
 module WorldAudioModule =
 
@@ -395,6 +399,10 @@ module WorldAudioModule =
         static member hintAudioPackageDisuse fileName packageName world =
             let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { FileName = fileName; PackageName = packageName }
             { world with AudioMessages = hintAudioPackageDisuseMessage :: world.AudioMessages }
+
+        static member reloadAudioAssets fileName world =
+            let reloadAudioAssetsMessage = ReloadAudioAssetsMessage { FileName = fileName }
+            { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }
 
 [<AutoOpen>]
 module WorldSimModule =

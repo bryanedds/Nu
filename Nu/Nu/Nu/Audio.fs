@@ -37,6 +37,9 @@ module AudioModule =
         { FileName : string
           PackageName : string }
 
+    type [<StructuralEquality; NoComparison>] ReloadAudioAssetsMessage =
+        { FileName : string }
+
     type [<StructuralEquality; NoComparison>] AudioMessage =
         | HintAudioPackageUseMessage of HintAudioPackageUseMessage
         | HintAudioPackageDisuseMessage of HintAudioPackageDisuseMessage
@@ -44,6 +47,7 @@ module AudioModule =
         | PlaySongMessage of PlaySongMessage
         | FadeOutSongMessage of int
         | StopSongMessage
+        | ReloadAudioAssetsMessage of ReloadAudioAssetsMessage
 
     type [<ReferenceEquality>] AudioAsset =
         | WavAsset of nativeint
@@ -121,7 +125,7 @@ module Audio =
         | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
     let private tryLoadAudioPackage packageName fileName audioPlayer =
-        let optAssets = Assets.tryLoadPackageAssets (Some "Audio") packageName fileName
+        let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName fileName
         match optAssets with
         | Left error ->
             trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
@@ -214,6 +218,14 @@ module Audio =
         if SDL_mixer.Mix_PlayingMusic () = 1 then ignore <| SDL_mixer.Mix_HaltMusic ()
         audioPlayer
 
+    let private handleReloadAudioAssets reloadAudioAssetsMessage audioPlayer =
+        let oldAssetMap = audioPlayer.AudioAssetMap
+        let audioPlayer = { audioPlayer with AudioAssetMap = Map.empty }
+        List.fold
+            (fun audioPlayer packageName -> tryLoadAudioPackage packageName reloadAudioAssetsMessage.FileName audioPlayer)
+            audioPlayer
+            (Map.toKeyList oldAssetMap)
+
     let private handleAudioMessage audioPlayer audioMessage =
         match audioMessage with
         | HintAudioPackageUseMessage hintPackageUse -> handleHintAudioPackageUse hintPackageUse audioPlayer
@@ -222,6 +234,7 @@ module Audio =
         | PlaySongMessage playSongMessage -> handlePlaySong playSongMessage audioPlayer
         | FadeOutSongMessage timeToFadeSongMs -> handleFadeOutSong timeToFadeSongMs audioPlayer
         | StopSongMessage -> handleStopSong audioPlayer
+        | ReloadAudioAssetsMessage reloadAudioAssetsMessage -> handleReloadAudioAssets reloadAudioAssetsMessage audioPlayer
 
     let private handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)

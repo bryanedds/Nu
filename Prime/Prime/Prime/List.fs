@@ -320,3 +320,8 @@ let collapseLeft list =
 let collapseLeftNoEmpty list =
     [for x in 1 .. List.length list - 1 do
         yield take x list]
+
+let rec duplicates z = function
+    | [] -> []
+    | x :: xs when x = z -> x :: (duplicates x xs)
+    | _ :: xs -> duplicates z xs

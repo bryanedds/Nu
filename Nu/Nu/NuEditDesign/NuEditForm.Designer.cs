@@ -85,11 +85,11 @@
             this.deleteEntityButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.resetCameraButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.reloadAssetsButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
-            this.reloadAssetsButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -244,7 +244,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1003, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1004, 585);
             this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
@@ -310,7 +310,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1003;
+            this.splitContainer1.SplitterDistance = 1004;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -333,7 +333,7 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(378, 585);
+            this.splitContainer2.Size = new System.Drawing.Size(377, 585);
             this.splitContainer2.SplitterDistance = 79;
             this.splitContainer2.SplitterWidth = 3;
             this.splitContainer2.TabIndex = 0;
@@ -349,7 +349,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(378, 79);
+            this.groupBox1.Size = new System.Drawing.Size(377, 79);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -411,7 +411,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(378, 503);
+            this.propertyGrid.Size = new System.Drawing.Size(377, 503);
             this.propertyGrid.TabIndex = 0;
             // 
             // openFileDialog
@@ -585,6 +585,20 @@
             this.resetCameraButton.Size = new System.Drawing.Size(83, 22);
             this.resetCameraButton.Text = "&Reset Camera";
             // 
+            // toolStripSeparator8
+            // 
+            this.toolStripSeparator8.Name = "toolStripSeparator8";
+            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
+            // 
+            // reloadAssetsButton
+            // 
+            this.reloadAssetsButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.reloadAssetsButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadAssetsButton.Image")));
+            this.reloadAssetsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.reloadAssetsButton.Name = "reloadAssetsButton";
+            this.reloadAssetsButton.Size = new System.Drawing.Size(83, 22);
+            this.reloadAssetsButton.Text = "Reload Assets";
+            // 
             // toolStripSeparator7
             // 
             this.toolStripSeparator7.Name = "toolStripSeparator7";
@@ -611,21 +625,6 @@
             this.editWhileInteractiveCheckBox.Name = "editWhileInteractiveCheckBox";
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(128, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit while Interactive)";
-            // 
-            // toolStripSeparator8
-            // 
-            this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
-            // 
-            // reloadAssetsButton
-            // 
-            this.reloadAssetsButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.reloadAssetsButton.Enabled = false;
-            this.reloadAssetsButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadAssetsButton.Image")));
-            this.reloadAssetsButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.reloadAssetsButton.Name = "reloadAssetsButton";
-            this.reloadAssetsButton.Size = new System.Drawing.Size(83, 22);
-            this.reloadAssetsButton.Text = "Reload Assets";
             // 
             // NuEditForm
             // 
@@ -720,7 +719,7 @@
         public System.Windows.Forms.Button removeSelectedXFieldButton;
         public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
-        private System.Windows.Forms.ToolStripButton reloadAssetsButton;
+        public System.Windows.Forms.ToolStripButton reloadAssetsButton;
 
     }
 }

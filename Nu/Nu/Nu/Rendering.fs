@@ -83,9 +83,13 @@ module RenderingModule =
         { FileName : string
           PackageName : string }
 
+    type [<StructuralEquality; NoComparison>] ReloadRenderingAssetsMessage =
+        { FileName : string }
+
     type [<StructuralEquality; NoComparison>] RenderMessage =
         | HintRenderingPackageUseMessage of HintRenderingPackageUseMessage
         | HintRenderingPackageDisuseMessage of HintRenderingPackageDisuseMessage
+        | ReloadRenderingAssetsMessage of ReloadRenderingAssetsMessage
         //| ScreenFlashMessage of ...
 
     type [<ReferenceEquality>] RenderAsset =
@@ -185,7 +189,7 @@ module Rendering =
             None
 
     let private tryLoadRenderPackage packageName fileName renderer =
-        let optAssets = Assets.tryLoadPackageAssets (Some "Rendering") packageName fileName
+        let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName fileName
         match optAssets with
         | Left error ->
             note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
@@ -225,10 +229,19 @@ module Rendering =
             for asset in Map.toValueList assets do freeRenderAsset asset
             { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
 
+    let private handleReloadRenderingAssets reloadRenderingAssetsMessage renderer =
+        let oldAssetMap = renderer.RenderAssetMap
+        let renderer = { renderer with RenderAssetMap = Map.empty }
+        List.fold
+            (fun renderer packageName -> tryLoadRenderPackage packageName reloadRenderingAssetsMessage.FileName renderer)
+            renderer
+            (Map.toKeyList oldAssetMap)
+
     let private handleRenderMessage renderer renderMessage =
         match renderMessage with
         | HintRenderingPackageUseMessage hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
         | HintRenderingPackageDisuseMessage hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
+        | ReloadRenderingAssetsMessage reloadRenderingAssetsMessage -> handleReloadRenderingAssets reloadRenderingAssetsMessage renderer
 
     let private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
         List.fold handleRenderMessage renderer (List.rev renderMessages)

@@ -56,7 +56,7 @@ module Metadata =
                             let packageName = (packageNode.Attributes.GetNamedItem NameAttributeName).InnerText
                             let optAssets =
                                 List.map
-                                    (fun assetNode -> Assets.tryLoadAssetFromNode assetNode)
+                                    (fun assetNode -> Assets.tryLoadAssetFromAssetNode assetNode)
                                     (List.ofSeq <| packageNode.OfType<XmlNode> ())
                             let assets = List.definitize optAssets
                             debugIf (fun () -> assets.Count () <> optAssets.Count ()) <| "Invalid asset node in '" + packageName + "' in '" + assetGraphFileName + "'."
