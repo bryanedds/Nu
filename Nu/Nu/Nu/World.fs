@@ -333,6 +333,7 @@ module WorldModule =
             Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         static member tryReloadAssets inputDir outputDir fileName world =
+            // TODO: copy over file from fileName as well (the asset graph)
             match Assets.tryBuildAssetGraph inputDir outputDir fileName with
             | Left error -> Left error
             | Right () ->

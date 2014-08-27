@@ -12,13 +12,13 @@ module Entity2dDispatcherModule =
 
     type Entity with
 
-        member entity.Position = Map.find "Position" entity.Xtension.XFields :?> Vector2 // optimization
+        member entity.Position = Map.find "Position" entity.Xtension.XFields :?> Vector2 // OPTIMIZATION
         static member setPosition (value : Vector2) (entity : Entity) : Entity = entity?Position <- value
-        member entity.Size = Map.find "Size" entity.Xtension.XFields :?> Vector2 // optimization
+        member entity.Size = Map.find "Size" entity.Xtension.XFields :?> Vector2 // OPTIMIZATION
         static member setSize (value : Vector2) (entity : Entity) : Entity = entity?Size <- value
-        member entity.Depth = Map.find "Depth" entity.Xtension.XFields :?> single // optimization
+        member entity.Depth = Map.find "Depth" entity.Xtension.XFields :?> single // OPTIMIZATION
         static member setDepth (value : single) (entity : Entity) : Entity = entity?Depth <- value
-        member entity.Rotation = Map.find "Rotation" entity.Xtension.XFields :?> single // optimization
+        member entity.Rotation = Map.find "Rotation" entity.Xtension.XFields :?> single // OPTIMIZATION
         static member setRotation (value : single) (entity : Entity) : Entity = entity?Rotation <- value
 
     type [<AbstractClass>] Entity2dDispatcher (facetNames) =
