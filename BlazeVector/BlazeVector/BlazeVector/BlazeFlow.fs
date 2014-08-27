@@ -58,7 +58,7 @@ module BlazeFlow =
 
         // we use World.tryMakeEmpty to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay extData
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay false extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->

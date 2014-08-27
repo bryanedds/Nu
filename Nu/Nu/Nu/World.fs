@@ -531,7 +531,7 @@ module WorldModule =
             let world = World.addScreen screenAddress screen [(groupName, group, entities)] world
             world
 
-        static member tryMakeEmpty sdlDeps gameDispatcher interactivity extData =
+        static member tryMakeEmpty sdlDeps gameDispatcher interactivity farseerCautionMode extData =
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
             | Left errorMsg -> Left errorMsg
             | Right assetMetadataMap ->
@@ -570,7 +570,7 @@ module WorldModule =
                       MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                       AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
-                      Integrator = Physics.makeIntegrator Gravity
+                      Integrator = Physics.makeIntegrator farseerCautionMode Gravity
                       AssetMetadataMap = assetMetadataMap
                       Overlayer = Overlayer.make OverlayFileName
                       AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]

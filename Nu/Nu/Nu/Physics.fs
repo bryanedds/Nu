@@ -153,6 +153,7 @@ module PhysicsModule =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
           IntegrationMessages : IntegrationMessage List
+          FarseerCautionMode : bool // ensures two bodies aren't in the same position, thus resolving a Farseer bug
           mutable RebuildingHack : bool }
           
 [<RequireQualifiedAccess>]
@@ -337,7 +338,8 @@ module Physics =
         body.add_OnCollision (fun fn fn2 collision -> handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
         
         // make a very hack-assed attempt to keep to bodies from being created in the same position
-        if integrator.Bodies |> Seq.exists (fun kvp -> kvp.Value.Position = body.Position)  then
+        if  integrator.FarseerCautionMode &&
+            integrator.Bodies |> Seq.exists (fun kvp -> kvp.Value.Position = body.Position)  then
             let random = System.Random ()
             let randomOffset = Framework.Vector2 (single <| random.NextDouble (), single <| random.NextDouble ())
             body.Position <- body.Position + randomOffset
@@ -422,8 +424,9 @@ module Physics =
         integrator.IntegrationMessages.Clear ()
         messages
 
-    let makeIntegrator gravity =
+    let makeIntegrator farseerCautionMode gravity =
          { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 gravity)
            Bodies = BodyDictionary ()
            IntegrationMessages = List<IntegrationMessage> ()
+           FarseerCautionMode = farseerCautionMode
            RebuildingHack = false }
