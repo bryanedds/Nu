@@ -2,7 +2,6 @@
 <Root>
   <Package name="Default">
     <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
-    <Asset name="Image" fileName="Assets/Default/Image.png" associations="Rendering"/>
     <Asset name="Image2" fileName="Assets/Default/Image2.png" associations="Rendering"/>
     <Asset name="Image3" fileName="Assets/Default/Image3.png" associations="Rendering"/>
     <Asset name="Image4" fileName="Assets/Default/Image4.png" associations="Rendering"/>

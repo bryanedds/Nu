@@ -336,9 +336,13 @@ module WorldModule =
             match Assets.tryBuildAssetGraph inputDir outputDir fileName with
             | Left error -> Left error
             | Right () ->
-                let world = World.reloadRenderingAssets fileName world
-                let world = World.reloadAudioAssets fileName world
-                Right world
+                match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
+                | Left errorMsg -> Left errorMsg
+                | Right assetMetadataMap ->
+                    let world = { world with AssetMetadataMap = assetMetadataMap }
+                    let world = World.reloadRenderingAssets fileName world
+                    let world = World.reloadAudioAssets fileName world
+                    Right world
 
         static member private play world =
             let audioMessages = world.AudioMessages
