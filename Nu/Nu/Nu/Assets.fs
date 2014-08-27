@@ -43,7 +43,7 @@ module AssetsModule =
 [<RequireQualifiedAccess>]
 module Assets =
 
-    let tryLoadAssetFromNode (node : XmlNode) =
+    let tryLoadAssetFromAssetNode (node : XmlNode) =
         let attributes = node.Attributes
         let optName = attributes.GetNamedItem NameAttributeName
         match optName with
@@ -58,29 +58,79 @@ module Assets =
                 | null -> None
                 | associations ->
                     let associationList = List.ofArray (associations.InnerText.Split ',')
-                    Some { Name = name.InnerText; FileName = fileName.InnerText; Associations = associationList; PackageName = node.ParentNode.Name }
+                    Some {
+                        Name = name.InnerText
+                        FileName = fileName.InnerText
+                        Associations = associationList
+                        PackageName = node.ParentNode.Name }
 
-    let tryLoadPackageAssetsFromNode optAssociation (node : XmlNode) =
-        let optAssets =
-            List.map
-                (fun assetNode -> tryLoadAssetFromNode assetNode)
+    let tryLoadAssetsFromPackageNode optAssociation (node : XmlNode) =
+        let assets =
+            List.fold
+                (fun assets assetNode ->
+                    match tryLoadAssetFromAssetNode assetNode with
+                    | None ->
+                        debug <| "Invalid asset node in '" + node.Name + "' in asset graph."
+                        assets
+                    | Some asset -> asset :: assets)
+                []
                 (List.ofSeq <| enumerable node.ChildNodes)
-        let assets = List.definitize optAssets
-        debugIf
-            (fun () -> List.length assets <> List.length optAssets)
-            ("Invalid asset node in '" + node.Name + "' in asset graph.")
         let associatedAssets =
             match optAssociation with
             | None -> assets
-            | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
+            | Some association ->
+                List.filter
+                    (fun asset -> List.exists ((=) association) asset.Associations)
+                    assets
         List.ofSeq associatedAssets
+        
+    let tryLoadAssetsFromRootNode optAssociation (node : XmlNode) =
+        let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
+        let packageNodes =
+            List.fold
+                (fun packageNodes (node : XmlNode) ->
+                    if node.Name = PackageNodeName then node :: packageNodes
+                    else packageNodes)
+                []
+                possiblePackageNodes
+        let assetLists =
+            List.fold
+                (fun assetLists packageNode ->
+                    let assets = tryLoadAssetsFromPackageNode optAssociation packageNode
+                    assets :: assetLists)
+                []
+                packageNodes
+        let assets = List.concat assetLists
+        Right assets
 
-    let tryLoadPackageAssets optAssociation packageName assetGraphFileName =
+    // TODO: test this function!
+    let tryLoadAssetsFromPackageNodes optAssociation nodes =
+        let packageNames = List.map (fun (node : XmlNode) -> node.Name) nodes
+        match packageNames with
+        | [] ->
+            Left <|
+                "Multiple packages have the same names '" +
+                String.Join ("; ", packageNames) +
+                "' which is an error."
+        | _ :: _ ->
+            let eitherPackageAssetLists =
+                List.map
+                    (fun (node : XmlNode) ->
+                        match tryLoadAssetsFromRootNode optAssociation node with
+                        | Left error -> Left error
+                        | Right assets -> Right (node.Name, assets))
+                    nodes
+            let (errors, assets) = Either.split eitherPackageAssetLists
+            match errors with
+            | [] -> Right <| Map.ofList assets
+            | _ :: _ -> Left <| "Error(s) when loading assets '" + String.Join ("; ", errors) + "'."
+
+    let tryLoadAssetsFromPackage optAssociation packageName (assetGraphFileName : string) =
         try let document = XmlDocument ()
-            document.Load (assetGraphFileName : string)
+            document.Load assetGraphFileName
             let optRootNode = document.[RootNodeName]
             match optRootNode with
-            | null -> Left ("Root node is missing from asset graph.")
+            | null -> Left "Root node is missing from asset graph."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
                 let packageNodes =
@@ -90,31 +140,35 @@ module Assets =
                             (node.Attributes.GetNamedItem NameAttributeName).InnerText = packageName)
                         possiblePackageNodes
                 match packageNodes with
-                | [] -> Left ("Package node '" + packageName + "' is missing from asset graph.")
-                | packageNode :: _ -> Right <| tryLoadPackageAssetsFromNode optAssociation packageNode
-        with exn -> Left (string exn)
+                | [] -> Left <| "Package node '" + packageName + "' is missing from asset graph."
+                | [packageNode] -> Right <| tryLoadAssetsFromPackageNode optAssociation packageNode
+                | _ :: _ -> Left <| "Multiple packages with the same name '" + packageName + "' is an error."
+        with exn -> Left <| string exn
 
-    let tryLoadAssets optAssociation assetGraphFileName =
+    // TODO: test this function!
+    let tryLoadAssetsFromPackages optAssociation packageNames (assetGraphFileName : string) =
         try let document = XmlDocument ()
-            document.Load (assetGraphFileName : string)
+            document.Load assetGraphFileName
             let optRootNode = document.[RootNodeName]
             match optRootNode with
-            | null -> Left ("Root node is missing from asset graph.")
+            | null -> Left "Root node is missing from asset graph."
             | rootNode ->
+                let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
+                let packageNameSet = Set.ofList packageNames
                 let packageNodes =
-                    let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
-                    let optPackageNodes =
-                        List.map
-                            (fun (node : XmlNode) -> if node.Name = PackageNodeName then Some node else None)
-                            possiblePackageNodes
-                    List.definitize optPackageNodes
-                let assetLists =
-                    List.fold
-                        (fun assetLists packageNode ->
-                            let assets = tryLoadPackageAssetsFromNode optAssociation packageNode
-                            assets :: assetLists)
-                        []
-                        packageNodes
-                let assets = List.concat assetLists
-                Right assets
+                    List.filter
+                        (fun (node : XmlNode) ->
+                            node.Name = PackageNodeName &&
+                            Set.contains (node.Attributes.GetNamedItem NameAttributeName).InnerText packageNameSet)
+                        possiblePackageNodes
+                tryLoadAssetsFromPackageNodes optAssociation packageNodes
+        with exn -> Left <| string exn
+
+    let tryLoadAssetFromDocument optAssociation (assetGraphFileName : string) =
+        try let document = XmlDocument ()
+            document.Load assetGraphFileName
+            let optRootNode = document.[RootNodeName]
+            match optRootNode with
+            | null -> Left "Root node is missing from asset graph."
+            | rootNode -> tryLoadAssetsFromRootNode optAssociation rootNode
         with exn -> Left <| string exn

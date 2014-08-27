@@ -22,7 +22,8 @@ module Program =
     let [<EntryPoint>] main argv = 
         match argv with
         | [|inputDir; outputDir|] ->
-            let eitherAssets = Assets.tryLoadAssets None <| Path.Combine (inputDir, AssetGraphFileName)
+            let assetGraphFilePath = Path.Combine (inputDir, AssetGraphFileName)
+            let eitherAssets = Assets.tryLoadAssetFromDocument None assetGraphFilePath
             match eitherAssets with
             | Left error ->
                 Console.WriteLine error
