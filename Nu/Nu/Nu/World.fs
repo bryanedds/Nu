@@ -332,9 +332,13 @@ module WorldModule =
             let groupNode = rootNode.[GroupNodeName]
             Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
-        static member reloadAssets fileName world =
-            let world = World.reloadRenderingAssets fileName world
-            World.reloadAudioAssets fileName world
+        static member tryReloadAssets inputDir outputDir fileName world =
+            match Assets.tryBuildAssetGraph inputDir outputDir fileName with
+            | Left error -> Left error
+            | Right () ->
+                let world = World.reloadRenderingAssets fileName world
+                let world = World.reloadAudioAssets fileName world
+                Right world
 
         static member private play world =
             let audioMessages = world.AudioMessages

@@ -42,7 +42,8 @@ module ProgramModule =
         | DragCameraPosition of Vector2 * Vector2
 
     type EditorState =
-        { RightClickPosition : Vector2
+        { TargetDirectory : string
+          RightClickPosition : Vector2
           DragEntityState : DragEntityState
           DragCameraState : DragCameraState
           PastWorlds : World list
@@ -557,7 +558,18 @@ module Program =
 
     let handleReloadAssets (_ : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
         ignore <| worldChangers.AddLast (fun world ->
-            World.reloadAssets AssetGraphFileName world)
+            let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
+            let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
+            match World.tryReloadAssets assetSourceDirectory targetDirectory AssetGraphFileName world with
+            | Left error ->
+                ignore <|
+                    MessageBox.Show
+                        ("Asset reload error due to: " + error + "'.",
+                         "Asset reload error.",
+                         MessageBoxButtons.OK,
+                         MessageBoxIcon.Error)
+                world
+            | Right world -> world)
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
@@ -596,10 +608,11 @@ module Program =
         form.Show ()
         form
 
-    let tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
+    let tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
         let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name 100L 100L
         let editorState =
-            { RightClickPosition = Vector2.Zero
+            { TargetDirectory = targetDirectory
+              RightClickPosition = Vector2.Zero
               DragEntityState = DragEntityNone
               DragCameraState = DragCameraNone
               PastWorlds = []
@@ -627,8 +640,8 @@ module Program =
                 ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
         world
 
-    let tryCreateEditorWorld gameDispatcher form worldChangers refWorld sdlDeps =
-        match tryMakeEditorWorld gameDispatcher form worldChangers refWorld sdlDeps with
+    let tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
+        match tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
         | Left _ as left -> left
         | Right _ -> Right <| populateCreateEntityComboBox form !refWorld
 
@@ -668,24 +681,27 @@ module Program =
         refWorld := { !refWorld with Liveness = if form.IsDisposed then Exiting else Running }
         !refWorld
 
-    let selectWorkingDirectoryAndMakeGameDispatcher () =
+    let selectTargetDirectoryAndMakeGameDispatcher () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for defaults)."
-        if openDialog.ShowDialog () <> DialogResult.OK then GameDispatcher ()
+        if openDialog.ShowDialog () <> DialogResult.OK then (".", GameDispatcher ())
         else
-            Directory.SetCurrentDirectory <| Path.GetDirectoryName openDialog.FileName
+            let directoryName = Path.GetDirectoryName openDialog.FileName
+            Directory.SetCurrentDirectory directoryName
             let assembly = Assembly.LoadFrom openDialog.FileName
             let optDispatcherType = assembly.GetTypes () |> Array.tryFind (fun aType -> aType.IsSubclassOf typeof<GameDispatcher>)
             match optDispatcherType with
-            | None -> GameDispatcher ()
-            | Some aType -> Activator.CreateInstance aType :?> GameDispatcher
+            | None -> (".", GameDispatcher ())
+            | Some aType ->
+                let gameDispatcher = Activator.CreateInstance aType :?> GameDispatcher
+                (directoryName, gameDispatcher)
 
     let [<EntryPoint; STAThread>] main _ =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let gameDispatcher = selectWorkingDirectoryAndMakeGameDispatcher ()
+        let (targetDirectory, gameDispatcher) = selectTargetDirectoryAndMakeGameDispatcher ()
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -696,7 +712,7 @@ module Program =
               RendererFlags = sdlRendererFlags
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
-            (tryCreateEditorWorld gameDispatcher form worldChangers refWorld)
+            (tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld)
             (updateEditorWorld form worldChangers refWorld)
             (invalidateDisplayPanel form)
             sdlConfig
