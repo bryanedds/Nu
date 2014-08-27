@@ -305,7 +305,14 @@ module Sim =
             let (simulant, world) = fn simulant
             setSimulant address simulant world
 
-    // NOTE: these must be defined in a module like this rather than in a World type extension
+module World =
+
+    let isPhysicsRunning world =
+        Interactivity.isPhysicsRunning world.Interactivity
+
+    let isGamePlaying world =
+        Interactivity.isGamePlaying world.Interactivity
+
     let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
     let mutable publish4 = Unchecked.defaultof<Address -> Address -> EventData -> World -> World>
     let mutable subscribe = Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
@@ -403,23 +410,3 @@ module WorldAudioModule =
         static member reloadAudioAssets fileName world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage { FileName = fileName }
             { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }
-
-[<AutoOpen>]
-module WorldSimModule =
-
-    type World with
-
-        static member isPhysicsRunning world =
-            Interactivity.isPhysicsRunning world.Interactivity
-
-        static member isGamePlaying world =
-            Interactivity.isGamePlaying world.Interactivity
-
-        (* The following are function forwarders. *)
-        static member publish publishSorter eventName publisher eventData world = Sim.publish publishSorter eventName publisher eventData world
-        static member publish4 eventName publisher eventData world = Sim.publish4 eventName publisher eventData world
-        static member subscribe subscriptionKey eventName subscriber subscription world = Sim.subscribe subscriptionKey eventName subscriber subscription world
-        static member subscribe4 eventName subscriber subscription world = Sim.subscribe4 eventName subscriber subscription world
-        static member unsubscribe subscriptionKey world = Sim.unsubscribe subscriptionKey world
-        static member withSubscription eventName subscriber subscription procedure world = Sim.withSubscription eventName subscriber subscription procedure world
-        static member observe eventName subscriber subscription world = Sim.observe eventName subscriber subscription world

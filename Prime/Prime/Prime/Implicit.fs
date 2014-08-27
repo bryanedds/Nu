@@ -10,7 +10,6 @@ module Implicit =
     let inline implicit arg =
         (^a : (static member op_Implicit : ^b -> ^a) arg)
 
-/// Implicit-conversion example.
 module ImplicitExample =
 
     (* Example definition of an implicitly-convertible type. *)
