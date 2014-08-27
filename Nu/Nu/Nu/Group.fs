@@ -153,7 +153,7 @@ module WorldGroupModule =
             let world = World.setGroup address group world
             let world = World.addEntities address entities world
             let world = World.registerGroup address group world
-            Sim.publish4 (AddEventName + address) address NoData world
+            World.publish4 (AddEventName + address) address NoData world
 
         static member addGroups screenAddress groupDescriptors world =
             List.fold

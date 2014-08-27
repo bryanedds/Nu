@@ -576,13 +576,13 @@ module WorldModule =
             NuMath.initTypeConverters ()
             Audio.initTypeConverters ()
             Rendering.initTypeConverters ()
-            Sim.publish <- World.publishDefinition
-            Sim.publish4 <- World.publish4Definition
-            Sim.subscribe <- World.subscribeDefinition
-            Sim.subscribe4 <- World.subscribe4Definition
-            Sim.unsubscribe <- World.unsubscribeDefinition
-            Sim.withSubscription <- World.withSubscriptionDefinition
-            Sim.observe <- World.observeDefinition
+            World.publish <- World.publishDefinition
+            World.publish4 <- World.publish4Definition
+            World.subscribe <- World.subscribeDefinition
+            World.subscribe4 <- World.subscribe4Definition
+            World.unsubscribe <- World.unsubscribeDefinition
+            World.withSubscription <- World.withSubscriptionDefinition
+            World.observe <- World.observeDefinition
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
