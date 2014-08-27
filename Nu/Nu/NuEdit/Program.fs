@@ -58,10 +58,8 @@ module Program =
     let CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
 
     let getPickableEntities world =
-        World.getEntities EditorGroupAddress world |>
-            Map.toValueSeq |>
-            Seq.filter (fun entity -> Entity.dispatchesAs typeof<Entity2dDispatcher> entity world) |>
-            Seq.toList
+        let entityMap = World.getEntities EditorGroupAddress world
+        Map.toValueList entityMap
 
     let pushPastWorld pastWorld world =
         let editorState = world.ExtData :?> EditorState
@@ -354,7 +352,7 @@ module Program =
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
-                let entityTransform = { Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
+                let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = addrstr EditorGroupAddress entity.Name
                 let world = World.addEntity entityAddress entity world
@@ -638,7 +636,7 @@ module Program =
     let populateCreateEntityComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in world.Dispatchers do
-            if Xtension.dispatchesAs2 typeof<Entity2dDispatcher> dispatcherKvp.Value then
+            if Xtension.dispatchesAs2 typeof<EntityDispatcher> dispatcherKvp.Value then
                 ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
         world
 

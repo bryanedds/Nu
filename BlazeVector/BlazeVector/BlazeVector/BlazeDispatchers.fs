@@ -277,18 +277,15 @@ module StageScreenModule =
                 (fun (entity : Entity) -> let id = NuCore.makeId () in { entity with Id = id; Name = string id })
                 entities
 
-        let shiftEntities xShift entities world =
+        let shiftEntities xShift entities =
             List.map
-                (fun entity ->
-                    if Entity.dispatchesAs typeof<Entity2dDispatcher> entity world
-                    then Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity
-                    else entity)
+                (fun (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
                 entities
 
         let makeSectionFromFile fileName sectionName xShift world =
             let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName world
             let sectionEntities = anonymizeEntities sectionEntities
-            let sectionEntities = shiftEntities xShift sectionEntities world
+            let sectionEntities = shiftEntities xShift sectionEntities
             (sectionName, sectionGroup, sectionEntities)
 
         let startPlayHandler event world =

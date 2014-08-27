@@ -4,12 +4,12 @@
     <Xtension optXDispatcherName="Some(StagePlayDispatcher)" />
     <Entity>
       <Name>Player</Name>
+      <Depth>1</Depth>
+      <Position>-356;-175.6805</Position>
+      <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(PlayerDispatcher)">
-        <Depth type="System.Single">1</Depth>
         <SpriteImage type="Nu.RenderingModule+Image">Player;Stage</SpriteImage>
-        <Position type="OpenTK.Vector2">-356;-175.6805</Position>
-        <Size type="OpenTK.Vector2">48;96</Size>
       </Xtension>
     </Entity>
   </Group>

@@ -72,6 +72,10 @@ module SimModule =
     type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
+          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Rotation : single // NOTE: will become a Vector3 or Quaternion if Nu gets 3d capabilities
           Visible : bool
           OptOverlayName : string option
           Xtension : Xtension }
@@ -86,6 +90,21 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
+
+        static member setPosition position (entity : Entity) =
+             { entity with Position = position }
+
+        static member setDepth depth (entity : Entity) =
+             { entity with Depth = depth }
+
+        static member setSize size (entity : Entity) =
+             { entity with Size = size }
+
+        static member setRotation rotation (entity : Entity) =
+             { entity with Rotation = rotation }
+
+        static member setVisible visible (entity : Entity) =
+             { entity with Visible = visible }
 
     type [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid

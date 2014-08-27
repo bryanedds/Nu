@@ -14,7 +14,7 @@ open Nu.NuConstants
 [<AutoOpen>]
 module EntityModule =
 
-    type EntityDispatcher (facetNames : Set<string>) =
+    type EntityDispatcher (facetNames : string Set) =
 
         new () = EntityDispatcher (Set.empty)
 
@@ -26,6 +26,24 @@ module EntityModule =
 
         abstract member Unregister : Address * World -> World
         default dispatcher.Unregister (_, world) = world
+                
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+
+        abstract member PropagatePhysics : Address * World -> World
+        default dispatcher.PropagatePhysics (_, world) = world
+
+        abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
+        default dispatcher.HandleBodyTransformMessage (_, _, world) = world
+
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors (_, _) = []
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
+
+        abstract member IsTransformRelative : Entity * World -> bool
+        default dispatcher.IsTransformRelative (_, _) = true
 
         member dispatcher.GetFacetNames (_ : World) = facetNames
 
@@ -52,6 +70,36 @@ module EntityModule =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.GetFacetNames world
             | _ -> failwith "Due to optimization in Entity.getFacetNames, an entity's base dispatcher must be an EntityDispatcher."
+
+        static member propagatePhysics address (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.PropagatePhysics (address, world)
+            | _ -> failwith "Due to optimization in Entity.propagatePhysics, an entity's 2d dispatcher must be an EntityDispatcher."
+        
+        static member handleBodyTransformMessage address message (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.HandleBodyTransformMessage (address, message, world)
+            | _ -> failwith "Due to optimization in Entity.handleBodyTransformMessage, an entity's 2d dispatcher must be an EntityDispatcher."
+        
+        static member getRenderDescriptors (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.GetRenderDescriptors (entity, world)
+            | _ -> failwith "Due to optimization in Entity.getRenderDescriptors, an entity's 2d dispatcher must be an EntityDispatcher."
+        
+        static member getQuickSize  (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.GetQuickSize (entity, world)
+            | _ -> failwith "Due to optimization in Entity.getQuickSize, an entity's 2d dispatcher must be an EntityDispatcher."
+        
+        static member getPickingPriority (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.GetPickingPriority (entity, world)
+            | _ -> failwith "Due to optimization in Entity.getPickingPriority, an entity's 2d dispatcher must be an EntityDispatcher."
+        
+        static member isTransformRelative  (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
+            | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an EntityDispatcher."
 
         static member usesFacet facetName entity world =
             let facetNames = Entity.getFacetNames entity world
@@ -83,6 +131,10 @@ module EntityModule =
             let id = NuCore.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
+              Position = Vector2.Zero
+              Depth = 0.0f
+              Size = DefaultEntitySize
+              Rotation = 0.0f
               Visible = true
               OptOverlayName = Some dispatcherName
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
