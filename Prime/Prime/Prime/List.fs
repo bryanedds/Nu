@@ -157,11 +157,9 @@ let foldi folder state (list : 'a list) =
     Seq.foldi folder state list
     
 /// Take for lists.
-/// TODO: make this tail-recursive.
 let rec take number (list : 'a list) =
-    match number with
-    | 0 -> []
-    | _ -> list.Head :: take (number - 1) list.Tail
+    let result = Seq.take number list
+    List.ofSeq result
 
 /// Skip for lists.
 let rec skip number (list : 'a list) =
