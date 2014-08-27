@@ -620,7 +620,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics AssetGraphFileName OverlayFileName editorState
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics editorState
         match optWorld with
         | Left errorMsg -> Left errorMsg
         | Right world ->

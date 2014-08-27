@@ -8,8 +8,8 @@ module Program =
 
     let [<EntryPoint>] main argv =
         match argv with
-        | [|assetGraphFileName; inputDir; outputDir|] ->
-            match Assets.tryBuildAssetGraph inputDir outputDir assetGraphFileName with
+        | [|inputDir; outputDir|] ->
+            match Assets.tryBuildAssetGraph inputDir outputDir AssetGraphFileName with
             | Left error ->
                 Console.WriteLine error
                 FailureReturnCode

@@ -57,7 +57,7 @@
     <PreBuildEvent />
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe AssetGraph.xml $(ProjectDir) $(TargetDir)</PostBuildEvent>
+    <PostBuildEvent>$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe $(ProjectDir) $(TargetDir)</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
