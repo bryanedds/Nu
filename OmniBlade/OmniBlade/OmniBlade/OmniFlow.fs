@@ -26,15 +26,15 @@ module OmniFlow =
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name FieldGroupFileName (Address.last FieldGroupAddress) IncomingTime OutgoingTime FieldAddress world
         World.subscribe4 ClickFieldBackEvent Address.empty (ScreenTransitionSub TitleAddress) world
 
-    let tryMakeOmniBladeWorld sdlDeps extData =
+    let tryMakeOmniBladeWorld sdlDeps assetGraphFileName overlayFileName extData =
         let gameDispatcher = OmniBladeDispatcher () :> obj
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics extData
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics assetGraphFileName overlayFileName extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->
-            let world = World.hintRenderingPackageUse AssetGraphFileName GuiPackageName world
+            let world = World.hintRenderingPackageUse GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
-            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
             let world = addTitleScreen world
             let world = addLoadGameScreen world

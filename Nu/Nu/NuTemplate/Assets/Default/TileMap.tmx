@@ -2,7 +2,6 @@
 <map version="1.0" orientation="orthogonal" width="50" height="50" tilewidth="24" tileheight="24">
  <tileset firstgid="1" name="TileSet" tilewidth="24" tileheight="24">
   <properties>
-   <property name="PackageFileName" value="AssetGraph.xml"/>
    <property name="PackageName" value="Default"/>
    <property name="ImageAssetName" value="TileSet"/>
   </properties>

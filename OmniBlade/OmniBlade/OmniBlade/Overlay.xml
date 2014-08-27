@@ -43,14 +43,14 @@
 
   <ButtonDispatcher include="GuiDispatcher">
     <IsDown>False</IsDown>
-    <ClickSound>Sound;Default;AssetGraph.xml</ClickSound>
+    <ClickSound>Sound;Default</ClickSound>
   </ButtonDispatcher>
 
   <LabelDispatcher include="GuiDispatcher" />
 
   <TextDispatcher include="GuiDispatcher">
     <TextColor>1;1;1;1</TextColor>
-    <TextFont>Font;Default;AssetGraph.xml</TextFont>
+    <TextFont>Font;Default</TextFont>
     <TextOffset>0;0</TextOffset>
   </TextDispatcher>
 

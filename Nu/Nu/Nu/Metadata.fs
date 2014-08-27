@@ -34,10 +34,9 @@ module Metadata =
     let getTileSetProperties (tileSet : TmxTileset) =
         let properties = tileSet.Properties
         try { ImageAssetName = properties.["ImageAssetName"]
-              PackageName = properties.["PackageName"]
-              PackageFileName = properties.["PackageFileName"] }
+              PackageName = properties.["PackageName"] }
         with :? KeyNotFoundException ->
-            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (ImageAssetName, PackageName, and / or PackageFileName)."
+            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (ImageAssetName or PackageName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 
     // TODO: factor this function into multiple functions...

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset name="RoadTileSet" tilewidth="64" tileheight="64">
  <properties>
-  <property name="PackageFileName" value="AssetGraph.xml"/>
   <property name="PackageName" value="Stage"/>
   <property name="ImageAssetName" value="RoadTileSet"/>
  </properties>

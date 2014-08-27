@@ -12,13 +12,11 @@ module AudioModule =
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
         { SongAssetName : string
-          PackageName : string
-          PackageFileName : string }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
         { SoundAssetName : string
-          PackageName : string
-          PackageFileName : string }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] PlaySongMessage =
         { Song : Song
@@ -30,15 +28,10 @@ module AudioModule =
           Sound : Sound }
 
     type [<StructuralEquality; NoComparison>] HintAudioPackageUseMessage =
-        { FileName : string
-          PackageName : string }
+        { PackageName : string }
 
     type [<StructuralEquality; NoComparison>] HintAudioPackageDisuseMessage =
-        { FileName : string
-          PackageName : string }
-
-    type [<StructuralEquality; NoComparison>] ReloadAudioAssetsMessage =
-        { FileName : string }
+        { PackageName : string }
 
     type [<StructuralEquality; NoComparison>] AudioMessage =
         | HintAudioPackageUseMessage of HintAudioPackageUseMessage
@@ -47,7 +40,7 @@ module AudioModule =
         | PlaySongMessage of PlaySongMessage
         | FadeOutSongMessage of int
         | StopSongMessage
-        | ReloadAudioAssetsMessage of ReloadAudioAssetsMessage
+        | ReloadAudioAssetsMessage
 
     type [<ReferenceEquality>] AudioAsset =
         | WavAsset of nativeint
@@ -57,7 +50,8 @@ module AudioModule =
         { AudioContext : unit // audio context, interestingly, is global
           AudioAssetMap : AudioAsset AssetMap
           OptCurrentSong : PlaySongMessage option
-          OptNextPlaySong : PlaySongMessage option }
+          OptNextPlaySong : PlaySongMessage option
+          AssetGraphFileName : string }
 
     type SoundTypeConverter () =
         inherit TypeConverter ()
@@ -65,7 +59,7 @@ module AudioModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Sound
-            String.Format (culture, "{0};{1};{2}", s.SoundAssetName, s.PackageName, s.PackageFileName) :> obj
+            String.Format (culture, "{0};{1}", s.SoundAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sound> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
@@ -73,7 +67,7 @@ module AudioModule =
             if sourceType = typeof<Sound> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { SoundAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
+                { SoundAssetName = args.[0]; PackageName = args.[1] } :> obj
 
     type SongTypeConverter () =
         inherit TypeConverter ()
@@ -81,7 +75,7 @@ module AudioModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Song
-            String.Format (culture, "{0};{1};{2}", s.SongAssetName, s.PackageName, s.PackageFileName) :> obj
+            String.Format (culture, "{0};{1}", s.SongAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Song> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
@@ -89,7 +83,7 @@ module AudioModule =
             if sourceType = typeof<Song> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { SongAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
+                { SongAssetName = args.[0]; PackageName = args.[1] } :> obj
 
 [<RequireQualifiedAccess>]
 module Audio = 
@@ -124,11 +118,11 @@ module Audio =
                 None
         | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
-    let private tryLoadAudioPackage packageName fileName audioPlayer =
-        let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName fileName
+    let private tryLoadAudioPackage packageName audioPlayer =
+        let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName audioPlayer.AssetGraphFileName
         match optAssets with
         | Left error ->
-            trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
+            trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, audioPlayer.AssetGraphFileName) + "'."
             audioPlayer
         | Right assets ->
             let optAudioAssets = List.map tryLoadAudioAsset2 assets
@@ -142,20 +136,20 @@ module Audio =
                 let audioAssetMap = Map.addMany audioAssets audioAssetMap
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
 
-    let private tryLoadAudioAsset packageName packageFileName assetName audioPlayer =
+    let private tryLoadAudioAsset packageName assetName audioPlayer =
         let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
         let (audioPlayer, optAssetMap) =
             match optAssetMap with
             | None ->
                 note <| "Loading audio package '" + packageName + "' for asset '" + assetName + "' on the fly."
-                let audioPlayer = tryLoadAudioPackage packageName packageFileName audioPlayer
+                let audioPlayer = tryLoadAudioPackage packageName audioPlayer
                 (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
             | Some _ -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
         (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
-        let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.PackageFileName song.SongAssetName audioPlayer
+        let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.SongAssetName audioPlayer
         match optAudioAsset with
         | None -> debug <| "PlaySongMessage failed due to unloadable assets for '" + string song + "'."
         | Some (WavAsset _) -> debug <| "Cannot play wav file as song '" + string song + "'."
@@ -165,7 +159,7 @@ module Audio =
         { audioPlayer' with OptCurrentSong = Some playSongMessage }
 
     let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
-        tryLoadAudioPackage hintPackageUse.PackageName hintPackageUse.FileName audioPlayer
+        tryLoadAudioPackage hintPackageUse.PackageName audioPlayer
 
     let private handleHintAudioPackageDisuse (hintPackageDisuse : HintAudioPackageDisuseMessage) audioPlayer =
         let packageName = hintPackageDisuse.PackageName
@@ -184,7 +178,7 @@ module Audio =
 
     let private handlePlaySound playSoundMessage audioPlayer =
         let sound = playSoundMessage.Sound
-        let (audioPlayer, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.PackageFileName sound.SoundAssetName audioPlayer
+        let (audioPlayer, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.SoundAssetName audioPlayer
         match optAudioAsset with
         | None -> debug <| "PlaySoundMessage failed due to unloadable assets for '" + string sound + "'."
         | Some (WavAsset wavAsset) ->
@@ -218,11 +212,11 @@ module Audio =
         if SDL_mixer.Mix_PlayingMusic () = 1 then ignore <| SDL_mixer.Mix_HaltMusic ()
         audioPlayer
 
-    let private handleReloadAudioAssets reloadAudioAssetsMessage audioPlayer =
+    let private handleReloadAudioAssets audioPlayer =
         let oldAssetMap = audioPlayer.AudioAssetMap
         let audioPlayer = { audioPlayer with AudioAssetMap = Map.empty }
         List.fold
-            (fun audioPlayer packageName -> tryLoadAudioPackage packageName reloadAudioAssetsMessage.FileName audioPlayer)
+            (fun audioPlayer packageName -> tryLoadAudioPackage packageName audioPlayer)
             audioPlayer
             (Map.toKeyList oldAssetMap)
 
@@ -234,7 +228,7 @@ module Audio =
         | PlaySongMessage playSongMessage -> handlePlaySong playSongMessage audioPlayer
         | FadeOutSongMessage timeToFadeSongMs -> handleFadeOutSong timeToFadeSongMs audioPlayer
         | StopSongMessage -> handleStopSong audioPlayer
-        | ReloadAudioAssetsMessage reloadAudioAssetsMessage -> handleReloadAudioAssets reloadAudioAssetsMessage audioPlayer
+        | ReloadAudioAssetsMessage -> handleReloadAudioAssets audioPlayer
 
     let private handleAudioMessages (audioMessages : AudioMessage rQueue) audioPlayer =
         List.fold handleAudioMessage audioPlayer (List.rev audioMessages)
@@ -261,8 +255,9 @@ module Audio =
         let audioPlayer = handleAudioMessages audioMessages audioPlayer
         updateAudioPlayer audioPlayer
 
-    let makeAudioPlayer () =
+    let makeAudioPlayer assetGraphFileName =
         { AudioContext = ()
           AudioAssetMap = Map.empty
           OptCurrentSong = None
-          OptNextPlaySong = None }
+          OptNextPlaySong = None
+          AssetGraphFileName = assetGraphFileName }

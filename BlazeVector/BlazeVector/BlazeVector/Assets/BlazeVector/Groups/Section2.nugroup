@@ -11,7 +11,7 @@
         <Health type="System.Int32">6</Health>
         <Position type="OpenTK.Vector2">-160;-15.68023</Position>
         <Size type="OpenTK.Vector2">48;96</Size>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
         <Stutter type="System.Int32">8</Stutter>
         <TileCount type="System.Int32">6</TileCount>
         <TileRun type="System.Int32">4</TileRun>
@@ -26,7 +26,7 @@
         <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
@@ -37,7 +37,7 @@
         <Parallax type="System.Single">0.1</Parallax>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage</TileMapAsset>
       </Xtension>
     </Entity>
     <Entity>
@@ -49,7 +49,7 @@
         <Health type="System.Int32">6</Health>
         <Position type="OpenTK.Vector2">-424;-175.68</Position>
         <Size type="OpenTK.Vector2">48;96</Size>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
         <Stutter type="System.Int32">8</Stutter>
         <TileCount type="System.Int32">6</TileCount>
         <TileRun type="System.Int32">4</TileRun>
@@ -65,7 +65,7 @@
         <Health type="System.Int32">6</Health>
         <Position type="OpenTK.Vector2">160;48.31998</Position>
         <Size type="OpenTK.Vector2">48;96</Size>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
         <Stutter type="System.Int32">8</Stutter>
         <TileCount type="System.Int32">6</TileCount>
         <TileRun type="System.Int32">4</TileRun>
@@ -81,7 +81,7 @@
         <Health type="System.Int32">6</Health>
         <Position type="OpenTK.Vector2">1256;112.3196</Position>
         <Size type="OpenTK.Vector2">48;96</Size>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage;AssetGraph.xml</SpriteImage>
+        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
         <Stutter type="System.Int32">8</Stutter>
         <TileCount type="System.Int32">6</TileCount>
         <TileRun type="System.Int32">4</TileRun>
@@ -95,7 +95,7 @@
         <Depth type="System.Single">0</Depth>
         <Position type="OpenTK.Vector2">-480;-304</Position>
         <Size type="OpenTK.Vector2">64;64</Size>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section2;Stage;AssetGraph.xml</TileMapAsset>
+        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section2;Stage</TileMapAsset>
       </Xtension>
     </Entity>
   </Group>

@@ -19,8 +19,7 @@ module RenderingModule =
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
         { ImageAssetName : string
-          PackageName : string
-          PackageFileName : string }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] SpriteDescriptor =
         { Position : Vector2
@@ -33,8 +32,7 @@ module RenderingModule =
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
         { TileMapAssetName : string
-          PackageName : string
-          PackageFileName : string }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
         { Position : Vector2
@@ -50,8 +48,7 @@ module RenderingModule =
 
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
         { FontAssetName : string
-          PackageName : string
-          PackageFileName : string }
+          PackageName : string }
 
     type [<StructuralEquality; NoComparison>] TextDescriptor =
         { Position : Vector2
@@ -76,20 +73,15 @@ module RenderingModule =
         | LayerableDescriptor of LayerableDescriptor
 
     type [<StructuralEquality; NoComparison>] HintRenderingPackageUseMessage =
-        { FileName : string
-          PackageName : string }
+        { PackageName : string }
 
     type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuseMessage =
-        { FileName : string
-          PackageName : string }
-
-    type [<StructuralEquality; NoComparison>] ReloadRenderingAssetsMessage =
-        { FileName : string }
+        { PackageName : string }
 
     type [<StructuralEquality; NoComparison>] RenderMessage =
         | HintRenderingPackageUseMessage of HintRenderingPackageUseMessage
         | HintRenderingPackageDisuseMessage of HintRenderingPackageDisuseMessage
-        | ReloadRenderingAssetsMessage of ReloadRenderingAssetsMessage
+        | ReloadRenderingAssetsMessage
         //| ScreenFlashMessage of ...
 
     type [<ReferenceEquality>] RenderAsset =
@@ -98,7 +90,8 @@ module RenderingModule =
 
     type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
-          RenderAssetMap : RenderAsset AssetMap }
+          RenderAssetMap : RenderAsset AssetMap
+          AssetGraphFileName : string }
 
     type ImageTypeConverter () =
         inherit TypeConverter ()
@@ -106,7 +99,7 @@ module RenderingModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Image
-            String.Format (culture, "{0};{1};{2}", s.ImageAssetName, s.PackageName, s.PackageFileName) :> obj
+            String.Format (culture, "{0};{1}", s.ImageAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
@@ -114,7 +107,7 @@ module RenderingModule =
             if sourceType = typeof<Image> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { ImageAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
+                { ImageAssetName = args.[0]; PackageName = args.[1] } :> obj
 
     type TileMapAssetTypeConverter () =
         inherit TypeConverter ()
@@ -122,7 +115,7 @@ module RenderingModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> TileMapAsset
-            String.Format (culture, "{0};{1};{2}", s.TileMapAssetName, s.PackageName, s.PackageFileName) :> obj
+            String.Format (culture, "{0};{1}", s.TileMapAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
@@ -130,7 +123,7 @@ module RenderingModule =
             if sourceType = typeof<TileMapAsset> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { TileMapAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
+                { TileMapAssetName = args.[0]; PackageName = args.[1] } :> obj
 
     type FontTypeConverter () =
         inherit TypeConverter ()
@@ -138,7 +131,7 @@ module RenderingModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, obj, _) =
             let s = obj :?> Font
-            String.Format (culture, "{0};{1};{2}", s.FontAssetName, s.PackageName, s.PackageFileName) :> obj
+            String.Format (culture, "{0};{1}", s.FontAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Font> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =
@@ -146,7 +139,7 @@ module RenderingModule =
             if sourceType = typeof<Font> then obj
             else
                 let args = (obj :?> string).Split ';'
-                { FontAssetName = args.[0]; PackageName = args.[1]; PackageFileName = args.[2] } :> obj
+                { FontAssetName = args.[0]; PackageName = args.[1] } :> obj
 
 [<RequireQualifiedAccess>]
 module Rendering =
@@ -188,11 +181,11 @@ module Rendering =
             trace <| "Could not load render asset '" + string asset + "' due to unknown extension '" + extension + "'."
             None
 
-    let private tryLoadRenderPackage packageName fileName renderer =
-        let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName fileName
+    let private tryLoadRenderPackage packageName renderer =
+        let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName renderer.AssetGraphFileName
         match optAssets with
         | Left error ->
-            note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, fileName) + "'."
+            note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, renderer.AssetGraphFileName) + "'."
             renderer
         | Right assets ->
             let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -206,19 +199,19 @@ module Rendering =
                 let renderAssetMap = Map.addMany renderAssets renderAssetMap
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
 
-    let private tryLoadRenderAsset packageName packageFileName assetName renderer =
+    let private tryLoadRenderAsset packageName assetName renderer =
         let optAssetMap = Map.tryFind packageName renderer.RenderAssetMap
         let (renderer, optAssetMap) =
             match optAssetMap with
             | None ->
                 note <| "Loading render package '" + packageName + "' for asset '" + assetName + "' on the fly."
-                let renderer = tryLoadRenderPackage packageName packageFileName renderer
+                let renderer = tryLoadRenderPackage packageName renderer
                 (renderer, Map.tryFind packageName renderer.RenderAssetMap)
             | Some _ -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
         (renderer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUseMessage) renderer =
-        tryLoadRenderPackage hintPackageUse.PackageName hintPackageUse.FileName renderer
+        tryLoadRenderPackage hintPackageUse.PackageName renderer
     
     let private handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuseMessage) renderer =
         let packageName = hintPackageDisuse.PackageName
@@ -229,11 +222,11 @@ module Rendering =
             for asset in Map.toValueList assets do freeRenderAsset asset
             { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
 
-    let private handleReloadRenderingAssets reloadRenderingAssetsMessage renderer =
+    let private handleReloadRenderingAssets renderer =
         let oldAssetMap = renderer.RenderAssetMap
         let renderer = { renderer with RenderAssetMap = Map.empty }
         List.fold
-            (fun renderer packageName -> tryLoadRenderPackage packageName reloadRenderingAssetsMessage.FileName renderer)
+            (fun renderer packageName -> tryLoadRenderPackage packageName renderer)
             renderer
             (Map.toKeyList oldAssetMap)
 
@@ -241,7 +234,7 @@ module Rendering =
         match renderMessage with
         | HintRenderingPackageUseMessage hintPackageUse -> handleHintRenderingPackageUse hintPackageUse renderer
         | HintRenderingPackageDisuseMessage hintPackageDisuse -> handleHintRenderingPackageDisuse hintPackageDisuse renderer
-        | ReloadRenderingAssetsMessage reloadRenderingAssetsMessage -> handleReloadRenderingAssets reloadRenderingAssetsMessage renderer
+        | ReloadRenderingAssetsMessage  -> handleReloadRenderingAssets renderer
 
     let private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
         List.fold handleRenderMessage renderer (List.rev renderMessages)
@@ -252,7 +245,7 @@ module Rendering =
         let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
         let image = descriptor.Image
         let color = descriptor.Color
-        let (renderer, optRenderAsset) = tryLoadRenderAsset image.PackageName image.PackageFileName image.ImageAssetName renderer
+        let (renderer, optRenderAsset) = tryLoadRenderAsset image.PackageName image.ImageAssetName renderer
         match optRenderAsset with
         | None ->
             debug <| "SpriteDescriptor failed due to unloadable assets for '" + string image + "'."
@@ -316,7 +309,7 @@ module Rendering =
         let tileSetImage = descriptor.TileSetImage
         let optTileSetWidth = tileSet.Image.Width
         let tileSetWidth = optTileSetWidth.Value
-        let (renderer, optRenderAsset) = tryLoadRenderAsset tileSetImage.PackageName tileSetImage.PackageFileName tileSetImage.ImageAssetName renderer
+        let (renderer, optRenderAsset) = tryLoadRenderAsset tileSetImage.PackageName tileSetImage.ImageAssetName renderer
         match optRenderAsset with
         | None ->
             debug <| "TileLayerDescriptor failed due to unloadable assets for '" + string tileSetImage + "'."
@@ -368,7 +361,7 @@ module Rendering =
         let text = descriptor.Text
         let font = descriptor.Font
         let color = descriptor.Color
-        let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.PackageFileName font.FontAssetName renderer
+        let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.FontAssetName renderer
         match optRenderAsset with
         | None ->
             debug <| "TextDescriptor failed due to unloadable assets for '" + string font + "'."
@@ -443,6 +436,7 @@ module Rendering =
         let renderer = handleRenderMessages renderMessages renderer
         renderDescriptors camera renderDescriptorsValue renderer
 
-    let makeRenderer renderContext =
+    let makeRenderer renderContext assetGraphFileName =
         { RenderContext = renderContext
-          RenderAssetMap = Map.empty }
+          RenderAssetMap = Map.empty
+          AssetGraphFileName = assetGraphFileName }

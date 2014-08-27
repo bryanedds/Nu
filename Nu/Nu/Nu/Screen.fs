@@ -41,7 +41,7 @@ module ScreenModule =
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
         static member makeDissolve dispatcherName incomingTime outgoingTime =
-            let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName; PackageFileName = AssetGraphFileName }
+            let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
             let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
             let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
             let screen = Screen.makeDefault dispatcherName

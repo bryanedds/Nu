@@ -31,6 +31,6 @@ module Program =
               AudioChunkSize = AudioBufferSizeDefault }
 
         World.run
-            (fun sdlDeps -> OmniFlow.tryMakeOmniBladeWorld sdlDeps ())
+            (fun sdlDeps -> OmniFlow.tryMakeOmniBladeWorld sdlDeps AssetGraphFileName OverlayFileName ())
             (fun world -> world)
             sdlConfig

@@ -7,17 +7,17 @@
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(ButtonDispatcher)">
         <Depth type="System.Single">0</Depth>
-        <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui;AssetGraph.xml</DownImage>
+        <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
         <Position type="OpenTK.Vector2">-128;-224</Position>
         <Size type="OpenTK.Vector2">256;64</Size>
-        <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui;AssetGraph.xml</UpImage>
+        <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
       </Xtension>
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
       <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TextDispatcher)">
-        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default</BackgroundImage>
         <Depth type="System.Single">0</Depth>
         <Position type="OpenTK.Vector2">-320;96</Position>
         <Size type="OpenTK.Vector2">640;128</Size>
@@ -28,7 +28,7 @@
       <Name>bc8f4d0f-66cb-4523-abb1-fca6564b9d1d</Name>
       <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TextDispatcher)">
-        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default</BackgroundImage>
         <Depth type="System.Single">0</Depth>
         <Position type="OpenTK.Vector2">-320;0</Position>
         <Size type="OpenTK.Vector2">640;64</Size>
@@ -40,7 +40,7 @@
       <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(LabelDispatcher)">
         <Depth type="System.Single">-1</Depth>
-        <LabelImage type="Nu.RenderingModule+Image">Image8;Default;AssetGraph.xml</LabelImage>
+        <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
         <Position type="OpenTK.Vector2">-480;-272</Position>
         <Size type="OpenTK.Vector2">960;544</Size>
       </Xtension>
@@ -49,7 +49,7 @@
       <Name>fee813fa-620b-4f74-843e-bcc9e6e96193</Name>
       <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TextDispatcher)">
-        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default;AssetGraph.xml</BackgroundImage>
+        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default</BackgroundImage>
         <Depth type="System.Single">0</Depth>
         <Position type="OpenTK.Vector2">-320;-96</Position>
         <Size type="OpenTK.Vector2">640;64</Size>

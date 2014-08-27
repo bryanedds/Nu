@@ -332,17 +332,17 @@ module WorldModule =
             let groupNode = rootNode.[GroupNodeName]
             Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
-        static member tryReloadAssets inputDir outputDir fileName world =
+        static member tryReloadAssets inputDir outputDir world =
             // TODO: copy over file from fileName as well (the asset graph)
-            match Assets.tryBuildAssetGraph inputDir outputDir fileName with
+            match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with
             | Left error -> Left error
             | Right () ->
-                match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
+                match Metadata.tryGenerateAssetMetadataMap world.AssetGraphFileName with
                 | Left errorMsg -> Left errorMsg
                 | Right assetMetadataMap ->
                     let world = { world with AssetMetadataMap = assetMetadataMap }
-                    let world = World.reloadRenderingAssets fileName world
-                    let world = World.reloadAudioAssets fileName world
+                    let world = World.reloadRenderingAssets world
+                    let world = World.reloadAudioAssets world
                     Right world
 
         static member private play world =
@@ -512,8 +512,8 @@ module WorldModule =
             let world = World.addScreen screenAddress screen [(groupName, group, entities)] world
             world
 
-        static member tryMakeEmpty sdlDeps gameDispatcher interactivity extData =
-            match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
+        static member tryMakeEmpty sdlDeps gameDispatcher interactivity assetGraphFileName overlayFileName extData =
+            match Metadata.tryGenerateAssetMetadataMap assetGraphFileName with
             | Left errorMsg -> Left errorMsg
             | Right assetMetadataMap ->
                 let gameDispatcherName = (gameDispatcher.GetType ()).Name
@@ -549,15 +549,17 @@ module WorldModule =
                       Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
                       MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
-                      AudioPlayer = Audio.makeAudioPlayer ()
-                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext
+                      AudioPlayer = Audio.makeAudioPlayer assetGraphFileName
+                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext assetGraphFileName
                       Integrator = Physics.makeIntegrator Gravity
                       AssetMetadataMap = assetMetadataMap
-                      Overlayer = Overlayer.make OverlayFileName
-                      AudioMessages = [HintAudioPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
-                      RenderMessages = [HintRenderingPackageUseMessage { FileName = AssetGraphFileName; PackageName = DefaultPackageName }]
+                      Overlayer = Overlayer.make overlayFileName
+                      AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
+                      RenderMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
                       PhysicsMessages = []
                       Dispatchers = dispatchers
+                      AssetGraphFileName = assetGraphFileName
+                      OverlayFileName = overlayFileName
                       ExtData = extData }
                 let world = world.Game.Register world
                 Right world

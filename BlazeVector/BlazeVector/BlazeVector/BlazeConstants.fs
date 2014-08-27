@@ -19,18 +19,18 @@ module BlazeConstants =
     let SectionCount = 32
 
     // asset constants
-    let NuSplashSound = { SoundAssetName = "Nu"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-    let MachinerySong = { SongAssetName = "Machinery"; PackageName = GuiPackageName; PackageFileName = AssetGraphFileName }
-    let DeadBlazeSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let HitSound = { SoundAssetName = "Hit"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let ExplosionSound = { SoundAssetName = "Explosion"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let ShotSound = { SoundAssetName = "Shot"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let JumpSound = { SoundAssetName = "Jump"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let DeathSound = { SoundAssetName = "Death"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let EnemyBulletImage = { ImageAssetName = "EnemyBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let PlayerBulletImage = { ImageAssetName = "PlayerBullet"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let EnemyImage = { ImageAssetName = "Enemy"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
-    let PlayerImage = { ImageAssetName = "Player"; PackageName = StagePackageName; PackageFileName = AssetGraphFileName }
+    let NuSplashSound = { SoundAssetName = "Nu"; PackageName = GuiPackageName }
+    let MachinerySong = { SongAssetName = "Machinery"; PackageName = GuiPackageName }
+    let DeadBlazeSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName }
+    let HitSound = { SoundAssetName = "Hit"; PackageName = StagePackageName }
+    let ExplosionSound = { SoundAssetName = "Explosion"; PackageName = StagePackageName }
+    let ShotSound = { SoundAssetName = "Shot"; PackageName = StagePackageName }
+    let JumpSound = { SoundAssetName = "Jump"; PackageName = StagePackageName }
+    let DeathSound = { SoundAssetName = "Death"; PackageName = StagePackageName }
+    let EnemyBulletImage = { ImageAssetName = "EnemyBullet"; PackageName = StagePackageName }
+    let PlayerBulletImage = { ImageAssetName = "PlayerBullet"; PackageName = StagePackageName }
+    let EnemyImage = { ImageAssetName = "Enemy"; PackageName = StagePackageName }
+    let PlayerImage = { ImageAssetName = "Player"; PackageName = StagePackageName }
 
     // transition constants
     let IncomingTimeSplash = 60L
