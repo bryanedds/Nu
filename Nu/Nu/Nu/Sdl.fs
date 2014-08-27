@@ -36,9 +36,6 @@ module SdlModule =
 [<RequireQualifiedAccess>]
 module Sdl =
 
-    let [<Literal>] private SuccessReturnCode = 0
-    let [<Literal>] private FailureReturnCode = 1
-
     let makeNuMouseButton sdlMouseButton =
         if sdlMouseButton = byte SDL.SDL_BUTTON_LEFT then MouseLeft
         elif sdlMouseButton = byte SDL.SDL_BUTTON_MIDDLE then MouseCenter

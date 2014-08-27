@@ -1,6 +1,7 @@
 ﻿namespace Nu
 open System
 open System.Xml
+open System.IO
 open Prime
 open Nu.NuConstants
 
@@ -172,3 +173,23 @@ module Assets =
             | null -> Left "Root node is missing from asset graph."
             | rootNode -> tryLoadAssetsFromRootNode optAssociation rootNode
         with exn -> Left <| string exn
+
+    let buildAssets inputDir outputDir assets =
+        // right now this function only copies if newer
+        for asset in assets do
+            let assetFilePath = Path.Combine (inputDir, asset.FileName)
+            let outputFilePath = Path.Combine (outputDir, asset.FileName)
+            let outputDirectory = Path.GetDirectoryName outputFilePath
+            ignore <| Directory.CreateDirectory outputDirectory
+            if  not <| File.Exists outputFilePath ||
+                File.GetLastWriteTimeUtc assetFilePath > File.GetLastWriteTimeUtc outputFilePath then
+                File.Copy (assetFilePath, outputFilePath, true)
+
+    let tryBuildAssetGraph inputDir outputDir assetGraphFileName =
+        let assetGraphFilePath = Path.Combine (inputDir, assetGraphFileName)
+        let eitherAssets = tryLoadAssetFromDocument None assetGraphFilePath
+        match eitherAssets with
+        | Left error -> Left error
+        | Right assets ->
+            try Right <| buildAssets inputDir outputDir assets
+            with exn -> Left <| string exn
