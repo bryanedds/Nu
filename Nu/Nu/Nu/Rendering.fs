@@ -419,9 +419,8 @@ module Rendering =
             ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
             let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
             let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-            // floating-point issues in Matrix inversion is causing a camera-shaking effect! TODO: fix!
-            let viewAbsolute = Matrix3.Invert (Camera.getViewAbsoluteI camera)
-            let viewRelative = Matrix3.Invert (Camera.getViewRelativeI camera)
+            let viewAbsolute = Matrix3.InvertView <| Camera.getViewAbsoluteI camera
+            let viewRelative = Matrix3.InvertView <| Camera.getViewRelativeI camera
             List.fold (renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
