@@ -28,7 +28,7 @@ module OmniFlow =
 
     let tryMakeOmniBladeWorld sdlDeps extData =
         let gameDispatcher = OmniBladeDispatcher () :> obj
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics extData
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics false extData
         match optWorld with
         | Left _ as left -> left
         | Right world ->

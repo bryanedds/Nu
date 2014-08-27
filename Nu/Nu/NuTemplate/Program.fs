@@ -49,7 +49,7 @@ module Program =
             // from the invoking function using the SDL configuration that we defined above, the
             // gameDispatcher immediately above, and a value that could have been used to
             // user-defined data to the world had we needed it (we don't, so we pass unit).
-            World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay ()
+            World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay false ()
             
         // this is a callback that specifies your game's unique behavior when updating the world
         // every tick. The World value is the state of the world after the callback has transformed
