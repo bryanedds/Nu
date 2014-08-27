@@ -249,7 +249,7 @@ module Rendering =
     let private renderSpriteDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : SpriteDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
         let positionView = descriptor.Position * view
-        let sizeView = descriptor.Size * Matrix3.getScaleMatrix view
+        let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
         let image = descriptor.Image
         let color = descriptor.Color
         let (renderer, optRenderAsset) = tryLoadRenderAsset image.PackageName image.PackageFileName image.ImageAssetName renderer
@@ -306,7 +306,7 @@ module Rendering =
     let private renderTileLayerDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TileLayerDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
         let positionView = descriptor.Position * view
-        let sizeView = descriptor.Size * Matrix3.getScaleMatrix view
+        let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
         let tileRotation = descriptor.Rotation
         let mapSize = descriptor.MapSize
         let tiles = descriptor.Tiles
@@ -364,7 +364,7 @@ module Rendering =
     let private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
         let positionView = descriptor.Position * view
-        let sizeView = descriptor.Size * Matrix3.getScaleMatrix view
+        let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
         let text = descriptor.Text
         let font = descriptor.Font
         let color = descriptor.Color
@@ -426,8 +426,8 @@ module Rendering =
             ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
             let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
             let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
-            let viewAbsolute = Camera.getViewAbsoluteI camera |> Matrix3.getInverseViewMatrix
-            let viewRelative = Camera.getViewRelativeI camera |> Matrix3.getInverseViewMatrix
+            let viewAbsolute = Matrix3.Invert (Camera.getViewAbsoluteI camera)
+            let viewRelative = Matrix3.Invert (Camera.getViewRelativeI camera)
             List.fold (renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
         | _ ->
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
