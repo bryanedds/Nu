@@ -143,7 +143,7 @@ module NuMath =
     let snap2F offset (v2 : Vector2) =
         Vector2 (snapF offset v2.X, snapF offset v2.Y)
 
-    let snapTransform positionSnap rotationSnap (transform : Transform) =
+    let snapTransform positionSnap rotationSnap transform =
         let transform = { transform with Position = snap2F positionSnap transform.Position }
         { transform with Rotation = snapR rotationSnap transform.Rotation }
 

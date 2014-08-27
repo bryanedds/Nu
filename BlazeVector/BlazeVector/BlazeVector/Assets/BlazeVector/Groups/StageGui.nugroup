@@ -4,23 +4,23 @@
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entity>
       <Name>Back</Name>
+      <Depth>10</Depth>
+      <Position>-128;-224</Position>
+      <Size>256;64</Size>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(ButtonDispatcher)">
-        <Depth type="System.Single">10</Depth>
         <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
-        <Position type="OpenTK.Vector2">-128;-224</Position>
-        <Size type="OpenTK.Vector2">256;64</Size>
         <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
       </Xtension>
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
+      <Depth>-100</Depth>
+      <Position>-480;-272</Position>
+      <Size>960;544</Size>
       <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(LabelDispatcher)">
-        <Depth type="System.Single">-100</Depth>
         <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
-        <Position type="OpenTK.Vector2">-480;-272</Position>
-        <Size type="OpenTK.Vector2">960;544</Size>
       </Xtension>
     </Entity>
   </Group>

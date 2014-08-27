@@ -25,17 +25,14 @@
 
   <EntityDispatcher>
     <Visible>True</Visible>
+    <Rotation>0</Rotation>
   </EntityDispatcher>
 
-  <Entity2dDispatcher include="EntityDispatcher">
-    <Rotation>0</Rotation>
-  </Entity2dDispatcher>
-
-  <GuiDispatcher include="Entity2dDispatcher">
+  <GuiDispatcher include="EntityDispatcher">
     <Enabled>True</Enabled>
   </GuiDispatcher>
 
-  <SimpleBodyDispatcher include="Entity2dDispatcher;SimpleBodyFacet" />
+  <SimpleBodyDispatcher include="EntityDispatcher;SimpleBodyFacet" />
 
   <SimpleBodySpriteDispatcher include="SimpleBodyDispatcher;SimpleSpriteFacet" />
 
@@ -82,7 +79,7 @@
     <LinearDamping>3</LinearDamping>
   </CharacterDispatcher>
 
-  <TileMapDispatcher include="Entity2dDispatcher">
+  <TileMapDispatcher include="EntityDispatcher">
     <Density>10</Density>
     <Friction>0</Friction>
     <Restitution>0</Restitution>
