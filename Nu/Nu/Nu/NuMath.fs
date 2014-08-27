@@ -92,6 +92,20 @@ module NuMathModule =
                     let innerStr = innerStr.Trim ()
                     Some innerStr :> obj
 
+
+module Matrix3 =
+
+    /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
+    /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
+    /// TODO: See if we can expose an SDL_RenderCopyEx from SDL2(#) that takes floats instead.
+    let InvertView (m : Matrix3) =
+        let mutable m = m
+        m.M13 <- -m.M13
+        m.M23 <- -m.M23
+        m.M11 <- 1.0f / m.M11
+        m.M22 <- 1.0f / m.M22
+        m
+
 [<RequireQualifiedAccess>]
 module NuMath =
 
