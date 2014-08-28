@@ -149,6 +149,7 @@ module WorldModule =
                 world
 
         static member getAnyEventNameStrs eventName =
+            // TODO: consider memoizing this function, but beware of space-leaks in doing so!
             let eventNameList = eventName.AddrList
             let anyEventNameList = AnyEventName.AddrList
             [for i in 0 .. List.length eventNameList - 1 do
