@@ -1,10 +1,12 @@
-﻿namespace NuTemplate
+﻿namespace $safeprojectname$
 open SDL2
+open Prime
+open Prime.PrimeConstants
 open Nu
 open Nu.NuConstants
 module Program =
 
-    // this the entry point for the empty Nu application
+    // this the entry point for the your Nu application
     let [<EntryPoint>] main _ =
     
         // this initializes miscellaneous values required by the engine. This should always be the
@@ -12,10 +14,10 @@ module Program =
         World.init ()
         
         // this specifies the manner in which the game is viewed. With this configuration, a new
-        // window is created with a title of "Nu Game Engine".
+        // window is created with a title of "$safeprojectname$".
         let sdlViewConfig =
             NewWindow
-                { WindowTitle = "Nu Game Engine"
+                { WindowTitle = "$safeprojectname$"
                   WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
                   WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
@@ -59,5 +61,5 @@ module Program =
         // behavior in this program, we simply return the world as it was received.
         let updateWorld world = world
 
-        // after some configuration it is time to run Nu. We're off and running!
+        // after some configuration it is time to run your game. We're off and running!
         World.run tryMakeWorld updateWorld sdlConfig

@@ -7,12 +7,12 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4dbbaa23-56ba-43cb-ab63-c45d5fc1016f</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>NuTemplate</RootNamespace>
-    <AssemblyName>NuTemplate</AssemblyName>
+    <RootNamespace>$safeprojectname$</RootNamespace>
+    <AssemblyName>$safeprojectname$</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
-    <Name>NuTemplate</Name>
+    <Name>$safeprojectname$</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,7 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Debug\NuTemplate.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\$safeprojectname$.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -34,7 +34,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>bin\Release\NuTemplate.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\$safeprojectname$.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
@@ -68,6 +68,21 @@
     <Content Include="Overlay.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Assets/Default/Image.png" />
+    <Resource Include="Assets/Default/Image2.png" />
+    <Resource Include="Assets/Default/Image3.png" />
+    <Resource Include="Assets/Default/Image4.png" />
+    <Resource Include="Assets/Default/Image5.png" />
+    <Resource Include="Assets/Default/Image6.png" />
+    <Resource Include="Assets/Default/Image7.png" />
+    <Resource Include="Assets/Default/Image8.png" />
+    <Resource Include="Assets/Default/Image9.png" />
+    <Resource Include="Assets/Default/Image10.png" />
+    <Resource Include="Assets/Default/FreeMonoBold.032.ttf" />
+    <Resource Include="Assets/Default/Song.ogg" />
+    <Resource Include="Assets/Default/Sound.wav" />
+    <Resource Include="Assets/Default/TileMap.tmx" />
+    <Resource Include="Assets/Default/TileSet.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -75,7 +90,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="SDL2#">
-      <HintPath>..\..\SDL2#\Release\SDL2#.dll</HintPath>
+      <HintPath>..\..\..\Nu\SDL2#\Release\SDL2#.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -85,7 +100,12 @@
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Nu\Nu.fsproj">
+    <ProjectReference Include="..\..\..\Nu\Nu\NuPipe\NuPipe.fsproj">
+      <Name>NuPipe</Name>
+      <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Nu\Nu\Nu\Nu.fsproj">
       <Name>Nu</Name>
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
