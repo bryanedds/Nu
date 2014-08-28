@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a7a6f758-e122-4c2c-9525-1f29802d007c</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>Nu</RootNamespace>
     <AssemblyName>Nu</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
@@ -79,6 +79,7 @@
     <Compile Include="Game.fs" />
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />
+    <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="libfreetype-6.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
