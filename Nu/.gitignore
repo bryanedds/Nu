@@ -41,3 +41,9 @@ Thumbs.db
 #####################
 bin/
 obj/
+
+##########
+# Custom #
+##########
+
+!Nu/NuTemplateExport/NuGame.zip
