@@ -153,7 +153,7 @@ module PhysicsModule =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
           IntegrationMessages : IntegrationMessage List
-          FarseerCautionMode : bool // ensures two bodies aren't in the same position, thus resolving a Farseer bug
+          FarseerCautionMode : bool // HACK: ensures two bodies aren't in the same position, thus resolving a Farseer bug
           mutable RebuildingHack : bool }
           
 [<RequireQualifiedAccess>]
