@@ -241,10 +241,10 @@ module Audio =
         match audioPlayer.OptNextPlaySong with
         | None -> audioPlayer
         | Some nextPlaySong ->
-            if SDL_mixer.Mix_PlayingMusic () = 1 then audioPlayer
-            else
+            if SDL_mixer.Mix_PlayingMusic () = 0 then
                 let audioPlayer = handlePlaySong nextPlaySong audioPlayer
                 { audioPlayer with OptNextPlaySong = None }
+            else audioPlayer
 
     let private updateAudioPlayer audioPlayer =
         audioPlayer |>

@@ -70,19 +70,14 @@ module Assets =
             List.fold
                 (fun assets assetNode ->
                     match tryLoadAssetFromAssetNode assetNode with
-                    | None ->
-                        debug <| "Invalid asset node in '" + node.Name + "' in asset graph."
-                        assets
+                    | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assets
                     | Some asset -> asset :: assets)
                 []
                 (List.ofSeq <| enumerable node.ChildNodes)
         let associatedAssets =
             match optAssociation with
             | None -> assets
-            | Some association ->
-                List.filter
-                    (fun asset -> List.exists ((=) association) asset.Associations)
-                    assets
+            | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
         List.ofSeq associatedAssets
         
     let tryLoadAssetsFromRootNode optAssociation (node : XmlNode) =
@@ -109,10 +104,8 @@ module Assets =
         let packageNames = List.map (fun (node : XmlNode) -> node.Name) nodes
         match packageNames with
         | [] ->
-            Left <|
-                "Multiple packages have the same names '" +
-                String.Join ("; ", packageNames) +
-                "' which is an error."
+            let packageListing = String.Join ("; ", packageNames)
+            Left <| "Multiple packages have the same names '" + packageListing + "' which is an error."
         | _ :: _ ->
             let eitherPackageAssetLists =
                 List.map

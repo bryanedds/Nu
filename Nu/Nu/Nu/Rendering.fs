@@ -173,13 +173,12 @@ module Rendering =
                 let fontSize = ref 0
                 if Int32.TryParse (fontSizeText, fontSize) then
                     let optFont = SDL_ttf.TTF_OpenFont (asset.FileName, !fontSize)
-                    if optFont <> IntPtr.Zero then Some (asset.Name, FontAsset (optFont, !fontSize))
+                    if optFont <> IntPtr.Zero
+                    then Some (asset.Name, FontAsset (optFont, !fontSize))
                     else trace <| "Could not load font due to unparsable font size in file name '" + asset.FileName + "'."; None
                 else trace <| "Could not load font due to file name being too short: '" + asset.FileName + "'."; None
             else trace <| "Could not load font '" + asset.FileName + "'."; None
-        | _ ->
-            trace <| "Could not load render asset '" + string asset + "' due to unknown extension '" + extension + "'."
-            None
+        | _ -> trace <| "Could not load render asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
     let private tryLoadRenderPackage packageName renderer =
         let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName renderer.AssetGraphFileName
