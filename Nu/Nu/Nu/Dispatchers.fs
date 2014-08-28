@@ -243,8 +243,7 @@ module SimpleAnimatedSpriteFacet =
             Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }
 
     let getRenderDescriptors (entity : Entity) viewType world =
-        if not entity.Visible || not <| Camera.inView3 entity.Position entity.Size world.Camera then []
-        else
+        if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
             [LayerableDescriptor
                 { Depth = entity.Depth
                   LayeredDescriptor =
@@ -256,6 +255,7 @@ module SimpleAnimatedSpriteFacet =
                           OptInset = getSpriteOptInset entity world
                           Image = entity.SpriteImage
                           Color = Vector4.One }}]
+        else []
 
     let getQuickSize (entity : Entity) (_ : World) =
         entity.TileSize
@@ -384,7 +384,7 @@ module ButtonDispatcherModule =
                     if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
                         let button = Entity.setIsDown true button
                         let world = World.setEntity event.Subscriber button world
-                        let world = World.publish4 (straddr "Down" event.Subscriber) event.Subscriber NoData world
+                        let world = World.publish4 (DownEventName + event.Subscriber) event.Subscriber NoData world
                         (Handled, world)
                     else (Unhandled, world)
                 else (Unhandled, world)
@@ -399,9 +399,9 @@ module ButtonDispatcherModule =
                     let world =
                         let button = Entity.setIsDown false button
                         let world = World.setEntity event.Subscriber button world
-                        World.publish4 (straddr "Up" event.Subscriber) event.Subscriber NoData world
+                        World.publish4 (UpEventName + event.Subscriber) event.Subscriber NoData world
                     if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
-                        let world = World.publish4 (straddr "Click" event.Subscriber) event.Subscriber NoData world
+                        let world = World.publish4 (ClickEventName + event.Subscriber) event.Subscriber NoData world
                         let world = World.playSound button.ClickSound 1.0f world
                         (Handled, world)
                     else (Unhandled, world)
@@ -586,15 +586,16 @@ module ToggleDispatcherModule =
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
                 if toggle.Enabled && toggle.Visible && toggle.IsPressed then
                     let toggle = Entity.setIsPressed false toggle
-                    let world = World.setEntity event.Subscriber toggle world
                     if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                         let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                         let world = World.setEntity event.Subscriber toggle world
-                        let eventType = if toggle.IsOn then "On" else "Off" // TODO: make these constants
-                        let world = World.publish4 (straddr eventType event.Subscriber) event.Subscriber NoData world
+                        let eventName = if toggle.IsOn then OnEventName else OffEventName
+                        let world = World.publish4 (eventName + event.Subscriber) event.Subscriber NoData world
                         let world = World.playSound toggle.ToggleSound 1.0f world
                         (Handled, world)
-                    else (Unhandled, world)
+                    else
+                        let world = World.setEntity event.Subscriber toggle world
+                        (Unhandled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
         
@@ -656,7 +657,7 @@ module FeelerDispatcherModule =
                     if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
                         let feeler = Entity.setIsTouched true feeler
                         let world = World.setEntity event.Subscriber feeler world
-                        let world = World.publish4 (straddr "Touch" event.Subscriber) event.Subscriber (MouseButtonData mouseButtonData) world
+                        let world = World.publish4 (TouchEventName + event.Subscriber) event.Subscriber (MouseButtonData mouseButtonData) world
                         (Handled, world)
                     else (Unhandled, world)
                 else (Unhandled, world)
@@ -668,7 +669,7 @@ module FeelerDispatcherModule =
                 if feeler.Enabled && feeler.Visible then
                     let feeler = Entity.setIsTouched false feeler
                     let world = World.setEntity event.Subscriber feeler world
-                    let world = World.publish4 (straddr "Release" event.Subscriber) event.Subscriber NoData world
+                    let world = World.publish4 (ReleaseEventName + event.Subscriber) event.Subscriber NoData world
                     (Handled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
@@ -989,8 +990,7 @@ module TileMapDispatcherModule =
                 registerTileMapPhysics address
 
         override dispatcher.GetRenderDescriptors (tileMap, world) =
-            if not tileMap.Visible then []
-            else
+            if tileMap.Visible then
                 let tileMapAsset = tileMap.TileMapAsset
                 match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
                 | None -> []
@@ -1024,6 +1024,7 @@ module TileMapDispatcherModule =
                             else descriptors)
                         []
                         layers
+            else []
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset

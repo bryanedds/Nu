@@ -153,7 +153,8 @@ module PhysicsModule =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
           IntegrationMessages : IntegrationMessage List
-          FarseerCautionMode : bool // HACK: ensures two bodies aren't in the same position, thus resolving a Farseer bug
+          // HACK: ensures two bodies aren't created in the same position, thus evading a Farseer bug
+          FarseerCautionMode : bool
           mutable RebuildingHack : bool }
           
 [<RequireQualifiedAccess>]
@@ -237,8 +238,9 @@ module Physics =
 
     let getOptGroundContactNormal physicsId integrator =
         let groundNormals = getGroundContactNormals physicsId integrator
-        if List.isEmpty groundNormals then None
-        else
+        match groundNormals with
+        | [] -> None
+        | _ :: _ ->
             let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
             Some averageNormal
 
