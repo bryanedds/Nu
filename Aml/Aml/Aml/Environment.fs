@@ -21,7 +21,7 @@ module Environment =
     /// Make an empty environment.
     let makeEmptyEnv () =
         makeEnv
-            (Dictionary<string, EnvEntry> ())
+            (Dictionary<string, EnvEntry> HashIdentity.Structural)
             []
             (List<CachedEntry ref> ())
             false

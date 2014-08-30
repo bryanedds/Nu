@@ -428,7 +428,7 @@ module Physics =
 
     let makeIntegrator farseerCautionMode gravity =
          { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 gravity)
-           Bodies = BodyDictionary ()
+           Bodies = BodyDictionary HashIdentity.Structural
            IntegrationMessages = List<IntegrationMessage> ()
            FarseerCautionMode = farseerCautionMode
            RebuildingHack = false }

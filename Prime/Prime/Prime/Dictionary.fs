@@ -22,9 +22,9 @@ let inline tryFind key (dictionary : Dictionary<'k, 'v>) =
     then Some valueRef.Value
     else None
 
-/// Like dict, but returns a concrete Dictionary instance.
+/// Like dict, but returns a concrete Dictionary instance with structural hashing.
 let dictC kvps =
-    let dictionary = Dictionary ()
+    let dictionary = Dictionary HashIdentity.Structural
     for (key, value) in kvps do dictionary.Add (key, value)
     dictionary
 
@@ -52,3 +52,13 @@ type Dictionary<'k, 'v> with
                 if enr2.MoveNext () then equal <- false
                 else moving <- false
         equal
+
+    /// Add multiple kvps to a dictionary.
+    member this.AddMany kvps =
+        for kvp in kvps do
+            this.Add kvp
+
+    /// Add all the elements of another dictionary.
+    member this.Consume (dictionary : Dictionary<'k, 'v>) =
+        for kvp in dictionary do
+            this.Add (kvp.Key, kvp.Value)

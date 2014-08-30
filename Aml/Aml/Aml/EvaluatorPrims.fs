@@ -185,7 +185,7 @@ module EvaluatorPrims =
         | _ -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.expandLambda'."
     
     /// Get a member from some composite members.
-    let getMember memberName (members : MemberDict) env =
+    let getMember memberName (members : MemberDictionary) env =
         let mem = ref Unchecked.defaultof<Member>
         if members.TryGetValue (memberName, mem) then (!mem).MemExpr
         else makeViolationWithPositions ":v/eval/missingMember" ("Member '" + memberName + "' does not exist.") env
@@ -275,8 +275,8 @@ module EvaluatorPrims =
         match optConstraints with
         | None -> tautology
         | Some constraints ->
-            let constraintDict = List.toDictionaryBy (fun constr -> (constr.ConstrArgs.Head, constr)) constraints
-            makeConstraintPredicate args constraintDict env
+            let constraintDictionary = List.toDictionaryBy (fun constr -> (constr.ConstrArgs.Head, constr)) constraints
+            makeConstraintPredicate args constraintDictionary env
 
     /// Augment an environment with a declaration function.
     let tryAppendDeclarationFunction name args argCount body optConstraints doc pre post emptyUnification optPositions env =

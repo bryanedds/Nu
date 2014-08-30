@@ -21,7 +21,8 @@ module NuCoreModule =
         | Running
 
     /// Specifies the address of an element in a game.
-    type [<CustomEquality; CustomComparison>] Address =
+    /// Comparison disabled due to performance issues when Address is using in a Map.
+    type [<StructuralEquality; NoComparison>] Address =
         { AddrList : string list
           AddrStr : string }
 
@@ -38,33 +39,8 @@ module NuCoreModule =
         static member private innerCompareTo this that =
             String.Compare (this.AddrStr, that.AddrStr)
         
-        static member private innerEquals this that =
-            this.AddrStr = that.AddrStr
-
-        interface Address IComparable with
-            member this.CompareTo that =
-                Address.innerCompareTo this that
-
-        interface IComparable with
-            member this.CompareTo that =
-                match that with
-                | :? Address as that -> Address.innerCompareTo this that
-                | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
-
-        interface Address IEquatable with
-            member this.Equals that =
-                Address.innerEquals this that
-
-        override this.Equals that =
-            match that with
-            | :? Address as that -> Address.innerEquals this that
-            | _ -> false
-
-        override this.GetHashCode () =
-            this.AddrStr.GetHashCode ()
-
         override this.ToString () =
-            Address.listToString this.AddrList
+            this.AddrStr
 
     let makeAddress =
         Address.makeAddress

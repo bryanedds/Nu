@@ -482,7 +482,7 @@ module Primitives =
 
     /// Make a declaration frame.
     let makeDeclarationFrame () =
-        DeclarationFrame ()
+        DeclarationFrame HashIdentity.Structural
 
     /// Make a procedural frame.
     let makeProceduralFrame size =
@@ -547,7 +547,7 @@ module Primitives =
     let makeType typeName optPositions =
         let (typeNameName, typeNameMember) = makeTypeNameMember typeName optPositions
         let members = Dictionary.singleton typeNameName typeNameMember
-        Composite (makeCompositeRecord true typeName members UnitValue (Dictionary<string, Expr> ()) (HashSet<string> ()) optPositions)
+        Composite (makeCompositeRecord true typeName members UnitValue (Dictionary<string, Expr> HashIdentity.Structural) (HashSet<string> HashIdentity.Structural) optPositions)
 
     /// Make a type entry.
     let makeTypeEntry typeName doc optPositions =

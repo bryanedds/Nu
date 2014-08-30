@@ -773,13 +773,13 @@ module Evaluator =
          (ArrayToListStr, applyArrayToList)]
 
     /// The appliable built-in lambdas in dictionary form.
-    and appliableBuiltinDict = 
+    and appliableBuiltinDictionary = 
         List.toDictionary appliableBuiltins
 
     /// Apply a built-in operator.
     and applyBuiltin name (args : Expr list) argCount env =
         let appliableBuiltin = ref Unchecked.defaultof<string -> Expr list -> int -> Env -> EvalResult>
-        if appliableBuiltinDict.TryGetValue (name, appliableBuiltin)
+        if appliableBuiltinDictionary.TryGetValue (name, appliableBuiltin)
         then !appliableBuiltin name args argCount env
         else applySpecialBuiltin name args argCount env
 
@@ -1100,7 +1100,10 @@ module Evaluator =
             match targetValue with
             | Violation _ as v -> forwardEvalViolation v env
             | Composite composite when composite.CompType = CompositeType ->
-                let (newCompositeMembers : MemberDict) = Dictionary composite.CompMembers
+                let (newCompositeMembers : MemberDictionary) =
+                    let dictionary = Dictionary HashIdentity.Structural
+                    dictionary.Consume composite.CompMembers
+                    dictionary // TODO
                 for extendMember in extend.ExtMembers do ignore (newCompositeMembers.ForceAdd (extendMember.Key, extendMember.Value))
                 if newCompositeMembers.Count - composite.CompMembers.Count < extend.ExtMembers.Count
                 then makeEvalViolation ":v/eval/malformedExtendOperation" "Extend operation may not duplicate composite members." env
