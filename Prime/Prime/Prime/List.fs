@@ -323,3 +323,13 @@ let rec duplicates z = function
     | [] -> []
     | x :: xs when x = z -> x :: (duplicates x xs)
     | _ :: xs -> duplicates z xs
+
+let rec inline compareStrings (list : string list) (list2 : string list) =
+    match (list, list2) with
+    | ([], []) -> 0
+    | (_ :: _, []) -> 1
+    | ([], _ :: _) -> -1
+    | (head :: tail, head2 :: tail2) ->
+        let result = head.CompareTo head2
+        if result = 0 then compare tail tail2
+        else result

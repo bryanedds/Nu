@@ -52,7 +52,7 @@ module WorldModule =
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
-    let private AnyEventNamesCache = Dictionary<string, string list> HashIdentity.Structural
+    let private AnyEventNamesCache = Dictionary<Address, Address list> HashIdentity.Structural
 
     type World with
 
@@ -150,27 +150,27 @@ module WorldModule =
                 world
 
         // OPTIMIZATION: uses memoization.
-        static member getAnyEventNameStrs eventName =
+        static member getAnyEventNames eventName =
             match eventName.AddrList with
             | [] -> failwith "Event name cannot be empty."
             | _ :: _ ->
-                let anyEventNamesKey = eventName.AddrStr.Substring (0, eventName.AddrStr.Length - (List.last eventName.AddrList).Length)
-                let refAnyEventNames = ref Unchecked.defaultof<string list>
+                let anyEventNamesKey = Address.allButLast eventName
+                let refAnyEventNames = ref Unchecked.defaultof<Address list>
                 if AnyEventNamesCache.TryGetValue (anyEventNamesKey, refAnyEventNames) then !refAnyEventNames
                 else
                     let eventNameList = eventName.AddrList
                     let anyEventNameList = AnyEventName.AddrList
-                    let anyEventNameStrs =
+                    let anyEventNames =
                         [for i in 0 .. List.length eventNameList - 1 do
                             let subNameList = List.take i eventNameList @ anyEventNameList
-                            yield String.Join ("/", subNameList)]
-                    AnyEventNamesCache.Add (anyEventNamesKey, anyEventNameStrs)
-                    anyEventNameStrs
+                            yield Address.make subNameList]
+                    AnyEventNamesCache.Add (anyEventNamesKey, anyEventNames)
+                    anyEventNames
 
         static member getSubscriptionsSorted publishSorter eventName world =
-            let anyEventNameStrs = World.getAnyEventNameStrs eventName
-            let optSubLists = List.map (fun anyEventNameStr -> Map.tryFind anyEventNameStr world.Subscriptions) anyEventNameStrs
-            let optSubLists = Map.tryFind eventName.AddrStr world.Subscriptions :: optSubLists
+            let anyEventNames = World.getAnyEventNames eventName
+            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName world.Subscriptions) anyEventNames
+            let optSubLists = Map.tryFind eventName world.Subscriptions :: optSubLists
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
             publishSorter subList world
@@ -206,9 +206,9 @@ module WorldModule =
         /// Subscribe to an event.
         static member subscribeDefinition subscriptionKey eventName subscriber subscription world =
             let subscriptions = 
-                match Map.tryFind eventName.AddrStr world.Subscriptions with
-                | None -> Map.add eventName.AddrStr [(subscriptionKey, subscriber, subscription)] world.Subscriptions
-                | Some subscriptionList -> Map.add eventName.AddrStr ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
+                match Map.tryFind eventName world.Subscriptions with
+                | None -> Map.add eventName [(subscriptionKey, subscriber, subscription)] world.Subscriptions
+                | Some subscriptionList -> Map.add eventName ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
             let unsubscriptions = Map.add subscriptionKey (eventName, subscriber) world.Unsubscriptions
             { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
@@ -221,7 +221,7 @@ module WorldModule =
             match Map.tryFind subscriptionKey world.Unsubscriptions with
             | None -> world // TODO: consider failure signal
             | Some (eventName, subscriber) ->
-                match Map.tryFind eventName.AddrStr world.Subscriptions with
+                match Map.tryFind eventName world.Subscriptions with
                 | None -> world // TODO: consider failure signal
                 | Some subscriptionList ->
                     let subscriptionList =
@@ -230,8 +230,8 @@ module WorldModule =
                             subscriptionList
                     let subscriptions = 
                         match subscriptionList with
-                        | [] -> Map.remove eventName.AddrStr world.Subscriptions
-                        | _ -> Map.add eventName.AddrStr subscriptionList world.Subscriptions
+                        | [] -> Map.remove eventName world.Subscriptions
+                        | _ -> Map.add eventName subscriptionList world.Subscriptions
                     let unsubscriptions = Map.remove subscriptionKey world.Unsubscriptions
                     { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
