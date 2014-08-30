@@ -190,7 +190,7 @@ module Writer =
     and writeMember mem = parenthesize (mem.MemName <+> writeExpr mem.MemExpr)
 
     /// Write composite members with a space at front if applicable.
-    and writeMembersWithSpace (members : MemberDict) =
+    and writeMembersWithSpace (members : MemberDictionary) =
         let memberList = List.ofSeq members.Values
         writeListWithSpace (writeValues writeMember) memberList
 

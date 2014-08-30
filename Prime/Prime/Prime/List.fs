@@ -272,28 +272,28 @@ let isSuperset firstList secondList = setBinop Set.isSuperset firstList secondLi
 let intersect firstList secondList = setBinop Set.intersect firstList secondList
 
 /// Add a list of pairs to a Dictionary.
-let addToDictionary (dict : Dictionary<'k, 'v>) list =
-    List.iter (fun (k, v) -> dict.Add (k, v)) list
+let addToDictionary (dictionary : Dictionary<'k, 'v>) list =
+    List.iter (fun (k, v) -> dictionary.Add (k, v)) list
     
 /// Add a list of values to a Dictionary.
-let addToDictionaryBy by (dict : Dictionary<'k, 'v>) list =
-    List.iter (fun value -> dict.Add (by value)) list
+let addToDictionaryBy by (dictionary : Dictionary<'k, 'v>) list =
+    List.iter (fun value -> dictionary.Add (by value)) list
 
 /// Convert a list of pairs to a Dictionary.
 let toDictionary list =
-    let dict = Dictionary ()
-    addToDictionary dict list
-    dict
+    let dictionary = Dictionary HashIdentity.Structural
+    addToDictionary dictionary list
+    dictionary
 
 /// Convert a list of values to a Dictionary.
 let toDictionaryBy by list =
-    let dict = Dictionary ()
-    addToDictionaryBy by dict list
-    dict
+    let dictionary = Dictionary HashIdentity.Structural
+    addToDictionaryBy by dictionary list
+    dictionary
 
 /// Convert a list to a HashSet.
 let toHashSet list =
-    let hashSet = HashSet ()
+    let hashSet = HashSet HashIdentity.Structural
     List.iter (fun item -> ignore <| hashSet.Add item) list
     hashSet
 

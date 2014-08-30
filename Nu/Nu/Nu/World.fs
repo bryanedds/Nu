@@ -30,7 +30,7 @@ module WorldModule =
     2x gain - Run app at 30fps instead of 60
     3x gain - put physics and rendering each in another process
     ? gain - quadtree culling to avoid unecessary render descriptor queries
-    1.3x gain - store loaded assets in a Dictionary<Dictionary, ...>> rather than a Map<Map, ...>>, or...
+    1.3x gain - store loaded assets in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
     1.2x gain - optimize locality of address usage
     1.2x gain - render tiles layers to their own buffer so that each whole layer can be blitted directly with a single draw call (though this might cause overdraw).
@@ -52,6 +52,7 @@ module WorldModule =
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
+    let private AnyEventNamesCache = Dictionary<string, string list> HashIdentity.Structural
 
     type World with
 
@@ -148,13 +149,23 @@ module WorldModule =
                 subscriptions
                 world
 
+        // OPTIMIZATION: uses memoization.
         static member getAnyEventNameStrs eventName =
-            // TODO: consider memoizing this function, but beware of space-leaks in doing so!
-            let eventNameList = eventName.AddrList
-            let anyEventNameList = AnyEventName.AddrList
-            [for i in 0 .. List.length eventNameList - 1 do
-                let subNameList = List.take i eventNameList @ anyEventNameList
-                yield String.Join ("/", subNameList)]
+            match eventName.AddrList with
+            | [] -> failwith "Event name cannot be empty."
+            | _ :: _ ->
+                let anyEventNamesKey = eventName.AddrStr.Substring (0, eventName.AddrStr.Length - (List.last eventName.AddrList).Length)
+                let refAnyEventNames = ref Unchecked.defaultof<string list>
+                if AnyEventNamesCache.TryGetValue (anyEventNamesKey, refAnyEventNames) then !refAnyEventNames
+                else
+                    let eventNameList = eventName.AddrList
+                    let anyEventNameList = AnyEventName.AddrList
+                    let anyEventNameStrs =
+                        [for i in 0 .. List.length eventNameList - 1 do
+                            let subNameList = List.take i eventNameList @ anyEventNameList
+                            yield String.Join ("/", subNameList)]
+                    AnyEventNamesCache.Add (anyEventNamesKey, anyEventNameStrs)
+                    anyEventNameStrs
 
         static member getSubscriptionsSorted publishSorter eventName world =
             let anyEventNameStrs = World.getAnyEventNameStrs eventName

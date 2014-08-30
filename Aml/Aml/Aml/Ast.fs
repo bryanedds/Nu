@@ -63,8 +63,8 @@ module AstModule =
         { MemName : string
           MemExpr : Expr }
         interface IComparable with
-            member this.CompareTo other =
-                match other with
+            member this.CompareTo that =
+                match that with
                 | :? Member as mem -> if this = mem then 0 else -1
                 | _ -> -1
 
@@ -104,7 +104,7 @@ module AstModule =
         | LetFunction of string * Arg list * int * Expr * Constraint list option * Expr * Expr * bool
     
     /// A dictionary of composite members by name.
-    and MemberDict = Dictionary<string, Member>
+    and MemberDictionary = Dictionary<string, Member>
 
     /// Record for a Violation expression.
     and [<NoEquality; NoComparison>] ViolationRecord =
@@ -229,7 +229,7 @@ module AstModule =
     /// Record for an Extend expression.
     and [<NoEquality; NoComparison>] ExtendRecord =
         { ExtTarget : Expr
-          ExtMembers : MemberDict
+          ExtMembers : MemberDictionary
           ExtOptPositions : ParserPositions option }
 
     /// Record for a Case expression.
@@ -283,7 +283,7 @@ module AstModule =
     and [<NoEquality; NoComparison>] CompositeRecord =
         { CompEvaluated : bool
           CompName : string
-          CompMembers : MemberDict
+          CompMembers : MemberDictionary
           CompType : Expr
           CompSigImpls : Dictionary<string, Expr>
           CompProtocols : HashSet<string>
@@ -479,8 +479,8 @@ module AstModule =
         | UsingFile of UsingFileRecord
         | UsingLanguage of UsingLanguageRecord
         | SpecialSeries of SpecialSeriesRecord
-        override this.Equals other =
-            match other with
+        override this.Equals that =
+            match that with
             | :? Expr as expr ->
                 match (this, expr) with
                 | (Boolean xb, Boolean yb) -> xb.BRValue = yb.BRValue
