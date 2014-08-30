@@ -179,42 +179,55 @@ module WorldEntityModule =
     type World with
 
         static member private optEntityFinder address world =
-            // OPTIMIZATION: entity is looked up in EntitiesByAddress
-            Map.tryFind address.AddrStr world.EntitiesByAddress
+            match address.AddrList with
+            | [screenName; groupName; entityName] ->
+                let optGroupMap = Map.tryFind screenName world.Entities
+                match optGroupMap with
+                | None -> None
+                | Some groupMap ->
+                    let optEntityMap = Map.tryFind groupName groupMap
+                    match optEntityMap with
+                    | None -> None
+                    | Some entityMap -> Map.tryFind entityName entityMap
+            | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member private entityAdder address world (entity : Entity) =
-            let world = { world with EntitiesByAddress = Map.add address.AddrStr entity world.EntitiesByAddress }
-            let optGroupMap = Map.tryFind (Address.at 0 address) world.Entities
-            match optGroupMap with
-            | None ->
-                let entityMap = Map.singleton (Address.at 2 address) entity
-                let groupMap = Map.singleton (Address.at 1 address) entityMap
-                { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
-            | Some groupMap ->
-                let optEntityMap = Map.tryFind (Address.at 1 address) groupMap
-                match optEntityMap with
+            match address.AddrList with
+            | [screenName; groupName; entityName] ->
+                let optGroupMap = Map.tryFind screenName world.Entities
+                match optGroupMap with
                 | None ->
-                    let entityMap = Map.singleton (Address.at 2 address) entity
-                    let groupMap = Map.add (Address.at 1 address) entityMap groupMap
-                    { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
-                | Some entityMap ->
-                    let entityMap = Map.add (Address.at 2 address) entity entityMap
-                    let groupMap = Map.add (Address.at 1 address) entityMap groupMap
-                    { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
+                    let entityMap = Map.singleton entityName entity
+                    let groupMap = Map.singleton groupName entityMap
+                    { world with Entities = Map.add screenName groupMap world.Entities }
+                | Some groupMap ->
+                    let optEntityMap = Map.tryFind groupName groupMap
+                    match optEntityMap with
+                    | None ->
+                        let entityMap = Map.singleton entityName entity
+                        let groupMap = Map.add groupName entityMap groupMap
+                        { world with Entities = Map.add screenName groupMap world.Entities }
+                    | Some entityMap ->
+                        let entityMap = Map.add entityName entity entityMap
+                        let groupMap = Map.add groupName entityMap groupMap
+                        { world with Entities = Map.add screenName groupMap world.Entities }
+            | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member private entityRemover address world =
-            let world = { world with EntitiesByAddress = Map.remove address.AddrStr world.EntitiesByAddress }
-            let optGroupMap = Map.tryFind (Address.at 0 address) world.Entities
-            match optGroupMap with
-            | None -> world
-            | Some groupMap ->
-                let optEntityMap = Map.tryFind (Address.at 1 address) groupMap
-                match optEntityMap with
+            match address.AddrList with
+            | [screenName; groupName; entityName] ->
+                let optGroupMap = Map.tryFind screenName world.Entities
+                match optGroupMap with
                 | None -> world
-                | Some entityMap ->
-                    let entityMap = Map.remove (Address.at 2 address) entityMap
-                    let groupMap = Map.add (Address.at 1 address) entityMap groupMap
-                    { world with Entities = Map.add (Address.at 0 address) groupMap world.Entities }
+                | Some groupMap ->
+                    let optEntityMap = Map.tryFind groupName groupMap
+                    match optEntityMap with
+                    | None -> world
+                    | Some entityMap ->
+                        let entityMap = Map.remove entityName entityMap
+                        let groupMap = Map.add groupName entityMap groupMap
+                        { world with Entities = Map.add screenName groupMap world.Entities }
+            | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member getEntity address world = Option.get <| World.optEntityFinder address world
         static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity

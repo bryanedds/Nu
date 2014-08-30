@@ -246,7 +246,6 @@ module SimModule =
           Screens : Map<string, Screen>
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
-          EntitiesByAddress : Map<string, Entity>
           TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
