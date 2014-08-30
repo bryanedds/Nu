@@ -571,7 +571,6 @@ module WorldModule =
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
-                      EntitiesByAddress = Map.empty
                       TickTime = 0L
                       Liveness = Running
                       Interactivity = interactivity

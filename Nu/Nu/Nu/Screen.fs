@@ -53,13 +53,19 @@ module WorldScreenModule =
     type World with
 
         static member private optScreenFinder address world =
-            Map.tryFind (Address.at 0 address) world.Screens
+            match address.AddrList with
+            | [screenName] -> Map.tryFind screenName world.Screens
+            | _ -> failwith <| "Invalid screen address '" + string address + "'."
 
         static member private screenAdder address world child =
-            { world with Screens = Map.add (Address.at 0 address) child world.Screens }
+            match address.AddrList with
+            | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
+            | _ -> failwith <| "Invalid screen address '" + string address + "'."
 
         static member private screenRemover address world =
-            { world with Screens = Map.remove (Address.at 0 address) world.Screens }
+            match address.AddrList with
+            | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
+            | _ -> failwith <| "Invalid screen address '" + string address + "'."
 
         static member getScreen address world = Option.get <| World.optScreenFinder address world
         static member setScreen address screen world = World.screenAdder address world screen

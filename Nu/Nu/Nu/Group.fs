@@ -56,27 +56,36 @@ module WorldGroupModule =
     type World with
 
         static member private optGroupFinder address world =
-            let optGroupMap = Map.tryFind (Address.at 0 address) world.Groups
-            match optGroupMap with
-            | None -> None
-            | Some groupMap -> Map.tryFind (Address.at 1 address) groupMap
+            match address.AddrList with
+            | [screenName; groupName] ->
+                let optGroupMap = Map.tryFind screenName world.Groups
+                match optGroupMap with
+                | None -> None
+                | Some groupMap -> Map.tryFind groupName groupMap
+            | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member private groupAdder address world child =
-            let optGroupMap = Map.tryFind (Address.at 0 address) world.Groups
-            match optGroupMap with
-            | None ->
-                { world with Groups = Map.singleton (Address.at 0 address) <| Map.singleton (Address.at 1 address) child }
-            | Some groupMap ->
-                let groupMap = Map.add (Address.at 1 address) child groupMap
-                { world with Groups = Map.add (Address.at 0 address) groupMap world.Groups }
+            match address.AddrList with
+            | [screenName; groupName] ->
+                let optGroupMap = Map.tryFind screenName world.Groups
+                match optGroupMap with
+                | None ->
+                    { world with Groups = Map.singleton screenName <| Map.singleton groupName child }
+                | Some groupMap ->
+                    let groupMap = Map.add groupName child groupMap
+                    { world with Groups = Map.add screenName groupMap world.Groups }
+            | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member private groupRemover address world =
-            let optGroupMap = Map.tryFind (Address.at 0 address) world.Groups
-            match optGroupMap with
-            | None -> world
-            | Some groupMap ->
-                let groupMap = Map.remove (Address.at 1 address) groupMap
-                { world with Groups = Map.add (Address.at 0 address) groupMap world.Groups }
+            match address.AddrList with
+            | [screenName; groupName] ->
+                let optGroupMap = Map.tryFind screenName world.Groups
+                match optGroupMap with
+                | None -> world
+                | Some groupMap ->
+                    let groupMap = Map.remove groupName groupMap
+                    { world with Groups = Map.add screenName groupMap world.Groups }
+            | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member getGroup address world = Option.get <| World.optGroupFinder address world
         static member setGroup address group world = World.groupAdder address world group
