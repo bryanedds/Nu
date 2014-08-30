@@ -21,52 +21,81 @@ module NuCoreModule =
         | Running
 
     /// Specifies the address of an element in a game.
-    /// Comparison disabled due to performance issues when Address is using in a Map.
-    type [<StructuralEquality; NoComparison>] Address =
+    /// OPTIMIZATION: Comparison is done using a reversed list since the backs of addresses tend to
+    /// be much more unique than the fronts.
+    type [<CustomEquality; CustomComparison>] Address =
         { AddrList : string list
-          AddrStr : string }
+          AddrListRev : string list }
 
         static member private listToString (list : string list) =
             String.Join ("/", list)
 
-        static member makeAddress list =
-            { AddrList = list; AddrStr = Address.listToString list }
+        static member make list =
+            { AddrList = list; AddrListRev = List.rev list }
 
         static member (+) (address, address2) =
             let list = address.AddrList @ address2.AddrList
-            Address.makeAddress list
+            Address.make list
 
         static member private innerCompareTo this that =
-            String.Compare (this.AddrStr, that.AddrStr)
+            List.compareStrings this.AddrListRev that.AddrListRev
+        
+        static member private innerEquals this that =
+            this.AddrList = that.AddrList
+
+        interface Address IComparable with
+            member this.CompareTo that =
+                Address.innerCompareTo this that
+
+        interface IComparable with
+            member this.CompareTo that =
+                match that with
+                | :? Address as that -> Address.innerCompareTo this that
+                | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
+
+        interface Address IEquatable with
+            member this.Equals that =
+                Address.innerEquals this that
+
+        override this.Equals that =
+            match that with
+            | :? Address as that -> Address.innerEquals this that
+            | _ -> false
+
+        override this.GetHashCode () =
+            let mutable hash = 0
+            for name in this.AddrList do
+                hash <- hash ^^^ name.GetHashCode ()
+            hash
         
         override this.ToString () =
-            this.AddrStr
+            String.Join ("/", this.AddrList)
 
-    let makeAddress =
-        Address.makeAddress
+    let make =
+        Address.make
 
     let addr (str : string) : Address =
         let list = List.ofArray <| str.Split '/'
-        makeAddress list
+        make list
 
     let straddr str address =
         addr str + address
 
     let addrstr address str =
         let list = address.AddrList @ [str]
-        makeAddress list
+        make list
 
     let straddrstr str address str2 =
         addr str + address + addr str2
 
     let listaddr list address =
-        makeAddress <| list @ address.AddrList
+        make <| list @ address.AddrList
 
     let addrlist address list =
-        makeAddress <| address.AddrList @ list
+        make <| address.AddrList @ list
 
     let listaddrlist list address list2 =
-        makeAddress <| list @ address.AddrList @ list2
+        make <| list @ address.AddrList @ list2
 
 [<RequireQualifiedAccess>]
 module NuCore =
@@ -87,39 +116,39 @@ module NuCore =
 module Address =
 
     let empty =
-        makeAddress []
+        make []
 
     let head address =
         List.head address.AddrList
         
     let tail address =
-        makeAddress <| List.tail address.AddrList
+        make <| List.tail address.AddrList
 
     let at index address =
         List.at index address.AddrList
 
     let map mapper address =
         let addrList = List.map mapper address.AddrList
-        makeAddress addrList
+        make addrList
 
     let filter predicate address =
         let addrList = List.filter predicate address.AddrList
-        makeAddress addrList
+        make addrList
 
     let fold folder state address =
         List.fold folder state address.AddrList
 
     let skip n address =
-        makeAddress <| List.skip n address.AddrList
+        make <| List.skip n address.AddrList
 
     let take n address =
-        makeAddress <| List.take n address.AddrList
+        make <| List.take n address.AddrList
 
     let last address =
         List.last address.AddrList
 
     let allButLast address =
-        makeAddress <| List.allButLast address.AddrList
+        make <| List.allButLast address.AddrList
 
     let length address =
         List.length address.AddrList

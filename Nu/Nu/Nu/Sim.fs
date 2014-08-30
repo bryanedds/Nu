@@ -230,9 +230,7 @@ module SimModule =
 
     /// A map of event subscriptions.
     /// A reference type due to the reference-typeness of Subscription.
-    /// OPTIMIZATION: due to what seems to be an internal optimization with Map<string, _>, it is
-    /// used rather than the more straight-froward Map<Address, _>
-    and SubscriptionEntries = Map<string, SubscriptionEntry list>
+    and SubscriptionEntries = Map<Address, SubscriptionEntry list>
 
     /// TODO: document
     and SubscriptionSorter = SubscriptionEntry list -> World -> SubscriptionEntry list
