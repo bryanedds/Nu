@@ -35,15 +35,13 @@ module AssetsModule =
         { Name : string
           AssetNames : string list }
 
-    type [<StructuralEquality; NoComparison>] AssetKey =
-        { Name : string
-          PackageName : string }
-
+    /// Maps asset (packages + names) to asset values.
     type 'a AssetMap = Map<string, Map<string, 'a>>
 
 [<RequireQualifiedAccess>]
 module Assets =
 
+    /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
         let attributes = node.Attributes
         let optName = attributes.GetNamedItem NameAttributeName
@@ -65,6 +63,7 @@ module Assets =
                         Associations = associationList
                         PackageName = node.ParentNode.Name }
 
+    /// Attempt to load all the assets from a package Xml node.
     let tryLoadAssetsFromPackageNode optAssociation (node : XmlNode) =
         let assets =
             List.fold
@@ -80,6 +79,7 @@ module Assets =
             | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
         List.ofSeq associatedAssets
         
+    /// Attempt to load all the assets from the document root Xml node.
     let tryLoadAssetsFromRootNode optAssociation (node : XmlNode) =
         let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
         let packageNodes =
@@ -99,7 +99,8 @@ module Assets =
         let assets = List.concat assetLists
         Right assets
 
-    // TODO: test this function!
+    /// Attempt to load all the assets from multiple package Xml nodes.
+    /// TODO: test this function!
     let tryLoadAssetsFromPackageNodes optAssociation nodes =
         let packageNames = List.map (fun (node : XmlNode) -> node.Name) nodes
         match packageNames with
@@ -119,6 +120,7 @@ module Assets =
             | [] -> Right <| Map.ofList assets
             | _ :: _ -> Left <| "Error(s) when loading assets '" + String.Join ("; ", errors) + "'."
 
+    /// Attempt to load all the assets from a package.
     let tryLoadAssetsFromPackage optAssociation packageName (assetGraphFileName : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFileName
@@ -139,7 +141,8 @@ module Assets =
                 | _ :: _ -> Left <| "Multiple packages with the same name '" + packageName + "' is an error."
         with exn -> Left <| string exn
 
-    // TODO: test this function!
+    /// Attempt to load all the assets from multiple packages.
+    /// TODO: test this function!
     let tryLoadAssetsFromPackages optAssociation packageNames (assetGraphFileName : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFileName
@@ -158,7 +161,8 @@ module Assets =
                 tryLoadAssetsFromPackageNodes optAssociation packageNodes
         with exn -> Left <| string exn
 
-    let tryLoadAssetFromDocument optAssociation (assetGraphFileName : string) =
+    /// Try to load all the assets from an asset graph document.
+    let tryLoadAssetsFromDocument optAssociation (assetGraphFileName : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFileName
             let optRootNode = document.[RootNodeName]
@@ -167,6 +171,7 @@ module Assets =
             | rootNode -> tryLoadAssetsFromRootNode optAssociation rootNode
         with exn -> Left <| string exn
 
+    /// Build all the assets.
     let buildAssets inputDir outputDir assets =
         // right now this function only copies if newer
         for asset in assets do
@@ -178,9 +183,10 @@ module Assets =
                 File.GetLastWriteTimeUtc assetFilePath > File.GetLastWriteTimeUtc outputFilePath then
                 File.Copy (assetFilePath, outputFilePath, true)
 
+    /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDir outputDir assetGraphFileName =
         let assetGraphFilePath = Path.Combine (inputDir, assetGraphFileName)
-        let eitherAssets = tryLoadAssetFromDocument None assetGraphFilePath
+        let eitherAssets = tryLoadAssetsFromDocument None assetGraphFilePath
         match eitherAssets with
         | Left error -> Left error
         | Right assets ->

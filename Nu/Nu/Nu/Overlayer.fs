@@ -10,6 +10,7 @@ open Nu.NuConstants
 [<AutoOpen>]
 module OverlayerModule =
 
+    /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
         { OverlayDocument : XmlDocument
           RootNode : XmlNode }
@@ -17,12 +18,15 @@ module OverlayerModule =
 [<RequireQualifiedAccess>]
 module Overlayer =
 
+    /// Make an Overlayer.
     let make (fileName : string) =
         let document = XmlDocument ()
         document.Load fileName
         let root = document.SelectSingleNode RootNodeName
         { OverlayDocument = document; RootNode = root }
 
+    /// Try to select an Xml node from an overlay that describes the overlayed value of the given
+    /// property / field.
     let rec trySelectNode overlayName propertyName overlayer =
         let optBranch = overlayer.RootNode.SelectSingleNode overlayName
         match optBranch with
@@ -45,6 +49,7 @@ module Overlayer =
                     optNode
             | leaf -> Some leaf
 
+    /// Query that the given target's property / field is overlaid.
     let isPropertyOverlaid overlayName propertyName target overlayer =
         match trySelectNode overlayName propertyName overlayer with
         | None -> false
@@ -72,6 +77,7 @@ module Overlayer =
                     overlayValue = propertyValue
                 else false
 
+    /// Query that the given target's property / field is overlaid.
     let isPropertyOverlaid3 propertyName target overlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty ("OptOverlayName", BindingFlags.Public ||| BindingFlags.Instance) with
@@ -84,6 +90,7 @@ module Overlayer =
                 | Some overlayName -> isPropertyOverlaid overlayName propertyName target overlayer
             | _ -> false
 
+    /// Attempt to apply an overlay to a standard .NET property of the given target.
     let tryApplyOverlayToDotNetProperty (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) overlayer =
         if property.PropertyType <> typeof<Xtension> &&
            (match optOldOverlayName with
@@ -95,6 +102,7 @@ module Overlayer =
                 let value = converter.ConvertFrom valueStr
                 property.SetValue (target, value)
 
+    /// Apply an overlay to the standard .NET properties of the given target.
     let applyOverlayToDotNetProperties optOldOverlayName newOverlayName (target : 'a) overlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
@@ -103,6 +111,7 @@ module Overlayer =
             | None -> ()
             | Some fieldNode -> tryApplyOverlayToDotNetProperty property fieldNode optOldOverlayName target overlayer
 
+    /// Apply an overlay to the XFields of the given target's Xtension.
     let applyOverlayToXtension optOldOverlayName newOverlayName target overlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
@@ -138,6 +147,8 @@ module Overlayer =
                 xtensionProperty.SetValue (target, xtension)
             | _ -> ()
 
+    /// Apply an overlay to the given target.
+    /// Only the properties / fields that are overlaid by the old overlay will be changed.
     let applyOverlay optOldOverlayName newOverlayName target overlayer =
         applyOverlayToDotNetProperties optOldOverlayName newOverlayName target overlayer
         applyOverlayToXtension optOldOverlayName newOverlayName target overlayer
