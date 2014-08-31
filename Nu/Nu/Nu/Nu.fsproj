@@ -60,6 +60,7 @@
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="RQueue.fs" />
+    <Compile Include="Address.fs" />
     <Compile Include="NuCore.fs" />
     <Compile Include="NuConstants.fs" />
     <Compile Include="NuMath.fs" />

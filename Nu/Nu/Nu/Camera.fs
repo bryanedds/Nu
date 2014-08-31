@@ -19,13 +19,16 @@ module CameraModule =
 [<RequireQualifiedAccess>]
 module Camera =
 
+    /// Get the view of the camera in absolute terms (world space) with the original single values.
     let getViewAbsoluteF (_ : Camera) =
         Matrix3.Identity
         
+    /// Get the view of the camera in absolute terms (world space) with translation sliced on
+    /// integers.
     let getViewAbsoluteI (_ : Camera) =
         Matrix3.Identity
 
-    /// The relative view of the camera with original float values. Due to the problems with
+    /// The relative view of the camera with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in NuMath.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelativeF camera =
@@ -38,6 +41,7 @@ module Camera =
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
         Matrix3.CreateFromTranslation translationI
 
+    /// Get the bounds of the camera's sight.
     let getBounds camera =
         Vector4 (
             camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
@@ -45,12 +49,15 @@ module Camera =
             camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
             camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
+    /// Query that the given bounds is within the camera's sight.
     let inView (bounds : Vector4) camera =
         NuMath.isBoundsInBounds bounds <| getBounds camera
 
+    /// Query that the given bounds is within the camera's sight.
     let inView3 (position : Vector2) (size : Vector2) camera =
         NuMath.isBoundsInBounds3 position size <| getBounds camera
 
+    /// Transform the given mouse position to the camera's sight.
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =
             Vector2 (
