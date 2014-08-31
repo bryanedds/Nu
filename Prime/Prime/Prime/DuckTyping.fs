@@ -4,7 +4,8 @@
 namespace Prime
 module DuckTypingExample =
 
-    (* This file merely contains code that exemplifies F#'s compile-time duck-typing. *)
+    (* This file merely contains code that exemplifies F#'s compile-time duck-typing, AKA,
+    Structural typing. *)
 
     type RedDuck =
         { Name : string }

@@ -42,23 +42,3 @@ let foldWhile fn initial input =
         Seq.takeWhile Option.isSome |>
         Seq.last |>
         Option.get
-
-/// Compare two sequences.
-let rec compare<'a when 'a :> IComparable<'a>> (left : 'a seq) (right : 'a seq) =
-    let mutable leftEnr = left.GetEnumerator ()
-    let mutable rightEnr = right.GetEnumerator ()
-    let mutable compareResult = 0
-    let mutable noResult = true
-    while noResult do
-        let leftIsDone = not <| leftEnr.MoveNext ()
-        let rightIsDone = not <| rightEnr.MoveNext ()
-        if leftIsDone then
-            if not rightIsDone then compareResult <- 1
-            noResult <- false
-        elif rightIsDone then
-            compareResult <- -1
-            noResult <- false
-        else
-            compareResult <- leftEnr.Current.CompareTo rightEnr.Current
-            if compareResult <> 0 then noResult <- false
-    compareResult

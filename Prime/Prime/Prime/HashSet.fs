@@ -10,6 +10,7 @@ let singleton item =
     List.toHashSet [item]
 
 type HashSet<'a> with
+
     /// Force the addition of an element, removing the existing one if necessary.
     member this.ForceAdd item =
         let forced = this.Remove item

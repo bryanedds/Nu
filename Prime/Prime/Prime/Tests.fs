@@ -10,6 +10,8 @@ open Prime
 open Prime.PrimeConstants
 module Tests =
 
+    /// TODO: test more stuff from Prime.
+
     type [<CLIMutable; NoComparison>] TestXtended =
         { Xtension : Xtension }
 
