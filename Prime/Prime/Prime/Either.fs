@@ -43,47 +43,52 @@ module Either =
     let inline returnFrom value =
         value
 
+    /// Builds an either monad.
     type EitherBuilder () =
         member this.Bind (either, fn) = either >>= fn
         member this.Return value = returnM value
         member this.ReturnFrom value = returnFrom value
 
+    /// The either monad.
     let either = EitherBuilder ()
 
+    /// Queries if the either is a Left value.
     let isLeft either =
         match either with
         | Left _ -> true
         | Right _ -> false
-
+    
+    /// Queries if the either is a Right value.
     let isRight either =
         match either with
         | Right _ -> true
         | Left _ -> false
 
+    /// Get the Left value of an either, failing if not available.
     let getLeftValue either =
         match either with
         | Left a -> a
         | Right _ -> failwith "Could not get Left value from a Right value."
 
+    /// Get the Right value of an either, failing if not available.
     let getRightValue either =
         match either with
         | Left _ -> failwith "Could not get Left value from a Right value."
         | Right b -> b
 
-    let getLefts eithers =
-        Seq.filter isLeft eithers
-
-    let getRights eithers =
-        Seq.filter isRight eithers
-
+    /// Get only the Left values of a sequence of either.
     let getLeftValues eithers =
-        let lefts = getLefts eithers
-        Seq.map getLeftValue lefts
+        Seq.fold
+            (fun lefts either -> match either with Left left -> left :: lefts | Right _ -> lefts)
+            eithers
 
+    /// Get only the Right values of a sequence of either.
     let getRightValues eithers =
-        let rights = getRights eithers
-        Seq.map getRightValue rights
+        Seq.fold
+            (fun rights either -> match either with Left right -> right :: rights | Right _ -> rights)
+            eithers
 
+    /// Split a sequences of eithers into a pair of left and right value lists.
     let split eithers =
         Seq.fold
             (fun (ls, rs) either ->

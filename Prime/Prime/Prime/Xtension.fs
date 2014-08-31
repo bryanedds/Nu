@@ -30,8 +30,7 @@ module XtensionModule =
           TypeName : string } // the .NET type name
 
     /// An indexible collection of XFields.
-    type XFields =
-        Map<string, obj>
+    type XFields = Map<string, obj>
 
     /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
     /// to solve the 'expression problem' in F#, and can also be used to implement a dynamic
@@ -42,6 +41,7 @@ module XtensionModule =
           CanDefault : bool
           Sealed : bool }
 
+        /// Get the default value of an instance of type 'r taking into account XDefaultValue decorations.
         static member private getDefaultValue () : 'r =
             let defaultFieldType = typeof<'r>
             let optDefaultValueAttribute = Seq.tryHead <| defaultFieldType.GetCustomAttributes<XDefaultValueAttribute> ()
@@ -56,22 +56,26 @@ module XtensionModule =
                     if converter.CanConvertFrom defaultValueType then converter.ConvertFrom defaultValue :?> 'r
                     else failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
 
+        /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
         static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
             if this.CanDefault then Xtension.getDefaultValue ()
             else failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
+        /// Get a dispatcher by its name from the given dispatcher container.
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
             let dispatchers = dispatcherContainer.GetDispatchers ()
             match Map.tryFind dispatcherName dispatchers with
             | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
             | Some dispatcher -> dispatcher
-
+        
+        /// Get the assigned dispatcher for an xtension.
         static member getDispatcher xtension (dispatcherContainer : IXDispatcherContainer) =
             let optXDispatcherName = xtension.OptXDispatcherName
             match optXDispatcherName with
             | None -> EmptyDispatcher
             | Some dispatcherName -> Xtension.getDispatcherByName dispatcherName dispatcherContainer
 
+        /// Queries that the target type offers dispatcher behavior congruent to the given dispatcher.
         static member dispatchesAs2 (dispatcherTargetType : Type) dispatcher =
             let dispatcherType = dispatcher.GetType ()
             let result =
@@ -79,11 +83,14 @@ module XtensionModule =
                 dispatcherType.IsSubclassOf dispatcherTargetType
             result
 
+        /// Queries that the target type offers dispatcher behavior congruent to the given xtension.
         static member dispatchesAs (dispatcherTargetType : Type) xtension dispatcherContainer =
             let dispatcher = Xtension.getDispatcher xtension dispatcherContainer
             Xtension.dispatchesAs2 dispatcherTargetType dispatcher
 
         /// The dynamic dispatch operator.
+        /// Example -   let parallax = entity?Parallax () : single
+        /// Example2 -  let renderDescriptor = entity?GetRenderDescriptor () : RenderDescriptor
         /// TODO: search for a way to effectively optimize this function, especially in regard
         /// to its use of MethodInfo.Invoke.
         static member (?) (xtension, memberName) : 'a -> 'r =
@@ -137,6 +144,8 @@ module XtensionModule =
                     | :? 'r as fieldValue -> fieldValue
                     | _ -> Xtension.tryGetDefaultValue xtension memberName
 
+        /// The dynamic assignment operator for an Xtension.
+        /// Example - let entity = entity.Position <- Vector2 (4.0, 5.0).
         static member (?<-) (xtension, fieldName, value) =
     #if DEBUG
             // nop'ed outside of debug mode for efficiency

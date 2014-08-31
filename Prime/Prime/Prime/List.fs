@@ -30,6 +30,7 @@ let rec private subpartitionPlus fnOptU list left right =
         | None -> subpartitionPlus fnOptU tail left (head :: right)
         | Some u -> subpartitionPlus fnOptU tail (u :: left) right
 
+/// Partition a list.
 let partitionPlus fnOptU list =
     subpartitionPlus fnOptU list [] []
 
@@ -311,19 +312,20 @@ let rec remove pred list =
             list
     List.rev listRev
 
+/// Collapse a list from the left.
+/// Example - [0, 1, 2] becomes [[]; [0]; [0; 1]; [0; 1; 2]]
 let collapseLeft list =
     [for x in 0 .. List.length list do
         yield take x list]
 
-let collapseLeftNoEmpty list =
-    [for x in 1 .. List.length list - 1 do
-        yield take x list]
-
+/// Find the duplicates in a list.
+/// TODO: speed this up with a Set internally?
 let rec duplicates z = function
     | [] -> []
     | x :: xs when x = z -> x :: (duplicates x xs)
     | _ :: xs -> duplicates z xs
 
+/// Compare a list of strings lexicographically.
 let rec inline compareStrings (list : string list) (list2 : string list) =
     match (list, list2) with
     | ([], []) -> 0
