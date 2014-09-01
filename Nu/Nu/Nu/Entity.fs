@@ -145,8 +145,8 @@ module EntityModule =
 
         static member writeToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
-            Xtension.writeTargetProperties
-                (fun propertyName -> not <| Overlayer.isPropertyOverlaid3 propertyName entity overlayer)
+            Xtension.writeTargetProperties 
+                (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
                 writer
                 entity
             writer.WriteEndElement ()

@@ -10,6 +10,11 @@ open Nu.NuConstants
 [<AutoOpen>]
 module OverlayerModule =
 
+    type OverlayState =
+        | Bare
+        | Altered
+        | Overlaid
+
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
         { OverlayDocument : XmlDocument
@@ -49,10 +54,10 @@ module Overlayer =
                     optNode
             | leaf -> Some leaf
 
-    /// Query that the given target's property / field is overlaid.
-    let isPropertyOverlaid overlayName propertyName target overlayer =
+    /// Get the given target property's state.
+    let getPropertyState overlayName propertyName target overlayer =
         match trySelectNode overlayName propertyName overlayer with
-        | None -> false
+        | None -> Bare
         | Some overlayNode -> 
             let targetType = target.GetType ()
             let optProperty = targetType.GetProperty (overlayNode.Name, BindingFlags.Public ||| BindingFlags.Instance)
@@ -69,13 +74,17 @@ module Overlayer =
                 | (null, Some xtension) -> Some <| Map.find overlayNode.Name xtension.XFields
                 | (targetProperty, _) -> Some <| targetProperty.GetValue target
             match optPropertyValue with
-            | None -> false
+            | None -> Bare
             | Some propertyValue ->
                 let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
                 if converter.CanConvertFrom typeof<string> then
                     let overlayValue = converter.ConvertFrom overlayNode.InnerText
-                    overlayValue = propertyValue
-                else false
+                    if overlayValue = propertyValue then Overlaid else Altered
+                else Bare
+
+    /// Query that the given target's property / field is overlaid.
+    let isPropertyOverlaid overlayName propertyName target overlayer =
+        getPropertyState overlayName propertyName target overlayer = Overlaid
 
     /// Query that the given target's property / field is overlaid.
     let isPropertyOverlaid3 propertyName target overlayer =
@@ -90,12 +99,22 @@ module Overlayer =
                 | Some overlayName -> isPropertyOverlaid overlayName propertyName target overlayer
             | _ -> false
 
+    /// Query that a property should be serialized.
+    let shouldPropertySerialize overlayName propertyName entity overlayer =
+        not <| isPropertyOverlaid overlayName propertyName entity overlayer
+
+    /// Query that a property should be serialized.
+    let shouldPropertySerialize3 propertyName entity overlayer =
+        not <| isPropertyOverlaid3 propertyName entity overlayer
+
     /// Attempt to apply an overlay to a standard .NET property of the given target.
     let tryApplyOverlayToDotNetProperty (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) overlayer =
-        if property.PropertyType <> typeof<Xtension> &&
-           (match optOldOverlayName with
-            | None -> false
-            | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name target overlayer) then
+        let shouldApplyOverlay =
+            property.PropertyType <> typeof<Xtension> &&
+            (match optOldOverlayName with
+             | None -> false
+             | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name target overlayer)
+        if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
             let converter = TypeDescriptor.GetConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
@@ -131,11 +150,11 @@ module Overlayer =
                 let xFields =
                     List.fold
                         (fun xFields (aType, node : XmlNode) ->
-                            let isOverlaid =
+                            let shouldApplyOverlay =
                                 match optOldOverlayName with
                                 | None -> false
                                 | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target overlayer
-                            if isOverlaid then
+                            if shouldApplyOverlay then
                                 let converter = TypeDescriptor.GetConverter aType
                                 let value = converter.ConvertFrom node.InnerText
                                 (node.Name, value) :: xFields
