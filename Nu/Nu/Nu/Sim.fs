@@ -12,22 +12,6 @@ open OpenTK
 open Prime
 open Nu
 
-// WISDOM: On avoiding threads where possible...
-//
-// Beyond the cases where persistent threads are absolutely required or where transient threads
-// implement embarassingly parallel processes, threads should be AVOIDED as a rule.
-//
-// If it were the case that physics were processed on a separate hardware component and thereby
-// ought to be run on a separate persistent thread, then the proper way to approach the problem of
-// physics system queries is to copy the relevant portion of the physics state from the PPU to main
-// memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
-// need for complex intermediate states (albeit against a physics state that is one frame old).
-
-// WISDOM: On threading physics...
-//
-// A simulation that would put physics on another thread should likely do so in a different app
-// domain with communication via .NET remoting to make 100% sure that no sharing is happening.
-
 [<AutoOpen>]
 module InterativityModule =
 
