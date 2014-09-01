@@ -620,7 +620,6 @@ module Program =
               Clipboard = ref None }
         let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics true editorState
         match optWorld with
-        | Left errorMsg -> Left errorMsg
         | Right world ->
             refWorld := world
             refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
@@ -632,6 +631,7 @@ module Program =
             refWorld := World.subscribe4 UpMouseCenterEventName Address.empty (CustomSub <| endCameraDrag form) !refWorld
             refWorld := World.subscribe4 (RemovingEventName + AnyEventName) Address.empty (CustomSub <| simulantRemovedHandler form) !refWorld
             Right !refWorld
+        | Left errorMsg -> Left errorMsg
 
     let populateCreateEntityComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
@@ -642,8 +642,8 @@ module Program =
 
     let tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
         match tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
-        | Left _ as left -> left
         | Right _ -> Right <| populateCreateEntityComboBox form !refWorld
+        | Left _ as left -> left
 
     let invalidateDisplayPanel (form : NuEditForm) world =
         form.displayPanel.Invalidate ()

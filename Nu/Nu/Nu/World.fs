@@ -256,14 +256,12 @@ module WorldModule =
                             then World.publish4 (SelectEventName + selectedScreenAddress) selectedScreenAddress NoData world
                             else world
                         match world.Liveness with
-                        | Exiting -> world
                         | Running ->
                             let world =
                                 if selectedScreen.Incoming.TransitionTicks = 0L
                                 then World.publish4 (StartIncomingEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 else world
                             match world.Liveness with
-                            | Exiting -> world
                             | Running ->
                                 let (finished, incoming) = World.updateTransition1 selectedScreen.Incoming
                                 let selectedScreen = { selectedScreen with Incoming = incoming }
@@ -272,12 +270,13 @@ module WorldModule =
                                     let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
                                     World.publish4 (FinishIncomingEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 else world
+                            | Exiting -> world
+                        | Exiting -> world
                     | OutgoingState ->
                         let world =
                             if selectedScreen.Outgoing.TransitionTicks <> 0L then world
                             else World.publish4 (StartOutgoingEventName + selectedScreenAddress) selectedScreenAddress NoData world
                         match world.Liveness with
-                        | Exiting -> world
                         | Running ->
                             let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
                             let selectedScreen = { selectedScreen with Outgoing = outgoing }
@@ -286,13 +285,14 @@ module WorldModule =
                                 let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
                                 let world = World.publish4 (DeselectEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 match world.Liveness with
-                                | Exiting -> world
                                 | Running -> World.publish4 (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                                | Exiting -> world
                             else world
+                        | Exiting -> world
                     | IdlingState -> world
             match world.Liveness with
-            | Exiting -> world
             | Running -> update world
+            | Exiting -> world
 
         static member private handleSplashScreenIdleTick idlingTime ticks event world =
             let world = World.unsubscribe SplashScreenTickKey world
@@ -347,15 +347,15 @@ module WorldModule =
         static member tryReloadAssets inputDir outputDir world =
             // TODO: copy over file from fileName as well (the asset graph)
             match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with
-            | Left error -> Left error
             | Right () ->
                 match Metadata.tryGenerateAssetMetadataMap world.AssetGraphFileName with
-                | Left errorMsg -> Left errorMsg
                 | Right assetMetadataMap ->
                     let world = { world with AssetMetadataMap = assetMetadataMap }
                     let world = World.reloadRenderingAssets world
                     let world = World.reloadAudioAssets world
                     Right world
+                | Left errorMsg -> Left errorMsg
+            | Left error -> Left error
 
         static member private play world =
             let audioMessages = world.AudioMessages
@@ -414,7 +414,6 @@ module WorldModule =
 
         static member private handleIntegrationMessage world integrationMessage =
             match world.Liveness with
-            | Exiting -> world
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
@@ -432,6 +431,7 @@ module WorldModule =
                                   Speed = bodyCollisionMessage.Speed
                                   Collidee = bodyCollisionMessage.EntityAddress2 }
                         World.publish4 collisionAddress Address.empty collisionData world
+            | Exiting -> world
 
         static member private handleIntegrationMessages integrationMessages world =
             List.fold World.handleIntegrationMessage world integrationMessages
@@ -487,18 +487,18 @@ module WorldModule =
                 (fun world ->
                     let world = World.integrate world
                     match world.Liveness with
-                    | Exiting -> (Exiting, world)
                     | Running ->
                         let world = World.publish4 TickEventName Address.empty NoData world
                         match world.Liveness with
-                        | Exiting -> (Exiting, world)
                         | Running ->
                             let world = World.updateTransition handleUpdate world
                             match world.Liveness with
-                            | Exiting -> (Exiting, world)
                             | Running ->
                                 let world = World.runTasks world
-                                (world.Liveness, world))
+                                (world.Liveness, world)
+                            | Exiting -> (Exiting, world)
+                        | Exiting -> (Exiting, world)
+                    | Exiting -> (Exiting, world))
                 (fun world -> let world = World.render world in handleRender world)
                 (fun world -> let world = World.play world in { world with TickTime = world.TickTime + 1L })
                 (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
@@ -526,7 +526,6 @@ module WorldModule =
 
         static member tryMakeEmpty sdlDeps gameDispatcher interactivity farseerCautionMode extData =
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
-            | Left errorMsg -> Left errorMsg
             | Right assetMetadataMap ->
                 let gameDispatcherName = (gameDispatcher.GetType ()).Name
                 let dispatchers =
@@ -574,6 +573,7 @@ module WorldModule =
                       ExtData = extData }
                 let world = world.Game.Register world
                 Right world
+            | Left errorMsg -> Left errorMsg
 
         static member rebuildPhysicsHack groupAddress world =
             let outstandingMessages = world.PhysicsMessages

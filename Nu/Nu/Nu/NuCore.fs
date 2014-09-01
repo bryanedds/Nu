@@ -17,8 +17,8 @@ module NuCoreModule =
 
     /// Specifies whether the engine is running or exiting.
     type Liveness =
-        | Exiting
         | Running
+        | Exiting
 
 [<RequireQualifiedAccess>]
 module NuCore =

@@ -135,9 +135,6 @@ module Audio =
     let private tryLoadAudioPackage packageName audioPlayer =
         let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName audioPlayer.AssetGraphFileName
         match optAssets with
-        | Left error ->
-            trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, audioPlayer.AssetGraphFileName) + "'."
-            audioPlayer
         | Right assets ->
             let optAudioAssets = List.map tryLoadAudioAsset2 assets
             let audioAssets = List.definitize optAudioAssets
@@ -149,7 +146,10 @@ module Audio =
             | Some audioAssetMap ->
                 let audioAssetMap = Map.addMany audioAssets audioAssetMap
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
-
+        | Left error ->
+            trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, audioPlayer.AssetGraphFileName) + "'."
+            audioPlayer
+        
     let private tryLoadAudioAsset packageName assetName audioPlayer =
         let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
         let (audioPlayer, optAssetMap) =
