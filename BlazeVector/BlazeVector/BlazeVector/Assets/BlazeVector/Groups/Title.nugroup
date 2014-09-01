@@ -4,7 +4,6 @@
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entity>
       <Name>Credits</Name>
-      <Depth>0</Depth>
       <Position>-128;-160</Position>
       <Size>256;64</Size>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
@@ -15,7 +14,6 @@
     </Entity>
     <Entity>
       <Name>Exit</Name>
-      <Depth>0</Depth>
       <Position>-128;-224</Position>
       <Size>256;64</Size>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
@@ -26,7 +24,6 @@
     </Entity>
     <Entity>
       <Name>Play</Name>
-      <Depth>0</Depth>
       <Position>-128;-96</Position>
       <Size>256;64</Size>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
@@ -37,19 +34,17 @@
     </Entity>
     <Entity>
       <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
-      <Depth>0</Depth>
       <Position>-320;96</Position>
       <Size>640;128</Size>
       <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TextDispatcher)">
-        <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default</BackgroundImage>
         <Text type="System.String">BlazeVector</Text>
       </Xtension>
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Depth>-1</Depth>
       <Position>-480;-272</Position>
+      <Depth>-1</Depth>
       <Size>960;544</Size>
       <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(LabelDispatcher)">

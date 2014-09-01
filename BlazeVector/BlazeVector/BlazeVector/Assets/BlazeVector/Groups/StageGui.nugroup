@@ -4,8 +4,8 @@
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entity>
       <Name>Back</Name>
-      <Depth>10</Depth>
       <Position>-128;-224</Position>
+      <Depth>10</Depth>
       <Size>256;64</Size>
       <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(ButtonDispatcher)">
@@ -15,8 +15,8 @@
     </Entity>
     <Entity>
       <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Depth>-100</Depth>
       <Position>-480;-272</Position>
+      <Depth>-100</Depth>
       <Size>960;544</Size>
       <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(LabelDispatcher)">
