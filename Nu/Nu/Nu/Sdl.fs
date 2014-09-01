@@ -10,17 +10,20 @@ open Nu.NuConstants
 [<AutoOpen>]
 module SdlModule =
 
+    /// Describes the initial configuration of a window created via SDL.
     type SdlWindowConfig =
         { WindowTitle : string
           WindowX : int
           WindowY : int
           WindowFlags : SDL.SDL_WindowFlags }
 
+    /// Describes the view that SDL will use to render.
     type SdlViewConfig =
         | NewWindow of SdlWindowConfig
         | ExistingWindow of nativeint
-        //| FullScreen
+        //| FullScreen TODO: implement
 
+    /// Describes the general configuration of SDL.
     type SdlConfig =
         { ViewConfig : SdlViewConfig
           ViewW : int
@@ -28,6 +31,7 @@ module SdlModule =
           RendererFlags : SDL.SDL_RendererFlags
           AudioChunkSize : int }
 
+    /// The dependencies needed to initialize SDL.
     type SdlDeps =
         { RenderContext : nativeint
           Window : nativeint
@@ -49,6 +53,7 @@ module Sdl =
 
     let resourceNop (_ : nativeint) = ()
 
+    /// Initalize SDL and continue into a given action (AKA, continuation).
     let withSdlInit create destroy action =
         let initResult = create ()
         let error = SDL.SDL_GetError ()
@@ -60,6 +65,7 @@ module Sdl =
             destroy ()
             result
 
+    /// Initalize an SDL resources and continue into a given action (AKA, continuation).
     let withSdlResource create destroy action =
         let resource = create ()
         if resource = IntPtr.Zero then
@@ -71,6 +77,7 @@ module Sdl =
             destroy resource
             result
 
+    /// Initalize a global SDL resources and continue into a given action (AKA, continuation).
     let withSdlGlobalResource create destroy action =
         let resource = create ()
         if resource <> 0 then
@@ -82,6 +89,7 @@ module Sdl =
             destroy ()
             result
 
+    /// Advance the game engine's logic by one frame.
     let advance handleEvent handleUpdate world =
         let mutable result = (Running, world)
         let polledEvent = ref (SDL.SDL_Event ())
@@ -94,6 +102,7 @@ module Sdl =
         | Running -> result <- handleUpdate (snd result)
         result
 
+    /// Render the game engine's current frame.
     let render handleRender sdlDeps world =
         match ScreenClearing with
         | NoClear -> ()
@@ -104,9 +113,11 @@ module Sdl =
         SDL.SDL_RenderPresent sdlDeps.RenderContext
         world
 
+    /// Play the game engine's current audio.
     let play handlePlay world =
         handlePlay world
 
+    /// Run the game engine with the given handlers.
     let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
         match liveness with
         | Exiting -> ()
@@ -119,7 +130,8 @@ module Sdl =
                 let world = play handlePlay world
                 run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world
 
-    let run tryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
+    /// Run the game engine with the given handlers.
+    let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
         withSdlInit
             (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
             (fun () -> SDL.SDL_Quit ())
@@ -152,7 +164,7 @@ module Sdl =
                                 (fun () -> SDL_mixer.Mix_CloseAudio ())
                                 (fun () ->
                                     let sdlDeps = { RenderContext = renderContext; Window = window; Config = sdlConfig }
-                                    let optWorld = tryMakeWorld sdlDeps
+                                    let optWorld = handleTryMakeWorld sdlDeps
                                     match optWorld with
                                     | Left errorMsg ->
                                         trace errorMsg
