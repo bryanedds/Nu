@@ -13,8 +13,8 @@ module EitherModule =
         | Left of 'a
         override this.ToString () =
             match this with
-            | Left a -> "Left(" + string a + ")"
             | Right b -> "Right(" + string b + ")"
+            | Left a -> "Left(" + string a + ")"
 
     /// Monadic bind.
     let inline (>>=) either fn =
