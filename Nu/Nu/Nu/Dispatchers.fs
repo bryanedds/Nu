@@ -58,21 +58,6 @@ module EntityDispatcherModule =
                 entitiesSorted
 
 [<AutoOpen>]
-module GuiDispatcherModule =
-
-    type Entity with
-        
-        member entity.Enabled = entity?Enabled () : bool
-        static member setEnabled (value : bool) (entity : Entity) : Entity = entity?Enabled <- value
-
-    type [<AbstractClass>] GuiDispatcher (facetNames) =
-        inherit EntityDispatcher (facetNames)
-
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            Entity.setEnabled true entity
-
-[<AutoOpen>]
 module SimpleBodyFacetModule =
 
     type Entity with
@@ -259,6 +244,21 @@ module SimpleAnimatedSpriteFacet =
 
     let getQuickSize (entity : Entity) (_ : World) =
         entity.TileSize
+
+[<AutoOpen>]
+module GuiDispatcherModule =
+
+    type Entity with
+        
+        member entity.Enabled = entity?Enabled () : bool
+        static member setEnabled (value : bool) (entity : Entity) : Entity = entity?Enabled <- value
+
+    type [<AbstractClass>] GuiDispatcher (facetNames) =
+        inherit EntityDispatcher (facetNames)
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            Entity.setEnabled true entity
 
 [<AutoOpen>]
 module SimpleBodyDispatcherModule =
