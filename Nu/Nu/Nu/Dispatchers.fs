@@ -57,11 +57,12 @@ module EntityDispatcherModule =
                     picked)
                 entitiesSorted
 
+
 [<AutoOpen>]
 module GuiDispatcherModule =
 
     type Entity with
-
+        
         member entity.Enabled = entity?Enabled () : bool
         static member setEnabled (value : bool) (entity : Entity) : Entity = entity?Enabled <- value
 
