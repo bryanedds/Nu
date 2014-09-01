@@ -15,6 +15,7 @@ open Nu
 [<AutoOpen>]
 module InterativityModule =
 
+    /// Describes the current state of the game engine's level of 'interactivity'.
     type Interactivity =
         | Gui
         | GuiAndPhysics
@@ -23,12 +24,14 @@ module InterativityModule =
 [<RequireQualifiedAccess>]
 module Interactivity =
 
+    /// Query that the engine is in game-playing mode.
     let isGamePlaying interactivity =
         match interactivity with
         | Gui -> false
         | GuiAndPhysics -> false
         | GuiAndPhysicsAndGamePlay -> true
 
+    /// Query that the physics system is running.
     let isPhysicsRunning interactivity =
         match interactivity with
         | Gui -> false
@@ -38,6 +41,8 @@ module Interactivity =
 [<AutoOpen>]
 module TransitionTypeModule =
 
+    /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
+    /// means an existing screen being hidden.
     type [<StructuralEquality; NoComparison>] TransitionType =
         | Incoming
         | Outgoing
@@ -45,6 +50,7 @@ module TransitionTypeModule =
 [<AutoOpen>]
 module ScreenStateModule =
 
+    /// The state of a screen in regards to its transitions.
     type [<StructuralEquality; NoComparison>] ScreenState =
         | IncomingState
         | OutgoingState
@@ -53,13 +59,15 @@ module ScreenStateModule =
 [<AutoOpen>]
 module SimModule =
 
+    /// The type around which the whole game engine is based! Used in combination with dispatchers
+    /// to implement things like buttons, avatars, blocks, and all things of that sort.
     type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
           Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
           Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Rotation : single // NOTE: will become a Vector3 or Quaternion if Nu gets 3d capabilities
+          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
           OptOverlayName : string option
           Xtension : Xtension }
@@ -90,6 +98,7 @@ module SimModule =
         static member setVisible visible (entity : Entity) =
              { entity with Visible = visible }
 
+    /// Forms logical groups of entities.
     type [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
           Xtension : Xtension }
@@ -105,12 +114,15 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
 
+    /// The state of one of a screen's transitions.
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { TransitionLifetime : int64
           TransitionTicks : int64
           TransitionType : TransitionType
           OptDissolveImage : Image option }
 
+    /// The screen type that allows transitioning to and fro other screens, and also hosts the
+    /// currently interactive groups of entities.
     type [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
           State : ScreenState
@@ -129,6 +141,7 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
 
+    /// The game type that hosts the various screens used to navigate through a game.
     type [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           OptSelectedScreenAddress : Address option
@@ -145,41 +158,43 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
 
+    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
     type [<StructuralEquality; NoComparison>] Simulant =
         | Game of Game
         | Screen of Screen
         | Group of Group
         | Entity of Entity
 
+    /// A task to be completed at the given time, with time being represented by the world's tick
+    /// field.
     type [<ReferenceEquality>] Task =
         { ScheduledTime : int64
           Operation : World -> World }
 
+    /// The data for a mouse move event.
     and [<StructuralEquality; NoComparison>] MouseMoveData =
         { Position : Vector2 }
 
+    /// The data for a mouse button event.
     and [<StructuralEquality; NoComparison>] MouseButtonData =
         { Position : Vector2
           Button : MouseButton }
 
+    /// The data for an entity collision event.
     and [<StructuralEquality; NoComparison>] EntityCollisionData =
         { Normal : Vector2
           Speed : single
           Collidee : Address }
 
+    /// The data for an entity change event.
     and [<StructuralEquality; NoComparison>] EntityChangeData =
         { OldEntity : Entity }
 
-    and [<StructuralEquality; NoComparison>] GroupChangeData =
-        { OldGroup : Group }
-
-    and [<StructuralEquality; NoComparison>] ScreenChangeData =
-        { OldScreen : Screen }
-
+    /// The data for a user-defined event.
     and [<StructuralEquality; NoComparison>] OtherData =
         { Obj : obj }
 
-    /// Describes data relevant to specific events.
+    /// The data for an event.
     and [<ReferenceEquality>] EventData =
         | MouseMoveData of MouseMoveData
         | MouseButtonData of MouseButtonData
@@ -188,20 +203,20 @@ module SimModule =
         | OtherData of OtherData
         | NoData
 
-    /// A generic event for the Nu game engine.
-    /// A reference type.
+    /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] Event =
         { Name : Address
           Publisher : Address
           Subscriber : Address
           Data : EventData }
 
+    /// Describes whether or not an event has been handled and should therefore no longer be
+    /// propagated.
     and EventHandled =
         | Handled
         | Unhandled
 
     /// Describes a game event subscription.
-    /// A reference type.
     and [<ReferenceEquality>] Subscription =
         | ExitSub
         | SwallowSub
@@ -209,20 +224,23 @@ module SimModule =
         | ScreenTransitionFromSplashSub of Address (*desinationScreen*)
         | CustomSub of (Event -> World -> EventHandled * World)
 
-    /// TODO: document
+    /// An entry into the world's subscription map.
     and SubscriptionEntry = Guid * Address * Subscription
 
     /// A map of event subscriptions.
-    /// A reference type due to the reference-typeness of Subscription.
     and SubscriptionEntries = Map<Address, SubscriptionEntry list>
 
-    /// TODO: document
+    /// Abstracts over a subscription sorting procedure.
     and SubscriptionSorter = SubscriptionEntry list -> World -> SubscriptionEntry list
 
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, Address * Address>
 
-    /// The world, in a functional programming sense.
+    /// The world, in a functional programming sense. Hosts the game object, the dependencies
+    /// needed to implement a game, messages to by consumed by the various engine sub-systems,
+    /// and general configuration data.
+    ///
+    /// TODO: see if the size of this type might have a non-trivial impact on performance.
     and [<ReferenceEquality>] World =
         { Game : Game
           Screens : Map<string, Screen>
@@ -255,10 +273,159 @@ module SimModule =
 [<RequireQualifiedAccess>]
 module EventData =
 
+    /// A convenience function to forcibly extract mouse movement data from an event data abstraction.
     let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + string data + "'."
+    
+    /// A convenience function to forcibly extract mouse button data from an event data abstraction.
     let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + string data + "'."
+    
+    /// A convenience function to forcibly extract entity collision data from an event data abstraction.
     let toEntityCollisionData data = match data with EntityCollisionData d -> d | _ -> failwith <| "Expected EntityCollisionData from event data '" + string data + "'."
+    
+    /// A convenience function to forcibly extract user-defined data from an event data abstraction.
     let toOtherData data = match data with OtherData d -> d | _ -> failwith <| "Expected OtherData from event data '" + string data + "'."
+
+module World =
+
+    /// Query that the engine is in game-playing mode.
+    let isGamePlaying world = Interactivity.isGamePlaying world.Interactivity
+
+    /// Query that the physics system is running.
+    let isPhysicsRunning world = Interactivity.isPhysicsRunning world.Interactivity
+
+    /// Publish an event.
+    let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
+    
+    /// Publish an event.
+    let mutable publish4 = Unchecked.defaultof<Address -> Address -> EventData -> World -> World>
+    
+    /// Subscribe to an event.
+    let mutable subscribe = Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
+    
+    /// Subscribe to an event.
+    let mutable subscribe4 = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+    
+    /// Unsubscribe from an event.
+    let mutable unsubscribe = Unchecked.defaultof<Guid -> World -> World>
+    
+    /// Keep active a subscription for the duration of a procedure.
+    let mutable withSubscription = Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
+    
+    /// Keep active a subscription for the lifetime of a simulant.
+    let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+
+[<AutoOpen>]
+module WorldPhysicsModule =
+
+    type World with
+
+        /// Send a message to the physics system to create a body with the given physics id.
+        static member createBody entityAddress physicsId position rotation bodyProperties world =
+            let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; PhysicsId = physicsId; Position = position; Rotation = rotation; BodyProperties = bodyProperties }
+            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
+
+        /// Send a message to the physics system to destroy a body with the given physics id.
+        static member destroyBody physicsId world =
+            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
+            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+
+        /// Send a message to the physics system to set the position of a body with the given physics id.
+        static member setPosition position physicsId world =
+            let setPositionMessage = SetPositionMessage { PhysicsId = physicsId; Position = position }
+            { world with PhysicsMessages = setPositionMessage :: world.PhysicsMessages }
+
+        /// Send a message to the physics system to set the rotation of a body with the given physics id.
+        static member setRotation rotation physicsId world =
+            let setRotationMessage = SetRotationMessage { PhysicsId = physicsId; Rotation = rotation }
+            { world with PhysicsMessages = setRotationMessage :: world.PhysicsMessages }
+
+        /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
+        static member setLinearVelocity linearVelocity physicsId world =
+            let setLinearVelocityMessage = SetLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
+            { world with PhysicsMessages = setLinearVelocityMessage :: world.PhysicsMessages }
+
+        /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
+        static member applyLinearImpulse linearImpulse physicsId world =
+            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
+            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+
+        /// Send a message to the physics system to apply force to a body with the given physics id.
+        static member applyForce force physicsId world =
+            let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
+            { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+
+[<AutoOpen>]
+module WorldRenderingModule =
+
+    type World with
+
+        /// Hint that a rendering asset package with the given name should be loaded. Should be
+        /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
+        static member hintRenderingPackageUse packageName world =
+            let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { PackageName = packageName }
+            { world with RenderMessages = hintRenderingPackageUseMessage :: world.RenderMessages }
+            
+        /// Hint that a rendering package should be unloaded since its assets will not be used
+        /// again (or until specified via World.hintRenderingPackageUse).
+        static member hintRenderingPackageDisuse packageName world =
+            let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { PackageName = packageName }
+            { world with RenderMessages = hintRenderingPackageDisuseMessage :: world.RenderMessages }
+            
+        /// Send a message to the renderer to reload its rendering assets.
+        static member reloadRenderingAssets world =
+            let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage
+            { world with RenderMessages = reloadRenderingAssetsMessage :: world.RenderMessages }
+
+[<AutoOpen>]
+module WorldAudioModule =
+
+    type World with
+
+        /// Send a message to the audio system to play a song.
+        static member playSong song volume timeToFadeOutSongMs world =
+            let playSongMessage = PlaySongMessage { Song = song; Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs }
+            { world with AudioMessages = playSongMessage :: world.AudioMessages }
+
+        /// Send a message to the audio system to play a song.
+        static member playSong6 songAssetName packageName volume timeToFadeOutSongMs world =
+            let song = { SongAssetName = songAssetName; PackageName = packageName }
+            World.playSong song volume timeToFadeOutSongMs world
+
+        /// Send a message to the audio system to play a sound.
+        static member playSound sound volume world =
+            let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
+            { world with AudioMessages = playSoundMessage :: world.AudioMessages }
+
+        /// Send a message to the audio system to play a sound.
+        static member playSound5 soundAssetName packageName volume world =
+            let sound = { SoundAssetName = soundAssetName; PackageName = packageName }
+            World.playSound sound volume world
+
+        /// Send a message to the audio system to fade out a song.
+        static member fadeOutSong timeToFadeOutSongMs world =
+            let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
+            { world with AudioMessages = fadeOutSongMessage :: world.AudioMessages }
+
+        /// Send a message to the audio system to stop a song.
+        static member stopSong world =
+            { world with AudioMessages = StopSongMessage :: world.AudioMessages }
+            
+        /// Hint that an audio asset package with the given name should be loaded. Should be used
+        /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
+        static member hintAudioPackageUse packageName world =
+            let hintAudioPackageUseMessage = HintAudioPackageUseMessage { PackageName = packageName }
+            { world with AudioMessages = hintAudioPackageUseMessage :: world.AudioMessages }
+            
+        /// Hint that an audio package should be unloaded since its assets will not be used again
+        /// (or until specified via a HintAudioPackageUseMessage).
+        static member hintAudioPackageDisuse packageName world =
+            let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { PackageName = packageName }
+            { world with AudioMessages = hintAudioPackageDisuseMessage :: world.AudioMessages }
+
+        /// Send a message to the audio player to reload its audio assets.
+        static member reloadAudioAssets world =
+            let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
+            { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }
 
 [<RequireQualifiedAccess>]
 module Sim =
@@ -305,109 +472,3 @@ module Sim =
         | Some simulant ->
             let (simulant, world) = fn simulant
             setSimulant address simulant world
-
-module World =
-
-    let isPhysicsRunning world =
-        Interactivity.isPhysicsRunning world.Interactivity
-
-    let isGamePlaying world =
-        Interactivity.isGamePlaying world.Interactivity
-
-    let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
-    let mutable publish4 = Unchecked.defaultof<Address -> Address -> EventData -> World -> World>
-    let mutable subscribe = Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
-    let mutable subscribe4 = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
-    let mutable unsubscribe = Unchecked.defaultof<Guid -> World -> World>
-    let mutable withSubscription = Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
-    let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
-
-[<AutoOpen>]
-module WorldPhysicsModule =
-
-    type World with
-
-        static member createBody entityAddress physicsId position rotation bodyProperties world =
-            let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; PhysicsId = physicsId; Position = position; Rotation = rotation; BodyProperties = bodyProperties }
-            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
-
-        static member destroyBody physicsId world =
-            let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
-
-        static member setPosition position physicsId world =
-            let setPositionMessage = SetPositionMessage { PhysicsId = physicsId; Position = position }
-            { world with PhysicsMessages = setPositionMessage :: world.PhysicsMessages }
-
-        static member setRotation rotation physicsId world =
-            let setRotationMessage = SetRotationMessage { PhysicsId = physicsId; Rotation = rotation }
-            { world with PhysicsMessages = setRotationMessage :: world.PhysicsMessages }
-
-        static member setLinearVelocity linearVelocity physicsId world =
-            let setLinearVelocityMessage = SetLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
-            { world with PhysicsMessages = setLinearVelocityMessage :: world.PhysicsMessages }
-
-        static member applyLinearImpulse linearImpulse physicsId world =
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
-            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
-
-        static member applyForce force physicsId world =
-            let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
-            { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
-
-[<AutoOpen>]
-module WorldRenderingModule =
-
-    type World with
-
-        static member hintRenderingPackageUse packageName world =
-            let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { PackageName = packageName }
-            { world with RenderMessages = hintRenderingPackageUseMessage :: world.RenderMessages }
-
-        static member hintRenderingPackageDisuse packageName world =
-            let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { PackageName = packageName }
-            { world with RenderMessages = hintRenderingPackageDisuseMessage :: world.RenderMessages }
-
-        static member reloadRenderingAssets world =
-            let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage
-            { world with RenderMessages = reloadRenderingAssetsMessage :: world.RenderMessages }
-
-[<AutoOpen>]
-module WorldAudioModule =
-
-    type World with
-
-        static member playSong song volume timeToFadeOutSongMs world =
-            let playSongMessage = PlaySongMessage { Song = song; Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs }
-            { world with AudioMessages = playSongMessage :: world.AudioMessages }
-
-        static member playSong6 songAssetName packageName volume timeToFadeOutSongMs world =
-            let song = { SongAssetName = songAssetName; PackageName = packageName }
-            World.playSong song volume timeToFadeOutSongMs world
-
-        static member playSound sound volume world =
-            let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
-            { world with AudioMessages = playSoundMessage :: world.AudioMessages }
-
-        static member playSound5 soundAssetName packageName volume world =
-            let sound = { SoundAssetName = soundAssetName; PackageName = packageName }
-            World.playSound sound volume world
-
-        static member fadeOutSong timeToFadeOutSongMs world =
-            let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
-            { world with AudioMessages = fadeOutSongMessage :: world.AudioMessages }
-
-        static member stopSong world =
-            { world with AudioMessages = StopSongMessage :: world.AudioMessages }
-
-        static member hintAudioPackageUse packageName world =
-            let hintAudioPackageUseMessage = HintAudioPackageUseMessage { PackageName = packageName }
-            { world with AudioMessages = hintAudioPackageUseMessage :: world.AudioMessages }
-
-        static member hintAudioPackageDisuse packageName world =
-            let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { PackageName = packageName }
-            { world with AudioMessages = hintAudioPackageDisuseMessage :: world.AudioMessages }
-
-        static member reloadAudioAssets world =
-            let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
-            { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }

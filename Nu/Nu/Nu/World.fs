@@ -197,7 +197,7 @@ module WorldModule =
         static member subscribe4Definition eventName subscriber subscription world =
             World.subscribe (World.makeSubscriptionKey ()) eventName subscriber subscription world
 
-        /// Unsubscribe to an event.
+        /// Unsubscribe from an event.
         static member unsubscribeDefinition subscriptionKey world =
             match Map.tryFind subscriptionKey world.Unsubscriptions with
             | None -> world // TODO: consider failure signal
@@ -216,14 +216,14 @@ module WorldModule =
                     let unsubscriptions = Map.remove subscriptionKey world.Unsubscriptions
                     { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
-        /// Execute a procedure within the context of a given subscription for the given event.
+        /// Keep active a subscription for the duration of a procedure.
         static member withSubscriptionDefinition eventName subscriber subscription procedure world =
             let subscriptionKey = World.makeSubscriptionKey ()
             let world = World.subscribe subscriptionKey eventName subscriber subscription world
             let world = procedure world
             World.unsubscribe subscriptionKey world
 
-        /// Subscribe to an event during the lifetime of the subscriber.
+        /// Keep active a subscription for the lifetime of a simulant.
         static member observeDefinition eventName subscriber subscription world =
             if Address.isEmpty subscriber then
                 debug "Cannot observe events with an anonymous subscriber."
