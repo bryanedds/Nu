@@ -15,6 +15,7 @@ open Nu.NuConstants
 [<AutoOpen>]
 module PhysicsModule =
 
+    /// Identifies a target whose body can be found in the Integrator.
     type [<StructuralEquality; StructuralComparison>] PhysicsId =
         struct
             val Major : Guid
@@ -23,36 +24,44 @@ module PhysicsModule =
             override this.ToString () = "{ Major = " + string this.Major + "; Minor = " + string this.Minor + " }"
             end
 
+    /// Physics-specific vertices type.
     type Vertices = Vector2 list
 
+    /// The shape of a physics box.
     type [<StructuralEquality; NoComparison>] BoxShape =
         { Extent : Vector2
           Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
+    /// The shape of a physics circle.
     type [<StructuralEquality; NoComparison>] CircleShape =
         { Radius : single
           Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
+    /// The shape of a physics capsule.
     type [<StructuralEquality; NoComparison>] CapsuleShape =
         { Height : single
           Radius : single
           Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
+    /// The shape of a physics polygon.
     type [<StructuralEquality; NoComparison>] PolygonShape =
         { Vertices : Vertices
           Center : Vector2 } // NOTE: I guess this is like a center offset for the shape?
 
+    /// The shape of a physics body.
     type [<StructuralEquality; NoComparison>] BodyShape =
         | BoxShape of BoxShape
         | CircleShape of CircleShape
         | CapsuleShape of CapsuleShape
         | PolygonShape of PolygonShape
 
+    /// The type of a physics body; Static, Kinematic, or Dynamic.
     type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] BodyType =
         | Static
         | Kinematic
         | Dynamic
 
+    /// Converts BodyType types.
     and BodyTypeTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -75,6 +84,7 @@ module PhysicsModule =
                 | "Dynamic" -> Dynamic :> obj
                 | other -> failwith <| "Unknown BodyType '" + other + "'."
 
+    /// The properties needed to describe a physical body.
     type [<StructuralEquality; NoComparison>] BodyProperties =
         { Shape : BodyShape
           BodyType : BodyType
@@ -90,6 +100,7 @@ module PhysicsModule =
           IsBullet : bool
           IsSensor : bool }
 
+    /// A message to the physics system to create a body.
     type [<StructuralEquality; NoComparison>] CreateBodyMessage =
         { EntityAddress : Address
           PhysicsId : PhysicsId
@@ -97,43 +108,52 @@ module PhysicsModule =
           Rotation : single
           BodyProperties : BodyProperties }
 
+    /// A message to the physics system to destroy a body.
     type [<StructuralEquality; NoComparison>] DestroyBodyMessage =
         { PhysicsId : PhysicsId }
 
+    /// A message to the physics system to destroy a body.
     type [<StructuralEquality; NoComparison>] SetPositionMessage =
         { PhysicsId : PhysicsId
           Position : Vector2 }
 
+    /// A message to the physics system to set the rotation of a body.
     type [<StructuralEquality; NoComparison>] SetRotationMessage =
         { PhysicsId : PhysicsId
           Rotation : single }
 
+    /// A message to the physics system to set the linear velocity of a body.
     type [<StructuralEquality; NoComparison>] SetLinearVelocityMessage =
         { PhysicsId : PhysicsId
           LinearVelocity : Vector2 }
 
+    /// A message to the physics system to apply a linear impulse to a body.
     type [<StructuralEquality; NoComparison>] ApplyLinearImpulseMessage =
         { PhysicsId : PhysicsId
           LinearImpulse : Vector2 }
 
+    /// A message to the physics system to apply a force to a body.
     type [<StructuralEquality; NoComparison>] ApplyForceMessage =
         { PhysicsId : PhysicsId
           Force : Vector2 }
 
+    /// A message from the physics system describing a body collision that took place.
     type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
         { EntityAddress : Address
           EntityAddress2 : Address
           Normal : Vector2
           Speed : single }
 
+    /// A message from the physics system describing the updated transform of a body.
     type [<StructuralEquality; NoComparison>] BodyTransformMessage =
         { EntityAddress : Address
           Position : Vector2
           Rotation : single }
 
-    type BodyDictionary =
-        Dictionary<PhysicsId, Dynamics.Body>
+    /// Tracks physics bodies by their PhysicsIds.
+    type BodyDictionary = Dictionary<PhysicsId, Dynamics.Body>
 
+    /// A message to the physics system.
     type [<StructuralEquality; NoComparison>] PhysicsMessage =
         | CreateBodyMessage of CreateBodyMessage
         | DestroyBodyMessage of DestroyBodyMessage
@@ -145,10 +165,15 @@ module PhysicsModule =
         | SetGravityMessage of Vector2
         | RebuildPhysicsHackMessage
 
+    /// A message from the physics system.
     type [<StructuralEquality; NoComparison>] IntegrationMessage =
         | BodyCollisionMessage of BodyCollisionMessage
         | BodyTransformMessage of BodyTransformMessage
 
+    /// The physics integrator. Represent the physics system in Nu.
+    /// NOTE: you should never access the PhysicsContext from outside the physics system.
+    /// TODO: consider making the Integrator an abstract data type to hide the PhysicsContext, or
+    /// at least give said field a name that communicates its desired privacy.
     type [<ReferenceEquality>] Integrator =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
@@ -160,9 +185,11 @@ module PhysicsModule =
 [<RequireQualifiedAccess>]
 module Physics =
 
+    /// The invalid physics id.
     let InvalidId =
         PhysicsId (NuCore.InvalidId, NuCore.InvalidId)
 
+    /// Make a PhysicsId for an external entity.
     let makeId (entityId : Guid) =
         PhysicsId (entityId, NuCore.makeId ())
 
@@ -213,9 +240,11 @@ module Physics =
             current <- current.Next
         List.ofSeq contacts
 
+    /// Does the integrator contain the body with the given physics id?
     let hasBody physicsId integrator =
         integrator.Bodies.ContainsKey physicsId
 
+    /// Get the contact normals of the body with the given physics id.
     let getBodyContactNormals physicsId integrator =
         let contacts = getBodyContacts physicsId integrator
         List.map
@@ -224,10 +253,12 @@ module Physics =
                 Vector2 (normal.X, normal.Y))
             contacts
 
+    /// Get the linear velocity of the body with the given physics id.
     let getLinearVelocity physicsId integrator =
         let body = integrator.Bodies.[physicsId]
         toPixelV2 body.LinearVelocity
 
+    /// Get the contact normals where the body with the given physics id is touching the ground.
     let getGroundContactNormals physicsId integrator =
         let normals = getBodyContactNormals physicsId integrator
         List.filter
@@ -236,6 +267,7 @@ module Physics =
                 theta < Math.PI * 0.25)
             normals
 
+    /// Try to get a contact normal where the body with the given physics id is touching the ground.
     let getOptGroundContactNormal physicsId integrator =
         let groundNormals = getGroundContactNormals physicsId integrator
         match groundNormals with
@@ -244,15 +276,24 @@ module Physics =
             let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
             Some averageNormal
 
+    /// Try to get a contact tangent where the body with the given physics id is touching the ground.
     let getOptGroundContactTangent physicsId integrator =
         match getOptGroundContactNormal physicsId integrator with
         | None -> None
         | Some normal -> Some <| Vector2 (normal.Y, -normal.X) 
 
+    /// Query that the body with the give physics id is on the ground.
     let isBodyOnGround physicsId integrator =
         let groundNormals = getGroundContactNormals physicsId integrator
         not <| List.isEmpty groundNormals
 
+    /// Convert a category expression to a value that represents collision categories.
+    /// Examples -
+    ///     * = -1
+    ///     0 = 0
+    ///     1 = 1
+    ///     10 = 2
+    ///     2 = ERROR - input must be either * or a binary number!
     let toCollisionCategories categoryExpr =
         match categoryExpr with
         | "*" -> -1
@@ -418,6 +459,7 @@ module Physics =
                           Rotation = body.Rotation }
                 integrator.IntegrationMessages.Add bodyTransformMessage
 
+    /// Integrate (or 'tick') the physics system one frame.
     let integrate (physicsMessages : PhysicsMessage rQueue) integrator =
         handlePhysicsMessages physicsMessages integrator
         integrator.PhysicsContext.Step PhysicsStepRate
@@ -426,6 +468,7 @@ module Physics =
         integrator.IntegrationMessages.Clear ()
         messages
 
+    /// Make a physics Integrator.
     let makeIntegrator farseerCautionMode gravity =
          { PhysicsContext = FarseerPhysics.Dynamics.World (toPhysicsV2 gravity)
            Bodies = BodyDictionary HashIdentity.Structural
