@@ -4,9 +4,7 @@
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entity>
       <Name>0066be26-b4ad-4fda-ad1f-13aba92657c1</Name>
-      <Depth>0</Depth>
       <Position>-480;-304</Position>
-      <Size>64;64</Size>
       <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TileMapDispatcher)">
         <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section0;Stage</TileMapAsset>
@@ -14,8 +12,8 @@
     </Entity>
     <Entity>
       <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
-      <Depth>4</Depth>
       <Position>1512;-175.68</Position>
+      <Depth>4</Depth>
       <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(EnemyDispatcher)">
@@ -30,8 +28,8 @@
     </Entity>
     <Entity>
       <Name>33293c93-3553-4875-9efd-3a2ba917c33a</Name>
-      <Depth>4</Depth>
       <Position>176;-79.68001</Position>
+      <Depth>4</Depth>
       <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(EnemyDispatcher)">
@@ -46,9 +44,8 @@
     </Entity>
     <Entity>
       <Name>35d5898e-32ef-4026-995b-a81cfbe7dfd2</Name>
-      <Depth>-8</Depth>
       <Position>-480;-304</Position>
-      <Size>64;64</Size>
+      <Depth>-8</Depth>
       <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TileMapDispatcher)">
         <Parallax type="System.Single">0.1</Parallax>
@@ -57,8 +54,8 @@
     </Entity>
     <Entity>
       <Name>3a26e4d1-0257-4755-8074-5a5810a8d6d0</Name>
-      <Depth>4</Depth>
       <Position>1376;-175.68</Position>
+      <Depth>4</Depth>
       <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(EnemyDispatcher)">
@@ -73,8 +70,8 @@
     </Entity>
     <Entity>
       <Name>642996a9-b2dd-48f5-a76a-25f6d457ef69</Name>
-      <Depth>4</Depth>
       <Position>1256;112.32</Position>
+      <Depth>4</Depth>
       <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(EnemyDispatcher)">
@@ -89,8 +86,8 @@
     </Entity>
     <Entity>
       <Name>705dc3f2-8678-426e-8a7a-10c523bb4521</Name>
-      <Depth>4</Depth>
       <Position>928;112.32</Position>
+      <Depth>4</Depth>
       <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(EnemyDispatcher)">
@@ -105,8 +102,8 @@
     </Entity>
     <Entity>
       <Name>cf1aabf7-258b-49c3-abaa-84d6479fa1a0</Name>
-      <Depth>4</Depth>
       <Position>112;48.31998</Position>
+      <Depth>4</Depth>
       <Size>48;96</Size>
       <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(EnemyDispatcher)">
@@ -121,9 +118,8 @@
     </Entity>
     <Entity>
       <Name>f63bf3c3-bb2e-4b09-8c64-1cb9b14aab12</Name>
-      <Depth>-4</Depth>
       <Position>-480;-304</Position>
-      <Size>64;64</Size>
+      <Depth>-4</Depth>
       <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(TileMapDispatcher)">
         <Parallax type="System.Single">0.1</Parallax>

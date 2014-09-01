@@ -17,15 +17,26 @@
     <IsSensor>False</IsSensor>
   </SimpleBodyFacet>
 
-  <SimpleSpriteFacet/>
+  <SimpleSpriteFacet>
+    <SpriteImage>Image3;Default</SpriteImage>
+  </SimpleSpriteFacet>
 
-  <SimpleAnimatedSpriteFacet/>
+  <SimpleAnimatedSpriteFacet>
+    <Stutter>4</Stutter>
+    <TileCount>16</TileCount>
+    <TileRun>4</TileRun>
+    <TileSize>16;16</TileSize>
+    <SpriteImage>Image7;Default</SpriteImage>
+  </SimpleAnimatedSpriteFacet>
 
   <!-- Dispatcher overlays. -->
 
   <EntityDispatcher>
-    <Visible>True</Visible>
+    <Position>0;0</Position>
+    <Depth>0</Depth>
+    <Size>64;64</Size>
     <Rotation>0</Rotation>
+    <Visible>True</Visible>
   </EntityDispatcher>
 
   <GuiDispatcher include="EntityDispatcher">
@@ -40,43 +51,55 @@
 
   <ButtonDispatcher include="GuiDispatcher">
     <IsDown>False</IsDown>
+    <UpImage>Image;Default</UpImage>
+    <DownImage>Image2;Default</DownImage>
     <ClickSound>Sound;Default</ClickSound>
   </ButtonDispatcher>
 
-  <LabelDispatcher include="GuiDispatcher" />
+  <LabelDispatcher include="GuiDispatcher">
+    <LabelImage>Image4;Default</LabelImage>
+  </LabelDispatcher>
 
   <TextDispatcher include="GuiDispatcher">
+    <BackgroundImage>Image4;Default</BackgroundImage>
+    <Text />
     <TextColor>1;1;1;1</TextColor>
     <TextFont>Font;Default</TextFont>
     <TextOffset>0;0</TextOffset>
   </TextDispatcher>
 
   <ToggleDispatcher include="GuiDispatcher">
+    <IsOn>False</IsOn>
     <IsPressed>False</IsPressed>
+    <OffImage>Image;Default</OffImage>
+    <OnImage>Image2;Default</OnImage>
+    <ClickSound>Sound;Default</ClickSound>
   </ToggleDispatcher>
 
   <FeelerDispatcher include="GuiDispatcher">
-    <Include></Include>
     <IsTouched>False</IsTouched>
   </FeelerDispatcher>
 
   <FillBarDispatcher include="GuiDispatcher">
     <Fill>0</Fill>
     <FillInset>0</FillInset>
+    <FillImage>Image9;Default</FillImage>
+    <BorderImage>Image10;Default</BorderImage>
   </FillBarDispatcher>
 
-  <BlockDispatcher include="SimpleBodySpriteDispatcher">
-  </BlockDispatcher>
+  <BlockDispatcher include="SimpleBodySpriteDispatcher" />
 
   <AvatarDispatcher include="SimpleBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
+    <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
   <CharacterDispatcher include="SimpleBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
+    <SpriteImage>Image6;Default</SpriteImage>
   </CharacterDispatcher>
 
   <TileMapDispatcher include="EntityDispatcher">
@@ -85,6 +108,7 @@
     <Restitution>0</Restitution>
     <CollisionCategories>1</CollisionCategories>
     <CollisionMask>*</CollisionMask>
+    <TileMap>TileMap;Default</TileMap>
     <Parallax>0</Parallax>
   </TileMapDispatcher>
 
