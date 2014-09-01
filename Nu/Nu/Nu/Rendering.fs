@@ -207,9 +207,6 @@ module Rendering =
     let private tryLoadRenderPackage packageName renderer =
         let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName renderer.AssetGraphFileName
         match optAssets with
-        | Left error ->
-            note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, renderer.AssetGraphFileName) + "'."
-            renderer
         | Right assets ->
             let optRenderAssets = List.map (tryLoadRenderAsset2 renderer.RenderContext) assets
             let renderAssets = List.definitize optRenderAssets
@@ -221,6 +218,9 @@ module Rendering =
             | Some renderAssetMap ->
                 let renderAssetMap = Map.addMany renderAssets renderAssetMap
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+        | Left error ->
+            note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, renderer.AssetGraphFileName) + "'."
+            renderer
 
     let private tryLoadRenderAsset packageName assetName renderer =
         let optAssetMap = Map.tryFind packageName renderer.RenderAssetMap

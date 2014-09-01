@@ -30,7 +30,6 @@ module OmniFlow =
         let gameDispatcher = OmniBladeDispatcher () :> obj
         let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics false extData
         match optWorld with
-        | Left _ as left -> left
         | Right world ->
             let world = World.hintRenderingPackageUse GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
@@ -42,3 +41,4 @@ module OmniFlow =
             let world = addFieldScreen world
             let world = World.selectScreen SplashAddress world
             Right world
+        | Left _ as left -> left

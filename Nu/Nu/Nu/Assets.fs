@@ -112,8 +112,8 @@ module Assets =
                 List.map
                     (fun (node : XmlNode) ->
                         match tryLoadAssetsFromRootNode optAssociation node with
-                        | Left error -> Left error
-                        | Right assets -> Right (node.Name, assets))
+                        | Right assets -> Right (node.Name, assets)
+                        | Left error -> Left error)
                     nodes
             let (errors, assets) = Either.split eitherPackageAssetLists
             match errors with
@@ -188,7 +188,7 @@ module Assets =
         let assetGraphFilePath = Path.Combine (inputDir, assetGraphFileName)
         let eitherAssets = tryLoadAssetsFromDocument None assetGraphFilePath
         match eitherAssets with
-        | Left error -> Left error
         | Right assets ->
             try Right <| buildAssets inputDir outputDir assets
             with exn -> Left <| string exn
+        | Left error -> Left error

@@ -60,7 +60,6 @@ module BlazeFlow =
         // BlazeVector world
         let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay false extData
         match optWorld with
-        | Left _ as left -> left
         | Right world ->
 
             // hint to the renderer that the Gui package should be loaded up front
@@ -81,3 +80,5 @@ module BlazeFlow =
 
             // return our world within the expected Either type, and we're off!
             Right world
+
+        | Left _ as left -> left

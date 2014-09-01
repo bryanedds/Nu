@@ -95,8 +95,8 @@ module Sdl =
         let polledEvent = ref (SDL.SDL_Event ())
         while SDL.SDL_PollEvent polledEvent <> 0 do
             match fst result with
-            | Exiting -> ()
             | Running -> result <- handleEvent polledEvent (snd result)
+            | Exiting -> ()
         match fst result with
         | Exiting -> ()
         | Running -> result <- handleUpdate (snd result)
@@ -120,15 +120,15 @@ module Sdl =
     /// Run the game engine with the given handlers.
     let rec run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world =
         match liveness with
-        | Exiting -> ()
         | Running ->
             let (liveness, world) = advance handleEvent handleUpdate world
             match liveness with
-            | Exiting -> ignore <| handleExit world
             | Running ->
                 let world = render handleRender sdlDeps world
                 let world = play handlePlay world
                 run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps liveness world
+            | Exiting -> ignore <| handleExit world
+        | Exiting -> ()
 
     /// Run the game engine with the given handlers.
     let run handleTryMakeWorld handleEvent handleUpdate handleRender handlePlay handleExit sdlConfig =
@@ -166,9 +166,9 @@ module Sdl =
                                     let sdlDeps = { RenderContext = renderContext; Window = window; Config = sdlConfig }
                                     let optWorld = handleTryMakeWorld sdlDeps
                                     match optWorld with
-                                    | Left errorMsg ->
-                                        trace errorMsg
-                                        FailureReturnCode
                                     | Right world ->
                                         run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
-                                        SuccessReturnCode))))))
+                                        SuccessReturnCode
+                                    | Left errorMsg ->
+                                        trace errorMsg
+                                        FailureReturnCode))))))
