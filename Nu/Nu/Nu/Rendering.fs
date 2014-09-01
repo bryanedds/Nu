@@ -82,12 +82,13 @@ module RenderingModule =
     type [<StructuralEquality; NoComparison>] RenderDescriptor =
         | LayerableDescriptor of LayerableDescriptor
 
-    /// Hint that a rendering package with the given name should be loaded. Should be used to avoid
-    /// loading assets at inconvenient times (such as in the middle of game play!)
+    /// Hint that a rendering asset package with the given name should be loaded. Should be used to
+    /// avoid loading assets at inconvenient times (such as in the middle of game play!)
     type [<StructuralEquality; NoComparison>] HintRenderingPackageUseMessage =
         { PackageName : string }
-
-    /// Hint that a rendering package can be safely unloaded due to disuse of its assets.
+        
+    /// Hint that a rendering package should be unloaded since its assets will not be used again
+    /// (or until specified via a HintRenderingPackageUseMessage).
     type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuseMessage =
         { PackageName : string }
 
@@ -448,6 +449,7 @@ module Rendering =
             trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
             renderer
 
+    /// Handle render exit by freeing all loaded render assets.
     let handleRenderExit renderer =
         let renderAssetMaps = Map.toValueSeq renderer.RenderAssetMap
         let renderAssets = Seq.collect Map.toValueSeq renderAssetMaps

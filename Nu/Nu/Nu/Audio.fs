@@ -10,29 +10,38 @@ open Nu.NuConstants
 [<AutoOpen>]
 module AudioModule =
 
+    /// Describes a song asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
         { SongAssetName : string
           PackageName : string }
 
+    /// Describes a sound asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
         { SoundAssetName : string
           PackageName : string }
 
+    /// A message to the audio system to play a song.
     type [<StructuralEquality; NoComparison>] PlaySongMessage =
         { Song : Song
           Volume : single
           TimeToFadeOutSongMs : int }
 
+    /// A message to the audio system to play a sound.
     type [<StructuralEquality; NoComparison>] PlaySoundMessage =
         { Volume : single
           Sound : Sound }
-
+          
+    /// Hint that an audio asset package with the given name should be loaded. Should be used to
+    /// avoid loading assets at inconvenient times (such as in the middle of game play!)
     type [<StructuralEquality; NoComparison>] HintAudioPackageUseMessage =
         { PackageName : string }
 
+    /// Hint that an audio package should be unloaded since its assets will not be used again (or
+    /// until specified via a HintAudioPackageUseMessage).
     type [<StructuralEquality; NoComparison>] HintAudioPackageDisuseMessage =
         { PackageName : string }
 
+    /// A message to the audio system.
     type [<StructuralEquality; NoComparison>] AudioMessage =
         | HintAudioPackageUseMessage of HintAudioPackageUseMessage
         | HintAudioPackageDisuseMessage of HintAudioPackageDisuseMessage
@@ -42,17 +51,20 @@ module AudioModule =
         | StopSongMessage
         | ReloadAudioAssetsMessage
 
+    /// An audio asset used by the audio system.
     type [<ReferenceEquality>] AudioAsset =
         | WavAsset of nativeint
         | OggAsset of nativeint
 
+    /// The audio player. Represents the audio system of Nu generally.
     type [<ReferenceEquality>] AudioPlayer =
-        { AudioContext : unit // audio context, interestingly, is global
+        { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioAssetMap : AudioAsset AssetMap
           OptCurrentSong : PlaySongMessage option
           OptNextPlaySong : PlaySongMessage option
           AssetGraphFileName : string }
 
+    /// Converts Sound types.
     type SoundTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -69,6 +81,7 @@ module AudioModule =
                 let args = (obj :?> string).Split ';'
                 { SoundAssetName = args.[0]; PackageName = args.[1] } :> obj
 
+    /// Converts Song types.
     type SongTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -88,6 +101,7 @@ module AudioModule =
 [<RequireQualifiedAccess>]
 module Audio = 
 
+    /// Initializes the type converters found in AudioModule.
     let initTypeConverters () =
         assignTypeConverter<Sound, SoundTypeConverter> ()
         assignTypeConverter<Song, SongTypeConverter> ()
@@ -251,10 +265,12 @@ module Audio =
             tryUpdateCurrentSong |>
             tryUpdateNextSong
 
+    /// 'Play' the audio system. Must be called once per frame.
     let play audioMessages audioPlayer =
         let audioPlayer = handleAudioMessages audioMessages audioPlayer
         updateAudioPlayer audioPlayer
 
+    /// Make an AudioPlayer.
     let makeAudioPlayer assetGraphFileName =
         { AudioContext = ()
           AudioAssetMap = Map.empty
