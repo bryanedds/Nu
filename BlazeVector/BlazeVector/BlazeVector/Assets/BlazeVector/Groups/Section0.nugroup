@@ -14,33 +14,15 @@
       <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
       <Position>1512;-175.68</Position>
       <Depth>4</Depth>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
-        <GravityScale type="System.Single">0</GravityScale>
-        <Health type="System.Int32">6</Health>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
-        <Stutter type="System.Int32">8</Stutter>
-        <TileCount type="System.Int32">6</TileCount>
-        <TileRun type="System.Int32">4</TileRun>
-        <TileSize type="OpenTK.Vector2">48;96</TileSize>
-      </Xtension>
+      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
     </Entity>
     <Entity>
       <Name>33293c93-3553-4875-9efd-3a2ba917c33a</Name>
       <Position>176;-79.68001</Position>
       <Depth>4</Depth>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
-        <GravityScale type="System.Single">0</GravityScale>
-        <Health type="System.Int32">6</Health>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
-        <Stutter type="System.Int32">8</Stutter>
-        <TileCount type="System.Int32">6</TileCount>
-        <TileRun type="System.Int32">4</TileRun>
-        <TileSize type="OpenTK.Vector2">48;96</TileSize>
-      </Xtension>
+      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
     </Entity>
     <Entity>
       <Name>35d5898e-32ef-4026-995b-a81cfbe7dfd2</Name>
@@ -56,65 +38,29 @@
       <Name>3a26e4d1-0257-4755-8074-5a5810a8d6d0</Name>
       <Position>1376;-175.68</Position>
       <Depth>4</Depth>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
-        <GravityScale type="System.Single">0</GravityScale>
-        <Health type="System.Int32">6</Health>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
-        <Stutter type="System.Int32">8</Stutter>
-        <TileCount type="System.Int32">6</TileCount>
-        <TileRun type="System.Int32">4</TileRun>
-        <TileSize type="OpenTK.Vector2">48;96</TileSize>
-      </Xtension>
+      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
     </Entity>
     <Entity>
       <Name>642996a9-b2dd-48f5-a76a-25f6d457ef69</Name>
       <Position>1256;112.32</Position>
       <Depth>4</Depth>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
-        <GravityScale type="System.Single">0</GravityScale>
-        <Health type="System.Int32">6</Health>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
-        <Stutter type="System.Int32">8</Stutter>
-        <TileCount type="System.Int32">6</TileCount>
-        <TileRun type="System.Int32">4</TileRun>
-        <TileSize type="OpenTK.Vector2">48;96</TileSize>
-      </Xtension>
+      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
     </Entity>
     <Entity>
       <Name>705dc3f2-8678-426e-8a7a-10c523bb4521</Name>
       <Position>928;112.32</Position>
       <Depth>4</Depth>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
-        <GravityScale type="System.Single">0</GravityScale>
-        <Health type="System.Int32">6</Health>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
-        <Stutter type="System.Int32">8</Stutter>
-        <TileCount type="System.Int32">6</TileCount>
-        <TileRun type="System.Int32">4</TileRun>
-        <TileSize type="OpenTK.Vector2">48;96</TileSize>
-      </Xtension>
+      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
     </Entity>
     <Entity>
       <Name>cf1aabf7-258b-49c3-abaa-84d6479fa1a0</Name>
       <Position>112;48.31998</Position>
       <Depth>4</Depth>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)">
-        <GravityScale type="System.Single">0</GravityScale>
-        <Health type="System.Int32">6</Health>
-        <SpriteImage type="Nu.RenderingModule+Image">Enemy;Stage</SpriteImage>
-        <Stutter type="System.Int32">8</Stutter>
-        <TileCount type="System.Int32">6</TileCount>
-        <TileRun type="System.Int32">4</TileRun>
-        <TileSize type="OpenTK.Vector2">48;96</TileSize>
-      </Xtension>
+      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
     </Entity>
     <Entity>
       <Name>f63bf3c3-bb2e-4b09-8c64-1cb9b14aab12</Name>

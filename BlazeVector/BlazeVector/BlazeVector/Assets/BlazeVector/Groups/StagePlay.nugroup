@@ -4,12 +4,12 @@
     <Xtension optXDispatcherName="Some(StagePlayDispatcher)" />
     <Entity>
       <Name>Player</Name>
-      <Depth>1</Depth>
       <Position>-356;-175.6805</Position>
-      <Size>48;96</Size>
-      <OptOverlayName>Some(CharacterDispatcher)</OptOverlayName>
+      <Depth>1</Depth>
+      <OptOverlayName>Some(PlayerDispatcher)</OptOverlayName>
       <Xtension optXDispatcherName="Some(PlayerDispatcher)">
-        <SpriteImage type="Nu.RenderingModule+Image">Player;Stage</SpriteImage>
+        <LastTimeJump type="System.Int64">-9223372036854775808</LastTimeJump>
+        <LastTimeOnGround type="System.Int64">-9223372036854775808</LastTimeOnGround>
       </Xtension>
     </Entity>
   </Group>

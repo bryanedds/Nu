@@ -87,16 +87,18 @@
     <BorderImage>Image10;Default</BorderImage>
   </FillBarDispatcher>
 
-  <BlockDispatcher include="SimpleBodySpriteDispatcher" />
+  <BlockDispatcher include="SimpleBodySpriteDispatcher">
+    <SpriteImage>Image3;Default</SpriteImage>
+  </BlockDispatcher>
 
-  <AvatarDispatcher include="SimpleBodySpriteDispatcher">
+  <AvatarDispatcher include="SimpleBodyAnimatedSpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
     <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
-  <CharacterDispatcher include="SimpleBodySpriteDispatcher">
+  <CharacterDispatcher include="SimpleBodyAnimatedSpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <SpriteImage>Image6;Default</SpriteImage>
@@ -112,4 +114,39 @@
     <Parallax>0</Parallax>
   </TileMapDispatcher>
 
+  <BulletDispatcher include="SimpleBodySpriteDispatcher">
+    <Size>24;24</Size>
+    <Density>0.25</Density>
+    <Restitution>0.5</Restitution>
+    <GravityScale>0</GravityScale>
+    <IsBullet>True</IsBullet>
+    <SpriteImage>PlayerBullet;Stage</SpriteImage>
+    <Age>0</Age>
+  </BulletDispatcher>
+
+  <EnemyDispatcher include="CharacterDispatcher">
+    <Size>48;96</Size>
+    <FixedRotation>True</FixedRotation>
+    <LinearDamping>3</LinearDamping>
+    <GravityScale>0</GravityScale>
+    <Stutter>8</Stutter>
+    <TileCount>6</TileCount>
+    <TileRun>4</TileRun>
+    <TileSize>48;96</TileSize>
+    <SpriteImage>Enemy;Stage</SpriteImage>
+    <Health>6</Health>
+  </EnemyDispatcher>
+
+  <PlayerDispatcher include="CharacterDispatcher">
+    <Size>48;96</Size>
+    <FixedRotation>True</FixedRotation>
+    <LinearDamping>3</LinearDamping>
+    <GravityScale>0</GravityScale>
+    <Stutter>3</Stutter>
+    <TileCount>16</TileCount>
+    <TileRun>4</TileRun>
+    <TileSize>48;96</TileSize>
+    <SpriteImage>Player;Stage</SpriteImage>
+  </PlayerDispatcher>
+  
 </Root>

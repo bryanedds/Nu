@@ -87,16 +87,18 @@
     <BorderImage>Image10;Default</BorderImage>
   </FillBarDispatcher>
 
-  <BlockDispatcher include="SimpleBodySpriteDispatcher" />
+  <BlockDispatcher include="SimpleBodySpriteDispatcher">
+    <SpriteImage>Image3;Default</SpriteImage>
+  </BlockDispatcher>
 
-  <AvatarDispatcher include="SimpleBodySpriteDispatcher">
+  <AvatarDispatcher include="SimpleBodyAnimatedSpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
     <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
-  <CharacterDispatcher include="SimpleBodySpriteDispatcher">
+  <CharacterDispatcher include="SimpleBodyAnimatedSpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <SpriteImage>Image6;Default</SpriteImage>
