@@ -261,104 +261,6 @@ module GuiDispatcherModule =
             Entity.setEnabled true entity
 
 [<AutoOpen>]
-module SimpleBodyDispatcherModule =
-
-    type [<AbstractClass>] SimpleBodyDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.add SimpleBodyFacet.Name facetNames)
-
-        abstract member GetBodyShape : Entity * World -> BodyShape
-        default dispatcher.GetBodyShape (entity, _) =
-            BoxShape { Extent = entity.Size * 0.5f; Center = Vector2.Zero }
-
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            SimpleBodyFacet.init entity dispatcherContainer
-
-        override dispatcher.Register (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.registerPhysics getBodyShape address world
-
-        override dispatcher.Unregister (address, world) =
-            SimpleBodyFacet.unregisterPhysics address world
-            
-        override dispatcher.PropagatePhysics (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.propagatePhysics getBodyShape address world
-
-        override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage address message world
-
-[<AutoOpen>]
-module SimpleBodySpriteDispatcherModule =
-
-    type [<AbstractClass>] SimpleBodySpriteDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.addMany [SimpleSpriteFacet.Name; SimpleBodyFacet.Name] facetNames)
-
-        abstract member GetBodyShape : Entity * World -> BodyShape
-        default dispatcher.GetBodyShape (entity, _) =
-            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
-
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            let entity = SimpleBodyFacet.init entity dispatcherContainer
-            SimpleSpriteFacet.init entity dispatcherContainer
-
-        override dispatcher.Register (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.registerPhysics getBodyShape address world
-
-        override dispatcher.Unregister (address, world) =
-            SimpleBodyFacet.unregisterPhysics address world
-            
-        override dispatcher.PropagatePhysics (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.propagatePhysics getBodyShape address world
-
-        override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage address message world
-
-        override dispatcher.GetRenderDescriptors (entity, world) =
-            SimpleSpriteFacet.getRenderDescriptors entity Relative world
-
-        override dispatcher.GetQuickSize (entity, world) =
-            SimpleSpriteFacet.getQuickSize entity world
-
-[<AutoOpen>]
-module SimpleBodyAnimatedSpriteDispatcherModule =
-
-    type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.addMany [SimpleAnimatedSpriteFacet.Name; SimpleBodyFacet.Name] facetNames)
-
-        abstract member GetBodyShape : Entity * World -> BodyShape
-        default dispatcher.GetBodyShape (entity, _) =
-            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
-
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            let entity = SimpleBodyFacet.init entity dispatcherContainer
-            SimpleAnimatedSpriteFacet.init entity dispatcherContainer
-
-        override dispatcher.Register (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.registerPhysics getBodyShape address world
-
-        override dispatcher.Unregister (address, world) =
-            SimpleBodyFacet.unregisterPhysics address world
-            
-        override dispatcher.PropagatePhysics (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.propagatePhysics getBodyShape address world
-
-        override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage address message world
-
-        override dispatcher.GetRenderDescriptors (entity, world) =
-            SimpleAnimatedSpriteFacet.getRenderDescriptors entity Relative world
-
-        override dispatcher.GetQuickSize (entity, world) =
-            SimpleAnimatedSpriteFacet.getQuickSize entity world
-
-[<AutoOpen>]
 module ButtonDispatcherModule =
 
     type Entity with
@@ -756,6 +658,104 @@ module FillBarDispatcherModule =
 
         override dispatcher.IsTransformRelative (_, _) =
             false
+
+[<AutoOpen>]
+module SimpleBodyDispatcherModule =
+
+    type [<AbstractClass>] SimpleBodyDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.add SimpleBodyFacet.Name facetNames)
+
+        abstract member GetBodyShape : Entity * World -> BodyShape
+        default dispatcher.GetBodyShape (entity, _) =
+            BoxShape { Extent = entity.Size * 0.5f; Center = Vector2.Zero }
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            SimpleBodyFacet.init entity dispatcherContainer
+
+        override dispatcher.Register (address, world) =
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.registerPhysics getBodyShape address world
+
+        override dispatcher.Unregister (address, world) =
+            SimpleBodyFacet.unregisterPhysics address world
+            
+        override dispatcher.PropagatePhysics (address, world) =
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.propagatePhysics getBodyShape address world
+
+        override dispatcher.HandleBodyTransformMessage (address, message, world) =
+            SimpleBodyFacet.handleBodyTransformMessage address message world
+
+[<AutoOpen>]
+module SimpleBodySpriteDispatcherModule =
+
+    type [<AbstractClass>] SimpleBodySpriteDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.addMany [SimpleSpriteFacet.Name; SimpleBodyFacet.Name] facetNames)
+
+        abstract member GetBodyShape : Entity * World -> BodyShape
+        default dispatcher.GetBodyShape (entity, _) =
+            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            let entity = SimpleBodyFacet.init entity dispatcherContainer
+            SimpleSpriteFacet.init entity dispatcherContainer
+
+        override dispatcher.Register (address, world) =
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.registerPhysics getBodyShape address world
+
+        override dispatcher.Unregister (address, world) =
+            SimpleBodyFacet.unregisterPhysics address world
+            
+        override dispatcher.PropagatePhysics (address, world) =
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.propagatePhysics getBodyShape address world
+
+        override dispatcher.HandleBodyTransformMessage (address, message, world) =
+            SimpleBodyFacet.handleBodyTransformMessage address message world
+
+        override dispatcher.GetRenderDescriptors (entity, world) =
+            SimpleSpriteFacet.getRenderDescriptors entity Relative world
+
+        override dispatcher.GetQuickSize (entity, world) =
+            SimpleSpriteFacet.getQuickSize entity world
+
+[<AutoOpen>]
+module SimpleBodyAnimatedSpriteDispatcherModule =
+
+    type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.addMany [SimpleAnimatedSpriteFacet.Name; SimpleBodyFacet.Name] facetNames)
+
+        abstract member GetBodyShape : Entity * World -> BodyShape
+        default dispatcher.GetBodyShape (entity, _) =
+            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
+
+        override dispatcher.Init (entity, dispatcherContainer) =
+            let entity = base.Init (entity, dispatcherContainer)
+            let entity = SimpleBodyFacet.init entity dispatcherContainer
+            SimpleAnimatedSpriteFacet.init entity dispatcherContainer
+
+        override dispatcher.Register (address, world) =
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.registerPhysics getBodyShape address world
+
+        override dispatcher.Unregister (address, world) =
+            SimpleBodyFacet.unregisterPhysics address world
+            
+        override dispatcher.PropagatePhysics (address, world) =
+            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
+            SimpleBodyFacet.propagatePhysics getBodyShape address world
+
+        override dispatcher.HandleBodyTransformMessage (address, message, world) =
+            SimpleBodyFacet.handleBodyTransformMessage address message world
+
+        override dispatcher.GetRenderDescriptors (entity, world) =
+            SimpleAnimatedSpriteFacet.getRenderDescriptors entity Relative world
+
+        override dispatcher.GetQuickSize (entity, world) =
+            SimpleAnimatedSpriteFacet.getQuickSize entity world
 
 [<AutoOpen>]
 module BlockDispatcherModule =
