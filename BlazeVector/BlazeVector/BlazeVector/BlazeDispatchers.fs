@@ -108,6 +108,7 @@ module EnemyDispatcherModule =
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
             enemy |>
+                Entity.setSize (Vector2 (48.0f, 96.0f)) |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
                 Entity.setGravityScale 0.0f |>
@@ -211,6 +212,7 @@ module PlayerDispatcherModule =
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
             player |>
+                Entity.setSize (Vector2 (48.0f, 96.0f)) |>
                 Entity.setFixedRotation true |>
                 Entity.setLinearDamping 3.0f |>
                 Entity.setGravityScale 0.0f |>
