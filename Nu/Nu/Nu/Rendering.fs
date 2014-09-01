@@ -13,14 +13,19 @@ open Nu.NuConstants
 [<AutoOpen>]
 module RenderingModule =
 
+    /// Depicts whether a view is purposed to render in relative or absolute space. For
+    /// example, UI entities are rendered in absolute space since they remain still no matter
+    /// where the camera moves, and vice versa for non-UI entities.
     type ViewType =
-        | Relative
         | Absolute
+        | Relative
 
+    /// Describes an image asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
         { ImageAssetName : string
           PackageName : string }
 
+    /// Describes how to render a sprite to the rendering system.
     type [<StructuralEquality; NoComparison>] SpriteDescriptor =
         { Position : Vector2
           Size : Vector2
@@ -30,10 +35,12 @@ module RenderingModule =
           Image : Image
           Color : Vector4 }
 
+    /// Describes a tile map asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
         { TileMapAssetName : string
           PackageName : string }
 
+    /// Describes how to render a tile map to the rendering system.
     type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
         { Position : Vector2
           Size : Vector2
@@ -45,11 +52,13 @@ module RenderingModule =
           TileSize : Vector2
           TileSet : TmxTileset
           TileSetImage : Image }
-
+    
+    /// Describes a font asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
         { FontAssetName : string
           PackageName : string }
 
+    /// Describes how to render text to the rendering system.
     type [<StructuralEquality; NoComparison>] TextDescriptor =
         { Position : Vector2
           Size : Vector2
@@ -58,41 +67,52 @@ module RenderingModule =
           Font : Font
           Color : Vector4 }
 
+    /// Describes how to render a layered 'thing' to the rendering system.
     type [<StructuralEquality; NoComparison>] LayeredDescriptor =
         | SpriteDescriptor of SpriteDescriptor
         | TileLayerDescriptor of TileLayerDescriptor
         | TextDescriptor of TextDescriptor
 
+    /// Describes how to render a layerable 'thing' to the rendering system.
     type [<StructuralEquality; NoComparison>] LayerableDescriptor =
         { Depth : single
           LayeredDescriptor : LayeredDescriptor }
 
-    /// Describes a rendering asset.
-    /// A serializable value type.
+    /// Describes how to render something to the rendering system.
     type [<StructuralEquality; NoComparison>] RenderDescriptor =
         | LayerableDescriptor of LayerableDescriptor
 
+    /// Hint that a rendering package with the given name should be loaded. Should be used to avoid
+    /// loading assets at inconvenient times (such as in the middle of game play!)
     type [<StructuralEquality; NoComparison>] HintRenderingPackageUseMessage =
         { PackageName : string }
 
+    /// Hint that a rendering package can be safely unloaded due to disuse of its assets.
     type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuseMessage =
         { PackageName : string }
 
+    /// A message to the rendering system.
     type [<StructuralEquality; NoComparison>] RenderMessage =
         | HintRenderingPackageUseMessage of HintRenderingPackageUseMessage
         | HintRenderingPackageDisuseMessage of HintRenderingPackageDisuseMessage
         | ReloadRenderingAssetsMessage
         //| ScreenFlashMessage of ...
 
+    /// An asset that is used for rendering.
     type [<ReferenceEquality>] RenderAsset =
         | TextureAsset of nativeint
         | FontAsset of nativeint * int
 
+    /// The renderer. Represent the rendering system in Nu generally.
+    /// NOTE: you should never access the RenderContext from outside the rednering system.
+    /// TODO: consider making the Renderer an abstract data type to hide the RenderContext, or
+    /// at least give said field a name that communicates its desired privacy.
     type [<ReferenceEquality>] Renderer =
         { RenderContext : nativeint
           RenderAssetMap : RenderAsset AssetMap
           AssetGraphFileName : string }
 
+    /// Converts Image types.
     type ImageTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -109,6 +129,7 @@ module RenderingModule =
                 let args = (obj :?> string).Split ';'
                 { ImageAssetName = args.[0]; PackageName = args.[1] } :> obj
 
+    /// Converts TileMapAsset types.
     type TileMapAssetTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -125,6 +146,7 @@ module RenderingModule =
                 let args = (obj :?> string).Split ';'
                 { TileMapAssetName = args.[0]; PackageName = args.[1] } :> obj
 
+    /// Converts Font types.
     type FontTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
@@ -144,6 +166,7 @@ module RenderingModule =
 [<RequireQualifiedAccess>]
 module Rendering =
 
+    /// Initializes the type converters found in RenderingModule.
     let initTypeConverters () =
         assignTypeConverter<Image, ImageTypeConverter> ()
         assignTypeConverter<Font, FontTypeConverter> ()
@@ -431,10 +454,12 @@ module Rendering =
         for renderAsset in renderAssets do freeRenderAsset renderAsset
         { renderer with RenderAssetMap = Map.empty }
 
+    /// Render a frame of the game.
     let render camera (renderMessages : RenderMessage rQueue) renderDescriptorsValue renderer =
         let renderer = handleRenderMessages renderMessages renderer
         renderDescriptors camera renderDescriptorsValue renderer
 
+    /// Make a Renderer.
     let makeRenderer renderContext assetGraphFileName =
         { RenderContext = renderContext
           RenderAssetMap = Map.empty
