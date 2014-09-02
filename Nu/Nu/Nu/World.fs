@@ -347,7 +347,9 @@ module WorldModule =
         static member tryReloadAssets inputDir outputDir world =
             
             // try to reload asset graph file
-            try File.Copy (inputDir + "/" + world.AssetGraphFileName, outputDir + "/" + world.AssetGraphFileName, true)
+            try File.Copy (
+                    Path.Combine(inputDir, world.AssetGraphFileName),
+                    Path.Combine(outputDir, world.AssetGraphFileName), true)
 
                 // reload asset graph
                 match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with

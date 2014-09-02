@@ -31,6 +31,13 @@ let dictC kvps =
 /// Dictionary extension methods.
 type Dictionary<'k, 'v> with
 
+    /// Try to add an element, returning false upon failure.
+    member this.TryAdd (key, value) =
+        if not <| this.ContainsKey key then
+            this.Add (key, value)
+            true
+        else false
+
     /// Force the addition of an element, removing the existing one if necessary.
     member this.ForceAdd (key, value) =
         let forced = this.Remove key

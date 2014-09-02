@@ -371,6 +371,8 @@ module Physics =
         body
 
     let private createBody createBodyMessage integrator =
+        
+        // make and configure the body
         let body =
             match createBodyMessage.BodyProperties.Shape with
             | BoxShape boxShape -> createBoxBody createBodyMessage boxShape integrator
@@ -387,7 +389,9 @@ module Physics =
             let randomOffset = Framework.Vector2 (single <| random.NextDouble (), single <| random.NextDouble ())
             body.Position <- body.Position + randomOffset
         
-        integrator.Bodies.Add (createBodyMessage.PhysicsId, body)
+        // attempt to add the body
+        if not <| integrator.Bodies.TryAdd (createBodyMessage.PhysicsId, body) then
+            debug <| "Could not add body via '" + string createBodyMessage + "'."
 
     let private destroyBody (destroyBodyMessage : DestroyBodyMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
