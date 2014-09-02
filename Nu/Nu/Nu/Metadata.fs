@@ -2,7 +2,7 @@
 open System
 open System.ComponentModel
 open System.Collections.Generic
-open System.Drawing // TODO: see if this dependency can be elegantly removed or replaced with something lighter
+open System.Drawing
 open System.IO
 open System.Linq
 open System.Xml
@@ -18,7 +18,7 @@ module MetadataModule =
     /// Metadata for an asset. Useful to describe various attributes of an asset without having the
     /// full asset loaded into memory.
     type [<StructuralEquality; NoComparison>] AssetMetadata =
-        | TextureMetadata of int * int
+        | TextureMetadata of Vector2I
         | TileMapMetadata of string * Image list * TmxMap
         | SoundMetadata
         | SongMetadata
@@ -48,7 +48,7 @@ module Metadata =
             trace errorMessage
             InvalidMetadata errorMessage
         else
-            try use bitmap = new Bitmap (asset.FileName) in TextureMetadata (bitmap.Width, bitmap.Height)
+            try use bitmap = new Bitmap (asset.FileName) in TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
             with _ as e ->
                 let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string e + "'."
                 trace errorMessage
@@ -127,7 +127,7 @@ module Metadata =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
         | None -> None
-        | Some (TextureMetadata (width, height)) -> Some (width, height)
+        | Some (TextureMetadata size) -> Some size
         | _ -> None
 
     /// Try to get the texture size metadata of the given asset.
@@ -135,7 +135,7 @@ module Metadata =
         let optMetadata = tryGetTextureMetadata assetName packageName assetMetadataMap
         match optMetadata with
         | None -> None
-        | Some metadata -> Some <| Vector2 (single <| fst metadata, single <| snd metadata)
+        | Some metadata -> Some <| Vector2 (single metadata.X, single metadata.Y)
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
     let getTextureSizeAsVector2 assetName packageName assetMetadataMap =

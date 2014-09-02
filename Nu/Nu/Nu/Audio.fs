@@ -165,8 +165,8 @@ module Audio =
         let song = playSongMessage.Song
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.SongAssetName audioPlayer
         match optAudioAsset with
-        | None -> debug <| "PlaySongMessage failed due to unloadable assets for '" + string song + "'."
-        | Some (WavAsset _) -> debug <| "Cannot play wav file as song '" + string song + "'."
+        | None -> note <| "PlaySongMessage failed due to unloadable assets for '" + string song + "'."
+        | Some (WavAsset _) -> note <| "Cannot play wav file as song '" + string song + "'."
         | Some (OggAsset oggAsset) ->
             ignore <| SDL_mixer.Mix_VolumeMusic (int <| playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
             ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
@@ -194,11 +194,11 @@ module Audio =
         let sound = playSoundMessage.Sound
         let (audioPlayer, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.SoundAssetName audioPlayer
         match optAudioAsset with
-        | None -> debug <| "PlaySoundMessage failed due to unloadable assets for '" + string sound + "'."
+        | None -> note <| "PlaySoundMessage failed due to unloadable assets for '" + string sound + "'."
         | Some (WavAsset wavAsset) ->
             ignore <| SDL_mixer.Mix_VolumeChunk (wavAsset, int <| playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
             ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
-        | Some (OggAsset _) -> debug <| "Cannot play ogg file as sound '" + string sound + "'."
+        | Some (OggAsset _) -> note <| "Cannot play ogg file as sound '" + string sound + "'."
         audioPlayer
 
     let private handlePlaySong playSongMessage audioPlayer =
