@@ -56,7 +56,6 @@
             this.copyContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.typeNameTextBox = new System.Windows.Forms.ComboBox();
             this.xFieldNameTextBox = new System.Windows.Forms.TextBox();
@@ -100,10 +99,6 @@
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
-            this.splitContainer2.Panel1.SuspendLayout();
-            this.splitContainer2.Panel2.SuspendLayout();
-            this.splitContainer2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
@@ -322,42 +317,18 @@
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
-            // splitContainer2
-            // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer2.IsSplitterFixed = true;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Margin = new System.Windows.Forms.Padding(2);
-            this.splitContainer2.Name = "splitContainer2";
-            this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer2.Panel1
-            // 
-            this.splitContainer2.Panel1.Controls.Add(this.groupBox1);
-            this.splitContainer2.Panel1.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            // 
-            // splitContainer2.Panel2
-            // 
-            this.splitContainer2.Panel2.Controls.Add(this.propertyGrid);
-            this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(373, 367);
-            this.splitContainer2.SplitterDistance = 79;
-            this.splitContainer2.SplitterWidth = 3;
-            this.splitContainer2.TabIndex = 0;
-            // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.typeNameTextBox);
             this.groupBox1.Controls.Add(this.xFieldNameTextBox);
             this.groupBox1.Controls.Add(this.removeSelectedXFieldButton);
             this.groupBox1.Controls.Add(this.addXFieldButton);
-            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox1.Location = new System.Drawing.Point(0, 0);
+            this.groupBox1.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.groupBox1.Location = new System.Drawing.Point(0, 296);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(373, 79);
+            this.groupBox1.Size = new System.Drawing.Size(373, 73);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -377,7 +348,7 @@
             "OpenTK.Vector2",
             "OpenTK.Vector3",
             "OpenTK.Vector4"});
-            this.typeNameTextBox.Location = new System.Drawing.Point(65, 43);
+            this.typeNameTextBox.Location = new System.Drawing.Point(118, 43);
             this.typeNameTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.typeNameTextBox.Name = "typeNameTextBox";
             this.typeNameTextBox.Size = new System.Drawing.Size(244, 21);
@@ -386,7 +357,7 @@
             // 
             // xFieldNameTextBox
             // 
-            this.xFieldNameTextBox.Location = new System.Drawing.Point(65, 17);
+            this.xFieldNameTextBox.Location = new System.Drawing.Point(118, 17);
             this.xFieldNameTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.xFieldNameTextBox.Name = "xFieldNameTextBox";
             this.xFieldNameTextBox.Size = new System.Drawing.Size(244, 20);
@@ -395,10 +366,10 @@
             // 
             // removeSelectedXFieldButton
             // 
-            this.removeSelectedXFieldButton.Location = new System.Drawing.Point(313, 17);
+            this.removeSelectedXFieldButton.Location = new System.Drawing.Point(4, 41);
             this.removeSelectedXFieldButton.Margin = new System.Windows.Forms.Padding(2);
             this.removeSelectedXFieldButton.Name = "removeSelectedXFieldButton";
-            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(57, 47);
+            this.removeSelectedXFieldButton.Size = new System.Drawing.Size(110, 23);
             this.removeSelectedXFieldButton.TabIndex = 3;
             this.removeSelectedXFieldButton.Text = "Remove Selected";
             this.removeSelectedXFieldButton.UseVisualStyleBackColor = true;
@@ -408,7 +379,7 @@
             this.addXFieldButton.Location = new System.Drawing.Point(4, 17);
             this.addXFieldButton.Margin = new System.Windows.Forms.Padding(2);
             this.addXFieldButton.Name = "addXFieldButton";
-            this.addXFieldButton.Size = new System.Drawing.Size(57, 47);
+            this.addXFieldButton.Size = new System.Drawing.Size(110, 20);
             this.addXFieldButton.TabIndex = 0;
             this.addXFieldButton.Text = "Add";
             this.addXFieldButton.UseVisualStyleBackColor = true;
@@ -418,7 +389,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(373, 214);
+            this.treeView.Size = new System.Drawing.Size(373, 212);
             this.treeView.TabIndex = 1;
             // 
             // propertyGrid
@@ -428,9 +399,8 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 0);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(373, 285);
+            this.propertyGrid.Size = new System.Drawing.Size(373, 296);
             this.propertyGrid.TabIndex = 0;
-            this.propertyGrid.ToolbarVisible = false;
             // 
             // openFileDialog
             // 
@@ -670,13 +640,14 @@
             // 
             // splitContainer3.Panel1
             // 
-            this.splitContainer3.Panel1.Controls.Add(this.splitContainer2);
+            this.splitContainer3.Panel1.Controls.Add(this.propertyGrid);
+            this.splitContainer3.Panel1.Controls.Add(this.groupBox1);
             // 
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
             this.splitContainer3.Size = new System.Drawing.Size(373, 585);
-            this.splitContainer3.SplitterDistance = 367;
+            this.splitContainer3.SplitterDistance = 369;
             this.splitContainer3.TabIndex = 2;
             // 
             // NuEditForm
@@ -698,10 +669,6 @@
             this.splitContainer1.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
-            this.splitContainer2.Panel1.ResumeLayout(false);
-            this.splitContainer2.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
-            this.splitContainer2.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.toolStrip.ResumeLayout(false);
@@ -767,7 +734,6 @@
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
-        private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.GroupBox groupBox1;
         public System.Windows.Forms.PropertyGrid propertyGrid;
         public System.Windows.Forms.Button addXFieldButton;
