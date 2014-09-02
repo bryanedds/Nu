@@ -418,11 +418,11 @@ module WorldModule =
                     | IdlingState -> descriptors
 
         static member private render world =
-            let renderMessages = world.RenderMessages
             let renderDescriptors = World.getRenderDescriptors world
-            let renderer = world.Renderer
-            let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors renderer
-            { world with RenderMessages = []; Renderer = renderer }
+            let renderMessages = world.RenderMessages
+            let world = { world with RenderMessages = [] }
+            let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors world.Renderer
+            { world with Renderer = renderer }
 
         static member private handleIntegrationMessage world integrationMessage =
             match world.Liveness with
@@ -450,8 +450,9 @@ module WorldModule =
 
         static member private integrate world =
             if World.isPhysicsRunning world then
-                let integrationMessages = Nu.Physics.integrate world.PhysicsMessages world.Integrator
+                let physicsMessages = world.PhysicsMessages
                 let world = { world with PhysicsMessages = [] }
+                let integrationMessages = Nu.Physics.integrate physicsMessages world.Integrator
                 World.handleIntegrationMessages integrationMessages world
             else world
 
@@ -589,14 +590,16 @@ module WorldModule =
 
         static member rebuildPhysicsHack groupAddress world =
             let outstandingMessages = world.PhysicsMessages
-            let world = { world with PhysicsMessages = [] }
+            let world = { world with PhysicsMessages = [RebuildPhysicsHackMessage] }
             let entities = World.getEntities groupAddress world
             let world =
                 Map.fold
-                    (fun world _ (entity : Entity) -> Entity.propagatePhysics (addrlist groupAddress [entity.Name]) entity world)
+                    (fun world _ (entity : Entity) ->
+                        let entityAddress = addrlist groupAddress [entity.Name]
+                        Entity.propagatePhysics entityAddress entity world)
                     world
                     entities
-            { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages @ [RebuildPhysicsHackMessage]}
+            { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages }
 
         static member init () =
             NuMath.initTypeConverters ()
