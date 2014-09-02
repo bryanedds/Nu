@@ -96,7 +96,7 @@ module EntityModule =
             | :? EntityDispatcher as dispatcher -> dispatcher.GetPickingPriority (entity, world)
             | _ -> failwith "Due to optimization in Entity.getPickingPriority, an entity's 2d dispatcher must be an EntityDispatcher."
         
-        static member isTransformRelative  (entity : Entity) world =
+        static member isTransformRelative (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
             | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an EntityDispatcher."
@@ -107,13 +107,13 @@ module EntityModule =
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
-          MapSize : int * int
-          TileSize : int * int
+          MapSize : Vector2I
+          TileSize : Vector2I
           TileSizeF : Vector2
-          TileMapSize : int * int
+          TileMapSize : Vector2I
           TileMapSizeF : Vector2
           TileSet : TmxTileset
-          TileSetSize : int * int }
+          TileSetSize : Vector2I }
 
     type [<StructuralEquality; NoComparison>] TileData =
         { Tile : TmxLayerTile
@@ -121,9 +121,9 @@ module EntityModule =
           J : int
           Gid : int
           GidPosition : int
-          Gid2 : int * int
+          Gid2 : Vector2I
           OptTileSetTile : TmxTilesetTile option
-          TilePosition : int * int }
+          TilePosition : Vector2I }
 
     type Entity with
     

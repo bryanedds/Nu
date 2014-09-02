@@ -815,29 +815,30 @@ module TileMapDispatcherModule =
 
         static member makeTileMapData tileMapAsset world =
             let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
-            let mapSize = (map.Width, map.Height)
-            let tileSize = (map.TileWidth, map.TileHeight)
-            let tileSizeF = Vector2 (single <| fst tileSize, single <| snd tileSize)
-            let tileMapSize = (fst mapSize * fst tileSize, snd mapSize * snd tileSize)
-            let tileMapSizeF = Vector2 (single <| fst tileMapSize, single <| snd tileMapSize)
+            let mapSize = Vector2I (map.Width, map.Height)
+            let tileSize = Vector2I (map.TileWidth, map.TileHeight)
+            let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
+            let tileMapSize = Vector2I (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
+            let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
             let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
             let optTileSetWidth = tileSet.Image.Width
             let optTileSetHeight = tileSet.Image.Height
-            let tileSetSize = (optTileSetWidth.Value / fst tileSize, optTileSetHeight.Value / snd tileSize)
+            let tileSetSize = Vector2I (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
             { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
         static member makeTileData (tileMap : Entity) tmd (tl : TmxLayer) tileIndex =
-            let mapRun = fst tmd.MapSize
-            let tileSetRun = fst tmd.TileSetSize
+            let mapRun = tmd.MapSize.X
+            let tileSetRun = tmd.TileSetSize.X
             let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
             let tile = tl.Tiles.[tileIndex]
             let gid = tile.Gid - tmd.TileSet.FirstGid
-            let gidPosition = gid * fst tmd.TileSize
-            let gid2 = (gid % tileSetRun, gid / tileSetRun)
+            let gidPosition = gid * tmd.TileSize.X
+            let gid2 = Vector2I (gid % tileSetRun, gid / tileSetRun)
             let tileMapPosition = tileMap.Position
-            let tilePosition = (
-                int tileMapPosition.X + fst tmd.TileSize * i,
-                int tileMapPosition.Y - snd tmd.TileSize * (j + 1)) // subtraction for right-handedness
+            let tilePosition =
+                Vector2I (
+                    int tileMapPosition.X + tmd.TileSize.X * i,
+                    int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
             let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
@@ -855,11 +856,11 @@ module TileMapDispatcherModule =
                       PhysicsId = physicsId
                       Position =
                         Vector2 (
-                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                            single <| td.TilePosition.X + tmd.TileSize.X / 2,
+                            single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
                       Rotation = tm.Rotation
                       BodyProperties =
-                        { Shape = BoxShape { Extent = Vector2 (single <| fst tmd.TileSize, single <| snd tmd.TileSize) * 0.5f; Center = Vector2.Zero }
+                        { Shape = BoxShape { Extent = Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y) * 0.5f; Center = Vector2.Zero }
                           BodyType = BodyType.Static
                           Density = tm.Density
                           Friction = tm.Friction
@@ -882,8 +883,8 @@ module TileMapDispatcherModule =
                       PhysicsId = physicsId
                       Position =
                         Vector2 (
-                            single <| fst td.TilePosition + fst tmd.TileSize / 2,
-                            single <| snd td.TilePosition + snd tmd.TileSize / 2 + snd tmd.TileMapSize)
+                            single <| td.TilePosition.X + tmd.TileSize.X / 2,
+                            single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
                       Rotation = tm.Rotation
                       BodyProperties =
                         { Shape = PolygonShape { Vertices = vertices; Center = Vector2.Zero }
@@ -996,7 +997,7 @@ module TileMapDispatcherModule =
                 | None -> []
                 | Some (_, images, map) ->
                     let layers = List.ofSeq map.Layers
-                    let tileSourceSize = (map.TileWidth, map.TileHeight)
+                    let tileSourceSize = Vector2I (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                     List.foldi
                         (fun i descriptors (layer : TmxLayer) ->
@@ -1014,7 +1015,7 @@ module TileMapDispatcherModule =
                                                   Size = size
                                                   Rotation = tileMap.Rotation
                                                   ViewType = Relative
-                                                  MapSize = (map.Width, map.Height)
+                                                  MapSize = Vector2I (map.Width, map.Height)
                                                   Tiles = layer.Tiles
                                                   TileSourceSize = tileSourceSize
                                                   TileSize = tileSize

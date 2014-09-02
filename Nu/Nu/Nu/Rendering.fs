@@ -46,9 +46,9 @@ module RenderingModule =
           Size : Vector2
           Rotation : single
           ViewType : ViewType
-          MapSize : int * int // TODO: replace int * ints with Vector2I.
+          MapSize : Vector2I
           Tiles : TmxLayerTile List
-          TileSourceSize : int * int
+          TileSourceSize : Vector2I
           TileSize : Vector2
           TileSet : TmxTileset
           TileSetImage : Image }
@@ -219,7 +219,7 @@ module Rendering =
                 let renderAssetMap = Map.addMany renderAssets renderAssetMap
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
         | Left error ->
-            note <| "HintRenderingPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, renderer.AssetGraphFileName) + "'."
+            note <| "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
             renderer
 
     let private tryLoadRenderAsset packageName assetName renderer =
@@ -271,7 +271,7 @@ module Rendering =
         let (renderer, optRenderAsset) = tryLoadRenderAsset image.PackageName image.ImageAssetName renderer
         match optRenderAsset with
         | None ->
-            debug <| "SpriteDescriptor failed due to unloadable assets for '" + string image + "'."
+            note <| "SpriteDescriptor failed to render due to unloadable assets for '" + string image + "'."
             renderer
         | Some renderAsset ->
             match renderAsset with
@@ -313,7 +313,7 @@ module Rendering =
                         rotation,
                         ref rotationCenter,
                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                if renderResult <> 0 then debug <| "Rendering error - could not render texture for sprite '" + string descriptor + "' due to '" + SDL.SDL_GetError () + "."
+                if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + string descriptor + "' due to '" + SDL.SDL_GetError () + "."
                 renderer
             | _ ->
                 trace "Cannot render sprite with a non-texture asset."
@@ -335,14 +335,14 @@ module Rendering =
         let (renderer, optRenderAsset) = tryLoadRenderAsset tileSetImage.PackageName tileSetImage.ImageAssetName renderer
         match optRenderAsset with
         | None ->
-            debug <| "TileLayerDescriptor failed due to unloadable assets for '" + string tileSetImage + "'."
+            note <| "TileLayerDescriptor failed due to unloadable assets for '" + string tileSetImage + "'."
             renderer
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 Seq.iteri
                     (fun n _ ->
-                        let mapRun = fst mapSize
+                        let mapRun = mapSize.X
                         let (i, j) = (n % mapRun, n / mapRun)
                         let tilePosition =
                             Vector2 (
@@ -350,16 +350,16 @@ module Rendering =
                                 -(positionView.Y - tileSize.Y * single j + sizeView.Y) + camera.EyeSize.Y * 0.5f) // negation for right-handedness
                         if NuMath.isBoundsInBounds3 tilePosition tileSize <| Vector4 (0.0f, 0.0f, camera.EyeSize.X, camera.EyeSize.Y) then
                             let gid = tiles.[n].Gid - tileSet.FirstGid
-                            let gidPosition = gid * fst tileSourceSize
+                            let gidPosition = gid * tileSourceSize.X
                             let tileSourcePosition =
                                 Vector2 (
                                     single <| gidPosition % tileSetWidth,
-                                    single <| gidPosition / tileSetWidth * snd tileSourceSize)
+                                    single <| gidPosition / tileSetWidth * tileSourceSize.Y)
                             let mutable sourceRect = SDL.SDL_Rect ()
                             sourceRect.x <- int tileSourcePosition.X
                             sourceRect.y <- int tileSourcePosition.Y
-                            sourceRect.w <- fst tileSourceSize
-                            sourceRect.h <- snd tileSourceSize
+                            sourceRect.w <- tileSourceSize.X
+                            sourceRect.h <- tileSourceSize.Y
                             let mutable destRect = SDL.SDL_Rect ()
                             destRect.x <- int tilePosition.X
                             destRect.y <- int tilePosition.Y
@@ -370,7 +370,7 @@ module Rendering =
                             rotationCenter.x <- int <| tileSize.X * 0.5f
                             rotationCenter.y <- int <| tileSize.Y * 0.5f
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                            if renderResult <> 0 then debug <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                            if renderResult <> 0 then note <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                     tiles
                 renderer
             | _ ->
@@ -387,7 +387,7 @@ module Rendering =
         let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.FontAssetName renderer
         match optRenderAsset with
         | None ->
-            debug <| "TextDescriptor failed due to unloadable assets for '" + string font + "'."
+            note <| "TextDescriptor failed due to unloadable assets for '" + string font + "'."
             renderer
         | Some renderAsset ->
             match renderAsset with

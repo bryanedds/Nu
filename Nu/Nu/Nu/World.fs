@@ -345,17 +345,27 @@ module WorldModule =
             Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         static member tryReloadAssets inputDir outputDir world =
-            // TODO: copy over file from fileName as well (the asset graph)
-            match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with
-            | Right () ->
-                match Metadata.tryGenerateAssetMetadataMap world.AssetGraphFileName with
-                | Right assetMetadataMap ->
-                    let world = { world with AssetMetadataMap = assetMetadataMap }
-                    let world = World.reloadRenderingAssets world
-                    let world = World.reloadAudioAssets world
-                    Right world
-                | Left errorMsg -> Left errorMsg
-            | Left error -> Left error
+            
+            // try to reload asset graph file
+            try File.Copy (inputDir + "/" + world.AssetGraphFileName, outputDir + "/" + world.AssetGraphFileName, true)
+
+                // reload asset graph
+                match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with
+                | Right () ->
+
+                    // reload asset metadata
+                    match Metadata.tryGenerateAssetMetadataMap world.AssetGraphFileName with
+                    | Right assetMetadataMap ->
+                    
+                        // reload assets
+                        let world = { world with AssetMetadataMap = assetMetadataMap }
+                        let world = World.reloadRenderingAssets world
+                        let world = World.reloadAudioAssets world
+                        Right world
+            
+                    | Left errorMsg -> Left errorMsg
+                | Left error -> Left error
+            with exn -> Left <| string exn
 
         static member private play world =
             let audioMessages = world.AudioMessages

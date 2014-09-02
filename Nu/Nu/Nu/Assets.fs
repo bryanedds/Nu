@@ -78,7 +78,7 @@ module Assets =
             | None -> assets
             | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
         List.ofSeq associatedAssets
-        
+
     /// Attempt to load all the assets from the document root Xml node.
     let tryLoadAssetsFromRootNode optAssociation (node : XmlNode) =
         let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
