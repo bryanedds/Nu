@@ -651,7 +651,7 @@ module Program =
                 world
             | Right world -> world)
     
-    let   (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
+    let handleTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
         let entityAddress = addr form.treeView.SelectedNode.Name
         match entityAddress.AddrList with
         | [_; _; _] -> form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -691,7 +691,7 @@ module Program =
         form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
         form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
         form.reloadAssetsButton.Click.Add (handleReloadAssets form worldChangers refWorld)
-        form.treeView.AfterSelect.Add (form worldChangers refWorld)
+        form.treeView.AfterSelect.Add (handleTreeViewNodeSelect form worldChangers refWorld)
         form.Show ()
         form
 
