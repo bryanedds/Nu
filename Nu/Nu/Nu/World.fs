@@ -36,30 +36,8 @@ module WorldModule =
     let private AnyEventNamesCache = Dictionary<Address, Address list> HashIdentity.Structural
 
     type World with
-
-        static member getMousePosition (_ : World) =
-            let x = ref 0
-            let y = ref 0
-            ignore <| SDL.SDL_GetMouseState (x, y)
-            Vector2I (!x, !y)
-
-        static member getMousePositionF world =
-            let mousePosition = World.getMousePosition world
-            Vector2 (single mousePosition.X, single mousePosition.Y)
-
-        static member getMouseButtonState mouseButton (_ : World) =
-            let sdlMouseButton = MouseButton.toSdl mouseButton
-            SDL.SDL_BUTTON sdlMouseButton = 1u
-
-        static member getKeyboardKeyState scanCode (_ : World) =
-            // HOLY GOD the imperative-ness!
-            let keyboardStatePtr = SDL.SDL_GetKeyboardState (ref 0)
-            let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
-            let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr scanCode
-            state <> byte 0
-
+        
         static member private setScreenStatePlus address state world =
-            // TODO: add swallowing for other types of input as well (keys, joy buttons, etc.)
             let world = World.withScreen (fun screen -> { screen with State = state }) address world
             match state with
             | IdlingState ->
@@ -500,18 +478,18 @@ module WorldModule =
                             { world with Liveness = Exiting }
                         | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                             let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                            if World.getMouseButtonState MouseLeft world
+                            if World.isMouseButtonDown MouseLeft world
                             then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName Address.empty (MouseMoveData { Position = mousePosition }) world
                             else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName Address.empty (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                             let mousePosition = World.getMousePositionF world
-                            let mouseButton = MouseButton.toNu <| uint32 event.button.button
+                            let mouseButton = World.toNuMouseButton <| uint32 event.button.button
                             let mouseEventName = addrlist DownMouseEventName [string mouseButton]
                             let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                             World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                             let mousePosition = World.getMousePositionF world
-                            let mouseButton = MouseButton.toNu <| uint32 event.button.button
+                            let mouseButton = World.toNuMouseButton <| uint32 event.button.button
                             let mouseEventName = addrlist UpMouseEventName [string mouseButton]
                             let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                             World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
