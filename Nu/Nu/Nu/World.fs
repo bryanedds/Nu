@@ -593,7 +593,8 @@ module WorldModule =
         static member continueHack groupAddress world =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
             // messages), all messages are eliminated. If this poses an issue, the editor will have
-            // to instead store only past / future worlds whose current frame has been completed.
+            // to instead store past / future worlds only once their current frame has been
+            // processed (integrated, advanced, rendered, played, et al).
             let world =
                 { world with
                     AudioMessages = []
