@@ -27,7 +27,7 @@ module BulletDispatcherModule =
                 let bullet = World.getEntity event.Subscriber world
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
-                    if bullet.Age <= 28L then World.setEntity event.Subscriber bullet world
+                    if bullet.Age < 28L then World.setEntity event.Subscriber bullet world
                     else World.removeEntity event.Subscriber world
                 (Unhandled, world)
             else (Unhandled, world)

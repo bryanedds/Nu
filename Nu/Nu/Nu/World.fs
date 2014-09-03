@@ -163,7 +163,9 @@ module WorldModule =
                 List.foldWhile
                     (fun (eventHandled, world) (_, subscriber, subscription) ->
                         let event = { Name = eventName; Publisher = publisher; Subscriber = subscriber; Data = eventData }
-                        if eventHandled = Handled || world.Liveness = Exiting then None
+                        if  eventHandled = Handled ||
+                            (match world.Liveness with Running -> false | Exiting -> true) then
+                            None
                         else
                             let result =
                                 match subscription with
@@ -589,17 +591,14 @@ module WorldModule =
             | Left errorMsg -> Left errorMsg
 
         static member rebuildPhysicsHack groupAddress world =
-            let outstandingMessages = world.PhysicsMessages
             let world = { world with PhysicsMessages = [RebuildPhysicsHackMessage] }
             let entities = World.getEntities groupAddress world
-            let world =
-                Map.fold
-                    (fun world _ (entity : Entity) ->
-                        let entityAddress = addrlist groupAddress [entity.Name]
-                        Entity.propagatePhysics entityAddress entity world)
-                    world
-                    entities
-            { world with PhysicsMessages = outstandingMessages @ world.PhysicsMessages }
+            Map.fold
+                (fun world _ (entity : Entity) ->
+                    let entityAddress = addrlist groupAddress [entity.Name]
+                    Entity.propagatePhysics entityAddress entity world)
+                world
+                entities
 
         static member init () =
             NuMath.initTypeConverters ()

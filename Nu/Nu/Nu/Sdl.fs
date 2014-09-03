@@ -93,10 +93,9 @@ module Sdl =
     let advance handleEvent handleUpdate world =
         let mutable result = (Running, world)
         let polledEvent = ref (SDL.SDL_Event ())
-        while SDL.SDL_PollEvent polledEvent <> 0 do
-            match fst result with
-            | Running -> result <- handleEvent polledEvent (snd result)
-            | Exiting -> ()
+        while   SDL.SDL_PollEvent polledEvent <> 0 &&
+                (match fst result with Running -> true | Exiting -> false) do
+                result <- handleEvent polledEvent (snd result)
         match fst result with
         | Exiting -> ()
         | Running -> result <- handleUpdate (snd result)
