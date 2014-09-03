@@ -590,8 +590,12 @@ module WorldModule =
                 Right world
             | Left errorMsg -> Left errorMsg
 
-        static member rebuildPhysicsHack groupAddress world =
-            let world = { world with PhysicsMessages = [RebuildPhysicsHackMessage] }
+        static member continueHack groupAddress world =
+            let world =
+                { world with
+                    AudioMessages = []
+                    RenderMessages = []
+                    PhysicsMessages = [RebuildPhysicsHackMessage] }
             let entities = World.getEntities groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->

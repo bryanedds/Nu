@@ -462,7 +462,7 @@ module Program =
             | [] -> world
             | pastWorld :: pastWorlds ->
                 let futureWorld = world
-                let world = World.rebuildPhysicsHack EditorGroupAddress pastWorld
+                let world = World.continueHack EditorGroupAddress pastWorld
                 let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
                 let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
                 refreshFormOnUndoRedo form world
@@ -475,7 +475,7 @@ module Program =
             | [] -> world
             | futureWorld :: futureWorlds ->
                 let pastWorld = world
-                let world = World.rebuildPhysicsHack EditorGroupAddress futureWorld
+                let world = World.continueHack EditorGroupAddress futureWorld
                 let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
                 let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
                 refreshFormOnUndoRedo form world
