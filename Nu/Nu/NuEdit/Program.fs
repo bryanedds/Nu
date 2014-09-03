@@ -30,7 +30,7 @@ module ProgramModule =
 
     type WorldChanger = World -> World
 
-    type WorldChangers = WorldChanger LinkedList
+    type WorldChangers = WorldChanger List
 
     type DragEntityState =
         | DragEntityNone
@@ -143,7 +143,7 @@ module Program =
             // in order to update the view immediately, we have to apply the changer twice, once
             // now and once in the update function
             entityTds.RefWorld := changer !entityTds.RefWorld
-            ignore <| entityTds.WorldChangers.AddLast changer
+            ignore <| entityTds.WorldChangers.Add changer
 
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
         static member GetPropertyDescriptors (aType : Type) optSource =
@@ -196,7 +196,23 @@ module Program =
         ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
         !creationDepth
 
-    let addEntityToTreeView (form : NuEditForm) entityAddress world =
+    let getExpansionState (treeView : TreeView) =
+        let nodeStates =
+            Seq.fold
+                (fun state (node : TreeNode) -> if node.Nodes.Count > 0 then (node.Name, node.IsExpanded) :: state else state)
+                []
+                (enumerable treeView.Nodes)
+        Map.ofSeq nodeStates
+        
+    let restoreExpansionState (treeView : TreeView) treeState =
+        Map.iter
+            (fun nodeName nodeExpansion ->
+                match treeView.Nodes.Find (nodeName, true) with
+                | [||] -> ()
+                | nodes -> let node = nodes.[0] in if nodeExpansion then node.Expand () else node.Collapse ())
+            treeState
+
+    let addTreeViewNode (form : NuEditForm) entityAddress world =
         let entity = World.getEntity entityAddress world
         let entityGroupName = Option.getOrDefault entity.Xtension.OptXDispatcherName "[No Dispatcher]"
         let treeGroup = form.treeView.Nodes.[entityGroupName]
@@ -204,7 +220,7 @@ module Program =
             let treeNode = TreeNode entity.Name
             treeNode.Name <- string entityAddress
             ignore <| treeGroup.Nodes.Add treeNode
-        else () // when changing an entity name, entity will be added twice - once from refWorld, once from world
+        else () // when changing an entity name, entity will be added twice - once from win forms, once from world
 
     let clearTreeViewNodes (form : NuEditForm) =
         form.treeView.Nodes.Clear ()
@@ -227,26 +243,7 @@ module Program =
     let populateTreeViewNodes (form : NuEditForm) world =
         for entityKvp in World.getEntities EditorGroupAddress world do
         let entityAddress = addrlist EditorGroupAddress [entityKvp.Key]
-        addEntityToTreeView form entityAddress world
-
-    let getExpansionState (treeView : TreeView) =
-        let nodeStates =
-            Seq.fold
-                (fun state (node : TreeNode) -> if node.Nodes.Count > 0 then (node.Name, node.IsExpanded) :: state else state)
-                []
-                (enumerable treeView.Nodes)
-        Map.ofSeq nodeStates
-        
-    let restoreExpansionState (treeView : TreeView) treeState =
-        Map.iter
-            (fun nodeName nodeExpansion ->
-                match treeView.Nodes.Find (nodeName, true) with
-                | [||] -> ()
-                | nodes ->
-                    let node = nodes.[0]
-                    if nodeExpansion then node.Expand ()
-                    else node.Collapse ())
-            treeState
+        addTreeViewNode form entityAddress world
 
     let tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
         match form.propertyGrid.SelectedObject with
@@ -260,6 +257,14 @@ module Program =
                     node.EnsureVisible ()
         | _ -> ()
 
+    let refreshPropertyGrid (form : NuEditForm) world =
+        match form.propertyGrid.SelectedObject with
+        | :? EntityTypeDescriptorSource as entityTds ->
+            entityTds.RefWorld := world // must be set for property grid
+            if World.containsEntity entityTds.Address world then form.propertyGrid.Refresh ()
+            else form.propertyGrid.SelectedObject <- null
+        | _ -> form.propertyGrid.SelectedObject <- null
+
     let refreshTreeView (form : NuEditForm) world =
         let treeState = getExpansionState form.treeView
         clearTreeViewNodes form
@@ -268,14 +273,9 @@ module Program =
         restoreExpansionState form.treeView treeState
         tryScrollTreeViewToPropertyGridSelection form
 
-    let refreshFormOnUndoRedo (form : NuEditForm) refWorld world =
-        match form.propertyGrid.SelectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            refWorld := world // must be set for property grid
-            if World.containsEntity entityTds.Address world then form.propertyGrid.Refresh ()
-            else form.propertyGrid.SelectedObject <- null
-        | _ -> form.propertyGrid.SelectedObject <- null
+    let refreshFormOnUndoRedo (form : NuEditForm) world =
         form.interactivityButton.Checked <- false
+        refreshPropertyGrid form world
         refreshTreeView form world
 
     let canEditWithMouse (form : NuEditForm) world =
@@ -321,7 +321,7 @@ module Program =
                      MessageBoxIcon.Error)
             world
 
-    let downRightMouse (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+    let handleNuDownRightMouse (form : NuEditForm) worldChangers refWorld (_ : Event) world =
         let handled = if World.isGamePlaying world then Unhandled else Handled
         let mousePosition = world.MouseState.MousePosition
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
@@ -330,7 +330,7 @@ module Program =
         let world = { world with ExtData = editorState }
         (handled, world)
 
-    let beginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+    let handleNuBeginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
         else
             let handled = if World.isGamePlaying world then Unhandled else Handled
@@ -346,7 +346,7 @@ module Program =
                 let world = { world with ExtData = editorState }
                 (handled, world)
 
-    let endEntityDrag (form : NuEditForm) (_ : Event) world =
+    let handleNuEndEntityDrag (form : NuEditForm) (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
         else
             let handled = if World.isGamePlaying world then Unhandled else Handled
@@ -358,6 +358,277 @@ module Program =
                 let editorState = { editorState with DragEntityState = DragEntityNone }
                 form.propertyGrid.Refresh ()
                 (handled, { world with ExtData = editorState })
+
+    let handleNuBeginCameraDrag (_ : NuEditForm) (_ : Event) world =
+        let mousePosition = world.MouseState.MousePosition
+        let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
+        let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
+        let editorState = world.ExtData :?> EditorState
+        let editorState = { editorState with DragCameraState = dragState }
+        let world = { world with ExtData = editorState }
+        (Handled, world)
+
+    let handleNuBeginEndCameraDrag (_ : NuEditForm) (_ : Event) world =
+        let editorState = world.ExtData :?> EditorState
+        match editorState.DragCameraState with
+        | DragCameraNone -> (Handled, world)
+        | DragCameraPosition _ ->
+            let editorState = { editorState with DragCameraState = DragCameraNone }
+            (Handled, { world with ExtData = editorState })
+
+    let handleNuEntityAdd (form : NuEditForm) event world =
+        addTreeViewNode form event.Publisher world
+        (Unhandled, world)
+
+    let handleNuEntityRemoving (form : NuEditForm) event world =
+        match form.treeView.Nodes.Find (string event.Publisher, true) with
+        | [||] -> () // when changing an entity name, entity will be removed twice - once from win forms, once from world
+        | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
+        match form.propertyGrid.SelectedObject with
+        | null -> (Unhandled, world)
+        | :? EntityTypeDescriptorSource as entityTds ->
+            if event.Publisher <> entityTds.Address then (Unhandled, world)
+            else
+                form.propertyGrid.SelectedObject <- null
+                let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
+                (Unhandled, { world with ExtData = editorState })
+        | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
+
+    let handleFormExit (form : NuEditForm) (_ : EventArgs) =
+        form.Close ()
+    
+    let handleFormTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let entityAddress = addr form.treeView.SelectedNode.Name
+            match entityAddress.AddrList with
+            | [_; _; _] ->
+                refWorld := world // must be set for property grid
+                let entityTds = { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                form.propertyGrid.SelectedObject <- entityTds
+                world
+            | _ -> world) // not an entity address
+
+    let handleFormCreate atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            try let entityXDispatcherName = form.createEntityComboBox.Text
+                let entity = Entity.makeDefault entityXDispatcherName None world
+                let world = pushPastWorld world world
+                let (positionSnap, rotationSnap) = getSnaps form
+                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
+                let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
+                let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
+                let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
+                let entityAddress = addrstr EditorGroupAddress entity.Name
+                let world = World.addEntity entityAddress entity world
+                refWorld := world // must be set for property grid
+                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+                world
+            with exn -> ignore <| MessageBox.Show (string exn); world)
+
+    let handleFormDelete (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let selectedObject = form.propertyGrid.SelectedObject
+            let world = pushPastWorld world world
+            match selectedObject with
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let world = World.removeEntity entityTds.Address world
+                form.propertyGrid.SelectedObject <- null
+                world
+            | _ -> world)
+
+    let handleFormSave (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let saveFileResult = form.saveFileDialog.ShowDialog form
+            match saveFileResult with
+            | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName world; world
+            | _ -> world)
+
+    let handleFormOpen (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let openFileResult = form.openFileDialog.ShowDialog form
+            match openFileResult with
+            | DialogResult.OK ->
+                let world = tryLoadFile form form.openFileDialog.FileName world
+                let world = clearOtherWorlds world
+                form.propertyGrid.SelectedObject <- null
+                form.interactivityButton.Checked <- false
+                world
+            | _ -> world)
+
+    let handleFormUndo (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let editorState = world.ExtData :?> EditorState
+            match editorState.PastWorlds with
+            | [] -> world
+            | pastWorld :: pastWorlds ->
+                let futureWorld = world
+                let world = World.rebuildPhysicsHack EditorGroupAddress pastWorld
+                let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
+                let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
+                refreshFormOnUndoRedo form world
+                world)
+
+    let handleFormRedo (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let editorState = world.ExtData :?> EditorState
+            match editorState.FutureWorlds with
+            | [] -> world
+            | futureWorld :: futureWorlds ->
+                let pastWorld = world
+                let world = World.rebuildPhysicsHack EditorGroupAddress futureWorld
+                let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
+                let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
+                refreshFormOnUndoRedo form world
+                world)
+
+    let handleFormInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            // TODO: enable disabling of physics as well
+            let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
+            let pastWorld = world
+            let world = { world with Interactivity = interactivity }
+            if Interactivity.isGamePlaying interactivity then pushPastWorld pastWorld world
+            else world)
+
+    let handleFormCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let optEntityTds = form.propertyGrid.SelectedObject
+            match optEntityTds with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let editorState = world.ExtData :?> EditorState
+                let entity = World.getEntity entityTds.Address world
+                let world = World.removeEntity entityTds.Address world
+                editorState.Clipboard := Some entity
+                form.propertyGrid.SelectedObject <- null
+                world
+            | _ -> trace <| "Invalid cut operation (likely a code issue in NuEdit)."; world)
+        
+    let handleFormCopy (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let optEntityTds = form.propertyGrid.SelectedObject
+            match optEntityTds with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let entity = World.getEntity entityTds.Address world
+                let editorState = world.ExtData :?> EditorState
+                editorState.Clipboard := Some entity
+                world
+            | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."; world)
+
+    let handleFormPaste atMouse (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let editorState = world.ExtData :?> EditorState
+            match !editorState.Clipboard with
+            | None -> world
+            | Some entity ->
+                let world = pushPastWorld world world
+                let (positionSnap, rotationSnap) = getSnaps form
+                let id = NuCore.makeId ()
+                let entity = { entity with Id = id; Name = string id }
+                let entityPosition =
+                    if atMouse
+                    then Entity.mouseToEntity editorState.RightClickPosition world entity
+                    else world.Camera.EyeCenter
+                let entityTransform = { Entity.getTransform entity with Position = entityPosition }
+                let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
+                let address = addrstr EditorGroupAddress entity.Name
+                World.addEntity address entity world)
+
+    let handleFormQuickSize (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let optEntityTds = form.propertyGrid.SelectedObject
+            match optEntityTds with
+            | null -> world
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let world = pushPastWorld world world
+                let entity = World.getEntity entityTds.Address world
+                let entity = Entity.setSize (Entity.getQuickSize entity world) entity
+                let world = World.setEntity entityTds.Address entity world
+                let world = Entity.propagatePhysics entityTds.Address entity world
+                entityTds.RefWorld := world // must be set for property grid
+                form.propertyGrid.Refresh ()
+                world
+            | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEdit)."; world)
+
+    let handleFormResetCamera (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world -> // XXX
+            let camera = { world.Camera with EyeCenter = Vector2.Zero } // XXX
+            { world with Camera = camera })
+
+    let handleFormAddXField (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            match (form.xFieldNameTextBox.Text, form.typeNameTextBox.Text) with
+            | ("", _) -> ignore <| MessageBox.Show "Enter an XField name."; world
+            | (_, "") -> ignore <| MessageBox.Show "Enter a type name."; world
+            | (xFieldName, typeName) ->
+                match tryFindType typeName with
+                | None -> ignore <| MessageBox.Show "Enter a valid type name."; world
+                | Some aType ->
+                    let selectedObject = form.propertyGrid.SelectedObject
+                    match selectedObject with
+                    | :? EntityTypeDescriptorSource as entityTds ->
+                        let world = pushPastWorld world world
+                        let entity = World.getEntity entityTds.Address world
+                        let xFieldValue =
+                            if aType = typeof<string> then String.Empty :> obj
+                            else Activator.CreateInstance aType
+                        let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
+                        let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+                        let world = World.setEntity entityTds.Address entity world
+                        entityTds.RefWorld := world // must be set for property grid
+                        form.propertyGrid.Refresh ()
+                        form.propertyGrid.Select ()
+                        form.propertyGrid.SelectedGridItem <- form.propertyGrid.SelectedGridItem.Parent.GridItems.[xFieldName]
+                        world
+                    | _ -> ignore <| MessageBox.Show "Select an entity to add the XField to."; world)
+
+    let handleFormRemoveSelectedXField (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let selectedObject = form.propertyGrid.SelectedObject
+            match selectedObject with
+            | :? EntityTypeDescriptorSource as entityTds ->
+                match form.propertyGrid.SelectedGridItem.Label with
+                | "" -> ignore <| MessageBox.Show "Select an XField."; world
+                | xFieldName ->
+                    let world = pushPastWorld world world
+                    let entity = World.getEntity entityTds.Address world
+                    let xFields = Map.remove xFieldName entity.Xtension.XFields
+                    let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
+                    let world = World.setEntity entityTds.Address entity world
+                    entityTds.RefWorld := world // must be set for property grid
+                    form.propertyGrid.Refresh ()
+                    world
+            | _ -> ignore <| MessageBox.Show "Select an entity to remove an XField from."; world)
+
+    let handleClearAllXFields (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let selectedObject = form.propertyGrid.SelectedObject
+            match selectedObject with
+            | :? EntityTypeDescriptorSource as entityTds ->
+                let world = pushPastWorld world world
+                let entity = World.getEntity entityTds.Address world
+                let entity = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
+                let world = World.setEntity entityTds.Address entity world
+                entityTds.RefWorld := world // must be set for property grid
+                form.propertyGrid.Refresh ()
+                world
+            | _ -> ignore <| MessageBox.Show "Select an entity to clear all XFields from."; world)
+
+    let handleFormReloadAssets (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
+            let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
+            match World.tryReloadAssets assetSourceDirectory targetDirectory world with
+            | Left error ->
+                ignore <|
+                    MessageBox.Show
+                        ("Asset reload error due to: " + error + "'.",
+                         "Asset reload error.",
+                         MessageBoxButtons.OK,
+                         MessageBoxIcon.Error)
+                world
+            | Right world -> world)
 
     let updateEntityDrag (form : NuEditForm) world =
         if canEditWithMouse form world then world
@@ -379,41 +650,6 @@ module Program =
                 world
             | DragEntityRotation _ -> world
 
-    let beginCameraDrag (_ : NuEditForm) (_ : Event) world =
-        let mousePosition = world.MouseState.MousePosition
-        let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
-        let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
-        let editorState = world.ExtData :?> EditorState
-        let editorState = { editorState with DragCameraState = dragState }
-        let world = { world with ExtData = editorState }
-        (Handled, world)
-
-    let endCameraDrag (_ : NuEditForm) (_ : Event) world =
-        let editorState = world.ExtData :?> EditorState
-        match editorState.DragCameraState with
-        | DragCameraNone -> (Handled, world)
-        | DragCameraPosition _ ->
-            let editorState = { editorState with DragCameraState = DragCameraNone }
-            (Handled, { world with ExtData = editorState })
-
-    let entityAddHandler (form : NuEditForm) event world =
-        addEntityToTreeView form event.Publisher world
-        (Unhandled, world)
-
-    let entityRemovingHandler (form : NuEditForm) event world =
-        match form.treeView.Nodes.Find (string event.Publisher, true) with
-        | [||] -> () // when changing an entity name, entity will be removed twice - once from refWorld, once from world
-        | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
-        match form.propertyGrid.SelectedObject with
-        | null -> (Unhandled, world)
-        | :? EntityTypeDescriptorSource as entityTds ->
-            if event.Publisher <> entityTds.Address then (Unhandled, world)
-            else
-                form.propertyGrid.SelectedObject <- null
-                let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
-                (Unhandled, { world with ExtData = editorState })
-        | _ -> failwith "Unexpected match failure in NuEdit.Program.entityRemovingHandler."
-
     let updateCameraDrag (_ : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
         match editorState.DragCameraState with
@@ -427,313 +663,8 @@ module Program =
             let editorState = { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) }
             { world with ExtData = editorState }
 
-    let handleExit (form : NuEditForm) (_ : EventArgs) =
-        form.Close ()
-
-    let handleCreate (form : NuEditForm) (worldChangers : WorldChangers) refWorld atMouse (_ : EventArgs) =
-        let entityXDispatcherName = form.createEntityComboBox.Text
-        ignore <| worldChangers.AddLast (fun world ->
-            try let entity = Entity.makeDefault entityXDispatcherName None world
-                let world = pushPastWorld world world
-                let (positionSnap, rotationSnap) = getSnaps form
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
-                let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
-                let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
-                let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let entityAddress = addrstr EditorGroupAddress entity.Name
-                let world = World.addEntity entityAddress entity world
-                refWorld := world // must be set for property grid
-                form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-                world
-            with exn ->
-                ignore <| MessageBox.Show (string exn)
-                world)
-
-    let handleDelete (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
-        let selectedObject = form.propertyGrid.SelectedObject
-        ignore <| worldChangers.AddLast (fun world ->
-            let world = pushPastWorld world world
-            match selectedObject with
-            | :? EntityTypeDescriptorSource as entityTds ->
-                let world = World.removeEntity entityTds.Address world
-                form.propertyGrid.SelectedObject <- null
-                world
-            | _ -> world)
-
-    let handleSave (form : NuEditForm) (_ : WorldChangers) refWorld (_ : EventArgs) =
-        let saveFileResult = form.saveFileDialog.ShowDialog form
-        match saveFileResult with
-        | DialogResult.OK -> trySaveFile form.saveFileDialog.FileName !refWorld
-        | _ -> ()
-
-    let handleOpen (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
-        let openFileResult = form.openFileDialog.ShowDialog form
-        match openFileResult with
-        | DialogResult.OK ->
-            ignore <| worldChangers.AddLast (fun world ->
-                let world = tryLoadFile form form.openFileDialog.FileName world
-                let world = clearOtherWorlds world
-                form.propertyGrid.SelectedObject <- null
-                form.interactivityButton.Checked <- false
-                world)
-        | _ -> ()
-
-    let handleUndo (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
-        ignore <| worldChangers.AddLast (fun world ->
-            let editorState = world.ExtData :?> EditorState
-            match editorState.PastWorlds with
-            | [] -> world
-            | pastWorld :: pastWorlds ->
-                let futureWorld = world
-                let world = World.rebuildPhysicsHack EditorGroupAddress pastWorld
-                let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
-                let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
-                refreshFormOnUndoRedo form refWorld world
-                world)
-
-    let handleRedo (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
-        ignore <| worldChangers.AddLast (fun world ->
-            let editorState = world.ExtData :?> EditorState
-            match editorState.FutureWorlds with
-            | [] -> world
-            | futureWorld :: futureWorlds ->
-                let pastWorld = world
-                let world = World.rebuildPhysicsHack EditorGroupAddress futureWorld
-                let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
-                let world = { world with ExtData = editorState; Interactivity = GuiAndPhysics }
-                refreshFormOnUndoRedo form refWorld world
-                world)
-
-    let handleInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
-        // TODO: enable disabling of physics as well
-        let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
-        ignore <| worldChangers.AddLast (fun world ->
-            let pastWorld = world
-            let world = { world with Interactivity = interactivity }
-            if Interactivity.isGamePlaying interactivity then pushPastWorld pastWorld world
-            else world)
-
-    let handleCut (form : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
-        let optEntityTds = form.propertyGrid.SelectedObject
-        match optEntityTds with
-        | null -> ()
-        | :? EntityTypeDescriptorSource as entityTds ->
-            ignore <| worldChangers.AddLast (fun world ->
-                let editorState = world.ExtData :?> EditorState
-                let entity = World.getEntity entityTds.Address world
-                let world = World.removeEntity entityTds.Address world
-                editorState.Clipboard := Some entity
-                form.propertyGrid.SelectedObject <- null
-                world)
-        | _ -> trace <| "Invalid cut operation (likely a code issue in NuEdit)."
-        
-    let handleCopy (form : NuEditForm) (_ : WorldChangers) refWorld (_ : EventArgs) =
-        let optEntityTds = form.propertyGrid.SelectedObject
-        match optEntityTds with
-        | null -> ()
-        | :? EntityTypeDescriptorSource as entityTds ->
-            let entity = World.getEntity entityTds.Address !refWorld
-            let editorState = (!refWorld).ExtData :?> EditorState
-            editorState.Clipboard := Some entity
-        | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."
-
-    let handlePaste (form : NuEditForm) (worldChangers : WorldChangers) refWorld atMouse (_ : EventArgs) =
-        let editorState = (!refWorld).ExtData :?> EditorState
-        match !editorState.Clipboard with
-        | None -> ()
-        | Some entity ->
-            ignore <| worldChangers.AddLast (fun world ->
-                let world = pushPastWorld world world
-                let (positionSnap, rotationSnap) = getSnaps form
-                let id = NuCore.makeId ()
-                let entity = { entity with Id = id; Name = string id }
-                let entityPosition =
-                    if atMouse
-                    then Entity.mouseToEntity editorState.RightClickPosition world entity
-                    else world.Camera.EyeCenter
-                let entityTransform = { Entity.getTransform entity with Position = entityPosition }
-                let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let address = addrstr EditorGroupAddress entity.Name
-                World.addEntity address entity world)
-
-    let handleQuickSize (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
-        let optEntityTds = form.propertyGrid.SelectedObject
-        match optEntityTds with
-        | null -> ()
-        | :? EntityTypeDescriptorSource as entityTds ->
-            ignore <| worldChangers.AddLast (fun world ->
-                let world = pushPastWorld world world
-                let entity = World.getEntity entityTds.Address world
-                let entity = Entity.setSize (Entity.getQuickSize entity world) entity
-                let world = World.setEntity entityTds.Address entity world
-                let world = Entity.propagatePhysics entityTds.Address entity world
-                refWorld := world // must be set for property grid
-                form.propertyGrid.Refresh ()
-                world)
-        | _ -> trace <| "Invalid quick size operation (likely a code issue in NuEdit)."
-
-    let handleResetCamera (_ : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
-        ignore <| worldChangers.AddLast (fun world ->
-            let camera = { world.Camera with EyeCenter = Vector2.Zero }
-            { world with Camera = camera })
-
-    let handleAddXField (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
-        match (form.xFieldNameTextBox.Text, form.typeNameTextBox.Text) with
-        | ("", _) -> ignore <| MessageBox.Show "Enter an XField name."
-        | (_, "") -> ignore <| MessageBox.Show "Enter a type name."
-        | (xFieldName, typeName) ->
-            match tryFindType typeName with
-            | None -> ignore <| MessageBox.Show "Enter a valid type name."
-            | Some aType ->
-                let selectedObject = form.propertyGrid.SelectedObject
-                match selectedObject with
-                | :? EntityTypeDescriptorSource as entityTds ->
-                    ignore <| worldChangers.AddLast (fun world ->
-                        let world = pushPastWorld world world
-                        let entity = World.getEntity entityTds.Address world
-                        let xFieldValue =
-                            if aType = typeof<string> then String.Empty :> obj
-                            else Activator.CreateInstance aType
-                        let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
-                        let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                        let world = World.setEntity entityTds.Address entity world
-                        refWorld := world // must be set for property grid
-                        form.propertyGrid.Refresh ()
-                        form.propertyGrid.Select ()
-                        form.propertyGrid.SelectedGridItem <- form.propertyGrid.SelectedGridItem.Parent.GridItems.[xFieldName]
-                        world)
-                | _ -> ignore <| MessageBox.Show "Select an entity to add the XField to."
-
-    let handleRemoveSelectedXField (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
-        let selectedObject = form.propertyGrid.SelectedObject
-        match selectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            match form.propertyGrid.SelectedGridItem.Label with
-            | "" -> ignore <| MessageBox.Show "Select an XField."
-            | xFieldName ->
-                ignore <| worldChangers.AddLast (fun world ->
-                    let world = pushPastWorld world world
-                    let entity = World.getEntity entityTds.Address world
-                    let xFields = Map.remove xFieldName entity.Xtension.XFields
-                    let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
-                    let world = World.setEntity entityTds.Address entity world
-                    refWorld := world // must be set for property grid
-                    form.propertyGrid.Refresh ()
-                    world)
-        | _ -> ignore <| MessageBox.Show "Select an entity to remove an XField from."
-
-    let handleClearAllXFields (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
-        let selectedObject = form.propertyGrid.SelectedObject
-        match selectedObject with
-        | :? EntityTypeDescriptorSource as entityTds ->
-            ignore <| worldChangers.AddLast (fun world ->
-                let world = pushPastWorld world world
-                let entity = World.getEntity entityTds.Address world
-                let entity = { entity with Xtension = { entity.Xtension with XFields = Map.empty }}
-                let world = World.setEntity entityTds.Address entity world
-                refWorld := world // must be set for property grid
-                form.propertyGrid.Refresh ()
-                world)
-        | _ -> ignore <| MessageBox.Show "Select an entity to clear all XFields from."
-
-    let handleReloadAssets (_ : NuEditForm) (worldChangers : WorldChangers) (_ : World ref) (_ : EventArgs) =
-        ignore <| worldChangers.AddLast (fun world ->
-            let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
-            let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
-            match World.tryReloadAssets assetSourceDirectory targetDirectory world with
-            | Left error ->
-                ignore <|
-                    MessageBox.Show
-                        ("Asset reload error due to: " + error + "'.",
-                         "Asset reload error.",
-                         MessageBoxButtons.OK,
-                         MessageBoxIcon.Error)
-                world
-            | Right world -> world)
-    
-    let handleTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
-        let entityAddress = addr form.treeView.SelectedNode.Name
-        match entityAddress.AddrList with
-        | [_; _; _] -> form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-        | _ -> () // not an entity address
-        
-    let createNuEditForm worldChangers refWorld =
-        let form = new NuEditForm ()
-        // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
-        // necessary if we can figure out how to keep SDL from stealing input events...
-        form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
-        form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
-        form.positionSnapTextBox.Text <- string DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- string DefaultRotationSnap
-        form.creationDepthTextBox.Text <- string DefaultCreationDepth
-        form.exitToolStripMenuItem.Click.Add (handleExit form)
-        form.createEntityButton.Click.Add (handleCreate form worldChangers refWorld false)
-        form.createToolStripMenuItem.Click.Add (handleCreate form worldChangers refWorld false)
-        form.createContextMenuItem.Click.Add (handleCreate form worldChangers refWorld true)
-        form.deleteEntityButton.Click.Add (handleDelete form worldChangers refWorld)
-        form.deleteToolStripMenuItem.Click.Add (handleDelete form worldChangers refWorld)
-        form.deleteContextMenuItem.Click.Add (handleDelete form worldChangers refWorld)
-        form.saveToolStripMenuItem.Click.Add (handleSave form worldChangers refWorld)
-        form.openToolStripMenuItem.Click.Add (handleOpen form worldChangers refWorld)
-        form.undoButton.Click.Add (handleUndo form worldChangers refWorld)
-        form.undoToolStripMenuItem.Click.Add (handleUndo form worldChangers refWorld)
-        form.redoButton.Click.Add (handleRedo form worldChangers refWorld)
-        form.redoToolStripMenuItem.Click.Add (handleRedo form worldChangers refWorld)
-        form.interactivityButton.CheckedChanged.Add (handleInteractivityChanged form worldChangers refWorld)
-        form.cutToolStripMenuItem.Click.Add (handleCut form worldChangers refWorld)
-        form.cutContextMenuItem.Click.Add (handleCut form worldChangers refWorld)
-        form.copyToolStripMenuItem.Click.Add (handleCopy form worldChangers refWorld)
-        form.copyContextMenuItem.Click.Add (handleCopy form worldChangers refWorld)
-        form.pasteToolStripMenuItem.Click.Add (handlePaste form worldChangers refWorld false)
-        form.pasteContextMenuItem.Click.Add (handlePaste form worldChangers refWorld true)
-        form.quickSizeToolStripButton.Click.Add (handleQuickSize form worldChangers refWorld)
-        form.resetCameraButton.Click.Add (handleResetCamera form worldChangers refWorld)
-        form.addXFieldButton.Click.Add (handleAddXField form worldChangers refWorld)
-        form.removeSelectedXFieldButton.Click.Add (handleRemoveSelectedXField form worldChangers refWorld)
-        form.reloadAssetsButton.Click.Add (handleReloadAssets form worldChangers refWorld)
-        form.treeView.AfterSelect.Add (handleTreeViewNodeSelect form worldChangers refWorld)
-        form.Show ()
-        form
-
-    let tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
-        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name 100L 100L
-        let editorState =
-            { TargetDirectory = targetDirectory
-              RightClickPosition = Vector2.Zero
-              DragEntityState = DragEntityNone
-              DragCameraState = DragCameraNone
-              PastWorlds = []
-              FutureWorlds = []
-              Clipboard = ref None }
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics true editorState
-        match optWorld with
-        | Right world ->
-            refWorld := world
-            refWorld := World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name !refWorld, [])] !refWorld
-            refWorld := World.setOptSelectedScreenAddress (Some EditorScreenAddress) !refWorld 
-            refWorld := World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| downRightMouse form worldChangers refWorld) !refWorld
-            refWorld := World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| beginEntityDrag form worldChangers refWorld) !refWorld
-            refWorld := World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| endEntityDrag form) !refWorld
-            refWorld := World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| beginCameraDrag form) !refWorld
-            refWorld := World.subscribe4 UpMouseCenterEventName Address.empty (CustomSub <| endCameraDrag form) !refWorld
-            refWorld := World.subscribe4 (AddEventName + EditorGroupAddress + AnyEventName) Address.empty (CustomSub <| entityAddHandler form) !refWorld
-            refWorld := World.subscribe4 (RemovingEventName + EditorGroupAddress + AnyEventName) Address.empty (CustomSub <| entityRemovingHandler form) !refWorld
-            Right !refWorld
-        | Left errorMsg -> Left errorMsg
-
-    let tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
-        match tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
-        | Right _ ->
-            populateCreateComboBox form !refWorld
-            populateTreeViewGroups form !refWorld
-            Right !refWorld
-        | Left _ as left -> left
-
-    let invalidateDisplayPanel (form : NuEditForm) =
-        form.displayPanel.Invalidate ()
-
     // TODO: remove code duplication with below
-    let updateUndo (form : NuEditForm) world =
+    let updateUndoButton (form : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
         if form.undoToolStripMenuItem.Enabled then
             if List.isEmpty editorState.PastWorlds then
@@ -743,7 +674,7 @@ module Program =
             form.undoButton.Enabled <- true
             form.undoToolStripMenuItem.Enabled <- true
 
-    let updateRedo (form : NuEditForm) world =
+    let updateRedoButton (form : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
         if form.redoToolStripMenuItem.Enabled then
             if List.isEmpty editorState.FutureWorlds then
@@ -753,16 +684,15 @@ module Program =
             form.redoButton.Enabled <- true
             form.redoToolStripMenuItem.Enabled <- true
 
-    let updateEditorWorld form (worldChangers : WorldChangers) refWorld world =
-        refWorld := updateEntityDrag form world
-        refWorld := updateCameraDrag form !refWorld
-        while worldChangers.Count <> 0 do
-            refWorld := worldChangers.First.Value !refWorld
-            worldChangers.RemoveFirst ()
-        updateUndo form !refWorld
-        updateRedo form !refWorld
-        refWorld := { !refWorld with Liveness = if form.IsDisposed then Exiting else Running }
-        !refWorld
+    let updateEditorWorld form (worldChangers : WorldChangers) world =
+        let worldChangersCopy = List.ofSeq worldChangers
+        worldChangers.Clear ()
+        let world = Seq.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
+        let world = updateEntityDrag form world
+        let world = updateCameraDrag form world
+        updateUndoButton form world
+        updateRedoButton form world
+        { world with Liveness = if form.IsDisposed then Exiting else Running }
 
     let selectTargetDirectoryAndMakeGameDispatcher () =
         use openDialog = new OpenFileDialog ()
@@ -780,6 +710,77 @@ module Program =
                 let gameDispatcher = Activator.CreateInstance aType :?> GameDispatcher
                 (directoryName, gameDispatcher)
 
+    let createNuEditForm worldChangers refWorld =
+        let form = new NuEditForm ()
+        // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
+        // necessary if we can figure out how to keep SDL from stealing input events...
+        form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
+        form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
+        form.positionSnapTextBox.Text <- string DefaultPositionSnap
+        form.rotationSnapTextBox.Text <- string DefaultRotationSnap
+        form.creationDepthTextBox.Text <- string DefaultCreationDepth
+        form.exitToolStripMenuItem.Click.Add (handleFormExit form)
+        form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form worldChangers refWorld)
+        form.createEntityButton.Click.Add (handleFormCreate false form worldChangers refWorld)
+        form.createToolStripMenuItem.Click.Add (handleFormCreate false form worldChangers refWorld)
+        form.createContextMenuItem.Click.Add (handleFormCreate true form worldChangers refWorld)
+        form.deleteEntityButton.Click.Add (handleFormDelete form worldChangers)
+        form.deleteToolStripMenuItem.Click.Add (handleFormDelete form worldChangers)
+        form.deleteContextMenuItem.Click.Add (handleFormDelete form worldChangers)
+        form.saveToolStripMenuItem.Click.Add (handleFormSave form worldChangers)
+        form.openToolStripMenuItem.Click.Add (handleFormOpen form worldChangers)
+        form.undoButton.Click.Add (handleFormUndo form worldChangers)
+        form.undoToolStripMenuItem.Click.Add (handleFormUndo form worldChangers)
+        form.redoButton.Click.Add (handleFormRedo form worldChangers)
+        form.redoToolStripMenuItem.Click.Add (handleFormRedo form worldChangers)
+        form.interactivityButton.CheckedChanged.Add (handleFormInteractivityChanged form worldChangers)
+        form.cutToolStripMenuItem.Click.Add (handleFormCut form worldChangers)
+        form.cutContextMenuItem.Click.Add (handleFormCut form worldChangers)
+        form.copyToolStripMenuItem.Click.Add (handleFormCopy form worldChangers)
+        form.copyContextMenuItem.Click.Add (handleFormCopy form worldChangers)
+        form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form worldChangers)
+        form.pasteContextMenuItem.Click.Add (handleFormPaste true form worldChangers)
+        form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form worldChangers)
+        form.resetCameraButton.Click.Add (handleFormResetCamera form worldChangers)
+        form.addXFieldButton.Click.Add (handleFormAddXField form worldChangers)
+        form.removeSelectedXFieldButton.Click.Add (handleFormRemoveSelectedXField form worldChangers)
+        form.reloadAssetsButton.Click.Add (handleFormReloadAssets form worldChangers)
+        form.Show ()
+        form
+
+    let tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
+        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name 100L 100L
+        let editorState =
+            { TargetDirectory = targetDirectory
+              RightClickPosition = Vector2.Zero
+              DragEntityState = DragEntityNone
+              DragCameraState = DragCameraNone
+              PastWorlds = []
+              FutureWorlds = []
+              Clipboard = ref None }
+        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics true editorState
+        match optWorld with
+        | Right world ->
+            let world = World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name world, [])] world
+            let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
+            let world = World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| handleNuDownRightMouse form worldChangers refWorld) world
+            let world = World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| handleNuBeginEntityDrag form worldChangers refWorld) world
+            let world = World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| handleNuEndEntityDrag form) world
+            let world = World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| handleNuBeginCameraDrag form) world
+            let world = World.subscribe4 UpMouseCenterEventName Address.empty (CustomSub <| handleNuBeginEndCameraDrag form) world
+            let world = World.subscribe4 (AddEventName + EditorGroupAddress + AnyEventName) Address.empty (CustomSub <| handleNuEntityAdd form) world
+            let world = World.subscribe4 (RemovingEventName + EditorGroupAddress + AnyEventName) Address.empty (CustomSub <| handleNuEntityRemoving form) world
+            Right world
+        | Left errorMsg -> Left errorMsg
+
+    let tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
+        match tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
+        | Right world ->
+            populateCreateComboBox form world
+            populateTreeViewGroups form world
+            Right world
+        | Left _ as left -> left
+
     let [<EntryPoint; STAThread>] main _ =
         World.init ()
         let worldChangers = WorldChangers ()
@@ -795,7 +796,17 @@ module Program =
               RendererFlags = sdlRendererFlags
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
-            (tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld)
-            (updateEditorWorld form worldChangers refWorld)
-            (fun world -> invalidateDisplayPanel form; world)
+            (fun sdlDeps ->
+                match tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
+                | Right world as right ->
+                    refWorld := world
+                    right
+                | Left _ as left -> left)
+            (fun world ->
+                let world = updateEditorWorld form worldChangers world
+                refWorld := world
+                world)
+            (fun world ->
+                form.displayPanel.Invalidate ()
+                world)
             sdlConfig

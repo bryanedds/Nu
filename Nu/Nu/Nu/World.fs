@@ -243,7 +243,7 @@ module WorldModule =
             else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
 
         // TODO: split this function up...
-        static member internal updateTransition update world =
+        static member internal updateTransition handleUpdate world =
             let world =
                 match World.getOptSelectedScreenAddress world with
                 | None -> world
@@ -291,7 +291,7 @@ module WorldModule =
                         | Exiting -> world
                     | IdlingState -> world
             match world.Liveness with
-            | Running -> update world
+            | Running -> handleUpdate world
             | Exiting -> world
 
         static member private handleSplashScreenIdleTick idlingTime ticks event world =
@@ -449,7 +449,7 @@ module WorldModule =
             List.fold World.handleIntegrationMessage world integrationMessages
 
         static member private integrate world =
-            if World.isPhysicsRunning world then
+            if World.isPhysicsRunning world then // XXX
                 let physicsMessages = world.PhysicsMessages
                 let world = { world with PhysicsMessages = [] }
                 let integrationMessages = Nu.Physics.integrate physicsMessages world.Integrator
