@@ -37,6 +37,27 @@ module WorldModule =
 
     type World with
 
+        static member getMousePosition (_ : World) =
+            let x = ref 0
+            let y = ref 0
+            ignore <| SDL.SDL_GetMouseState (x, y)
+            Vector2I (!x, !y)
+
+        static member getMousePositionF world =
+            let mousePosition = World.getMousePosition world
+            Vector2 (single mousePosition.X, single mousePosition.Y)
+
+        static member getMouseButtonState mouseButton (_ : World) =
+            let sdlMouseButton = MouseButton.toSdl mouseButton
+            SDL.SDL_BUTTON sdlMouseButton = 1u
+
+        static member getKeyboardKeyState scanCode (_ : World) =
+            // HOLY GOD the imperative-ness!
+            let keyboardStatePtr = SDL.SDL_GetKeyboardState (ref 0)
+            let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
+            let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr scanCode
+            state <> byte 0
+
         static member private setScreenStatePlus address state world =
             // TODO: add swallowing for other types of input as well (keys, joy buttons, etc.)
             let world = World.withScreen (fun screen -> { screen with State = state }) address world
@@ -475,28 +496,33 @@ module WorldModule =
                     let event = !refEvent
                     let world =
                         match event.``type`` with
-                        | SDL.SDL_EventType.SDL_QUIT -> { world with Liveness = Exiting }
+                        | SDL.SDL_EventType.SDL_QUIT ->
+                            { world with Liveness = Exiting }
                         | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                             let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                            let world = { world with MouseState = { world.MouseState with MousePosition = mousePosition }}
-                            if Set.contains MouseLeft world.MouseState.MouseDowns
+                            if World.getMouseButtonState MouseLeft world
                             then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName Address.empty (MouseMoveData { Position = mousePosition }) world
                             else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName Address.empty (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                            let mouseButton = Sdl.makeNuMouseButton event.button.button
-                            let mouseEventName = addrstr DownMouseEventName <| string mouseButton
-                            let world = { world with MouseState = { world.MouseState with MouseDowns = Set.add mouseButton world.MouseState.MouseDowns }}
-                            let eventData = MouseButtonData { Position = world.MouseState.MousePosition; Button = mouseButton }
+                            let mousePosition = World.getMousePositionF world
+                            let mouseButton = MouseButton.toNu <| uint32 event.button.button
+                            let mouseEventName = addrlist DownMouseEventName [string mouseButton]
+                            let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                             World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                            let mouseState = world.MouseState
-                            let mouseButton = Sdl.makeNuMouseButton event.button.button
-                            let mouseEventName = addrstr UpMouseEventName <| string mouseButton
-                            if Set.contains mouseButton mouseState.MouseDowns then
-                                let world = { world with MouseState = { world.MouseState with MouseDowns = Set.remove mouseButton world.MouseState.MouseDowns }}
-                                let eventData = MouseButtonData { Position = world.MouseState.MousePosition; Button = mouseButton }
-                                World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
-                            else world
+                            let mousePosition = World.getMousePositionF world
+                            let mouseButton = MouseButton.toNu <| uint32 event.button.button
+                            let mouseEventName = addrlist UpMouseEventName [string mouseButton]
+                            let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
+                            World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
+                        | SDL.SDL_EventType.SDL_KEYDOWN ->
+                            let key = event.key.keysym
+                            let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
+                            World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventName Address.empty eventData world
+                        | SDL.SDL_EventType.SDL_KEYUP ->
+                            let key = event.key.keysym
+                            let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
+                            World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventName Address.empty eventData world
                         | _ -> world
                     (world.Liveness, world))
                 (fun world ->
@@ -573,7 +599,6 @@ module WorldModule =
                       Tasks = []
                       Subscriptions = Map.empty
                       Unsubscriptions = Map.empty
-                      MouseState = { MousePosition = Vector2.Zero; MouseDowns = Set.empty }
                       AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
                       Integrator = Physics.makeIntegrator farseerCautionMode Gravity

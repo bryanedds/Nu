@@ -1,11 +1,10 @@
 ﻿namespace Nu
 open OpenTK
+open SDL2
 open Nu
 
 [<AutoOpen>]
-module InputModule =
-
-    // TODO: implement keyboard input
+module MouseButtonModule =
 
     /// Describes a mouse button.
     type [<StructuralEquality; StructuralComparison>] MouseButton =
@@ -18,7 +17,18 @@ module InputModule =
             | MouseCenter -> "Center"
             | MouseRight -> "Right"
 
-    /// The current state of the mouse.
-    type [<StructuralEquality; NoComparison>] MouseState =
-        { MousePosition : Vector2
-          MouseDowns : MouseButton Set }
+module MouseButton =
+
+    let toSdl mouseButton =
+        match mouseButton with
+        | MouseLeft -> SDL.SDL_BUTTON_LEFT
+        | MouseCenter -> SDL.SDL_BUTTON_MIDDLE
+        | MouseRight -> SDL.SDL_BUTTON_RIGHT
+
+    let toNu mouseButton =
+        match mouseButton with
+        | SDL2.SDL.SDL_BUTTON_LEFT -> MouseLeft
+        | SDL2.SDL.SDL_BUTTON_MIDDLE -> MouseCenter
+        | SDL2.SDL.SDL_BUTTON_RIGHT -> MouseRight
+        | _ -> failwith "Invalid SDL mouse button."
+

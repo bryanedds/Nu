@@ -40,17 +40,6 @@ module SdlModule =
 [<RequireQualifiedAccess>]
 module Sdl =
 
-    let makeNuMouseButton sdlMouseButton =
-        if sdlMouseButton = byte SDL.SDL_BUTTON_LEFT then MouseLeft
-        elif sdlMouseButton = byte SDL.SDL_BUTTON_MIDDLE then MouseCenter
-        else MouseRight
-
-    let makeSdlMouseButton nuMouseButton =
-        match nuMouseButton with
-        | MouseLeft -> byte SDL.SDL_BUTTON_LEFT
-        | MouseCenter -> byte SDL.SDL_BUTTON_MIDDLE
-        | MouseRight -> byte SDL.SDL_BUTTON_RIGHT
-
     let resourceNop (_ : nativeint) = ()
 
     /// Initalize SDL and continue into a given action (AKA, continuation).

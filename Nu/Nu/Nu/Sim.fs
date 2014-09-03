@@ -180,6 +180,10 @@ module SimModule =
         { Position : Vector2
           Button : MouseButton }
 
+    /// The data for a keyboard key event.
+    and [<StructuralEquality; NoComparison>] KeyboardKeyData =
+        { ScanCode : uint32 }
+
     /// The data for an entity collision event.
     and [<StructuralEquality; NoComparison>] EntityCollisionData =
         { Normal : Vector2
@@ -198,6 +202,7 @@ module SimModule =
     and [<ReferenceEquality>] EventData =
         | MouseMoveData of MouseMoveData
         | MouseButtonData of MouseButtonData
+        | KeyboardKeyData of KeyboardKeyData
         | EntityCollisionData of EntityCollisionData
         | EntityChangeData of EntityChangeData
         | OtherData of OtherData
@@ -253,7 +258,6 @@ module SimModule =
           Tasks : Task list
           Subscriptions : SubscriptionEntries
           Unsubscriptions : UnsubscriptionEntries
-          MouseState : MouseState
           AudioPlayer : AudioPlayer
           Renderer : Renderer
           Integrator : Integrator

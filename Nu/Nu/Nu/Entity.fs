@@ -314,6 +314,6 @@ module WorldEntityModule =
 
         static member addEntities groupAddress entities world =
             List.fold
-                (fun world (entity : Entity) -> World.addEntity (addrstr groupAddress entity.Name) entity world)
+                (fun world (entity : Entity) -> World.addEntity (addrlist groupAddress [entity.Name]) entity world)
                 world
                 entities

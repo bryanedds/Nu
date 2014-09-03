@@ -21,7 +21,7 @@ module PhysicsModule =
             val Major : Guid
             val Minor : Guid
             new (major, minor) = { Major = major; PhysicsId.Minor = minor }
-            override this.ToString () = "{ Major = " + string this.Major + "; Minor = " + string this.Minor + " }"
+            override this.ToString () = "{Major = " + string this.Major + "; Minor = " + string this.Minor + "}"
             end
 
     /// Physics-specific vertices type.
