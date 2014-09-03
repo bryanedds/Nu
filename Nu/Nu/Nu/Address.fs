@@ -72,18 +72,6 @@ module AddressModule =
         let list = List.ofArray <| str.Split '/'
         make list
 
-    /// Concatenate a string to the front of an address.
-    let straddr str address =
-        addr str + address
-
-    /// Concatenate a string to the back of an address.
-    let addrstr address str =
-        address + addr str
-
-    /// Surround an address with two strings.
-    let straddrstr str address str2 =
-        addr str + address + addr str2
-
     /// Concatenate a list of strings to the front of an address.
     let listaddr list address =
         make <| list @ address.AddrList

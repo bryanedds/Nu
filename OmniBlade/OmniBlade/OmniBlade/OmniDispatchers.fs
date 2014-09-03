@@ -27,7 +27,8 @@ module FieldGroupDispatcherModule =
             if feeler.IsTouched then
                 let avatarAddress = addrlist event.Subscriber [FieldAvatarName]
                 let avatar = World.getEntity avatarAddress world
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world avatar
+                let mousePosition = World.getMousePositionF world
+                let mousePositionEntity = Entity.mouseToEntity mousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
                 let world = World.applyLinearImpulse impulseVector (Entity.getPhysicsId avatar) world 

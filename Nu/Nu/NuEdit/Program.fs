@@ -116,7 +116,7 @@ module Program =
                         let entity = World.getEntity entityTds.Address world
                         let world = World.removeEntityImmediate entityTds.Address world
                         let entity = { entity with Name = valueStr }
-                        let entityAddress = addrstr EditorGroupAddress valueStr
+                        let entityAddress = addrlist EditorGroupAddress [valueStr]
                         let world = World.addEntity entityAddress entity world
                         entityTds.RefWorld := world // must be set for property grid
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
@@ -288,7 +288,7 @@ module Program =
         match optPicked with
         | None -> None
         | Some entity ->
-            let entityAddress = addrstr EditorGroupAddress entity.Name
+            let entityAddress = addrlist EditorGroupAddress [entity.Name]
             refWorld := world // must be set for property grid
             form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
             tryScrollTreeViewToPropertyGridSelection form
@@ -321,9 +321,9 @@ module Program =
                      MessageBoxIcon.Error)
             world
 
-    let handleNuDownRightMouse (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+    let handleNuDownMouseRight (form : NuEditForm) worldChangers refWorld (_ : Event) world =
         let handled = if World.isGamePlaying world then Unhandled else Handled
-        let mousePosition = world.MouseState.MousePosition
+        let mousePosition = World.getMousePositionF world
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
         let editorState = world.ExtData :?> EditorState
         let editorState = { editorState with RightClickPosition = mousePosition }
@@ -334,7 +334,7 @@ module Program =
         if canEditWithMouse form world then (Unhandled, world)
         else
             let handled = if World.isGamePlaying world then Unhandled else Handled
-            let mousePosition = world.MouseState.MousePosition
+            let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition worldChangers refWorld world with
             | None -> (handled, world)
             | Some (entity, entityAddress) ->
@@ -360,7 +360,7 @@ module Program =
                 (handled, { world with ExtData = editorState })
 
     let handleNuBeginCameraDrag (_ : NuEditForm) (_ : Event) world =
-        let mousePosition = world.MouseState.MousePosition
+        let mousePosition = World.getMousePositionF world
         let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
         let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
         let editorState = world.ExtData :?> EditorState
@@ -414,11 +414,12 @@ module Program =
                 let entity = Entity.makeDefault entityXDispatcherName None world
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
+                let mousePosition = World.getMousePositionF world
+                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let entityAddress = addrstr EditorGroupAddress entity.Name
+                let entityAddress = addrlist EditorGroupAddress [entity.Name]
                 let world = World.addEntity entityAddress entity world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -532,7 +533,7 @@ module Program =
                     else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let address = addrstr EditorGroupAddress entity.Name
+                let address = addrlist EditorGroupAddress [entity.Name]
                 World.addEntity address entity world)
 
     let handleFormQuickSize (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
@@ -639,7 +640,8 @@ module Program =
             | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
                 let (positionSnap, _) = getSnaps form
                 let entity = World.getEntity address world
-                let mousePositionEntity = Entity.mouseToEntity world.MouseState.MousePosition world entity
+                let mousePosition = World.getMousePositionF world
+                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
                 let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
                 let entity = Entity.setPositionSnapped positionSnap entityPosition entity
                 let world = World.setEntity address entity world
@@ -655,7 +657,7 @@ module Program =
         match editorState.DragCameraState with
         | DragCameraNone -> world
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
-            let mousePosition = world.MouseState.MousePosition
+            let mousePosition = World.getMousePositionF world
             let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
             let eyeCenter = (pickOffset - mousePositionScreenOrig) + -CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let camera = { world.Camera with EyeCenter = eyeCenter }
@@ -763,7 +765,7 @@ module Program =
         | Right world ->
             let world = World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name world, [])] world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
-            let world = World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| handleNuDownRightMouse form worldChangers refWorld) world
+            let world = World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| handleNuDownMouseRight form worldChangers refWorld) world
             let world = World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| handleNuBeginEntityDrag form worldChangers refWorld) world
             let world = World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| handleNuEndEntityDrag form) world
             let world = World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| handleNuBeginCameraDrag form) world
