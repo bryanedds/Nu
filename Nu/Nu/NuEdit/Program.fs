@@ -714,13 +714,13 @@ module Program =
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
-        // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
-        // necessary if we can figure out how to keep SDL from stealing input events...
-        form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
         form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
         form.positionSnapTextBox.Text <- string DefaultPositionSnap
         form.rotationSnapTextBox.Text <- string DefaultRotationSnap
         form.creationDepthTextBox.Text <- string DefaultCreationDepth
+        // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
+        // necessary if we can figure out how to keep SDL from stealing input events...
+        form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form worldChangers refWorld)
         form.createEntityButton.Click.Add (handleFormCreate false form worldChangers refWorld)
