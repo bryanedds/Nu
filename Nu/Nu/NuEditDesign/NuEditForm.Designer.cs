@@ -247,7 +247,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1009, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1010, 585);
             this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
@@ -313,7 +313,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1009;
+            this.splitContainer1.SplitterDistance = 1010;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -332,7 +332,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(372, 585);
+            this.splitContainer3.Size = new System.Drawing.Size(371, 585);
             this.splitContainer3.SplitterDistance = 384;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -342,7 +342,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 73);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(372, 311);
+            this.propertyGrid.Size = new System.Drawing.Size(371, 311);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -357,7 +357,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(372, 73);
+            this.groupBox1.Size = new System.Drawing.Size(371, 73);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -418,7 +418,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(372, 197);
+            this.treeView.Size = new System.Drawing.Size(371, 197);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -463,7 +463,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1236, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1267, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -616,7 +616,6 @@
             // reloadOverlaysButton
             // 
             this.reloadOverlaysButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.reloadOverlaysButton.Enabled = false;
             this.reloadOverlaysButton.Image = ((System.Drawing.Image)(resources.GetObject("reloadOverlaysButton.Image")));
             this.reloadOverlaysButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.reloadOverlaysButton.Name = "reloadOverlaysButton";
