@@ -345,12 +345,45 @@ module WorldModule =
             let groupNode = rootNode.[GroupNodeName]
             Group.readFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
+        static member tryReloadOverlays inputDir outputDir world =
+            
+            // try to reload overlay file
+            let inputOverlayFileName = Path.Combine (inputDir, world.OverlayFileName)
+            let outputOverlayFileName = Path.Combine (outputDir, world.OverlayFileName)
+            try File.Copy (inputOverlayFileName, outputOverlayFileName, true)
+
+                // cache old overlayer and make new one
+                let oldOverlayer = world.Overlayer
+                let world = { world with Overlayer = Overlayer.make outputOverlayFileName }
+
+                // apply overlays to all entities
+                // NOTE: uses mutation because I'm really tired right now...
+                // TODO: remove mutation
+                let mutable world = world
+                for screenKvp in world.Entities do
+                    for groupKvp in screenKvp.Value do
+                        for entityKvp in groupKvp.Value do
+                            let entity = entityKvp.Value
+                            let entity = { entity with Id = entity.Id } // hacky copy
+                            match entity.OptOverlayName with
+                            | Some overlayName ->
+                                Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
+                                let address = Address.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
+                                world <- World.setEntity address entity world
+                            | None -> ()
+
+                // right!
+                Right world
+
+            // propagate error
+            with exn -> Left <| string exn
+
         static member tryReloadAssets inputDir outputDir world =
             
             // try to reload asset graph file
             try File.Copy (
-                    Path.Combine(inputDir, world.AssetGraphFileName),
-                    Path.Combine(outputDir, world.AssetGraphFileName), true)
+                    Path.Combine (inputDir, world.AssetGraphFileName),
+                    Path.Combine (outputDir, world.AssetGraphFileName), true)
 
                 // reload asset graph
                 match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with
@@ -366,6 +399,7 @@ module WorldModule =
                         let world = World.reloadAudioAssets world
                         Right world
             
+                    // propagate errors
                     | Left errorMsg -> Left errorMsg
                 | Left error -> Left error
             with exn -> Left <| string exn

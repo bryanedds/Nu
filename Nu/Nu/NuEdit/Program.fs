@@ -621,6 +621,7 @@ module Program =
             let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
             let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
             match World.tryReloadAssets assetSourceDirectory targetDirectory world with
+            | Right world -> world
             | Left error ->
                 ignore <|
                     MessageBox.Show
@@ -628,8 +629,23 @@ module Program =
                          "Asset reload error.",
                          MessageBoxButtons.OK,
                          MessageBoxIcon.Error)
-                world
-            | Right world -> world)
+                world)
+
+    let handleFormReloadOverlays (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+        ignore <| worldChangers.Add (fun world ->
+            let world = pushPastWorld world world
+            let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
+            let overlayDirectory = Path.Combine (targetDirectory, "..\\..")
+            match World.tryReloadOverlays overlayDirectory targetDirectory world with
+            | Right world -> world
+            | Left error ->
+                ignore <|
+                    MessageBox.Show
+                        ("Overlay reload error due to: " + error + "'.",
+                         "Overlay reload error.",
+                         MessageBoxButtons.OK,
+                         MessageBoxIcon.Error)
+                world)
 
     let updateEntityDrag (form : NuEditForm) world =
         if canEditWithMouse form world then world
@@ -747,6 +763,7 @@ module Program =
         form.addXFieldButton.Click.Add (handleFormAddXField form worldChangers)
         form.removeSelectedXFieldButton.Click.Add (handleFormRemoveSelectedXField form worldChangers)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form worldChangers)
+        form.reloadOverlaysButton.Click.Add (handleFormReloadOverlays form worldChangers)
         form.Show ()
         form
 
