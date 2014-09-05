@@ -83,6 +83,10 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
 
+        static member removeField fieldName entity =
+            let xtension = Xtension.removeField fieldName entity.Xtension
+            { entity with Xtension = xtension }
+
         static member setPosition position (entity : Entity) =
              { entity with Position = position }
 
