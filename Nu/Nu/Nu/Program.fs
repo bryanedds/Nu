@@ -6,11 +6,6 @@ module Program =
     scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. *)
 
-    (* WISDOM - In order to have facets dynamically assigned in the editor, an empirical algorithm
-    would be used to tell what fields are used by each facet so that they can be removed from an
-    entity along with the facet. This same empirical algorithm can be used to derive overlay data
-    from both facets and entities as well. *)
-
     (* WISDOM: From benchmarks. it looks like our mobile target will cost us anywhere from a 25% to
     50% decrease in speed as compared to the dev machine. However, this can be mitigated in a few
     ways with approximate speed-ups -
