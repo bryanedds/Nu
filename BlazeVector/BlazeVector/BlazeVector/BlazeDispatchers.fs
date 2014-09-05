@@ -133,10 +133,10 @@ module PlayerDispatcherModule =
 
     type Entity with
 
-        member entity.LastTimeOnGround = entity?LastTimeOnGround () : int64
-        static member setLastTimeOnGround (value : int64) (entity : Entity) : Entity = entity?LastTimeOnGround <- value
-        member entity.LastTimeJump = entity?LastTimeJump () : int64
-        static member setLastTimeJump (value : int64) (entity : Entity) : Entity = entity?LastTimeJump <- value
+        member entity.LastTimeOnGroundTr = entity?LastTimeOnGroundTr () : int64
+        static member setLastTimeOnGroundTr (value : int64) (entity : Entity) : Entity = entity?LastTimeOnGroundTr <- value
+        member entity.LastTimeJumpTr = entity?LastTimeJumpTr () : int64
+        static member setLastTimeJumpTr (value : int64) (entity : Entity) : Entity = entity?LastTimeJumpTr <- value
         
         static member hasFallen (entity : Entity) =
             entity.Position.Y < -600.0f
@@ -177,14 +177,14 @@ module PlayerDispatcherModule =
         let getLastTimeOnGround (player : Entity) world =
             let physicsId = Entity.getPhysicsId player
             if not <| Physics.isBodyOnGround physicsId world.Integrator
-            then player.LastTimeOnGround
+            then player.LastTimeOnGroundTr
             else world.TickTime
 
         let movementHandler event world =
             if World.isGamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
-                let player = Entity.setLastTimeOnGround lastTimeOnGround player
+                let player = Entity.setLastTimeOnGroundTr lastTimeOnGround player
                 let world = World.setEntity event.Subscriber player world
                 let physicsId = Entity.getPhysicsId player
                 let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
@@ -199,9 +199,9 @@ module PlayerDispatcherModule =
         let jumpHandler event world =
             if World.isGamePlaying world then
                 let player = World.getEntity event.Subscriber world
-                if  world.TickTime >= player.LastTimeJump + 12L &&
-                    world.TickTime <= player.LastTimeOnGround + 10L then
-                    let player = Entity.setLastTimeJump world.TickTime player
+                if  world.TickTime >= player.LastTimeJumpTr + 12L &&
+                    world.TickTime <= player.LastTimeOnGroundTr + 10L then
+                    let player = Entity.setLastTimeJumpTr world.TickTime player
                     let world = World.setEntity event.Subscriber player world
                     let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
                     let world = World.playSound JumpSound 1.0f world
@@ -221,8 +221,8 @@ module PlayerDispatcherModule =
                 Entity.setTileRun 4 |>
                 Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
                 Entity.setSpriteImage PlayerImage |>
-                Entity.setLastTimeOnGround Int64.MinValue |>
-                Entity.setLastTimeJump Int64.MinValue
+                Entity.setLastTimeOnGroundTr Int64.MinValue |>
+                Entity.setLastTimeJumpTr Int64.MinValue
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)

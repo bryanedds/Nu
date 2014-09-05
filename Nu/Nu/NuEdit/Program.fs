@@ -92,7 +92,7 @@ module Program =
 
         override this.IsReadOnly =
             not propertyCanWrite ||
-            not <| Xtension.isPropertyNameWriteable propertyName
+            not <| Xtension.isPropertyPersistentByName propertyName
 
         override this.GetValue optSource =
             match optSource with
@@ -147,8 +147,11 @@ module Program =
 
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
         static member GetPropertyDescriptors (aType : Type) optSource =
+            // OPTIMIZATION: seqs used for speed.
             let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Xtension.isPropertyPersistentByName property.Name) properties
             let optProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor) properties
             let propertyDescriptors =
