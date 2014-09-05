@@ -83,8 +83,8 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
 
-        static member describeField (fieldName : string) (optInitValue : 't option) =
-            (fieldName, typeof<'t>, Option.map (fun value -> value :> obj) optInitValue)
+        static member describeField (fieldName : string) (initValue : 't) =
+            (fieldName, typeof<'t>, initValue :> obj)
 
         static member setPosition position (entity : Entity) =
              { entity with Position = position }
@@ -103,18 +103,15 @@ module SimModule =
 
         static member attachFields fieldDescriptors (entity : Entity) =
             List.fold
-                (fun entity (fieldName, _ : Type, optInitValue : obj option) ->
-                    match optInitValue with
-                    | None -> entity
-                    | Some initValue ->
-                        let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
-                        { entity with Xtension = xtension })
+                (fun entity (fieldName, _ : Type, initValue : obj) ->
+                    let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
+                    { entity with Xtension = xtension })
                 entity
                 fieldDescriptors
 
         static member detachFields fieldDescriptors (entity : Entity) =
             List.fold
-                (fun entity (fieldName, _ : Type, _ : obj option) ->
+                (fun entity (fieldName, _ : Type, _ : obj) ->
                     let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
                     { entity with Xtension = xtension })
                 entity
