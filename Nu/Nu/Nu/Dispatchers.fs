@@ -14,55 +14,30 @@ module RigidBodyFacetModule =
 
         member entity.MinorId = entity?MinorId () : Guid
         static member setMinorId (value : Guid) (entity : Entity) : Entity = entity?MinorId <- value
-        static member removeMinorId (entity : Entity) : Entity = Entity.removeField XField?MinorId entity
-
         member entity.BodyType = entity?BodyType () : BodyType
         static member setBodyType (value : BodyType) (entity : Entity) : Entity = entity?BodyType <- value
-        static member removeBodyType (entity : Entity) : Entity = Entity.removeField XField?BodyType entity
-
         member entity.Density = entity?Density () : single
         static member setDensity (value : single) (entity : Entity) : Entity = entity?Density <- value
-        static member removeDensity (entity : Entity) : Entity = Entity.removeField XField?Density entity
-
         member entity.Friction = entity?Friction () : single
         static member setFriction (value : single) (entity : Entity) : Entity = entity?Friction <- value
-        static member removeFriction (entity : Entity) : Entity = Entity.removeField XField?Friction entity
-
         member entity.Restitution = entity?Restitution () : single
         static member setRestitution (value : single) (entity : Entity) : Entity = entity?Restitution <- value
-        static member removeRestitution (entity : Entity) : Entity = Entity.removeField XField?Restitution entity
-
         member entity.FixedRotation = entity?FixedRotation () : bool
         static member setFixedRotation (value : bool) (entity : Entity) : Entity = entity?FixedRotation <- value
-        static member removeFixedRotation (entity : Entity) : Entity = Entity.removeField XField?FixedRotation entity
-
         member entity.LinearDamping = entity?LinearDamping () : single
         static member setLinearDamping (value : single) (entity : Entity) : Entity = entity?LinearDamping <- value
-        static member removeLinearDamping (entity : Entity) : Entity = Entity.removeField XField?LinearDamping entity
-
         member entity.AngularDamping = entity?AngularDamping () : single
         static member setAngularDamping (value : single) (entity : Entity) : Entity = entity?AngularDamping <- value
-        static member removeAngularDamping (entity : Entity) : Entity = Entity.removeField XField?AngularDamping entity
-
         member entity.GravityScale = entity?GravityScale () : single
         static member setGravityScale (value : single) (entity : Entity) : Entity = entity?GravityScale <- value
-        static member removeGravityScale (entity : Entity) : Entity = Entity.removeField XField?GravityScale entity
-
         member entity.CollisionCategories = entity?CollisionCategories () : string
         static member setCollisionCategories (value : string) (entity : Entity) : Entity = entity?CollisionCategories <- value
-        static member removeCollisionCategories (entity : Entity) : Entity = Entity.removeField XField?CollisionCategories entity
-
         member entity.CollisionMask = entity?CollisionMask () : string
         static member setCollisionMask (value : string) (entity : Entity) : Entity = entity?CollisionMask <- value
-        static member removeCollisionMask (entity : Entity) : Entity = Entity.removeField XField?CollisionMask entity
-
         member entity.IsBullet = entity?IsBullet () : bool
         static member setIsBullet (value : bool) (entity : Entity) : Entity = entity?IsBullet <- value
-        static member removeIsBullet (entity : Entity) : Entity = Entity.removeField XField?IsBullet entity
-
         member entity.IsSensor = entity?IsSensor () : bool
         static member setIsSensor (value : bool) (entity : Entity) : Entity = entity?IsSensor <- value
-        static member removeIsSensor (entity : Entity) : Entity = Entity.removeField XField?IsSensor entity
 
         static member getPhysicsId (entity : Entity) =
             PhysicsId (entity.Id, entity.MinorId)
@@ -72,37 +47,27 @@ module RigidBodyFacet =
 
     let [<Literal>] Name = "RigidBodyFacet"
 
+    let FieldDescriptors =
+        [Entity.describeField XField?MinorId None
+         Entity.describeField XField?BodyType <| Some Dynamic
+         Entity.describeField XField?Density <| Some NormalDensity
+         Entity.describeField XField?Friction <| Some 0.0f
+         Entity.describeField XField?Restitution <| Some 0.0f
+         Entity.describeField XField?FixedRotation <| Some false
+         Entity.describeField XField?LinearDamping <| Some 1.0f
+         Entity.describeField XField?AngularDamping <| Some 1.0f
+         Entity.describeField XField?GravityScale <| Some 1.0f
+         Entity.describeField XField?CollisionCategories <| Some "1"
+         Entity.describeField XField?CollisionMask <| Some "*"
+         Entity.describeField XField?IsBullet <| Some false
+         Entity.describeField XField?IsSensor <| Some false]
+
     let attach entity =
-        entity |>
-            Entity.setMinorId (NuCore.makeId ()) |>
-            Entity.setBodyType BodyType.Dynamic |>
-            Entity.setDensity NormalDensity |>
-            Entity.setFriction 0.0f |>
-            Entity.setRestitution 0.0f |>
-            Entity.setFixedRotation false |>
-            Entity.setLinearDamping 1.0f |>
-            Entity.setAngularDamping 1.0f |>
-            Entity.setGravityScale 1.0f |>
-            Entity.setCollisionCategories "1" |>
-            Entity.setCollisionMask "*" |>
-            Entity.setIsBullet false |>
-            Entity.setIsSensor false
+        let entity = Entity.attachFields FieldDescriptors entity
+        Entity.setMinorId (NuCore.makeId ()) entity
 
     let detach entity =
-        entity |>
-            Entity.removeMinorId |>
-            Entity.removeBodyType |>
-            Entity.removeDensity |>
-            Entity.removeFriction |>
-            Entity.removeRestitution |>
-            Entity.removeFixedRotation |>
-            Entity.removeLinearDamping |>
-            Entity.removeAngularDamping |>
-            Entity.removeGravityScale |>
-            Entity.removeCollisionCategories |>
-            Entity.removeCollisionMask |>
-            Entity.removeIsBullet |>
-            Entity.removeIsSensor
+        Entity.detachFields FieldDescriptors entity
 
     let registerPhysics getBodyShape address world =
         let entity = World.getEntity address world
@@ -152,18 +117,20 @@ module SpriteFacetModule =
 
         member entity.SpriteImage = entity?SpriteImage () : Image
         static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
-        static member removeSpriteImage (entity : Entity) : Entity = Entity.removeField XField?SpriteImage entity
 
 [<RequireQualifiedAccess>]
 module SpriteFacet =
 
     let [<Literal>] Name = "SpriteFacet"
 
+    let FieldDescriptors =
+        [Entity.describeField XField?SpriteImage <| Some { ImageAssetName = "Image3"; PackageName = "Default"}]
+
     let attach entity =
-        Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName } entity
+        Entity.attachFields FieldDescriptors entity
 
     let detach entity =
-        Entity.removeSpriteImage entity
+        Entity.detachFields FieldDescriptors entity
 
     let getRenderDescriptors (entity : Entity) viewType world =
         if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
@@ -193,24 +160,24 @@ module AnimatedSpriteFacetModule =
 
         member entity.Stutter = entity?Stutter () : int
         static member setStutter (value : int) (entity : Entity) : Entity = entity?Stutter <- value
-        static member removeStutter (entity : Entity) : Entity = Entity.removeField XField?Stutter entity
-        
         member entity.TileCount = entity?TileCount () : int
         static member setTileCount (value : int) (entity : Entity) : Entity = entity?TileCount <- value
-        static member removeTileCount (entity : Entity) : Entity = Entity.removeField XField?TileCount entity
-        
         member entity.TileRun = entity?TileRun () : int
         static member setTileRun (value : int) (entity : Entity) : Entity = entity?TileRun <- value
-        static member removeTileRun (entity : Entity) : Entity = Entity.removeField XField?TileRun entity
-        
         member entity.TileSize = entity?TileSize () : Vector2
         static member setTileSize (value : Vector2) (entity : Entity) : Entity = entity?TileSize <- value
-        static member removeTileSize (entity : Entity) : Entity = Entity.removeField XField?TileSize entity
 
 [<RequireQualifiedAccess>]
 module AnimatedSpriteFacet =
 
     let [<Literal>] Name = "AnimatedSpriteFacet"
+
+    let FieldDescriptors =
+        [Entity.describeField XField?Stutter <| Some 4
+         Entity.describeField XField?TileCount <| Some 16 
+         Entity.describeField XField?TileRun <| Some 4
+         Entity.describeField XField?TileSize <| Some (Vector2 (16.0f, 16.0f))
+         Entity.describeField XField?SpriteImage <| Some { ImageAssetName = "Image7"; PackageName = "Default"}]
 
     let private getSpriteOptInset (entity : Entity) world =
         let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
@@ -222,20 +189,10 @@ module AnimatedSpriteFacet =
         Some inset
 
     let attach entity =
-        entity |>
-            Entity.setStutter 4 |>
-            Entity.setTileCount 16 |>
-            Entity.setTileRun 4 |>
-            Entity.setTileSize (Vector2 (16.0f, 16.0f)) |>
-            Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }
+        Entity.attachFields FieldDescriptors entity
 
     let detach entity =
-        entity |>
-            Entity.removeStutter |>
-            Entity.removeTileCount |>
-            Entity.removeTileRun |>
-            Entity.removeTileSize |>
-            Entity.removeSpriteImage
+        Entity.detachFields FieldDescriptors entity
 
     let getRenderDescriptors (entity : Entity) viewType world =
         if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
@@ -327,13 +284,10 @@ module ButtonDispatcherModule =
 
         member entity.IsDown = entity?IsDown () : bool
         static member setIsDown (value : bool) (entity : Entity) : Entity = entity?IsDown <- value
-        
         member entity.UpImage = entity?UpImage () : Image
         static member setUpImage (value : Image) (entity : Entity) : Entity = entity?UpImage <- value
-        
         member entity.DownImage = entity?DownImage () : Image
         static member setDownImage (value : Image) (entity : Entity) : Entity = entity?DownImage <- value
-        
         member entity.ClickSound = entity?ClickSound () : Sound
         static member setClickSound (value : Sound) (entity : Entity) : Entity = entity?ClickSound <- value
 
@@ -456,16 +410,12 @@ module TextDispatcherModule =
 
         member entity.BackgroundImage = entity?BackgroundImage () : Image
         static member setBackgroundImage (value : Image) (entity : Entity) : Entity = entity?BackgroundImage <- value
-        
         member entity.Text = entity?Text () : string
         static member setText (value : string) (entity : Entity) : Entity = entity?Text <- value
-        
         member entity.TextFont = entity?TextFont () : Font
         static member setTextFont (value : Font) (entity : Entity) : Entity = entity?TextFont <- value
-        
         member entity.TextOffset = entity?TextOffset () : Vector2
         static member setTextOffset (value : Vector2) (entity : Entity) : Entity = entity?TextOffset <- value
-        
         member entity.TextColor = entity?TextColor () : Vector4
         static member setTextColor (value : Vector4) (entity : Entity) : Entity = entity?TextColor <- value
 
@@ -522,16 +472,12 @@ module ToggleDispatcherModule =
 
         member entity.IsOn = entity?IsOn () : bool
         static member setIsOn (value : bool) (entity : Entity) : Entity = entity?IsOn <- value
-        
         member entity.IsPressed = entity?IsPressed () : bool
         static member setIsPressed (value : bool) (entity : Entity) : Entity = entity?IsPressed <- value
-        
         member entity.OffImage = entity?OffImage () : Image
         static member setOffImage (value : Image) (entity : Entity) : Entity = entity?OffImage <- value
-        
         member entity.OnImage = entity?OnImage () : Image
         static member setOnImage (value : Image) (entity : Entity) : Entity = entity?OnImage <- value
-        
         member entity.ToggleSound = entity?ToggleSound () : Sound
         static member setToggleSound (value : Sound) (entity : Entity) : Entity = entity?ToggleSound <- value
 
@@ -669,13 +615,10 @@ module FillBarDispatcherModule =
     
         member entity.Fill = entity?Fill () : single
         static member setFill (value : single) (entity : Entity) : Entity = entity?Fill <- value
-        
         member entity.FillInset = entity?FillInset () : single
         static member setFillInset (value : single) (entity : Entity) : Entity = entity?FillInset <- value
-        
         member entity.FillImage = entity?FillImage () : Image
         static member setFillImage (value : Image) (entity : Entity) : Entity = entity?FillImage <- value
-        
         member entity.BorderImage = entity?BorderImage () : Image
         static member setBorderImage (value : Image) (entity : Entity) : Entity = entity?BorderImage <- value
 
@@ -884,7 +827,6 @@ module TileMapDispatcherModule =
 
         member entity.TileMapAsset = entity?TileMapAsset () : TileMapAsset
         static member setTileMapAsset (value : TileMapAsset) (entity : Entity) : Entity = entity?TileMapAsset <- value
-        
         member entity.Parallax = entity?Parallax () : single
         static member setParallax (value : single) (entity : Entity) : Entity = entity?Parallax <- value
 
