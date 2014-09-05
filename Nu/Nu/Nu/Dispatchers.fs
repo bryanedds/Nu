@@ -72,7 +72,7 @@ module RigidBodyFacet =
 
     let [<Literal>] Name = "RigidBodyFacet"
 
-    let attach (entity : Entity) (_ : IXDispatcherContainer) =
+    let attach entity =
         entity |>
             Entity.setMinorId (NuCore.makeId ()) |>
             Entity.setBodyType BodyType.Dynamic |>
@@ -88,7 +88,7 @@ module RigidBodyFacet =
             Entity.setIsBullet false |>
             Entity.setIsSensor false
 
-    let detach (entity : Entity) (_ : IXDispatcherContainer) =
+    let detach entity =
         entity |>
             Entity.removeMinorId |>
             Entity.removeBodyType |>
@@ -159,10 +159,10 @@ module SpriteFacet =
 
     let [<Literal>] Name = "SpriteFacet"
 
-    let attach entity (_ : IXDispatcherContainer) =
+    let attach entity =
         Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName } entity
 
-    let detach (entity : Entity) (_ : IXDispatcherContainer) =
+    let detach entity =
         Entity.removeSpriteImage entity
 
     let getRenderDescriptors (entity : Entity) viewType world =
@@ -221,7 +221,7 @@ module AnimatedSpriteFacet =
         let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
         Some inset
 
-    let attach (entity : Entity) (_ : IXDispatcherContainer) =
+    let attach entity =
         entity |>
             Entity.setStutter 4 |>
             Entity.setTileCount 16 |>
@@ -229,7 +229,7 @@ module AnimatedSpriteFacet =
             Entity.setTileSize (Vector2 (16.0f, 16.0f)) |>
             Entity.setSpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }
 
-    let detach (entity : Entity) (_ : IXDispatcherContainer) =
+    let detach entity =
         entity |>
             Entity.removeStutter |>
             Entity.removeTileCount |>
@@ -745,7 +745,7 @@ module RigidBodyDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            RigidBodyFacet.attach entity dispatcherContainer
+            RigidBodyFacet.attach entity
 
         override dispatcher.Register (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
@@ -773,8 +773,8 @@ module RigidBodySpriteDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            let entity = RigidBodyFacet.attach entity dispatcherContainer
-            SpriteFacet.attach entity dispatcherContainer
+            let entity = RigidBodyFacet.attach entity
+            SpriteFacet.attach entity
 
         override dispatcher.Register (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
@@ -808,8 +808,8 @@ module RigidBodyAnimatedSpriteDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            let entity = RigidBodyFacet.attach entity dispatcherContainer
-            AnimatedSpriteFacet.attach entity dispatcherContainer
+            let entity = RigidBodyFacet.attach entity
+            AnimatedSpriteFacet.attach entity
 
         override dispatcher.Register (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
