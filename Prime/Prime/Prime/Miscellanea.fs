@@ -91,3 +91,24 @@ module Miscellanea =
         match tryFindType typeName with
         | None -> failwith <| "Could not find type with name '" + typeName + "'."
         | Some aType -> aType
+
+    /// Along with the Symbol binding, is used to elaborate the name of a symbol without using a
+    /// string literal.
+    type SymbolName =
+        { DummyField : unit }
+        static member (?) (_, name) = name
+
+    /// Along with the SymbolName type, is used to elaborate the name of a field without using a
+    /// string literal.
+    ///
+    /// Usage:
+    ///     let fieldName = Symbol?MySymbolName
+    let Symbol = { DummyField = () }
+    
+    /// Symbol alias for Module names.
+    /// Needed since we can't utter something like typeof<MyModule>.
+    let Module = Symbol
+    
+    /// Symbol alias for Field names.
+    /// Needed since we can't utter something like typeof<MyField>.
+    let Field = Symbol

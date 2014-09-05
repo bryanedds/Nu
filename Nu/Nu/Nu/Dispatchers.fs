@@ -45,22 +45,22 @@ module RigidBodyFacetModule =
 [<RequireQualifiedAccess>]
 module RigidBodyFacet =
 
-    let [<Literal>] Name = "RigidBodyFacet"
+    let Name = Module?RigidBodyFacet
 
     let FieldDescriptors =
-        [Entity.describeField XField?MinorId None
-         Entity.describeField XField?BodyType <| Some Dynamic
-         Entity.describeField XField?Density <| Some NormalDensity
-         Entity.describeField XField?Friction <| Some 0.0f
-         Entity.describeField XField?Restitution <| Some 0.0f
-         Entity.describeField XField?FixedRotation <| Some false
-         Entity.describeField XField?LinearDamping <| Some 1.0f
-         Entity.describeField XField?AngularDamping <| Some 1.0f
-         Entity.describeField XField?GravityScale <| Some 1.0f
-         Entity.describeField XField?CollisionCategories <| Some "1"
-         Entity.describeField XField?CollisionMask <| Some "*"
-         Entity.describeField XField?IsBullet <| Some false
-         Entity.describeField XField?IsSensor <| Some false]
+        [Entity.describeField Field?MinorId None
+         Entity.describeField Field?BodyType <| Some Dynamic
+         Entity.describeField Field?Density <| Some NormalDensity
+         Entity.describeField Field?Friction <| Some 0.0f
+         Entity.describeField Field?Restitution <| Some 0.0f
+         Entity.describeField Field?FixedRotation <| Some false
+         Entity.describeField Field?LinearDamping <| Some 1.0f
+         Entity.describeField Field?AngularDamping <| Some 1.0f
+         Entity.describeField Field?GravityScale <| Some 1.0f
+         Entity.describeField Field?CollisionCategories <| Some "1"
+         Entity.describeField Field?CollisionMask <| Some "*"
+         Entity.describeField Field?IsBullet <| Some false
+         Entity.describeField Field?IsSensor <| Some false]
 
     let attach entity =
         let entity = Entity.attachFields FieldDescriptors entity
@@ -121,10 +121,10 @@ module SpriteFacetModule =
 [<RequireQualifiedAccess>]
 module SpriteFacet =
 
-    let [<Literal>] Name = "SpriteFacet"
+    let Name = Module?SpriteFacet
 
     let FieldDescriptors =
-        [Entity.describeField XField?SpriteImage <| Some { ImageAssetName = "Image3"; PackageName = "Default"}]
+        [Entity.describeField Field?SpriteImage <| Some { ImageAssetName = "Image3"; PackageName = "Default"}]
 
     let attach entity =
         Entity.attachFields FieldDescriptors entity
@@ -170,14 +170,14 @@ module AnimatedSpriteFacetModule =
 [<RequireQualifiedAccess>]
 module AnimatedSpriteFacet =
 
-    let [<Literal>] Name = "AnimatedSpriteFacet"
+    let Name = Module?AnimatedSpriteFacet
 
     let FieldDescriptors =
-        [Entity.describeField XField?Stutter <| Some 4
-         Entity.describeField XField?TileCount <| Some 16 
-         Entity.describeField XField?TileRun <| Some 4
-         Entity.describeField XField?TileSize <| Some (Vector2 (16.0f, 16.0f))
-         Entity.describeField XField?SpriteImage <| Some { ImageAssetName = "Image7"; PackageName = "Default"}]
+        [Entity.describeField Field?Stutter <| Some 4
+         Entity.describeField Field?TileCount <| Some 16 
+         Entity.describeField Field?TileRun <| Some 4
+         Entity.describeField Field?TileSize <| Some (Vector2 (16.0f, 16.0f))
+         Entity.describeField Field?SpriteImage <| Some { ImageAssetName = "Image7"; PackageName = "Default"}]
 
     let private getSpriteOptInset (entity : Entity) world =
         let tile = (int world.TickTime / entity.Stutter) % entity.TileCount

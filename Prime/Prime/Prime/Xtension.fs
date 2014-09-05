@@ -180,7 +180,7 @@ module Xtension =
     let isPropertyPersistentByName (propertyName : string) =
         not <| propertyName.EndsWith "Id" && // don't write an Id
         not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
-        not <| propertyName.EndsWith "Transient" // don't write transient properties
+        not <| propertyName.EndsWith "Np" // don't write non-persistent properties
 
     /// Is the given property writable?
     let isPropertyPersistent (property : PropertyInfo) =
