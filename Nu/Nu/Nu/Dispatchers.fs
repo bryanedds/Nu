@@ -58,7 +58,7 @@ module EntityDispatcherModule =
                 entitiesSorted
 
 [<AutoOpen>]
-module SimpleBodyFacetModule =
+module RigidBodyFacetModule =
 
     type Entity with
 
@@ -93,9 +93,9 @@ module SimpleBodyFacetModule =
             PhysicsId (entity.Id, entity.MinorId)
 
 [<RequireQualifiedAccess>]
-module SimpleBodyFacet =
+module RigidBodyFacet =
 
-    let [<Literal>] Name = "SimpleBodyFacet"
+    let [<Literal>] Name = "RigidBodyFacet"
 
     let init (entity : Entity) (_ : IXDispatcherContainer) =
         entity |>
@@ -155,7 +155,7 @@ module SimpleBodyFacet =
         else world
 
 [<AutoOpen>]
-module SimpleSpriteFacetModule =
+module SpriteFacetModule =
 
     type Entity with
 
@@ -163,9 +163,9 @@ module SimpleSpriteFacetModule =
         static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
 
 [<RequireQualifiedAccess>]
-module SimpleSpriteFacet =
+module SpriteFacet =
 
-    let [<Literal>] Name = "SimpleSpriteFacet"
+    let [<Literal>] Name = "SpriteFacet"
 
     let init entity (_ : IXDispatcherContainer) =
         Entity.setSpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName } entity
@@ -192,7 +192,7 @@ module SimpleSpriteFacet =
         | Some size -> size
 
 [<AutoOpen>]
-module SimpleAnimatedSpriteFacetModule =
+module AnimatedSpriteFacetModule =
 
     type Entity with
 
@@ -206,9 +206,9 @@ module SimpleAnimatedSpriteFacetModule =
         static member setTileSize (value : Vector2) (entity : Entity) : Entity = entity?TileSize <- value
 
 [<RequireQualifiedAccess>]
-module SimpleAnimatedSpriteFacet =
+module AnimatedSpriteFacet =
 
-    let [<Literal>] Name = "SimpleAnimatedSpriteFacet"
+    let [<Literal>] Name = "AnimatedSpriteFacet"
 
     let private getSpriteOptInset (entity : Entity) world =
         let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
@@ -622,7 +622,7 @@ module FillBarDispatcherModule =
                 Entity.setFillInset 0.0f |>
                 Entity.setFillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName } |>
                 Entity.setBorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }
-                
+
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
@@ -660,10 +660,10 @@ module FillBarDispatcherModule =
             false
 
 [<AutoOpen>]
-module SimpleBodyDispatcherModule =
+module RigidBodyDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodyDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.add SimpleBodyFacet.Name facetNames)
+    type [<AbstractClass>] RigidBodyDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.add RigidBodyFacet.Name facetNames)
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
@@ -671,27 +671,27 @@ module SimpleBodyDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            SimpleBodyFacet.init entity dispatcherContainer
+            RigidBodyFacet.init entity dispatcherContainer
 
         override dispatcher.Register (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.registerPhysics getBodyShape address world
+            RigidBodyFacet.registerPhysics getBodyShape address world
 
         override dispatcher.Unregister (address, world) =
-            SimpleBodyFacet.unregisterPhysics address world
+            RigidBodyFacet.unregisterPhysics address world
             
         override dispatcher.PropagatePhysics (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.propagatePhysics getBodyShape address world
+            RigidBodyFacet.propagatePhysics getBodyShape address world
 
         override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage address message world
+            RigidBodyFacet.handleBodyTransformMessage address message world
 
 [<AutoOpen>]
-module SimpleBodySpriteDispatcherModule =
+module RigidBodySpriteDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodySpriteDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.addMany [SimpleSpriteFacet.Name; SimpleBodyFacet.Name] facetNames)
+    type [<AbstractClass>] RigidBodySpriteDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.addMany [SpriteFacet.Name; RigidBodyFacet.Name] facetNames)
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
@@ -699,34 +699,34 @@ module SimpleBodySpriteDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            let entity = SimpleBodyFacet.init entity dispatcherContainer
-            SimpleSpriteFacet.init entity dispatcherContainer
+            let entity = RigidBodyFacet.init entity dispatcherContainer
+            SpriteFacet.init entity dispatcherContainer
 
         override dispatcher.Register (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.registerPhysics getBodyShape address world
+            RigidBodyFacet.registerPhysics getBodyShape address world
 
         override dispatcher.Unregister (address, world) =
-            SimpleBodyFacet.unregisterPhysics address world
+            RigidBodyFacet.unregisterPhysics address world
             
         override dispatcher.PropagatePhysics (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.propagatePhysics getBodyShape address world
+            RigidBodyFacet.propagatePhysics getBodyShape address world
 
         override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage address message world
+            RigidBodyFacet.handleBodyTransformMessage address message world
 
         override dispatcher.GetRenderDescriptors (entity, world) =
-            SimpleSpriteFacet.getRenderDescriptors entity Relative world
+            SpriteFacet.getRenderDescriptors entity Relative world
 
         override dispatcher.GetQuickSize (entity, world) =
-            SimpleSpriteFacet.getQuickSize entity world
+            SpriteFacet.getQuickSize entity world
 
 [<AutoOpen>]
-module SimpleBodyAnimatedSpriteDispatcherModule =
+module RigidBodyAnimatedSpriteDispatcherModule =
 
-    type [<AbstractClass>] SimpleBodyAnimatedSpriteDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.addMany [SimpleAnimatedSpriteFacet.Name; SimpleBodyFacet.Name] facetNames)
+    type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher (facetNames) =
+        inherit EntityDispatcher (Set.addMany [AnimatedSpriteFacet.Name; RigidBodyFacet.Name] facetNames)
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
@@ -734,34 +734,34 @@ module SimpleBodyAnimatedSpriteDispatcherModule =
 
         override dispatcher.Init (entity, dispatcherContainer) =
             let entity = base.Init (entity, dispatcherContainer)
-            let entity = SimpleBodyFacet.init entity dispatcherContainer
-            SimpleAnimatedSpriteFacet.init entity dispatcherContainer
+            let entity = RigidBodyFacet.init entity dispatcherContainer
+            AnimatedSpriteFacet.init entity dispatcherContainer
 
         override dispatcher.Register (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.registerPhysics getBodyShape address world
+            RigidBodyFacet.registerPhysics getBodyShape address world
 
         override dispatcher.Unregister (address, world) =
-            SimpleBodyFacet.unregisterPhysics address world
+            RigidBodyFacet.unregisterPhysics address world
             
         override dispatcher.PropagatePhysics (address, world) =
             let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            SimpleBodyFacet.propagatePhysics getBodyShape address world
+            RigidBodyFacet.propagatePhysics getBodyShape address world
 
         override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            SimpleBodyFacet.handleBodyTransformMessage address message world
+            RigidBodyFacet.handleBodyTransformMessage address message world
 
         override dispatcher.GetRenderDescriptors (entity, world) =
-            SimpleAnimatedSpriteFacet.getRenderDescriptors entity Relative world
+            AnimatedSpriteFacet.getRenderDescriptors entity Relative world
 
         override dispatcher.GetQuickSize (entity, world) =
-            SimpleAnimatedSpriteFacet.getQuickSize entity world
+            AnimatedSpriteFacet.getQuickSize entity world
 
 [<AutoOpen>]
 module BlockDispatcherModule =
 
     type [<Sealed>] BlockDispatcher () =
-        inherit SimpleBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher (Set.empty)
 
         override dispatcher.Init (block, dispatcherContainer) =
             let block = base.Init (block, dispatcherContainer)
@@ -774,7 +774,7 @@ module BlockDispatcherModule =
 module AvatarDispatcherModule =
 
     type [<Sealed>] AvatarDispatcher () =
-        inherit SimpleBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher (Set.empty)
 
         override dispatcher.Init (avatar, dispatcherContainer) =
             let avatar = base.Init (avatar, dispatcherContainer)
@@ -791,7 +791,7 @@ module AvatarDispatcherModule =
 module CharacterDispatcherModule =
 
     type [<Sealed>] CharacterDispatcher () =
-        inherit SimpleBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher (Set.empty)
 
         override dispatcher.Init (character, dispatcherContainer) =
             let character = base.Init (character, dispatcherContainer)

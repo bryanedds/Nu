@@ -16,6 +16,7 @@ open Nu.NuConstants
 module PhysicsModule =
 
     /// Identifies a target whose body can be found in the Integrator.
+    /// TODO: remove PhysicsId and have no more than one body per entity!
     type [<StructuralEquality; StructuralComparison>] PhysicsId =
         struct
             val Major : Guid
