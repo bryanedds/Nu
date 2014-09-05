@@ -176,16 +176,16 @@ module Xtension =
     /// The empty Xtension.
     let empty = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
 
-    /// Is a property with the give name writable?
-    let isPropertyNameWriteable (propertyName : string) =
+    /// Is a property with the give name persistent?
+    let isPropertyPersistentByName (propertyName : string) =
         not <| propertyName.EndsWith "Id" && // don't write an Id
         not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
-        not <| propertyName.EndsWith "Ns" // 'Ns' stands for 'Not serializable'
+        not <| propertyName.EndsWith "Transient" // don't write transient properties
 
     /// Is the given property writable?
-    let isPropertyWriteable (property : PropertyInfo) =
+    let isPropertyPersistent (property : PropertyInfo) =
         property.CanWrite &&
-        isPropertyNameWriteable property.Name
+        isPropertyPersistentByName property.Name
 
     /// Read an Xtension's fields from Xml.
     let readXFields (valueNode : XmlNode) =
@@ -245,7 +245,7 @@ module Xtension =
     let readTargetXDispatcher (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
-        let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyWriteable property) targetProperties
+        let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyPersistent property) targetProperties
         let xtensionNode = targetNode.[xtensionProperty.Name]
         let optXDispatcherName = readOptXDispatcherName xtensionNode
         let xtension = xtensionProperty.GetValue target :?> Xtension
@@ -259,7 +259,7 @@ module Xtension =
         writer.WriteAttributeString (OptXDispatcherNameAttributeName, string xtension.OptXDispatcherName)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
-            if  isPropertyNameWriteable xFieldName &&
+            if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName then
                 let xValue = xField.Value
                 let xDispatcher = xValue.GetType ()
@@ -284,7 +284,7 @@ module Xtension =
                 write shouldWriteProperty writer xtension
                 writer.WriteEndElement ()
             | _ ->
-                if  isPropertyWriteable property &&
+                if  isPropertyPersistent property &&
                     shouldWriteProperty property.Name then
                     let converter = TypeDescriptor.GetConverter property.PropertyType
                     let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
