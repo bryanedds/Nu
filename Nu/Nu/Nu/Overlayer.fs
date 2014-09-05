@@ -87,7 +87,7 @@ module Overlayer =
                 | Some overlayName -> isPropertyOverlaid overlayName propertyName target overlayer
             | _ -> false
 
-    let private tryApplyOverlayToDotNetProperty (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) oldOverlayer =
+    let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) oldOverlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
             (match optOldOverlayName with
@@ -106,7 +106,7 @@ module Overlayer =
         for property in targetProperties do
             match trySelectNode newOverlayName property.Name newOverlayer with
             | None -> ()
-            | Some fieldNode -> tryApplyOverlayToDotNetProperty property fieldNode optOldOverlayName target oldOverlayer
+            | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode optOldOverlayName target oldOverlayer
 
     let private applyOverlayToXtension optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()

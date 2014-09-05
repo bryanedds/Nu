@@ -2,7 +2,7 @@
 <Root>
   <!-- Facet overlays. -->
 
-  <SimpleBodyFacet>
+  <RigidBodyFacet>
     <BodyType>Dynamic</BodyType>
     <Density>10</Density>
     <Friction>0</Friction>
@@ -15,19 +15,19 @@
     <CollisionMask>*</CollisionMask>
     <IsBullet>False</IsBullet>
     <IsSensor>False</IsSensor>
-  </SimpleBodyFacet>
+  </RigidBodyFacet>
 
-  <SimpleSpriteFacet>
+  <SpriteFacet>
     <SpriteImage>Image3;Default</SpriteImage>
-  </SimpleSpriteFacet>
+  </SpriteFacet>
 
-  <SimpleAnimatedSpriteFacet>
+  <AnimatedSpriteFacet>
     <Stutter>4</Stutter>
     <TileCount>16</TileCount>
     <TileRun>4</TileRun>
     <TileSize>16;16</TileSize>
     <SpriteImage>Image7;Default</SpriteImage>
-  </SimpleAnimatedSpriteFacet>
+  </AnimatedSpriteFacet>
 
   <!-- Dispatcher overlays. -->
 
@@ -43,11 +43,11 @@
     <Enabled>True</Enabled>
   </GuiDispatcher>
 
-  <SimpleBodyDispatcher include="EntityDispatcher;SimpleBodyFacet" />
+  <RigidBodyDispatcher include="EntityDispatcher;RigidBodyFacet" />
 
-  <SimpleBodySpriteDispatcher include="SimpleBodyDispatcher;SimpleSpriteFacet" />
+  <RigidBodySpriteDispatcher include="RigidBodyDispatcher;SpriteFacet" />
 
-  <SimpleBodyAnimatedSpriteDispatcher include="SimpleBodyDispatcher;SimpleAnimatedSpriteFacet" />
+  <RigidBodyAnimatedSpriteDispatcher include="RigidBodyDispatcher;AnimatedSpriteFacet" />
 
   <ButtonDispatcher include="GuiDispatcher">
     <IsDown>False</IsDown>
@@ -87,18 +87,18 @@
     <BorderImage>Image10;Default</BorderImage>
   </FillBarDispatcher>
 
-  <BlockDispatcher include="SimpleBodySpriteDispatcher">
+  <BlockDispatcher include="RigidBodySpriteDispatcher">
     <SpriteImage>Image3;Default</SpriteImage>
   </BlockDispatcher>
 
-  <AvatarDispatcher include="SimpleBodyAnimatedSpriteDispatcher">
+  <AvatarDispatcher include="RigidBodyAnimatedSpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
     <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
-  <CharacterDispatcher include="SimpleBodyAnimatedSpriteDispatcher">
+  <CharacterDispatcher include="RigidBodyAnimatedSpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <SpriteImage>Image6;Default</SpriteImage>
