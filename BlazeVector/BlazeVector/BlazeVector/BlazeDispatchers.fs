@@ -19,7 +19,7 @@ module BulletDispatcherModule =
         member entity.Age = entity?Age () : int64
         static member setAge (value : int64) (entity : Entity) : Entity = entity?Age <- value
 
-    type [<Sealed>] BulletDispatcher () =
+    type BulletDispatcher () =
         inherit RigidBodySpriteDispatcher (Set.empty)
 
         let tickHandler event world =
@@ -69,7 +69,7 @@ module EnemyDispatcherModule =
         static member hasAppeared camera (entity : Entity) =
             entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
-    type [<Sealed>] EnemyDispatcher () =
+    type EnemyDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
 
         let move enemy world =
@@ -141,7 +141,7 @@ module PlayerDispatcherModule =
         static member hasFallen (entity : Entity) =
             entity.Position.Y < -600.0f
 
-    type [<Sealed>] PlayerDispatcher () =
+    type PlayerDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
 
         let createBullet bulletAddress (playerTransform : Transform) world =

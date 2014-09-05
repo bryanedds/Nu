@@ -112,3 +112,6 @@ module Miscellanea =
     /// Symbol alias for Field names.
     /// Needed since we can't utter something like typeof<MyField>.
     let Field = Symbol
+
+    /// Symbol alias for Facet names.
+    let Facet = Symbol
