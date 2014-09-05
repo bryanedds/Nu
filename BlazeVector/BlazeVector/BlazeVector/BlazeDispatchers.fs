@@ -16,8 +16,8 @@ module BulletDispatcherModule =
 
     type Entity with
 
-        member entity.Age = entity?Age () : int64
-        static member setAge (value : int64) (entity : Entity) : Entity = entity?Age <- value
+        member bullet.Age = bullet?Age () : int64
+        static member setAge (value : int64) (bullet : Entity) : Entity = bullet?Age <- value
 
     type BulletDispatcher () =
         inherit RigidBodySpriteDispatcher (Set.empty)
@@ -55,19 +55,19 @@ module BulletDispatcherModule =
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
 
-        override dispatcher.GetBodyShape (entity, _) =
-            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
+        override dispatcher.GetBodyShape (bullet, _) =
+            CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module EnemyDispatcherModule =
 
     type Entity with
 
-        member entity.Health = entity?Health () : int
-        static member setHealth (value : int) (entity : Entity) : Entity = entity?Health <- value
+        member enemy.Health = enemy?Health () : int
+        static member setHealth (value : int) (enemy : Entity) : Entity = enemy?Health <- value
 
-        static member hasAppeared camera (entity : Entity) =
-            entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
+        static member hasAppeared camera (enemy : Entity) =
+            enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
     type EnemyDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
@@ -133,13 +133,13 @@ module PlayerDispatcherModule =
 
     type Entity with
 
-        member entity.LastTimeOnGroundNp = entity?LastTimeOnGroundNp () : int64
-        static member setLastTimeOnGroundNp (value : int64) (entity : Entity) : Entity = entity?LastTimeOnGroundNp <- value
-        member entity.LastTimeJumpNp = entity?LastTimeJumpNp () : int64
-        static member setLastTimeJumpNp (value : int64) (entity : Entity) : Entity = entity?LastTimeJumpNp <- value
+        member player.LastTimeOnGroundNp = player?LastTimeOnGroundNp () : int64
+        static member setLastTimeOnGroundNp (value : int64) (player : Entity) : Entity = player?LastTimeOnGroundNp <- value
+        member player.LastTimeJumpNp = player?LastTimeJumpNp () : int64
+        static member setLastTimeJumpNp (value : int64) (player : Entity) : Entity = player?LastTimeJumpNp <- value
         
-        static member hasFallen (entity : Entity) =
-            entity.Position.Y < -600.0f
+        static member hasFallen (player : Entity) =
+            player.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
