@@ -83,9 +83,8 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
 
-        static member removeField fieldName entity =
-            let xtension = Xtension.removeField fieldName entity.Xtension
-            { entity with Xtension = xtension }
+        static member describeField (fieldName : string) (optInitValue : 't option) =
+            (fieldName, typeof<'t>, Option.map (fun value -> value :> obj) optInitValue)
 
         static member setPosition position (entity : Entity) =
              { entity with Position = position }
@@ -101,6 +100,25 @@ module SimModule =
 
         static member setVisible visible (entity : Entity) =
              { entity with Visible = visible }
+
+        static member attachFields fieldDescriptors (entity : Entity) =
+            List.fold
+                (fun entity (fieldName, _ : Type, optInitValue : obj option) ->
+                    match optInitValue with
+                    | None -> entity
+                    | Some initValue ->
+                        let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
+                        { entity with Xtension = xtension })
+                entity
+                fieldDescriptors
+
+        static member detachFields fieldDescriptors (entity : Entity) =
+            List.fold
+                (fun entity (fieldName, _ : Type, _ : obj option) ->
+                    let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
+                    { entity with Xtension = xtension })
+                entity
+                fieldDescriptors
 
     /// Forms logical groups of entities.
     type [<CLIMutable; StructuralEquality; NoComparison>] Group =
