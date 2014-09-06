@@ -10,6 +10,8 @@ open Nu.NuConstants
 [<AutoOpen>]
 module OverlayerModule =
 
+    // TODO: generate default overlays for dispatchers and facets.
+
     type OverlayState =
         | Bare
         | Altered
