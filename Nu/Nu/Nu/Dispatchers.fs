@@ -42,71 +42,71 @@ module RigidBodyFacetModule =
         static member getPhysicsId (entity : Entity) =
             PhysicsId (entity.Id, entity.MinorId)
 
-[<RequireQualifiedAccess>]
-module RigidBodyFacet =
+    type RigidBodyFacet (getBodyShape) =
+        inherit EntityFacet ()
 
-    let FieldDescriptors =
-        [Entity.describeField Field?MinorId InvalidId
-         Entity.describeField Field?BodyType Dynamic
-         Entity.describeField Field?Density NormalDensity
-         Entity.describeField Field?Friction 0.0f
-         Entity.describeField Field?Restitution 0.0f
-         Entity.describeField Field?FixedRotation false
-         Entity.describeField Field?LinearDamping 1.0f
-         Entity.describeField Field?AngularDamping 1.0f
-         Entity.describeField Field?GravityScale 1.0f
-         Entity.describeField Field?CollisionCategories "1"
-         Entity.describeField Field?CollisionMask "*"
-         Entity.describeField Field?IsBullet false
-         Entity.describeField Field?IsSensor false]
+        static let fieldDescriptors =
+            [Entity.describeField Field?MinorId InvalidId
+             Entity.describeField Field?BodyType Dynamic
+             Entity.describeField Field?Density NormalDensity
+             Entity.describeField Field?Friction 0.0f
+             Entity.describeField Field?Restitution 0.0f
+             Entity.describeField Field?FixedRotation false
+             Entity.describeField Field?LinearDamping 1.0f
+             Entity.describeField Field?AngularDamping 1.0f
+             Entity.describeField Field?GravityScale 1.0f
+             Entity.describeField Field?CollisionCategories "1"
+             Entity.describeField Field?CollisionMask "*"
+             Entity.describeField Field?IsBullet false
+             Entity.describeField Field?IsSensor false]
 
-    let attach entity =
-        let entity = Entity.attachFields FieldDescriptors entity
-        Entity.setMinorId (NuCore.makeId ()) entity
+        static member FieldDescriptors =
+            fieldDescriptors
 
-    let detach entity =
-        Entity.detachFields FieldDescriptors entity
+        override facet.Attach entity =
+            let entity = Entity.attachFields fieldDescriptors entity
+            Entity.setMinorId (NuCore.makeId ()) entity
 
-    let registerPhysics getBodyShape address world =
-        let entity = World.getEntity address world
-        let bodyProperties = 
-            { Shape = getBodyShape entity world
-              BodyType = entity.BodyType
-              Density = entity.Density
-              Friction = entity.Friction
-              Restitution = entity.Restitution
-              FixedRotation = entity.FixedRotation
-              LinearDamping = entity.LinearDamping
-              AngularDamping = entity.AngularDamping
-              GravityScale = entity.GravityScale
-              CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
-              CollisionMask = Physics.toCollisionCategories entity.CollisionMask
-              IsBullet = entity.IsBullet
-              IsSensor = entity.IsSensor }
-        let physicsId = Entity.getPhysicsId entity
-        let position = entity.Position + entity.Size * 0.5f
-        let rotation = entity.Rotation
-        World.createBody address physicsId position rotation bodyProperties world
+        override facet.Detach entity =
+            Entity.detachFields fieldDescriptors entity
 
-    let unregisterPhysics address world =
-        let entity = World.getEntity address world
-        World.destroyBody (Entity.getPhysicsId entity) world
+        override facet.RegisterPhysics (entity, address, world) =
+            let bodyProperties = 
+                { Shape = getBodyShape (entity, world)
+                  BodyType = entity.BodyType
+                  Density = entity.Density
+                  Friction = entity.Friction
+                  Restitution = entity.Restitution
+                  FixedRotation = entity.FixedRotation
+                  LinearDamping = entity.LinearDamping
+                  AngularDamping = entity.AngularDamping
+                  GravityScale = entity.GravityScale
+                  CollisionCategories = Physics.toCollisionCategories entity.CollisionCategories
+                  CollisionMask = Physics.toCollisionCategories entity.CollisionMask
+                  IsBullet = entity.IsBullet
+                  IsSensor = entity.IsSensor }
+            let physicsId = Entity.getPhysicsId entity
+            let position = entity.Position + entity.Size * 0.5f
+            let rotation = entity.Rotation
+            World.createBody address physicsId position rotation bodyProperties world
 
-    let propagatePhysics getBodyShape address world =
-        let world = unregisterPhysics address world
-        registerPhysics getBodyShape address world
+        override facet.UnregisterPhysics (entity, _, world) =
+            World.destroyBody (Entity.getPhysicsId entity) world
 
-    let handleBodyTransformMessage address (message : BodyTransformMessage) world =
-        // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
-        let entity = World.getEntity address world
-        if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
-            let entity =
-                entity |>
-                    // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                    Entity.setPosition (message.Position - entity.Size * 0.5f) |>
-                    Entity.setRotation message.Rotation
-            World.setEntity message.EntityAddress entity world
-        else world
+        override facet.PropagatePhysics (entity, address, world) =
+            let world = facet.UnregisterPhysics (entity, address, world)
+            facet.RegisterPhysics (entity, address, world)
+
+        override facet.HandleBodyTransformMessage (entity, address, message : BodyTransformMessage, world) =
+            // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
+            if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
+                let entity =
+                    entity |>
+                        // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
+                        Entity.setPosition (message.Position - entity.Size * 0.5f) |>
+                        Entity.setRotation message.Rotation
+                World.setEntity address entity world
+            else world
 
 [<AutoOpen>]
 module SpriteFacetModule =
@@ -116,38 +116,41 @@ module SpriteFacetModule =
         member entity.SpriteImage = entity?SpriteImage () : Image
         static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
 
-[<RequireQualifiedAccess>]
-module SpriteFacet =
+    type SpriteFacet (viewType) =
+        inherit EntityFacet ()
 
-    let FieldDescriptors =
-        [Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
+        static let fieldDescriptors =
+            [Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
 
-    let attach entity =
-        Entity.attachFields FieldDescriptors entity
+        static member FieldDescriptors =
+            fieldDescriptors
 
-    let detach entity =
-        Entity.detachFields FieldDescriptors entity
+        override facet.Attach entity =
+            Entity.attachFields fieldDescriptors entity
 
-    let getRenderDescriptors (entity : Entity) viewType world =
-        if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
-            [LayerableDescriptor
-                { Depth = entity.Depth
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = entity.Position
-                          Size = entity.Size
-                          Rotation = entity.Rotation
-                          ViewType = viewType
-                          OptInset = None
-                          Image = entity.SpriteImage
-                          Color = Vector4.One }}]
-        else []
+        override facet.Detach entity =
+            Entity.detachFields fieldDescriptors entity
 
-    let getQuickSize (entity : Entity) world =
-        let image = entity.SpriteImage
-        match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-        | None -> DefaultEntitySize
-        | Some size -> size
+        override facet.GetRenderDescriptors (entity : Entity, world) =
+            if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
+                [LayerableDescriptor
+                    { Depth = entity.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
+                            { Position = entity.Position
+                              Size = entity.Size
+                              Rotation = entity.Rotation
+                              ViewType = viewType
+                              OptInset = None
+                              Image = entity.SpriteImage
+                              Color = Vector4.One }}]
+            else []
+
+        override facet.GetQuickSize (entity : Entity, world) =
+            let image = entity.SpriteImage
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            | None -> DefaultEntitySize
+            | Some size -> size
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -165,48 +168,51 @@ module AnimatedSpriteFacetModule =
         member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage () : Image
         static member setAnimatedSpriteImage (value : Image) (entity : Entity) : Entity = entity?AnimatedSpriteImage <- value
 
-[<RequireQualifiedAccess>]
-module AnimatedSpriteFacet =
+    type AnimatedSpriteFacet (viewType) =
+        inherit EntityFacet ()
 
-    let FieldDescriptors =
-        [Entity.describeField Field?Stutter 4
-         Entity.describeField Field?TileCount 16 
-         Entity.describeField Field?TileRun 4
-         Entity.describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
-         Entity.describeField Field?AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
+        static let fieldDescriptors =
+            [Entity.describeField Field?Stutter 4
+             Entity.describeField Field?TileCount 16 
+             Entity.describeField Field?TileRun 4
+             Entity.describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
+             Entity.describeField Field?AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
 
-    let private getSpriteOptInset (entity : Entity) world =
-        let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
-        let tileI = tile % entity.TileRun
-        let tileJ = tile / entity.TileRun
-        let tileX = single tileI * entity.TileSize.X
-        let tileY = single tileJ * entity.TileSize.Y
-        let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
-        Some inset
+        static let getSpriteOptInset (entity : Entity) world =
+            let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
+            let tileI = tile % entity.TileRun
+            let tileJ = tile / entity.TileRun
+            let tileX = single tileI * entity.TileSize.X
+            let tileY = single tileJ * entity.TileSize.Y
+            let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
+            Some inset
 
-    let attach entity =
-        Entity.attachFields FieldDescriptors entity
+        static member FieldDescriptors =
+            fieldDescriptors
 
-    let detach entity =
-        Entity.detachFields FieldDescriptors entity
+        override facet.Attach entity =
+            Entity.attachFields fieldDescriptors entity
 
-    let getRenderDescriptors (entity : Entity) viewType world =
-        if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
-            [LayerableDescriptor
-                { Depth = entity.Depth
-                  LayeredDescriptor =
-                    SpriteDescriptor
-                        { Position = entity.Position
-                          Size = entity.Size
-                          Rotation = entity.Rotation
-                          ViewType = viewType
-                          OptInset = getSpriteOptInset entity world
-                          Image = entity.AnimatedSpriteImage
-                          Color = Vector4.One }}]
-        else []
+        override facet.Detach entity =
+            Entity.detachFields fieldDescriptors entity
 
-    let getQuickSize (entity : Entity) (_ : World) =
-        entity.TileSize
+        override facet.GetRenderDescriptors (entity : Entity, world) =
+            if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
+                [LayerableDescriptor
+                    { Depth = entity.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
+                            { Position = entity.Position
+                              Size = entity.Size
+                              Rotation = entity.Rotation
+                              ViewType = viewType
+                              OptInset = getSpriteOptInset entity world
+                              Image = entity.AnimatedSpriteImage
+                              Color = Vector4.One }}]
+            else []
+
+        override facet.GetQuickSize (entity : Entity, _ : World) =
+            entity.TileSize
 
 [<AutoOpen>]
 module EntityDispatcherModule =
@@ -266,8 +272,8 @@ module GuiDispatcherModule =
         member gui.Enabled = gui?Enabled () : bool
         static member setEnabled (value : bool) (gui : Entity) : Entity = gui?Enabled <- value
 
-    type [<AbstractClass>] GuiDispatcher (facetNames) =
-        inherit EntityDispatcher (facetNames)
+    type [<AbstractClass>] GuiDispatcher () =
+        inherit EntityDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Enabled true]
@@ -275,8 +281,8 @@ module GuiDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (gui, dispatcherContainer) =
-            let gui = base.Init (gui, dispatcherContainer)
+        override dispatcher.Init (gui, facets, dispatcherContainer) =
+            let gui = base.Init (gui, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors gui
 
 [<AutoOpen>]
@@ -294,7 +300,7 @@ module ButtonDispatcherModule =
         static member setClickSound (value : Sound) (button : Entity) : Entity = button?ClickSound <- value
 
     type ButtonDispatcher () =
-        inherit GuiDispatcher (Set.empty)
+        inherit GuiDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?IsDown false
@@ -338,11 +344,11 @@ module ButtonDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (button, dispatcherContainer) =
-            let button = base.Init (button, dispatcherContainer)
+        override dispatcher.Init (button, facets, dispatcherContainer) =
+            let button = base.Init (button, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors button
 
-        override dispatcher.Register (address, world) =
+        override dispatcher.Register (_, address, world) =
             world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleButtonEventDownMouseLeft) |>
                 World.observe UpMouseLeftEventName address (CustomSub handleButtonEventUpMouseLeft)
@@ -380,7 +386,7 @@ module LabelDispatcherModule =
         static member setLabelImage (value : Image) (label : Entity) : Entity = label?LabelImage <- value
 
     type LabelDispatcher () =
-        inherit GuiDispatcher (Set.empty)
+        inherit GuiDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
@@ -388,8 +394,8 @@ module LabelDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (label, dispatcherContainer) =
-            let label = base.Init (label, dispatcherContainer)
+        override dispatcher.Init (label, facets, dispatcherContainer) =
+            let label = base.Init (label, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors label
 
         override dispatcher.GetRenderDescriptors (label, _) =
@@ -433,7 +439,7 @@ module TextDispatcherModule =
         static member setBackgroundImage (value : Image) (text : Entity) : Entity = text?BackgroundImage <- value
 
     type TextDispatcher () =
-        inherit GuiDispatcher (Set.empty)
+        inherit GuiDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Text String.Empty
@@ -445,8 +451,8 @@ module TextDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (text, dispatcherContainer) =
-            let text = base.Init (text, dispatcherContainer)
+        override dispatcher.Init (text, facets, dispatcherContainer) =
+            let text = base.Init (text, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors text
 
         override dispatcher.GetRenderDescriptors (text, _) =
@@ -500,7 +506,7 @@ module ToggleDispatcherModule =
         static member setToggleSound (value : Sound) (toggle : Entity) : Entity = toggle?ToggleSound <- value
 
     type ToggleDispatcher () =
-        inherit GuiDispatcher (Set.empty)
+        inherit GuiDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?IsOn false
@@ -546,11 +552,11 @@ module ToggleDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (toggle, dispatcherContainer) =
-            let toggle = base.Init (toggle, dispatcherContainer)
+        override dispatcher.Init (toggle, facets, dispatcherContainer) =
+            let toggle = base.Init (toggle, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors toggle
 
-        override dispatcher.Register (address, world) =
+        override dispatcher.Register (_, address, world) =
             world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleToggleEventDownMouseLeft) |>
                 World.observe UpMouseLeftEventName address (CustomSub handleToggleEventUpMouseLeft)
@@ -588,7 +594,7 @@ module FeelerDispatcherModule =
         static member setIsTouched (value : bool) (feeler : Entity) : Entity = feeler?IsTouched <- value
 
     type FeelerDispatcher () =
-        inherit GuiDispatcher (Set.empty)
+        inherit GuiDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?IsTouched false]
@@ -622,11 +628,11 @@ module FeelerDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (feeler, dispatcherContainer) =
-            let feeler = base.Init (feeler, dispatcherContainer)
+        override dispatcher.Init (feeler, facets, dispatcherContainer) =
+            let feeler = base.Init (feeler, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors feeler
 
-        override dispatcher.Register (address, world) =
+        override dispatcher.Register (_, address, world) =
             world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleFeelerEventDownMouseLeft) |>
                 World.observe UpMouseLeftEventName address (CustomSub handleFeelerEventUpMouseLeft)
@@ -652,7 +658,7 @@ module FillBarDispatcherModule =
         static member setBorderImage (value : Image) (fillBar : Entity) : Entity = fillBar?BorderImage <- value
 
     type FillBarDispatcher () =
-        inherit GuiDispatcher (Set.empty)
+        inherit GuiDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Fill 0.0f
@@ -670,8 +676,8 @@ module FillBarDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (fillBar, dispatcherContainer) =
-            let fillBar = base.Init (fillBar, dispatcherContainer)
+        override dispatcher.Init (fillBar, facets, dispatcherContainer) =
+            let fillBar = base.Init (fillBar, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors fillBar
 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
@@ -713,106 +719,53 @@ module FillBarDispatcherModule =
 [<AutoOpen>]
 module RigidBodyDispatcherModule =
 
-    type [<AbstractClass>] RigidBodyDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.add Facet?RigidBodyFacet facetNames)
+    type [<AbstractClass>] RigidBodyDispatcher () =
+        inherit EntityDispatcher ()
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
             BoxShape { Extent = entity.Size * 0.5f; Center = Vector2.Zero }
 
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            RigidBodyFacet.attach entity
-
-        override dispatcher.Register (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            RigidBodyFacet.registerPhysics getBodyShape address world
-
-        override dispatcher.Unregister (address, world) =
-            RigidBodyFacet.unregisterPhysics address world
-            
-        override dispatcher.PropagatePhysics (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            RigidBodyFacet.propagatePhysics getBodyShape address world
-
-        override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            RigidBodyFacet.handleBodyTransformMessage address message world
+        override dispatcher.Init (entity, facets, dispatcherContainer) =
+            let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
+            let facets = RigidBodyFacet getBodyShape :> EntityFacet :: facets
+            base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
 module RigidBodySpriteDispatcherModule =
 
-    type [<AbstractClass>] RigidBodySpriteDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.addMany [Facet?SpriteFacet; Facet?RigidBodyFacet] facetNames)
+    type [<AbstractClass>] RigidBodySpriteDispatcher () =
+        inherit EntityDispatcher ()
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
             CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            let entity = RigidBodyFacet.attach entity
-            SpriteFacet.attach entity
-
-        override dispatcher.Register (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            RigidBodyFacet.registerPhysics getBodyShape address world
-
-        override dispatcher.Unregister (address, world) =
-            RigidBodyFacet.unregisterPhysics address world
-            
-        override dispatcher.PropagatePhysics (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            RigidBodyFacet.propagatePhysics getBodyShape address world
-
-        override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            RigidBodyFacet.handleBodyTransformMessage address message world
-
-        override dispatcher.GetRenderDescriptors (entity, world) =
-            SpriteFacet.getRenderDescriptors entity Relative world
-
-        override dispatcher.GetQuickSize (entity, world) =
-            SpriteFacet.getQuickSize entity world
+        override dispatcher.Init (entity, facets, dispatcherContainer) =
+            let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
+            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; SpriteFacet Relative :> EntityFacet] @ facets
+            base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
 module RigidBodyAnimatedSpriteDispatcherModule =
 
-    type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher (facetNames) =
-        inherit EntityDispatcher (Set.addMany [Facet?AnimatedSpriteFacet; Facet?RigidBodyFacet] facetNames)
+    type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher () =
+        inherit EntityDispatcher ()
 
         abstract member GetBodyShape : Entity * World -> BodyShape
         default dispatcher.GetBodyShape (entity, _) =
             CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
 
-        override dispatcher.Init (entity, dispatcherContainer) =
-            let entity = base.Init (entity, dispatcherContainer)
-            let entity = RigidBodyFacet.attach entity
-            AnimatedSpriteFacet.attach entity
-
-        override dispatcher.Register (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            RigidBodyFacet.registerPhysics getBodyShape address world
-
-        override dispatcher.Unregister (address, world) =
-            RigidBodyFacet.unregisterPhysics address world
-            
-        override dispatcher.PropagatePhysics (address, world) =
-            let getBodyShape = (fun entity world -> dispatcher.GetBodyShape (entity, world))
-            RigidBodyFacet.propagatePhysics getBodyShape address world
-
-        override dispatcher.HandleBodyTransformMessage (address, message, world) =
-            RigidBodyFacet.handleBodyTransformMessage address message world
-
-        override dispatcher.GetRenderDescriptors (entity, world) =
-            AnimatedSpriteFacet.getRenderDescriptors entity Relative world
-
-        override dispatcher.GetQuickSize (entity, world) =
-            AnimatedSpriteFacet.getQuickSize entity world
+        override dispatcher.Init (entity, facets, dispatcherContainer) =
+            let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
+            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; AnimatedSpriteFacet Relative :> EntityFacet] @ facets
+            base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
 module BlockDispatcherModule =
 
     type BlockDispatcher () =
-        inherit RigidBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
@@ -820,8 +773,8 @@ module BlockDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (block, dispatcherContainer) =
-            let block = base.Init (block, dispatcherContainer)
+        override dispatcher.Init (block, facets, dispatcherContainer) =
+            let block = base.Init (block, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors block
 
         override dispatcher.GetBodyShape (block, _) =
@@ -831,7 +784,7 @@ module BlockDispatcherModule =
 module AvatarDispatcherModule =
 
     type AvatarDispatcher () =
-        inherit RigidBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?FixedRotation true
@@ -842,8 +795,8 @@ module AvatarDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (avatar, dispatcherContainer) =
-            let avatar = base.Init (avatar, dispatcherContainer)
+        override dispatcher.Init (avatar, facets, dispatcherContainer) =
+            let avatar = base.Init (avatar, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors avatar
 
         override dispatcher.GetBodyShape (avatar, _) =
@@ -853,7 +806,7 @@ module AvatarDispatcherModule =
 module CharacterDispatcherModule =
 
     type CharacterDispatcher () =
-        inherit RigidBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?FixedRotation true
@@ -863,8 +816,8 @@ module CharacterDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (character, dispatcherContainer) =
-            let character = base.Init (character, dispatcherContainer)
+        override dispatcher.Init (character, facets, dispatcherContainer) =
+            let character = base.Init (character, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors character
 
         override dispatcher.GetBodyShape (character, _) =
@@ -910,7 +863,7 @@ module TileMapDispatcherModule =
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; OptTileSetTile = optTileSetTile }
 
     type TileMapDispatcher () =
-        inherit EntityDispatcher (Set.empty)
+        inherit EntityDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Density NormalDensity
@@ -1013,16 +966,14 @@ module TileMapDispatcherModule =
                     tileLayer.Tiles
             else world
 
-        let registerTileMapPhysics address world =
-            let tileMap = World.getEntity address world
+        let registerTileMapPhysics (tileMap : Entity) address world =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (registerTileLayerPhysics address tileMap tileMapData)
                 world
                 tileMapData.Map.Layers
 
-        let unregisterTileMapPhysics address world =
-            let tileMap = World.getEntity address world
+        let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
@@ -1047,20 +998,20 @@ module TileMapDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
         
-        override dispatcher.Init (tileMap, dispatcherContainer) =
-            let tileMap = base.Init (tileMap, dispatcherContainer)
+        override dispatcher.Init (tileMap, facets, dispatcherContainer) =
+            let tileMap = base.Init (tileMap, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors tileMap
 
-        override dispatcher.Register (address, world) =
-            registerTileMapPhysics address world
+        override dispatcher.Register (tileMap, address, world) =
+            registerTileMapPhysics tileMap address world
 
-        override dispatcher.Unregister (address, world) =
-            unregisterTileMapPhysics address world
+        override dispatcher.Unregister (tileMap, _, world) =
+            unregisterTileMapPhysics tileMap world
             
-        override dispatcher.PropagatePhysics (address, world) =
+        override dispatcher.PropagatePhysics (tileMap, address, world) =
             world |>
-                unregisterTileMapPhysics address |>
-                registerTileMapPhysics address
+                unregisterTileMapPhysics tileMap |>
+                registerTileMapPhysics tileMap address
 
         override dispatcher.GetRenderDescriptors (tileMap, world) =
             if tileMap.Visible then

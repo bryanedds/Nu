@@ -14,30 +14,37 @@ open Nu.NuConstants
 [<AutoOpen>]
 module EntityModule =
 
-    type EntityDispatcher (facetNames : string Set) =
+    type EntityDispatcher () =
 
-        new () = EntityDispatcher (Set.empty)
+        abstract member Init : Entity * EntityFacet list * IXDispatcherContainer -> Entity
+        default dispatcher.Init (entity, facets, _) =
+            let entity = Entity.setFacetsNp facets entity
+            List.fold (fun entity (facet : EntityFacet) -> facet.Attach entity) entity entity.FacetsNp
 
-        abstract member Init : Entity * IXDispatcherContainer -> Entity
-        default dispatcher.Init (entity, _) = entity
+        abstract member Register : Entity * Address * World -> World
+        default dispatcher.Register (entity, address, world) =
+            List.fold (fun world (facet : EntityFacet) -> facet.RegisterPhysics (entity, address, world)) world entity.FacetsNp
 
-        abstract member Register : Address * World -> World
-        default dispatcher.Register (_, world) = world
+        abstract member Unregister : Entity * Address * World -> World
+        default dispatcher.Unregister (entity, address, world) =
+            List.fold (fun world (facet : EntityFacet) -> facet.UnregisterPhysics (entity, address, world)) world entity.FacetsNp
 
-        abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (_, world) = world
-                
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+        abstract member PropagatePhysics : Entity * Address * World -> World
+        default dispatcher.PropagatePhysics (entity, address, world) =
+            List.fold (fun world (facet : EntityFacet) -> facet.PropagatePhysics (entity, address, world)) world entity.FacetsNp
 
-        abstract member PropagatePhysics : Address * World -> World
-        default dispatcher.PropagatePhysics (_, world) = world
-
-        abstract member HandleBodyTransformMessage : Address * BodyTransformMessage * World -> World
-        default dispatcher.HandleBodyTransformMessage (_, _, world) = world
+        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
+        default dispatcher.HandleBodyTransformMessage (entity, address, message, world) =
+            List.fold (fun world (facet : EntityFacet) -> facet.HandleBodyTransformMessage (entity, address, message, world)) world entity.FacetsNp
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _) = []
+        default dispatcher.GetRenderDescriptors (entity, world) =
+            List.fold
+                (fun renderDescriptors (facet : EntityFacet) ->
+                    let descriptors = facet.GetRenderDescriptors (entity, world)
+                    descriptors @ renderDescriptors)
+                []
+                entity.FacetsNp
 
         abstract member GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
@@ -45,7 +52,8 @@ module EntityModule =
         abstract member IsTransformRelative : Entity * World -> bool
         default dispatcher.IsTransformRelative (_, _) = true
 
-        member dispatcher.GetFacetNames (_ : World) = facetNames
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
 
     type Entity with
 
@@ -53,32 +61,27 @@ module EntityModule =
 
         static member init (entity : Entity) dispatcherContainer =
             match Xtension.getDispatcher entity.Xtension dispatcherContainer with
-            | :? EntityDispatcher as dispatcher -> dispatcher.Init (entity, dispatcherContainer)
+            | :? EntityDispatcher as dispatcher -> dispatcher.Init (entity, [], dispatcherContainer)
             | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
         
         static member register address (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.Register (address, world)
+            | :? EntityDispatcher as dispatcher -> dispatcher.Register (entity, address, world)
             | _ -> failwith "Due to optimization in Entity.register, an entity's base dispatcher must be an EntityDispatcher."
         
         static member unregister address (entity : Entity) (world : World) : World =
             match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.Unregister (address, world)
+            | :? EntityDispatcher as dispatcher -> dispatcher.Unregister (entity, address, world)
             | _ -> failwith "Due to optimization in Entity.unregister, an entity's base dispatcher must be an EntityDispatcher."
         
-        static member getFacetNames (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.GetFacetNames world
-            | _ -> failwith "Due to optimization in Entity.getFacetNames, an entity's base dispatcher must be an EntityDispatcher."
-
         static member propagatePhysics address (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.PropagatePhysics (address, world)
+            | :? EntityDispatcher as dispatcher -> dispatcher.PropagatePhysics (entity, address, world)
             | _ -> failwith "Due to optimization in Entity.propagatePhysics, an entity's 2d dispatcher must be an EntityDispatcher."
         
         static member handleBodyTransformMessage address message (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.HandleBodyTransformMessage (address, message, world)
+            | :? EntityDispatcher as dispatcher -> dispatcher.HandleBodyTransformMessage (entity, address, message, world)
             | _ -> failwith "Due to optimization in Entity.handleBodyTransformMessage, an entity's 2d dispatcher must be an EntityDispatcher."
         
         static member getRenderDescriptors (entity : Entity) world =
@@ -100,10 +103,6 @@ module EntityModule =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
             | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an EntityDispatcher."
-
-        static member usesFacet facetName entity world =
-            let facetNames = Entity.getFacetNames entity world
-            facetNames.Contains facetName
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
@@ -137,7 +136,8 @@ module EntityModule =
               Rotation = 0.0f
               Visible = true
               OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }
+              FacetsNp = [] }
 
         static member makeDefault dispatcherName optName dispatcherContainer =
             let entity = Entity.makeDefaultUninitialized dispatcherName optName
