@@ -102,18 +102,27 @@ module SimModule =
              { entity with Visible = visible }
 
         static member attachFields fieldDescriptors (entity : Entity) =
+            let entity = { entity with Id = entity.Id } // hacky copy in case property is set directly
             List.fold
                 (fun entity (fieldName, _ : Type, initValue : obj) ->
-                    let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
-                    { entity with Xtension = xtension })
+                    match typeof<Entity>.GetPropertyWritable fieldName with
+                    | null ->
+                        let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
+                        { entity with Xtension = xtension }
+                    | property ->
+                        property.SetValue (entity, initValue)
+                        entity)
                 entity
                 fieldDescriptors
 
         static member detachFields fieldDescriptors (entity : Entity) =
             List.fold
                 (fun entity (fieldName, _ : Type, _ : obj) ->
-                    let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
-                    { entity with Xtension = xtension })
+                    match typeof<Entity>.GetPropertyWritable fieldName with
+                    | null ->
+                        let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
+                        { entity with Xtension = xtension }
+                    | _ -> entity)
                 entity
                 fieldDescriptors
 

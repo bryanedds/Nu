@@ -232,9 +232,9 @@ module Xtension =
 
     /// Read a target's property from Xml if possible.
     let readTargetProperty (fieldNode : XmlNode) (target : 'a) =
-        match typeof<'a>.GetPropertyWritable (fieldNode.Name, BindingFlags.Public ||| BindingFlags.Instance) with
-        | None -> ()
-        | Some property -> tryReadTargetProperty property fieldNode target
+        match typeof<'a>.GetPropertyWritable fieldNode.Name with
+        | null -> ()
+        | property -> tryReadTargetProperty property fieldNode target
 
     /// Read all of a target's properties from Xml.
     let readTargetProperties (targetNode : XmlNode) target =
@@ -244,7 +244,7 @@ module Xtension =
     /// Read just the target's XDispatcher from Xml.
     let readTargetXDispatcher (targetNode : XmlNode) target =
         let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
+        let targetProperties = targetType.GetProperties ()
         let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyPersistent property) targetProperties
         let xtensionNode = targetNode.[xtensionProperty.Name]
         let optXDispatcherName = readOptXDispatcherName xtensionNode
@@ -275,7 +275,7 @@ module Xtension =
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let writeTargetProperties shouldWriteProperty (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
-        let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
+        let properties = aType.GetProperties ()
         for property in properties do
             let propertyValue = property.GetValue source
             match propertyValue with

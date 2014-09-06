@@ -170,7 +170,7 @@ module AnimatedSpriteFacet =
         [Entity.describeField Field?Stutter 4
          Entity.describeField Field?TileCount 16 
          Entity.describeField Field?TileRun 4
-         Entity.describeField Field?TileSize (Vector2 (16.0f, 16.0f))
+         Entity.describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
          Entity.describeField Field?SpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
 
     let private getSpriteOptInset (entity : Entity) world =

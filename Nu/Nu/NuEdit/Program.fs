@@ -148,7 +148,7 @@ module Program =
         // NOTE: This has to be a static member in order to see the relevant types in the recursive definitions.
         static member GetPropertyDescriptors (aType : Type) optSource =
             // OPTIMIZATION: seqs used for speed.
-            let properties = aType.GetProperties (BindingFlags.Instance ||| BindingFlags.Public)
+            let properties = aType.GetProperties ()
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Xtension.isPropertyPersistentByName property.Name) properties

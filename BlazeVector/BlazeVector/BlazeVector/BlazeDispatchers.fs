@@ -22,6 +22,16 @@ module BulletDispatcherModule =
     type BulletDispatcher () =
         inherit RigidBodySpriteDispatcher (Set.empty)
 
+        static let fieldDescriptors =
+            [Entity.describeField Field?Size <| Vector2 (24.0f, 24.0f)
+             Entity.describeField Field?Density 0.25f
+             Entity.describeField Field?Restitution 0.5f
+             Entity.describeField Field?LinearDamping 0.0f
+             Entity.describeField Field?GravityScale 0.0f
+             Entity.describeField Field?IsBullet true
+             Entity.describeField Field?SpriteImage PlayerBulletImage
+             Entity.describeField Field?Age 0L]
+
         let tickHandler event world =
             if World.isGamePlaying world then
                 let bullet = World.getEntity event.Subscriber world
@@ -38,17 +48,13 @@ module BulletDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
+        static member FieldDescriptors =
+            fieldDescriptors
+
         override dispatcher.Init (bullet, dispatcherContainer) =
             let bullet = base.Init (bullet, dispatcherContainer)
-            bullet |>
-                Entity.setSize (Vector2 (24.0f, 24.0f)) |>
-                Entity.setDensity 0.25f |>
-                Entity.setRestitution 0.5f |>
-                Entity.setLinearDamping 0.0f |>
-                Entity.setGravityScale 0.0f |>
-                Entity.setIsBullet true |>
-                Entity.setSpriteImage PlayerBulletImage |>
-                Entity.setAge 0L
+            let bullet = Entity.attachFields fieldDescriptors bullet
+            bullet
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)

@@ -13,49 +13,53 @@ module TypeExtension =
 
         static member GetPropertyByPreference (preference, properties) =
             let optPreferred = Seq.tryFind preference properties
-            if Seq.isEmpty properties then None
+            if Seq.isEmpty properties then null
             else
                 match optPreferred with
-                | None -> Some <| Seq.head properties
-                | Some _ -> optPreferred
+                | None -> Seq.head properties
+                | Some preferred -> preferred
 
-        member this.GetPropertyWritable (propertyName, bindingFlags) =
-            Seq.tryFind
-                (fun (property : PropertyInfo) -> property.Name = propertyName && property.CanWrite)
-                (this.GetProperties bindingFlags)
+        member this.GetPropertyWritable propertyName =
+            let optProperty =
+                Seq.tryFind
+                    (fun (property : PropertyInfo) -> property.Name = propertyName && property.CanWrite)
+                    (this.GetProperties ())
+            match optProperty with
+            | None -> null
+            | Some property -> property
 
-        member this.GetProperties (propertyName, bindingFlags) =
+        member this.GetProperties propertyName =
             Seq.filter
                 (fun (property : PropertyInfo) -> property.Name = propertyName)
-                (this.GetProperties bindingFlags)
+                (this.GetProperties ())
 
-        member this.GetPropertiesWritable bindingFlags =
+        member this.GetPropertiesWritable =
             Seq.filter
                 (fun (property : PropertyInfo) -> property.CanWrite)
-                (this.GetProperties bindingFlags)
+                (this.GetProperties ())
 
-        member this.GetPropertiesWritable (propertyName, bindingFlags) =
+        member this.GetPropertiesWritable propertyName =
             Seq.filter
                 (fun (property : PropertyInfo) -> property.Name = propertyName && property.CanWrite)
-                (this.GetProperties bindingFlags)
+                (this.GetProperties ())
 
-        member this.GetPropertyByPreference (preference, propertyName, bindingFlags) =
-            let properties = this.GetProperties (propertyName, bindingFlags)
+        member this.GetPropertyByPreference (preference, propertyName) =
+            let properties = this.GetProperties propertyName
             Type.GetPropertyByPreference (preference, properties)
 
-        member this.GetPropertyPreferWritable (propertyName, bindingFlags) =
-            this.GetPropertyByPreference ((fun (property : PropertyInfo) -> property.CanWrite), propertyName, bindingFlags)
+        member this.GetPropertyPreferWritable propertyName =
+            this.GetPropertyByPreference ((fun (property : PropertyInfo) -> property.CanWrite), propertyName)
 
-        member this.GetPropertiesByPreference (preference, bindingFlags) =
+        member this.GetPropertiesByPreference preference =
             let propertiesGrouped =
                 Seq.groupBy
                     (fun (property : PropertyInfo) -> property.Name)
-                    (this.GetProperties bindingFlags)
+                    (this.GetProperties ())
             let optProperties =
                 Seq.map
                     (fun (_, properties) -> Type.GetPropertyByPreference (preference, properties))
                     propertiesGrouped
-            Seq.definitize optProperties
+            Seq.filter (fun optProperty -> optProperty <> null) optProperties
 
-        member this.GetPropertiesPreferWritable bindingFlags =
-            this.GetPropertiesByPreference ((fun (property : PropertyInfo) -> property.CanWrite), bindingFlags)
+        member this.GetPropertiesPreferWritable () =
+            this.GetPropertiesByPreference (fun (property : PropertyInfo) -> property.CanWrite)
