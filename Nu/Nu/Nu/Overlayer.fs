@@ -50,7 +50,7 @@ module Overlayer =
         | None -> Bare
         | Some overlayNode -> 
             let targetType = target.GetType ()
-            let optProperty = targetType.GetProperty (overlayNode.Name, BindingFlags.Public ||| BindingFlags.Instance)
+            let optProperty = targetType.GetProperty overlayNode.Name
             let optXtension =
                 match targetType.GetProperty "Xtension" with
                 | null -> None
@@ -77,7 +77,7 @@ module Overlayer =
 
     let private isPropertyOverlaid3 propertyName target overlayer =
         let targetType = target.GetType ()
-        match targetType.GetProperty ("OptOverlayName", BindingFlags.Public ||| BindingFlags.Instance) with
+        match targetType.GetProperty "OptOverlayName" with
         | null -> false
         | optOverlayNameProperty ->
             match optOverlayNameProperty.GetValue target with
@@ -102,7 +102,7 @@ module Overlayer =
 
     let private applyOverlayToDotNetProperties optOldOverlayName newOverlayName (target : 'a) oldOverlayer newOverlayer =
         let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties (BindingFlags.Public ||| BindingFlags.Instance)
+        let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
             match trySelectNode newOverlayName property.Name newOverlayer with
             | None -> ()
