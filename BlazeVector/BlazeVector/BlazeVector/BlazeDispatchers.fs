@@ -20,7 +20,7 @@ module BulletDispatcherModule =
         static member setAge (value : int64) (bullet : Entity) : Entity = bullet?Age <- value
 
     type BulletDispatcher () =
-        inherit RigidBodySpriteDispatcher (Set.empty)
+        inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Size <| Vector2 (24.0f, 24.0f)
@@ -51,13 +51,13 @@ module BulletDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (bullet, dispatcherContainer) =
-            let bullet = base.Init (bullet, dispatcherContainer)
+        override dispatcher.Init (bullet, facets, dispatcherContainer) =
+            let bullet = base.Init (bullet, facets, dispatcherContainer)
             let bullet = Entity.attachFields fieldDescriptors bullet
             bullet
 
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
+        override dispatcher.Register (entity, address, world) =
+            let world = base.Register (entity, address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
 
@@ -76,7 +76,7 @@ module EnemyDispatcherModule =
             enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
     type EnemyDispatcher () =
-        inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
+        inherit RigidBodyAnimatedSpriteDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Size <| Vector2 (48.0f, 96.0f)
@@ -126,12 +126,12 @@ module EnemyDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (enemy, dispatcherContainer) =
-            let enemy = base.Init (enemy, dispatcherContainer)
+        override dispatcher.Init (enemy, facets, dispatcherContainer) =
+            let enemy = base.Init (enemy, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors enemy
 
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
+        override dispatcher.Register (entity, address, world) =
+            let world = base.Register (entity, address, world)
             world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
                 World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
@@ -153,7 +153,7 @@ module PlayerDispatcherModule =
             player.Position.Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
+        inherit RigidBodyAnimatedSpriteDispatcher ()
 
         static let fieldDescriptors =
             [Entity.describeField Field?Size <| Vector2 (48.0f, 96.0f)
@@ -236,12 +236,12 @@ module PlayerDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (player, dispatcherContainer) =
-            let player = base.Init (player, dispatcherContainer)
+        override dispatcher.Init (player, facets, dispatcherContainer) =
+            let player = base.Init (player, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors player
 
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
+        override dispatcher.Register (entity, address, world) =
+            let world = base.Register (entity, address, world)
             world |>
                 World.observe TickEventName address (CustomSub spawnBulletHandler) |>
                 World.observe TickEventName address (CustomSub movementHandler) |>

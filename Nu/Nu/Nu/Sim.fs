@@ -11,6 +11,7 @@ open SDL2
 open OpenTK
 open Prime
 open Nu
+open Nu.NuConstants
 
 [<AutoOpen>]
 module InterativityModule =
@@ -58,140 +59,6 @@ module ScreenStateModule =
 
 [<AutoOpen>]
 module SimModule =
-
-    /// The type around which the whole game engine is based! Used in combination with dispatchers
-    /// to implement things like buttons, avatars, blocks, and all things of that sort.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Entity =
-        { Id : Guid
-          Name : string
-          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
-          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-          Visible : bool
-          OptOverlayName : string option
-          Xtension : Xtension }
-
-        static member (?) (this : Entity, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Entity, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
-
-        static member describeField (fieldName : string) (initValue : 't) =
-            (fieldName, typeof<'t>, initValue :> obj)
-
-        static member setPosition position (entity : Entity) =
-             { entity with Position = position }
-
-        static member setDepth depth (entity : Entity) =
-             { entity with Depth = depth }
-
-        static member setSize size (entity : Entity) =
-             { entity with Size = size }
-
-        static member setRotation rotation (entity : Entity) =
-             { entity with Rotation = rotation }
-
-        static member setVisible visible (entity : Entity) =
-             { entity with Visible = visible }
-
-        static member attachFields fieldDescriptors (entity : Entity) =
-            let entity = { entity with Id = entity.Id } // hacky copy in case property is set directly
-            List.fold
-                (fun entity (fieldName, _ : Type, initValue : obj) ->
-                    match typeof<Entity>.GetPropertyWritable fieldName with
-                    | null ->
-                        let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
-                        { entity with Xtension = xtension }
-                    | property ->
-                        property.SetValue (entity, initValue)
-                        entity)
-                entity
-                fieldDescriptors
-
-        static member detachFields fieldDescriptors (entity : Entity) =
-            List.fold
-                (fun entity (fieldName, _ : Type, _ : obj) ->
-                    match typeof<Entity>.GetPropertyWritable fieldName with
-                    | null ->
-                        let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
-                        { entity with Xtension = xtension }
-                    | _ -> entity)
-                entity
-                fieldDescriptors
-
-    /// Forms logical groups of entities.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Group =
-        { Id : Guid
-          Xtension : Xtension }
-
-        static member (?) (this : Group, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Group, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType group dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
-
-    /// The state of one of a screen's transitions.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
-        { TransitionLifetime : int64
-          TransitionTicks : int64
-          TransitionType : TransitionType
-          OptDissolveImage : Image option }
-
-    /// The screen type that allows transitioning to and fro other screens, and also hosts the
-    /// currently interactive groups of entities.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Screen =
-        { Id : Guid
-          State : ScreenState
-          Incoming : Transition
-          Outgoing : Transition
-          Xtension : Xtension }
-
-        static member (?) (this : Screen, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Screen, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
-
-    /// The game type that hosts the various screens used to navigate through a game.
-    type [<CLIMutable; StructuralEquality; NoComparison>] Game =
-        { Id : Guid
-          OptSelectedScreenAddress : Address option
-          Xtension : Xtension }
-
-        static member (?) (this : Game, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
-
-        static member (?<-) (this : Game, memberName, value) =
-            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
-            { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType game dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
-
-    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
-    type [<StructuralEquality; NoComparison>] Simulant =
-        | Game of Game
-        | Screen of Screen
-        | Group of Group
-        | Entity of Entity
 
     /// A task to be completed at the given time, with time being represented by the world's tick
     /// field.
@@ -268,6 +135,171 @@ module SimModule =
 
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, Address * Address>
+
+    /// A facat the dynamically augments an entity's behavior.
+    and EntityFacet () =
+
+        abstract member Attach : Entity -> Entity
+        default facet.Attach entity = entity
+        
+        abstract member Detach : Entity -> Entity
+        default facet.Detach entity = entity
+
+        abstract member RegisterPhysics : Entity * Address * World -> World
+        default facet.RegisterPhysics (_, _, world) = world
+
+        abstract member UnregisterPhysics : Entity * Address * World -> World
+        default facet.UnregisterPhysics (_, _, world) = world
+        
+        abstract member PropagatePhysics : Entity * Address * World -> World
+        default facet.PropagatePhysics (_, _, world) = world
+        
+        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
+        default facet.HandleBodyTransformMessage (_, _, _, world) = world
+        
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default facet.GetRenderDescriptors (_, _) = []
+        
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default facet.GetQuickSize (_, _) = DefaultEntitySize
+
+    /// The type around which the whole game engine is based! Used in combination with dispatchers
+    /// to implement things like buttons, avatars, blocks, and all things of that sort.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
+        { Id : Guid
+          Name : string
+          Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+          Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
+          Visible : bool
+          OptOverlayName : string option
+          Xtension : Xtension
+          FacetsNp : EntityFacet list }
+
+        static member (?) (this : Entity, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Entity, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
+
+        static member describeField (fieldName : string) (initValue : 't) =
+            (fieldName, typeof<'t>, initValue :> obj)
+
+        static member setPosition position (entity : Entity) =
+             { entity with Position = position }
+
+        static member setDepth depth (entity : Entity) =
+             { entity with Depth = depth }
+
+        static member setSize size (entity : Entity) =
+             { entity with Size = size }
+
+        static member setRotation rotation (entity : Entity) =
+             { entity with Rotation = rotation }
+
+        static member setVisible visible (entity : Entity) =
+             { entity with Visible = visible }
+
+        static member setFacetsNp facets (entity : Entity) =
+             { entity with FacetsNp = facets }
+
+        static member attachFields fieldDescriptors (entity : Entity) =
+            let entity = { entity with Id = entity.Id } // hacky copy in case property is set directly
+            List.fold
+                (fun entity (fieldName, _ : Type, initValue : obj) ->
+                    match typeof<Entity>.GetPropertyWritable fieldName with
+                    | null ->
+                        let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
+                        { entity with Xtension = xtension }
+                    | property ->
+                        property.SetValue (entity, initValue)
+                        entity)
+                entity
+                fieldDescriptors
+
+        static member detachFields fieldDescriptors (entity : Entity) =
+            List.fold
+                (fun entity (fieldName, _ : Type, _ : obj) ->
+                    match typeof<Entity>.GetPropertyWritable fieldName with
+                    | null ->
+                        let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
+                        { entity with Xtension = xtension }
+                    | _ -> entity)
+                entity
+                fieldDescriptors
+
+    /// Forms logical groups of entities.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Group =
+        { Id : Guid
+          Xtension : Xtension }
+
+        static member (?) (this : Group, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Group, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType group dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
+
+    /// The state of one of a screen's transitions.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Transition =
+        { TransitionLifetime : int64
+          TransitionTicks : int64
+          TransitionType : TransitionType
+          OptDissolveImage : Image option }
+
+    /// The screen type that allows transitioning to and fro other screens, and also hosts the
+    /// currently interactive groups of entities.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
+        { Id : Guid
+          State : ScreenState
+          Incoming : Transition
+          Outgoing : Transition
+          Xtension : Xtension }
+
+        static member (?) (this : Screen, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Screen, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
+
+    /// The game type that hosts the various screens used to navigate through a game.
+    and [<CLIMutable; StructuralEquality; NoComparison>] Game =
+        { Id : Guid
+          OptSelectedScreenAddress : Address option
+          Xtension : Xtension }
+
+        static member (?) (this : Game, memberName) =
+            fun args ->
+                Xtension.(?) (this.Xtension, memberName) args
+
+        static member (?<-) (this : Game, memberName, value) =
+            let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
+            { this with Xtension = xtension }
+
+        static member dispatchesAs dispatcherTargetType game dispatcherContainer =
+            Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
+
+    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
+    and [<StructuralEquality; NoComparison>] Simulant =
+        | Game of Game
+        | Screen of Screen
+        | Group of Group
+        | Entity of Entity
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
