@@ -162,6 +162,8 @@ module AnimatedSpriteFacetModule =
         static member setTileRun (value : int) (entity : Entity) : Entity = entity?TileRun <- value
         member entity.TileSize = entity?TileSize () : Vector2
         static member setTileSize (value : Vector2) (entity : Entity) : Entity = entity?TileSize <- value
+        member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage () : Image
+        static member setAnimatedSpriteImage (value : Image) (entity : Entity) : Entity = entity?AnimatedSpriteImage <- value
 
 [<RequireQualifiedAccess>]
 module AnimatedSpriteFacet =
@@ -171,7 +173,7 @@ module AnimatedSpriteFacet =
          Entity.describeField Field?TileCount 16 
          Entity.describeField Field?TileRun 4
          Entity.describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
-         Entity.describeField Field?SpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
+         Entity.describeField Field?AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
 
     let private getSpriteOptInset (entity : Entity) world =
         let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
@@ -199,7 +201,7 @@ module AnimatedSpriteFacet =
                           Rotation = entity.Rotation
                           ViewType = viewType
                           OptInset = getSpriteOptInset entity world
-                          Image = entity.SpriteImage
+                          Image = entity.AnimatedSpriteImage
                           Color = Vector4.One }}]
         else []
 

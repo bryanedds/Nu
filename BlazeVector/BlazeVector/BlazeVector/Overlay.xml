@@ -26,7 +26,7 @@
     <TileCount>16</TileCount>
     <TileRun>4</TileRun>
     <TileSize>16;16</TileSize>
-    <SpriteImage>Image7;Default</SpriteImage>
+    <AnimatedSpriteImage>Image7;Default</AnimatedSpriteImage>
   </AnimatedSpriteFacet>
 
   <!-- Dispatcher overlays. -->
@@ -91,14 +91,14 @@
     <SpriteImage>Image3;Default</SpriteImage>
   </BlockDispatcher>
 
-  <AvatarDispatcher include="RigidBodyAnimatedSpriteDispatcher">
+  <AvatarDispatcher include="RigidBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
     <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
-  <CharacterDispatcher include="RigidBodyAnimatedSpriteDispatcher">
+  <CharacterDispatcher include="RigidBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <SpriteImage>Image6;Default</SpriteImage>
@@ -133,7 +133,7 @@
     <TileCount>6</TileCount>
     <TileRun>4</TileRun>
     <TileSize>48;96</TileSize>
-    <SpriteImage>Enemy;Stage</SpriteImage>
+    <AnimatedSpriteImage>Enemy;Stage</AnimatedSpriteImage>
     <Health>6</Health>
   </EnemyDispatcher>
 
@@ -146,7 +146,7 @@
     <TileCount>16</TileCount>
     <TileRun>4</TileRun>
     <TileSize>48;96</TileSize>
-    <SpriteImage>Player;Stage</SpriteImage>
+    <AnimatedSpriteImage>Player;Stage</AnimatedSpriteImage>
   </PlayerDispatcher>
   
 </Root>

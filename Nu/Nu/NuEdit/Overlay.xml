@@ -26,7 +26,7 @@
     <TileCount>16</TileCount>
     <TileRun>4</TileRun>
     <TileSize>16;16</TileSize>
-    <SpriteImage>Image7;Default</SpriteImage>
+    <AnimatedSpriteImage>Image7;Default</AnimatedSpriteImage>
   </AnimatedSpriteFacet>
 
   <!-- Dispatcher overlays. -->
@@ -86,19 +86,19 @@
     <FillImage>Image9;Default</FillImage>
     <BorderImage>Image10;Default</BorderImage>
   </FillBarDispatcher>
-  
+
   <BlockDispatcher include="RigidBodySpriteDispatcher">
     <SpriteImage>Image3;Default</SpriteImage>
   </BlockDispatcher>
 
-  <AvatarDispatcher include="RigidBodyAnimatedSpriteDispatcher">
+  <AvatarDispatcher include="RigidBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
     <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
-  <CharacterDispatcher include="RigidBodyAnimatedSpriteDispatcher">
+  <CharacterDispatcher include="RigidBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <SpriteImage>Image6;Default</SpriteImage>
@@ -113,5 +113,40 @@
     <TileMap>TileMap;Default</TileMap>
     <Parallax>0</Parallax>
   </TileMapDispatcher>
+
+  <BulletDispatcher include="RigidBodySpriteDispatcher">
+    <Size>24;24</Size>
+    <Density>0.25</Density>
+    <Restitution>0.5</Restitution>
+    <GravityScale>0</GravityScale>
+    <IsBullet>True</IsBullet>
+    <SpriteImage>PlayerBullet;Stage</SpriteImage>
+    <Age>0</Age>
+  </BulletDispatcher>
+
+  <EnemyDispatcher include="CharacterDispatcher">
+    <Size>48;96</Size>
+    <FixedRotation>True</FixedRotation>
+    <LinearDamping>3</LinearDamping>
+    <GravityScale>0</GravityScale>
+    <Stutter>8</Stutter>
+    <TileCount>6</TileCount>
+    <TileRun>4</TileRun>
+    <TileSize>48;96</TileSize>
+    <AnimatedSpriteImage>Enemy;Stage</AnimatedSpriteImage>
+    <Health>6</Health>
+  </EnemyDispatcher>
+
+  <PlayerDispatcher include="CharacterDispatcher">
+    <Size>48;96</Size>
+    <FixedRotation>True</FixedRotation>
+    <LinearDamping>3</LinearDamping>
+    <GravityScale>0</GravityScale>
+    <Stutter>3</Stutter>
+    <TileCount>16</TileCount>
+    <TileRun>4</TileRun>
+    <TileSize>48;96</TileSize>
+    <AnimatedSpriteImage>Player;Stage</AnimatedSpriteImage>
+  </PlayerDispatcher>
 
 </Root>

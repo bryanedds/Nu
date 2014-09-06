@@ -78,6 +78,18 @@ module EnemyDispatcherModule =
     type EnemyDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
 
+        static let fieldDescriptors =
+            [Entity.describeField Field?Size <| Vector2 (48.0f, 96.0f)
+             Entity.describeField Field?FixedRotation true
+             Entity.describeField Field?LinearDamping 3.0f
+             Entity.describeField Field?GravityScale 0.0f
+             Entity.describeField Field?Stutter 8
+             Entity.describeField Field?TileCount 6
+             Entity.describeField Field?TileRun 4
+             Entity.describeField Field?TileSize <| Vector2 (48.0f, 96.0f)
+             Entity.describeField Field?AnimatedSpriteImage EnemyImage
+             Entity.describeField Field?Health 6]
+
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
             let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
@@ -111,19 +123,12 @@ module EnemyDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
+        static member FieldDescriptors =
+            fieldDescriptors
+
         override dispatcher.Init (enemy, dispatcherContainer) =
             let enemy = base.Init (enemy, dispatcherContainer)
-            enemy |>
-                Entity.setSize (Vector2 (48.0f, 96.0f)) |>
-                Entity.setFixedRotation true |>
-                Entity.setLinearDamping 3.0f |>
-                Entity.setGravityScale 0.0f |>
-                Entity.setStutter 8 |>
-                Entity.setTileCount 6 |>
-                Entity.setTileRun 4 |>
-                Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
-                Entity.setSpriteImage EnemyImage |>
-                Entity.setHealth 6
+            Entity.attachFields fieldDescriptors enemy
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
@@ -149,6 +154,19 @@ module PlayerDispatcherModule =
 
     type PlayerDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher (Set.empty)
+
+        static let fieldDescriptors =
+            [Entity.describeField Field?Size <| Vector2 (48.0f, 96.0f)
+             Entity.describeField Field?FixedRotation true
+             Entity.describeField Field?LinearDamping 3.0f
+             Entity.describeField Field?GravityScale 0.0f
+             Entity.describeField Field?Stutter 3
+             Entity.describeField Field?TileCount 16
+             Entity.describeField Field?TileRun 4
+             Entity.describeField Field?TileSize (Vector2 (48.0f, 96.0f))
+             Entity.describeField Field?AnimatedSpriteImage PlayerImage
+             Entity.describeField Field?LastTimeOnGroundNp Int64.MinValue
+             Entity.describeField Field?LastTimeJumpNp Int64.MinValue]
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
@@ -215,20 +233,12 @@ module PlayerDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
+        static member FieldDescriptors =
+            fieldDescriptors
+
         override dispatcher.Init (player, dispatcherContainer) =
             let player = base.Init (player, dispatcherContainer)
-            player |>
-                Entity.setSize (Vector2 (48.0f, 96.0f)) |>
-                Entity.setFixedRotation true |>
-                Entity.setLinearDamping 3.0f |>
-                Entity.setGravityScale 0.0f |>
-                Entity.setStutter 3 |>
-                Entity.setTileCount 16 |>
-                Entity.setTileRun 4 |>
-                Entity.setTileSize (Vector2 (48.0f, 96.0f)) |>
-                Entity.setSpriteImage PlayerImage |>
-                Entity.setLastTimeOnGroundNp Int64.MinValue |>
-                Entity.setLastTimeJumpNp Int64.MinValue
+            Entity.attachFields fieldDescriptors player
 
         override dispatcher.Register (address, world) =
             let world = base.Register (address, world)
