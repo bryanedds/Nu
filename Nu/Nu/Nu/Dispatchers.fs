@@ -82,6 +82,7 @@ module RigidBodyFacetModule =
              Entity.describeField Field?GravityScale 1.0f
              Entity.describeField Field?CollisionCategories "1"
              Entity.describeField Field?CollisionMask "*"
+             Entity.describeField Field?CollisionExpression "Box"
              Entity.describeField Field?IsBullet false
              Entity.describeField Field?IsSensor false]
 

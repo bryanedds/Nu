@@ -583,7 +583,7 @@ module WorldModule =
                 let gameDispatcherName = (gameDispatcher.GetType ()).Name
                 let dispatchers =
                     Map.ofList
-                        // TODO: see if we can reflectively generate this array
+                        // TODO: see if we can reflectively generate this list
                         [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                          typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
                          typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
@@ -599,6 +599,12 @@ module WorldModule =
                          typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                          typeof<GameDispatcher>.Name, GameDispatcher () :> obj
                          gameDispatcherName, gameDispatcher]
+                let facets =
+                    Map.ofList
+                        // TODO: see if we can reflectively generate this list
+                        [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> obj
+                         typeof<SpriteFacet>.Name, SpriteFacet () :> obj
+                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> obj]
                 let world =
                     { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                       Screens = Map.empty
@@ -620,6 +626,7 @@ module WorldModule =
                       RenderMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
                       PhysicsMessages = []
                       Dispatchers = dispatchers
+                      Facets = facets
                       AssetGraphFileName = AssetGraphFileName
                       OverlayFileName = OverlayFileName
                       ExtData = extData }
