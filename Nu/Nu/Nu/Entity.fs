@@ -357,7 +357,8 @@ module WorldEntityModule =
             let entity = facet.Detach entity
             let entity = Entity.setFacetNames (List.remove ((=) (EntityFacet.getName facet)) entity.FacetNames) entity
             let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
-            World.setEntity address entity world
+            let world = World.setEntity address entity world
+            (entity, world)
 
         static member tryAddFacet (facet : EntityFacet) address entity world =
             if Entity.isFacetCompatible facet entity then
@@ -371,9 +372,7 @@ module WorldEntityModule =
 
         static member removeFacets facetsToRemove address entity world =
             List.fold
-                (fun (entity, world) (facet : EntityFacet) ->
-                    let world = World.removeFacet facet address entity world
-                    (entity, world))
+                (fun (entity, world) (facet : EntityFacet) -> World.removeFacet facet address entity world)
                 (entity, world)
                 facetsToRemove
 

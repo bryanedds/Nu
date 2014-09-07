@@ -124,9 +124,13 @@ module Program =
                 | "FacetNames" ->
                     let entity = World.getEntity entityTds.Address world
                     let facetNames = value :?> string list
-                    match World.trySetFacetNames facetNames entityTds.Address entity world with
-                    | Right world -> world
-                    | Left error -> trace error; world
+                    let world =
+                        match World.trySetFacetNames facetNames entityTds.Address entity world with
+                        | Right world -> world
+                        | Left error -> trace error; world
+                    entityTds.RefWorld := world // must be set for property grid
+                    entityTds.Form.propertyGrid.Refresh ()
+                    world
                 | _ ->
                     let entity = World.getEntity entityTds.Address world
                     let optOldOverlayName = entity.OptOverlayName
