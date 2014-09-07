@@ -106,9 +106,10 @@ module Overlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
-            match trySelectNode newOverlayName property.Name newOverlayer with
-            | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode optOldOverlayName target oldOverlayer
-            | None -> ()
+            if property.Name <> "FacetNames" && property.PropertyType <> typeof<string list> then
+                match trySelectNode newOverlayName property.Name newOverlayer with
+                | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode optOldOverlayName target oldOverlayer
+                | None -> ()
 
     let private applyOverlayToXtension optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
