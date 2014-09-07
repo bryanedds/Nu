@@ -66,9 +66,6 @@ module RigidBodyFacetModule =
         static let getBodyShape (entity : Entity) =
             Physics.evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override facet.AttachFields entity =
             Entity.attachFields fieldDefinitions entity
 
@@ -130,11 +127,7 @@ module SpriteFacetModule =
             [define? ViewType Relative
              define? SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override facet.AttachFields entity =
-            /// TODO: check for compatibility for facets
             Entity.attachFields fieldDefinitions entity
 
         override facet.DetachFields entity =
@@ -196,9 +189,6 @@ module AnimatedSpriteFacetModule =
             let tileY = single tileJ * entity.TileSize.Y
             let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
             Some inset
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override facet.AttachFields entity =
             Entity.attachFields fieldDefinitions entity
@@ -288,9 +278,6 @@ module GuiDispatcherModule =
         static let fieldDefinitions =
             [define? Enabled true]
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (gui, world) =
             let gui = base.AttachIntrinsicFields (gui, world)
             Entity.attachFields fieldDefinitions gui
@@ -351,9 +338,6 @@ module ButtonDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (button, world) =
             let button = base.AttachIntrinsicFields (button, world)
             Entity.attachFields fieldDefinitions button
@@ -400,9 +384,6 @@ module LabelDispatcherModule =
 
         static let fieldDefinitions =
             [define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (label, world) =
             let label = base.AttachIntrinsicFields (label, world)
@@ -457,9 +438,6 @@ module TextDispatcherModule =
              define? TextOffset Vector2.Zero
              define? TextColor Vector4.One
              define? BackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (text, world) =
             let text = base.AttachIntrinsicFields (text, world)
@@ -559,9 +537,6 @@ module ToggleDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (toggle, world) =
             let toggle = base.AttachIntrinsicFields (toggle, world)
             Entity.attachFields fieldDefinitions toggle
@@ -635,9 +610,6 @@ module FeelerDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (feeler, world) =
             let feeler = base.AttachIntrinsicFields (feeler, world)
             Entity.attachFields fieldDefinitions feeler
@@ -682,9 +654,6 @@ module FillBarDispatcherModule =
             let spriteWidth = (fillBar.Size.X - spriteInset.X * 2.0f) * fillBar.Fill
             let spriteHeight = fillBar.Size.Y - spriteInset.Y * 2.0f
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (fillBar, world) =
             let fillBar = base.AttachIntrinsicFields (fillBar, world)
@@ -773,9 +742,6 @@ module BlockDispatcherModule =
         static let fieldDefinitions =
             [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (block, world) =
             let block = base.AttachIntrinsicFields (block, world)
             Entity.attachFields fieldDefinitions block
@@ -793,9 +759,6 @@ module AvatarDispatcherModule =
              define? CollisionExpression "Circle"
              define? SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (avatar, world) =
             let avatar = base.AttachIntrinsicFields (avatar, world)
             Entity.attachFields fieldDefinitions avatar
@@ -811,9 +774,6 @@ module CharacterDispatcherModule =
              define? LinearDamping 3.0f
              define? CollisionExpression "Capsule"
              define? SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (character, world) =
             let character = base.AttachIntrinsicFields (character, world)
@@ -949,9 +909,6 @@ module TileMapDispatcherModule =
                 world
                 tileMapData.Map.Layers
 
-        static member FieldDefinitions =
-            fieldDefinitions
-        
         override dispatcher.AttachIntrinsicFields (tileMap, world) =
             let tileMap = base.AttachIntrinsicFields (tileMap, world)
             Entity.attachFields fieldDefinitions tileMap
