@@ -24,24 +24,24 @@ module EntityModule =
 
         abstract member Register : Entity * Address * World -> World
         default dispatcher.Register (entity, address, world) =
-            List.fold (fun world (facet : EntityFacet) -> facet.RegisterPhysics (entity, address, world)) world entity.FacetsNp
+            List.fold (fun world (facet : Facet) -> facet.RegisterPhysics (entity, address, world)) world entity.FacetsNp
 
         abstract member Unregister : Entity * Address * World -> World
         default dispatcher.Unregister (entity, address, world) =
-            List.fold (fun world (facet : EntityFacet) -> facet.UnregisterPhysics (entity, address, world)) world entity.FacetsNp
+            List.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, address, world)) world entity.FacetsNp
 
         abstract member PropagatePhysics : Entity * Address * World -> World
         default dispatcher.PropagatePhysics (entity, address, world) =
-            List.fold (fun world (facet : EntityFacet) -> facet.PropagatePhysics (entity, address, world)) world entity.FacetsNp
+            List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world)) world entity.FacetsNp
 
         abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
         default dispatcher.HandleBodyTransformMessage (entity, address, message, world) =
-            List.fold (fun world (facet : EntityFacet) -> facet.HandleBodyTransformMessage (entity, address, message, world)) world entity.FacetsNp
+            List.fold (fun world (facet : Facet) -> facet.HandleBodyTransformMessage (entity, address, message, world)) world entity.FacetsNp
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (entity, world) =
             List.fold
-                (fun renderDescriptors (facet : EntityFacet) ->
+                (fun renderDescriptors (facet : Facet) ->
                     let descriptors = facet.GetRenderDescriptors (entity, world)
                     descriptors @ renderDescriptors)
                 []
@@ -133,7 +133,7 @@ module EntityModule =
     type Entity with
         
         static member make dispatcherName optName =
-            let id = NuCore.makeId ()
+            let id = makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               Position = Vector2.Zero
@@ -293,10 +293,7 @@ module WorldEntityModule =
 
         static member tryGetFacet facetName world =
             match Map.tryFind facetName world.Facets with
-            | Some facet ->
-                match facet with
-                | :? EntityFacet as facet -> Right <| facet
-                | _ -> Left <| "Invalid entity facet '" + facetName + "'."
+            | Some facet -> Right <| facet
             | None -> Left <| "Invalid facet name '" + facetName + "'."
 
         static member getFacetNamesToAdd oldFacetNames newFacetNames =
@@ -313,35 +310,32 @@ module WorldEntityModule =
 
         static member tryRemoveFacet facetName address world =
             let entity = World.getEntity address world
-            match List.tryFind (fun facet -> EntityFacet.getName facet = facetName) entity.FacetsNp with
+            match List.tryFind (fun facet -> Facet.getName facet = facetName) entity.FacetsNp with
             | Some facet ->
                 let world = facet.UnregisterPhysics (entity, address, world)
                 let entity = facet.DetachFields entity
-                let entity = Entity.setFacetNames (List.remove ((=) (EntityFacet.getName facet)) entity.FacetNames) entity
+                let entity = Entity.setFacetNames (List.remove ((=) (Facet.getName facet)) entity.FacetNames) entity
                 let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
                 let world = World.setEntity address entity world
                 Right world
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity at address '" + string address + "'."
 
         static member tryPopulateFacet compatibilityCheck facetName entity world =
-            match Map.tryFind facetName world.Facets with
-            | Some facetObj ->
-                match facetObj with
-                | :? EntityFacet as facet ->
-                    if  not compatibilityCheck ||
-                        Entity.isFacetCompatible facet entity then
-                        let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
-                        let entity = facet.AttachFields entity
-                        Right (facet, entity)
-                    else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
-                | _ -> Left <| "Invalid entity facet '" + facetName + "'."
-            | None -> Left <| "Invalid facet name '" + facetName + "'."
+            match World.tryGetFacet facetName world with
+            | Right facet ->
+                if  not compatibilityCheck ||
+                    Entity.isFacetCompatible facet entity then
+                    let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
+                    let entity = facet.AttachFields entity
+                    Right (facet, entity)
+                else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
+            | Left error -> Left error
 
         static member tryAddFacet facetName address world =
             let entity = World.getEntity address world
             match World.tryPopulateFacet true facetName entity world with
             | Right (facet, entity) ->
-                let entity = Entity.setFacetNames (EntityFacet.getName facet :: entity.FacetNames) entity
+                let entity = Entity.setFacetNames (Facet.getName facet :: entity.FacetNames) entity
                 let world = facet.RegisterPhysics (entity, address, world)
                 let world = World.setEntity address entity world
                 Right world
@@ -387,17 +381,7 @@ module WorldEntityModule =
 
         static member tryPopulateFacets entity world =
             let facetNamesToAdd = World.getFacetNamesToAdd [] entity.FacetNames
-            match World.tryPopulateFacets3 facetNamesToAdd entity world with
-            | Right entity -> Right entity
-            | Left error -> Left error
-
-        static member makeEntity dispatcherName optName world =
-            let entity = Entity.make dispatcherName optName
-            let entity = Entity.attachIntrinsicFacets entity world
-            let entity = Entity.attachIntrinsicFields entity world
-            match World.tryPopulateFacets entity world with
-            | Right entity -> entity
-            | Left error -> debug error; entity
+            World.tryPopulateFacets3 facetNamesToAdd entity world
 
         static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
@@ -431,3 +415,11 @@ module WorldEntityModule =
                     (fun entityNode -> World.readEntityFromXml entityNode defaultDispatcherName world)
                     (enumerable entityNodes)
             Seq.toList entities
+
+        static member makeEntity dispatcherName optName world =
+            let entity = Entity.make dispatcherName optName
+            let entity = Entity.attachIntrinsicFacets entity world
+            let entity = Entity.attachIntrinsicFields entity world
+            match World.tryPopulateFacets entity world with
+            | Right entity -> entity
+            | Left error -> debug error; entity

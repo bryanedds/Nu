@@ -9,7 +9,6 @@ open Nu.NuConstants
 module AssetsModule =
 
     /// Describes a game asset, such as a texture, sound, or model in detail.
-    /// A serializable value type.
     type [<StructuralEquality; NoComparison>] Asset =
         { Name : string
           FileName : string
@@ -29,8 +28,6 @@ module AssetsModule =
     ///
     /// Finally, the use of AssetPackages could enforce assets to be loaded in order of size and will
     /// avoid unnecessary Large Object Heap fragmentation.
-    ///
-    /// A serializable value type.
     type [<StructuralEquality; NoComparison>] Package =
         { Name : string
           AssetNames : string list }
