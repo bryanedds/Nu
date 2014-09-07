@@ -30,7 +30,7 @@ module GroupModule =
     type Group with
     
         static member make dispatcherName =
-            { Group.Id = makeId ()
+            { Group.Id = NuCore.makeId ()
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
 [<AutoOpen>]

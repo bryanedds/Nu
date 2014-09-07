@@ -169,7 +169,7 @@ module Program =
                 | (_, None) -> propertyDescriptors
                 | (Some property, Some entity) ->
                     let xtension = property.GetValue entity :?> Xtension
-                    let xFieldDescriptors =
+                    let xFieldDefinitions =
                         Seq.map
                             (fun (xField : KeyValuePair<string, obj>) ->
                                 let fieldName = xField.Key
@@ -177,7 +177,7 @@ module Program =
                                 let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
                                 EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
                             xtension.XFields
-                    Seq.append xFieldDescriptors propertyDescriptors
+                    Seq.append xFieldDefinitions propertyDescriptors
             List.ofSeq propertyDescriptors
 
     and EntityTypeDescriptor (optSource : obj) =

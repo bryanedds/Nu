@@ -22,16 +22,16 @@ module BulletDispatcherModule =
     type BulletDispatcher () =
         inherit RigidBodySpriteDispatcher ()
 
-        static let fieldDescriptors =
-            [describeField Field?Size <| Vector2 (24.0f, 24.0f)
-             describeField Field?Density 0.25f
-             describeField Field?Restitution 0.5f
-             describeField Field?LinearDamping 0.0f
-             describeField Field?GravityScale 0.0f
-             describeField Field?IsBullet true
-             describeField Field?CollisionExpression "Circle"
-             describeField Field?SpriteImage PlayerBulletImage
-             describeField Field?Age 0L]
+        static let fieldDefinitions =
+            [define? Size <| Vector2 (24.0f, 24.0f)
+             define? Density 0.25f
+             define? Restitution 0.5f
+             define? LinearDamping 0.0f
+             define? GravityScale 0.0f
+             define? IsBullet true
+             define? CollisionExpression "Circle"
+             define? SpriteImage PlayerBulletImage
+             define? Age 0L]
 
         let tickHandler event world =
             if World.isGamePlaying world then
@@ -49,12 +49,12 @@ module BulletDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDescriptors =
-            fieldDescriptors
+        static member FieldDefinitions =
+            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (bullet, world) =
             let bullet = base.AttachIntrinsicFields (bullet, world)
-            let bullet = Entity.attachFields fieldDescriptors bullet
+            let bullet = Entity.attachFields fieldDefinitions bullet
             bullet
 
         override dispatcher.Register (entity, address, world) =
@@ -76,18 +76,18 @@ module EnemyDispatcherModule =
     type EnemyDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher ()
 
-        static let fieldDescriptors =
-            [describeField Field?Size <| Vector2 (48.0f, 96.0f)
-             describeField Field?FixedRotation true
-             describeField Field?LinearDamping 3.0f
-             describeField Field?GravityScale 0.0f
-             describeField Field?CollisionExpression "Capsule"
-             describeField Field?Stutter 8
-             describeField Field?TileCount 6
-             describeField Field?TileRun 4
-             describeField Field?TileSize <| Vector2 (48.0f, 96.0f)
-             describeField Field?AnimatedSpriteImage EnemyImage
-             describeField Field?Health 6]
+        static let fieldDefinitions =
+            [define? Size <| Vector2 (48.0f, 96.0f)
+             define? FixedRotation true
+             define? LinearDamping 3.0f
+             define? GravityScale 0.0f
+             define? CollisionExpression "Capsule"
+             define? Stutter 8
+             define? TileCount 6
+             define? TileRun 4
+             define? TileSize <| Vector2 (48.0f, 96.0f)
+             define? AnimatedSpriteImage EnemyImage
+             define? Health 6]
 
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
@@ -122,12 +122,12 @@ module EnemyDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDescriptors =
-            fieldDescriptors
+        static member FieldDefinitions =
+            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (enemy, world) =
             let enemy = base.AttachIntrinsicFields (enemy, world)
-            Entity.attachFields fieldDescriptors enemy
+            Entity.attachFields fieldDefinitions enemy
 
         override dispatcher.Register (entity, address, world) =
             let world = base.Register (entity, address, world)
@@ -151,19 +151,19 @@ module PlayerDispatcherModule =
     type PlayerDispatcher () =
         inherit RigidBodyAnimatedSpriteDispatcher ()
 
-        static let fieldDescriptors =
-            [describeField Field?Size <| Vector2 (48.0f, 96.0f)
-             describeField Field?FixedRotation true
-             describeField Field?LinearDamping 3.0f
-             describeField Field?GravityScale 0.0f
-             describeField Field?CollisionExpression "Capsule"
-             describeField Field?Stutter 3
-             describeField Field?TileCount 16
-             describeField Field?TileRun 4
-             describeField Field?TileSize (Vector2 (48.0f, 96.0f))
-             describeField Field?AnimatedSpriteImage PlayerImage
-             describeField Field?LastTimeOnGroundNp Int64.MinValue
-             describeField Field?LastTimeJumpNp Int64.MinValue]
+        static let fieldDefinitions =
+            [define? Size <| Vector2 (48.0f, 96.0f)
+             define? FixedRotation true
+             define? LinearDamping 3.0f
+             define? GravityScale 0.0f
+             define? CollisionExpression "Capsule"
+             define? Stutter 3
+             define? TileCount 16
+             define? TileRun 4
+             define? TileSize <| Vector2 (48.0f, 96.0f)
+             define? AnimatedSpriteImage PlayerImage
+             define? LastTimeOnGroundNp Int64.MinValue
+             define? LastTimeJumpNp Int64.MinValue]
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
@@ -230,12 +230,12 @@ module PlayerDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDescriptors =
-            fieldDescriptors
+        static member FieldDefinitions =
+            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (player, world) =
             let player = base.AttachIntrinsicFields (player, world)
-            Entity.attachFields fieldDescriptors player
+            Entity.attachFields fieldDefinitions player
 
         override dispatcher.Register (entity, address, world) =
             let world = base.Register (entity, address, world)
