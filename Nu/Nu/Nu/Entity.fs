@@ -319,7 +319,7 @@ module WorldEntityModule =
                 world
                 entities
 
-        static member setFacetNames entity address facetNames world =
+        static member trySetFacetNames entity address facetNames world =
             let oldEntity = entity
             let oldFacetNameSet = Set.ofList entity.FacetNames
             let newFacetNameSet = Set.ofList facetNames
@@ -342,10 +342,11 @@ module WorldEntityModule =
                             | Some facet ->
                                 match facet with
                                 | :? EntityFacet as entityFacet ->
-                                    // TODO: check for incompatible facets
-                                    let entity = Entity.setFacetsNp (entityFacet :: entity.FacetsNp) entity
-                                    let entity = entityFacet.Attach entity
-                                    Right entity
+                                    if Entity.isFacetCompatible facet entity then
+                                        let entity = Entity.setFacetsNp (entityFacet :: entity.FacetsNp) entity
+                                        let entity = entityFacet.Attach entity
+                                        Right entity
+                                    else Left <| "An entity cannot contain multiple assets with the same fields."
                                 | _ -> Left <| "Facet '" + facetName + "' is not of the required type 'EntityFacet'."
                             | None -> Left <| "Invalid facet name '" + facetName + "'."
                         | Left _ as left -> left)
@@ -356,5 +357,6 @@ module WorldEntityModule =
                 let world = Entity.unregister address oldEntity world
                 let entity = Entity.setFacetNames facetNames entity
                 let world = World.setEntity address entity world
-                Entity.register address entity world
-            | Left error -> trace error; world
+                let world = Entity.register address entity world
+                Right world
+            | Left error -> Left error

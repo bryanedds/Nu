@@ -21,6 +21,14 @@ let inline flipCons tail head = head :: tail
 let inline at index (list : 'a list) =
     list.[index]
 
+/// Check that a predicate passes for NO items in a list.
+let rec notExists pred list =
+    match list with
+    | [] -> true
+    | head :: tail ->
+        if pred head then true
+        else notExists pred tail
+
 let rec private subpartitionPlus fnOptU list left right =
     match list with
     | [] -> (left, right)

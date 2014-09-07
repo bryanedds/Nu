@@ -124,7 +124,9 @@ module Program =
                 | "FacetNames" ->
                     let entity = World.getEntity entityTds.Address world
                     let facetNames = value :?> string list
-                    World.setFacetNames entity entityTds.Address facetNames world
+                    match World.trySetFacetNames entity entityTds.Address facetNames world with
+                    | Right world -> world
+                    | Left error -> trace error; world
                 | _ ->
                     let entity = World.getEntity entityTds.Address world
                     let optOldOverlayName = entity.OptOverlayName
