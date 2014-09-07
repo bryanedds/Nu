@@ -9,12 +9,12 @@ module Option =
     /// Concatenate an option option.
     let inline concat opt =
         match opt with
-        | None -> None
-        | Some None -> None
         | Some (Some s) -> Some s
+        | Some None -> None
+        | None -> None
 
     /// Get an option's value, or missing that, return a default value.
     let getOrDefault opt aDefault =
         match opt with
-        | None -> aDefault
         | Some value -> value
+        | None -> aDefault

@@ -60,8 +60,8 @@ module WorldGroupModule =
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
                 match optGroupMap with
-                | None -> None
                 | Some groupMap -> Map.tryFind groupName groupMap
+                | None -> None
             | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member private groupAdder address world child =
@@ -69,11 +69,10 @@ module WorldGroupModule =
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
                 match optGroupMap with
-                | None ->
-                    { world with Groups = Map.singleton screenName <| Map.singleton groupName child }
                 | Some groupMap ->
                     let groupMap = Map.add groupName child groupMap
                     { world with Groups = Map.add screenName groupMap world.Groups }
+                | None -> { world with Groups = Map.singleton screenName <| Map.singleton groupName child }
             | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member private groupRemover address world =
@@ -81,10 +80,10 @@ module WorldGroupModule =
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
                 match optGroupMap with
-                | None -> world
                 | Some groupMap ->
                     let groupMap = Map.remove groupName groupMap
                     { world with Groups = Map.add screenName groupMap world.Groups }
+                | None -> world
             | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member getGroup address world = Option.get <| World.optGroupFinder address world
@@ -93,8 +92,8 @@ module WorldGroupModule =
         static member containsGroup address world = Option.isSome <| World.getOptGroup address world
         static member private setOptGroup address optGroup world =
             match optGroup with
-            | None -> World.groupRemover address world
             | Some group -> World.setGroup address group world
+            | None -> World.groupRemover address world
             
         static member withGroup fn address world = Sim.withSimulant World.getGroup World.setGroup fn address world
         static member withGroupAndWorld fn address world = Sim.withSimulantAndWorld World.getGroup World.setGroup fn address world
@@ -105,8 +104,8 @@ module WorldGroupModule =
             match address.AddrList with
             | [screenStr] ->
                 match Map.tryFind screenStr world.Groups with
-                | None -> Map.empty
                 | Some groupMap -> groupMap
+                | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + string address + "'."
 
         static member registerGroup address (group : Group) world =
@@ -157,8 +156,8 @@ module WorldGroupModule =
         static member addGroup address (group : Group) entities world =
             let world =
                 match World.getOptGroup address world with
-                | None -> world
                 | Some _ -> World.removeGroupImmediate address world
+                | None -> world
             let world = World.setGroup address group world
             let world = World.addEntities address entities world
             let world = World.registerGroup address group world

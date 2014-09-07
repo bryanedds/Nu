@@ -73,8 +73,8 @@ module WorldScreenModule =
         static member containsScreen address world = Option.isSome <| World.getOptScreen address world
         static member private setOptScreen address optScreen world =
             match optScreen with
-            | None -> World.screenRemover address world
             | Some screen -> World.setScreen address screen world
+            | None -> World.screenRemover address world
             
         static member withScreen fn address world = Sim.withSimulant World.getScreen World.setScreen fn address world
         static member withScreenAndWorld fn address world = Sim.withSimulantAndWorld World.getScreen World.setScreen fn address world
@@ -108,8 +108,8 @@ module WorldScreenModule =
         static member addScreen address screen groupDescriptors world =
             let world =
                 match World.getOptScreen address world with
-                | None -> world
                 | Some _ -> World.removeScreenImmediate address world
+                | None -> world
             let world = World.setScreen address screen world
             let world = World.addGroups address groupDescriptors world
             let world = World.registerScreen address screen world

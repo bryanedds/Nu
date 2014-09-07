@@ -89,8 +89,8 @@ module Miscellanea =
     /// Find a type by its name from all the loaded assemblies. Time-intensive.
     let findType typeName =
         match tryFindType typeName with
-        | None -> failwith <| "Could not find type with name '" + typeName + "'."
         | Some aType -> aType
+        | None -> failwith <| "Could not find type with name '" + typeName + "'."
 
     /// Along with the Symbol binding, is used to elaborate the name of a symbol without using a
     /// string literal.

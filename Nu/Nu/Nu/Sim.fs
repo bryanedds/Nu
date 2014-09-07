@@ -139,6 +139,10 @@ module SimModule =
     /// A facat the dynamically augments an entity's behavior.
     and [<AbstractClass>] EntityFacet () =
 
+        static member getName facet =
+            let facetType = facet.GetType ()
+            facetType.Name
+
         static member getFieldDescriptors facet =
             let facetType = facet.GetType ()
             match facetType.GetProperty (Property?FieldDescriptors, BindingFlags.Static ||| BindingFlags.Public) with
@@ -257,11 +261,10 @@ module SimModule =
                 fieldDescriptors
 
         static member isFacetCompatible facet entity =
-            List.notExists
-                (fun currentFacet ->
-                    let compatible = EntityFacet.areFacetsCompatible facet currentFacet
-                    not compatible)
-                entity.FacetsNp
+            let facetFieldNames = EntityFacet.getFieldDescriptorNames facet
+            let entityFieldNames = Map.toKeyList entity.Xtension.XFields
+            let intersection = List.intersect facetFieldNames entityFieldNames
+            Set.isEmpty intersection
 
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
@@ -558,13 +561,13 @@ module Sim =
     let getOptChild optChildFinder address parent =
         let optChild = optChildFinder address parent
         match optChild with
-        | None -> None
         | Some child -> Some child
+        | None -> None
 
     let setOptChild addChild removeChild address parent optChild =
         match optChild with
-        | None -> removeChild address parent
         | Some child -> addChild address parent child
+        | None -> removeChild address parent
 
     let getChild optChildFinder address parent =
         Option.get <| optChildFinder address parent
@@ -585,15 +588,15 @@ module Sim =
     let tryWithSimulant getOptSimulant setSimulant fn address world : World =
         let optSimulant = getOptSimulant address world
         match optSimulant with
-        | None -> world
         | Some simulant ->
             let simulant = fn simulant
             setSimulant address simulant world
+        | None -> world
 
     let tryWithSimulantAndWorld getOptSimulant setSimulant fn address world : World =
         let optSimulant = getOptSimulant address world
         match optSimulant with
-        | None -> world
         | Some simulant ->
             let (simulant, world) = fn simulant
             setSimulant address simulant world
+        | None -> world

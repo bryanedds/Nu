@@ -55,9 +55,6 @@ module WorldModule =
 
         static member transitionScreen destination world =
             match World.getOptSelectedScreenAddress world with
-            | None ->
-                trace "Program Error: Could not handle screen transition due to no selected screen."
-                { world with Liveness = Exiting }
             | Some selectedScreenAddress ->
                 let subscriptionKey = World.makeSubscriptionKey ()
                 let sub = CustomSub (fun _ world ->
@@ -66,6 +63,9 @@ module WorldModule =
                     (Unhandled, world))
                 let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
                 World.subscribe subscriptionKey (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress sub world
+            | None ->
+                trace "Program Error: Could not handle screen transition due to no selected screen."
+                { world with Liveness = Exiting }
 
         static member handleEventAsScreenTransitionFromSplash destination world =
             let world = World.selectScreen destination world
@@ -174,8 +174,8 @@ module WorldModule =
                                 | ScreenTransitionFromSplashSub destination -> World.handleEventAsScreenTransitionFromSplash destination world
                                 | CustomSub fn ->
                                     match World.getOptSimulant event.Subscriber world with
-                                    | None -> (Unhandled, world)
                                     | Some _ -> fn event world
+                                    | None -> (Unhandled, world)
                             Some result)
                     (Unhandled, world)
                     subscriptions
@@ -189,8 +189,8 @@ module WorldModule =
         static member subscribeDefinition subscriptionKey eventName subscriber subscription world =
             let subscriptions = 
                 match Map.tryFind eventName world.Subscriptions with
-                | None -> Map.add eventName [(subscriptionKey, subscriber, subscription)] world.Subscriptions
                 | Some subscriptionList -> Map.add eventName ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
+                | None -> Map.add eventName [(subscriptionKey, subscriber, subscription)] world.Subscriptions
             let unsubscriptions = Map.add subscriptionKey (eventName, subscriber) world.Unsubscriptions
             { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
@@ -201,10 +201,8 @@ module WorldModule =
         /// Unsubscribe from an event.
         static member unsubscribeDefinition subscriptionKey world =
             match Map.tryFind subscriptionKey world.Unsubscriptions with
-            | None -> world // TODO: consider failure signal
             | Some (eventName, subscriber) ->
                 match Map.tryFind eventName world.Subscriptions with
-                | None -> world // TODO: consider failure signal
                 | Some subscriptionList ->
                     let subscriptionList =
                         List.remove
@@ -216,6 +214,8 @@ module WorldModule =
                         | _ -> Map.add eventName subscriptionList world.Subscriptions
                     let unsubscriptions = Map.remove subscriptionKey world.Unsubscriptions
                     { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+                | None -> world // TODO: consider failure signal
+            | None -> world // TODO: consider failure signal
 
         /// Keep active a subscription for the duration of a procedure.
         static member withSubscriptionDefinition eventName subscriber subscription procedure world =
@@ -247,7 +247,6 @@ module WorldModule =
         static member internal updateTransition handleUpdate world =
             let world =
                 match World.getOptSelectedScreenAddress world with
-                | None -> world
                 | Some selectedScreenAddress ->
                     let selectedScreen = World.getScreen selectedScreenAddress world
                     match selectedScreen.State with
@@ -291,6 +290,7 @@ module WorldModule =
                             else world
                         | Exiting -> world
                     | IdlingState -> world
+                | None -> world
             match world.Liveness with
             | Running -> handleUpdate world
             | Exiting -> world
@@ -303,12 +303,12 @@ module WorldModule =
                 (Unhandled, world)
             else
                 match World.getOptSelectedScreenAddress world with
-                | None ->
-                    trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                    (Handled, { world with Liveness = Exiting })
                 | Some selectedScreenAddress ->
                     let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
                     (Unhandled, world)
+                | None ->
+                    trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                    (Handled, { world with Liveness = Exiting })
 
         static member internal handleSplashScreenIdle idlingTime event world =
             let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime 0L
@@ -416,7 +416,6 @@ module WorldModule =
 
         static member private getTransitionRenderDescriptors camera transition =
             match transition.OptDissolveImage with
-            | None -> []
             | Some dissolveImage ->
                 let progress = single transition.TransitionTicks / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
@@ -432,14 +431,13 @@ module WorldModule =
                               OptInset = None
                               Image = dissolveImage
                               Color = color }}]
+            | None -> []
 
         static member private getRenderDescriptors world =
             match World.getOptSelectedScreenAddress world with
-            | None -> []
             | Some selectedScreenAddress ->
                 let optGroupMap = Map.tryFind (Address.head selectedScreenAddress) world.Entities
                 match optGroupMap with
-                | None -> []
                 | Some groupMap ->
                     let groupValues = Map.toValueList groupMap
                     let entityMaps = List.fold List.flipCons [] groupValues
@@ -451,6 +449,8 @@ module WorldModule =
                     | IncomingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
                     | OutgoingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Outgoing
                     | IdlingState -> descriptors
+                | None -> []
+            | None -> []
 
         static member private render world =
             let renderDescriptors = World.getRenderDescriptors world
@@ -465,11 +465,10 @@ module WorldModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     match World.getOptEntity bodyTransformMessage.EntityAddress world with
-                    | None -> world
                     | Some entity -> Entity.handleBodyTransformMessage bodyTransformMessage.EntityAddress bodyTransformMessage entity world
+                    | None -> world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match World.getOptEntity bodyCollisionMessage.EntityAddress world with
-                    | None -> world
                     | Some _ ->
                         let collisionAddress = CollisionEventName + bodyCollisionMessage.EntityAddress
                         let collisionData =
@@ -478,6 +477,7 @@ module WorldModule =
                                   Speed = bodyCollisionMessage.Speed
                                   Collidee = bodyCollisionMessage.EntityAddress2 }
                         World.publish4 collisionAddress Address.empty collisionData world
+                    | None -> world
             | Exiting -> world
 
         static member private handleIntegrationMessages integrationMessages world =

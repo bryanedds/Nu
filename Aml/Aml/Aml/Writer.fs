@@ -110,8 +110,8 @@ module Writer =
     /// Write an option string.
     and writeOptionStr (optStr : string option) =
         match optStr with
-        | None -> EmptyStr
         | Some str -> str
+        | None -> EmptyStr
 
     /// Write out an int.
     and writeInt int =
@@ -224,8 +224,8 @@ module Writer =
     /// Write opt type constraints.
     and writeOptConstraintsWithSpace surroundBy optConstraints =
         match optConstraints with
-        | None -> EmptyStr
         | Some constraints -> writeConstraintsWithSpace surroundBy constraints
+        | None -> EmptyStr
 
     /// Write an attempt branch.
     and writeAttemptBranch branch =
@@ -310,7 +310,6 @@ module Writer =
     /// Try to write an expression from parser positions.
     let tryWriteExprFromPositions optPositions trimStartOfFirstLine =
         match optPositions with
-        | None -> None
         | Some positions ->
             let start = positions.ParStart
             let usesFile = start.StreamName <> null && start.StreamName.Length <> 0 // NOTE: it seems like it's a bug for FParsec to allow StreamName to be null...
@@ -324,14 +323,15 @@ module Writer =
                 let result = firstFileLineTrimmed + "\n  " + startStr
                 Some result
             else None
+        | None -> None
     
     /// Write a stack frame.
     let writeStackFrame expr =
         let positions = getOptPositions expr
         let optResult = tryWriteExprFromPositions positions true
         match optResult with
-        | None -> writeExpr expr + "\n  [In: Ast]"
         | Some result -> result
+        | None -> writeExpr expr + "\n  [In: Ast]"
     
     /// Write a stack trace.
     let writeStackTrace env =
@@ -346,7 +346,6 @@ module Writer =
         let positionDescription =
             // TODO: remove the code duplication with 'Primitives.tryWriteExprFromPositions'.
             match optPositions with
-            | None -> EmptyStr
             | Some positions ->
                 let start = positions.ParStart
                 let stop = positions.ParStop
@@ -358,8 +357,8 @@ module Writer =
                         firstFileLine
                     else
                         match env.EnvDebugInfo.DIOptFirstReplLine with
-                        | None -> "[Could not write expression...]"
                         | Some firstReplLine -> firstReplLine
+                        | None -> "[Could not write expression...]"
                 let underline = (String.replicate (int start.Column - 1) " ") + "^"
                 let fileStr = if usesFile then start.StreamName else "Ast"
                 let stackTrace = writeStackTrace env
@@ -379,5 +378,6 @@ module Writer =
                     fileStr +
                     "\n\nStack trace:\n\n" +
                     stackTrace
+            | None -> EmptyStr
         let messagePositioned = message + positionDescription
         makeViolation category messagePositioned

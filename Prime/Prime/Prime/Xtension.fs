@@ -46,7 +46,6 @@ module XtensionModule =
             let defaultFieldType = typeof<'r>
             let optDefaultValueAttribute = Seq.tryHead <| defaultFieldType.GetCustomAttributes<XDefaultValueAttribute> ()
             match optDefaultValueAttribute with
-            | None -> Unchecked.defaultof<'r>
             | Some defaultValueAttribute ->
                 match defaultValueAttribute.DefaultValue with
                 | :? 'r as defaultValue -> defaultValue
@@ -55,6 +54,7 @@ module XtensionModule =
                     let defaultValueType = defaultValue.GetType ()
                     if converter.CanConvertFrom defaultValueType then converter.ConvertFrom defaultValue :?> 'r
                     else failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
+            | None -> Unchecked.defaultof<'r>
 
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
         static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
@@ -65,15 +65,15 @@ module XtensionModule =
         static member getDispatcherByName dispatcherName (dispatcherContainer : IXDispatcherContainer) =
             let dispatchers = dispatcherContainer.GetDispatchers ()
             match Map.tryFind dispatcherName dispatchers with
-            | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
             | Some dispatcher -> dispatcher
+            | None -> failwith <| "Invalid XDispatcher '" + dispatcherName + "'."
         
         /// Get the assigned dispatcher for an xtension.
         static member getDispatcher xtension (dispatcherContainer : IXDispatcherContainer) =
             let optXDispatcherName = xtension.OptXDispatcherName
             match optXDispatcherName with
-            | None -> EmptyDispatcher
             | Some dispatcherName -> Xtension.getDispatcherByName dispatcherName dispatcherContainer
+            | None -> EmptyDispatcher
 
         /// Queries that the target type offers dispatcher behavior congruent to the given dispatcher.
         static member dispatchesAs2 (dispatcherTargetType : Type) dispatcher =
@@ -101,6 +101,14 @@ module XtensionModule =
 
                 // check if dynamic member is an existing field
                 match Map.tryFind memberName xtension.XFields with
+
+                | Some field ->
+                    
+                    // return field directly if the return type matches, otherwise the default value for that type
+                    match field with
+                    | :? 'r as fieldValue -> fieldValue
+                    | _ -> Xtension.tryGetDefaultValue xtension memberName
+
                 | None ->
 
                     // try to convert method args to an array
@@ -137,12 +145,6 @@ module XtensionModule =
                                     reraise ()
 
                         | _ -> failwith "Last argument of Xtension method call must be an IXDispatcherContainer or sub-type."
-
-                // return field directly if the return type matches, otherwise the default value for that type
-                | Some field ->
-                    match field with
-                    | :? 'r as fieldValue -> fieldValue
-                    | _ -> Xtension.tryGetDefaultValue xtension memberName
 
         /// The dynamic assignment operator for an Xtension.
         /// Example - let entity = entity.Position <- Vector2 (4.0, 5.0).

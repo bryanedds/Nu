@@ -13,8 +13,8 @@ let inline tryHead seq =
 /// Get a seq head or a default value if there is none.
 let inline headOrDefault seq aDefault =
     match tryHead seq with
-    | None -> aDefault
     | Some _ as head -> head
+    | None -> aDefault
 
 /// Convert option values to definite values.
 let inline definitize opts =

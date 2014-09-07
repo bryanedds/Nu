@@ -964,8 +964,8 @@ module Reader =
             let optPositions = Some (makeParserPositions start stop)
             return
                 match optOpExpr with
-                | None -> UnitValue
-                | Some opExpr -> Series (makeSeriesRecord (opExpr :: argExprs) (argExprs.Length + 1) optPositions) }
+                | Some opExpr -> Series (makeSeriesRecord (opExpr :: argExprs) (argExprs.Length + 1) optPositions)
+                | None -> UnitValue }
 
     /// Read a structure.
     let readStructure =

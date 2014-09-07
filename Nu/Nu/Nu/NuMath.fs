@@ -81,8 +81,8 @@ module NuMathModule =
         override this.ConvertTo (_, _, obj, _) =
             let optValue = obj :?> string option
             match optValue with
-            | None -> "None" :> obj
             | Some value -> "Some(" + string value + ")" :> obj
+            | None -> "None" :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string option> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, obj) =

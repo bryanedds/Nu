@@ -16,8 +16,8 @@ module TypeExtension =
             if Seq.isEmpty properties then null
             else
                 match optPreferred with
-                | None -> Seq.head properties
                 | Some preferred -> preferred
+                | None -> Seq.head properties
 
         member this.GetPropertyWritable propertyName =
             let optProperty =
@@ -25,8 +25,8 @@ module TypeExtension =
                     (fun (property : PropertyInfo) -> property.Name = propertyName && property.CanWrite)
                     (this.GetProperties ())
             match optProperty with
-            | None -> null
             | Some property -> property
+            | None -> null
 
         member this.GetProperties propertyName =
             Seq.filter

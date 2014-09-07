@@ -124,7 +124,7 @@ module Program =
                 | "FacetNames" ->
                     let entity = World.getEntity entityTds.Address world
                     let facetNames = value :?> string list
-                    match World.trySetFacetNames entity entityTds.Address facetNames world with
+                    match World.trySetFacetNames facetNames entityTds.Address entity world with
                     | Right world -> world
                     | Left error -> trace error; world
                 | _ ->
@@ -135,11 +135,11 @@ module Program =
                         match propertyName with
                         | "OptOverlayName" ->
                             match entity.OptOverlayName with
-                            | None -> entity
                             | Some overlayName ->
                                 let entity = { entity with Id = entity.Id } // hacky copy
                                 Overlayer.applyOverlay optOldOverlayName overlayName entity world.Overlayer
                                 entity
+                            | None -> entity
                         | _ -> entity
                     let world = World.setEntity entityTds.Address entity world
                     let world = Entity.propagatePhysics entityTds.Address entity world
@@ -295,13 +295,13 @@ module Program =
         let entities = getPickableEntities world
         let optPicked = Entity.tryPick mousePosition entities world
         match optPicked with
-        | None -> None
         | Some entity ->
             let entityAddress = addrlist EditorGroupAddress [entity.Name]
             refWorld := world // must be set for property grid
             form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
             tryScrollTreeViewToPropertyGridSelection form
             Some (entity, entityAddress)
+        | None -> None
 
     let trySaveFile fileName world =
         try let editorGroup = World.getGroup NuEditConstants.EditorGroupAddress world
@@ -345,7 +345,6 @@ module Program =
             let handled = if World.isGamePlaying world then Unhandled else Handled
             let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition worldChangers refWorld world with
-            | None -> (handled, world)
             | Some (entity, entityAddress) ->
                 let world = pushPastWorld world world
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
@@ -354,6 +353,7 @@ module Program =
                 let editorState = { editorState with DragEntityState = dragState }
                 let world = { world with ExtData = editorState }
                 (handled, world)
+            | None -> (handled, world)
 
     let handleNuEndEntityDrag (form : NuEditForm) (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
@@ -530,7 +530,6 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             let editorState = world.ExtData :?> EditorState
             match !editorState.Clipboard with
-            | None -> world
             | Some entity ->
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
@@ -543,7 +542,8 @@ module Program =
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let address = addrlist EditorGroupAddress [entity.Name]
-                World.addEntity address entity world)
+                World.addEntity address entity world
+            | None -> world)
 
     let handleFormQuickSize (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
@@ -573,7 +573,6 @@ module Program =
             | (_, "") -> ignore <| MessageBox.Show "Enter a type name."; world
             | (xFieldName, typeName) ->
                 match tryFindType typeName with
-                | None -> ignore <| MessageBox.Show "Enter a valid type name."; world
                 | Some aType ->
                     let selectedObject = form.propertyGrid.SelectedObject
                     match selectedObject with
@@ -591,7 +590,8 @@ module Program =
                         form.propertyGrid.Select ()
                         form.propertyGrid.SelectedGridItem <- form.propertyGrid.SelectedGridItem.Parent.GridItems.[xFieldName]
                         world
-                    | _ -> ignore <| MessageBox.Show "Select an entity to add the XField to."; world)
+                    | _ -> ignore <| MessageBox.Show "Select an entity to add the XField to."; world
+                | None -> ignore <| MessageBox.Show "Enter a valid type name."; world)
 
     let handleFormRemoveSelectedXField (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
@@ -725,17 +725,17 @@ module Program =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for defaults)."
-        if openDialog.ShowDialog () <> DialogResult.OK then (".", GameDispatcher ())
-        else
+        if openDialog.ShowDialog () = DialogResult.OK then
             let directoryName = Path.GetDirectoryName openDialog.FileName
             Directory.SetCurrentDirectory directoryName
             let assembly = Assembly.LoadFrom openDialog.FileName
             let optDispatcherType = assembly.GetTypes () |> Array.tryFind (fun aType -> aType.IsSubclassOf typeof<GameDispatcher>)
             match optDispatcherType with
-            | None -> (".", GameDispatcher ())
             | Some aType ->
                 let gameDispatcher = Activator.CreateInstance aType :?> GameDispatcher
                 (directoryName, gameDispatcher)
+            | None -> (".", GameDispatcher ())
+        else (".", GameDispatcher ())
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()

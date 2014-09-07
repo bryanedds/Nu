@@ -35,8 +35,8 @@ let rec private subpartitionPlus fnOptU list left right =
     | head :: tail ->
         let optU = fnOptU head
         match optU with
-        | None -> subpartitionPlus fnOptU tail left (head :: right)
         | Some u -> subpartitionPlus fnOptU tail (u :: left) right
+        | None -> subpartitionPlus fnOptU tail left (head :: right)
 
 /// Partition a list.
 let partitionPlus fnOptU list =
@@ -259,11 +259,11 @@ let joinList sep list =
 let takeTillInclusive pred list =
     let optIndex = List.tryFindIndex pred list
     match optIndex with
-    | None -> list
     | Some index ->
         let incIndex = index + 1
         if hasAtLeast incIndex list then take incIndex list
         else take index list
+    | None -> list
 
 /// Runs a binary set operation on two lists that are converted to sets.
 let setBinop binop firstList secondList =

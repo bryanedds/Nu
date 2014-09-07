@@ -23,20 +23,20 @@ module MapPlus =
     let tryFind (plusKey, mapKey) mapPlus =
         let optMap = Map.tryFind plusKey mapPlus
         match optMap with
-        | None -> None
         | Some map -> Map.tryFind mapKey map
+        | None -> None
 
     let containsKey (plusKey, mapKey) _ mapPlus =
         let optMap = Map.tryFind plusKey mapPlus
         match optMap with
-        | None -> false
         | Some map -> Option.isSome <| Map.tryFind mapKey map
+        | None -> false
 
     let add (plusKey, mapKey) value mapPlus =
         let optMap = Map.tryFind plusKey mapPlus
         match optMap with
-        | None -> Map.singleton plusKey (Map.singleton mapKey value)
         | Some map -> Map.add plusKey (Map.add mapKey value map) mapPlus
+        | None -> Map.singleton plusKey (Map.singleton mapKey value)
 
     let rec addMany kvps mapPlus =
         if Seq.isEmpty kvps then mapPlus
@@ -49,8 +49,8 @@ module MapPlus =
     let remove (versionKey, mapKey) mapPlus =
         let optMap = Map.tryFind versionKey mapPlus
         match optMap with
-        | None -> Map.empty
         | Some map -> Map.add versionKey (Map.remove mapKey map) mapPlus
+        | None -> Map.empty
 
     let rec removeMany keys map =
         if Seq.isEmpty keys then map
