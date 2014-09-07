@@ -33,7 +33,7 @@ module ScreenModule =
 
     type Screen with
 
-        static member makeDefault dispatcherName =
+        static member make dispatcherName =
             { Id = NuCore.makeId ()
               State = IdlingState
               Incoming = Transition.makeDefault Incoming
@@ -44,7 +44,7 @@ module ScreenModule =
             let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
             let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
             let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
-            let screen = Screen.makeDefault dispatcherName
+            let screen = Screen.make dispatcherName
             { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 
 [<AutoOpen>]

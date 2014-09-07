@@ -47,11 +47,17 @@
     <Enabled>True</Enabled>
   </GuiDispatcher>
 
-  <RigidBodyDispatcher include="EntityDispatcher;RigidBodyFacet" />
+  <RigidBodyDispatcher include="EntityDispatcher;RigidBodyFacet">
+    <FacetNames>[RigidBodyFacet]</FacetNames>
+  </RigidBodyDispatcher>
 
-  <RigidBodySpriteDispatcher include="RigidBodyDispatcher;SpriteFacet" />
+  <RigidBodySpriteDispatcher include="RigidBodyDispatcher;SpriteFacet">
+    <FacetNames>[RigidBodyFacet;SpriteFacet]</FacetNames>
+  </RigidBodySpriteDispatcher>
 
-  <RigidBodyAnimatedSpriteDispatcher include="RigidBodyDispatcher;AnimatedSpriteFacet" />
+  <RigidBodyAnimatedSpriteDispatcher include="RigidBodyDispatcher;AnimatedSpriteFacet">
+    <FacetNames>[RigidBodyFacet;AnimatedSpriteFacet]</FacetNames>
+  </RigidBodyAnimatedSpriteDispatcher>
 
   <ButtonDispatcher include="GuiDispatcher">
     <IsDown>False</IsDown>

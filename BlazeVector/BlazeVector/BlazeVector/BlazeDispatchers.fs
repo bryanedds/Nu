@@ -52,8 +52,8 @@ module BulletDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (bullet, facets, dispatcherContainer) =
-            let bullet = base.Init (bullet, facets, dispatcherContainer)
+        override dispatcher.AttachFields (bullet, world) =
+            let bullet = base.AttachFields (bullet, world)
             let bullet = Entity.attachFields fieldDescriptors bullet
             bullet
 
@@ -125,8 +125,8 @@ module EnemyDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (enemy, facets, dispatcherContainer) =
-            let enemy = base.Init (enemy, facets, dispatcherContainer)
+        override dispatcher.AttachFields (enemy, world) =
+            let enemy = base.AttachFields (enemy, world)
             Entity.attachFields fieldDescriptors enemy
 
         override dispatcher.Register (entity, address, world) =
@@ -166,7 +166,7 @@ module PlayerDispatcherModule =
              Entity.describeField Field?LastTimeJumpNp Int64.MinValue]
 
         let createBullet bulletAddress (playerTransform : Transform) world =
-            let bullet = Entity.makeDefault typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
+            let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
                 bullet |>
                     Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>
@@ -233,8 +233,8 @@ module PlayerDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.Init (player, facets, dispatcherContainer) =
-            let player = base.Init (player, facets, dispatcherContainer)
+        override dispatcher.AttachFields (player, world) =
+            let player = base.AttachFields (player, world)
             Entity.attachFields fieldDescriptors player
 
         override dispatcher.Register (entity, address, world) =

@@ -409,9 +409,9 @@ module WorldModule =
             let world = { world with AudioMessages = [] }
             { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
 
-        static member private getGroupRenderDescriptors dispatcherContainer entities =
+        static member private getGroupRenderDescriptors world entities =
             Map.toValueListBy
-                (fun entity -> Entity.getRenderDescriptors entity dispatcherContainer)
+                (fun entity -> Entity.getRenderDescriptors entity world)
                 entities
 
         static member private getTransitionRenderDescriptors camera transition =
@@ -562,8 +562,8 @@ module WorldModule =
 
         static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
             let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
-            let splashGroup = Group.makeDefault typeof<GroupDispatcher>.Name world
-            let splashLabel = Entity.makeDefault typeof<LabelDispatcher>.Name (Some "SplashLabel") world
+            let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name world
+            let splashLabel = World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage image splashLabel

@@ -423,7 +423,7 @@ module Program =
     let handleFormCreate atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             try let entityXDispatcherName = form.createEntityComboBox.Text
-                let entity = Entity.makeDefault entityXDispatcherName None world
+                let entity = World.makeEntity entityXDispatcherName None world
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
@@ -792,7 +792,7 @@ module Program =
         let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics true editorState
         match optWorld with
         | Right world ->
-            let world = World.addScreen EditorScreenAddress screen [(EditorGroupName, Group.makeDefault typeof<GroupDispatcher>.Name world, [])] world
+            let world = World.addScreen EditorScreenAddress screen [(EditorGroupName, World.makeGroup typeof<GroupDispatcher>.Name world, [])] world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
             let world = World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| handleNuDownMouseRight form worldChangers refWorld) world
             let world = World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| handleNuBeginEntityDrag form worldChangers refWorld) world
