@@ -16,8 +16,11 @@ module EntityModule =
 
     type EntityDispatcher () =
 
-        abstract member AttachFields : Entity * World -> Entity
-        default dispatcher.AttachFields (entity, _) = entity
+        abstract member AttachIntrinsicFacets : Entity * World -> Entity
+        default dispatcher.AttachIntrinsicFacets (entity, _) = entity
+
+        abstract member AttachIntrinsicFields : Entity * World -> Entity
+        default dispatcher.AttachIntrinsicFields (entity, _) = entity
 
         abstract member Register : Entity * Address * World -> World
         default dispatcher.Register (entity, address, world) =
@@ -57,9 +60,14 @@ module EntityModule =
 
         (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
 
-        static member attachAllFields (entity : Entity) world =
+        static member attachIntrinsicFacets (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.AttachFields (entity, world)
+            | :? EntityDispatcher as dispatcher -> dispatcher.AttachIntrinsicFacets (entity, world)
+            | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
+
+        static member attachIntrinsicFields (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.AttachIntrinsicFields (entity, world)
             | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
         
         static member register address (entity : Entity) world =
@@ -308,7 +316,7 @@ module WorldEntityModule =
             match List.tryFind (fun facet -> EntityFacet.getName facet = facetName) entity.FacetsNp with
             | Some facet ->
                 let world = facet.UnregisterPhysics (entity, address, world)
-                let entity = facet.Detach entity
+                let entity = facet.DetachFields entity
                 let entity = Entity.setFacetNames (List.remove ((=) (EntityFacet.getName facet)) entity.FacetNames) entity
                 let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
                 let world = World.setEntity address entity world
@@ -323,7 +331,7 @@ module WorldEntityModule =
                     if  not compatibilityCheck ||
                         Entity.isFacetCompatible facet entity then
                         let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
-                        let entity = facet.Attach entity
+                        let entity = facet.AttachFields entity
                         Right (facet, entity)
                     else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
                 | _ -> Left <| "Invalid entity facet '" + facetName + "'."
@@ -348,7 +356,7 @@ module WorldEntityModule =
                 (Right world)
                 facetNamesToRemove
 
-        static member tryPopulateFacets2 facetNamesToAdd entity world =
+        static member tryPopulateFacets3 facetNamesToAdd entity world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
@@ -379,13 +387,14 @@ module WorldEntityModule =
 
         static member tryPopulateFacets entity world =
             let facetNamesToAdd = World.getFacetNamesToAdd [] entity.FacetNames
-            match World.tryPopulateFacets2 facetNamesToAdd entity world with
+            match World.tryPopulateFacets3 facetNamesToAdd entity world with
             | Right entity -> Right entity
             | Left error -> Left error
 
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName
-            let entity = Entity.attachAllFields entity world
+            let entity = Entity.attachIntrinsicFacets entity world
+            let entity = Entity.attachIntrinsicFields entity world
             match World.tryPopulateFacets entity world with
             | Right entity -> entity
             | Left error -> debug error; entity
@@ -405,12 +414,15 @@ module WorldEntityModule =
         static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
             let entity = Entity.make defaultDispatcherName None
             Xtension.readTargetXDispatcher entityNode entity
-            let entity = Entity.attachAllFields entity world
+            let entity = Entity.attachIntrinsicFacets entity world
+            let entity = Entity.attachIntrinsicFields entity world
             match entity.OptOverlayName with
             | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
             | None -> ()
             Xtension.readTargetProperties entityNode entity // TODO: see if it's ok to read target properties before applying overlay
-            entity
+            match World.tryPopulateFacets entity world with
+            | Right entity -> entity
+            | Left error -> debug error; entity
 
         static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
             let entityNodes = parentNode.SelectNodes EntityNodeName

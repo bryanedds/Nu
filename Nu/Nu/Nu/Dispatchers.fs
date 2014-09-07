@@ -69,11 +69,11 @@ module RigidBodyFacetModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override facet.Attach entity =
+        override facet.AttachFields entity =
             let entity = Entity.attachFields fieldDescriptors entity
             Entity.setMinorId (NuCore.makeId ()) entity
 
-        override facet.Detach entity =
+        override facet.DetachFields entity =
             Entity.detachFields fieldDescriptors entity
 
         override facet.RegisterPhysics (entity, address, world) =
@@ -134,11 +134,11 @@ module SpriteFacetModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override facet.Attach entity =
+        override facet.AttachFields entity =
             /// TODO: check for compatibility for facets
             Entity.attachFields fieldDescriptors entity
 
-        override facet.Detach entity =
+        override facet.DetachFields entity =
             Entity.detachFields fieldDescriptors entity
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
@@ -201,10 +201,10 @@ module AnimatedSpriteFacetModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override facet.Attach entity =
+        override facet.AttachFields entity =
             Entity.attachFields fieldDescriptors entity
 
-        override facet.Detach entity =
+        override facet.DetachFields entity =
             Entity.detachFields fieldDescriptors entity
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
@@ -292,8 +292,8 @@ module GuiDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (gui, world) =
-            let gui = base.AttachFields (gui, world)
+        override dispatcher.AttachIntrinsicFields (gui, world) =
+            let gui = base.AttachIntrinsicFields (gui, world)
             Entity.attachFields fieldDescriptors gui
 
 [<AutoOpen>]
@@ -355,8 +355,8 @@ module ButtonDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (button, world) =
-            let button = base.AttachFields (button, world)
+        override dispatcher.AttachIntrinsicFields (button, world) =
+            let button = base.AttachIntrinsicFields (button, world)
             Entity.attachFields fieldDescriptors button
 
         override dispatcher.Register (_, address, world) =
@@ -405,8 +405,8 @@ module LabelDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (label, world) =
-            let label = base.AttachFields (label, world)
+        override dispatcher.AttachIntrinsicFields (label, world) =
+            let label = base.AttachIntrinsicFields (label, world)
             Entity.attachFields fieldDescriptors label
 
         override dispatcher.GetRenderDescriptors (label, _) =
@@ -462,8 +462,8 @@ module TextDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (text, world) =
-            let text = base.AttachFields (text, world)
+        override dispatcher.AttachIntrinsicFields (text, world) =
+            let text = base.AttachIntrinsicFields (text, world)
             Entity.attachFields fieldDescriptors text
 
         override dispatcher.GetRenderDescriptors (text, _) =
@@ -563,8 +563,8 @@ module ToggleDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (toggle, world) =
-            let toggle = base.AttachFields (toggle, world)
+        override dispatcher.AttachIntrinsicFields (toggle, world) =
+            let toggle = base.AttachIntrinsicFields (toggle, world)
             Entity.attachFields fieldDescriptors toggle
 
         override dispatcher.Register (_, address, world) =
@@ -639,8 +639,8 @@ module FeelerDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (feeler, world) =
-            let feeler = base.AttachFields (feeler, world)
+        override dispatcher.AttachIntrinsicFields (feeler, world) =
+            let feeler = base.AttachIntrinsicFields (feeler, world)
             Entity.attachFields fieldDescriptors feeler
 
         override dispatcher.Register (_, address, world) =
@@ -687,8 +687,8 @@ module FillBarDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (fillBar, world) =
-            let fillBar = base.AttachFields (fillBar, world)
+        override dispatcher.AttachIntrinsicFields (fillBar, world) =
+            let fillBar = base.AttachIntrinsicFields (fillBar, world)
             Entity.attachFields fieldDescriptors fillBar
 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
@@ -733,47 +733,35 @@ module RigidBodyDispatcherModule =
     type [<AbstractClass>] RigidBodyDispatcher () =
         inherit EntityDispatcher ()
 
-        static let fieldDescriptors =
-            [Entity.describeField Field?FacetNames [typeof<RigidBodyFacet>.Name]]
-
-        static member FieldDescriptors =
-            fieldDescriptors
-
-        override dispatcher.AttachFields (rigidBody, world) =
-            let rigidBody = base.AttachFields (rigidBody, world)
-            Entity.attachFields fieldDescriptors rigidBody
+        override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
+            let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
+            let rigidBodyFacet = Map.find typeof<RigidBodyFacet>.Name world.Facets :?> EntityFacet
+            let rigidBody = rigidBodyFacet.AttachFields rigidBody
+            Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
 
 [<AutoOpen>]
 module RigidBodySpriteDispatcherModule =
 
     type [<AbstractClass>] RigidBodySpriteDispatcher () =
-        inherit EntityDispatcher ()
+        inherit RigidBodyDispatcher ()
 
-        static let fieldDescriptors =
-            [Entity.describeField Field?FacetNames [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]]
-
-        static member FieldDescriptors =
-            fieldDescriptors
-
-        override dispatcher.AttachFields (rigidBody, world) =
-            let rigidBody = base.AttachFields (rigidBody, world)
-            Entity.attachFields fieldDescriptors rigidBody
+        override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
+            let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
+            let rigidBodyFacet = Map.find typeof<SpriteFacet>.Name world.Facets :?> EntityFacet
+            let rigidBody = rigidBodyFacet.AttachFields rigidBody
+            Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
 
 [<AutoOpen>]
 module RigidBodyAnimatedSpriteDispatcherModule =
 
     type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher () =
-        inherit EntityDispatcher ()
+        inherit RigidBodyDispatcher ()
 
-        static let fieldDescriptors =
-            [Entity.describeField Field?FacetNames [typeof<RigidBodyFacet>.Name; typeof<AnimatedSpriteFacet>.Name]]
-
-        static member FieldDescriptors =
-            fieldDescriptors
-
-        override dispatcher.AttachFields (rigidBody, world) =
-            let rigidBody = base.AttachFields (rigidBody, world)
-            Entity.attachFields fieldDescriptors rigidBody
+        override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
+            let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
+            let rigidBodyFacet = Map.find typeof<AnimatedSpriteFacet>.Name world.Facets :?> EntityFacet
+            let rigidBody = rigidBodyFacet.AttachFields rigidBody
+            Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
 
 [<AutoOpen>]
 module BlockDispatcherModule =
@@ -787,8 +775,8 @@ module BlockDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (block, world) =
-            let block = base.AttachFields (block, world)
+        override dispatcher.AttachIntrinsicFields (block, world) =
+            let block = base.AttachIntrinsicFields (block, world)
             Entity.attachFields fieldDescriptors block
 
 [<AutoOpen>]
@@ -807,8 +795,8 @@ module AvatarDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (avatar, world) =
-            let avatar = base.AttachFields (avatar, world)
+        override dispatcher.AttachIntrinsicFields (avatar, world) =
+            let avatar = base.AttachIntrinsicFields (avatar, world)
             Entity.attachFields fieldDescriptors avatar
 
 [<AutoOpen>]
@@ -826,8 +814,8 @@ module CharacterDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (character, world) =
-            let character = base.AttachFields (character, world)
+        override dispatcher.AttachIntrinsicFields (character, world) =
+            let character = base.AttachIntrinsicFields (character, world)
             Entity.attachFields fieldDescriptors character
 
 [<AutoOpen>]
@@ -963,8 +951,8 @@ module TileMapDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
         
-        override dispatcher.AttachFields (tileMap, world) =
-            let tileMap = base.AttachFields (tileMap, world)
+        override dispatcher.AttachIntrinsicFields (tileMap, world) =
+            let tileMap = base.AttachIntrinsicFields (tileMap, world)
             Entity.attachFields fieldDescriptors tileMap
 
         override dispatcher.Register (tileMap, address, world) =
