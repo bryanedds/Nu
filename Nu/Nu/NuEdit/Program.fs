@@ -179,13 +179,13 @@ module Program =
         static member GetPropertyDescriptors (aType : Type) optSource =
             // OPTIMIZATION: seqs used for speed.
             let properties = aType.GetProperties ()
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
+            let optXtensionProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Xtension.isPropertyPersistentByName property.Name) properties
-            let optProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor) properties
             let propertyDescriptors =
-                match (optProperty, optSource) with
+                match (optXtensionProperty, optSource) with
                 | (None, _) 
                 | (_, None) -> propertyDescriptors
                 | (Some property, Some entity) ->
