@@ -36,19 +36,6 @@ module GroupModule =
         static member makeDefault dispatcherName dispatcherContainer =
             let group = Group.makeDefaultUninitialized dispatcherName
             Group.init group dispatcherContainer
-    
-        static member writeToXml overlayer (writer : XmlWriter) group entities =
-            writer.WriteStartElement typeof<Group>.Name
-            Xtension.writeTargetProperties tautology writer group
-            Entity.writeManyToXml overlayer writer entities
-    
-        static member readFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
-            let group = Group.makeDefaultUninitialized defaultDispatcherName
-            Xtension.readTargetXDispatcher groupNode group
-            let group = Group.init group dispatcherContainer
-            Xtension.readTargetProperties groupNode group
-            let entities = Entity.readManyFromXml (groupNode : XmlNode) defaultEntityDispatcherName dispatcherContainer
-            (group, entities)
 
 [<AutoOpen>]
 module WorldGroupModule =
@@ -168,3 +155,16 @@ module WorldGroupModule =
                 (fun world (groupName, group, entities) -> World.addGroup (addrlist screenAddress [groupName]) group entities world)
                 world
                 groupDescriptors
+    
+        static member writeGroupToXml overlayer (writer : XmlWriter) group entities =
+            writer.WriteStartElement typeof<Group>.Name
+            Xtension.writeTargetProperties tautology writer group
+            World.writeEntitiesToXml overlayer writer entities
+    
+        static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
+            let group = Group.makeDefaultUninitialized defaultDispatcherName
+            Xtension.readTargetXDispatcher groupNode group
+            let group = Group.init group dispatcherContainer
+            Xtension.readTargetProperties groupNode group
+            let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName dispatcherContainer
+            (group, entities)
