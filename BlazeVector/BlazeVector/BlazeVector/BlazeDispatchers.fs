@@ -52,8 +52,8 @@ module BulletDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (bullet, world) =
-            let bullet = base.AttachFields (bullet, world)
+        override dispatcher.AttachIntrinsicFields (bullet, world) =
+            let bullet = base.AttachIntrinsicFields (bullet, world)
             let bullet = Entity.attachFields fieldDescriptors bullet
             bullet
 
@@ -125,8 +125,8 @@ module EnemyDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (enemy, world) =
-            let enemy = base.AttachFields (enemy, world)
+        override dispatcher.AttachIntrinsicFields (enemy, world) =
+            let enemy = base.AttachIntrinsicFields (enemy, world)
             Entity.attachFields fieldDescriptors enemy
 
         override dispatcher.Register (entity, address, world) =
@@ -233,8 +233,8 @@ module PlayerDispatcherModule =
         static member FieldDescriptors =
             fieldDescriptors
 
-        override dispatcher.AttachFields (player, world) =
-            let player = base.AttachFields (player, world)
+        override dispatcher.AttachIntrinsicFields (player, world) =
+            let player = base.AttachIntrinsicFields (player, world)
             Entity.attachFields fieldDescriptors player
 
         override dispatcher.Register (entity, address, world) =

@@ -161,11 +161,11 @@ module SimModule =
             let intersection = List.intersect facetFieldDescriptors facet2FieldDescriptors
             Set.isEmpty intersection
 
-        abstract member Attach : Entity -> Entity
-        default facet.Attach entity = entity
+        abstract member AttachFields : Entity -> Entity
+        default facet.AttachFields entity = entity
         
-        abstract member Detach : Entity -> Entity
-        default facet.Detach entity = entity
+        abstract member DetachFields : Entity -> Entity
+        default facet.DetachFields entity = entity
 
         abstract member RegisterPhysics : Entity * Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
