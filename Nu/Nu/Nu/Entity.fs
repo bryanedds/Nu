@@ -137,6 +137,7 @@ module EntityModule =
               Visible = true
               OptOverlayName = Some dispatcherName
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }
+              FacetNames = []
               FacetsNp = [] }
 
         static member makeDefault dispatcherName optName dispatcherContainer =

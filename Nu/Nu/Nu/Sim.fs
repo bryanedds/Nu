@@ -175,6 +175,7 @@ module SimModule =
           Visible : bool
           OptOverlayName : string option
           Xtension : Xtension
+          FacetNames : string list
           FacetsNp : EntityFacet list } // TODO: now that there a field descriptors, consider making their persistence configurable with data instead of name-suffixing.
 
         static member (?) (this : Entity, memberName) =
@@ -205,6 +206,9 @@ module SimModule =
 
         static member setVisible visible (entity : Entity) =
              { entity with Visible = visible }
+
+        static member setFacetNames facets (entity : Entity) =
+             { entity with FacetNames = facets }
 
         static member setFacetsNp facets (entity : Entity) =
              { entity with FacetsNp = facets }
@@ -327,6 +331,7 @@ module SimModule =
           RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue
           Dispatchers : XDispatchers
+          Facets : Map<string, obj>
           AssetGraphFileName : string
           OverlayFileName : string
           ExtData : obj }

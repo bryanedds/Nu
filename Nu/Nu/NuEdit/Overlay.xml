@@ -40,6 +40,7 @@
     <Size>64;64</Size>
     <Rotation>0</Rotation>
     <Visible>True</Visible>
+    <FacetNames>[]</FacetNames>
   </EntityDispatcher>
 
   <GuiDispatcher include="EntityDispatcher">

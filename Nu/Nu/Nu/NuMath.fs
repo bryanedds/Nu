@@ -89,14 +89,38 @@ module NuMathModule =
             let sourceType = obj.GetType ()
             if sourceType = typeof<string option> then obj
             else
-                let str = obj :?> string
-                match str with
+                let valueStr = obj :?> string
+                match valueStr with
                 | "None" -> None :> obj
                 | _ ->
-                    let innerStr = str.Substring (5, str.Length - 6)
+                    let innerStr = valueStr.Substring (5, valueStr.Length - 6)
                     let innerStr = innerStr.Trim ()
                     Some innerStr :> obj
 
+    /// Converts string list types.
+    /// TODO: find a better place for this?
+    type StringListTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, _, obj, _) =
+            let value = obj :?> string list
+            let valueStr = String.Join (";", Array.ofList value)
+            let valueStr = "[" + valueStr + "]"
+            valueStr:> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<string option> || sourceType = typeof<string>
+        override this.ConvertFrom (_, _, obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<string option> then obj
+            else
+                let valueStr = obj :?> string
+                let valueStr = valueStr.Trim ()
+                let valueStr = valueStr.Substring (1, valueStr.Length - 2)
+                let valueStrs = valueStr.Split (';')
+                let valueStrs = Array.map (fun (valueStr : string) -> valueStr.Trim ()) valueStrs
+                let value = List.ofArray valueStrs
+                value :> obj
 
 module Matrix3 =
 
@@ -120,6 +144,7 @@ module NuMath =
         assignTypeConverter<Vector3, Vector3TypeConverter> ()
         assignTypeConverter<Vector4, Vector4TypeConverter> ()
         assignTypeConverter<string option, StringOptionTypeConverter> ()
+        assignTypeConverter<string list, StringListTypeConverter> ()
 
     /// The identity transform.
     let transformIdentity =
