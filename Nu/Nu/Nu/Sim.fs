@@ -176,7 +176,7 @@ module SimModule =
           OptOverlayName : string option
           Xtension : Xtension
           FacetNames : string list
-          FacetsNp : EntityFacet list } // TODO: now that there a field descriptors, consider making their persistence configurable with data instead of name-suffixing.
+          FacetsNp : EntityFacet list } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.
 
         static member (?) (this : Entity, memberName) =
             fun args ->

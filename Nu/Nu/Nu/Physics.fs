@@ -301,6 +301,30 @@ module Physics =
         | "*" -> -1
         | _ -> Convert.ToInt32 (categoryExpr, 2)
 
+    /// Evaluate a collision expression.
+    /// TODO: explain syntax.
+    let evalCollisionExpression (extent : Vector2) (collisionExpr : string) =
+        let collisionTerms = List.ofArray <| collisionExpr.Split '?'
+        let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
+        let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
+        match collisionTermsTrimmed with
+        | [""] -> defaultShape
+        | ["Box"] -> defaultShape
+        | ["Circle"] -> CircleShape { Radius = extent.X * 0.5f; Center = Vector2.Zero }
+        | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
+        | ["Polygon"; verticesStr] ->
+            let vertexStrs = List.ofArray <| verticesStr.Split '|'
+            try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
+                let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
+                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
+                PolygonShape { Vertices = vertices; Center = Vector2.Zero }
+            with :? NotSupportedException ->
+                trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;0.0 | 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
+                defaultShape
+        | _ ->
+            trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
+            defaultShape
+
     let private configureBodyProperties bodyPosition bodyRotation bodyProperties (body : Body) =
         body.Position <- toPhysicsV2 bodyPosition
         body.Rotation <- bodyRotation
