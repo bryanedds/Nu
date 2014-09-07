@@ -258,7 +258,9 @@ module SimModule =
 
         static member isFacetCompatible facet entity =
             List.notExists
-                (fun currentFacet -> EntityFacet.areFacetsCompatible facet currentFacet)
+                (fun currentFacet ->
+                    let compatible = EntityFacet.areFacetsCompatible facet currentFacet
+                    not compatible)
                 entity.FacetsNp
 
     /// Forms logical groups of entities.
