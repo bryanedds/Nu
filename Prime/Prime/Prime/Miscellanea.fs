@@ -105,10 +105,18 @@ module Miscellanea =
     ///     let fieldName = Symbol?MySymbolName
     let Symbol = { DummyField = () }
     
-    /// Symbol alias for Module names.
+    /// Symbol alias for module names.
     /// Needed since we can't utter something like typeof<MyModule>.
     let Module = Symbol
     
-    /// Symbol alias for Field names.
+    /// Symbol alias for field names.
     /// Needed since we can't utter something like typeof<MyField>.
     let Field = Symbol
+    
+    /// Symbol alias for property names.
+    /// Needed since we can't utter something like typeof<MyProperty>.
+    let Property = Symbol
+    
+    /// Symbol alias for method names.
+    /// Needed since we can't utter something like typeof<MyMethod>.
+    let Method = Symbol

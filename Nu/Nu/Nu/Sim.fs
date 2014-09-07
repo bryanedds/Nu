@@ -137,7 +137,25 @@ module SimModule =
     and UnsubscriptionEntries = Map<Guid, Address * Address>
 
     /// A facat the dynamically augments an entity's behavior.
-    and EntityFacet () =
+    and [<AbstractClass>] EntityFacet () =
+
+        static member getFieldDescriptors facet =
+            let facetType = facet.GetType ()
+            match facetType.GetProperty (Property?FieldDescriptors, BindingFlags.Static ||| BindingFlags.Public) with
+            | null -> []
+            | fieldDescriptorsProperty ->
+                let fieldDescriptors = fieldDescriptorsProperty.GetValue facet
+                fieldDescriptors :?> (string * Type * obj) list // TODO: abstract this tuple type
+
+        static member getFieldDescriptorNames facet =
+            let fieldDescriptors = EntityFacet.getFieldDescriptors facet
+            List.map a__ fieldDescriptors
+
+        static member areFacetsCompatible facet facet2 =
+            let facetFieldDescriptors = EntityFacet.getFieldDescriptorNames facet
+            let facet2FieldDescriptors = EntityFacet.getFieldDescriptorNames facet2
+            let intersection = List.intersect facetFieldDescriptors facet2FieldDescriptors
+            Set.isEmpty intersection
 
         abstract member Attach : Entity -> Entity
         default facet.Attach entity = entity
@@ -227,7 +245,7 @@ module SimModule =
                 entity
                 fieldDescriptors
 
-        static member detachFields fieldDescriptors (entity : Entity) =
+        static member detachFields fieldDescriptors entity =
             List.fold
                 (fun entity (fieldName, _ : Type, _ : obj) ->
                     match typeof<Entity>.GetPropertyWritable fieldName with
@@ -237,6 +255,11 @@ module SimModule =
                     | _ -> entity)
                 entity
                 fieldDescriptors
+
+        static member isFacetCompatible facet entity =
+            List.notExists
+                (fun currentFacet -> EntityFacet.areFacetsCompatible facet currentFacet)
+                entity.FacetsNp
 
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
