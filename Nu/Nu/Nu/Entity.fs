@@ -144,36 +144,6 @@ module EntityModule =
             let entity = Entity.makeDefaultUninitialized dispatcherName optName
             Entity.init entity dispatcherContainer
 
-        static member writeToXml overlayer (writer : XmlWriter) (entity : Entity) =
-            writer.WriteStartElement typeof<Entity>.Name
-            Xtension.writeTargetProperties 
-                (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
-                writer
-                entity
-            writer.WriteEndElement ()
-
-        static member writeManyToXml overlayer writer (entities : Map<_, _>) =
-            for entityKvp in entities do
-                Entity.writeToXml overlayer writer entityKvp.Value
-
-        static member readFromXml (entityNode : XmlNode) defaultDispatcherName world =
-            let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
-            Xtension.readTargetXDispatcher entityNode entity
-            let entity = Entity.init entity world
-            match entity.OptOverlayName with
-            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
-            | None -> ()
-            Xtension.readTargetProperties entityNode entity
-            entity
-
-        static member readManyFromXml (parentNode : XmlNode) defaultDispatcherName world =
-            let entityNodes = parentNode.SelectNodes EntityNodeName
-            let entities =
-                Seq.map
-                    (fun entityNode -> Entity.readFromXml entityNode defaultDispatcherName world)
-                    (enumerable entityNodes)
-            Seq.toList entities
-
 [<AutoOpen>]
 module WorldEntityModule =
 
@@ -396,3 +366,33 @@ module WorldEntityModule =
                     | Left error -> Left error
                 | Left error -> Left error
             | Left error -> Left error
+
+        static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
+            writer.WriteStartElement typeof<Entity>.Name
+            Xtension.writeTargetProperties 
+                (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
+                writer
+                entity
+            writer.WriteEndElement ()
+
+        static member writeEntitiesToXml overlayer writer (entities : Map<_, _>) =
+            for entityKvp in entities do
+                World.writeEntityToXml overlayer writer entityKvp.Value
+
+        static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
+            let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
+            Xtension.readTargetXDispatcher entityNode entity
+            let entity = Entity.init entity world
+            match entity.OptOverlayName with
+            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
+            | None -> ()
+            Xtension.readTargetProperties entityNode entity
+            entity
+
+        static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
+            let entityNodes = parentNode.SelectNodes EntityNodeName
+            let entities =
+                Seq.map
+                    (fun entityNode -> World.readEntityFromXml entityNode defaultDispatcherName world)
+                    (enumerable entityNodes)
+            Seq.toList entities
