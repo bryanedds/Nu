@@ -318,3 +318,43 @@ module WorldEntityModule =
                 (fun world (entity : Entity) -> World.addEntity (addrlist groupAddress [entity.Name]) entity world)
                 world
                 entities
+
+        static member setFacetNames entity address facetNames world =
+            let oldEntity = entity
+            let oldFacetNameSet = Set.ofList entity.FacetNames
+            let newFacetNameSet = Set.ofList facetNames
+            let removedFacetNameSet = Set.difference oldFacetNameSet newFacetNameSet
+            let addedFacetNameSet = Set.difference newFacetNameSet oldFacetNameSet
+            let entity =
+                Set.fold
+                    (fun entity facetName ->
+                        match List.tryFind (fun facet -> (facet.GetType ()).Name = facetName) entity.FacetsNp with
+                        | None -> entity
+                        | Some facet -> facet.Detach entity)
+                    entity
+                    removedFacetNameSet
+            let optEntity =
+                Set.fold
+                    (fun eitherEntity facetName ->
+                        match eitherEntity with
+                        | Right entity ->
+                            match Map.tryFind facetName world.Facets with
+                            | Some facet ->
+                                match facet with
+                                | :? EntityFacet as entityFacet ->
+                                    // TODO: check for incompatible facets
+                                    let entity = Entity.setFacetsNp (entityFacet :: entity.FacetsNp) entity
+                                    let entity = entityFacet.Attach entity
+                                    Right entity
+                                | _ -> Left <| "Facet '" + facetName + "' is not of the required type 'EntityFacet'."
+                            | None -> Left <| "Invalid facet name '" + facetName + "'."
+                        | Left _ as left -> left)
+                    (Right entity)
+                    addedFacetNameSet
+            match optEntity with
+            | Right entity ->
+                let world = Entity.unregister address oldEntity world
+                let entity = Entity.setFacetNames facetNames entity
+                let world = World.setEntity address entity world
+                Entity.register address entity world
+            | Left error -> trace error; world

@@ -27,7 +27,6 @@ open NuEdit.NuEditReflection
 module ProgramModule =
 
     // TODO: increase warning level to 5.
-    // TODO: enable configuring what facets are used in editor.
 
     type WorldChanger = World -> World
 
@@ -123,34 +122,9 @@ module Program =
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
                 | "FacetNames" ->
-                    let facetNames = value :?> string list
                     let entity = World.getEntity entityTds.Address world
-                    let world = Entity.unregister entityTds.Address entity world
-                    let entity = Entity.setFacetNames facetNames entity
-                    let entity =
-                        List.fold
-                            (fun entity (facet : EntityFacet) -> facet.Detach entity)
-                            entity
-                            entity.FacetsNp
-                    let entity = 
-                        List.fold
-                            (fun entity facetName ->
-                                match Map.tryFind facetName world.Facets with
-                                | None -> failwith <| "Invalid facet name '" + facetName + "'."
-                                | Some facet ->
-                                    match facet with
-                                    | :? EntityFacet as entityFacet ->
-                                        // TODO: check for incompatible facets
-                                        let entity = Entity.setFacetsNp (entityFacet :: entity.FacetsNp) entity
-                                        entityFacet.Attach entity
-                                    | _ -> failwith <| "Facet '" + facetName + "' is not of the required type 'EntityFacet'.")
-                            entity
-                            facetNames
-                    let world = World.setEntity entityTds.Address entity world
-                    let world = Entity.register entityTds.Address entity world
-                    entityTds.RefWorld := world // must be set for property grid
-                    entityTds.Form.propertyGrid.Refresh ()
-                    world
+                    let facetNames = value :?> string list
+                    World.setFacetNames entity entityTds.Address facetNames world
                 | _ ->
                     let entity = World.getEntity entityTds.Address world
                     let optOldOverlayName = entity.OptOverlayName
