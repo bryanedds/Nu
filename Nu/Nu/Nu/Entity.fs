@@ -133,7 +133,7 @@ module EntityModule =
     type Entity with
         
         static member make dispatcherName optName =
-            let id = makeId ()
+            let id = NuCore.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               Position = Vector2.Zero

@@ -150,22 +150,22 @@ module SimModule =
             let facetType = facet.GetType ()
             facetType.Name
 
-        static member getFieldDescriptors facet =
+        static member getFieldDefinitions facet =
             let facetType = facet.GetType ()
-            match facetType.GetProperty (Property?FieldDescriptors, BindingFlags.Static ||| BindingFlags.Public) with
+            match facetType.GetProperty (Property?FieldDefinitions, BindingFlags.Static ||| BindingFlags.Public) with
             | null -> []
-            | fieldDescriptorsProperty ->
-                let fieldDescriptors = fieldDescriptorsProperty.GetValue facet
-                fieldDescriptors :?> (string * Type * obj) list // TODO: abstract this tuple type
+            | fieldDefinitionsProperty ->
+                let fieldDefinitions = fieldDefinitionsProperty.GetValue facet
+                fieldDefinitions :?> (string * Type * obj) list // TODO: abstract this tuple type
 
         static member getFieldDescriptorNames facet =
-            let fieldDescriptors = Facet.getFieldDescriptors facet
-            List.map a__ fieldDescriptors
+            let fieldDefinitions = Facet.getFieldDefinitions facet
+            List.map a__ fieldDefinitions
 
         static member areFacetsCompatible facet facet2 =
-            let facetFieldDescriptors = Facet.getFieldDescriptorNames facet
-            let facet2FieldDescriptors = Facet.getFieldDescriptorNames facet2
-            let intersection = List.intersect facetFieldDescriptors facet2FieldDescriptors
+            let facetFieldDefinitions = Facet.getFieldDescriptorNames facet
+            let facet2FieldDefinitions = Facet.getFieldDescriptorNames facet2
+            let intersection = List.intersect facetFieldDefinitions facet2FieldDefinitions
             Set.isEmpty intersection
 
         abstract member AttachFields : Entity -> Entity
@@ -239,30 +239,31 @@ module SimModule =
         static member setFacetsNp facets (entity : Entity) =
              { entity with FacetsNp = facets }
 
-        static member attachFields fieldDescriptors (entity : Entity) =
+        static member attachFields fieldDefinitions (entity : Entity) =
             let entity = { entity with Id = entity.Id } // hacky copy. Copied in case property is set in-place.
             List.fold
-                (fun entity (fieldName, _ : Type, initValue : obj) ->
+                (fun entity (fieldName, _ : Type, fieldExpr) ->
+                    let fieldValue = FieldExpression.eval fieldExpr
                     match typeof<Entity>.GetPropertyWritable fieldName with
                     | null ->
-                        let xtension = { entity.Xtension with XFields = Map.add fieldName initValue entity.Xtension.XFields }
+                        let xtension = { entity.Xtension with XFields = Map.add fieldName fieldValue entity.Xtension.XFields }
                         { entity with Xtension = xtension }
                     | property ->
-                        property.SetValue (entity, initValue)
+                        property.SetValue (entity, fieldValue)
                         entity)
                 entity
-                fieldDescriptors
+                fieldDefinitions
 
-        static member detachFields fieldDescriptors entity =
+        static member detachFields fieldDefinitions entity =
             List.fold
-                (fun entity (fieldName, _ : Type, _ : obj) ->
+                (fun entity (fieldName, _ : Type, _ : FieldExpression) ->
                     match typeof<Entity>.GetPropertyWritable fieldName with
                     | null ->
                         let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
                         { entity with Xtension = xtension }
                     | _ -> entity)
                 entity
-                fieldDescriptors
+                fieldDefinitions
 
         static member isFacetCompatible facet entity =
             let facetFieldNames = Facet.getFieldDescriptorNames facet

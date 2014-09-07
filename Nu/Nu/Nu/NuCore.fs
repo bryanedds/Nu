@@ -20,30 +20,43 @@ module NuCoreModule =
         | Running
         | Exiting
 
+    /// An evaluatable expression for defining an XField.
+    type [<NoEquality; NoComparison>] FieldExpression =
+        | Constant of obj
+        | Variable of (unit -> obj)
+        static member eval expr =
+            match expr with
+            | Constant value -> value
+            | Variable fn -> fn ()
+
+    /// In tandem with the define literal, grants a nice syntax to define constant XFields.
+    type DefineConstant =
+        { DefineConstant : unit }
+        static member (?) (_, name) =
+            fun constant ->
+                (name, constant.GetType (), Constant constant)
+
+    /// In tandem with the variable literal, grants a nice syntax to define variable XFields.
+    type DefineVariable =
+        { DefineVariable : unit }
+        static member (?) (_, name) =
+            fun (variable : unit -> 'v) ->
+                (name, variable.GetType (), Variable (fun () -> variable () :> obj))
+
+    /// In tandem with the DefineConstant type, grants a nice syntax to define constant XFields.
+    let define = { DefineConstant = () }
+
+    /// In tandem with the DefineLiteral type, grants a nice syntax to define variable XFields.
+    let variable = { DefineVariable = () }
+
+[<RequireQualifiedAccess>]
+module NuCore =
+
     /// The invalid Id.
     let InvalidId = Guid.Empty
 
     /// Make a Nu Id.
     let makeId = Guid.NewGuid
-
-    type T =
-        { U : unit }
-        static member (?) (_, n) =
-            fun (i : 'i) _ -> (n, typeof<'i>, i :> obj)
-
-    let Define = { U = () }
-
-    type AsWord =
-        { AsWord : unit }
-
-    let As = { AsWord = () }
-
-    // Make a field descriptor from a field name and initial value.
-    let describeField (fieldName : string) (initValue : 't) =
-        (fieldName, typeof<'t>, initValue :> obj)
-
-[<RequireQualifiedAccess>]
-module NuCore =
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =

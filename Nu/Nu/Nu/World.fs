@@ -602,11 +602,11 @@ module WorldModule =
                 let facets =
                     Map.ofList
                         // TODO: see if we can reflectively generate this list
-                        [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> obj
-                         typeof<SpriteFacet>.Name, SpriteFacet () :> obj
-                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> obj]
+                        [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
+                         typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
+                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
                 let world =
-                    { Game = { Id = makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                    { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
