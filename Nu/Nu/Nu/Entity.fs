@@ -16,10 +16,8 @@ module EntityModule =
 
     type EntityDispatcher () =
 
-        abstract member Init : Entity * EntityFacet list * IXDispatcherContainer -> Entity
-        default dispatcher.Init (entity, facets, _) =
-            let entity = Entity.setFacetsNp facets entity
-            List.fold (fun entity (facet : EntityFacet) -> facet.Attach entity) entity entity.FacetsNp
+        abstract member AttachFields : Entity * World -> Entity
+        default dispatcher.AttachFields (entity, _) = entity
 
         abstract member Register : Entity * Address * World -> World
         default dispatcher.Register (entity, address, world) =
@@ -59,9 +57,9 @@ module EntityModule =
 
         (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
 
-        static member init (entity : Entity) dispatcherContainer =
-            match Xtension.getDispatcher entity.Xtension dispatcherContainer with
-            | :? EntityDispatcher as dispatcher -> dispatcher.Init (entity, [], dispatcherContainer)
+        static member attachAllFields (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as dispatcher -> dispatcher.AttachFields (entity, world)
             | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
         
         static member register address (entity : Entity) world =
@@ -125,8 +123,8 @@ module EntityModule =
           TilePosition : Vector2I }
 
     type Entity with
-    
-        static member makeDefaultUninitialized dispatcherName optName =
+        
+        static member make dispatcherName optName =
             let id = NuCore.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
@@ -139,10 +137,6 @@ module EntityModule =
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }
               FacetNames = []
               FacetsNp = [] }
-
-        static member makeDefault dispatcherName optName dispatcherContainer =
-            let entity = Entity.makeDefaultUninitialized dispatcherName optName
-            Entity.init entity dispatcherContainer
 
 [<AutoOpen>]
 module WorldEntityModule =
@@ -326,7 +320,7 @@ module WorldEntityModule =
             | Some facetObj ->
                 match facetObj with
                 | :? EntityFacet as facet ->
-                    if  compatibilityCheck &&
+                    if  not compatibilityCheck ||
                         Entity.isFacetCompatible facet entity then
                         let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
                         let entity = facet.Attach entity
@@ -377,7 +371,7 @@ module WorldEntityModule =
 
         static member trySetFacetNames facetNames address world =
             let entity = World.getEntity address world
-            let facetNamesToAdd = World.getFacetNamesToAdd [] entity.FacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd entity.FacetNames facetNames
             let facetNamesToRemove = World.getFacetNamesToRemove entity.FacetNames facetNames
             match World.tryRemoveFacets facetNamesToRemove address world with
             | Right world -> World.tryAddFacets facetNamesToAdd address world
@@ -388,6 +382,13 @@ module WorldEntityModule =
             match World.tryPopulateFacets2 facetNamesToAdd entity world with
             | Right entity -> Right entity
             | Left error -> Left error
+
+        static member makeEntity dispatcherName optName world =
+            let entity = Entity.make dispatcherName optName
+            let entity = Entity.attachAllFields entity world
+            match World.tryPopulateFacets entity world with
+            | Right entity -> entity
+            | Left error -> debug error; entity
 
         static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
@@ -402,16 +403,14 @@ module WorldEntityModule =
                 World.writeEntityToXml overlayer writer entityKvp.Value
 
         static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
-            let entity = Entity.makeDefaultUninitialized defaultDispatcherName None
+            let entity = Entity.make defaultDispatcherName None
             Xtension.readTargetXDispatcher entityNode entity
-            let entity = Entity.init entity world
+            let entity = Entity.attachAllFields entity world
             match entity.OptOverlayName with
             | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
             | None -> ()
-            Xtension.readTargetProperties entityNode entity
-            match World.tryPopulateFacets entity world with
-            | Right entity -> entity
-            | Left error -> debug error; entity
+            Xtension.readTargetProperties entityNode entity // TODO: see if it's ok to read target properties before applying overlay
+            entity
 
         static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
             let entityNodes = parentNode.SelectNodes EntityNodeName

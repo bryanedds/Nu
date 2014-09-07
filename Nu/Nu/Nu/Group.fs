@@ -12,7 +12,7 @@ module GroupModule =
 
     type Group with
         
-        static member init (group : Group) (dispatcherContainer : IXDispatcherContainer) : Group = group?Init (group, dispatcherContainer)
+        static member init (group : Group) (world : World) : Group = group?Init (group, world)
         static member register (address : Address) (group : Group) (world : World) : World = group?Register (address, world)
         static member unregister (address : Address) (group : Group) (world : World) : World = group?Unregister (address, world)
 
@@ -29,13 +29,9 @@ module GroupModule =
 
     type Group with
     
-        static member makeDefaultUninitialized dispatcherName =
+        static member make dispatcherName =
             { Group.Id = NuCore.makeId ()
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-    
-        static member makeDefault dispatcherName dispatcherContainer =
-            let group = Group.makeDefaultUninitialized dispatcherName
-            Group.init group dispatcherContainer
 
 [<AutoOpen>]
 module WorldGroupModule =
@@ -155,16 +151,20 @@ module WorldGroupModule =
                 (fun world (groupName, group, entities) -> World.addGroup (addrlist screenAddress [groupName]) group entities world)
                 world
                 groupDescriptors
+        
+        static member makeGroup dispatcherName world =
+            let group = Group.make dispatcherName
+            Group.init group world
     
         static member writeGroupToXml overlayer (writer : XmlWriter) group entities =
             writer.WriteStartElement typeof<Group>.Name
             Xtension.writeTargetProperties tautology writer group
             World.writeEntitiesToXml overlayer writer entities
     
-        static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName dispatcherContainer =
-            let group = Group.makeDefaultUninitialized defaultDispatcherName
+        static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+            let group = Group.make defaultDispatcherName
             Xtension.readTargetXDispatcher groupNode group
-            let group = Group.init group dispatcherContainer
+            let group = Group.init group world
             Xtension.readTargetProperties groupNode group
-            let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName dispatcherContainer
+            let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName world
             (group, entities)
