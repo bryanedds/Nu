@@ -113,19 +113,23 @@ module SpriteFacetModule =
 
     type Entity with
 
+        member entity.ViewType = entity?ViewType () : ViewType
+        static member setViewType (value : ViewType) (entity : Entity) : Entity = entity?ViewType <- value
         member entity.SpriteImage = entity?SpriteImage () : Image
         static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
 
-    type SpriteFacet (viewType) =
+    type SpriteFacet () =
         inherit EntityFacet ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
+            [Entity.describeField Field?ViewType Relative
+             Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
 
         static member FieldDescriptors =
             fieldDescriptors
 
         override facet.Attach entity =
+            /// TODO: check for compatibility for facets
             Entity.attachFields fieldDescriptors entity
 
         override facet.Detach entity =
@@ -140,7 +144,7 @@ module SpriteFacetModule =
                             { Position = entity.Position
                               Size = entity.Size
                               Rotation = entity.Rotation
-                              ViewType = viewType
+                              ViewType = entity.ViewType
                               OptInset = None
                               Image = entity.SpriteImage
                               Color = Vector4.One }}]
@@ -168,7 +172,7 @@ module AnimatedSpriteFacetModule =
         member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage () : Image
         static member setAnimatedSpriteImage (value : Image) (entity : Entity) : Entity = entity?AnimatedSpriteImage <- value
 
-    type AnimatedSpriteFacet (viewType) =
+    type AnimatedSpriteFacet () =
         inherit EntityFacet ()
 
         static let fieldDescriptors =
@@ -176,6 +180,7 @@ module AnimatedSpriteFacetModule =
              Entity.describeField Field?TileCount 16 
              Entity.describeField Field?TileRun 4
              Entity.describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
+             Entity.describeField Field?ViewType Relative
              Entity.describeField Field?AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
 
         static let getSpriteOptInset (entity : Entity) world =
@@ -205,7 +210,7 @@ module AnimatedSpriteFacetModule =
                             { Position = entity.Position
                               Size = entity.Size
                               Rotation = entity.Rotation
-                              ViewType = viewType
+                              ViewType = entity.ViewType
                               OptInset = getSpriteOptInset entity world
                               Image = entity.AnimatedSpriteImage
                               Color = Vector4.One }}]
@@ -743,7 +748,7 @@ module RigidBodySpriteDispatcherModule =
 
         override dispatcher.Init (entity, facets, dispatcherContainer) =
             let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
-            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; SpriteFacet Relative :> EntityFacet] @ facets
+            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; SpriteFacet () :> EntityFacet] @ facets
             base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
@@ -758,7 +763,7 @@ module RigidBodyAnimatedSpriteDispatcherModule =
 
         override dispatcher.Init (entity, facets, dispatcherContainer) =
             let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
-            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; AnimatedSpriteFacet Relative :> EntityFacet] @ facets
+            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; AnimatedSpriteFacet () :> EntityFacet] @ facets
             base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
