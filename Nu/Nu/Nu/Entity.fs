@@ -330,7 +330,10 @@ module WorldEntityModule =
                     (fun entity facetName ->
                         match List.tryFind (fun facet -> (facet.GetType ()).Name = facetName) entity.FacetsNp with
                         | None -> entity
-                        | Some facet -> facet.Detach entity)
+                        | Some facet ->
+                            let entity = facet.Detach entity
+                            let facets = List.remove ((=) facet) entity.FacetsNp
+                            Entity.setFacetsNp facets entity)
                     entity
                     removedFacetNameSet
             let optEntity =

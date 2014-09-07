@@ -119,6 +119,7 @@ module NuMathModule =
                 let valueStr = valueStr.Substring (1, valueStr.Length - 2)
                 let valueStrs = valueStr.Split (';')
                 let valueStrs = Array.map (fun (valueStr : string) -> valueStr.Trim ()) valueStrs
+                let valueStrs = Array.filter (fun (valueStr : string) -> valueStr.Length <> 0) valueStrs
                 let value = List.ofArray valueStrs
                 value :> obj
 

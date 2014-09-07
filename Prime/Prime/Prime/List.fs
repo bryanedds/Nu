@@ -26,7 +26,7 @@ let rec notExists pred list =
     match list with
     | [] -> true
     | head :: tail ->
-        if pred head then true
+        if pred head then false
         else notExists pred tail
 
 let rec private subpartitionPlus fnOptU list left right =
