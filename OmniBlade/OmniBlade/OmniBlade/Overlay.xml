@@ -18,6 +18,7 @@
   </RigidBodyFacet>
 
   <SpriteFacet>
+    <ViewType>Relative</ViewType>
     <SpriteImage>Image3;Default</SpriteImage>
   </SpriteFacet>
 
@@ -26,6 +27,7 @@
     <TileCount>16</TileCount>
     <TileRun>4</TileRun>
     <TileSize>16;16</TileSize>
+    <ViewType>Relative</ViewType>
     <AnimatedSpriteImage>Image7;Default</AnimatedSpriteImage>
   </AnimatedSpriteFacet>
 

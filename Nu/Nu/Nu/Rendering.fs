@@ -16,9 +16,30 @@ module RenderingModule =
     /// Depicts whether a view is purposed to render in relative or absolute space. For
     /// example, UI entities are rendered in absolute space since they remain still no matter
     /// where the camera moves, and vice versa for non-UI entities.
-    type ViewType =
+    type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] ViewType =
         | Absolute
         | Relative
+
+    /// Converts ViewType types.
+    and ViewTypeTypeConverter () =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string>
+        override this.ConvertTo (_, _, obj, _) =
+            let bodyType = obj :?> ViewType
+            match bodyType with
+            | Absolute -> "Absolute" :> obj
+            | Relative -> "Relative" :> obj
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<Vector2> || sourceType = typeof<string>
+        override this.ConvertFrom (_, _, obj) =
+            let sourceType = obj.GetType ()
+            if sourceType = typeof<ViewType> then obj
+            else
+                match obj :?> string with
+                | "Absolute" -> Absolute :> obj
+                | "Relative" -> Relative :> obj
+                | other -> failwith <| "Unknown ViewType '" + other + "'."
 
     /// Describes an image asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
