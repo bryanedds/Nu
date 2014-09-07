@@ -49,7 +49,6 @@ module Overlayer =
 
     let private getPropertyState overlayName propertyName target overlayer =
         match trySelectNode overlayName propertyName overlayer with
-        | None -> Bare
         | Some overlayNode -> 
             let targetType = target.GetType ()
             let optProperty = targetType.GetProperty overlayNode.Name
@@ -66,13 +65,14 @@ module Overlayer =
                 | (null, Some xtension) -> Some <| Map.find overlayNode.Name xtension.XFields
                 | (targetProperty, _) -> Some <| targetProperty.GetValue target
             match optPropertyValue with
-            | None -> Bare
             | Some propertyValue ->
                 let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
                 if converter.CanConvertFrom typeof<string> then
                     let overlayValue = converter.ConvertFrom overlayNode.InnerText
                     if overlayValue = propertyValue then Overlaid else Altered
                 else Bare
+            | None -> Bare
+        | None -> Bare
 
     let private isPropertyOverlaid overlayName propertyName target overlayer =
         getPropertyState overlayName propertyName target overlayer = Overlaid
@@ -85,16 +85,16 @@ module Overlayer =
             match optOverlayNameProperty.GetValue target with
             | :? (string option) as optOverlayName ->
                 match optOverlayName with
-                | None -> false
                 | Some overlayName -> isPropertyOverlaid overlayName propertyName target overlayer
+                | None -> false
             | _ -> false
 
     let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) oldOverlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
             (match optOldOverlayName with
-             | None -> false
-             | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name target oldOverlayer)
+             | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name target oldOverlayer
+             | None -> false)
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
             let converter = TypeDescriptor.GetConverter property.PropertyType
@@ -107,8 +107,8 @@ module Overlayer =
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
             match trySelectNode newOverlayName property.Name newOverlayer with
-            | None -> ()
             | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode optOldOverlayName target oldOverlayer
+            | None -> ()
 
     let private applyOverlayToXtension optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
@@ -121,8 +121,8 @@ module Overlayer =
                     Seq.fold
                         (fun optNodes (kvp : KeyValuePair<string, obj>) ->
                             match trySelectNode newOverlayName kvp.Key newOverlayer with
-                            | None -> optNodes
-                            | Some node -> (kvp.Value.GetType (), node) :: optNodes)
+                            | Some node -> (kvp.Value.GetType (), node) :: optNodes
+                            | None -> optNodes)
                         []
                         xtension.XFields
                 let nodes = List.ofSeq optNodes
@@ -131,8 +131,8 @@ module Overlayer =
                         (fun xFields (aType, node : XmlNode) ->
                             let shouldApplyOverlay =
                                 match optOldOverlayName with
-                                | None -> false
                                 | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target oldOverlayer
+                                | None -> false
                             if shouldApplyOverlay then
                                 let converter = TypeDescriptor.GetConverter aType
                                 let value = converter.ConvertFrom node.InnerText

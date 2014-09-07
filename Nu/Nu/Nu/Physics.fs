@@ -281,8 +281,8 @@ module Physics =
     /// Try to get a contact tangent where the body with the given physics id is touching the ground.
     let getOptGroundContactTangent physicsId integrator =
         match getOptGroundContactNormal physicsId integrator with
+        | Some normal -> Some <| Vector2 (normal.Y, -normal.X)
         | None -> None
-        | Some normal -> Some <| Vector2 (normal.Y, -normal.X) 
 
     /// Query that the body with the give physics id is on the ground.
     let isBodyOnGround physicsId integrator =

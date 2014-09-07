@@ -140,11 +140,11 @@ module Audio =
             let audioAssets = List.definitize optAudioAssets
             let optAudioAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
             match optAudioAssetMap with
-            | None ->
-                let audioAssetMap = Map.ofSeq audioAssets
-                { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
             | Some audioAssetMap ->
                 let audioAssetMap = Map.addMany audioAssets audioAssetMap
+                { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
+            | None ->
+                let audioAssetMap = Map.ofSeq audioAssets
                 { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
         | Left error ->
             trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, audioPlayer.AssetGraphFileName) + "'."
@@ -154,22 +154,22 @@ module Audio =
         let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
         let (audioPlayer, optAssetMap) =
             match optAssetMap with
+            | Some _ -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
             | None ->
                 note <| "Loading audio package '" + packageName + "' for asset '" + assetName + "' on the fly."
                 let audioPlayer = tryLoadAudioPackage packageName audioPlayer
                 (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
-            | Some _ -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
         (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
         let (audioPlayer', optAudioAsset) = tryLoadAudioAsset song.PackageName song.SongAssetName audioPlayer
         match optAudioAsset with
-        | None -> note <| "PlaySongMessage failed due to unloadable assets for '" + string song + "'."
         | Some (WavAsset _) -> note <| "Cannot play wav file as song '" + string song + "'."
         | Some (OggAsset oggAsset) ->
             ignore <| SDL_mixer.Mix_VolumeMusic (int <| playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
             ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
+        | None -> note <| "PlaySongMessage failed due to unloadable assets for '" + string song + "'."
         { audioPlayer' with OptCurrentSong = Some playSongMessage }
 
     let private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
@@ -179,7 +179,6 @@ module Audio =
         let packageName = hintPackageDisuse.PackageName
         let optAssets = Map.tryFind packageName audioPlayer.AudioAssetMap
         match optAssets with
-        | None -> audioPlayer
         | Some assets ->
             // all sounds / music must be halted because one of them might be playing during unload
             // (which is very bad according to the API docs).
@@ -189,16 +188,17 @@ module Audio =
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
                 | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
             { audioPlayer with AudioAssetMap = Map.remove packageName audioPlayer.AudioAssetMap }
+        | None -> audioPlayer
 
     let private handlePlaySound playSoundMessage audioPlayer =
         let sound = playSoundMessage.Sound
         let (audioPlayer, optAudioAsset) = tryLoadAudioAsset sound.PackageName sound.SoundAssetName audioPlayer
         match optAudioAsset with
-        | None -> note <| "PlaySoundMessage failed due to unloadable assets for '" + string sound + "'."
         | Some (WavAsset wavAsset) ->
             ignore <| SDL_mixer.Mix_VolumeChunk (wavAsset, int <| playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
             ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
         | Some (OggAsset _) -> note <| "Cannot play ogg file as sound '" + string sound + "'."
+        | None -> note <| "PlaySoundMessage failed due to unloadable assets for '" + string sound + "'."
         audioPlayer
 
     let private handlePlaySong playSongMessage audioPlayer =
@@ -253,12 +253,12 @@ module Audio =
 
     let private tryUpdateNextSong audioPlayer =
         match audioPlayer.OptNextPlaySong with
-        | None -> audioPlayer
         | Some nextPlaySong ->
             if SDL_mixer.Mix_PlayingMusic () = 0 then
                 let audioPlayer = handlePlaySong nextPlaySong audioPlayer
                 { audioPlayer with OptNextPlaySong = None }
             else audioPlayer
+        | None -> audioPlayer
 
     let private updateAudioPlayer audioPlayer =
         audioPlayer |>

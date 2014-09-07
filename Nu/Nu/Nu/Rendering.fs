@@ -233,11 +233,11 @@ module Rendering =
             let renderAssets = List.definitize optRenderAssets
             let optRenderAssetMap = Map.tryFind packageName renderer.RenderAssetMap
             match optRenderAssetMap with
-            | None ->
-                let renderAssetMap = Map.ofSeq renderAssets
-                { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
             | Some renderAssetMap ->
                 let renderAssetMap = Map.addMany renderAssets renderAssetMap
+                { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
+            | None ->
+                let renderAssetMap = Map.ofSeq renderAssets
                 { renderer with RenderAssetMap = Map.add packageName renderAssetMap renderer.RenderAssetMap }
         | Left error ->
             note <| "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
@@ -247,11 +247,11 @@ module Rendering =
         let optAssetMap = Map.tryFind packageName renderer.RenderAssetMap
         let (renderer, optAssetMap) =
             match optAssetMap with
+            | Some _ -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
             | None ->
                 note <| "Loading render package '" + packageName + "' for asset '" + assetName + "' on the fly."
                 let renderer = tryLoadRenderPackage packageName renderer
                 (renderer, Map.tryFind packageName renderer.RenderAssetMap)
-            | Some _ -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
         (renderer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
 
     let private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUseMessage) renderer =
@@ -261,10 +261,10 @@ module Rendering =
         let packageName = hintPackageDisuse.PackageName
         let optAssets = Map.tryFind packageName renderer.RenderAssetMap
         match optAssets with
-        | None -> renderer
         | Some assets ->
             for asset in Map.toValueList assets do freeRenderAsset asset
             { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
+        | None -> renderer
 
     let private handleReloadRenderingAssets renderer =
         let oldAssetMap = renderer.RenderAssetMap
@@ -291,9 +291,6 @@ module Rendering =
         let color = descriptor.Color
         let (renderer, optRenderAsset) = tryLoadRenderAsset image.PackageName image.ImageAssetName renderer
         match optRenderAsset with
-        | None ->
-            note <| "SpriteDescriptor failed to render due to unloadable assets for '" + string image + "'."
-            renderer
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
@@ -304,16 +301,16 @@ module Rendering =
                 ignore <| SDL.SDL_QueryTexture (texture, textureFormat, textureAccess, textureSizeX, textureSizeY)
                 let mutable sourceRect = SDL.SDL_Rect ()
                 match descriptor.OptInset with
-                | None ->
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- !textureSizeX
-                    sourceRect.h <- !textureSizeY
                 | Some inset ->
                     sourceRect.x <- int inset.X
                     sourceRect.y <- int inset.Y
                     sourceRect.w <- int <| inset.Z - inset.X
                     sourceRect.h <- int <| inset.W - inset.Y
+                | None ->
+                    sourceRect.x <- 0
+                    sourceRect.y <- 0
+                    sourceRect.w <- !textureSizeX
+                    sourceRect.h <- !textureSizeY
                 let mutable destRect = SDL.SDL_Rect ()
                 destRect.x <- int <| positionView.X + camera.EyeSize.X * 0.5f
                 destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
@@ -336,9 +333,8 @@ module Rendering =
                         SDL.SDL_RendererFlip.SDL_FLIP_NONE)
                 if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + string descriptor + "' due to '" + SDL.SDL_GetError () + "."
                 renderer
-            | _ ->
-                trace "Cannot render sprite with a non-texture asset."
-                renderer
+            | _ -> trace "Cannot render sprite with a non-texture asset."; renderer
+        | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + string image + "'."; renderer
 
     let private renderTileLayerDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TileLayerDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -355,9 +351,6 @@ module Rendering =
         let tileSetWidth = optTileSetWidth.Value
         let (renderer, optRenderAsset) = tryLoadRenderAsset tileSetImage.PackageName tileSetImage.ImageAssetName renderer
         match optRenderAsset with
-        | None ->
-            note <| "TileLayerDescriptor failed due to unloadable assets for '" + string tileSetImage + "'."
-            renderer
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
@@ -394,9 +387,8 @@ module Rendering =
                             if renderResult <> 0 then note <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                     tiles
                 renderer
-            | _ ->
-                trace "Cannot render tile with a non-texture asset."
-                renderer
+            | _ -> trace "Cannot render tile with a non-texture asset."; renderer
+        | None -> note <| "TileLayerDescriptor failed due to unloadable assets for '" + string tileSetImage + "'."; renderer
     
     let private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
         let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -407,9 +399,6 @@ module Rendering =
         let color = descriptor.Color
         let (renderer, optRenderAsset) = tryLoadRenderAsset font.PackageName font.FontAssetName renderer
         match optRenderAsset with
-        | None ->
-            note <| "TextDescriptor failed due to unloadable assets for '" + string font + "'."
-            renderer
         | Some renderAsset ->
             match renderAsset with
             | FontAsset (font, _) ->
@@ -445,9 +434,8 @@ module Rendering =
                     SDL.SDL_DestroyTexture textTexture
                     SDL.SDL_FreeSurface textSurface
                 renderer
-            | _ ->
-                trace "Cannot render text with a non-font asset."
-                renderer
+            | _ -> trace "Cannot render text with a non-font asset."; renderer
+        | None -> note <| "TextDescriptor failed due to unloadable assets for '" + string font + "'."; renderer
 
     let private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
         match layerableDescriptor with

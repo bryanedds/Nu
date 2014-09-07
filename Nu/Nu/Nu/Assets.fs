@@ -69,14 +69,14 @@ module Assets =
             List.fold
                 (fun assets assetNode ->
                     match tryLoadAssetFromAssetNode assetNode with
-                    | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assets
-                    | Some asset -> asset :: assets)
+                    | Some asset -> asset :: assets
+                    | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assets)
                 []
                 (List.ofSeq <| enumerable node.ChildNodes)
         let associatedAssets =
             match optAssociation with
-            | None -> assets
             | Some association -> List.filter (fun asset -> List.exists ((=) association) asset.Associations) assets
+            | None -> assets
         List.ofSeq associatedAssets
 
     /// Attempt to load all the assets from the document root Xml node.

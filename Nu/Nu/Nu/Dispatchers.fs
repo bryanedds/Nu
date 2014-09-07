@@ -159,8 +159,8 @@ module SpriteFacetModule =
         override facet.GetQuickSize (entity : Entity, world) =
             let image = entity.SpriteImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
             | Some size -> size
+            | None -> DefaultEntitySize
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -382,8 +382,8 @@ module ButtonDispatcherModule =
         override dispatcher.GetQuickSize (button, world) =
             let image = button.UpImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
             | Some size -> size
+            | None -> DefaultEntitySize
 
         override dispatcher.IsTransformRelative (_, _) =
             false
@@ -427,8 +427,8 @@ module LabelDispatcherModule =
         override dispatcher.GetQuickSize (label, world) =
             let image = label.LabelImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
             | Some size -> size
+            | None -> DefaultEntitySize
 
         override dispatcher.IsTransformRelative (_, _) =
             false
@@ -494,8 +494,8 @@ module TextDispatcherModule =
         override dispatcher.GetQuickSize (text, world) =
             let image = text.BackgroundImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
             | Some size -> size
+            | None -> DefaultEntitySize
 
         override dispatcher.IsTransformRelative (_, _) =
             false
@@ -590,8 +590,8 @@ module ToggleDispatcherModule =
         override dispatcher.GetQuickSize (toggle, world) =
             let image = toggle.OffImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
             | Some size -> size
+            | None -> DefaultEntitySize
 
         override dispatcher.IsTransformRelative (_, _) =
             false
@@ -721,8 +721,8 @@ module FillBarDispatcherModule =
         override dispatcher.GetQuickSize (fillBar, world) =
             let image = fillBar.BorderImage
             match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
-            | None -> DefaultEntitySize
             | Some size -> size
+            | None -> DefaultEntitySize
 
         override dispatcher.IsTransformRelative (_, _) =
             false
@@ -897,13 +897,13 @@ module TileMapDispatcherModule =
         let registerTilePhysics tm tmd (tl : TmxLayer) tli address ti world _ =
             let td = Entity.makeTileData tm tmd tl ti
             match td.OptTileSetTile with
-            | None -> world
             | Some tileSetTile ->
                 let collisionProperty = ref Unchecked.defaultof<string>
                 if tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then
                     let collisionExpr = string collisionProperty.Value
                     registerTilePhysicsShape address tm tmd tli td ti collisionExpr world
                 else world
+            | None -> world
 
         let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world (tileLayer : TmxLayer) =
             if tileLayer.Properties.ContainsKey CollisionProperty then
@@ -929,13 +929,13 @@ module TileMapDispatcherModule =
                             (fun tileIndex world _ ->
                                 let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex
                                 match tileData.OptTileSetTile with
-                                | None -> world
                                 | Some tileSetTile ->
                                     if tileSetTile.Properties.ContainsKey CollisionProperty then
                                         let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
                                         let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
                                         { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
-                                    else world)
+                                    else world
+                                | None -> world)
                             world
                             tileLayer.Tiles
                     else world)
@@ -964,7 +964,6 @@ module TileMapDispatcherModule =
             if tileMap.Visible then
                 let tileMapAsset = tileMap.TileMapAsset
                 match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
-                | None -> []
                 | Some (_, images, map) ->
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2I (map.TileWidth, map.TileHeight)
@@ -995,10 +994,11 @@ module TileMapDispatcherModule =
                             else descriptors)
                         []
                         layers
+                | None -> []
             else []
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset
             match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
-            | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
+            | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."

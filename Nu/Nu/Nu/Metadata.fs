@@ -115,27 +115,27 @@ module Metadata =
     let tryGetMetadata assetName packageName assetMetadataMap =
         let optPackage = Map.tryFind packageName assetMetadataMap
         match optPackage with
-        | None -> None
         | Some package ->
             let optAsset = Map.tryFind assetName package
             match optAsset with
-            | None -> None
             | Some _ as asset -> asset
+            | None -> None
+        | None -> None
 
     /// Try to get the texture metadata of the given asset.
     let tryGetTextureMetadata assetName packageName assetMetadataMap =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
-        | None -> None
         | Some (TextureMetadata size) -> Some size
+        | None -> None
         | _ -> None
 
     /// Try to get the texture size metadata of the given asset.
     let tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap =
         let optMetadata = tryGetTextureMetadata assetName packageName assetMetadataMap
         match optMetadata with
-        | None -> None
         | Some metadata -> Some <| Vector2 (single metadata.X, single metadata.Y)
+        | None -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
     let getTextureSizeAsVector2 assetName packageName assetMetadataMap =
@@ -145,8 +145,8 @@ module Metadata =
     let tryGetTileMapMetadata assetName packageName assetMetadataMap =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
-        | None -> None
         | Some (TileMapMetadata (fileName, images, tmxMap)) -> Some (fileName, images, tmxMap)
+        | None -> None
         | _ -> None
 
     /// Forcibly get the tile map metadata of the given asset (throwing on failure).

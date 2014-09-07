@@ -29,14 +29,14 @@ module WorldGameModule =
         static member getOptSelectedScreen world =
             let optSelectedScreenAddress = World.getOptSelectedScreenAddress world
             match optSelectedScreenAddress with
-            | None -> None
             | Some selectedScreenAddress -> World.getOptScreen selectedScreenAddress world
+            | None -> None
 
         static member setOptSelectedScreen optScreen world =
             let optSelectedScreenAddress = World.getOptSelectedScreenAddress world
             match optSelectedScreenAddress with
-            | None -> failwith "Cannot set a non-existent screen."
             | Some selectedScreenAddress -> World.setScreen selectedScreenAddress (Option.get optScreen) world
+            | None -> failwith "Cannot set a non-existent screen."
 
         static member getSelectedScreen world = Option.get <| World.getOptSelectedScreen world
         static member setSelectedScreen screen world = World.setOptSelectedScreen (Some screen) world

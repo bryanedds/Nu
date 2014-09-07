@@ -161,8 +161,8 @@ module EntityModule =
             Xtension.readTargetXDispatcher entityNode entity
             let entity = Entity.init entity world
             match entity.OptOverlayName with
-            | None -> ()
             | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
+            | None -> ()
             Xtension.readTargetProperties entityNode entity
             entity
 
@@ -184,12 +184,12 @@ module WorldEntityModule =
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
                 match optGroupMap with
-                | None -> None
                 | Some groupMap ->
                     let optEntityMap = Map.tryFind groupName groupMap
                     match optEntityMap with
-                    | None -> None
                     | Some entityMap -> Map.tryFind entityName entityMap
+                    | None -> None
+                | None -> None
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member private entityAdder address world (entity : Entity) =
@@ -197,21 +197,21 @@ module WorldEntityModule =
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
                 match optGroupMap with
-                | None ->
-                    let entityMap = Map.singleton entityName entity
-                    let groupMap = Map.singleton groupName entityMap
-                    { world with Entities = Map.add screenName groupMap world.Entities }
                 | Some groupMap ->
                     let optEntityMap = Map.tryFind groupName groupMap
                     match optEntityMap with
-                    | None ->
-                        let entityMap = Map.singleton entityName entity
-                        let groupMap = Map.add groupName entityMap groupMap
-                        { world with Entities = Map.add screenName groupMap world.Entities }
                     | Some entityMap ->
                         let entityMap = Map.add entityName entity entityMap
                         let groupMap = Map.add groupName entityMap groupMap
                         { world with Entities = Map.add screenName groupMap world.Entities }
+                    | None ->
+                        let entityMap = Map.singleton entityName entity
+                        let groupMap = Map.add groupName entityMap groupMap
+                        { world with Entities = Map.add screenName groupMap world.Entities }
+                | None ->
+                    let entityMap = Map.singleton entityName entity
+                    let groupMap = Map.singleton groupName entityMap
+                    { world with Entities = Map.add screenName groupMap world.Entities }
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member private entityRemover address world =
@@ -219,15 +219,15 @@ module WorldEntityModule =
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
                 match optGroupMap with
-                | None -> world
                 | Some groupMap ->
                     let optEntityMap = Map.tryFind groupName groupMap
                     match optEntityMap with
-                    | None -> world
                     | Some entityMap ->
                         let entityMap = Map.remove entityName entityMap
                         let groupMap = Map.add groupName entityMap groupMap
                         { world with Entities = Map.add screenName groupMap world.Entities }
+                    | None -> world
+                | None -> world
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member getEntity address world = Option.get <| World.optEntityFinder address world
@@ -241,8 +241,8 @@ module WorldEntityModule =
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
         static member private setOptEntityWithoutEvent address optEntity world =
             match optEntity with 
-            | None -> World.entityRemover address world
             | Some entity -> World.entityAdder address world entity
+            | None -> World.entityRemover address world
 
         static member withEntity fn address world = Sim.withSimulant World.getEntity World.setEntity fn address world
         static member withEntityAndWorld fn address world = Sim.withSimulantAndWorld World.getEntity World.setEntity fn address world
@@ -253,11 +253,11 @@ module WorldEntityModule =
             match address.AddrList with
             | [screenStr; groupStr] ->
                 match Map.tryFind screenStr world.Entities with
-                | None -> Map.empty
                 | Some groupMap ->
                     match Map.tryFind groupStr groupMap with
-                    | None -> Map.empty
                     | Some entityMap -> entityMap
+                    | None -> Map.empty
+                | None -> Map.empty
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member registerEntity address (entity : Entity) world =
@@ -307,8 +307,8 @@ module WorldEntityModule =
         static member addEntity address entity world =
             let world =
                 match World.getOptEntity address world with
-                | None -> world
                 | Some _ -> World.removeEntityImmediate address world
+                | None -> world
             let world = World.setEntityWithoutEvent address entity world
             let world = World.registerEntity address entity world
             World.publish4 (AddEventName + address) address NoData world
@@ -319,47 +319,81 @@ module WorldEntityModule =
                 world
                 entities
 
-        static member trySetFacetNames entity address facetNames world =
-            let oldEntity = entity
-            let oldFacetNameSet = Set.ofList entity.FacetNames
-            let newFacetNameSet = Set.ofList facetNames
-            let removedFacetNameSet = Set.difference oldFacetNameSet newFacetNameSet
-            let addedFacetNameSet = Set.difference newFacetNameSet oldFacetNameSet
-            let entity =
-                Set.fold
-                    (fun entity facetName ->
-                        match List.tryFind (fun facet -> (facet.GetType ()).Name = facetName) entity.FacetsNp with
-                        | None -> entity
+        static member tryGetFacetsToAdd facetNames entity world =
+            let newFacetNames = Set.ofList facetNames
+            let oldFacetNames = Set.ofList entity.FacetNames
+            let addedFacetNames = Set.difference newFacetNames oldFacetNames
+            Set.fold
+                (fun eitherFacetsToAdd facetName ->
+                    match eitherFacetsToAdd with
+                    | Right facetsToAdd ->
+                        match Map.tryFind facetName world.Facets with
                         | Some facet ->
-                            let entity = facet.Detach entity
-                            let facets = List.remove ((=) facet) entity.FacetsNp
-                            Entity.setFacetsNp facets entity)
-                    entity
-                    removedFacetNameSet
-            let optEntity =
-                Set.fold
-                    (fun eitherEntity facetName ->
-                        match eitherEntity with
-                        | Right entity ->
-                            match Map.tryFind facetName world.Facets with
-                            | Some facet ->
-                                match facet with
-                                | :? EntityFacet as entityFacet ->
-                                    if Entity.isFacetCompatible facet entity then
-                                        let entity = Entity.setFacetsNp (entityFacet :: entity.FacetsNp) entity
-                                        let entity = entityFacet.Attach entity
-                                        Right entity
-                                    else Left <| "An entity cannot contain multiple assets with the same fields."
-                                | _ -> Left <| "Facet '" + facetName + "' is not of the required type 'EntityFacet'."
-                            | None -> Left <| "Invalid facet name '" + facetName + "'."
-                        | Left _ as left -> left)
-                    (Right entity)
-                    addedFacetNameSet
-            match optEntity with
-            | Right entity ->
-                let world = Entity.unregister address oldEntity world
-                let entity = Entity.setFacetNames facetNames entity
+                            match facet with
+                            | :? EntityFacet as facet -> Right (facet :: facetsToAdd)
+                            | _ -> Left <| "Invalid entity facet '" + facetName + "'."
+                        | None -> Left <| "Invalid facet name '" + facetName + "'."
+                    | Left _ as left -> left)
+                (Right [])
+                addedFacetNames
+
+        static member tryGetFacetsToRemove facetNames entity =
+            let newFacetNames = Set.ofList facetNames
+            let oldFacetNames = Set.ofList entity.FacetNames
+            let removedFacetNames = Set.difference oldFacetNames newFacetNames
+            Set.fold
+                (fun eitherFacetsToRemove facetName ->
+                    match eitherFacetsToRemove with
+                    | Right facetsToRemove ->
+                        match List.tryFind (fun facet -> EntityFacet.getName facet = facetName) entity.FacetsNp with
+                        | Some facet -> Right <| facet :: facetsToRemove
+                        | None -> Left <| "Invalid facet name '" + facetName + "'."
+                    | Left _ as left -> left)
+                (Right [])
+                removedFacetNames
+
+        static member removeFacet (facet : EntityFacet) address entity world =
+            let world = facet.UnregisterPhysics (entity, address, world)
+            let entity = facet.Detach entity
+            let entity = Entity.setFacetNames (List.remove ((=) (EntityFacet.getName facet)) entity.FacetNames) entity
+            let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
+            World.setEntity address entity world
+
+        static member tryAddFacet (facet : EntityFacet) address entity world =
+            if Entity.isFacetCompatible facet entity then
+                let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
+                let entity = Entity.setFacetNames (EntityFacet.getName facet :: entity.FacetNames) entity
+                let entity = facet.Attach entity
+                let world = facet.RegisterPhysics (entity, address, world)
                 let world = World.setEntity address entity world
-                let world = Entity.register address entity world
-                Right world
+                Right (entity, world)
+            else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
+
+        static member removeFacets facetsToRemove address entity world =
+            List.fold
+                (fun (entity, world) (facet : EntityFacet) ->
+                    let world = World.removeFacet facet address entity world
+                    (entity, world))
+                (entity, world)
+                facetsToRemove
+
+        static member tryAddFacets facetsToAdd address entity world =
+            List.fold
+                (fun eitherEntityWorld (facet : EntityFacet) ->
+                    match eitherEntityWorld with
+                    | Right (entity, world) -> World.tryAddFacet facet address entity world
+                    | Left _ as left -> left)
+                (Right (entity, world))
+                facetsToAdd
+
+        static member trySetFacetNames facetNames address entity world =
+            match World.tryGetFacetsToAdd facetNames entity world with
+            | Right facetsToAdd ->
+                match World.tryGetFacetsToRemove facetNames entity with
+                | Right facetsToRemove ->
+                    let (entity, world) = World.removeFacets facetsToRemove address entity world
+                    match World.tryAddFacets facetsToAdd address entity world with
+                    | Right (_, world) -> Right world
+                    | Left error -> Left error
+                | Left error -> Left error
             | Left error -> Left error
