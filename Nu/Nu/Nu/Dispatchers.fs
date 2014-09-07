@@ -10,6 +10,29 @@ open Nu.NuConstants
 [<AutoOpen>]
 module RigidBodyFacetModule =
 
+    // TODO: move to World
+    let evalCollisionExpression (extent : Vector2) (collisionExpr : string) =
+        let collisionTerms = List.ofArray <| collisionExpr.Split '?'
+        let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
+        let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
+        match collisionTermsTrimmed with
+        | [""] -> defaultShape
+        | ["Box"] -> defaultShape
+        | ["Circle"] -> CircleShape { Radius = extent.X * 0.5f; Center = Vector2.Zero }
+        | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
+        | ["Polygon"; verticesStr] ->
+            let vertexStrs = List.ofArray <| verticesStr.Split '|'
+            try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
+                let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
+                let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
+                PolygonShape { Vertices = vertices; Center = Vector2.Zero }
+            with :? NotSupportedException ->
+                trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;0.0 | 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
+                defaultShape
+        | _ ->
+            trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
+            defaultShape
+
     type Entity with
 
         member entity.MinorId = entity?MinorId () : Guid
@@ -34,6 +57,8 @@ module RigidBodyFacetModule =
         static member setCollisionCategories (value : string) (entity : Entity) : Entity = entity?CollisionCategories <- value
         member entity.CollisionMask = entity?CollisionMask () : string
         static member setCollisionMask (value : string) (entity : Entity) : Entity = entity?CollisionMask <- value
+        member entity.CollisionExpression = entity?CollisionExpression () : string
+        static member setCollisionExpr (value : string) (entity : Entity) : Entity = entity?CollisionExpr <- value
         member entity.IsBullet = entity?IsBullet () : bool
         static member setIsBullet (value : bool) (entity : Entity) : Entity = entity?IsBullet <- value
         member entity.IsSensor = entity?IsSensor () : bool
@@ -42,7 +67,7 @@ module RigidBodyFacetModule =
         static member getPhysicsId (entity : Entity) =
             PhysicsId (entity.Id, entity.MinorId)
 
-    type RigidBodyFacet (getBodyShape) =
+    type RigidBodyFacet () =
         inherit EntityFacet ()
 
         static let fieldDescriptors =
@@ -60,6 +85,9 @@ module RigidBodyFacetModule =
              Entity.describeField Field?IsBullet false
              Entity.describeField Field?IsSensor false]
 
+        static let getBodyShape (entity : Entity) =
+            evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
+
         static member FieldDescriptors =
             fieldDescriptors
 
@@ -72,7 +100,7 @@ module RigidBodyFacetModule =
 
         override facet.RegisterPhysics (entity, address, world) =
             let bodyProperties = 
-                { Shape = getBodyShape (entity, world)
+                { Shape = getBodyShape entity
                   BodyType = entity.BodyType
                   Density = entity.Density
                   Friction = entity.Friction
@@ -727,13 +755,8 @@ module RigidBodyDispatcherModule =
     type [<AbstractClass>] RigidBodyDispatcher () =
         inherit EntityDispatcher ()
 
-        abstract member GetBodyShape : Entity * World -> BodyShape
-        default dispatcher.GetBodyShape (entity, _) =
-            BoxShape { Extent = entity.Size * 0.5f; Center = Vector2.Zero }
-
         override dispatcher.Init (entity, facets, dispatcherContainer) =
-            let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
-            let facets = RigidBodyFacet getBodyShape :> EntityFacet :: facets
+            let facets = RigidBodyFacet () :> EntityFacet :: facets
             base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
@@ -742,13 +765,8 @@ module RigidBodySpriteDispatcherModule =
     type [<AbstractClass>] RigidBodySpriteDispatcher () =
         inherit EntityDispatcher ()
 
-        abstract member GetBodyShape : Entity * World -> BodyShape
-        default dispatcher.GetBodyShape (entity, _) =
-            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
-
         override dispatcher.Init (entity, facets, dispatcherContainer) =
-            let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
-            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; SpriteFacet () :> EntityFacet] @ facets
+            let facets = [RigidBodyFacet () :> EntityFacet; SpriteFacet () :> EntityFacet] @ facets
             base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
@@ -757,13 +775,8 @@ module RigidBodyAnimatedSpriteDispatcherModule =
     type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher () =
         inherit EntityDispatcher ()
 
-        abstract member GetBodyShape : Entity * World -> BodyShape
-        default dispatcher.GetBodyShape (entity, _) =
-            CircleShape { Radius = entity.Size.X * 0.5f; Center = Vector2.Zero }
-
         override dispatcher.Init (entity, facets, dispatcherContainer) =
-            let getBodyShape = fun (entity, world) -> dispatcher.GetBodyShape (entity, world)
-            let facets = [RigidBodyFacet getBodyShape :> EntityFacet; AnimatedSpriteFacet () :> EntityFacet] @ facets
+            let facets = [RigidBodyFacet () :> EntityFacet; AnimatedSpriteFacet () :> EntityFacet] @ facets
             base.Init (entity, facets, dispatcherContainer)
 
 [<AutoOpen>]
@@ -782,9 +795,6 @@ module BlockDispatcherModule =
             let block = base.Init (block, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors block
 
-        override dispatcher.GetBodyShape (block, _) =
-            BoxShape { Extent = block.Size * 0.5f; Center = Vector2.Zero }
-
 [<AutoOpen>]
 module AvatarDispatcherModule =
 
@@ -795,6 +805,7 @@ module AvatarDispatcherModule =
             [Entity.describeField Field?FixedRotation true
              Entity.describeField Field?LinearDamping 10.0f
              Entity.describeField Field?GravityScale 0.0f
+             Entity.describeField Field?CollisionExpression "Circle"
              Entity.describeField Field?SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
@@ -803,9 +814,6 @@ module AvatarDispatcherModule =
         override dispatcher.Init (avatar, facets, dispatcherContainer) =
             let avatar = base.Init (avatar, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors avatar
-
-        override dispatcher.GetBodyShape (avatar, _) =
-            CircleShape { Radius = avatar.Size.X * 0.5f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
@@ -816,6 +824,7 @@ module CharacterDispatcherModule =
         static let fieldDescriptors =
             [Entity.describeField Field?FixedRotation true
              Entity.describeField Field?LinearDamping 3.0f
+             Entity.describeField Field?CollisionExpression "Capsule"
              Entity.describeField Field?SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
@@ -824,9 +833,6 @@ module CharacterDispatcherModule =
         override dispatcher.Init (character, facets, dispatcherContainer) =
             let character = base.Init (character, facets, dispatcherContainer)
             Entity.attachFields fieldDescriptors character
-
-        override dispatcher.GetBodyShape (character, _) =
-            CapsuleShape { Height = character.Size.Y * 0.5f; Radius = character.Size.Y * 0.25f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
@@ -882,7 +888,8 @@ module TileMapDispatcherModule =
         let getTilePhysicsId tmid (tli : int) (ti : int) =
             PhysicsId (tmid, intsToGuid tli ti)
 
-        let registerTilePhysicsBox address (tm : Entity) tmd tli td ti world =
+        let registerTilePhysicsShape address (tm : Entity) tmd tli td ti cexpr world =
+            let tileShape = evalCollisionExpression (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             let physicsId = getTilePhysicsId tm.Id tli ti
             let createBodyMessage =
                 CreateBodyMessage
@@ -894,34 +901,7 @@ module TileMapDispatcherModule =
                             single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
                       Rotation = tm.Rotation
                       BodyProperties =
-                        { Shape = BoxShape { Extent = Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y) * 0.5f; Center = Vector2.Zero }
-                          BodyType = BodyType.Static
-                          Density = tm.Density
-                          Friction = tm.Friction
-                          Restitution = tm.Restitution
-                          FixedRotation = true
-                          LinearDamping = 0.0f
-                          AngularDamping = 0.0f
-                          GravityScale = 0.0f
-                          CollisionCategories = Physics.toCollisionCategories tm.CollisionCategories
-                          CollisionMask = Physics.toCollisionCategories tm.CollisionMask
-                          IsBullet = false
-                          IsSensor = false }}
-            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
-
-        let registerTilePhysicsPolygon address (tm : Entity) tmd tli td ti vertices world =
-            let physicsId = getTilePhysicsId tm.Id tli ti
-            let createBodyMessage =
-                CreateBodyMessage
-                    { EntityAddress = address
-                      PhysicsId = physicsId
-                      Position =
-                        Vector2 (
-                            single <| td.TilePosition.X + tmd.TileSize.X / 2,
-                            single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
-                      Rotation = tm.Rotation
-                      BodyProperties =
-                        { Shape = PolygonShape { Vertices = vertices; Center = Vector2.Zero }
+                        { Shape = tileShape
                           BodyType = BodyType.Static
                           Density = tm.Density
                           Friction = tm.Friction
@@ -944,23 +924,7 @@ module TileMapDispatcherModule =
                 let collisionProperty = ref Unchecked.defaultof<string>
                 if tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then
                     let collisionExpr = string collisionProperty.Value
-                    let collisionTerms = List.ofArray <| collisionExpr.Split '?'
-                    let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
-                    match collisionTermsTrimmed with
-                    | [""]
-                    | ["Box"] -> registerTilePhysicsBox address tm tmd tli td ti world
-                    | ["Polygon"; verticesStr] ->
-                        let vertexStrs = List.ofArray <| verticesStr.Split '|'
-                        try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
-                            let verticesOffset = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
-                            let verticesScaled = List.map (fun vertex -> Vector2.Multiply (vertex, tmd.TileSizeF)) verticesOffset
-                            registerTilePhysicsPolygon address tm tmd tli td ti verticesScaled world
-                        with :? NotSupportedException ->
-                            trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;0.0 | 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
-                            world
-                    | _ ->
-                        trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
-                        world
+                    registerTilePhysicsShape address tm tmd tli td ti collisionExpr world
                 else world
 
         let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world (tileLayer : TmxLayer) =

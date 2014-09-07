@@ -63,6 +63,7 @@ module PhysicsModule =
         | Dynamic
 
     /// Converts BodyType types.
+    /// TODO: factor out a simple DU type converter.
     and BodyTypeTypeConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =

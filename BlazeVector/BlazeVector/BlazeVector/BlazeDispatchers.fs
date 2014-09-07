@@ -29,6 +29,7 @@ module BulletDispatcherModule =
              Entity.describeField Field?LinearDamping 0.0f
              Entity.describeField Field?GravityScale 0.0f
              Entity.describeField Field?IsBullet true
+             Entity.describeField Field?CollisionExpression "Circle"
              Entity.describeField Field?SpriteImage PlayerBulletImage
              Entity.describeField Field?Age 0L]
 
@@ -61,9 +62,6 @@ module BulletDispatcherModule =
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
 
-        override dispatcher.GetBodyShape (bullet, _) =
-            CircleShape { Radius = bullet.Size.X * 0.5f; Center = Vector2.Zero }
-
 [<AutoOpen>]
 module EnemyDispatcherModule =
 
@@ -83,6 +81,7 @@ module EnemyDispatcherModule =
              Entity.describeField Field?FixedRotation true
              Entity.describeField Field?LinearDamping 3.0f
              Entity.describeField Field?GravityScale 0.0f
+             Entity.describeField Field?CollisionExpression "Capsule"
              Entity.describeField Field?Stutter 8
              Entity.describeField Field?TileCount 6
              Entity.describeField Field?TileRun 4
@@ -136,9 +135,6 @@ module EnemyDispatcherModule =
                 World.observe TickEventName address (CustomSub tickHandler) |>
                 World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
 
-        override dispatcher.GetBodyShape (enemy, _) =
-            CapsuleShape { Height = enemy.Size.Y * 0.5f; Radius = enemy.Size.Y * 0.25f; Center = Vector2.Zero }
-
 [<AutoOpen>]
 module PlayerDispatcherModule =
 
@@ -160,6 +156,7 @@ module PlayerDispatcherModule =
              Entity.describeField Field?FixedRotation true
              Entity.describeField Field?LinearDamping 3.0f
              Entity.describeField Field?GravityScale 0.0f
+             Entity.describeField Field?CollisionExpression "Capsule"
              Entity.describeField Field?Stutter 3
              Entity.describeField Field?TileCount 16
              Entity.describeField Field?TileRun 4
@@ -246,9 +243,6 @@ module PlayerDispatcherModule =
                 World.observe TickEventName address (CustomSub spawnBulletHandler) |>
                 World.observe TickEventName address (CustomSub movementHandler) |>
                 World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
-
-        override dispatcher.GetBodyShape (player, _) =
-            CapsuleShape { Height = player.Size.Y * 0.5f; Radius = player.Size.Y * 0.25f; Center = Vector2.Zero }
 
 [<AutoOpen>]
 module StagePlayDispatcherModule =
