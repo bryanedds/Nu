@@ -484,7 +484,7 @@ module WorldModule =
             List.fold World.handleIntegrationMessage world integrationMessages
 
         static member private integrate world =
-            if World.isPhysicsRunning world then // XXX
+            if World.isPhysicsRunning world then
                 let physicsMessages = world.PhysicsMessages
                 let world = { world with PhysicsMessages = [] }
                 let integrationMessages = Nu.Physics.integrate physicsMessages world.Integrator

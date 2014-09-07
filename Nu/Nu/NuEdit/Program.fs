@@ -33,13 +33,13 @@ module ProgramModule =
     type WorldChangers = WorldChanger List
 
     type DragEntityState =
-        | DragEntityNone
         | DragEntityPosition of Vector2 * Vector2 * Address
         | DragEntityRotation of Vector2 * Vector2 * Address
+        | DragEntityNone
 
     type DragCameraState =
-        | DragCameraNone
         | DragCameraPosition of Vector2 * Vector2
+        | DragCameraNone
 
     type EditorState =
         { TargetDirectory : string
@@ -131,6 +131,8 @@ module Program =
                     entityTds.Form.propertyGrid.Refresh ()
                     world
                 | _ ->
+                    // TODO: last I remembered there seemed to be some difficulty in understanding
+                    // this code due to its unintuitive ordering. See if that can be fixed.
                     let entity = World.getEntity entityTds.Address world
                     let optOldOverlayName = entity.OptOverlayName
                     let entity = setEntityPropertyValue property value entity
@@ -149,8 +151,8 @@ module Program =
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
                     world)
-            // in order to update the view immediately, we have to apply the changer twice, once
-            // now and once in the update function
+            // NOTE: in order to update the view immediately, we have to apply the changer twice,
+            // once immediately and once in the update function
             entityTds.RefWorld := changer !entityTds.RefWorld
             ignore <| entityTds.WorldChangers.Add changer
 
@@ -211,7 +213,9 @@ module Program =
     let getExpansionState (treeView : TreeView) =
         let nodeStates =
             Seq.fold
-                (fun state (node : TreeNode) -> if node.Nodes.Count > 0 then (node.Name, node.IsExpanded) :: state else state)
+                (fun state (node : TreeNode) ->
+                    if node.Nodes.Count = 0 then state
+                    else (node.Name, node.IsExpanded) :: state)
                 []
                 (enumerable treeView.Nodes)
         Map.ofSeq nodeStates
@@ -221,7 +225,10 @@ module Program =
             (fun nodeName nodeExpansion ->
                 match treeView.Nodes.Find (nodeName, true) with
                 | [||] -> ()
-                | nodes -> let node = nodes.[0] in if nodeExpansion then node.Expand () else node.Collapse ())
+                | nodes ->
+                    let node = nodes.[0]
+                    if nodeExpansion then node.Expand ()
+                    else node.Collapse ())
             treeState
 
     let addTreeViewNode (form : NuEditForm) entityAddress world =
@@ -343,8 +350,7 @@ module Program =
         (handled, world)
 
     let handleNuBeginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
-        if canEditWithMouse form world then (Unhandled, world)
-        else
+        if not <| canEditWithMouse form world then
             let handled = if World.isGamePlaying world then Unhandled else Handled
             let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition worldChangers refWorld world with
@@ -357,6 +363,7 @@ module Program =
                 let world = { world with ExtData = editorState }
                 (handled, world)
             | None -> (handled, world)
+        else (Unhandled, world)
 
     let handleNuEndEntityDrag (form : NuEditForm) (_ : Event) world =
         if canEditWithMouse form world then (Unhandled, world)
@@ -364,12 +371,12 @@ module Program =
             let handled = if World.isGamePlaying world then Unhandled else Handled
             let editorState = world.ExtData :?> EditorState
             match editorState.DragEntityState with
-            | DragEntityNone -> (Handled, world)
             | DragEntityPosition _
             | DragEntityRotation _ ->
                 let editorState = { editorState with DragEntityState = DragEntityNone }
                 form.propertyGrid.Refresh ()
                 (handled, { world with ExtData = editorState })
+            | DragEntityNone -> (Handled, world)
 
     let handleNuBeginCameraDrag (_ : NuEditForm) (_ : Event) world =
         let mousePosition = World.getMousePositionF world
@@ -383,10 +390,10 @@ module Program =
     let handleNuBeginEndCameraDrag (_ : NuEditForm) (_ : Event) world =
         let editorState = world.ExtData :?> EditorState
         match editorState.DragCameraState with
-        | DragCameraNone -> (Handled, world)
         | DragCameraPosition _ ->
             let editorState = { editorState with DragCameraState = DragCameraNone }
             (Handled, { world with ExtData = editorState })
+        | DragCameraNone -> (Handled, world)
 
     let handleNuEntityAdd (form : NuEditForm) event world =
         addTreeViewNode form event.Publisher world
@@ -394,16 +401,16 @@ module Program =
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
         match form.treeView.Nodes.Find (string event.Publisher, true) with
-        | [||] -> () // when changing an entity name, entity will be removed twice - once from win forms, once from world
+        | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
         | null -> (Unhandled, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if event.Publisher <> entityTds.Address then (Unhandled, world)
-            else
+            if event.Publisher = entityTds.Address then
                 form.propertyGrid.SelectedObject <- null
                 let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
                 (Unhandled, { world with ExtData = editorState })
+            else (Unhandled, world)
         | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
 
     let handleFormExit (form : NuEditForm) (_ : EventArgs) =
@@ -660,11 +667,9 @@ module Program =
                 world)
 
     let updateEntityDrag (form : NuEditForm) world =
-        if canEditWithMouse form world then world
-        else
+        if not <| canEditWithMouse form world then
             let editorState = world.ExtData :?> EditorState
             match editorState.DragEntityState with
-            | DragEntityNone -> world
             | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
                 let (positionSnap, _) = getSnaps form
                 let entity = World.getEntity address world
@@ -679,11 +684,12 @@ module Program =
                 form.propertyGrid.Refresh ()
                 world
             | DragEntityRotation _ -> world
+            | DragEntityNone -> world
+        else world
 
     let updateCameraDrag (_ : NuEditForm) world =
         let editorState = world.ExtData :?> EditorState
         match editorState.DragCameraState with
-        | DragCameraNone -> world
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
             let mousePosition = World.getMousePositionF world
             let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
@@ -692,6 +698,7 @@ module Program =
             let world = { world with Camera = camera }
             let editorState = { editorState with DragCameraState = DragCameraPosition (pickOffset, mousePositionScreenOrig) }
             { world with ExtData = editorState }
+        | DragCameraNone -> world
 
     // TODO: remove code duplication with below
     let updateUndoButton (form : NuEditForm) world =
