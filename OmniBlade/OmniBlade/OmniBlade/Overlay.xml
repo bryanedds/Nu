@@ -13,6 +13,7 @@
     <GravityScale>1</GravityScale>
     <CollisionCategories>1</CollisionCategories>
     <CollisionMask>*</CollisionMask>
+    <CollisionExpression>Box</CollisionExpression>
     <IsBullet>False</IsBullet>
     <IsSensor>False</IsSensor>
   </RigidBodyFacet>
@@ -97,12 +98,14 @@
     <FixedRotation>True</FixedRotation>
     <LinearDamping>10</LinearDamping>
     <GravityScale>0</GravityScale>
+    <CollisionExpression>Circle</CollisionExpression>
     <SpriteImage>Image7;Default</SpriteImage>
   </AvatarDispatcher>
 
   <CharacterDispatcher include="RigidBodySpriteDispatcher">
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
+    <CollisionExpression>Capsule</CollisionExpression>
     <SpriteImage>Image6;Default</SpriteImage>
   </CharacterDispatcher>
 
@@ -122,6 +125,7 @@
     <Restitution>0.5</Restitution>
     <GravityScale>0</GravityScale>
     <IsBullet>True</IsBullet>
+    <CollisionExpression>Circle</CollisionExpression>
     <SpriteImage>PlayerBullet;Stage</SpriteImage>
     <Age>0</Age>
   </BulletDispatcher>
@@ -131,6 +135,7 @@
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <GravityScale>0</GravityScale>
+    <CollisionExpression>Capsule</CollisionExpression>
     <Stutter>8</Stutter>
     <TileCount>6</TileCount>
     <TileRun>4</TileRun>
@@ -144,6 +149,7 @@
     <FixedRotation>True</FixedRotation>
     <LinearDamping>3</LinearDamping>
     <GravityScale>0</GravityScale>
+    <CollisionExpression>Capsule</CollisionExpression>
     <Stutter>3</Stutter>
     <TileCount>16</TileCount>
     <TileRun>4</TileRun>
