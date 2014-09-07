@@ -289,99 +289,104 @@ module WorldEntityModule =
                 world
                 entities
 
-        static member tryGetFacets facetNames world =
-            Set.fold
-                (fun eitherFacetsToAdd facetName ->
-                    match eitherFacetsToAdd with
-                    | Right facetsToAdd ->
-                        match Map.tryFind facetName world.Facets with
-                        | Some facet ->
-                            match facet with
-                            | :? EntityFacet as facet -> Right <| facet :: facetsToAdd
-                            | _ -> Left <| "Invalid entity facet '" + facetName + "'."
-                        | None -> Left <| "Invalid facet name '" + facetName + "'."
-                    | Left _ as left -> left)
-                (Right [])
-                facetNames
+        static member tryGetFacet facetName world =
+            match Map.tryFind facetName world.Facets with
+            | Some facet ->
+                match facet with
+                | :? EntityFacet as facet -> Right <| facet
+                | _ -> Left <| "Invalid entity facet '" + facetName + "'."
+            | None -> Left <| "Invalid facet name '" + facetName + "'."
 
-        static member tryGetFacetsToAdd oldFacetNames newFacetNames world =
+        static member getFacetNamesToAdd oldFacetNames newFacetNames =
             let newFacetNames = Set.ofList newFacetNames
             let oldFacetNames = Set.ofList oldFacetNames
-            let facetNames = Set.difference newFacetNames oldFacetNames
-            World.tryGetFacets facetNames world
+            let facetNamesToAdd = Set.difference newFacetNames oldFacetNames
+            List.ofSeq facetNamesToAdd
 
-        static member tryGetFacetsToRemove oldFacetNames newFacetNames world =
+        static member getFacetNamesToRemove oldFacetNames newFacetNames =
             let newFacetNames = Set.ofList newFacetNames
             let oldFacetNames = Set.ofList oldFacetNames
-            let facetNames = Set.difference oldFacetNames newFacetNames
-            World.tryGetFacets facetNames world
+            let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
+            List.ofSeq facetNamesToRemove
 
-        static member removeFacet (facet : EntityFacet) address world =
+        static member tryRemoveFacet facetName address world =
             let entity = World.getEntity address world
-            let world = facet.UnregisterPhysics (entity, address, world)
-            let entity = facet.Detach entity
-            let entity = Entity.setFacetNames (List.remove ((=) (EntityFacet.getName facet)) entity.FacetNames) entity
-            let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
-            World.setEntity address entity world
+            match List.tryFind (fun facet -> EntityFacet.getName facet = facetName) entity.FacetsNp with
+            | Some facet ->
+                let world = facet.UnregisterPhysics (entity, address, world)
+                let entity = facet.Detach entity
+                let entity = Entity.setFacetNames (List.remove ((=) (EntityFacet.getName facet)) entity.FacetNames) entity
+                let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
+                let world = World.setEntity address entity world
+                Right world
+            | None -> Left <| "Failure to remove facet '" + facetName + "' from entity at address '" + string address + "'."
 
-        static member tryBuildFacet (facet : EntityFacet) entity =
-            if Entity.isFacetCompatible facet entity then
-                let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
-                let entity = facet.Attach entity
-                Right entity
-            else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
+        static member tryPopulateFacet compatibilityCheck facetName entity world =
+            match Map.tryFind facetName world.Facets with
+            | Some facetObj ->
+                match facetObj with
+                | :? EntityFacet as facet ->
+                    if  compatibilityCheck &&
+                        Entity.isFacetCompatible facet entity then
+                        let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
+                        let entity = facet.Attach entity
+                        Right (facet, entity)
+                    else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
+                | _ -> Left <| "Invalid entity facet '" + facetName + "'."
+            | None -> Left <| "Invalid facet name '" + facetName + "'."
 
-        static member tryAddFacet (facet : EntityFacet) address world =
+        static member tryAddFacet facetName address world =
             let entity = World.getEntity address world
-            match World.tryBuildFacet facet entity with
-            | Right entity ->
+            match World.tryPopulateFacet true facetName entity world with
+            | Right (facet, entity) ->
                 let entity = Entity.setFacetNames (EntityFacet.getName facet :: entity.FacetNames) entity
                 let world = facet.RegisterPhysics (entity, address, world)
                 let world = World.setEntity address entity world
                 Right world
             | Left error -> Left error
 
-        static member removeFacets facetsToRemove address world =
+        static member tryRemoveFacets facetNamesToRemove address world =
             List.fold
-                (fun world (facet : EntityFacet) -> World.removeFacet facet address world)
-                world
-                facetsToRemove
-
-        static member tryBuildFacets2 facetsToAdd entity =
-            List.fold
-                (fun eitherEntityWorld (facet : EntityFacet) ->
-                    match eitherEntityWorld with
-                    | Right entity -> World.tryBuildFacet facet entity
-                    | Left _ as left -> left)
-                (Right entity)
-                facetsToAdd
-
-        static member tryAddFacets facetsToAdd address world =
-            List.fold
-                (fun eitherEntityWorld (facet : EntityFacet) ->
-                    match eitherEntityWorld with
-                    | Right world -> World.tryAddFacet facet address world
+                (fun eitherWorld facetName ->
+                    match eitherWorld with
+                    | Right world -> World.tryRemoveFacet facetName address world
                     | Left _ as left -> left)
                 (Right world)
-                facetsToAdd
+                facetNamesToRemove
 
-        static member tryBuildFacets entity world =
-            match World.tryGetFacetsToAdd [] entity.FacetNames world with
-            | Right facetsToAdd ->
-                match World.tryBuildFacets2 facetsToAdd entity with
-                | Right entity -> Right entity
-                | Left error -> Left error
-            | Left error -> Left error
+        static member tryPopulateFacets2 facetNamesToAdd entity world =
+            List.fold
+                (fun eitherEntityWorld facetName ->
+                    match eitherEntityWorld with
+                    | Right entity ->
+                        match World.tryPopulateFacet false facetName entity world with
+                        | Right (_, entity) -> Right entity
+                        | Left error -> Left error
+                    | Left _ as left -> left)
+                (Right entity)
+                facetNamesToAdd
+
+        static member tryAddFacets facetNamesToAdd address world =
+            List.fold
+                (fun eitherEntityWorld facetName ->
+                    match eitherEntityWorld with
+                    | Right world -> World.tryAddFacet facetName address world
+                    | Left _ as left -> left)
+                (Right world)
+                facetNamesToAdd
 
         static member trySetFacetNames facetNames address world =
             let entity = World.getEntity address world
-            match World.tryGetFacetsToAdd entity.FacetNames facetNames world with
-            | Right facetsToAdd ->
-                match World.tryGetFacetsToRemove entity.FacetNames facetNames world with
-                | Right facetsToRemove ->
-                    let world = World.removeFacets facetsToRemove address world
-                    World.tryAddFacets facetsToAdd address world
-                | Left error -> Left error
+            let facetNamesToAdd = World.getFacetNamesToAdd [] entity.FacetNames
+            let facetNamesToRemove = World.getFacetNamesToRemove entity.FacetNames facetNames
+            match World.tryRemoveFacets facetNamesToRemove address world with
+            | Right world -> World.tryAddFacets facetNamesToAdd address world
+            | Left _ as left -> left
+
+        static member tryPopulateFacets entity world =
+            let facetNamesToAdd = World.getFacetNamesToAdd [] entity.FacetNames
+            match World.tryPopulateFacets2 facetNamesToAdd entity world with
+            | Right entity -> Right entity
             | Left error -> Left error
 
         static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
@@ -404,7 +409,7 @@ module WorldEntityModule =
             | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
             | None -> ()
             Xtension.readTargetProperties entityNode entity
-            match World.tryBuildFacets entity world with
+            match World.tryPopulateFacets entity world with
             | Right entity -> entity
             | Left error -> debug error; entity
 

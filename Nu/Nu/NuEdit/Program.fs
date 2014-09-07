@@ -122,10 +122,9 @@ module Program =
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
                 | "FacetNames" ->
-                    let entity = World.getEntity entityTds.Address world
                     let facetNames = value :?> string list
                     let world =
-                        match World.trySetFacetNames facetNames entityTds.Address entity world with
+                        match World.trySetFacetNames facetNames entityTds.Address world with
                         | Right world -> world
                         | Left error -> trace error; world
                     entityTds.RefWorld := world // must be set for property grid
