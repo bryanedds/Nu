@@ -189,11 +189,11 @@ module Physics =
 
     /// The invalid physics id.
     let InvalidId =
-        PhysicsId (NuCore.InvalidId, NuCore.InvalidId)
+        PhysicsId (InvalidId, InvalidId)
 
     /// Make a PhysicsId for an external entity.
     let makeId (entityId : Guid) =
-        PhysicsId (entityId, NuCore.makeId ())
+        PhysicsId (entityId, makeId ())
 
     let private toPixel value =
         value * PhysicsToPixelRatio

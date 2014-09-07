@@ -12,6 +12,7 @@ module OverlayerModule =
 
     // TODO: generate default overlays for dispatchers and facets.
 
+    /// Describes the overlay state of a field.
     type OverlayState =
         | Bare
         | Altered

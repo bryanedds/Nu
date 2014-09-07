@@ -23,15 +23,15 @@ module BulletDispatcherModule =
         inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Size <| Vector2 (24.0f, 24.0f)
-             Entity.describeField Field?Density 0.25f
-             Entity.describeField Field?Restitution 0.5f
-             Entity.describeField Field?LinearDamping 0.0f
-             Entity.describeField Field?GravityScale 0.0f
-             Entity.describeField Field?IsBullet true
-             Entity.describeField Field?CollisionExpression "Circle"
-             Entity.describeField Field?SpriteImage PlayerBulletImage
-             Entity.describeField Field?Age 0L]
+            [describeField Field?Size <| Vector2 (24.0f, 24.0f)
+             describeField Field?Density 0.25f
+             describeField Field?Restitution 0.5f
+             describeField Field?LinearDamping 0.0f
+             describeField Field?GravityScale 0.0f
+             describeField Field?IsBullet true
+             describeField Field?CollisionExpression "Circle"
+             describeField Field?SpriteImage PlayerBulletImage
+             describeField Field?Age 0L]
 
         let tickHandler event world =
             if World.isGamePlaying world then
@@ -77,17 +77,17 @@ module EnemyDispatcherModule =
         inherit RigidBodyAnimatedSpriteDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Size <| Vector2 (48.0f, 96.0f)
-             Entity.describeField Field?FixedRotation true
-             Entity.describeField Field?LinearDamping 3.0f
-             Entity.describeField Field?GravityScale 0.0f
-             Entity.describeField Field?CollisionExpression "Capsule"
-             Entity.describeField Field?Stutter 8
-             Entity.describeField Field?TileCount 6
-             Entity.describeField Field?TileRun 4
-             Entity.describeField Field?TileSize <| Vector2 (48.0f, 96.0f)
-             Entity.describeField Field?AnimatedSpriteImage EnemyImage
-             Entity.describeField Field?Health 6]
+            [describeField Field?Size <| Vector2 (48.0f, 96.0f)
+             describeField Field?FixedRotation true
+             describeField Field?LinearDamping 3.0f
+             describeField Field?GravityScale 0.0f
+             describeField Field?CollisionExpression "Capsule"
+             describeField Field?Stutter 8
+             describeField Field?TileCount 6
+             describeField Field?TileRun 4
+             describeField Field?TileSize <| Vector2 (48.0f, 96.0f)
+             describeField Field?AnimatedSpriteImage EnemyImage
+             describeField Field?Health 6]
 
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
@@ -152,18 +152,18 @@ module PlayerDispatcherModule =
         inherit RigidBodyAnimatedSpriteDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Size <| Vector2 (48.0f, 96.0f)
-             Entity.describeField Field?FixedRotation true
-             Entity.describeField Field?LinearDamping 3.0f
-             Entity.describeField Field?GravityScale 0.0f
-             Entity.describeField Field?CollisionExpression "Capsule"
-             Entity.describeField Field?Stutter 3
-             Entity.describeField Field?TileCount 16
-             Entity.describeField Field?TileRun 4
-             Entity.describeField Field?TileSize (Vector2 (48.0f, 96.0f))
-             Entity.describeField Field?AnimatedSpriteImage PlayerImage
-             Entity.describeField Field?LastTimeOnGroundNp Int64.MinValue
-             Entity.describeField Field?LastTimeJumpNp Int64.MinValue]
+            [describeField Field?Size <| Vector2 (48.0f, 96.0f)
+             describeField Field?FixedRotation true
+             describeField Field?LinearDamping 3.0f
+             describeField Field?GravityScale 0.0f
+             describeField Field?CollisionExpression "Capsule"
+             describeField Field?Stutter 3
+             describeField Field?TileCount 16
+             describeField Field?TileRun 4
+             describeField Field?TileSize (Vector2 (48.0f, 96.0f))
+             describeField Field?AnimatedSpriteImage PlayerImage
+             describeField Field?LastTimeOnGroundNp Int64.MinValue
+             describeField Field?LastTimeJumpNp Int64.MinValue]
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world

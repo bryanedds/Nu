@@ -18,7 +18,7 @@ module GroupModule =
 
     type GroupDispatcher () =
 
-        abstract member Init : Group * IXDispatcherContainer -> Group
+        abstract member Init : Group * World -> Group
         default dispatcher.Init (group, _) = group
         
         abstract member Register : Address * World -> World
@@ -30,7 +30,7 @@ module GroupModule =
     type Group with
     
         static member make dispatcherName =
-            { Group.Id = NuCore.makeId ()
+            { Group.Id = makeId ()
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
 [<AutoOpen>]
@@ -151,10 +151,6 @@ module WorldGroupModule =
                 (fun world (groupName, group, entities) -> World.addGroup (addrlist screenAddress [groupName]) group entities world)
                 world
                 groupDescriptors
-        
-        static member makeGroup dispatcherName world =
-            let group = Group.make dispatcherName
-            Group.init group world
     
         static member writeGroupToXml overlayer (writer : XmlWriter) group entities =
             writer.WriteStartElement typeof<Group>.Name
@@ -168,3 +164,7 @@ module WorldGroupModule =
             Xtension.readTargetProperties groupNode group
             let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName world
             (group, entities)
+
+        static member makeGroup dispatcherName world =
+            let group = Group.make dispatcherName
+            Group.init group world

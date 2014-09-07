@@ -20,14 +20,30 @@ module NuCoreModule =
         | Running
         | Exiting
 
-[<RequireQualifiedAccess>]
-module NuCore =
-
     /// The invalid Id.
     let InvalidId = Guid.Empty
 
     /// Make a Nu Id.
     let makeId = Guid.NewGuid
+
+    type T =
+        { U : unit }
+        static member (?) (_, n) =
+            fun (i : 'i) _ -> (n, typeof<'i>, i :> obj)
+
+    let Define = { U = () }
+
+    type AsWord =
+        { AsWord : unit }
+
+    let As = { AsWord = () }
+
+    // Make a field descriptor from a field name and initial value.
+    let describeField (fieldName : string) (initValue : 't) =
+        (fieldName, typeof<'t>, initValue :> obj)
+
+[<RequireQualifiedAccess>]
+module NuCore =
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =

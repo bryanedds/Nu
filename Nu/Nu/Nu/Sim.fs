@@ -60,33 +60,34 @@ module ScreenStateModule =
 [<AutoOpen>]
 module SimModule =
 
-    /// A task to be completed at the given time, with time being represented by the world's tick
-    /// field.
-    type [<ReferenceEquality>] Task =
-        { ScheduledTime : int64
-          Operation : World -> World }
+    /// The state of one of a screen's transitions.
+    type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
+        { TransitionLifetime : int64
+          TransitionTicks : int64
+          TransitionType : TransitionType
+          OptDissolveImage : Image option }
 
     /// The data for a mouse move event.
-    and [<StructuralEquality; NoComparison>] MouseMoveData =
+    type [<StructuralEquality; NoComparison>] MouseMoveData =
         { Position : Vector2 }
 
     /// The data for a mouse button event.
-    and [<StructuralEquality; NoComparison>] MouseButtonData =
+    type [<StructuralEquality; NoComparison>] MouseButtonData =
         { Position : Vector2
           Button : MouseButton }
 
     /// The data for a keyboard key event.
-    and [<StructuralEquality; NoComparison>] KeyboardKeyData =
+    type [<StructuralEquality; NoComparison>] KeyboardKeyData =
         { ScanCode : uint32 }
 
     /// The data for an entity collision event.
-    and [<StructuralEquality; NoComparison>] EntityCollisionData =
+    type [<StructuralEquality; NoComparison>] EntityCollisionData =
         { Normal : Vector2
           Speed : single
           Collidee : Address }
 
     /// The data for an entity change event.
-    and [<StructuralEquality; NoComparison>] EntityChangeData =
+    type [<StructuralEquality; NoComparison>] EntityChangeData =
         { OldEntity : Entity }
 
     /// The data for a user-defined event.
@@ -136,8 +137,14 @@ module SimModule =
     /// A map of subscription keys to unsubscription data.
     and UnsubscriptionEntries = Map<Guid, Address * Address>
 
+    /// A task to be completed at the given time, with time being represented by the world's tick
+    /// field.
+    and [<ReferenceEquality>] Task =
+        { ScheduledTime : int64
+          Operation : World -> World }
+
     /// A facat the dynamically augments an entity's behavior.
-    and [<AbstractClass>] EntityFacet () =
+    and [<AbstractClass>] Facet () =
 
         static member getName facet =
             let facetType = facet.GetType ()
@@ -152,12 +159,12 @@ module SimModule =
                 fieldDescriptors :?> (string * Type * obj) list // TODO: abstract this tuple type
 
         static member getFieldDescriptorNames facet =
-            let fieldDescriptors = EntityFacet.getFieldDescriptors facet
+            let fieldDescriptors = Facet.getFieldDescriptors facet
             List.map a__ fieldDescriptors
 
         static member areFacetsCompatible facet facet2 =
-            let facetFieldDescriptors = EntityFacet.getFieldDescriptorNames facet
-            let facet2FieldDescriptors = EntityFacet.getFieldDescriptorNames facet2
+            let facetFieldDescriptors = Facet.getFieldDescriptorNames facet
+            let facet2FieldDescriptors = Facet.getFieldDescriptorNames facet2
             let intersection = List.intersect facetFieldDescriptors facet2FieldDescriptors
             Set.isEmpty intersection
 
@@ -186,7 +193,7 @@ module SimModule =
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
-    /// to implement things like buttons, avatars, blocks, and all things of that sort.
+    /// to implement things like buttons, avatars, blocks, and things of that sort.
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
@@ -198,7 +205,7 @@ module SimModule =
           OptOverlayName : string option
           Xtension : Xtension
           FacetNames : string list
-          FacetsNp : EntityFacet list } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.
+          FacetsNp : Facet list } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.
 
         static member (?) (this : Entity, memberName) =
             fun args ->
@@ -210,9 +217,6 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
-
-        static member describeField (fieldName : string) (initValue : 't) =
-            (fieldName, typeof<'t>, initValue :> obj)
 
         static member setPosition position (entity : Entity) =
              { entity with Position = position }
@@ -236,7 +240,7 @@ module SimModule =
              { entity with FacetsNp = facets }
 
         static member attachFields fieldDescriptors (entity : Entity) =
-            let entity = { entity with Id = entity.Id } // hacky copy in case property is set directly
+            let entity = { entity with Id = entity.Id } // hacky copy. Copied in case property is set in-place.
             List.fold
                 (fun entity (fieldName, _ : Type, initValue : obj) ->
                     match typeof<Entity>.GetPropertyWritable fieldName with
@@ -261,7 +265,7 @@ module SimModule =
                 fieldDescriptors
 
         static member isFacetCompatible facet entity =
-            let facetFieldNames = EntityFacet.getFieldDescriptorNames facet
+            let facetFieldNames = Facet.getFieldDescriptorNames facet
             let entityFieldNames = Map.toKeyList entity.Xtension.XFields
             let intersection = List.intersect facetFieldNames entityFieldNames
             Set.isEmpty intersection
@@ -281,13 +285,6 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
-
-    /// The state of one of a screen's transitions.
-    and [<CLIMutable; StructuralEquality; NoComparison>] Transition =
-        { TransitionLifetime : int64
-          TransitionTicks : int64
-          TransitionType : TransitionType
-          OptDissolveImage : Image option }
 
     /// The screen type that allows transitioning to and fro other screens, and also hosts the
     /// currently interactive groups of entities.
@@ -326,13 +323,6 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
 
-    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
-    and [<StructuralEquality; NoComparison>] Simulant =
-        | Game of Game
-        | Screen of Screen
-        | Group of Group
-        | Entity of Entity
-
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
     /// and general configuration data.
@@ -359,7 +349,7 @@ module SimModule =
           RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue
           Dispatchers : XDispatchers
-          Facets : Map<string, obj>
+          Facets : Map<string, Facet>
           AssetGraphFileName : string
           OverlayFileName : string
           ExtData : obj }
@@ -367,8 +357,17 @@ module SimModule =
             member this.GetDispatchers () = this.Dispatchers
             end
 
+    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
+    type [<StructuralEquality; NoComparison>] Simulant =
+        | Game of Game
+        | Screen of Screen
+        | Group of Group
+        | Entity of Entity
+
 [<RequireQualifiedAccess>]
 module EventData =
+
+    // TODO: provide rest of convenience functions
 
     /// A convenience function to forcibly extract mouse movement data from an event data abstraction.
     let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + string data + "'."

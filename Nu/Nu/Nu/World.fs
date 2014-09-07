@@ -606,7 +606,7 @@ module WorldModule =
                          typeof<SpriteFacet>.Name, SpriteFacet () :> obj
                          typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> obj]
                 let world =
-                    { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                    { Game = { Id = makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty

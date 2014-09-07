@@ -34,7 +34,7 @@ module ScreenModule =
     type Screen with
 
         static member make dispatcherName =
-            { Id = NuCore.makeId ()
+            { Id = makeId ()
               State = IdlingState
               Incoming = Transition.makeDefault Incoming
               Outgoing = Transition.makeDefault Outgoing

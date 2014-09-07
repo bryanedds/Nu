@@ -45,23 +45,23 @@ module RigidBodyFacetModule =
             PhysicsId (entity.Id, entity.MinorId)
 
     type RigidBodyFacet () =
-        inherit EntityFacet ()
+        inherit Facet ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?MinorId InvalidId
-             Entity.describeField Field?BodyType Dynamic
-             Entity.describeField Field?Density NormalDensity
-             Entity.describeField Field?Friction 0.0f
-             Entity.describeField Field?Restitution 0.0f
-             Entity.describeField Field?FixedRotation false
-             Entity.describeField Field?LinearDamping 1.0f
-             Entity.describeField Field?AngularDamping 1.0f
-             Entity.describeField Field?GravityScale 1.0f
-             Entity.describeField Field?CollisionCategories "1"
-             Entity.describeField Field?CollisionMask "*"
-             Entity.describeField Field?CollisionExpression "Box"
-             Entity.describeField Field?IsBullet false
-             Entity.describeField Field?IsSensor false]
+            [describeField Field?MinorId InvalidId
+             describeField Field?BodyType Dynamic
+             describeField Field?Density NormalDensity
+             describeField Field?Friction 0.0f
+             describeField Field?Restitution 0.0f
+             describeField Field?FixedRotation false
+             describeField Field?LinearDamping 1.0f
+             describeField Field?AngularDamping 1.0f
+             describeField Field?GravityScale 1.0f
+             describeField Field?CollisionCategories "1"
+             describeField Field?CollisionMask "*"
+             describeField Field?CollisionExpression "Box"
+             describeField Field?IsBullet false
+             describeField Field?IsSensor false]
 
         static let getBodyShape (entity : Entity) =
             Physics.evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
@@ -71,7 +71,7 @@ module RigidBodyFacetModule =
 
         override facet.AttachFields entity =
             let entity = Entity.attachFields fieldDescriptors entity
-            Entity.setMinorId (NuCore.makeId ()) entity
+            Entity.setMinorId (makeId ()) entity
 
         override facet.DetachFields entity =
             Entity.detachFields fieldDescriptors entity
@@ -125,11 +125,11 @@ module SpriteFacetModule =
         static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
 
     type SpriteFacet () =
-        inherit EntityFacet ()
+        inherit Facet ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?ViewType Relative
-             Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
+            [describeField Field?ViewType Relative
+             describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -179,15 +179,15 @@ module AnimatedSpriteFacetModule =
         static member setAnimatedSpriteImage (value : Image) (entity : Entity) : Entity = entity?AnimatedSpriteImage <- value
 
     type AnimatedSpriteFacet () =
-        inherit EntityFacet ()
+        inherit Facet ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Stutter 4
-             Entity.describeField Field?TileCount 16 
-             Entity.describeField Field?TileRun 4
-             Entity.describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
-             Entity.describeField Field?ViewType Relative
-             Entity.describeField Field?AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
+            [describeField Field?Stutter 4
+             describeField Field?TileCount 16 
+             describeField Field?TileRun 4
+             describeField Field?TileSize <| Vector2 (16.0f, 16.0f)
+             describeField Field?ViewType Relative
+             describeField Field?AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
 
         static let getSpriteOptInset (entity : Entity) world =
             let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
@@ -287,7 +287,7 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Enabled true]
+            [describeField Field?Enabled true]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -314,10 +314,10 @@ module ButtonDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?IsDown false
-             Entity.describeField Field?UpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
-             Entity.describeField Field?DownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
-             Entity.describeField Field?ClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
+            [describeField Field?IsDown false
+             describeField Field?UpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
+             describeField Field?DownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
+             describeField Field?ClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
 
         let handleButtonEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -400,7 +400,7 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
+            [describeField Field?LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -453,11 +453,11 @@ module TextDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Text String.Empty
-             Entity.describeField Field?TextFont { FontAssetName = "Font"; PackageName = DefaultPackageName }
-             Entity.describeField Field?TextOffset Vector2.Zero
-             Entity.describeField Field?TextColor Vector4.One
-             Entity.describeField Field?BackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
+            [describeField Field?Text String.Empty
+             describeField Field?TextFont { FontAssetName = "Font"; PackageName = DefaultPackageName }
+             describeField Field?TextOffset Vector2.Zero
+             describeField Field?TextColor Vector4.One
+             describeField Field?BackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -520,11 +520,11 @@ module ToggleDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?IsOn false
-             Entity.describeField Field?IsPressed false
-             Entity.describeField Field?OffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
-             Entity.describeField Field?OnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
-             Entity.describeField Field?ToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
+            [describeField Field?IsOn false
+             describeField Field?IsPressed false
+             describeField Field?OffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
+             describeField Field?OnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
+             describeField Field?ToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
 
         let handleToggleEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -608,7 +608,7 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?IsTouched false]
+            [describeField Field?IsTouched false]
 
         let handleFeelerEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -672,10 +672,10 @@ module FillBarDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Fill 0.0f
-             Entity.describeField Field?FillInset 0.0f
-             Entity.describeField Field?FillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName }
-             Entity.describeField Field?BorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }]
+            [describeField Field?Fill 0.0f
+             describeField Field?FillInset 0.0f
+             describeField Field?FillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName }
+             describeField Field?BorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }]
 
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
@@ -735,7 +735,9 @@ module RigidBodyDispatcherModule =
 
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
-            let rigidBodyFacet = Map.find typeof<RigidBodyFacet>.Name world.Facets :?> EntityFacet
+
+            // TODO: find a property factor for these lines of code
+            let rigidBodyFacet = Map.find typeof<RigidBodyFacet>.Name world.Facets
             let rigidBody = rigidBodyFacet.AttachFields rigidBody
             Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
 
@@ -747,7 +749,7 @@ module RigidBodySpriteDispatcherModule =
 
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
-            let rigidBodyFacet = Map.find typeof<SpriteFacet>.Name world.Facets :?> EntityFacet
+            let rigidBodyFacet = Map.find typeof<SpriteFacet>.Name world.Facets
             let rigidBody = rigidBodyFacet.AttachFields rigidBody
             Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
 
@@ -759,7 +761,7 @@ module RigidBodyAnimatedSpriteDispatcherModule =
 
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
-            let rigidBodyFacet = Map.find typeof<AnimatedSpriteFacet>.Name world.Facets :?> EntityFacet
+            let rigidBodyFacet = Map.find typeof<AnimatedSpriteFacet>.Name world.Facets
             let rigidBody = rigidBodyFacet.AttachFields rigidBody
             Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
 
@@ -770,7 +772,7 @@ module BlockDispatcherModule =
         inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+            [describeField Field?SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -786,11 +788,11 @@ module AvatarDispatcherModule =
         inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?FixedRotation true
-             Entity.describeField Field?LinearDamping 10.0f
-             Entity.describeField Field?GravityScale 0.0f
-             Entity.describeField Field?CollisionExpression "Circle"
-             Entity.describeField Field?SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
+            [describeField Field?FixedRotation true
+             describeField Field?LinearDamping 10.0f
+             describeField Field?GravityScale 0.0f
+             describeField Field?CollisionExpression "Circle"
+             describeField Field?SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -806,10 +808,10 @@ module CharacterDispatcherModule =
         inherit RigidBodySpriteDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?FixedRotation true
-             Entity.describeField Field?LinearDamping 3.0f
-             Entity.describeField Field?CollisionExpression "Capsule"
-             Entity.describeField Field?SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
+            [describeField Field?FixedRotation true
+             describeField Field?LinearDamping 3.0f
+             describeField Field?CollisionExpression "Capsule"
+             describeField Field?SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
 
         static member FieldDescriptors =
             fieldDescriptors
@@ -861,13 +863,13 @@ module TileMapDispatcherModule =
         inherit EntityDispatcher ()
 
         static let fieldDescriptors =
-            [Entity.describeField Field?Density NormalDensity
-             Entity.describeField Field?Friction 0.0f
-             Entity.describeField Field?Restitution 0.0f
-             Entity.describeField Field?CollisionCategories "1"
-             Entity.describeField Field?CollisionMask "*"
-             Entity.describeField Field?TileMapAsset { TileMapAssetName = "TileMap"; PackageName = DefaultPackageName }
-             Entity.describeField Field?Parallax 0.0f]
+            [describeField Field?Density NormalDensity
+             describeField Field?Friction 0.0f
+             describeField Field?Restitution 0.0f
+             describeField Field?CollisionCategories "1"
+             describeField Field?CollisionMask "*"
+             describeField Field?TileMapAsset { TileMapAssetName = "TileMap"; PackageName = DefaultPackageName }
+             describeField Field?Parallax 0.0f]
 
         let getTilePhysicsId tmid (tli : int) (ti : int) =
             PhysicsId (tmid, intsToGuid tli ti)
