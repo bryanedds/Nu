@@ -49,9 +49,6 @@ module BulletDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
-
         override dispatcher.AttachIntrinsicFields (bullet, world) =
             let bullet = base.AttachIntrinsicFields (bullet, world)
             let bullet = Entity.attachFields fieldDefinitions bullet
@@ -121,9 +118,6 @@ module EnemyDispatcherModule =
                     (Unhandled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (enemy, world) =
             let enemy = base.AttachIntrinsicFields (enemy, world)
@@ -229,9 +223,6 @@ module PlayerDispatcherModule =
                     (Unhandled, world)
                 else (Unhandled, world)
             else (Unhandled, world)
-
-        static member FieldDefinitions =
-            fieldDefinitions
 
         override dispatcher.AttachIntrinsicFields (player, world) =
             let player = base.AttachIntrinsicFields (player, world)

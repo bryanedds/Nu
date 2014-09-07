@@ -143,28 +143,16 @@ module SimModule =
         { ScheduledTime : int64
           Operation : World -> World }
 
-    /// A facat the dynamically augments an entity's behavior.
+    /// Dynamically augments an entity's behavior in a composable way.
     and [<AbstractClass>] Facet () =
 
         static member getName facet =
             let facetType = facet.GetType ()
             facetType.Name
 
-        static member getFieldDefinitions facet =
-            let facetType = facet.GetType ()
-            match facetType.GetProperty (Property?FieldDefinitions, BindingFlags.Static ||| BindingFlags.Public) with
-            | null -> []
-            | fieldDefinitionsProperty ->
-                let fieldDefinitions = fieldDefinitionsProperty.GetValue facet
-                fieldDefinitions :?> (string * Type * obj) list // TODO: abstract this tuple type
-
-        static member getFieldDescriptorNames facet =
-            let fieldDefinitions = Facet.getFieldDefinitions facet
-            List.map a__ fieldDefinitions
-
         static member areFacetsCompatible facet facet2 =
-            let facetFieldDefinitions = Facet.getFieldDescriptorNames facet
-            let facet2FieldDefinitions = Facet.getFieldDescriptorNames facet2
+            let facetFieldDefinitions = NuCore.getFieldDefinitionNames facet
+            let facet2FieldDefinitions = NuCore.getFieldDefinitionNames facet2
             let intersection = List.intersect facetFieldDefinitions facet2FieldDefinitions
             Set.isEmpty intersection
 
@@ -266,7 +254,7 @@ module SimModule =
                 fieldDefinitions
 
         static member isFacetCompatible facet entity =
-            let facetFieldNames = Facet.getFieldDescriptorNames facet
+            let facetFieldNames = NuCore.getFieldDefinitionNames facet
             let entityFieldNames = Map.toKeyList entity.Xtension.XFields
             let intersection = List.intersect facetFieldNames entityFieldNames
             Set.isEmpty intersection

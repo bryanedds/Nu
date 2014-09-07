@@ -4,7 +4,7 @@
 namespace Nu
 open System
 open System.Configuration
-open System.Text
+open System.Reflection
 open Prime
 
 [<AutoOpen>]
@@ -64,3 +64,17 @@ module NuCore =
         let appSetting = ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"]
         if not <| Int32.TryParse (appSetting, resolution) then resolution := defaultResolution
         !resolution
+
+    /// Get the field definitions of a target.
+    let getFieldDefinitions target =
+        let facetType = target.GetType ()
+        match facetType.GetField ("fieldDefinitions", BindingFlags.Static ||| BindingFlags.NonPublic) with
+        | null -> []
+        | fieldDefinitionsProperty ->
+            let fieldDefinitions = fieldDefinitionsProperty.GetValue target
+            fieldDefinitions :?> (string * Type * FieldExpression) list // TODO: abstract this tuple type
+
+    /// Get the names of the field definition of a target.
+    let getFieldDefinitionNames target =
+        let fieldDefinitions = getFieldDefinitions target
+        List.map a__ fieldDefinitions
