@@ -21,14 +21,12 @@ module ReflectionModule =
           FieldType : Type
           FieldExpression : FieldExpression }
         static member private validate fieldName (fieldType : Type) (_ : FieldExpression) =
-            if fieldName = "OptOverlayName" then
-                failwith "OptOverlayName cannot be an intrinsic field."
-            if fieldName = "FacetNames" then
-                failwith "FacetNames cannot be an intrinsic field."
+            if fieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
+            if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
             if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
                 failwith <|
                     "Generic field definition lacking too much type information for field '" + fieldName + "'. " +
-                    "Use explicit type annotations on all values that carry incomplete type information."
+                    "Use explicit type annotations on all values that carry incomplete type information such as empty lists."
         static member make fieldName fieldType fieldExpression =
             FieldDefinition.validate fieldName fieldType fieldExpression
             { FieldName = fieldName; FieldType = fieldType; FieldExpression = fieldExpression }
@@ -110,7 +108,7 @@ module Reflection =
             fieldDefinitions
 
     /// Get the field definitions of a target type not considering inheritance.
-    let getFieldDefinitionsNoInheritance (targetType : Type) =
+    let getFieldDefinitionsNoInherit (targetType : Type) =
         match targetType.GetProperty ("FieldDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
         | null -> failwith <| "Could not get static property FieldDefinitions from type '" + targetType.Name + "'."
         | fieldDefinitionsProperty ->
@@ -123,7 +121,8 @@ module Reflection =
     /// Get the field definitions of a target type.
     let getFieldDefinitions (targetType : Type) =
         let baseTypes = targetType :: getBaseTypesExceptObject targetType
-        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInheritance aType) baseTypes
+        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInherit aType) baseTypes
+        let fieldDefinitionLists = List.rev fieldDefinitionLists
         List.concat fieldDefinitionLists
 
     /// Get the names of the field definition of a target type.

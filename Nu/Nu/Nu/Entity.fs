@@ -63,20 +63,6 @@ module EntityModule =
             | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
             | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an EntityDispatcher."
 
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Id = id
-              Name = match optName with None -> string id | Some name -> name
-              Position = Vector2.Zero
-              Depth = 0.0f
-              Size = DefaultEntitySize
-              Rotation = 0.0f
-              Visible = true
-              FacetNames = []
-              FacetsNp = []
-              OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false } }
-
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
           MapSize : Vector2I

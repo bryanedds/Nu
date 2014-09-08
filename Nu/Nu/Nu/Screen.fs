@@ -5,31 +5,6 @@ open Nu
 open Nu.NuConstants
 
 [<AutoOpen>]
-module TransitionModule =
-
-    type Transition with
-    
-        static member makeDefault transitionType =
-            { TransitionLifetime = 0L
-              TransitionTicks = 0L
-              TransitionType = transitionType
-              OptDissolveImage = None }
-
-[<AutoOpen>]
-module ScreenModule =
-
-    type Screen with
-
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Id = id
-              Name = match optName with None -> string id | Some name -> name
-              State = IdlingState
-              Incoming = Transition.makeDefault Incoming
-              Outgoing = Transition.makeDefault Outgoing
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-
-[<AutoOpen>]
 module WorldScreenModule =
 
     type World with
@@ -112,6 +87,6 @@ module WorldScreenModule =
         static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime world =
             let screen = World.makeScreen dispatcherName optName world
             let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
-            let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
-            let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
+            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
             { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

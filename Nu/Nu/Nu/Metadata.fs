@@ -49,8 +49,8 @@ module Metadata =
             InvalidMetadata errorMessage
         else
             try use bitmap = new Bitmap (asset.FileName) in TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
-            with _ as e ->
-                let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string e + "'."
+            with _ as exn ->
+                let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string exn + "'."
                 trace errorMessage
                 InvalidMetadata errorMessage
 
@@ -59,8 +59,8 @@ module Metadata =
             let tileSets = List.ofSeq tmxMap.Tilesets
             let tileSetImages = List.map getTileSetProperties tileSets
             TileMapMetadata (asset.FileName, tileSetImages, tmxMap)
-        with _ as e ->
-            let errorMessage = "Failed to load TmxMap '" + asset.FileName + "' due to '" + string e + "'."
+        with _ as exn ->
+            let errorMessage = "Failed to load TmxMap '" + asset.FileName + "' due to '" + string exn + "'."
             trace errorMessage
             InvalidMetadata errorMessage
 

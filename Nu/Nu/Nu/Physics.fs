@@ -180,8 +180,7 @@ module PhysicsModule =
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
           IntegrationMessages : IntegrationMessage List
-          // HACK: ensures two bodies aren't created in the same position, thus evading a Farseer bug
-          FarseerCautionMode : bool
+          FarseerCautionMode : bool // HACK: ensures two bodies aren't created in the same position, thus evading a Farseer bug
           mutable RebuildingHack : bool }
           
 [<RequireQualifiedAccess>]
@@ -303,6 +302,7 @@ module Physics =
 
     /// Evaluate a collision expression.
     /// TODO: explain syntax.
+    /// TODO: propagate errors rather than tracing in place
     let evalCollisionExpression (extent : Vector2) (expr : string) =
         let terms = List.ofArray <| expr.Split '?'
         let terms = List.map (fun (term : string) -> term.Trim ()) terms

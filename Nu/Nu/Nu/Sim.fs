@@ -66,6 +66,12 @@ module SimModule =
           TransitionTicks : int64
           TransitionType : TransitionType
           OptDissolveImage : Image option }
+    
+        static member make transitionType =
+            { TransitionLifetime = 0L
+              TransitionTicks = 0L
+              TransitionType = transitionType
+              OptDissolveImage = None }
 
     /// The data for a mouse move event.
     type [<StructuralEquality; NoComparison>] MouseMoveData =
@@ -121,8 +127,8 @@ module SimModule =
     and [<ReferenceEquality>] Subscription =
         | ExitSub
         | SwallowSub
-        | ScreenTransitionSub of Address (*desinationScreen*)
-        | ScreenTransitionFromSplashSub of Address (*desinationScreen*)
+        | ScreenTransitionSub of desinationScreen : Address
+        | ScreenTransitionFromSplashSub of desinationScreen : Address
         | CustomSub of (Event -> World -> EventHandled * World)
 
     /// An entry into the world's subscription map.
@@ -231,6 +237,20 @@ module SimModule =
             let intersection = List.intersect facetFieldNames entityFieldNames
             Set.isEmpty intersection
 
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
+              Position = Vector2.Zero
+              Depth = 0.0f
+              Size = DefaultEntitySize
+              Rotation = 0.0f
+              Visible = true
+              FacetNames = []
+              FacetsNp = []
+              OptOverlayName = Some dispatcherName
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false } }
+
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
@@ -247,12 +267,18 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
-        
+
         static member register (address : Address) (group : Group) (world : World) : Group * World =
             group?Register (group, address, world)
         
         static member unregister (address : Address) (group : Group) (world : World) : Group * World =
             group?Unregister (group, address, world)
+
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Group.Id = id
+              Name = match optName with None -> string id | Some name -> name
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
     /// The screen type that allows transitioning to and fro other screens, and also hosts the
     /// currently interactive groups of entities.
@@ -281,6 +307,15 @@ module SimModule =
         static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
             screen?Unregister (screen, address, world)
 
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
+              State = IdlingState
+              Incoming = Transition.make Incoming
+              Outgoing = Transition.make Outgoing
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
@@ -298,6 +333,16 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
+
+        static member make dispatcherName dispatcher optName =
+            let id = NuCore.makeId ()
+            let game =
+                { Id = id
+                  Name = match optName with None -> string id | Some name -> name
+                  OptSelectedScreenAddress = None
+                  Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+            Reflection.attachFieldsFromSource dispatcher game
+            game
 
         member game.Register (world : World) : Game * World =
             game?Register (game, world)
