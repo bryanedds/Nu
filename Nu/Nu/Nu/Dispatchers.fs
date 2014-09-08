@@ -66,6 +66,9 @@ module RigidBodyFacetModule =
         static let getBodyShape (entity : Entity) =
             Physics.evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
 
+        override facet.FieldDefinitions =
+            fieldDefinitions
+
         override facet.AttachFields entity =
             Entity.attachFields fieldDefinitions entity
 
@@ -126,6 +129,9 @@ module SpriteFacetModule =
         static let fieldDefinitions =
             [define? ViewType Relative
              define? SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
+
+        override facet.FieldDefinitions =
+            fieldDefinitions
 
         override facet.AttachFields entity =
             Entity.attachFields fieldDefinitions entity
@@ -189,6 +195,9 @@ module AnimatedSpriteFacetModule =
             let tileY = single tileJ * entity.TileSize.Y
             let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
             Some inset
+
+        override facet.FieldDefinitions =
+            fieldDefinitions
 
         override facet.AttachFields entity =
             Entity.attachFields fieldDefinitions entity
