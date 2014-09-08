@@ -144,7 +144,10 @@ module SimModule =
           Operation : World -> World }
 
     /// Dynamically augments an entity's behavior in a composable way.
-    and [<AbstractClass>] Facet () =
+    and Facet () =
+
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         abstract member Register : Entity * Address * World -> Entity * World
         default facet.Register (entity, address, world) =
@@ -350,8 +353,7 @@ module SimModule =
              define? Rotation 0.0f
              define? Visible true]
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         // TODO: displace this
         abstract member AttachIntrinsicFacets : Entity * World -> Entity
@@ -405,11 +407,8 @@ module SimModule =
 
     type GroupDispatcher () =
 
-        static let fieldDefinitions =
-            []
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         abstract member Register : Group * Address * World -> Group * World
         default dispatcher.Register (group, _, world) = (group, world)
@@ -419,11 +418,8 @@ module SimModule =
 
     type ScreenDispatcher () =
 
-        static let fieldDefinitions =
-            []
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         abstract member Register : Screen * Address * World -> Screen * World
         default dispatcher.Register (screen, _, world) = (screen, world)
@@ -433,11 +429,8 @@ module SimModule =
 
     type GameDispatcher () =
 
-        static let fieldDefinitions =
-            []
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
         
         abstract member Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
