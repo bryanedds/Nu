@@ -11,26 +11,11 @@ open Nu.NuConstants
 module GroupModule =
 
     type Group with
-        
-        static member init (group : Group) (world : World) : Group = group?Init (group, world)
-        static member register (address : Address) (group : Group) (world : World) : World = group?Register (address, world)
-        static member unregister (address : Address) (group : Group) (world : World) : World = group?Unregister (address, world)
-
-    type GroupDispatcher () =
-
-        abstract member Init : Group * World -> Group
-        default dispatcher.Init (group, _) = group
-        
-        abstract member Register : Address * World -> World
-        default dispatcher.Register (_, world) = world
-
-        abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (_, world) = world
-
-    type Group with
     
-        static member make dispatcherName =
-            { Group.Id = NuCore.makeId ()
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Group.Id = id
+              Name = match optName with None -> string id | Some name -> name
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
 
 [<AutoOpen>]
@@ -91,65 +76,53 @@ module WorldGroupModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + string address + "'."
 
-        static member registerGroup address (group : Group) world =
+        static member registerGroup address group world =
             Group.register address group world
 
-        static member unregisterGroup address world =
-            let group = World.getGroup address world
+        static member unregisterGroup address group world =
             Group.unregister address group world
 
-        static member removeGroupImmediate address world =
+        static member removeGroupImmediate address group world =
             let world = World.publish4 (RemovingEventName + address) address NoData world
-            let world = World.unregisterGroup address world
-            let world = World.clearEntitiesImmediate address world
-            World.setOptGroup address None world
+            let (group, world) = World.unregisterGroup address group world
+            let entities = World.getEntities address world
+            let world = snd <| World.removeEntitiesImmediate address entities world
+            let world = World.setOptGroup address None world
+            (group, world)
 
-        static member removeGroup address world =
+        static member removeGroup address group world =
             let task =
                 { ScheduledTime = world.TickTime
-                  Operation = fun world -> if World.containsGroup address world then World.removeGroupImmediate address world else world }
-            { world with Tasks = task :: world.Tasks }
+                  Operation = fun world ->
+                    match World.getOptGroup address world with
+                    | Some group -> snd <| World.removeGroupImmediate address group world
+                    | None -> world }
+            let world = { world with Tasks = task :: world.Tasks }
+            (group, world)
 
-        static member clearGroupsImmediate address world =
-            let groups = World.getGroups address world
-            Map.fold
-                (fun world groupName _ -> World.removeGroupImmediate (addrlist address [groupName]) world)
-                world
-                groups
+        static member removeGroupsImmediate screenAddress groups world =
+            Sim.transformSimulants World.removeGroupImmediate screenAddress groups world
 
-        static member clearGroups address world =
-            let groups = World.getGroups address world
-            Map.fold
-                (fun world groupName _ -> World.removeGroup (addrlist address [groupName]) world)
-                world
-                groups
+        static member removeGroups screenAddress groups world =
+            Sim.transformSimulants World.removeGroup screenAddress groups world
 
-        static member removeGroupsImmediate screenAddress groupNames world =
-            List.fold
-                (fun world groupName -> World.removeGroupImmediate (addrlist screenAddress [groupName]) world)
-                world
-                groupNames
-
-        static member removeGroups screenAddress groupNames world =
-            List.fold
-                (fun world groupName -> World.removeGroup (addrlist screenAddress [groupName]) world)
-                world
-                groupNames
-
-        static member addGroup address (group : Group) entities world =
-            let world =
+        static member addGroup address group entities world =
+            let (group, world) =
                 match World.getOptGroup address world with
-                | Some _ -> World.removeGroupImmediate address world
-                | None -> world
+                | Some _ -> World.removeGroupImmediate address group world
+                | None -> (group, world)
             let world = World.setGroup address group world
-            let world = World.addEntities address entities world
-            let world = World.registerGroup address group world
-            World.publish4 (AddEventName + address) address NoData world
+            let world = snd <| World.addEntities address entities world
+            let (group, world) = World.registerGroup address group world
+            let world = World.publish4 (AddEventName + address) address NoData world
+            (group, world)
 
         static member addGroups screenAddress groupDescriptors world =
             List.fold
-                (fun world (groupName, group, entities) -> World.addGroup (addrlist screenAddress [groupName]) group entities world)
-                world
+                (fun (groups, world) (groupName, group, entities) ->
+                    let (group, world) = World.addGroup (addrlist screenAddress [groupName]) group entities world
+                    (group :: groups, world))
+                ([], world)
                 groupDescriptors
     
         static member writeGroupToXml overlayer (writer : XmlWriter) group entities =
@@ -158,13 +131,35 @@ module WorldGroupModule =
             World.writeEntitiesToXml overlayer writer entities
     
         static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
-            let group = Group.make defaultDispatcherName
+            
+            // make the bare group with name as id
+            let group = Group.make defaultDispatcherName None
+            
+            // read in the Xtension.OptXDispatcherName
             Serialization.readTargetOptXDispatcherName groupNode group
-            let group = Group.init group world
+            
+            // attach the group's instrinsic fields from its dispatcher if any
+            match group.Xtension.OptXDispatcherName with
+            | Some dispatcherName ->
+                match Map.tryFind dispatcherName world.Dispatchers with
+                | Some dispatcher ->
+                    match dispatcher with
+                    | :? GroupDispatcher -> Reflection.attachFieldsFromSource dispatcher group
+                    | _ -> note <| "Dispatcher '" + dispatcherName + "' is not an group dispatcher."
+                | None -> note <| "Could not locate dispatcher '" + dispatcherName + "'."
+            | None -> ()
+
+            // read the groups's properties
             Serialization.readTargetProperties groupNode group
+            
+            // read the group's entities
             let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName world
+
+            // return the initialized group and entities
             (group, entities)
 
-        static member makeGroup dispatcherName world =
-            let group = Group.make dispatcherName
-            Group.init group world
+        static member makeGroup dispatcherName optName world =
+            let group = Group.make dispatcherName optName
+            let groupDispatcher = Map.find dispatcherName world.Dispatchers
+            Reflection.attachFieldsFromSource groupDispatcher group
+            group

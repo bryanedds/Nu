@@ -104,8 +104,9 @@ module RigidBodyFacetModule =
                         // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
                         Entity.setPosition (message.Position - entity.Size * 0.5f) |>
                         Entity.setRotation message.Rotation
-                World.setEntity address entity world
-            else world
+                let world = World.setEntity address entity world
+                (entity, world)
+            else (entity, world)
 
 [<AutoOpen>]
 module SpriteFacetModule =
@@ -331,25 +332,31 @@ module ButtonDispatcherModule =
         static member FieldDefinitions =
             fieldDefinitions
 
-        override dispatcher.Register (_, address, world) =
-            world |>
+        override dispatcher.Register (button, address, world) =
+            let (button, world) = base.Register (button, address, world)
+            let world =
+                world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleButtonEventDownMouseLeft) |>
                 World.observe UpMouseLeftEventName address (CustomSub handleButtonEventUpMouseLeft)
+            (button, world)
 
-        override dispatcher.GetRenderDescriptors (button, _) =
-            if button.Visible then
-                [LayerableDescriptor
-                    { Depth = button.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = button.Position
-                              Size = button.Size
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = if button.IsDown then button.DownImage else button.UpImage
-                              Color = Vector4.One }}]
-            else []
+        override dispatcher.GetRenderDescriptors (button, world) =
+            let renderDescriptors = base.GetRenderDescriptors (button, world)
+            let localRenderDescriptors =
+                if button.Visible then
+                    [LayerableDescriptor
+                        { Depth = button.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = button.Position
+                                  Size = button.Size
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = if button.IsDown then button.DownImage else button.UpImage
+                                  Color = Vector4.One }}]
+                else []
+            localRenderDescriptors @ renderDescriptors
 
         override dispatcher.GetQuickSize (button, world) =
             let image = button.UpImage
@@ -377,20 +384,23 @@ module LabelDispatcherModule =
         static member FieldDefinitions =
             fieldDefinitions
 
-        override dispatcher.GetRenderDescriptors (label, _) =
-            if label.Visible then
-                [LayerableDescriptor
-                    { Depth = label.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = label.Position
-                              Size = label.Size
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = label.LabelImage
-                              Color = Vector4.One }}]
-            else []
+        override dispatcher.GetRenderDescriptors (label, world) =
+            let renderDescriptors = base.GetRenderDescriptors (label, world)
+            let localRenderDescriptors =
+                if label.Visible then
+                    [LayerableDescriptor
+                        { Depth = label.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = label.Position
+                                  Size = label.Size
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = label.LabelImage
+                                  Color = Vector4.One }}]
+                else []
+            localRenderDescriptors @ renderDescriptors
 
         override dispatcher.GetQuickSize (label, world) =
             let image = label.LabelImage
@@ -430,30 +440,33 @@ module TextDispatcherModule =
         static member FieldDefinitions =
             fieldDefinitions
 
-        override dispatcher.GetRenderDescriptors (text, _) =
-            if text.Visible then
-                [LayerableDescriptor
-                    { Depth = text.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = text.Position
-                              Size = text.Size
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = text.BackgroundImage
-                              Color = Vector4.One }}
-                 LayerableDescriptor
-                    { Depth = text.Depth
-                      LayeredDescriptor =
-                        TextDescriptor
-                            { Text = text.Text
-                              Position = (text.Position + text.TextOffset)
-                              Size = text.Size - text.TextOffset
-                              ViewType = Absolute
-                              Font = text.TextFont
-                              Color = text.TextColor }}]
-            else []
+        override dispatcher.GetRenderDescriptors (text, world) =
+            let renderDescriptors = base.GetRenderDescriptors (text, world)
+            let localRenderDescriptors =
+                if text.Visible then
+                    [LayerableDescriptor
+                        { Depth = text.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = text.Position
+                                  Size = text.Size
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = text.BackgroundImage
+                                  Color = Vector4.One }}
+                     LayerableDescriptor
+                        { Depth = text.Depth
+                          LayeredDescriptor =
+                            TextDescriptor
+                                { Text = text.Text
+                                  Position = (text.Position + text.TextOffset)
+                                  Size = text.Size - text.TextOffset
+                                  ViewType = Absolute
+                                  Font = text.TextFont
+                                  Color = text.TextColor }}]
+                else []
+            localRenderDescriptors @ renderDescriptors
 
         override dispatcher.GetQuickSize (text, world) =
             let image = text.BackgroundImage
@@ -527,25 +540,31 @@ module ToggleDispatcherModule =
         static member FieldDefinitions =
             fieldDefinitions
 
-        override dispatcher.Register (_, address, world) =
-            world |>
+        override dispatcher.Register (toggle, address, world) =
+            let (toggle, world) = base.Register (toggle, address, world)
+            let world =
+                world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleToggleEventDownMouseLeft) |>
                 World.observe UpMouseLeftEventName address (CustomSub handleToggleEventUpMouseLeft)
+            (toggle, world)
 
-        override dispatcher.GetRenderDescriptors (toggle, _) =
-            if toggle.Visible then
-                [LayerableDescriptor
-                    { Depth = toggle.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = toggle.Position
-                              Size = toggle.Size
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = if toggle.IsOn || toggle.IsPressed then toggle.OnImage else toggle.OffImage
-                              Color = Vector4.One }}]
-            else []
+        override dispatcher.GetRenderDescriptors (toggle, world) =
+            let renderDescriptors = base.GetRenderDescriptors (toggle, world)
+            let localRenderDescriptors =
+                if toggle.Visible then
+                    [LayerableDescriptor
+                        { Depth = toggle.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = toggle.Position
+                                  Size = toggle.Size
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = if toggle.IsOn || toggle.IsPressed then toggle.OnImage else toggle.OffImage
+                                  Color = Vector4.One }}]
+                else []
+            localRenderDescriptors @ renderDescriptors
 
         override dispatcher.GetQuickSize (toggle, world) =
             let image = toggle.OffImage
@@ -599,10 +618,13 @@ module FeelerDispatcherModule =
         static member FieldDefinitions =
             fieldDefinitions
 
-        override dispatcher.Register (_, address, world) =
-            world |>
+        override dispatcher.Register (feeler, address, world) =
+            let (feeler, world) = base.Register (feeler, address, world)
+            let world =
+                world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleFeelerEventDownMouseLeft) |>
                 World.observe UpMouseLeftEventName address (CustomSub handleFeelerEventUpMouseLeft)
+            (feeler, world)
 
         override dispatcher.GetQuickSize (_, _) =
             Vector2 64.0f
@@ -643,32 +665,35 @@ module FillBarDispatcherModule =
         static member FieldDefinitions =
             fieldDefinitions
 
-        override dispatcher.GetRenderDescriptors (fillBar, _) =
-            if fillBar.Visible then
-                let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
-                [LayerableDescriptor
-                    { Depth = fillBar.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = fillBarSpritePosition
-                              Size = fillBarSpriteSize
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = fillBar.FillImage
-                              Color = Vector4.One }}
-                 LayerableDescriptor
-                    { Depth = fillBar.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
-                            { Position = fillBar.Position
-                              Size = fillBar.Size
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = fillBar.BorderImage
-                              Color = Vector4.One }}]
-            else []
+        override dispatcher.GetRenderDescriptors (fillBar, world) =
+            let renderDescriptors = base.GetRenderDescriptors (fillBar, world)
+            let localRenderDescriptors =
+                if fillBar.Visible then
+                    let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar
+                    [LayerableDescriptor
+                        { Depth = fillBar.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = fillBarSpritePosition
+                                  Size = fillBarSpriteSize
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = fillBar.FillImage
+                                  Color = Vector4.One }}
+                     LayerableDescriptor
+                        { Depth = fillBar.Depth
+                          LayeredDescriptor =
+                            SpriteDescriptor
+                                { Position = fillBar.Position
+                                  Size = fillBar.Size
+                                  Rotation = 0.0f
+                                  ViewType = Absolute
+                                  OptInset = None
+                                  Image = fillBar.BorderImage
+                                  Color = Vector4.One }}]
+                else []
+            localRenderDescriptors @ renderDescriptors
 
         override dispatcher.GetQuickSize (fillBar, world) =
             let image = fillBar.BorderImage
@@ -912,52 +937,60 @@ module TileMapDispatcherModule =
             fieldDefinitions
 
         override dispatcher.Register (tileMap, address, world) =
-            registerTileMapPhysics tileMap address world
+            let (tileMap, world) = base.Register (tileMap, address, world)
+            let world = registerTileMapPhysics tileMap address world
+            (tileMap, world)
 
-        override dispatcher.Unregister (tileMap, _, world) =
-            unregisterTileMapPhysics tileMap world
+        override dispatcher.Unregister (tileMap, address, world) =
+            let (tileMap, world) = base.Unregister (tileMap, address, world)
+            let world = unregisterTileMapPhysics tileMap world
+            (tileMap, world)
             
         override dispatcher.PropagatePhysics (tileMap, address, world) =
+            let world = base.PropagatePhysics (tileMap, address, world)
             world |>
                 unregisterTileMapPhysics tileMap |>
                 registerTileMapPhysics tileMap address
 
         override dispatcher.GetRenderDescriptors (tileMap, world) =
-            if tileMap.Visible then
-                let tileMapAsset = tileMap.TileMapAsset
-                match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
-                | Some (_, images, map) ->
-                    let layers = List.ofSeq map.Layers
-                    let tileSourceSize = Vector2I (map.TileWidth, map.TileHeight)
-                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                    List.foldi
-                        (fun i descriptors (layer : TmxLayer) ->
-                            let depth = tileMap.Depth + single i * 2.0f // MAGIC_VALUE: assumption
-                            let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
-                            let parallaxPosition = tileMap.Position + parallaxTranslation
-                            let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                            if Camera.inView3 parallaxPosition size world.Camera then
-                                let descriptor =
-                                    LayerableDescriptor 
-                                        { Depth = depth
-                                          LayeredDescriptor =
-                                            TileLayerDescriptor
-                                                { Position = parallaxPosition
-                                                  Size = size
-                                                  Rotation = tileMap.Rotation
-                                                  ViewType = Relative
-                                                  MapSize = Vector2I (map.Width, map.Height)
-                                                  Tiles = layer.Tiles
-                                                  TileSourceSize = tileSourceSize
-                                                  TileSize = tileSize
-                                                  TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                  TileSetImage = List.head images }} // MAGIC_VALUE: for same reason as above
-                                descriptor :: descriptors
-                            else descriptors)
-                        []
-                        layers
-                | None -> []
-            else []
+            let renderDescriptors = base.GetRenderDescriptors (tileMap, world)
+            let localRenderDescriptors =
+                if tileMap.Visible then
+                    let tileMapAsset = tileMap.TileMapAsset
+                    match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+                    | Some (_, images, map) ->
+                        let layers = List.ofSeq map.Layers
+                        let tileSourceSize = Vector2I (map.TileWidth, map.TileHeight)
+                        let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                        List.foldi
+                            (fun i descriptors (layer : TmxLayer) ->
+                                let depth = tileMap.Depth + single i * 2.0f // MAGIC_VALUE: assumption
+                                let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
+                                let parallaxPosition = tileMap.Position + parallaxTranslation
+                                let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
+                                if Camera.inView3 parallaxPosition size world.Camera then
+                                    let descriptor =
+                                        LayerableDescriptor 
+                                            { Depth = depth
+                                              LayeredDescriptor =
+                                                TileLayerDescriptor
+                                                    { Position = parallaxPosition
+                                                      Size = size
+                                                      Rotation = tileMap.Rotation
+                                                      ViewType = Relative
+                                                      MapSize = Vector2I (map.Width, map.Height)
+                                                      Tiles = layer.Tiles
+                                                      TileSourceSize = tileSourceSize
+                                                      TileSize = tileSize
+                                                      TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
+                                                      TileSetImage = List.head images }} // MAGIC_VALUE: for same reason as above
+                                    descriptor :: descriptors
+                                else descriptors)
+                            []
+                            layers
+                    | None -> []
+                else []
+            localRenderDescriptors @ renderDescriptors
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset

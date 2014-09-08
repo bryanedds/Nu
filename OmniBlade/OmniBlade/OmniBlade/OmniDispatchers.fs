@@ -35,12 +35,13 @@ module FieldGroupDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
         
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
+        override dispatcher.Register (avatar, address, world) =
+            let (avatar, world) = base.Register (avatar, address, world)
             let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
             let world = World.observe TickEventName address (CustomSub adjustFieldCameraHandler) world
             let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-            adjustFieldCamera address world
+            let world = adjustFieldCamera address world
+            (avatar, world)
 
 [<AutoOpen>]
 module BattleGroupDispatcherModule =
@@ -48,12 +49,10 @@ module BattleGroupDispatcherModule =
     type BattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
-            { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
-
-        override dispatcher.Unregister (address, world) =
-            base.Unregister (address, world)
+        override dispatcher.Register (group, address, world) =
+            let (group, world) = base.Register (group, address, world)
+            let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+            (group, world)
 
 [<AutoOpen>]
 module OmniBladeDispatcherModule =
@@ -61,11 +60,12 @@ module OmniBladeDispatcherModule =
     type OmniBladeDispatcher () =
         inherit GameDispatcher ()
         
-        override dispatcher.Register world =
-            let world = base.Register world
+        override dispatcher.Register (game, world) =
+            let (game, world) = base.Register (game, world)
             let dispatchers =
                 Map.addMany
                     [|typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj
                       typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> obj|]
                     world.Dispatchers
-            { world with Dispatchers = dispatchers }
+            let world = { world with Dispatchers = dispatchers }
+            (game, world)

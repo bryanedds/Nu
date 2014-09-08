@@ -39,13 +39,14 @@ module BulletDispatcherModule =
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
                     if bullet.Age < 28L then World.setEntity event.Subscriber bullet world
-                    else World.removeEntity event.Subscriber world
+                    else snd <| World.removeEntity event.Subscriber bullet world
                 (Unhandled, world)
             else (Unhandled, world)
 
         let collisionHandler event world =
             if World.isGamePlaying world then
-                let world = World.removeEntity event.Subscriber world
+                let bullet = World.getEntity event.Subscriber world
+                let world = snd <| World.removeEntity event.Subscriber bullet world
                 (Unhandled, world)
             else (Unhandled, world)
 
@@ -53,9 +54,10 @@ module BulletDispatcherModule =
             fieldDefinitions
 
         override dispatcher.Register (entity, address, world) =
-            let world = base.Register (entity, address, world)
+            let (entity, world) = base.Register (entity, address, world)
             let world = World.observe TickEventName address (CustomSub tickHandler) world
-            World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
+            let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
+            (entity, world)
 
 [<AutoOpen>]
 module EnemyDispatcherModule =
@@ -93,15 +95,16 @@ module EnemyDispatcherModule =
                 | None -> Vector2 (-2000.0f, -30000.0f)
             World.applyForce force physicsId world
 
-        let die address world =
-            let world = World.removeEntity address world
-            World.playSound ExplosionSound 1.0f world
+        let die address enemy world =
+            let (enemy, world) = World.removeEntity address enemy world
+            let world = World.playSound ExplosionSound 1.0f world
+            (enemy, world)
 
         let tickHandler event world =
             if World.isGamePlaying world then
                 let enemy = World.getEntity event.Subscriber world
                 let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
-                let world = if enemy.Health <= 0 then die event.Subscriber world else world
+                let world = if enemy.Health <= 0 then snd <| die event.Subscriber enemy world else world
                 (Unhandled, world)
             else (Unhandled, world)
 
@@ -121,10 +124,12 @@ module EnemyDispatcherModule =
             fieldDefinitions
 
         override dispatcher.Register (entity, address, world) =
-            let world = base.Register (entity, address, world)
-            world |>
+            let (entity, world) = base.Register (entity, address, world)
+            let world =
+                world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
                 World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
+            (entity, world)
 
 [<AutoOpen>]
 module PlayerDispatcherModule =
@@ -164,23 +169,23 @@ module PlayerDispatcherModule =
                     Entity.setDepth playerTransform.Depth
             World.addEntity bulletAddress bullet world
 
-        let propelBullet bulletAddress world =
-            let bullet = World.getEntity bulletAddress world
+        let propelBullet bullet world =
             let world = World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) (Entity.getPhysicsId bullet) world
-            World.playSound ShotSound 1.0f world
+            let world = World.playSound ShotSound 1.0f world
+            (bullet, world)
 
         let shootBullet address world =
             let bulletAddress = addrlist (Address.allButLast address) [string <| NuCore.makeId ()]
             let playerTransform = world |> World.getEntity address |> Entity.getTransform
-            let world = createBullet bulletAddress playerTransform world
-            propelBullet bulletAddress world
+            let (bullet, world) = createBullet bulletAddress playerTransform world
+            propelBullet bullet world
 
         let spawnBulletHandler event world =
             if World.isGamePlaying world then
                 let player = World.getEntity event.Subscriber world
                 if not <| Entity.hasFallen player then
                     if world.TickTime % 6L = 0L then
-                        let world = shootBullet event.Subscriber world
+                        let world = snd <| shootBullet event.Subscriber world
                         (Unhandled, world)
                     else (Unhandled, world)
                 else (Unhandled, world)
@@ -225,11 +230,13 @@ module PlayerDispatcherModule =
             fieldDefinitions
 
         override dispatcher.Register (entity, address, world) =
-            let world = base.Register (entity, address, world)
-            world |>
+            let (entity, world) = base.Register (entity, address, world)
+            let world =
+                world |>
                 World.observe TickEventName address (CustomSub spawnBulletHandler) |>
                 World.observe TickEventName address (CustomSub movementHandler) |>
                 World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
+            (entity, world)
 
 [<AutoOpen>]
 module StagePlayDispatcherModule =
@@ -257,13 +264,14 @@ module StagePlayDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
+        override dispatcher.Register (group, address, world) =
+            let (group, world) = base.Register (group, address, world)
             let world =
                 world |>
                 World.observe TickEventName address (CustomSub adjustCameraHandler) |>
                 World.observe TickEventName address (CustomSub playerFallHandler)
-            adjustCamera address world
+            let world = adjustCamera address world
+            (group, world)
 
 [<AutoOpen>]
 module StageScreenModule =
@@ -272,13 +280,15 @@ module StageScreenModule =
         inherit ScreenDispatcher ()
 
         let anonymizeEntities entities =
-            List.map
-                (fun (entity : Entity) -> let id = NuCore.makeId () in { entity with Id = id; Name = string id })
+            Map.map
+                (fun _ (entity : Entity) ->
+                    let id = NuCore.makeId ()
+                    { entity with Id = id; Name = string id })
                 entities
 
         let shiftEntities xShift entities =
-            List.map
-                (fun (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
+            Map.map
+                (fun _ (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
                 entities
 
         let makeSectionFromFile fileName sectionName xShift world =
@@ -297,7 +307,7 @@ module StageScreenModule =
                     yield makeSectionFromFile sectionFileNames.[sectionFileNameIndex] (SectionName + string i) (xShift * single i) world]
             let stagePlayDescriptor = Triple.prepend StagePlayName <| World.loadGroupFromFile StagePlayFileName world
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
-            let world = World.addGroups event.Subscriber groupDescriptors world
+            let world = snd <| World.addGroups event.Subscriber groupDescriptors world
             let world = World.playSong DeadBlazeSong 1.0f 0 world
             (Unhandled, world)
 
@@ -308,15 +318,19 @@ module StageScreenModule =
         let stopPlayHandler event world =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
             let groupNames = StagePlayName :: sectionNames
-            let world = World.removeGroups event.Subscriber groupNames world
+            let groups = World.getGroups (Address.take 1 event.Subscriber) world
+            let groups = Map.filter (fun groupName _ -> List.exists ((=) groupName) groupNames) groups
+            let world = snd <| World.removeGroups event.Subscriber groups world
             (Unhandled, world)
 
-        override dispatcher.Register (address, world) =
-            let world = base.Register (address, world)
-            world |>
+        override dispatcher.Register (screen, address, world) =
+            let (screen, world) = base.Register (screen, address, world)
+            let world =
+                world |>
                 World.observe (SelectEventName + address) address (CustomSub startPlayHandler) |>
                 World.observe (StartOutgoingEventName + address) address (CustomSub stoppingPlayHandler) |>
                 World.observe (DeselectEventName + address) address (CustomSub stopPlayHandler)
+            (screen, world)
 
 [<AutoOpen>]
 module BlazeVectorDispatcherModule =
@@ -325,8 +339,8 @@ module BlazeVectorDispatcherModule =
     type BlazeVectorDispatcher () =
         inherit GameDispatcher ()
 
-        override dispatcher.Register world =
-            let world = base.Register world
+        override dispatcher.Register (game, world) =
+            let (game, world) = base.Register (game, world)
             // add the BlazeVector-specific dispatchers to the world
             let dispatchers =
                 Map.addMany
@@ -336,4 +350,5 @@ module BlazeVectorDispatcherModule =
                      typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> obj
                      typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> obj]
                     world.Dispatchers
-            { world with Dispatchers = dispatchers }
+            let world = { world with Dispatchers = dispatchers }
+            (game, world)
