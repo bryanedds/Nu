@@ -85,7 +85,7 @@ module EvaluatorPrims =
             List.tryFindPlus
                 (fun (frame : ProceduralFrame) ->
                     let optEntry = Array.tryFind (fun (entryName, _) -> name = entryName) frame
-                    match optEntry with None -> (false, None) | Some (_, entry) -> (true, Some entry))
+                    match optEntry with Some (_, entry) -> (true, Some entry) | None -> (false, None))
                 env.EnvProceduralFrames
         match optEntry with
         | Some (Some entry) -> Some entry
@@ -491,7 +491,7 @@ module EvaluatorPrims =
                     let (unifiedArgs, restLargs) = advanceArgs largs r.LargAdvances
                     let restLargs2 = if r.LargShouldAdvance then restLargs.Tail else restLargs
                     let unifiedRest = unifyArgs argsEvaluated r.RestArgs restLargs2
-                    let unifiedRest2 = match r.OptUnifiedArg with None -> unifiedRest | Some unifiedArg -> unifiedArg :: unifiedRest
+                    let unifiedRest2 = match r.OptUnifiedArg with Some unifiedArg -> unifiedArg :: unifiedRest | None -> unifiedRest
                     unifiedArgs @ unifiedRest2
                 | None -> [(args.Head, makeArg MissingStr Concrete UnitValue)]
 

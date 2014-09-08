@@ -303,11 +303,11 @@ module Physics =
 
     /// Evaluate a collision expression.
     /// TODO: explain syntax.
-    let evalCollisionExpression (extent : Vector2) (collisionExpr : string) =
-        let collisionTerms = List.ofArray <| collisionExpr.Split '?'
-        let collisionTermsTrimmed = List.map (fun (term : string) -> term.Trim ()) collisionTerms
+    let evalCollisionExpression (extent : Vector2) (expr : string) =
+        let terms = List.ofArray <| expr.Split '?'
+        let terms = List.map (fun (term : string) -> term.Trim ()) terms
         let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }
-        match collisionTermsTrimmed with
+        match terms with
         | [""] -> defaultShape
         | ["Box"] -> defaultShape
         | ["Circle"] -> CircleShape { Radius = extent.X * 0.5f; Center = Vector2.Zero }
@@ -322,7 +322,7 @@ module Physics =
                 trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;0.0 | 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
                 defaultShape
         | _ ->
-            trace <| "Invalid tile collision shape expression '" + collisionExpr + "'."
+            trace <| "Invalid tile collision expression '" + expr + "'."
             defaultShape
 
     let private configureBodyProperties bodyPosition bodyRotation bodyProperties (body : Body) =

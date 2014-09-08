@@ -303,7 +303,7 @@ module Reader =
         readName .>>.
         opt (pstring EllipsisStr) |>>
         fun (name, optEllipsis) ->
-            let suffix = match optEllipsis with None -> EmptyStr | Some ellipsis -> ellipsis
+            let suffix = match optEllipsis with Some ellipsis -> ellipsis | None -> EmptyStr
             String (makeStringRecord (makeStringValue (name + suffix) LiteralString) None)
 
     /// Forward-reference the expr reader.
@@ -404,7 +404,7 @@ module Reader =
     /// Read a contract.
     let readContract contractTag =
         opt (attempt (readContractContents contractTag)) |>>
-        fun optPre -> match optPre with None -> UnitValue | Some pre -> pre
+        fun optPre -> match optPre with Some pre -> pre | None -> UnitValue
 
     /// Read a composite member.
     let readMember =

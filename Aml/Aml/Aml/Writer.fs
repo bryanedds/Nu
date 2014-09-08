@@ -342,7 +342,7 @@ module Writer =
     /// Make a violation with an error message using an environment's parser positions.
     let makeViolationWithPositions category message env =
         let optExpr = match env.EnvDebugInfo.DIExprTrace with [] -> None | exprTrace -> Some exprTrace.Head
-        let optPositions = match optExpr with None -> None | Some expr -> getOptPositions expr
+        let optPositions = match optExpr with Some expr -> getOptPositions expr | None -> None
         let positionDescription =
             // TODO: remove the code duplication with 'Primitives.tryWriteExprFromPositions'.
             match optPositions with
