@@ -141,10 +141,10 @@ module EntityModule =
               Size = DefaultEntitySize
               Rotation = 0.0f
               Visible = true
-              OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }
               FacetNames = []
-              FacetsNp = [] }
+              FacetsNp = []
+              OptOverlayName = Some dispatcherName
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false } }
 
 [<AutoOpen>]
 module WorldEntityModule =
@@ -308,7 +308,7 @@ module WorldEntityModule =
             let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
             List.ofSeq facetNamesToRemove
 
-        static member tryRemoveFacet facetName optAddress entity world =
+        static member tryRemoveFacet syncing facetName optAddress entity world =
             match List.tryFind (fun facet -> Facet.getName facet = facetName) entity.FacetsNp with
             | Some facet ->
                 let world =
@@ -316,7 +316,9 @@ module WorldEntityModule =
                     | Some address -> facet.UnregisterPhysics (entity, address, world)
                     | None -> world
                 let entity = facet.DetachFields entity
-                let entity = Entity.setFacetNames (List.remove ((=) (Facet.getName facet)) entity.FacetNames) entity
+                let entity =
+                    if syncing then entity
+                    else Entity.setFacetNames (List.remove ((=) (Facet.getName facet)) entity.FacetNames) entity
                 let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
                 let world =
                     match optAddress with
@@ -325,55 +327,38 @@ module WorldEntityModule =
                 Right (entity, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
-        static member tryPopulateFacet compatibilityCheck facetName entity world =
+        static member tryAddFacet syncing facetName optAddress entity world =
             match World.tryGetFacet facetName world with
             | Right facet ->
-                if  not compatibilityCheck ||
-                    Entity.isFacetCompatible facet entity then
+                if Entity.isFacetCompatible facet entity then
                     let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
                     let entity = facet.AttachFields entity
-                    Right (facet, entity)
+                    let entity =
+                        if syncing then entity
+                        else Entity.setFacetNames (Facet.getName facet :: entity.FacetNames) entity
+                    match optAddress with
+                    | Some address ->
+                        let world = facet.RegisterPhysics (entity, address, world)
+                        let world = World.setEntity address entity world
+                        Right (entity, world)
+                    | None -> Right (entity, world)
                 else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
             | Left error -> Left error
 
-        static member tryAddFacet facetName optAddress entity world =
-            match World.tryPopulateFacet true facetName entity world with
-            | Right (facet, entity) ->
-                let entity = Entity.setFacetNames (Facet.getName facet :: entity.FacetNames) entity
-                match optAddress with
-                | Some address ->
-                    let world = facet.RegisterPhysics (entity, address, world)
-                    let world = World.setEntity address entity world
-                    Right (entity, world)
-                | None -> Right (entity, world)
-            | Left error -> Left error
-
-        static member tryRemoveFacets facetNamesToRemove optAddress entity world =
+        static member tryRemoveFacets syncing facetNamesToRemove optAddress entity world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right (entity, world) -> World.tryRemoveFacet facetName optAddress entity world
+                    | Right (entity, world) -> World.tryRemoveFacet syncing facetName optAddress entity world
                     | Left _ as left -> left)
                 (Right (entity, world))
                 facetNamesToRemove
 
-        static member tryPopulateFacets3 facetNamesToAdd entity world =
+        static member tryAddFacets syncing facetNamesToAdd optAddress entity world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right entity ->
-                        match World.tryPopulateFacet false facetName entity world with
-                        | Right (_, entity) -> Right entity
-                        | Left error -> Left error
-                    | Left _ as left -> left)
-                (Right entity)
-                facetNamesToAdd
-
-        static member tryAddFacets facetNamesToAdd optAddress entity world =
-            List.fold
-                (fun eitherEntityWorld facetName ->
-                    match eitherEntityWorld with
-                    | Right (entity, world) -> World.tryAddFacet facetName optAddress entity world
+                    | Right (entity, world) -> World.tryAddFacet syncing facetName optAddress entity world
                     | Left _ as left -> left)
                 (Right (entity, world))
                 facetNamesToAdd
@@ -381,13 +366,16 @@ module WorldEntityModule =
         static member trySetFacetNames oldFacetNames newFacetNames optAddress entity world =
             let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
             let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
-            match World.tryRemoveFacets facetNamesToRemove optAddress entity world with
-            | Right (entity, world) -> World.tryAddFacets facetNamesToAdd optAddress entity world
+            match World.tryRemoveFacets false facetNamesToRemove optAddress entity world with
+            | Right (entity, world) -> World.tryAddFacets false facetNamesToAdd optAddress entity world
             | Left _ as left -> left
 
-        static member tryPopulateFacets entity world =
-            let facetNamesToAdd = World.getFacetNamesToAdd [] entity.FacetNames
-            World.tryPopulateFacets3 facetNamesToAdd entity world
+        static member trySynchronizeFacets oldFacetNames optAddress entity world =
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames entity.FacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames entity.FacetNames
+            match World.tryRemoveFacets true facetNamesToRemove optAddress entity world with
+            | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd optAddress entity world
+            | Left _ as left -> left
 
         static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
@@ -411,8 +399,8 @@ module WorldEntityModule =
                     Serialization.readTargetOptOverlayName entityNode entity
                     Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName "FacetNames" world.Overlayer world.Overlayer
                     Serialization.readTargetFacetNames entityNode entity
-                    match World.tryPopulateFacets entity world with
-                    | Right entity -> entity
+                    match World.trySynchronizeFacets [] None entity world with
+                    | Right (entity, _) -> entity
                     | Left error -> debug error; entity
                 | None -> entity
             let entity = Entity.attachIntrinsicFields entity world
@@ -434,6 +422,6 @@ module WorldEntityModule =
             let entity = Entity.make dispatcherName optName
             let entity = Entity.attachIntrinsicFacets entity world
             let entity = Entity.attachIntrinsicFields entity world
-            match World.tryPopulateFacets entity world with
-            | Right entity -> entity
+            match World.trySynchronizeFacets [] None entity world with
+            | Right (entity, _) -> entity
             | Left error -> debug error; entity

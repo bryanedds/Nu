@@ -135,27 +135,25 @@ module Program =
                     // TODO: last I remembered there seemed to be some difficulty in understanding
                     // this code due to its unintuitive ordering. See if that can be fixed.
                     let entity = World.getEntity entityTds.Address world
-                    let optOldOverlayName = entity.OptOverlayName
+                    let oldOptOverlayName = entity.OptOverlayName
                     let entity = setEntityPropertyValue property value entity
                     let entity =
                         match propertyName with
                         | "OptOverlayName" ->
                             match entity.OptOverlayName with
                             | Some overlayName ->
-                            
                                 let (entity, world) =
                                     match entity.OptOverlayName with
                                     | Some overlayName ->
-                                        let entity = { entity with Id = entity.Id } // hacky copy
                                         let oldFacetNames = entity.FacetNames
-                                        Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName "FacetNames" world.Overlayer world.Overlayer
-                                        match World.trySetFacetNames oldFacetNames entity.FacetNames (Some entityTds.Address) entity world with
+                                        let entity = { entity with Id = entity.Id } // hacky copy
+                                        Overlayer.applyOverlayToFacetNames oldOptOverlayName overlayName entity world.Overlayer world.Overlayer
+                                        match World.trySynchronizeFacets oldFacetNames (Some entityTds.Address) entity world with
                                         | Right (entity, world) -> (entity, world)
                                         | Left error -> debug error; (entity, world)
                                     | None -> (entity, world)
-
                                 let entity = { entity with Id = entity.Id } // hacky copy
-                                Overlayer.applyOverlay optOldOverlayName overlayName entity world.Overlayer
+                                Overlayer.applyOverlay oldOptOverlayName overlayName entity world.Overlayer
                                 entity
 
                             | None -> entity
