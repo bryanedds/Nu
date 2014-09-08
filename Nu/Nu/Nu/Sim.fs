@@ -190,10 +190,10 @@ module SimModule =
           Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
-          OptOverlayName : string option
-          Xtension : Xtension
           FacetNames : string list
-          FacetsNp : Facet list } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.
+          FacetsNp : Facet list
+          OptOverlayName : string option
+          Xtension : Xtension } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.
 
         static member (?) (this : Entity, memberName) =
             fun args ->
