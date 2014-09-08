@@ -465,7 +465,7 @@ module WorldModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     match World.getOptEntity bodyTransformMessage.EntityAddress world with
-                    | Some entity -> Entity.handleBodyTransformMessage bodyTransformMessage.EntityAddress bodyTransformMessage entity world
+                    | Some entity -> snd <| Entity.handleBodyTransformMessage bodyTransformMessage.EntityAddress bodyTransformMessage entity world
                     | None -> world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match World.getOptEntity bodyCollisionMessage.EntityAddress world with
@@ -561,21 +561,21 @@ module WorldModule =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
         static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
-            let splashScreen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
-            let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name world
+            let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime world
+            let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world
             let splashLabel = World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage image splashLabel
-            let world = World.addScreen address splashScreen [("SplashGroup", splashGroup, [splashLabel])] world
+            let splashGroupDescriptors = [(splashGroup.Name, splashGroup, Map.singleton splashLabel.Name splashLabel)]
+            let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
             let world = World.observe (FinishIncomingEventName + address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
             World.observe (FinishOutgoingEventName + address) address (ScreenTransitionFromSplashSub destination) world
 
         static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
-            let screen = Screen.makeDissolve screenDispatcherName incomingTime outgoingTime
+            let screen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
             let (group, entities) = World.loadGroupFromFile groupFileName world
-            let world = World.addScreen screenAddress screen [(groupName, group, entities)] world
-            world
+            snd <| World.addScreen screenAddress screen [(groupName, group, entities)] world
 
         static member tryMakeEmpty sdlDeps gameDispatcher interactivity farseerCautionMode extData =
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
@@ -606,7 +606,7 @@ module WorldModule =
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
                          typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
                 let world =
-                    { Game = { Id = NuCore.makeId (); OptSelectedScreenAddress = None; Xtension = { XFields = Map.empty; OptXDispatcherName = Some gameDispatcherName; CanDefault = true; Sealed = false }}
+                    { Game = Game.make gameDispatcherName gameDispatcher (Some "Game")
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
@@ -630,7 +630,7 @@ module WorldModule =
                       AssetGraphFileName = AssetGraphFileName
                       OverlayFileName = OverlayFileName
                       ExtData = extData }
-                let world = world.Game.Register world
+                let world = snd <| world.Game.Register world
                 Right world
             | Left errorMsg -> Left errorMsg
 

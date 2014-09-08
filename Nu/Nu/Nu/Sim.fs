@@ -146,21 +146,31 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and [<AbstractClass>] Facet () =
 
+        abstract member Register : Entity * Address * World -> Entity * World
+        default facet.Register (entity, address, world) =
+            let world = facet.RegisterPhysics (entity, address, world)
+            (entity, world)
+
+        abstract member Unregister : Entity * Address * World -> Entity * World
+        default facet.Unregister (entity, address, world) =
+            let world = facet.UnregisterPhysics (entity, address, world)
+            (entity, world)
+
         abstract member RegisterPhysics : Entity * Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
         abstract member UnregisterPhysics : Entity * Address * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
-        
+
         abstract member PropagatePhysics : Entity * Address * World -> World
         default facet.PropagatePhysics (_, _, world) = world
-        
-        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
-        default facet.HandleBodyTransformMessage (_, _, _, world) = world
-        
+
+        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> Entity * World
+        default facet.HandleBodyTransformMessage (entity, _, _, world) = (entity, world)
+
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default facet.GetRenderDescriptors (_, _) = []
-        
+
         abstract member GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
@@ -221,6 +231,7 @@ module SimModule =
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
+          Name : string
           Xtension : Xtension }
 
         static member (?) (this : Group, memberName) =
@@ -233,11 +244,18 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
+        
+        static member register (address : Address) (group : Group) (world : World) : Group * World =
+            group?Register (group, address, world)
+        
+        static member unregister (address : Address) (group : Group) (world : World) : Group * World =
+            group?Unregister (group, address, world)
 
     /// The screen type that allows transitioning to and fro other screens, and also hosts the
     /// currently interactive groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
+          Name : string
           State : ScreenState
           Incoming : Transition
           Outgoing : Transition
@@ -254,9 +272,16 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
 
+        static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
+            screen?Register (screen, address, world)
+
+        static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
+            screen?Unregister (screen, address, world)
+
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
+          Name : string
           OptSelectedScreenAddress : Address option
           Xtension : Xtension }
 
@@ -270,6 +295,9 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
+
+        member game.Register (world : World) : Game * World =
+            game?Register (game, world)
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
@@ -311,6 +339,108 @@ module SimModule =
         | Screen of Screen
         | Group of Group
         | Entity of Entity
+
+    /// The default dispatcher for entities.
+    type EntityDispatcher () =
+
+        static let fieldDefinitions =
+            [define? Position Vector2.Zero
+             define? Depth 0.0f
+             define? Size DefaultEntitySize
+             define? Rotation 0.0f
+             define? Visible true]
+
+        static member FieldDefinitions =
+            fieldDefinitions
+
+        // TODO: displace this
+        abstract member AttachIntrinsicFacets : Entity * World -> Entity
+        default dispatcher.AttachIntrinsicFacets (entity, _) = entity
+
+        abstract member Register : Entity * Address * World -> Entity * World
+        default dispatcher.Register (entity, address, world) =
+            List.fold
+                (fun (entity, world) (facet : Facet) -> facet.Register (entity, address, world))
+                (entity, world)
+                entity.FacetsNp
+
+        abstract member Unregister : Entity * Address * World -> Entity * World
+        default dispatcher.Unregister (entity, address, world) =
+            List.fold
+                (fun (entity, world) (facet : Facet) -> facet.Unregister (entity, address, world))
+                (entity, world)
+                entity.FacetsNp
+
+        abstract member PropagatePhysics : Entity * Address * World -> World
+        default dispatcher.PropagatePhysics (entity, address, world) =
+            List.fold
+                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world))
+                world
+                entity.FacetsNp
+
+        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> Entity * World
+        default dispatcher.HandleBodyTransformMessage (entity, address, message, world) =
+            List.fold
+                (fun (entity, world) (facet : Facet) -> facet.HandleBodyTransformMessage (entity, address, message, world))
+                (entity, world)
+                entity.FacetsNp
+
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors (entity, world) =
+            List.fold
+                (fun renderDescriptors (facet : Facet) ->
+                    let descriptors = facet.GetRenderDescriptors (entity, world)
+                    descriptors @ renderDescriptors)
+                []
+                entity.FacetsNp
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
+
+        abstract member IsTransformRelative : Entity * World -> bool
+        default dispatcher.IsTransformRelative (_, _) = true
+
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+
+    type GroupDispatcher () =
+
+        static let fieldDefinitions =
+            []
+
+        static member FieldDefinitions =
+            fieldDefinitions
+
+        abstract member Register : Group * Address * World -> Group * World
+        default dispatcher.Register (group, _, world) = (group, world)
+
+        abstract member Unregister : Group * Address * World -> Group * World
+        default dispatcher.Unregister (group, _, world) = (group, world)
+
+    type ScreenDispatcher () =
+
+        static let fieldDefinitions =
+            []
+
+        static member FieldDefinitions =
+            fieldDefinitions
+
+        abstract member Register : Screen * Address * World -> Screen * World
+        default dispatcher.Register (screen, _, world) = (screen, world)
+
+        abstract member Unregister : Screen * Address * World -> Screen * World
+        default dispatcher.Unregister (screen, _, world) = (screen, world)
+
+    type GameDispatcher () =
+
+        static let fieldDefinitions =
+            []
+
+        static member FieldDefinitions =
+            fieldDefinitions
+        
+        abstract member Register : Game * World -> Game * World
+        default dispatcher.Register (game, world) = (game, world)
 
 [<RequireQualifiedAccess>]
 module EventData =
@@ -547,3 +677,11 @@ module Sim =
             let (simulant, world) = fn simulant
             setSimulant address simulant world
         | None -> world
+
+    let transformSimulants transform groupAddress simulants world : Map<string, 's> * World =
+        Map.fold
+            (fun (simulants, world) simulantName (simulant : 's) ->
+                let (simulant, world) = transform (addrlist groupAddress [simulantName]) simulant world
+                (Map.add simulantName simulant simulants, world))
+            (Map.empty, world)
+            simulants

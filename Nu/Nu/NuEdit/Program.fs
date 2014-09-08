@@ -130,10 +130,10 @@ module Program =
                         world
                     else
                         let entity = World.getEntity entityTds.Address world
-                        let world = World.removeEntityImmediate entityTds.Address world
+                        let (entity, world) = World.removeEntityImmediate entityTds.Address entity world
                         let entity = { entity with Name = valueStr }
                         let entityAddress = addrlist EditorGroupAddress [valueStr]
-                        let world = World.addEntity entityAddress entity world
+                        let world = snd <| World.addEntity entityAddress entity world
                         entityTds.RefWorld := world // must be set for property grid
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
@@ -326,8 +326,8 @@ module Program =
         | None -> None
 
     let trySaveFile fileName world =
-        try let editorGroup = World.getGroup NuEditConstants.EditorGroupAddress world
-            let editorEntities = World.getEntities NuEditConstants.EditorGroupAddress world
+        try let editorGroup = World.getGroup EditorGroupAddress world
+            let editorEntities = World.getEntities EditorGroupAddress world
             World.saveGroupToFile editorGroup editorEntities fileName world
         with exn ->
             ignore <|
@@ -338,9 +338,10 @@ module Program =
                      MessageBoxIcon.Error)
 
     let tryLoadFile (form : NuEditForm) fileName world =
-        try let world = World.removeGroupImmediate NuEditConstants.EditorGroupAddress world
+        try let group = World.getGroup EditorGroupAddress world
+            let world = snd <| World.removeGroupImmediate EditorGroupAddress group world
             let (group, entities) = World.loadGroupFromFile fileName world
-            let world = World.addGroup NuEditConstants.EditorGroupAddress group entities world
+            let world = snd <| World.addGroup EditorGroupAddress group entities world
             form.saveFileDialog.FileName <- Path.GetFileName fileName
             world
         with exn ->
@@ -451,7 +452,7 @@ module Program =
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = addrlist EditorGroupAddress [entity.Name]
-                let world = World.addEntity entityAddress entity world
+                let world = snd <| World.addEntity entityAddress entity world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 world
@@ -463,7 +464,8 @@ module Program =
             let world = pushPastWorld world world
             match selectedObject with
             | :? EntityTypeDescriptorSource as entityTds ->
-                let world = World.removeEntity entityTds.Address world
+                let entity = World.getEntity entityTds.Address world
+                let world = snd <| World.removeEntity entityTds.Address entity world
                 form.propertyGrid.SelectedObject <- null
                 world
             | _ -> world)
@@ -530,7 +532,7 @@ module Program =
             | :? EntityTypeDescriptorSource as entityTds ->
                 let editorState = world.ExtData :?> EditorState
                 let entity = World.getEntity entityTds.Address world
-                let world = World.removeEntity entityTds.Address world
+                let (entity, world) = World.removeEntity entityTds.Address entity world
                 editorState.Clipboard := Some entity
                 form.propertyGrid.SelectedObject <- null
                 world
@@ -564,7 +566,7 @@ module Program =
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let address = addrlist EditorGroupAddress [entity.Name]
-                World.addEntity address entity world
+                snd <| World.addEntity address entity world
             | None -> world)
 
     let handleFormQuickSize (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
@@ -799,7 +801,6 @@ module Program =
         form
 
     let tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
-        let screen = Screen.makeDissolve typeof<ScreenDispatcher>.Name 100L 100L
         let editorState =
             { TargetDirectory = targetDirectory
               RightClickPosition = Vector2.Zero
@@ -811,7 +812,10 @@ module Program =
         let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics true editorState
         match optWorld with
         | Right world ->
-            let world = World.addScreen EditorScreenAddress screen [(EditorGroupName, World.makeGroup typeof<GroupDispatcher>.Name world, [])] world
+            let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
+            let editorGroup = World.makeGroup typeof<GroupDispatcher>.Name (Some EditorGroupName) world
+            let editorGroupDescriptors = [(EditorGroupName, editorGroup, Map.empty)]
+            let world = snd <| World.addScreen EditorScreenAddress screen editorGroupDescriptors world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
             let world = World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| handleNuDownMouseRight form worldChangers refWorld) world
             let world = World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| handleNuBeginEntityDrag form worldChangers refWorld) world

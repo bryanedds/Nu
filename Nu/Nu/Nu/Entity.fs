@@ -14,56 +14,6 @@ open Nu.NuConstants
 [<AutoOpen>]
 module EntityModule =
 
-    type EntityDispatcher () =
-
-        static let fieldDefinitions =
-            [define? Position Vector2.Zero
-             define? Depth 0.0f
-             define? Size DefaultEntitySize
-             define? Rotation 0.0f
-             define? Visible true]
-
-        static member FieldDefinitions =
-            fieldDefinitions
-
-        // TODO: displace this
-        abstract member AttachIntrinsicFacets : Entity * World -> Entity
-        default dispatcher.AttachIntrinsicFacets (entity, _) = entity
-
-        abstract member Register : Entity * Address * World -> World
-        default dispatcher.Register (entity, address, world) =
-            List.fold (fun world (facet : Facet) -> facet.RegisterPhysics (entity, address, world)) world entity.FacetsNp
-
-        abstract member Unregister : Entity * Address * World -> World
-        default dispatcher.Unregister (entity, address, world) =
-            List.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, address, world)) world entity.FacetsNp
-
-        abstract member PropagatePhysics : Entity * Address * World -> World
-        default dispatcher.PropagatePhysics (entity, address, world) =
-            List.fold (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world)) world entity.FacetsNp
-
-        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> World
-        default dispatcher.HandleBodyTransformMessage (entity, address, message, world) =
-            List.fold (fun world (facet : Facet) -> facet.HandleBodyTransformMessage (entity, address, message, world)) world entity.FacetsNp
-
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (entity, world) =
-            List.fold
-                (fun renderDescriptors (facet : Facet) ->
-                    let descriptors = facet.GetRenderDescriptors (entity, world)
-                    descriptors @ renderDescriptors)
-                []
-                entity.FacetsNp
-
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
-
-        abstract member IsTransformRelative : Entity * World -> bool
-        default dispatcher.IsTransformRelative (_, _) = true
-
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
-
     type Entity with
 
         (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
@@ -78,7 +28,7 @@ module EntityModule =
             | :? EntityDispatcher as dispatcher -> dispatcher.Register (entity, address, world)
             | _ -> failwith "Due to optimization in Entity.register, an entity's base dispatcher must be an EntityDispatcher."
         
-        static member unregister address (entity : Entity) (world : World) : World =
+        static member unregister address (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.Unregister (entity, address, world)
             | _ -> failwith "Due to optimization in Entity.unregister, an entity's base dispatcher must be an EntityDispatcher."
@@ -113,6 +63,20 @@ module EntityModule =
             | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
             | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an EntityDispatcher."
 
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
+              Position = Vector2.Zero
+              Depth = 0.0f
+              Size = DefaultEntitySize
+              Rotation = 0.0f
+              Visible = true
+              FacetNames = []
+              FacetsNp = []
+              OptOverlayName = Some dispatcherName
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false } }
+
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
           MapSize : Vector2I
@@ -132,22 +96,6 @@ module EntityModule =
           Gid2 : Vector2I
           OptTileSetTile : TmxTilesetTile option
           TilePosition : Vector2I }
-
-    type Entity with
-        
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Id = id
-              Name = match optName with None -> string id | Some name -> name
-              Position = Vector2.Zero
-              Depth = 0.0f
-              Size = DefaultEntitySize
-              Rotation = 0.0f
-              Visible = true
-              FacetNames = []
-              FacetsNp = []
-              OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false } }
 
 [<AutoOpen>]
 module WorldEntityModule =
@@ -235,64 +183,46 @@ module WorldEntityModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
-        static member registerEntity address (entity : Entity) world =
+        static member registerEntity address entity world =
             Entity.register address entity world
 
-        static member unregisterEntity address world =
-            let entity = World.getEntity address world
+        static member unregisterEntity address entity world =
             Entity.unregister address entity world
 
-        static member removeEntityImmediate address world =
+        static member removeEntityImmediate address entity world =
             let world = World.publish4 (RemovingEventName + address) address NoData world
-            let world = World.unregisterEntity address world
-            World.setOptEntityWithoutEvent address None world
+            let (entity, world) = World.unregisterEntity address entity world
+            let world = World.setOptEntityWithoutEvent address None world
+            (entity, world)
 
-        static member removeEntity address world =
+        static member removeEntity address entity world =
             let task =
                 { ScheduledTime = world.TickTime
-                  Operation = fun world -> if World.containsEntity address world then World.removeEntityImmediate address world else world }
-            { world with Tasks = task :: world.Tasks }
+                  Operation = fun world ->
+                    match World.getOptEntity address world with
+                    | Some entity -> snd <| World.removeEntityImmediate address entity world
+                    | None -> world }
+            let world = { world with Tasks = task :: world.Tasks }
+            (entity, world)
 
-        static member clearEntitiesImmediate address world =
-            let entities = World.getEntities address world
-            Map.fold
-                (fun world entityName _ -> World.removeEntityImmediate (addrlist address [entityName]) world)
-                world
-                entities
+        static member removeEntitiesImmediate groupAddress entities world =
+            Sim.transformSimulants World.removeEntityImmediate groupAddress entities world
 
-        static member clearEntities address world =
-            let entities = World.getEntities address world
-            Map.fold
-                (fun world entityName _ -> World.removeEntity (addrlist address [entityName]) world)
-                world
-                entities
-
-        static member removeEntitiesImmediate screenAddress entityNames world =
-            List.fold
-                (fun world entityName -> World.removeEntityImmediate (addrlist screenAddress [entityName]) world)
-                world
-                entityNames
-
-        static member removeEntities screenAddress entityNames world =
-            List.fold
-                (fun world entityName -> World.removeEntity (addrlist screenAddress [entityName]) world)
-                world
-                entityNames
+        static member removeEntities groupAddress entities world =
+            Sim.transformSimulants World.removeEntity groupAddress entities world
 
         static member addEntity address entity world =
-            let world =
+            let (entity, world) =
                 match World.getOptEntity address world with
-                | Some _ -> World.removeEntityImmediate address world
-                | None -> world
+                | Some _ -> World.removeEntityImmediate address entity world
+                | None -> (entity, world)
             let world = World.setEntityWithoutEvent address entity world
-            let world = World.registerEntity address entity world
-            World.publish4 (AddEventName + address) address NoData world
+            let (entity, world) = World.registerEntity address entity world
+            let world = World.publish4 (AddEventName + address) address NoData world
+            (entity, world)
 
         static member addEntities groupAddress entities world =
-            List.fold
-                (fun world (entity : Entity) -> World.addEntity (addrlist groupAddress [entity.Name]) entity world)
-                world
-                entities
+            Sim.transformSimulants World.addEntity groupAddress entities world
 
         static member tryGetFacet facetName world =
             match Map.tryFind facetName world.Facets with
@@ -314,10 +244,10 @@ module WorldEntityModule =
         static member tryRemoveFacet syncing facetName optAddress entity world =
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
             | Some facet ->
-                let world =
+                let (entity, world) =
                     match optAddress with
-                    | Some address -> facet.UnregisterPhysics (entity, address, world)
-                    | None -> world
+                    | Some address -> facet.Unregister (entity, address, world)
+                    | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
                 Reflection.detachFieldsFromSource facet entity
                 let entity =
@@ -342,7 +272,7 @@ module WorldEntityModule =
                         else Entity.setFacetNames (Reflection.getTypeName facet :: entity.FacetNames) entity
                     match optAddress with
                     | Some address ->
-                        let world = facet.RegisterPhysics (entity, address, world)
+                        let (entity, world) = facet.Register (entity, address, world)
                         let world = World.setEntity address entity world
                         Right (entity, world)
                     | None -> Right (entity, world)
@@ -398,7 +328,7 @@ module WorldEntityModule =
             // make the bare entity with name as id
             let entity = Entity.make defaultDispatcherName None
 
-            // read in the Xtension.OptXDispatcher name
+            // read in the Xtension.OptXDispatcherName
             Serialization.readTargetOptXDispatcherName entityNode entity
 
             // attach the entity's intrinsic facets
@@ -443,11 +373,12 @@ module WorldEntityModule =
 
         static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
             let entityNodes = parentNode.SelectNodes EntityNodeName
-            let entities =
-                Seq.map
-                    (fun entityNode -> World.readEntityFromXml entityNode defaultDispatcherName world)
-                    (enumerable entityNodes)
-            Seq.toList entities
+            Seq.fold
+                (fun entities entityNode ->
+                    let entity = World.readEntityFromXml entityNode defaultDispatcherName world
+                    Map.add entity.Name entity entities)
+                Map.empty
+                (enumerable entityNodes)
 
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName

@@ -20,32 +20,14 @@ module ScreenModule =
 
     type Screen with
 
-        static member register (address : Address) (screen : Screen) (world : World) : World = screen?Register (address, world)
-        static member unregister (address : Address) (screen : Screen) (world : World) : World = screen?Unregister (address, world)
-
-    type ScreenDispatcher () =
-
-        abstract member Register : Address * World -> World
-        default dispatcher.Register (_, world) = world
-
-        abstract member Unregister : Address * World -> World
-        default dispatcher.Unregister (_, world) = world
-
-    type Screen with
-
-        static member make dispatcherName =
-            { Id = NuCore.makeId ()
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
               State = IdlingState
               Incoming = Transition.makeDefault Incoming
               Outgoing = Transition.makeDefault Outgoing
               Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-
-        static member makeDissolve dispatcherName incomingTime outgoingTime =
-            let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
-            let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
-            let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
-            let screen = Screen.make dispatcherName
-            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -86,31 +68,50 @@ module WorldScreenModule =
             | [] -> world.Screens
             | _ -> failwith <| "Invalid screen address '" + string address + "'."
 
-        static member registerScreen address (screen : Screen) world =
+        static member registerScreen address screen world =
             Screen.register address screen world
 
-        static member unregisterScreen address world =
-            let screen = World.getScreen address world
+        static member unregisterScreen address screen world =
             Screen.unregister address screen world
 
-        static member removeScreenImmediate address world =
+        static member removeScreenImmediate address screen world =
             let world = World.publish4 (RemovingEventName + address) address NoData world
-            let world = World.clearGroupsImmediate address world
-            let world = World.unregisterScreen address world
-            World.setOptScreen address None world
+            let groups = World.getGroups address world
+            let world = snd <| World.removeGroupsImmediate address groups world
+            let (screen, world) = World.unregisterScreen address screen world
+            let world = World.setOptScreen address None world
+            (screen, world)
 
-        static member removeScreen address world =
+        static member removeScreen address screen world =
             let task =
                 { ScheduledTime = world.TickTime
-                  Operation = fun world -> if World.containsScreen address world then World.removeScreenImmediate address world else world }
-            { world with Tasks = task :: world.Tasks }
+                  Operation = fun world ->
+                    match World.getOptScreen address world with
+                    | Some screen -> snd <| World.removeScreenImmediate address screen world
+                    | None -> world }
+            let world = { world with Tasks = task :: world.Tasks }
+            (screen, world)
 
         static member addScreen address screen groupDescriptors world =
-            let world =
+            let (screen, world) =
                 match World.getOptScreen address world with
-                | Some _ -> World.removeScreenImmediate address world
-                | None -> world
+                | Some _ -> World.removeScreenImmediate address screen world
+                | None -> (screen, world)
             let world = World.setScreen address screen world
-            let world = World.addGroups address groupDescriptors world
-            let world = World.registerScreen address screen world
-            World.publish4 (AddEventName + address) address NoData world
+            let world = snd <| World.addGroups address groupDescriptors world
+            let (screen, world) = World.registerScreen address screen world
+            let world = World.publish4 (AddEventName + address) address NoData world
+            (screen, world)
+
+        static member makeScreen dispatcherName optName world =
+            let screen = Screen.make dispatcherName optName
+            let screenDispatcher = Map.find dispatcherName world.Dispatchers
+            Reflection.attachFieldsFromSource screenDispatcher screen
+            screen
+
+        static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime world =
+            let screen = World.makeScreen dispatcherName optName world
+            let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
+            let incomingDissolve = { Transition.makeDefault Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { Transition.makeDefault Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
+            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

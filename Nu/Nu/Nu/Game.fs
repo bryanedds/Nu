@@ -9,12 +9,15 @@ module GameModule =
 
     type Game with
 
-        member game.Register (world : World) : World = game?Register world
-
-    type GameDispatcher () =
-        
-        abstract member Register : World -> World
-        default dispatcher.Register world = world
+        static member make dispatcherName dispatcher optName =
+            let id = NuCore.makeId ()
+            let game =
+                { Id = id
+                  Name = match optName with None -> string id | Some name -> name
+                  OptSelectedScreenAddress = None
+                  Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+            Reflection.attachFieldsFromSource dispatcher game
+            game
 
 [<AutoOpen>]
 module WorldGameModule =
