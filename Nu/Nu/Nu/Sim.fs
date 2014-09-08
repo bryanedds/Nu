@@ -146,21 +146,9 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and [<AbstractClass>] Facet () =
 
-        static member getName facet =
-            let facetType = facet.GetType ()
-            facetType.Name
-
-        static member areFacetsCompatible facet facet2 =
-            let facetFieldDefinitions = NuCore.getFieldDefinitionNames facet
-            let facet2FieldDefinitions = NuCore.getFieldDefinitionNames facet2
-            let intersection = List.intersect facetFieldDefinitions facet2FieldDefinitions
-            Set.isEmpty intersection
-
+        abstract FieldDefinitions : (string * Type * FieldExpression) list
         abstract member AttachFields : Entity -> Entity
-        default facet.AttachFields entity = entity
-        
         abstract member DetachFields : Entity -> Entity
-        default facet.DetachFields entity = entity
 
         abstract member RegisterPhysics : Entity * Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
@@ -179,6 +167,16 @@ module SimModule =
         
         abstract member GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
+
+        /// Get the global name of a facet (it's type name).
+        static member getName facet =
+            let facetType = facet.GetType ()
+            facetType.Name
+
+        /// Get the names of the field definition of a target.
+        static member getFieldDefinitionNames (facet : Facet) =
+            let fieldDefinitions = facet.FieldDefinitions
+            List.map a__ fieldDefinitions
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, avatars, blocks, and things of that sort.
@@ -254,7 +252,7 @@ module SimModule =
                 fieldDefinitions
 
         static member isFacetCompatible facet entity =
-            let facetFieldNames = NuCore.getFieldDefinitionNames facet
+            let facetFieldNames = Facet.getFieldDefinitionNames facet
             let entityFieldNames = Map.toKeyList entity.Xtension.XFields
             let intersection = List.intersect facetFieldNames entityFieldNames
             Set.isEmpty intersection
