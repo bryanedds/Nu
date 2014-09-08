@@ -29,6 +29,10 @@ module NuCoreModule =
             | Constant value -> value
             | Variable fn -> fn ()
 
+    /// The definition of a data-driven field.
+    type FieldDefinition =
+        string * Type * FieldExpression
+
     /// In tandem with the define literal, grants a nice syntax to define constant XFields.
     type DefineConstant =
         { DefineConstant : unit }
