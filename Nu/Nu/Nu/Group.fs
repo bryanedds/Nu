@@ -8,17 +8,6 @@ open Nu
 open Nu.NuConstants
 
 [<AutoOpen>]
-module GroupModule =
-
-    type Group with
-    
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Group.Id = id
-              Name = match optName with None -> string id | Some name -> name
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-
-[<AutoOpen>]
 module WorldGroupModule =
 
     type World with

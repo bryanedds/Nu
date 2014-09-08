@@ -8,24 +8,29 @@ module EitherModule =
 
     /// Haskell-style Either type.
     /// TODO: more nice operators definitions.
-    type Either<'a, 'b> =
-        | Right of 'b
-        | Left of 'a
+    type Either<'l, 'r> =
+        | Right of 'r
+        | Left of 'l
         override this.ToString () =
             match this with
-            | Right b -> "Right(" + string b + ")"
-            | Left a -> "Left(" + string a + ")"
+            | Right r -> "Right(" + string r + ")"
+            | Left l -> "Left(" + string l + ")"
+
+    /// Construct a left value.
+    let Left l =
+        debug <| string l
+        Left l
 
     /// Monadic bind.
     let inline (>>=) either fn =
         match either with
-        | Right value -> Right <| fn value
+        | Right r -> Right <| fn r
         | Left _ -> either
 
     /// Bind that allows indication of failure.
     let inline (>>=?) either fn =
         match either with
-        | Right value -> fn value
+        | Right r -> fn r
         | Left _ -> either
 
     /// Bind that allows handling of failure.
@@ -35,19 +40,19 @@ module EitherModule =
 module Either =
 
     /// Monadic return.
-    let inline returnM value =
-        Right value
+    let inline returnM r =
+        Right r
 
     /// Monadic returnFrom.
     /// TODO: ensure this is defined correctly!
-    let inline returnFrom value =
-        value
+    let inline returnFrom r =
+        r
 
     /// Builds an either monad.
     type EitherBuilder () =
         member this.Bind (either, fn) = either >>= fn
-        member this.Return value = returnM value
-        member this.ReturnFrom value = returnFrom value
+        member this.Return r = returnM r
+        member this.ReturnFrom r = returnFrom r
 
     /// The either monad.
     let either = EitherBuilder ()
@@ -68,12 +73,12 @@ module Either =
     let getLeftValue either =
         match either with
         | Right _ -> failwith "Could not get Left value from a Right value."
-        | Left a -> a
+        | Left l -> l
 
     /// Get the Right value of an either, failing if not available.
     let getRightValue either =
         match either with
-        | Right b -> b
+        | Right r -> r
         | Left _ -> failwith "Could not get Left value from a Right value."
 
     /// Get only the Left values of a sequence of either.
