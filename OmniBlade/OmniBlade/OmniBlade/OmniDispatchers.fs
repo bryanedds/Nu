@@ -12,6 +12,8 @@ module FieldGroupDispatcherModule =
     type FieldGroupDispatcher () =
         inherit GroupDispatcher ()
 
+        static let fieldDefinitions = []
+
         let adjustFieldCamera groupAddress world =
             let avatarAddress = addrlist groupAddress [FieldAvatarName]
             let avatar = World.getEntity avatarAddress world
@@ -34,7 +36,9 @@ module FieldGroupDispatcherModule =
                 let world = World.applyLinearImpulse impulseVector (Entity.getPhysicsId avatar) world 
                 (Unhandled, world)
             else (Unhandled, world)
-        
+
+        static member FieldDefinitions = fieldDefinitions
+
         override dispatcher.Register (avatar, address, world) =
             let (avatar, world) = base.Register (avatar, address, world)
             let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
@@ -49,6 +53,9 @@ module BattleGroupDispatcherModule =
     type BattleGroupDispatcher () =
         inherit GroupDispatcher ()
 
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
+
         override dispatcher.Register (group, address, world) =
             let (group, world) = base.Register (group, address, world)
             let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
@@ -59,7 +66,10 @@ module OmniBladeDispatcherModule =
 
     type OmniBladeDispatcher () =
         inherit GameDispatcher ()
-        
+
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
+
         override dispatcher.Register (game, world) =
             let (game, world) = base.Register (game, world)
             let dispatchers =

@@ -50,8 +50,7 @@ module BulletDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (entity, address, world) =
             let (entity, world) = base.Register (entity, address, world)
@@ -120,8 +119,7 @@ module EnemyDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (entity, address, world) =
             let (entity, world) = base.Register (entity, address, world)
@@ -226,8 +224,7 @@ module PlayerDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (entity, address, world) =
             let (entity, world) = base.Register (entity, address, world)
@@ -243,6 +240,8 @@ module StagePlayDispatcherModule =
 
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
+
+        static let fieldDefinitions = []
 
         let getPlayer groupAddress world =
             let playerAddress = addrlist groupAddress [StagePlayerName]
@@ -264,6 +263,8 @@ module StagePlayDispatcherModule =
                 (Unhandled, world)
             else (Unhandled, world)
 
+        static member FieldDefinitions = fieldDefinitions
+
         override dispatcher.Register (group, address, world) =
             let (group, world) = base.Register (group, address, world)
             let world =
@@ -278,6 +279,8 @@ module StageScreenModule =
 
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
+
+        static let fieldDefinitions = []
 
         let anonymizeEntities entities =
             Map.map
@@ -323,6 +326,8 @@ module StageScreenModule =
             let world = snd <| World.removeGroups event.Subscriber groups world
             (Unhandled, world)
 
+        static member FieldDefinitions = fieldDefinitions
+
         override dispatcher.Register (screen, address, world) =
             let (screen, world) = base.Register (screen, address, world)
             let world =
@@ -338,6 +343,9 @@ module BlazeVectorDispatcherModule =
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeVectorDispatcher () =
         inherit GameDispatcher ()
+
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (game, world) =
             let (game, world) = base.Register (game, world)

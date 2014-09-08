@@ -66,8 +66,7 @@ module RigidBodyFacetModule =
         static let getBodyShape (entity : Entity) =
             Physics.evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override facet.RegisterPhysics (entity, address, world) =
             let bodyProperties = 
@@ -125,8 +124,7 @@ module SpriteFacetModule =
             [define? ViewType Relative
              define? SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
@@ -185,8 +183,7 @@ module AnimatedSpriteFacetModule =
             let inset = Vector4 (tileX, tileY, tileX + entity.TileSize.X, tileY + entity.TileSize.Y)
             Some inset
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.Position entity.Size world.Camera then
@@ -267,11 +264,8 @@ module GuiDispatcherModule =
     type [<AbstractClass>] GuiDispatcher () =
         inherit EntityDispatcher ()
 
-        static let fieldDefinitions =
-            [define? Enabled true]
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = [define? Enabled true]
+        static member FieldDefinitions = fieldDefinitions
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -329,8 +323,7 @@ module ButtonDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (button, address, world) =
             let (button, world) = base.Register (button, address, world)
@@ -378,11 +371,8 @@ module LabelDispatcherModule =
     type LabelDispatcher () =
         inherit GuiDispatcher ()
 
-        static let fieldDefinitions =
-            [define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = [define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.GetRenderDescriptors (label, world) =
             let renderDescriptors = base.GetRenderDescriptors (label, world)
@@ -437,8 +427,7 @@ module TextDispatcherModule =
              define? TextColor Vector4.One
              define? BackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.GetRenderDescriptors (text, world) =
             let renderDescriptors = base.GetRenderDescriptors (text, world)
@@ -537,8 +526,7 @@ module ToggleDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (toggle, address, world) =
             let (toggle, world) = base.Register (toggle, address, world)
@@ -586,8 +574,7 @@ module FeelerDispatcherModule =
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
 
-        static let fieldDefinitions =
-            [define? IsTouched false]
+        static let fieldDefinitions = [define? IsTouched false]
 
         let handleFeelerEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -615,8 +602,7 @@ module FeelerDispatcherModule =
                 else (Unhandled, world)
             else (Unhandled, world)
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (feeler, address, world) =
             let (feeler, world) = base.Register (feeler, address, world)
@@ -662,8 +648,7 @@ module FillBarDispatcherModule =
             let spriteHeight = fillBar.Size.Y - spriteInset.Y * 2.0f
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.GetRenderDescriptors (fillBar, world) =
             let renderDescriptors = base.GetRenderDescriptors (fillBar, world)
@@ -710,11 +695,8 @@ module RigidBodyDispatcherModule =
     type [<AbstractClass>] RigidBodyDispatcher () =
         inherit EntityDispatcher ()
 
-        static let fieldDefinitions =
-            []
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
@@ -730,11 +712,8 @@ module RigidBodySpriteDispatcherModule =
     type [<AbstractClass>] RigidBodySpriteDispatcher () =
         inherit RigidBodyDispatcher ()
 
-        static let fieldDefinitions =
-            []
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
@@ -748,11 +727,8 @@ module RigidBodyAnimatedSpriteDispatcherModule =
     type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher () =
         inherit RigidBodyDispatcher ()
 
-        static let fieldDefinitions =
-            []
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = []
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
@@ -766,11 +742,8 @@ module BlockDispatcherModule =
     type BlockDispatcher () =
         inherit RigidBodySpriteDispatcher ()
 
-        static let fieldDefinitions =
-            [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
-
-        static member FieldDefinitions =
-            fieldDefinitions
+        static let fieldDefinitions = [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+        static member FieldDefinitions = fieldDefinitions
 
 [<AutoOpen>]
 module AvatarDispatcherModule =
@@ -785,8 +758,7 @@ module AvatarDispatcherModule =
              define? CollisionExpression "Circle"
              define? SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
@@ -800,8 +772,7 @@ module CharacterDispatcherModule =
              define? CollisionExpression "Capsule"
              define? SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
@@ -933,8 +904,7 @@ module TileMapDispatcherModule =
                 world
                 tileMapData.Map.Layers
 
-        static member FieldDefinitions =
-            fieldDefinitions
+        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (tileMap, address, world) =
             let (tileMap, world) = base.Register (tileMap, address, world)

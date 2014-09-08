@@ -62,12 +62,12 @@ module Reflection =
         targetType.Name
 
     /// Get the concrete base types of a type excepting the object type.
-    let rec private getConcreteBaseTypesExceptObject (aType : Type) =
+    let rec private getBaseTypesExceptObject (aType : Type) =
         match aType.BaseType with
         | null -> []
         | baseType ->
-            if not baseType.IsAbstract && baseType <> typeof<obj>
-            then baseType :: getConcreteBaseTypesExceptObject baseType
+            if baseType <> typeof<obj>
+            then baseType :: getBaseTypesExceptObject baseType
             else []
 
     /// Attach fields to a target.
@@ -115,15 +115,16 @@ module Reflection =
         | null -> failwith <| "Could not get static property FieldDefinitions from type '" + targetType.Name + "'."
         | fieldDefinitionsProperty ->
             let fieldDefinitions = fieldDefinitionsProperty.GetValue null
-            fieldDefinitions :?> FieldDefinition list
+            match fieldDefinitions with
+            | :? (obj list) as fieldDefinitions when List.isEmpty fieldDefinitions -> []
+            | :? (FieldDefinition list) as fieldDefinitions -> fieldDefinitions
+            | _ -> failwith <| "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
 
     /// Get the field definitions of a target type.
     let getFieldDefinitions (targetType : Type) =
-        if not targetType.IsAbstract then
-            let concreteTypes = targetType :: getConcreteBaseTypesExceptObject targetType
-            let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInheritance aType) concreteTypes
-            List.concat fieldDefinitionLists
-        else failwith <| "Cannot get field definitions from an abstract type '" + targetType.Name + "'."
+        let baseTypes = targetType :: getBaseTypesExceptObject targetType
+        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInheritance aType) baseTypes
+        List.concat fieldDefinitionLists
 
     /// Get the names of the field definition of a target type.
     let getFieldDefinitionNames targetType =
