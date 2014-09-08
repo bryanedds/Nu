@@ -84,6 +84,22 @@ module Program =
         let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName | EntityPropertyInfo p -> p.PropertyType
         let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
 
+        /// Synchonize an entity after an overlay change.
+        let synchronizeEntity oldOptOverlayName address (entity : Entity) world =
+            match entity.OptOverlayName with
+            | Some overlayName ->
+                let entity = { entity with Id = entity.Id } // hacky copy for in-place mutation
+                let (entity, world) =
+                    let oldFacetNames = entity.FacetNames
+                    Overlayer.applyOverlayToFacetNames oldOptOverlayName overlayName entity world.Overlayer world.Overlayer
+                    match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
+                    | Right (entity, world) -> (entity, world)
+                    | Left error -> debug error; (entity, world)
+                Overlayer.applyOverlay oldOptOverlayName overlayName entity world.Overlayer
+                let world = World.setEntity address entity world
+                (entity, world)
+            | None -> (entity, world)
+
         override this.ComponentType = propertyType.DeclaringType
         override this.PropertyType = propertyType
         override this.CanResetValue _ = false
@@ -132,33 +148,17 @@ module Program =
                     entityTds.Form.propertyGrid.Refresh ()
                     world
                 | _ ->
-                    // TODO: last I remembered there seemed to be some difficulty in understanding
-                    // this code due to its unintuitive ordering. See if that can be fixed.
                     let entity = World.getEntity entityTds.Address world
-                    let oldOptOverlayName = entity.OptOverlayName
-                    let entity = setEntityPropertyValue property value entity
-                    let entity =
+                    let (entity, world) =
                         match propertyName with
                         | "OptOverlayName" ->
-                            match entity.OptOverlayName with
-                            | Some overlayName ->
-                                let (entity, world) =
-                                    match entity.OptOverlayName with
-                                    | Some overlayName ->
-                                        let oldFacetNames = entity.FacetNames
-                                        let entity = { entity with Id = entity.Id } // hacky copy
-                                        Overlayer.applyOverlayToFacetNames oldOptOverlayName overlayName entity world.Overlayer world.Overlayer
-                                        match World.trySynchronizeFacets oldFacetNames (Some entityTds.Address) entity world with
-                                        | Right (entity, world) -> (entity, world)
-                                        | Left error -> debug error; (entity, world)
-                                    | None -> (entity, world)
-                                let entity = { entity with Id = entity.Id } // hacky copy
-                                Overlayer.applyOverlay oldOptOverlayName overlayName entity world.Overlayer
-                                entity
-
-                            | None -> entity
-                        | _ -> entity
-                    let world = World.setEntity entityTds.Address entity world
+                            let oldOptOverlayName = entity.OptOverlayName
+                            let entity = setEntityPropertyValue property value entity
+                            synchronizeEntity oldOptOverlayName entityTds.Address entity world
+                        | _ ->
+                            let entity = setEntityPropertyValue property value entity
+                            let world = World.setEntity entityTds.Address entity world
+                            (entity, world)
                     let world = Entity.propagatePhysics entityTds.Address entity world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
