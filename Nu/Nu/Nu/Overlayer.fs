@@ -159,6 +159,16 @@ module Overlayer =
     let applyOverlay optOldOverlayName newOverlayName target overlayer =
         applyOverlay5 optOldOverlayName newOverlayName target overlayer overlayer
 
+    /// Apply an overlay to the FacetName field of the given target.
+    let applyOverlayToFacetNames optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
+        let targetType = target.GetType ()
+        match targetType.GetProperty "FacetNames" with
+        | null -> ()
+        | facetNamesProperty ->
+            match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
+            | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode optOldOverlayName target oldOverlayer
+            | None -> ()
+
     /// Query that a property should be serialized.
     let shouldPropertySerialize overlayName propertyName entity overlayer =
         not <| isPropertyOverlaid overlayName propertyName entity overlayer

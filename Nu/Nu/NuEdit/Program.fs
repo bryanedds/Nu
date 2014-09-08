@@ -92,7 +92,7 @@ module Program =
 
         override this.IsReadOnly =
             not propertyCanWrite ||
-            not <| Xtension.isPropertyPersistentByName propertyName
+            not <| Serialization.isPropertyPersistentByName propertyName
 
         override this.GetValue optSource =
             match optSource with
@@ -123,9 +123,10 @@ module Program =
                         world
                 | "FacetNames" ->
                     let facetNames = value :?> string list
+                    let entity = World.getEntity entityTds.Address world
                     let world =
-                        match World.trySetFacetNames facetNames entityTds.Address world with
-                        | Right world -> world
+                        match World.trySetFacetNames entity.FacetNames facetNames (Some entityTds.Address) entity world with
+                        | Right (_, world) -> world
                         | Left error -> trace error; world
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
@@ -141,9 +142,22 @@ module Program =
                         | "OptOverlayName" ->
                             match entity.OptOverlayName with
                             | Some overlayName ->
+                            
+                                let (entity, world) =
+                                    match entity.OptOverlayName with
+                                    | Some overlayName ->
+                                        let entity = { entity with Id = entity.Id } // hacky copy
+                                        let oldFacetNames = entity.FacetNames
+                                        Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName "FacetNames" world.Overlayer world.Overlayer
+                                        match World.trySetFacetNames oldFacetNames entity.FacetNames (Some entityTds.Address) entity world with
+                                        | Right (entity, world) -> (entity, world)
+                                        | Left error -> debug error; (entity, world)
+                                    | None -> (entity, world)
+
                                 let entity = { entity with Id = entity.Id } // hacky copy
                                 Overlayer.applyOverlay optOldOverlayName overlayName entity world.Overlayer
                                 entity
+
                             | None -> entity
                         | _ -> entity
                     let world = World.setEntity entityTds.Address entity world
@@ -163,7 +177,7 @@ module Program =
             let optXtensionProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Xtension.isPropertyPersistentByName property.Name) properties
+            let properties = Seq.filter (fun (property : PropertyInfo) -> Serialization.isPropertyPersistentByName property.Name) properties
             let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor) properties
             let propertyDescriptors =
                 match (optXtensionProperty, optSource) with

@@ -4,11 +4,13 @@
 namespace Nu
 open System
 open OpenTK
-open Prime.PrimeConstants
 open Nu
 
 module NuConstants =
 
+    let [<Literal>] RootNodeName = "Root"
+    let [<Literal>] TypeAttributeName = "type"
+    let [<Literal>] OptXDispatcherNameAttributeName = "optXDispatcherName"
     let [<Literal>] AssetGraphFileName = "AssetGraph.xml"
     let [<Literal>] OverlayFileName = "Overlay.xml"
     let [<Literal>] DefaultPackageName = "Default"
@@ -18,7 +20,6 @@ module NuConstants =
     let [<Literal>] DefaultFontValue = "Font;Default;AssetGraph.xml"
     let [<Literal>] DefaultSoundValue = "Sound;Default;AssetGraph.xml"
     let [<Literal>] DefaultSongValue = "Song;Default;AssetGraph.xml"
-    let [<Literal>] RootNodeName = RootNodeName
     let [<Literal>] PackageNodeName = "Package"
     let [<Literal>] AssetNodeName = "Asset"
     let [<Literal>] GroupNodeName = "Group"
