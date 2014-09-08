@@ -88,8 +88,8 @@ module Serialization =
                 node.Name <> "FacetNames" then
                 readTargetProperty node target
 
-    /// Read just the target's XDispatcher from Xml.
-    let readTargetXDispatcher (targetNode : XmlNode) target =
+    /// Read just the target's OptXDispatcherName from Xml.
+    let readTargetOptXDispatcherName (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let xtensionProperty =

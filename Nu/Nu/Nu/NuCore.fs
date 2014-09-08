@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Configuration
-open System.Reflection
 open Prime
 
 [<AutoOpen>]
@@ -19,39 +18,6 @@ module NuCoreModule =
     type Liveness =
         | Running
         | Exiting
-
-    /// An evaluatable expression for defining an XField.
-    type [<NoEquality; NoComparison>] FieldExpression =
-        | Constant of obj
-        | Variable of (unit -> obj)
-        static member eval expr =
-            match expr with
-            | Constant value -> value
-            | Variable fn -> fn ()
-
-    /// The definition of a data-driven field.
-    type FieldDefinition =
-        string * Type * FieldExpression
-
-    /// In tandem with the define literal, grants a nice syntax to define constant XFields.
-    type DefineConstant =
-        { DefineConstant : unit }
-        static member (?) (_, name) =
-            fun constant ->
-                (name, constant.GetType (), Constant constant)
-
-    /// In tandem with the variable literal, grants a nice syntax to define variable XFields.
-    type DefineVariable =
-        { DefineVariable : unit }
-        static member (?) (_, name) =
-            fun (variable : unit -> 'v) ->
-                (name, variable.GetType (), Variable (fun () -> variable () :> obj))
-
-    /// In tandem with the DefineConstant type, grants a nice syntax to define constant XFields.
-    let define = { DefineConstant = () }
-
-    /// In tandem with the DefineLiteral type, grants a nice syntax to define variable XFields.
-    let variable = { DefineVariable = () }
 
 [<RequireQualifiedAccess>]
 module NuCore =

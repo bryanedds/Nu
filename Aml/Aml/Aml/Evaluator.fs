@@ -235,15 +235,30 @@ module Evaluator =
             match value with
             | Violation _ as v -> forwardEvalViolation v env
             | Keyword keyword ->
-                let entryName = if keyword.KRValue.StartsWith SimpleEntryPrefixStr then keyword.KRValue.Substring SimpleEntryPrefixStr.Length else keyword.KRValue
+                let entryName =
+                    if keyword.KRValue.StartsWith SimpleEntryPrefixStr
+                    then keyword.KRValue.Substring SimpleEntryPrefixStr.Length
+                    else keyword.KRValue
                 let optEntry = tryFindEntry entryName env
                 match optEntry with
                 | Some entry ->
                     match entry with
-                    | ValueEntry (_, doc) -> match doc with None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env | Some str -> makeEvalResult (String (makeStringRecord str None)) env
-                    | DynamicEntry (_, doc) -> match doc with None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env | Some str -> makeEvalResult (String (makeStringRecord str None)) env
-                    | TypeEntry (_, _, doc) -> match doc with None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env | Some str -> makeEvalResult (String (makeStringRecord str None)) env
-                    | ProtocolEntry (_, _, doc, _) -> match doc with None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env | Some str -> makeEvalResult (String (makeStringRecord str None)) env
+                    | ValueEntry (_, doc) ->
+                        match doc with
+                        | Some str -> makeEvalResult (String (makeStringRecord str None)) env
+                        | None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env
+                    | DynamicEntry (_, doc) ->
+                        match doc with
+                        | Some str -> makeEvalResult (String (makeStringRecord str None)) env
+                        | None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env
+                    | TypeEntry (_, _, doc) ->
+                        match doc with
+                        | Some str -> makeEvalResult (String (makeStringRecord str None)) env
+                        | None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env
+                    | ProtocolEntry (_, _, doc, _) ->
+                        match doc with
+                        | Some str -> makeEvalResult (String (makeStringRecord str None)) env
+                        | None -> makeEvalViolation ":v/eval/invalidDocOperation" "Documentation missing for entry." env
                 | None -> makeEvalViolation ":v/eval/invalidDocOperation" "Entry not found for doc operation." env
             | _ -> makeEvalViolation ":v/eval/invalidDocParameter" "Doc operation requires a keyword argument." env
 

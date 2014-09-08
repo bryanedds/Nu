@@ -16,11 +16,19 @@ module EntityModule =
 
     type EntityDispatcher () =
 
+        static let fieldDefinitions =
+            [define? Position Vector2.Zero
+             define? Depth 0.0f
+             define? Size DefaultEntitySize
+             define? Rotation 0.0f
+             define? Visible true]
+
+        static member FieldDefinitions =
+            fieldDefinitions
+
+        // TODO: displace this
         abstract member AttachIntrinsicFacets : Entity * World -> Entity
         default dispatcher.AttachIntrinsicFacets (entity, _) = entity
-
-        abstract member AttachIntrinsicFields : Entity * World -> Entity
-        default dispatcher.AttachIntrinsicFields (entity, _) = entity
 
         abstract member Register : Entity * Address * World -> World
         default dispatcher.Register (entity, address, world) =
@@ -63,11 +71,6 @@ module EntityModule =
         static member attachIntrinsicFacets (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.AttachIntrinsicFacets (entity, world)
-            | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
-
-        static member attachIntrinsicFields (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.AttachIntrinsicFields (entity, world)
             | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
         
         static member register address (entity : Entity) world =
@@ -309,16 +312,17 @@ module WorldEntityModule =
             List.ofSeq facetNamesToRemove
 
         static member tryRemoveFacet syncing facetName optAddress entity world =
-            match List.tryFind (fun facet -> Facet.getName facet = facetName) entity.FacetsNp with
+            match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
             | Some facet ->
                 let world =
                     match optAddress with
                     | Some address -> facet.UnregisterPhysics (entity, address, world)
                     | None -> world
-                let entity = facet.DetachFields entity
+                let entity = { entity with Id = entity.Id } // hacky copy
+                Reflection.detachFieldsFromSource facet entity
                 let entity =
                     if syncing then entity
-                    else Entity.setFacetNames (List.remove ((=) (Facet.getName facet)) entity.FacetNames) entity
+                    else Entity.setFacetNames (List.remove ((=) (Reflection.getTypeName facet)) entity.FacetNames) entity
                 let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
                 let world =
                     match optAddress with
@@ -332,10 +336,10 @@ module WorldEntityModule =
             | Right facet ->
                 if Entity.isFacetCompatible facet entity then
                     let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
-                    let entity = facet.AttachFields entity
+                    Reflection.attachFieldsFromSource facet entity
                     let entity =
                         if syncing then entity
-                        else Entity.setFacetNames (Facet.getName facet :: entity.FacetNames) entity
+                        else Entity.setFacetNames (Reflection.getTypeName facet :: entity.FacetNames) entity
                     match optAddress with
                     | Some address ->
                         let world = facet.RegisterPhysics (entity, address, world)
@@ -390,24 +394,51 @@ module WorldEntityModule =
                 World.writeEntityToXml overlayer writer entityKvp.Value
 
         static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
+
+            // make the bare entity with name as id
             let entity = Entity.make defaultDispatcherName None
-            Serialization.readTargetXDispatcher entityNode entity
+
+            // read in the Xtension.OptXDispatcher name
+            Serialization.readTargetOptXDispatcherName entityNode entity
+
+            // attach the entity's intrinsic facets
             let entity = Entity.attachIntrinsicFacets entity world
+
+            // read the entity's overlay and apply it to its facet names
+            Serialization.readTargetOptOverlayName entityNode entity
+            match entity.OptOverlayName with
+            | Some overlayName ->
+                let defaultOptDispatcherName = Some typeof<EntityDispatcher>.Name
+                Overlayer.applyOverlayToFacetNames defaultOptDispatcherName overlayName entity world.Overlayer world.Overlayer
+            | None -> ()
+
+            // read the entity's facet names, and synchronize its facets 
+            Serialization.readTargetFacetNames entityNode entity
             let entity =
-                match entity.OptOverlayName with
-                | Some overlayName ->
-                    Serialization.readTargetOptOverlayName entityNode entity
-                    Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName "FacetNames" world.Overlayer world.Overlayer
-                    Serialization.readTargetFacetNames entityNode entity
-                    match World.trySynchronizeFacets [] None entity world with
-                    | Right (entity, _) -> entity
-                    | Left error -> debug error; entity
-                | None -> entity
-            let entity = Entity.attachIntrinsicFields entity world
+                match World.trySynchronizeFacets [] None entity world with
+                | Right (entity, _) -> entity
+                | Left error -> debug error; entity
+
+            // attach the entity's instrinsic fields from its dispatcher if any
+            match entity.Xtension.OptXDispatcherName with
+            | Some dispatcherName ->
+                match Map.tryFind dispatcherName world.Dispatchers with
+                | Some dispatcher ->
+                    match dispatcher with
+                    | :? EntityDispatcher -> Reflection.attachFieldsFromSource dispatcher entity
+                    | _ -> note <| "Dispatcher '" + dispatcherName + "' is not an entity dispatcher."
+                | None -> note <| "Could not locate dispatcher '" + dispatcherName + "'."
+            | None -> ()
+
+            // apply the entity's overlay
             match entity.OptOverlayName with
             | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
             | None -> ()
+
+            // read the entity's properties
             Serialization.readTargetProperties entityNode entity
+
+            // return the initialized entity
             entity
 
         static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
@@ -421,7 +452,8 @@ module WorldEntityModule =
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName
             let entity = Entity.attachIntrinsicFacets entity world
-            let entity = Entity.attachIntrinsicFields entity world
+            let entityDispatcher = Map.find dispatcherName world.Dispatchers
+            Reflection.attachFieldsFromSource entityDispatcher entity
             match World.trySynchronizeFacets [] None entity world with
             | Right (entity, _) -> entity
             | Left error -> debug error; entity

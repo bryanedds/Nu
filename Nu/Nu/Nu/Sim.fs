@@ -146,10 +146,6 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and [<AbstractClass>] Facet () =
 
-        abstract FieldDefinitions : FieldDefinition list
-        abstract member AttachFields : Entity -> Entity
-        abstract member DetachFields : Entity -> Entity
-
         abstract member RegisterPhysics : Entity * Address * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
@@ -167,16 +163,6 @@ module SimModule =
         
         abstract member GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
-
-        /// Get the global name of a facet (it's type name).
-        static member getName facet =
-            let facetType = facet.GetType ()
-            facetType.Name
-
-        /// Get the names of the field definition of a target.
-        static member getFieldDefinitionNames (facet : Facet) =
-            let fieldDefinitions = facet.FieldDefinitions
-            List.map a__ fieldDefinitions
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, avatars, blocks, and things of that sort.
@@ -225,34 +211,9 @@ module SimModule =
         static member setFacetsNp facets (entity : Entity) =
              { entity with FacetsNp = facets }
 
-        static member attachFields fieldDefinitions (entity : Entity) =
-            let entity = { entity with Id = entity.Id } // hacky copy. Copied in case property is set in-place.
-            List.fold
-                (fun entity (fieldName, _ : Type, fieldExpr) ->
-                    let fieldValue = FieldExpression.eval fieldExpr
-                    match typeof<Entity>.GetPropertyWritable fieldName with
-                    | null ->
-                        let xtension = { entity.Xtension with XFields = Map.add fieldName fieldValue entity.Xtension.XFields }
-                        { entity with Xtension = xtension }
-                    | property ->
-                        property.SetValue (entity, fieldValue)
-                        entity)
-                entity
-                fieldDefinitions
-
-        static member detachFields fieldDefinitions entity =
-            List.fold
-                (fun entity (fieldName, _ : Type, _ : FieldExpression) ->
-                    match typeof<Entity>.GetPropertyWritable fieldName with
-                    | null ->
-                        let xtension = { entity.Xtension with XFields = Map.remove fieldName entity.Xtension.XFields }
-                        { entity with Xtension = xtension }
-                    | _ -> entity)
-                entity
-                fieldDefinitions
-
         static member isFacetCompatible facet entity =
-            let facetFieldNames = Facet.getFieldDefinitionNames facet
+            let facetType = facet.GetType ()
+            let facetFieldNames = Reflection.getFieldDefinitionNames facetType
             let entityFieldNames = Map.toKeyList entity.Xtension.XFields
             let intersection = List.intersect facetFieldNames entityFieldNames
             Set.isEmpty intersection

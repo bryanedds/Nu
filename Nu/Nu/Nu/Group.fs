@@ -159,7 +159,7 @@ module WorldGroupModule =
     
         static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
             let group = Group.make defaultDispatcherName
-            Serialization.readTargetXDispatcher groupNode group
+            Serialization.readTargetOptXDispatcherName groupNode group
             let group = Group.init group world
             Serialization.readTargetProperties groupNode group
             let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName world

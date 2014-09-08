@@ -538,7 +538,7 @@
             this.createEntityComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
             this.createEntityComboBox.Name = "createEntityComboBox";
             this.createEntityComboBox.Size = new System.Drawing.Size(130, 25);
-            this.createEntityComboBox.Text = "ButtonDispatcher";
+            this.createEntityComboBox.Text = "EntityDispatcher";
             // 
             // creationDepthLabel
             // 
