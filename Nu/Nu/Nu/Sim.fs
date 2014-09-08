@@ -60,6 +60,10 @@ module ScreenStateModule =
 [<AutoOpen>]
 module SimModule =
 
+    /// The definition of a field in terms of an entity.
+    type FieldDefinition =
+        string * Type * FieldExpression
+
     /// The state of one of a screen's transitions.
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { TransitionLifetime : int64
@@ -146,7 +150,7 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and [<AbstractClass>] Facet () =
 
-        abstract FieldDefinitions : (string * Type * FieldExpression) list
+        abstract FieldDefinitions : FieldDefinition list
         abstract member AttachFields : Entity -> Entity
         abstract member DetachFields : Entity -> Entity
 
