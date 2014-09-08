@@ -308,17 +308,22 @@ module WorldEntityModule =
             let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
             List.ofSeq facetNamesToRemove
 
-        static member tryRemoveFacet facetName address world =
-            let entity = World.getEntity address world
+        static member tryRemoveFacet facetName optAddress entity world =
             match List.tryFind (fun facet -> Facet.getName facet = facetName) entity.FacetsNp with
             | Some facet ->
-                let world = facet.UnregisterPhysics (entity, address, world)
+                let world =
+                    match optAddress with
+                    | Some address -> facet.UnregisterPhysics (entity, address, world)
+                    | None -> world
                 let entity = facet.DetachFields entity
                 let entity = Entity.setFacetNames (List.remove ((=) (Facet.getName facet)) entity.FacetNames) entity
                 let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
-                let world = World.setEntity address entity world
-                Right world
-            | None -> Left <| "Failure to remove facet '" + facetName + "' from entity at address '" + string address + "'."
+                let world =
+                    match optAddress with
+                    | Some address -> World.setEntity address entity world
+                    | None -> world
+                Right (entity, world)
+            | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
         static member tryPopulateFacet compatibilityCheck facetName entity world =
             match World.tryGetFacet facetName world with
@@ -331,23 +336,25 @@ module WorldEntityModule =
                 else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
             | Left error -> Left error
 
-        static member tryAddFacet facetName address world =
-            let entity = World.getEntity address world
+        static member tryAddFacet facetName optAddress entity world =
             match World.tryPopulateFacet true facetName entity world with
             | Right (facet, entity) ->
                 let entity = Entity.setFacetNames (Facet.getName facet :: entity.FacetNames) entity
-                let world = facet.RegisterPhysics (entity, address, world)
-                let world = World.setEntity address entity world
-                Right world
+                match optAddress with
+                | Some address ->
+                    let world = facet.RegisterPhysics (entity, address, world)
+                    let world = World.setEntity address entity world
+                    Right (entity, world)
+                | None -> Right (entity, world)
             | Left error -> Left error
 
-        static member tryRemoveFacets facetNamesToRemove address world =
+        static member tryRemoveFacets facetNamesToRemove optAddress entity world =
             List.fold
-                (fun eitherWorld facetName ->
-                    match eitherWorld with
-                    | Right world -> World.tryRemoveFacet facetName address world
+                (fun eitherEntityWorld facetName ->
+                    match eitherEntityWorld with
+                    | Right (entity, world) -> World.tryRemoveFacet facetName optAddress entity world
                     | Left _ as left -> left)
-                (Right world)
+                (Right (entity, world))
                 facetNamesToRemove
 
         static member tryPopulateFacets3 facetNamesToAdd entity world =
@@ -362,21 +369,20 @@ module WorldEntityModule =
                 (Right entity)
                 facetNamesToAdd
 
-        static member tryAddFacets facetNamesToAdd address world =
+        static member tryAddFacets facetNamesToAdd optAddress entity world =
             List.fold
                 (fun eitherEntityWorld facetName ->
                     match eitherEntityWorld with
-                    | Right world -> World.tryAddFacet facetName address world
+                    | Right (entity, world) -> World.tryAddFacet facetName optAddress entity world
                     | Left _ as left -> left)
-                (Right world)
+                (Right (entity, world))
                 facetNamesToAdd
 
-        static member trySetFacetNames facetNames address world =
-            let entity = World.getEntity address world
-            let facetNamesToAdd = World.getFacetNamesToAdd entity.FacetNames facetNames
-            let facetNamesToRemove = World.getFacetNamesToRemove entity.FacetNames facetNames
-            match World.tryRemoveFacets facetNamesToRemove address world with
-            | Right world -> World.tryAddFacets facetNamesToAdd address world
+        static member trySetFacetNames oldFacetNames newFacetNames optAddress entity world =
+            let facetNamesToRemove = World.getFacetNamesToRemove oldFacetNames newFacetNames
+            let facetNamesToAdd = World.getFacetNamesToAdd oldFacetNames newFacetNames
+            match World.tryRemoveFacets facetNamesToRemove optAddress entity world with
+            | Right (entity, world) -> World.tryAddFacets facetNamesToAdd optAddress entity world
             | Left _ as left -> left
 
         static member tryPopulateFacets entity world =
@@ -385,7 +391,7 @@ module WorldEntityModule =
 
         static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
-            Xtension.writeTargetProperties 
+            Serialization.writeTargetProperties 
                 (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
                 writer
                 entity
@@ -397,16 +403,24 @@ module WorldEntityModule =
 
         static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
             let entity = Entity.make defaultDispatcherName None
-            Xtension.readTargetXDispatcher entityNode entity
+            Serialization.readTargetXDispatcher entityNode entity
             let entity = Entity.attachIntrinsicFacets entity world
+            let entity =
+                match entity.OptOverlayName with
+                | Some overlayName ->
+                    Serialization.readTargetOptOverlayName entityNode entity
+                    Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName "FacetNames" world.Overlayer world.Overlayer
+                    Serialization.readTargetFacetNames entityNode entity
+                    match World.tryPopulateFacets entity world with
+                    | Right entity -> entity
+                    | Left error -> debug error; entity
+                | None -> entity
             let entity = Entity.attachIntrinsicFields entity world
             match entity.OptOverlayName with
             | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
             | None -> ()
-            Xtension.readTargetProperties entityNode entity // TODO: see if it's ok to read target properties before applying overlay
-            match World.tryPopulateFacets entity world with
-            | Right entity -> entity
-            | Left error -> debug error; entity
+            Serialization.readTargetProperties entityNode entity
+            entity
 
         static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
             let entityNodes = parentNode.SelectNodes EntityNodeName

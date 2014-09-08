@@ -154,14 +154,14 @@ module WorldGroupModule =
     
         static member writeGroupToXml overlayer (writer : XmlWriter) group entities =
             writer.WriteStartElement typeof<Group>.Name
-            Xtension.writeTargetProperties tautology writer group
+            Serialization.writeTargetProperties tautology writer group
             World.writeEntitiesToXml overlayer writer entities
     
         static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
             let group = Group.make defaultDispatcherName
-            Xtension.readTargetXDispatcher groupNode group
+            Serialization.readTargetXDispatcher groupNode group
             let group = Group.init group world
-            Xtension.readTargetProperties groupNode group
+            Serialization.readTargetProperties groupNode group
             let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName world
             (group, entities)
 

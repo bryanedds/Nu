@@ -59,7 +59,6 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="PrimeConstants.fs" />
     <Compile Include="ReferenceEquality.fs" />
     <Compile Include="Miscellanea.fs" />
     <Compile Include="Sectioning.fs" />
@@ -80,7 +79,6 @@
     <Compile Include="RduTree.fs" />
     <Compile Include="TypeExtension.fs" />
     <Compile Include="Log.fs" />
-    <Compile Include="Xtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
     <Compile Include="ImmutableSubclass.fs" />

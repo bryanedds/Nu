@@ -1,15 +1,13 @@
 ﻿// Prime - A PRIMitivEs code library.
 // Copyright (C) Bryan Edds, 2012-2014.
 
-namespace Prime
+namespace Nu
 open System
 open System.Reflection
-open System.Collections.Generic
 open System.ComponentModel
-open System.Xml
 open Microsoft.FSharp.Reflection
 open Prime
-open Prime.PrimeConstants
+open Nu.NuConstants
 
 [<AutoOpen>]
 module XtensionModule =
@@ -177,117 +175,3 @@ module Xtension =
 
     /// The empty Xtension.
     let empty = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
-
-    /// Is a property with the give name persistent?
-    let isPropertyPersistentByName (propertyName : string) =
-        not <| propertyName.EndsWith "Id" && // don't write an Id
-        not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
-        not <| propertyName.EndsWith "Np" // don't write non-persistent properties
-
-    /// Is the given property writable?
-    let isPropertyPersistent (property : PropertyInfo) =
-        property.CanWrite &&
-        isPropertyPersistentByName property.Name
-
-    /// Read an Xtension's fields from Xml.
-    let readXFields (valueNode : XmlNode) =
-        let childNodes = enumerable valueNode.ChildNodes
-        Seq.map
-            (fun (xNode : XmlNode) ->
-                let typeName = xNode.Attributes.[TypeAttributeName].InnerText
-                let aType = findType typeName
-                let xValueStr = xNode.InnerText
-                let converter = TypeDescriptor.GetConverter aType
-                if converter.CanConvertFrom typeof<string> then (xNode.Name, converter.ConvertFrom xValueStr)
-                else failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'.")
-            childNodes
-
-    /// Read an optXDispatcherName from an xml node.
-    let readOptXDispatcherName (node : XmlNode) =
-        match node.Attributes.[OptXDispatcherNameAttributeName] with
-        | null -> None
-        | optXDispatcherNameAttribute ->
-            let optXDispatcherNameStr = optXDispatcherNameAttribute.InnerText
-            let optStrConverter = TypeDescriptor.GetConverter typeof<string option>
-            optStrConverter.ConvertFrom optXDispatcherNameStr :?> string option
-
-    /// Read an Xtension from Xml.
-    let read valueNode =
-        let xFields = Map.ofSeq <| readXFields valueNode
-        let optXDispatcherName = readOptXDispatcherName valueNode
-        { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
-
-    /// Attempt to read a target's property from Xml.
-    let tryReadTargetProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
-        if property.PropertyType = typeof<Xtension> then
-            let xtension = property.GetValue target :?> Xtension
-            let xFields = readXFields valueNode
-            let optXDispatcherName = readOptXDispatcherName valueNode
-            let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields; OptXDispatcherName = optXDispatcherName }
-            property.SetValue (target, xtension)
-        else
-            let valueStr = valueNode.InnerText
-            let converter = TypeDescriptor.GetConverter property.PropertyType
-            if converter.CanConvertFrom typeof<string> then
-                let value = converter.ConvertFrom valueStr
-                property.SetValue (target, value)
-
-    /// Read a target's property from Xml if possible.
-    let readTargetProperty (fieldNode : XmlNode) (target : 'a) =
-        match typeof<'a>.GetPropertyWritable fieldNode.Name with
-        | null -> ()
-        | property -> tryReadTargetProperty property fieldNode target
-
-    /// Read all of a target's properties from Xml.
-    let readTargetProperties (targetNode : XmlNode) target =
-        for node in targetNode.ChildNodes do
-            readTargetProperty node target
-
-    /// Read just the target's XDispatcher from Xml.
-    let readTargetXDispatcher (targetNode : XmlNode) target =
-        let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties ()
-        let xtensionProperty = Array.find (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension> && isPropertyPersistent property) targetProperties
-        let xtensionNode = targetNode.[xtensionProperty.Name]
-        let optXDispatcherName = readOptXDispatcherName xtensionNode
-        let xtension = xtensionProperty.GetValue target :?> Xtension
-        let xtension = { xtension with OptXDispatcherName = optXDispatcherName }
-        xtensionProperty.SetValue (target, xtension)
-
-    /// Write an Xtension to Xml.
-    // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-    let write shouldWriteProperty (writer : XmlWriter) xtension =
-        writer.WriteAttributeString (OptXDispatcherNameAttributeName, string xtension.OptXDispatcherName)
-        for xField in xtension.XFields do
-            let xFieldName = xField.Key
-            if  isPropertyPersistentByName xFieldName &&
-                shouldWriteProperty xFieldName then
-                let xValue = xField.Value
-                let xDispatcher = xValue.GetType ()
-                let xConverter = TypeDescriptor.GetConverter xDispatcher
-                let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
-                writer.WriteStartElement xFieldName
-                writer.WriteAttributeString (TypeAttributeName, xDispatcher.FullName)
-                writer.WriteString xValueStr
-                writer.WriteEndElement ()
-
-    /// Write all of a target's properties to Xml.
-    // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-    /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-    let writeTargetProperties shouldWriteProperty (writer : XmlWriter) (source : 'a) =
-        let aType = source.GetType ()
-        let properties = aType.GetProperties ()
-        for property in properties do
-            let propertyValue = property.GetValue source
-            match propertyValue with
-            | :? Xtension as xtension ->
-                writer.WriteStartElement property.Name
-                write shouldWriteProperty writer xtension
-                writer.WriteEndElement ()
-            | _ ->
-                if  isPropertyPersistent property &&
-                    shouldWriteProperty property.Name then
-                    let converter = TypeDescriptor.GetConverter property.PropertyType
-                    let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
-                    writer.WriteElementString (property.Name, valueStr)
