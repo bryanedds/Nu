@@ -17,11 +17,6 @@ module EntityModule =
     type Entity with
 
         (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
-
-        static member attachIntrinsicFacets (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.AttachIntrinsicFacets (entity, world)
-            | _ -> failwith "Due to optimization in Entity.init, an entity's base dispatcher must be an EntityDispatcher."
         
         static member register address (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
@@ -36,32 +31,32 @@ module EntityModule =
         static member propagatePhysics address (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.PropagatePhysics (entity, address, world)
-            | _ -> failwith "Due to optimization in Entity.propagatePhysics, an entity's 2d dispatcher must be an EntityDispatcher."
+            | _ -> failwith "Due to optimization in Entity.propagatePhysics, an entity's base dispatcher must be an EntityDispatcher."
         
         static member handleBodyTransformMessage address message (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.HandleBodyTransformMessage (entity, address, message, world)
-            | _ -> failwith "Due to optimization in Entity.handleBodyTransformMessage, an entity's 2d dispatcher must be an EntityDispatcher."
+            | _ -> failwith "Due to optimization in Entity.handleBodyTransformMessage, an entity's base dispatcher must be an EntityDispatcher."
         
         static member getRenderDescriptors (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.GetRenderDescriptors (entity, world)
-            | _ -> failwith "Due to optimization in Entity.getRenderDescriptors, an entity's 2d dispatcher must be an EntityDispatcher."
+            | _ -> failwith "Due to optimization in Entity.getRenderDescriptors, an entity's base dispatcher must be an EntityDispatcher."
         
         static member getQuickSize  (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.GetQuickSize (entity, world)
-            | _ -> failwith "Due to optimization in Entity.getQuickSize, an entity's 2d dispatcher must be an EntityDispatcher."
+            | _ -> failwith "Due to optimization in Entity.getQuickSize, an entity's base dispatcher must be an EntityDispatcher."
         
         static member getPickingPriority (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.GetPickingPriority (entity, world)
-            | _ -> failwith "Due to optimization in Entity.getPickingPriority, an entity's 2d dispatcher must be an EntityDispatcher."
+            | _ -> failwith "Due to optimization in Entity.getPickingPriority, an entity's base dispatcher must be an EntityDispatcher."
         
         static member isTransformRelative (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
-            | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's 2d dispatcher must be an EntityDispatcher."
+            | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's base dispatcher must be an EntityDispatcher."
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
@@ -270,7 +265,7 @@ module WorldEntityModule =
                         let world = World.setEntity address entity world
                         Right (entity, world)
                     | None -> Right (entity, world)
-                else Left <| "Cannot add incompatible facet '" + (facet.GetType ()).Name + "'."
+                else Left <| "Cannot add incompatible facet '" + Reflection.getTypeName facet + "'."
             | Left error -> Left error
 
         static member tryRemoveFacets syncing facetNamesToRemove optAddress entity world =
@@ -305,6 +300,14 @@ module WorldEntityModule =
             | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd optAddress entity world
             | Left _ as left -> left
 
+        static member attachIntrinsicFacets (entity : Entity) world =
+            match Xtension.getDispatcher entity.Xtension world with
+            | :? EntityDispatcher as entityDispatcher ->
+                let entity = { entity with Id = entity.Id } // hacky copy
+                Reflection.attachIntrinsicFacetsFromSource entityDispatcher entity world.Facets
+                entity
+            | _ -> failwith <| "No valid entity dispatcher for entity '" + entity.Name + "'."
+
         static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
             Serialization.writeTargetProperties 
@@ -326,7 +329,7 @@ module WorldEntityModule =
             Serialization.readTargetOptXDispatcherName entityNode entity
 
             // attach the entity's intrinsic facets
-            let entity = Entity.attachIntrinsicFacets entity world
+            let entity = World.attachIntrinsicFacets entity world
 
             // read the entity's overlay and apply it to its facet names
             Serialization.readTargetOptOverlayName entityNode entity
@@ -376,7 +379,7 @@ module WorldEntityModule =
 
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName
-            let entity = Entity.attachIntrinsicFacets entity world
+            let entity = World.attachIntrinsicFacets entity world
             let entityDispatcher = Map.find dispatcherName world.Dispatchers
             Reflection.attachFieldsFromSource entityDispatcher entity
             match World.trySynchronizeFacets [] None entity world with

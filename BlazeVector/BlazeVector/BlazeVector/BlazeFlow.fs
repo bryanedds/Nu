@@ -6,6 +6,25 @@ open Nu.NuConstants
 open BlazeVector
 open BlazeVector.BlazeConstants
 module BlazeFlow =
+    
+    /// Creates BlazeVector-specific components (dispatchers and facets).
+    /// Allows BlazeVector simulation types to be created in the editor.
+    type BlazeComponentFactory () =
+        interface IComponentFactory with
+
+            member dispatcher.MakeDispatchers () =
+                // make our game's specific dispatchers
+                Map.ofList
+                    [typeof<BulletDispatcher>.Name, BulletDispatcher () :> obj
+                     typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> obj
+                     typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> obj
+                     typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> obj
+                     typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> obj
+                     typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> obj]
+
+            member dispatcher.MakeFacets () =
+                // currently we have no game-specific facets to create...
+                Map.empty
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
@@ -53,12 +72,12 @@ module BlazeFlow =
     // here we make the BlazeVector world in a callback from the World.run function.
     let tryMakeBlazeVectorWorld sdlDeps extData =
 
-        // our custom game dispatcher here is OmniGameDispatcher
-        let gameDispatcher = BlazeVectorDispatcher () :> obj
+        // create our game's component factory
+        let blazeComponentFactory = BlazeComponentFactory ()
 
         // we use World.tryMakeEmpty to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay false extData
+        let optWorld = World.tryMakeEmpty sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false extData
         match optWorld with
         | Right world ->
 

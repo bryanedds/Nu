@@ -20,7 +20,7 @@ module BulletDispatcherModule =
         static member setAge (value : int64) (bullet : Entity) : Entity = bullet?Age <- value
 
     type BulletDispatcher () =
-        inherit RigidBodySpriteDispatcher ()
+        inherit EntityDispatcher ()
 
         static let fieldDefinitions =
             [define? Size <| Vector2 (24.0f, 24.0f)
@@ -32,6 +32,10 @@ module BulletDispatcherModule =
              define? CollisionExpression "Circle"
              define? SpriteImage PlayerBulletImage
              define? Age 0L]
+
+        static let intrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<SpriteFacet>.Name]
 
         let tickHandler event world =
             if World.isGamePlaying world then
@@ -51,6 +55,7 @@ module BulletDispatcherModule =
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (entity, address, world) =
             let (entity, world) = base.Register (entity, address, world)
@@ -70,7 +75,7 @@ module EnemyDispatcherModule =
             enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
     type EnemyDispatcher () =
-        inherit RigidBodyAnimatedSpriteDispatcher ()
+        inherit EntityDispatcher ()
 
         static let fieldDefinitions =
             [define? Size <| Vector2 (48.0f, 96.0f)
@@ -84,6 +89,10 @@ module EnemyDispatcherModule =
              define? TileSize <| Vector2 (48.0f, 96.0f)
              define? AnimatedSpriteImage EnemyImage
              define? Health 6]
+
+        static let intrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<AnimatedSpriteFacet>.Name]
 
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
@@ -120,6 +129,7 @@ module EnemyDispatcherModule =
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (entity, address, world) =
             let (entity, world) = base.Register (entity, address, world)
@@ -143,7 +153,7 @@ module PlayerDispatcherModule =
             player.Position.Y < -600.0f
 
     type PlayerDispatcher () =
-        inherit RigidBodyAnimatedSpriteDispatcher ()
+        inherit EntityDispatcher ()
 
         static let fieldDefinitions =
             [define? Size <| Vector2 (48.0f, 96.0f)
@@ -158,6 +168,10 @@ module PlayerDispatcherModule =
              define? AnimatedSpriteImage PlayerImage
              define? LastTimeOnGroundNp Int64.MinValue
              define? LastTimeJumpNp Int64.MinValue]
+
+        static let intrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<AnimatedSpriteFacet>.Name]
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
@@ -225,6 +239,7 @@ module PlayerDispatcherModule =
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (entity, address, world) =
             let (entity, world) = base.Register (entity, address, world)
@@ -346,17 +361,3 @@ module BlazeVectorDispatcherModule =
 
         static let fieldDefinitions = []
         static member FieldDefinitions = fieldDefinitions
-
-        override dispatcher.Register (game, world) =
-            let (game, world) = base.Register (game, world)
-            // add the BlazeVector-specific dispatchers to the world
-            let dispatchers =
-                Map.addMany
-                    [typeof<BulletDispatcher>.Name, BulletDispatcher () :> obj
-                     typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> obj
-                     typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> obj
-                     typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> obj
-                     typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> obj]
-                    world.Dispatchers
-            let world = { world with Dispatchers = dispatchers }
-            (game, world)

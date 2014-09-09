@@ -410,7 +410,9 @@ module SimModule =
              define? Rotation 0.0f
              define? Visible true]
 
+        static let intrinsicFacetNames = []
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         // TODO: displace this
         abstract member AttachIntrinsicFacets : Entity * World -> Entity
@@ -491,6 +493,19 @@ module SimModule =
         
         abstract member Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
+
+    /// Provides a way to make XDispatchers.
+    type IComponentFactory =
+        interface
+            abstract MakeDispatchers : unit -> XDispatchers
+            abstract MakeFacets : unit -> Map<string, Facet>
+            end
+
+    /// A factory that makes nothing.
+    type EmptyComponentFactory () =
+        interface IComponentFactory with
+            member dispatcher.MakeDispatchers () = Map.empty
+            member dispatcher.MakeFacets () = Map.empty
 
 [<RequireQualifiedAccess>]
 module EventData =
