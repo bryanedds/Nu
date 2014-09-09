@@ -81,13 +81,6 @@ module Serialization =
         | null -> ()
         | property -> tryReadTargetProperty property fieldNode target
 
-    /// Read all of a target's properties from Xml.
-    let readTargetProperties (targetNode : XmlNode) target =
-        for node in targetNode.ChildNodes do
-            if  node.Name <> "OptOverlayName" &&
-                node.Name <> "FacetNames" then
-                readTargetProperty node target
-
     /// Read just the target's OptXDispatcherName from Xml.
     let readTargetOptXDispatcherName (targetNode : XmlNode) target =
         let targetType = target.GetType ()
@@ -138,6 +131,13 @@ module Serialization =
         | facetNamesNode ->
             let facetNames = readFacetNames facetNamesNode
             facetNamesProperty.SetValue (target, facetNames)
+
+    /// Read all of a target's properties from Xml.
+    let readTargetProperties (targetNode : XmlNode) target =
+        for node in targetNode.ChildNodes do
+            if  node.Name <> "OptOverlayName" &&
+                node.Name <> "FacetNames" then
+                readTargetProperty node target
 
     /// Write an Xtension to Xml.
     // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using

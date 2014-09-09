@@ -147,6 +147,16 @@ module Overlayer =
                 xtensionProperty.SetValue (target, xtension)
             | _ -> ()
 
+    /// Apply an overlay to the FacetName field of the given target.
+    let applyOverlayToFacetNames optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
+        let targetType = target.GetType ()
+        match targetType.GetProperty "FacetNames" with
+        | null -> ()
+        | facetNamesProperty ->
+            match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
+            | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode optOldOverlayName target oldOverlayer
+            | None -> ()
+
     /// Apply an overlay to the given target.
     /// Only the properties / fields that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
@@ -158,16 +168,6 @@ module Overlayer =
     /// Only the properties / fields that are overlaid by the old overlay will be changed.
     let applyOverlay optOldOverlayName newOverlayName target overlayer =
         applyOverlay5 optOldOverlayName newOverlayName target overlayer overlayer
-
-    /// Apply an overlay to the FacetName field of the given target.
-    let applyOverlayToFacetNames optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
-        let targetType = target.GetType ()
-        match targetType.GetProperty "FacetNames" with
-        | null -> ()
-        | facetNamesProperty ->
-            match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
-            | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode optOldOverlayName target oldOverlayer
-            | None -> ()
 
     /// Query that a property should be serialized.
     let shouldPropertySerialize overlayName propertyName entity overlayer =
