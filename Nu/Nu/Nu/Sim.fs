@@ -301,6 +301,15 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
 
+        static member setState state screen =
+             { screen with State = state }
+
+        static member setIncoming incoming screen =
+             { screen with Incoming = incoming }
+
+        static member setOutgoing outgoing screen =
+             { screen with Outgoing = outgoing }
+
         static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
             screen?Register (screen, address, world)
 
@@ -333,6 +342,9 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
+
+        static member setOptSelectedScreenAddress optSelectedScreenAddress game =
+             { game with OptSelectedScreenAddress = optSelectedScreenAddress }
 
         static member make dispatcherName dispatcher optName =
             let id = NuCore.makeId ()

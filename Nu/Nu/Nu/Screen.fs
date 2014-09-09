@@ -38,6 +38,12 @@ module WorldScreenModule =
         static member tryWithScreen fn address world = Sim.tryWithSimulant World.getOptScreen World.setScreen fn address world
         static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptScreen World.setScreen fn address world
 
+        static member getScreens1 world =
+            seq {
+                for screenKvp in world.Entities do
+                    let address = Address.make [screenKvp.Key]
+                    yield (address, screenKvp.Value) }
+
         static member getScreens address world =
             match address.AddrList with
             | [] -> world.Screens

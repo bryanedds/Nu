@@ -664,13 +664,15 @@ module Program =
                          MessageBoxIcon.Error)
                 world)
 
-    let handleFormReloadOverlays (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+    let handleFormReloadOverlays (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             let world = pushPastWorld world world
             let targetDirectory = (world.ExtData :?> EditorState).TargetDirectory
             let overlayDirectory = Path.Combine (targetDirectory, "..\\..")
             match World.tryReloadOverlays overlayDirectory targetDirectory world with
-            | Right world -> world
+            | Right world ->
+                refreshPropertyGrid form world
+                world
             | Left error ->
                 ignore <|
                     MessageBox.Show

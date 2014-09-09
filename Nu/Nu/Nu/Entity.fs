@@ -157,6 +157,14 @@ module WorldEntityModule =
         static member withEntityAndWorld fn address world = Sim.withSimulantAndWorld World.getEntity World.setEntity fn address world
         static member tryWithEntity fn address world = Sim.tryWithSimulant World.getOptEntity World.setEntity fn address world
         static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
+
+        static member getEntities1 world =
+            seq {
+                for screenKvp in world.Entities do
+                    for groupKvp in screenKvp.Value do
+                        for entityKvp in groupKvp.Value do
+                            let address = Address.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
+                            yield (address, entityKvp.Value) }
     
         static member getEntities address world =
             match address.AddrList with

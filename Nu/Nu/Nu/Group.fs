@@ -56,7 +56,14 @@ module WorldGroupModule =
         static member withGroupAndWorld fn address world = Sim.withSimulantAndWorld World.getGroup World.setGroup fn address world
         static member tryWithGroup fn address world = Sim.tryWithSimulant World.getOptGroup World.setGroup fn address world
         static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptGroup World.setGroup fn address world
-    
+
+        static member getGroups1 world =
+            seq {
+                for screenKvp in world.Entities do
+                    for groupKvp in screenKvp.Value do
+                        let address = Address.make [screenKvp.Key; groupKvp.Key]
+                        yield (address, groupKvp.Value) }
+
         static member getGroups address world =
             match address.AddrList with
             | [screenStr] ->

@@ -701,7 +701,7 @@ module RigidBodyDispatcherModule =
         override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
             let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
 
-            // TODO: find a property factor for these lines of code
+            // TODO: find a proper factor for these lines of code
             let rigidBodyFacet = Map.find typeof<RigidBodyFacet>.Name world.Facets
             Reflection.attachFieldsFromSource rigidBodyFacet rigidBody
             Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody

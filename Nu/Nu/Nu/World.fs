@@ -37,8 +37,8 @@ module WorldModule =
 
     type World with
         
-        static member private setScreenStatePlus address state world =
-            let world = World.withScreen (fun screen -> { screen with State = state }) address world
+        static member private setScreenState address state world =
+            let world = World.withScreen (fun screen -> Screen.setState state screen) address world
             match state with
             | IdlingState ->
                 world |>
@@ -50,7 +50,7 @@ module WorldModule =
                     World.subscribe ScreenTransitionUpMouseKey (UpMouseEventName + AnyEventName) address SwallowSub
 
         static member selectScreen destination world =
-            let world = World.setScreenStatePlus destination IncomingState world
+            let world = World.setScreenState destination IncomingState world
             World.setOptSelectedScreenAddress (Some destination) world
 
         static member transitionScreen destination world =
@@ -61,7 +61,7 @@ module WorldModule =
                     let world = World.unsubscribe subscriptionKey world
                     let world = World.selectScreen destination world
                     (Unhandled, world))
-                let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
+                let world = World.setScreenState selectedScreenAddress OutgoingState world
                 World.subscribe subscriptionKey (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress sub world
             | None ->
                 trace "Program Error: Could not handle screen transition due to no selected screen."
@@ -264,10 +264,10 @@ module WorldModule =
                             match world.Liveness with
                             | Running ->
                                 let (finished, incoming) = World.updateTransition1 selectedScreen.Incoming
-                                let selectedScreen = { selectedScreen with Incoming = incoming }
+                                let selectedScreen = Screen.setIncoming incoming selectedScreen
                                 let world = World.setScreen selectedScreenAddress selectedScreen world
                                 if finished then
-                                    let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
+                                    let world = World.setScreenState selectedScreenAddress IdlingState world
                                     World.publish4 (FinishIncomingEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 else world
                             | Exiting -> world
@@ -279,10 +279,10 @@ module WorldModule =
                         match world.Liveness with
                         | Running ->
                             let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
-                            let selectedScreen = { selectedScreen with Outgoing = outgoing }
+                            let selectedScreen = Screen.setOutgoing outgoing selectedScreen
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
-                                let world = World.setScreenStatePlus selectedScreenAddress IdlingState world
+                                let world = World.setScreenState selectedScreenAddress IdlingState world
                                 let world = World.publish4 (DeselectEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 match world.Liveness with
                                 | Running -> World.publish4 (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress NoData world
@@ -304,7 +304,7 @@ module WorldModule =
             else
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
-                    let world = World.setScreenStatePlus selectedScreenAddress OutgoingState world
+                    let world = World.setScreenState selectedScreenAddress OutgoingState world
                     (Unhandled, world)
                 | None ->
                     trace "Program Error: Could not handle splash screen tick due to no selected screen."
@@ -357,20 +357,22 @@ module WorldModule =
                 let world = { world with Overlayer = Overlayer.make outputOverlayFileName }
 
                 // apply overlays to all entities
-                // NOTE: uses mutation because I'm really tired right now...
-                // TODO: remove mutation
-                let mutable world = world
-                for screenKvp in world.Entities do
-                    for groupKvp in screenKvp.Value do
-                        for entityKvp in groupKvp.Value do
-                            let entity = entityKvp.Value
+                let world =
+                    Seq.fold
+                        (fun world (address, entity : Entity) ->
                             let entity = { entity with Id = entity.Id } // hacky copy
                             match entity.OptOverlayName with
                             | Some overlayName ->
-                                Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
-                                let address = Address.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
-                                world <- World.setEntity address entity world
-                            | None -> ()
+                                let oldFacetNames = entity.FacetNames
+                                Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
+                                match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
+                                | Right (entity, world) ->
+                                    Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
+                                    World.setEntity address entity world
+                                | Left _ -> world // TODO: consider if we should debug or note here.. or something?
+                            | None -> world)
+                        world
+                        (World.getEntities1 world)
 
                 // right!
                 Right world
