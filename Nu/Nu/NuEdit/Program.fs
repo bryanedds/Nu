@@ -755,13 +755,17 @@ module Program =
             let directoryName = Path.GetDirectoryName openDialog.FileName
             Directory.SetCurrentDirectory directoryName
             let assembly = Assembly.LoadFrom openDialog.FileName
-            let optDispatcherType = assembly.GetTypes () |> Array.tryFind (fun aType -> aType.IsSubclassOf typeof<IComponentFactory>)
+            let assemblyTypes = assembly.GetTypes ()
+            let optDispatcherType =
+                Array.tryFind
+                    (fun (aType : Type) -> aType.GetInterface typeof<IUserComponentFactory>.Name <> null)
+                    assemblyTypes
             match optDispatcherType with
             | Some aType ->
-                let componentFactory = Activator.CreateInstance aType :?> IComponentFactory
-                (directoryName, componentFactory)
-            | None -> (".", EmptyComponentFactory () :> IComponentFactory)
-        else (".", EmptyComponentFactory () :> IComponentFactory)
+                let userComponentFactory = Activator.CreateInstance aType :?> IUserComponentFactory
+                (directoryName, userComponentFactory)
+            | None -> (".", EmptyComponentFactory () :> IUserComponentFactory)
+        else (".", EmptyComponentFactory () :> IUserComponentFactory)
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()

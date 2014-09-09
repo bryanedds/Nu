@@ -20,14 +20,13 @@ module OverlayerModule =
 
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
-        { OverlayDocument : XmlDocument
-          RootNode : XmlNode }
+        { Overlays : XmlDocument }
 
 [<RequireQualifiedAccess>]
 module Overlayer =
 
     let rec private trySelectNode overlayName propertyName overlayer =
-        let optBranch = overlayer.RootNode.SelectSingleNode overlayName
+        let optBranch = overlayer.Overlays.DocumentElement.SelectSingleNode overlayName
         match optBranch with
         | null -> None
         | branch ->
@@ -179,9 +178,12 @@ module Overlayer =
     let shouldPropertySerialize3 propertyName entity overlayer =
         not <| isPropertyOverlaid3 propertyName entity overlayer
 
-    /// Make an Overlayer.
-    let make (fileName : string) =
-        let document = XmlDocument ()
-        document.Load fileName
-        let root = document.SelectSingleNode RootNodeName
-        { OverlayDocument = document; RootNode = root }
+    /// Make an Overlayer by loading overlays from a file and then combining it with the given
+    /// intrinsic overlays.
+    let make (fileName : string) (intrinsicOverlays : XmlDocument) =
+        let overlays = XmlDocument ()
+        overlays.Load fileName
+        for node in intrinsicOverlays.DocumentElement.ChildNodes do
+            let imported = overlays.ImportNode (node, true)
+            ignore <| overlays.DocumentElement.AppendChild imported
+        { Overlays = overlays }
