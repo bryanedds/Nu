@@ -1,7 +1,6 @@
 ﻿namespace $safeprojectname$
 open SDL2
 open Prime
-open Prime.PrimeConstants
 open Nu
 open Nu.NuConstants
 module Program =
@@ -42,16 +41,22 @@ module Program =
         // sense. In a Nu game, the world is represented as a complex record type named World.
         let tryMakeWorld sdlDeps =
             
-            // Game dispatchers specify some unique, high-level behavior and data for your game.
-            // Since this particular program has no unique behavior, the vanilla base class
-            // GameDispatcher is used.            
-            let gameDispatcher = GameDispatcher () :> obj
+            // Component factories are the means by which user-defined dispatchers and facets are
+            // made available for creation by the engine, as well as NuEdit. Since there are no
+            // user-defined dispatchers or facets here, the empty component factory is used. To
+            // inject your own dispatchers and facets, you must make you own class that implements
+            // the IComponentFactory interface properly.
+            //
+            // Finally, any user-defined game dispatcher returned from a user-defined component
+            // factory will be used as your game's dispatcher.
+            let userComponentFactory = EmptyComponentFactory ()
             
             // here is an attempt to make the world using SDL dependencies that will be created
             // from the invoking function using the SDL configuration that we defined above, the
-            // gameDispatcher immediately above, and a value that could have been used to
-            // user-defined data to the world had we needed it (we don't, so we pass unit).
-            World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysicsAndGamePlay false ()
+            // component factory above, a boolean that protects from a Farseer physics bug but
+            // slows down the engine badly, and a value that could have been used to user-defined
+            // data to the world had we needed it (we don't, so we pass unit).
+            World.tryMakeEmpty sdlDeps userComponentFactory GuiAndPhysicsAndGamePlay false ()
             
         // this is a callback that specifies your game's unique behavior when updating the world
         // every tick. The World value is the state of the world after the callback has transformed
