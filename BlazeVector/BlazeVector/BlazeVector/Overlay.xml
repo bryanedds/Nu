@@ -1,161 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
-  <!-- Facet overlays. -->
+  
+  <!-- Add user-defined facet overlays here... -->
 
-  <RigidBodyFacet>
+  <SampleFacetOverlay>
     <BodyType>Dynamic</BodyType>
-    <Density>10</Density>
-    <Friction>0</Friction>
-    <Restitution>0</Restitution>
-    <FixedRotation>False</FixedRotation>
-    <LinearDamping>1</LinearDamping>
-    <AngularDamping>1</AngularDamping>
-    <GravityScale>1</GravityScale>
-    <CollisionCategories>1</CollisionCategories>
-    <CollisionMask>*</CollisionMask>
-    <CollisionExpression>Box</CollisionExpression>
-    <IsBullet>False</IsBullet>
-    <IsSensor>False</IsSensor>
-  </RigidBodyFacet>
-
-  <SpriteFacet>
-    <ViewType>Relative</ViewType>
-    <SpriteImage>Image3;Default</SpriteImage>
-  </SpriteFacet>
-
-  <AnimatedSpriteFacet>
-    <Stutter>4</Stutter>
-    <TileCount>16</TileCount>
-    <TileRun>4</TileRun>
-    <TileSize>16;16</TileSize>
-    <ViewType>Relative</ViewType>
-    <AnimatedSpriteImage>Image7;Default</AnimatedSpriteImage>
-  </AnimatedSpriteFacet>
-
-  <!-- Dispatcher overlays. -->
-
-  <EntityDispatcher>
-    <Position>0;0</Position>
-    <Depth>0</Depth>
-    <Size>64;64</Size>
-    <Rotation>0</Rotation>
-    <Visible>True</Visible>
-    <FacetNames>[]</FacetNames>
-  </EntityDispatcher>
-
-  <GuiDispatcher include="EntityDispatcher">
-    <Enabled>True</Enabled>
-  </GuiDispatcher>
-
-  <RigidBodyDispatcher include="EntityDispatcher;RigidBodyFacet" />
-
-  <RigidBodySpriteDispatcher include="RigidBodyDispatcher;SpriteFacet" />
-
-  <RigidBodyAnimatedSpriteDispatcher include="RigidBodyDispatcher;AnimatedSpriteFacet" />
-
-  <ButtonDispatcher include="GuiDispatcher">
-    <IsDown>False</IsDown>
-    <UpImage>Image;Default</UpImage>
-    <DownImage>Image2;Default</DownImage>
-    <ClickSound>Sound;Default</ClickSound>
-  </ButtonDispatcher>
-
-  <LabelDispatcher include="GuiDispatcher">
-    <LabelImage>Image4;Default</LabelImage>
-  </LabelDispatcher>
-
-  <TextDispatcher include="GuiDispatcher">
-    <BackgroundImage>Image4;Default</BackgroundImage>
-    <Text />
-    <TextColor>1;1;1;1</TextColor>
-    <TextFont>Font;Default</TextFont>
-    <TextOffset>0;0</TextOffset>
-  </TextDispatcher>
-
-  <ToggleDispatcher include="GuiDispatcher">
-    <IsOn>False</IsOn>
-    <IsPressed>False</IsPressed>
-    <OffImage>Image;Default</OffImage>
-    <OnImage>Image2;Default</OnImage>
-    <ClickSound>Sound;Default</ClickSound>
-  </ToggleDispatcher>
-
-  <FeelerDispatcher include="GuiDispatcher">
-    <IsTouched>False</IsTouched>
-  </FeelerDispatcher>
-
-  <FillBarDispatcher include="GuiDispatcher">
-    <Fill>0</Fill>
-    <FillInset>0</FillInset>
-    <FillImage>Image9;Default</FillImage>
-    <BorderImage>Image10;Default</BorderImage>
-  </FillBarDispatcher>
-
-  <BlockDispatcher include="RigidBodySpriteDispatcher">
-    <SpriteImage>Image3;Default</SpriteImage>
-  </BlockDispatcher>
-
-  <AvatarDispatcher include="RigidBodySpriteDispatcher">
-    <FixedRotation>True</FixedRotation>
-    <LinearDamping>10</LinearDamping>
-    <GravityScale>0</GravityScale>
+    <Friction>0.5</Friction>
     <CollisionExpression>Circle</CollisionExpression>
-    <SpriteImage>Image7;Default</SpriteImage>
-  </AvatarDispatcher>
+  </SampleFacetOverlay>
 
-  <CharacterDispatcher include="RigidBodySpriteDispatcher">
-    <FixedRotation>True</FixedRotation>
-    <LinearDamping>3</LinearDamping>
-    <CollisionExpression>Capsule</CollisionExpression>
-    <SpriteImage>Image6;Default</SpriteImage>
-  </CharacterDispatcher>
+  <!-- Add user-defined dispatcher overlays here... -->
 
-  <TileMapDispatcher include="EntityDispatcher">
-    <Density>10</Density>
-    <Friction>0</Friction>
-    <Restitution>0</Restitution>
-    <CollisionCategories>1</CollisionCategories>
-    <CollisionMask>*</CollisionMask>
-    <TileMap>TileMap;Default</TileMap>
-    <Parallax>0</Parallax>
-  </TileMapDispatcher>
-
-  <BulletDispatcher include="RigidBodySpriteDispatcher">
-    <Size>24;24</Size>
-    <Density>0.25</Density>
-    <Restitution>0.5</Restitution>
-    <GravityScale>0</GravityScale>
-    <IsBullet>True</IsBullet>
-    <CollisionExpression>Circle</CollisionExpression>
-    <SpriteImage>PlayerBullet;Stage</SpriteImage>
-    <Age>0</Age>
-  </BulletDispatcher>
-
-  <EnemyDispatcher include="CharacterDispatcher">
-    <Size>48;96</Size>
-    <FixedRotation>True</FixedRotation>
-    <LinearDamping>3</LinearDamping>
-    <GravityScale>0</GravityScale>
-    <CollisionExpression>Capsule</CollisionExpression>
-    <Stutter>8</Stutter>
-    <TileCount>6</TileCount>
-    <TileRun>4</TileRun>
-    <TileSize>48;96</TileSize>
-    <AnimatedSpriteImage>Enemy;Stage</AnimatedSpriteImage>
-    <Health>6</Health>
-  </EnemyDispatcher>
-
-  <PlayerDispatcher include="CharacterDispatcher">
-    <Size>48;96</Size>
-    <FixedRotation>True</FixedRotation>
-    <LinearDamping>3</LinearDamping>
-    <GravityScale>0</GravityScale>
-    <CollisionExpression>Capsule</CollisionExpression>
-    <Stutter>3</Stutter>
-    <TileCount>16</TileCount>
-    <TileRun>4</TileRun>
-    <TileSize>48;96</TileSize>
-    <AnimatedSpriteImage>Player;Stage</AnimatedSpriteImage>
-  </PlayerDispatcher>
+  <SampleDispatcherOverlay include="EntityDispatcher">
+    <Size>100;100</Size>
+    <FacetNames>[SpriteFacet]</FacetNames>
+  </SampleDispatcherOverlay>
 
 </Root>

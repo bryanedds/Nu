@@ -346,6 +346,21 @@ module WorldModule =
             let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
             world.Game.Register world
 
+        static member createIntrinsicOverlays dispatchers facets =
+
+            let hasFacetNamesField = fun sourceType ->
+                sourceType = typeof<EntityDispatcher>
+
+            let usesFacets = fun sourceType ->
+                sourceType = typeof<EntityDispatcher> ||
+                sourceType.IsSubclassOf typeof<EntityDispatcher>
+
+            let dispatchers = Map.toValueList dispatchers
+            let facets = Map.toValueListBy (fun facet -> facet :> obj) facets
+            let sources = facets @ dispatchers
+            let sourceTypes = List.map (fun source -> source.GetType ()) sources
+            Reflection.createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes
+
         static member saveGroupToFile group entities fileName world =
             use file = File.Open (fileName, FileMode.Create)
             let writerSettings = XmlWriterSettings ()
@@ -375,7 +390,8 @@ module WorldModule =
 
                 // cache old overlayer and make new one
                 let oldOverlayer = world.Overlayer
-                let world = { world with Overlayer = Overlayer.make outputOverlayFileName }
+                let intrinsicOverlays = World.createIntrinsicOverlays world.Dispatchers world.Facets
+                let world = { world with Overlayer = Overlayer.make outputOverlayFileName intrinsicOverlays }
 
                 // apply overlays to all entities
                 let world =
@@ -603,7 +619,7 @@ module WorldModule =
 
         static member tryMakeEmpty
             sdlDeps
-            (userComponentFactory : IComponentFactory)
+            (userComponentFactory : IUserComponentFactory)
             interactivity
             farseerCautionMode
             extData =
@@ -613,7 +629,7 @@ module WorldModule =
             | Right assetMetadataMap ->
 
                 // make user dispatchers
-                let userDispatchers = userComponentFactory.MakeDispatchers ()
+                let userDispatchers = userComponentFactory.MakeUserDispatchers ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher () :> obj
@@ -643,7 +659,7 @@ module WorldModule =
                          typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
                          typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
                          typeof<GameDispatcher>.Name, defaultGameDispatcher]
-                let userDispatchers = userComponentFactory.MakeDispatchers ()
+                let userDispatchers = userComponentFactory.MakeUserDispatchers ()
                 let dispatchers = Map.addMany (Map.toSeq userDispatchers) defaultDispatchers
 
                 // make facets
@@ -653,23 +669,11 @@ module WorldModule =
                         [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
                          typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
-                let userFacets = userComponentFactory.MakeFacets ()
+                let userFacets = userComponentFactory.MakeUserFacets ()
                 let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
 
-                let dispatcherList = Map.toValueList dispatchers
-                let facetList = Map.toValueListBy (fun facet -> facet :> obj) facets
-                let sourceList = facetList @ dispatcherList
-                let sourceTypeList = List.map (fun source -> source.GetType ()) sourceList
-
-                let hasFacetNamesField = fun sourceType ->
-                    sourceType = typeof<EntityDispatcher>
-
-                let usesFacets = fun sourceType ->
-                    sourceType = typeof<EntityDispatcher> ||
-                    sourceType.IsSubclassOf typeof<EntityDispatcher>
-
-                let document = Reflection.createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypeList
-                ignore <| document.Save "OverlayTest.xml"
+                // make intrinsic overlays
+                let intrinsicOverlays = World.createIntrinsicOverlays dispatchers facets
 
                 let world =
                     { Game = Game.make activeGameDispatcherName activeGameDispatcher (Some "Game")
@@ -687,7 +691,7 @@ module WorldModule =
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
                       Integrator = Physics.makeIntegrator farseerCautionMode Gravity
                       AssetMetadataMap = assetMetadataMap
-                      Overlayer = Overlayer.make OverlayFileName
+                      Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
                       AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
                       RenderMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
                       PhysicsMessages = []

@@ -10,9 +10,9 @@ module BlazeFlow =
     /// Creates BlazeVector-specific components (dispatchers and facets).
     /// Allows BlazeVector simulation types to be created in the editor.
     type BlazeComponentFactory () =
-        interface IComponentFactory with
+        interface IUserComponentFactory with
 
-            member dispatcher.MakeDispatchers () =
+            member dispatcher.MakeUserDispatchers () =
                 // make our game's specific dispatchers
                 Map.ofList
                     [typeof<BulletDispatcher>.Name, BulletDispatcher () :> obj
@@ -22,7 +22,7 @@ module BlazeFlow =
                      typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> obj
                      typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> obj]
 
-            member dispatcher.MakeFacets () =
+            member dispatcher.MakeUserFacets () =
                 // currently we have no game-specific facets to create...
                 Map.empty
 

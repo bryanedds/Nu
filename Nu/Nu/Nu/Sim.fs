@@ -359,6 +359,13 @@ module SimModule =
         member game.Register (world : World) : Game * World =
             game?Register (game, world)
 
+    /// Provides a way to make user-defined components.
+    and IUserComponentFactory =
+        interface
+            abstract MakeUserDispatchers : unit -> XDispatchers
+            abstract MakeUserFacets : unit -> Map<string, Facet>
+            end
+
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
     /// and general configuration data.
@@ -494,18 +501,11 @@ module SimModule =
         abstract member Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
 
-    /// Provides a way to make XDispatchers.
-    type IComponentFactory =
-        interface
-            abstract MakeDispatchers : unit -> XDispatchers
-            abstract MakeFacets : unit -> Map<string, Facet>
-            end
-
-    /// A factory that makes nothing.
+    /// A factory that makes no components.
     type EmptyComponentFactory () =
-        interface IComponentFactory with
-            member dispatcher.MakeDispatchers () = Map.empty
-            member dispatcher.MakeFacets () = Map.empty
+        interface IUserComponentFactory with
+            member dispatcher.MakeUserDispatchers () = Map.empty
+            member dispatcher.MakeUserFacets () = Map.empty
 
 [<RequireQualifiedAccess>]
 module EventData =

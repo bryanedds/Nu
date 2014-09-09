@@ -9,15 +9,15 @@ module OmniFlow =
 
     type OmniComponentFactory () =
 
-        interface IComponentFactory with
+        interface IUserComponentFactory with
 
-            member dispatcher.MakeDispatchers () =
+            member dispatcher.MakeUserDispatchers () =
                 Map.ofList
                     [typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj
                      typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> obj
                      typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> obj]
 
-            member dispatcher.MakeFacets () =
+            member dispatcher.MakeUserFacets () =
                 Map.empty
 
     let addTitleScreen world =
