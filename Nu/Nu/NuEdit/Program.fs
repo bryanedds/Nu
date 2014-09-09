@@ -747,7 +747,7 @@ module Program =
         updateRedoButton form world
         { world with Liveness = if form.IsDisposed then Exiting else Running }
 
-    let selectTargetDirectoryAndMakeGameDispatcher () =
+    let selectTargetDirectoryAndMakeUserComponentFactory () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for defaults)."
@@ -755,13 +755,13 @@ module Program =
             let directoryName = Path.GetDirectoryName openDialog.FileName
             Directory.SetCurrentDirectory directoryName
             let assembly = Assembly.LoadFrom openDialog.FileName
-            let optDispatcherType = assembly.GetTypes () |> Array.tryFind (fun aType -> aType.IsSubclassOf typeof<GameDispatcher>)
+            let optDispatcherType = assembly.GetTypes () |> Array.tryFind (fun aType -> aType.IsSubclassOf typeof<IComponentFactory>)
             match optDispatcherType with
             | Some aType ->
-                let gameDispatcher = Activator.CreateInstance aType :?> GameDispatcher
-                (directoryName, gameDispatcher)
-            | None -> (".", GameDispatcher ())
-        else (".", GameDispatcher ())
+                let componentFactory = Activator.CreateInstance aType :?> IComponentFactory
+                (directoryName, componentFactory)
+            | None -> (".", EmptyComponentFactory () :> IComponentFactory)
+        else (".", EmptyComponentFactory () :> IComponentFactory)
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
@@ -802,7 +802,7 @@ module Program =
         form.Show ()
         form
 
-    let tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
+    let tryMakeEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
         let editorState =
             { TargetDirectory = targetDirectory
               RightClickPosition = Vector2.Zero
@@ -811,7 +811,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics true editorState
+        let optWorld = World.tryMakeEmpty sdlDeps userComponentFactory GuiAndPhysics true editorState
         match optWorld with
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
@@ -829,8 +829,8 @@ module Program =
             Right world
         | Left errorMsg -> Left errorMsg
 
-    let tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps =
-        match tryMakeEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
+    let tryCreateEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
+        match tryMakeEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
         | Right world ->
             populateCreateComboBox form world
             populateTreeViewGroups form world
@@ -841,7 +841,7 @@ module Program =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let (targetDirectory, gameDispatcher) = selectTargetDirectoryAndMakeGameDispatcher ()
+        let (targetDirectory, userComponentFactory) = selectTargetDirectoryAndMakeUserComponentFactory ()
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -853,7 +853,7 @@ module Program =
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
             (fun sdlDeps ->
-                match tryCreateEditorWorld targetDirectory gameDispatcher form worldChangers refWorld sdlDeps with
+                match tryCreateEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
                 | Right world as right ->
                     refWorld := world
                     right

@@ -264,7 +264,9 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static let fieldDefinitions = [define? Enabled true]
+        static let intrinsicFacetNames = []
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
@@ -289,6 +291,8 @@ module ButtonDispatcherModule =
              define? DownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
              define? ClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames = []
+        
         let handleButtonEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
                 let mouseButtonData = EventData.toMouseButtonData event.Data
@@ -323,6 +327,7 @@ module ButtonDispatcherModule =
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (button, address, world) =
             let (button, world) = base.Register (button, address, world)
@@ -371,7 +376,9 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDefinitions = [define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
+        static let intrinsicFacetNames = []
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.GetRenderDescriptors (label, world) =
             let renderDescriptors = base.GetRenderDescriptors (label, world)
@@ -426,7 +433,9 @@ module TextDispatcherModule =
              define? TextColor Vector4.One
              define? BackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames = []
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.GetRenderDescriptors (text, world) =
             let renderDescriptors = base.GetRenderDescriptors (text, world)
@@ -491,6 +500,8 @@ module ToggleDispatcherModule =
              define? OnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
              define? ToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames = []
+        
         let handleToggleEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
                 let mouseButtonData = EventData.toMouseButtonData event.Data
@@ -526,6 +537,7 @@ module ToggleDispatcherModule =
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (toggle, address, world) =
             let (toggle, world) = base.Register (toggle, address, world)
@@ -574,6 +586,7 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         static let fieldDefinitions = [define? IsTouched false]
+        static let intrinsicFacetNames = []
 
         let handleFeelerEventDownMouseLeft event world =
             if World.isAddressSelected event.Subscriber world then
@@ -602,6 +615,7 @@ module FeelerDispatcherModule =
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (feeler, address, world) =
             let (feeler, world) = base.Register (feeler, address, world)
@@ -640,6 +654,8 @@ module FillBarDispatcherModule =
              define? FillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName }
              define? BorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames = []
+        
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
             let spritePosition = fillBar.Position + spriteInset
@@ -648,6 +664,7 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.GetRenderDescriptors (fillBar, world) =
             let renderDescriptors = base.GetRenderDescriptors (fillBar, world)
@@ -689,66 +706,21 @@ module FillBarDispatcherModule =
             false
 
 [<AutoOpen>]
-module RigidBodyDispatcherModule =
-
-    type [<AbstractClass>] RigidBodyDispatcher () =
-        inherit EntityDispatcher ()
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
-
-        override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
-            let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
-
-            // TODO: find a proper factor for these lines of code
-            let rigidBodyFacet = Map.find typeof<RigidBodyFacet>.Name world.Facets
-            Reflection.attachFieldsFromSource rigidBodyFacet rigidBody
-            Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
-
-[<AutoOpen>]
-module RigidBodySpriteDispatcherModule =
-
-    type [<AbstractClass>] RigidBodySpriteDispatcher () =
-        inherit RigidBodyDispatcher ()
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
-
-        override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
-            let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
-            let rigidBodyFacet = Map.find typeof<SpriteFacet>.Name world.Facets
-            Reflection.attachFieldsFromSource rigidBodyFacet rigidBody
-            Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
-
-[<AutoOpen>]
-module RigidBodyAnimatedSpriteDispatcherModule =
-
-    type [<AbstractClass>] RigidBodyAnimatedSpriteDispatcher () =
-        inherit RigidBodyDispatcher ()
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
-
-        override dispatcher.AttachIntrinsicFacets (rigidBody, world) =
-            let rigidBody = base.AttachIntrinsicFacets (rigidBody, world)
-            let rigidBodyFacet = Map.find typeof<AnimatedSpriteFacet>.Name world.Facets
-            Reflection.attachFieldsFromSource rigidBodyFacet rigidBody
-            Entity.setFacetsNp (rigidBodyFacet :: rigidBody.FacetsNp) rigidBody
-
-[<AutoOpen>]
 module BlockDispatcherModule =
 
     type BlockDispatcher () =
-        inherit RigidBodySpriteDispatcher ()
+        inherit EntityDispatcher ()
 
         static let fieldDefinitions = [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+        static let intrinsicFacetNames = [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
 [<AutoOpen>]
 module AvatarDispatcherModule =
 
     type AvatarDispatcher () =
-        inherit RigidBodySpriteDispatcher ()
+        inherit EntityDispatcher ()
 
         static let fieldDefinitions =
             [define? FixedRotation true
@@ -757,13 +729,18 @@ module AvatarDispatcherModule =
              define? CollisionExpression "Circle"
              define? SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<SpriteFacet>.Name]
+        
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
     type CharacterDispatcher () =
-        inherit RigidBodySpriteDispatcher ()
+        inherit EntityDispatcher ()
 
         static let fieldDefinitions =
             [define? FixedRotation true
@@ -771,7 +748,12 @@ module CharacterDispatcherModule =
              define? CollisionExpression "Capsule"
              define? SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<SpriteFacet>.Name]
+
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
 [<AutoOpen>]
 module TileMapDispatcherModule =
@@ -823,6 +805,8 @@ module TileMapDispatcherModule =
              define? CollisionMask "*"
              define? TileMapAsset { TileMapAssetName = "TileMap"; PackageName = DefaultPackageName }
              define? Parallax 0.0f]
+
+        static let intrinsicFacetNames = []
 
         let getTilePhysicsId tmid (tli : int) (ti : int) =
             PhysicsId (tmid, intsToGuid tli ti)
@@ -904,6 +888,7 @@ module TileMapDispatcherModule =
                 tileMapData.Map.Layers
 
         static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
 
         override dispatcher.Register (tileMap, address, world) =
             let (tileMap, world) = base.Register (tileMap, address, world)

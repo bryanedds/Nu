@@ -69,13 +69,3 @@ module OmniBladeDispatcherModule =
 
         static let fieldDefinitions = []
         static member FieldDefinitions = fieldDefinitions
-
-        override dispatcher.Register (game, world) =
-            let (game, world) = base.Register (game, world)
-            let dispatchers =
-                Map.addMany
-                    [|typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj
-                      typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> obj|]
-                    world.Dispatchers
-            let world = { world with Dispatchers = dispatchers }
-            (game, world)

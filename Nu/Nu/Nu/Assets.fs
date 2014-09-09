@@ -53,7 +53,8 @@ module Assets =
                 match optAssociations with
                 | null -> None
                 | associations ->
-                    let associationList = List.ofArray (associations.InnerText.Split ',')
+                    let converter = StringListTypeConverter ()
+                    let associationList = converter.ConvertFromString associations.InnerText :?> string list
                     Some {
                         Name = name.InnerText
                         FileName = fileName.InnerText

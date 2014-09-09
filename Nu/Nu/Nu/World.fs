@@ -319,6 +319,23 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey TickEventName event.Subscriber subscription world
             (Handled, world)
 
+        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
+            let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime world
+            let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world
+            let splashLabel = World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world
+            let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
+            let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
+            let splashLabel = Entity.setLabelImage image splashLabel
+            let splashGroupDescriptors = [(splashGroup.Name, splashGroup, Map.singleton splashLabel.Name splashLabel)]
+            let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
+            let world = World.observe (FinishIncomingEventName + address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
+            World.observe (FinishOutgoingEventName + address) address (ScreenTransitionFromSplashSub destination) world
+
+        static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
+            let screen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
+            let (group, entities) = World.loadGroupFromFile groupFileName world
+            snd <| World.addScreen screenAddress screen [(groupName, group, entities)] world
+
         static member activateGameDispatcher assemblyFileName gameDispatcherFullName world =
             let assembly = Assembly.LoadFrom assemblyFileName
             let gameDispatcherType = assembly.GetType gameDispatcherFullName
@@ -409,6 +426,24 @@ module WorldModule =
                     | Left errorMsg -> Left errorMsg
                 | Left error -> Left error
             with exn -> Left <| string exn
+
+        static member continueHack groupAddress world =
+            // NOTE: since messages may be invalid upon continuing a world (especially physics
+            // messages), all messages are eliminated. If this poses an issue, the editor will have
+            // to instead store past / future worlds only once their current frame has been
+            // processed (integrated, advanced, rendered, played, et al).
+            let world =
+                { world with
+                    AudioMessages = []
+                    RenderMessages = []
+                    PhysicsMessages = [RebuildPhysicsHackMessage] }
+            let entities = World.getEntities groupAddress world
+            Map.fold
+                (fun world _ (entity : Entity) ->
+                    let entityAddress = addrlist groupAddress [entity.Name]
+                    Entity.propagatePhysics entityAddress entity world)
+                world
+                entities
 
         static member private play world =
             let audioMessages = world.AudioMessages
@@ -566,30 +601,34 @@ module WorldModule =
         static member run tryMakeWorld handleUpdate sdlConfig =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
-        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
-            let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime world
-            let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world
-            let splashLabel = World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world
-            let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
-            let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
-            let splashLabel = Entity.setLabelImage image splashLabel
-            let splashGroupDescriptors = [(splashGroup.Name, splashGroup, Map.singleton splashLabel.Name splashLabel)]
-            let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
-            let world = World.observe (FinishIncomingEventName + address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
-            World.observe (FinishOutgoingEventName + address) address (ScreenTransitionFromSplashSub destination) world
+        static member tryMakeEmpty
+            sdlDeps
+            (userComponentFactory : IComponentFactory)
+            interactivity
+            farseerCautionMode
+            extData =
 
-        static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
-            let screen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
-            let (group, entities) = World.loadGroupFromFile groupFileName world
-            snd <| World.addScreen screenAddress screen [(groupName, group, entities)] world
-
-        static member tryMakeEmpty sdlDeps gameDispatcher interactivity farseerCautionMode extData =
+            // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
             | Right assetMetadataMap ->
-                let gameDispatcherName = (gameDispatcher.GetType ()).Name
-                let dispatchers =
+
+                // make user dispatchers
+                let userDispatchers = userComponentFactory.MakeDispatchers ()
+
+                // infer the active game dispatcher
+                let defaultGameDispatcher = GameDispatcher () :> obj
+                let userDispatcherList = Map.toValueList userDispatchers
+                let isGameDispatcher = fun (dispatcher : obj) -> match dispatcher with :? GameDispatcher -> true | _ -> false
+                let activeGameDispatcher =
+                    match List.tryFind isGameDispatcher userDispatcherList with
+                    | Some userGameDispatcher -> userGameDispatcher
+                    | None -> defaultGameDispatcher
+                let activeGameDispatcherName = Reflection.getTypeName activeGameDispatcher
+
+                // make dispatchers
+                // TODO: see if we can reflectively generate this
+                let defaultDispatchers =
                     Map.ofList
-                        // TODO: see if we can reflectively generate this list
                         [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
                          typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
                          typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
@@ -603,16 +642,37 @@ module WorldModule =
                          typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
                          typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
                          typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
-                         typeof<GameDispatcher>.Name, GameDispatcher () :> obj
-                         gameDispatcherName, gameDispatcher]
-                let facets =
+                         typeof<GameDispatcher>.Name, defaultGameDispatcher]
+                let userDispatchers = userComponentFactory.MakeDispatchers ()
+                let dispatchers = Map.addMany (Map.toSeq userDispatchers) defaultDispatchers
+
+                // make facets
+                // TODO: see if we can reflectively generate this
+                let defaultFacets =
                     Map.ofList
-                        // TODO: see if we can reflectively generate this list
                         [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
                          typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
+                let userFacets = userComponentFactory.MakeFacets ()
+                let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
+
+                let dispatcherList = Map.toValueList dispatchers
+                let facetList = Map.toValueListBy (fun facet -> facet :> obj) facets
+                let sourceList = facetList @ dispatcherList
+                let sourceTypeList = List.map (fun source -> source.GetType ()) sourceList
+
+                let hasFacetNamesField = fun sourceType ->
+                    sourceType = typeof<EntityDispatcher>
+
+                let usesFacets = fun sourceType ->
+                    sourceType = typeof<EntityDispatcher> ||
+                    sourceType.IsSubclassOf typeof<EntityDispatcher>
+
+                let document = Reflection.createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypeList
+                ignore <| document.Save "OverlayTest.xml"
+
                 let world =
-                    { Game = Game.make gameDispatcherName gameDispatcher (Some "Game")
+                    { Game = Game.make activeGameDispatcherName activeGameDispatcher (Some "Game")
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
@@ -639,24 +699,6 @@ module WorldModule =
                 let world = snd <| world.Game.Register world
                 Right world
             | Left errorMsg -> Left errorMsg
-
-        static member continueHack groupAddress world =
-            // NOTE: since messages may be invalid upon continuing a world (especially physics
-            // messages), all messages are eliminated. If this poses an issue, the editor will have
-            // to instead store past / future worlds only once their current frame has been
-            // processed (integrated, advanced, rendered, played, et al).
-            let world =
-                { world with
-                    AudioMessages = []
-                    RenderMessages = []
-                    PhysicsMessages = [RebuildPhysicsHackMessage] }
-            let entities = World.getEntities groupAddress world
-            Map.fold
-                (fun world _ (entity : Entity) ->
-                    let entityAddress = addrlist groupAddress [entity.Name]
-                    Entity.propagatePhysics entityAddress entity world)
-                world
-                entities
 
         static member init () =
             NuMath.initTypeConverters ()

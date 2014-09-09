@@ -7,6 +7,19 @@ open OmniBlade
 open OmniBlade.OmniConstants
 module OmniFlow =
 
+    type OmniComponentFactory () =
+
+        interface IComponentFactory with
+
+            member dispatcher.MakeDispatchers () =
+                Map.ofList
+                    [typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj
+                     typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> obj
+                     typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> obj]
+
+            member dispatcher.MakeFacets () =
+                Map.empty
+
     let addTitleScreen world =
         let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (Address.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
         let world = World.subscribe4 ClickTitleNewGameEvent Address.empty (ScreenTransitionSub FieldAddress) world
@@ -27,8 +40,8 @@ module OmniFlow =
         World.subscribe4 ClickFieldBackEvent Address.empty (ScreenTransitionSub TitleAddress) world
 
     let tryMakeOmniBladeWorld sdlDeps extData =
-        let gameDispatcher = OmniBladeDispatcher () :> obj
-        let optWorld = World.tryMakeEmpty sdlDeps gameDispatcher GuiAndPhysics false extData
+        let omniComponentFactory = OmniComponentFactory ()
+        let optWorld = World.tryMakeEmpty sdlDeps omniComponentFactory GuiAndPhysics false extData
         match optWorld with
         | Right world ->
             let world = World.hintRenderingPackageUse GuiPackageName world
