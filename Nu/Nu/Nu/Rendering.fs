@@ -354,6 +354,10 @@ module Rendering =
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
+                // OPTIMIZATION: allocating refs in a tight-loop = problematic
+                let refTileSourceRect = ref <| SDL.SDL_Rect ()
+                let refTileDestRect = ref <| SDL.SDL_Rect ()
+                let refTileRotationCenter = ref <| SDL.SDL_Point ()
                 Seq.iteri
                     (fun n _ ->
                         let mapRun = mapSize.X
@@ -383,7 +387,10 @@ module Rendering =
                             let mutable rotationCenter = SDL.SDL_Point ()
                             rotationCenter.x <- int <| tileSize.X * 0.5f
                             rotationCenter.y <- int <| tileSize.Y * 0.5f
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                            refTileSourceRect := sourceRect
+                            refTileDestRect := destRect
+                            refTileRotationCenter := rotationCenter
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
                             if renderResult <> 0 then note <| "Rendering error - could not render texture for tile '" + string descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                     tiles
                 renderer

@@ -75,7 +75,8 @@ module WorldModule =
             let world = World.transitionScreen destination world
             (Unhandled, world)
 
-        static member private sortFstDesc (priority, _) (priority2, _) =
+        // OPTIMIZATION: priority annotated as single to decrease GC pressure.
+        static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
             if priority = priority2 then 0
             elif priority > priority2 then -1
             else 1
@@ -103,17 +104,20 @@ module WorldModule =
             | Group _ -> GroupPublishingPriority
             | Entity entity -> getEntityPublishingPriority entity world
 
-        static member getSubscriptionSortables getEntityPublishingPriority subscriptions world =
-            let optSimulants =
-                List.map
-                    (fun (key, address, subscription) ->
-                        let optSimulant = World.getOptSimulant address world
-                        Option.map (fun simulant -> (World.getPublishingPriority getEntityPublishingPriority simulant world, (key, address, subscription))) optSimulant)
-                    subscriptions
-            List.definitize optSimulants
+        static member getSubscriptions getEntityPublishingPriority subscriptions world =
+            List.fold
+                (fun subscriptions (key, address, subscription) ->
+                    match World.getOptSimulant address world with
+                    | Some simulant ->
+                        let priority = World.getPublishingPriority getEntityPublishingPriority simulant world
+                        let subscription = (priority, (key, address, subscription))
+                        subscription :: subscriptions
+                    | None -> subscriptions)
+                []
+                subscriptions
 
         static member sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
-            let subscriptions = World.getSubscriptionSortables getEntityPublishingPriority subscriptions world
+            let subscriptions = World.getSubscriptions getEntityPublishingPriority subscriptions world
             let subscriptions = List.sortWith World.sortFstDesc subscriptions
             List.map snd subscriptions
 

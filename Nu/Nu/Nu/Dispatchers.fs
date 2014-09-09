@@ -238,10 +238,9 @@ module EntityDispatcherModule =
                 Entity.setRotation transform.Rotation
 
         static member pickingSort entities world =
-            let priorities = List.map (fun (entity : Entity) -> Entity.getPickingPriority entity world) entities
-            let prioritiesAndEntities = List.zip priorities entities
-            let prioritiesAndEntitiesSorted = List.sortWith Entity.sortFstDesc prioritiesAndEntities
-            List.map snd prioritiesAndEntitiesSorted
+            let prioritiesAndEntities = List.map (fun (entity : Entity) -> (Entity.getPickingPriority entity world, entity)) entities
+            let prioritiesAndEntities = List.sortWith Entity.sortFstDesc prioritiesAndEntities
+            List.map snd prioritiesAndEntities
 
         static member tryPick position entities world =
             let entitiesSorted = Entity.pickingSort entities world

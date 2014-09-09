@@ -75,6 +75,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\SDL2CSAddendum\SDL2CSAddendum\SDL2CSAddendum\SDL2CSAddendum.csproj">
+      <Name>SDL2CSAddendum</Name>
+      <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
