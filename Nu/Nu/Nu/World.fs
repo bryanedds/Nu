@@ -444,8 +444,7 @@ module WorldModule =
                     let groupValues = Map.toValueList groupMap
                     let entityMaps = List.fold List.flipCons [] groupValues
                     let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
-                    let descriptors = List.concat descriptors
-                    let descriptors = List.concat descriptors
+                    let descriptors = List.concat <| List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
                     match selectedScreen.State with
                     | IncomingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
@@ -503,6 +502,7 @@ module WorldModule =
         static member private runTasks world =
             List.fold (fun world _ -> World.runNextTask world) world world.Tasks
 
+        // TODO: split this function up
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
             Sdl.run
                 (fun sdlDeps -> tryMakeWorld sdlDeps)

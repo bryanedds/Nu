@@ -11,7 +11,7 @@ module Program =
     ways with approximate speed-ups -
 
     2x gain - Run app at 30fps instead of 60
-    3x gain - put physics and rendering each in another process
+    2x gain - put physics and rendering each in another process
     ? gain - quadtree culling to avoid unecessary render descriptor queries
     1.3x gain - store loaded assets in a Dictionary<string, Dictionary>> rather than a Map<string, Map>>, or...
     1.3x gain - alternatively, use short-term memoization with a temporary dictionary to cache asset queries during rendering / playing / etc.
