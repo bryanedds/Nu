@@ -20,12 +20,6 @@ module AddressModule =
         static member private listToString (list : string list) =
             String.Join ("/", list)
 
-        static member private innerCompareTo this that =
-            List.compareStrings this.AddrListRev that.AddrListRev
-        
-        static member private innerEquals this that =
-            this.AddrList = that.AddrList
-
         /// Make an address from a list of strings.
         static member make list =
             { AddrList = list; AddrListRev = List.rev list }
@@ -37,28 +31,28 @@ module AddressModule =
 
         interface Address IComparable with
             member this.CompareTo that =
-                Address.innerCompareTo this that
+                List.compareStrings this.AddrListRev that.AddrListRev
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? Address as that -> Address.innerCompareTo this that
+                | :? Address as that -> List.compareStrings this.AddrListRev that.AddrListRev
                 | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
 
         interface Address IEquatable with
             member this.Equals that =
-                Address.innerEquals this that
+                this.AddrList = that.AddrList
 
         override this.Equals that =
             match that with
-            | :? Address as that -> Address.innerEquals this that
+            | :? Address as that -> this.AddrList = that.AddrList
             | _ -> false
 
         override this.GetHashCode () =
-            let mutable hash = 0
+            let mutable result = 0
             for name in this.AddrList do
-                hash <- hash ^^^ name.GetHashCode ()
-            hash
+                result <- result ^^^ (name.GetHashCode ())
+            result
         
         override this.ToString () =
             String.Join ("/", this.AddrList)

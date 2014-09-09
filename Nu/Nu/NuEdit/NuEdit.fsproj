@@ -96,6 +96,11 @@
       <Project>{fe09ae81-b66b-42e0-8192-eadecefc9893}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\SDL2CSAddendum\SDL2CSAddendum\SDL2CSAddendum\SDL2CSAddendum.csproj">
+      <Name>SDL2CSAddendum</Name>
+      <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\NuEditDesign\NuEditDesign.csproj">
       <Name>NuEditDesign</Name>
       <Project>{f67217c1-6bb3-4180-916b-b7b4cdc14c2d}</Project>
