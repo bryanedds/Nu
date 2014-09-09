@@ -10,7 +10,7 @@ module WorldGameModule =
     type World with
 
         static member getOptSelectedScreenAddress world = world.Game.OptSelectedScreenAddress
-        static member setOptSelectedScreenAddress optAddress world = { world with Game = { world.Game with OptSelectedScreenAddress = optAddress }}
+        static member setOptSelectedScreenAddress optAddress world = { world with Game = Game.setOptSelectedScreenAddress optAddress world.Game }
         static member getSelectedScreenAddress world = Option.get <| World.getOptSelectedScreenAddress world
         static member setSelectedScreenAddress address world = World.setOptSelectedScreenAddress (Some address) world
         
