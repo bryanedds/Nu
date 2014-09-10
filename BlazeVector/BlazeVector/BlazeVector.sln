@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Windows Desktop
 VisualStudioVersion = 12.0.30501.0
@@ -34,7 +34,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuTemplate", "..\..\Nu\Nu\N
 		{85D631A5-821A-4755-A68E-C1FFC64E469A} = {85D631A5-821A-4755-A68E-C1FFC64E469A}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2Addendum", "..\..\SDL2CSAddendum\SDL2CSAddendum\SDL2CSAddendum\SDL2Addendum.csproj", "{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2Addendum", "..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj", "{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
