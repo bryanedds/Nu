@@ -45,7 +45,7 @@ module Program =
             // made available for creation by the engine, as well as NuEdit. Since there are no
             // user-defined dispatchers or facets here, the empty component factory is used. To
             // inject your own dispatchers and facets, you must make you own class that implements
-            // the IComponentFactory interface properly.
+            // the IUserComponentFactory interface properly.
             //
             // Finally, any user-defined game dispatcher returned from a user-defined component
             // factory will be used as your game's dispatcher.
