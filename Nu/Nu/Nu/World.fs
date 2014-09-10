@@ -25,10 +25,10 @@ module WorldModule =
             Guid.NewGuid ()
 
         static member handleEventAsSwallow (world : World) =
-            (Handled, world)
+            (Resolved, world)
 
         static member handleEventAsExit (world : World) =
-            (Handled, { world with Liveness = Exiting })
+            (Resolved, { world with Liveness = Exiting })
 
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
@@ -65,10 +65,10 @@ module WorldModule =
                         let oldWorld = world
                         let world = World.unsubscribe subscriptionKey world
                         match World.trySelectScreen destination world with
-                        | Some world -> (Unhandled, world)
+                        | Some world -> (Propagate, world)
                         | None ->
                             trace <| "Program error: Could not handle screen transition due to non-existent destination screen '" + string destination + "'."
-                            (Unhandled, oldWorld))
+                            (Propagate, oldWorld))
                     let world = World.setScreenState selectedScreenAddress OutgoingState world
                     let world = World.subscribe subscriptionKey (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress sub world
                     Some world
@@ -79,13 +79,13 @@ module WorldModule =
 
         static member handleEventAsScreenTransitionFromSplash destination world =
             match World.trySelectScreen destination world with
-            | Some world -> (Unhandled, world)
-            | None -> (Unhandled, world)
+            | Some world -> (Propagate, world)
+            | None -> (Propagate, world)
 
         static member handleEventAsScreenTransition destination world =
             match World.tryTransitionScreen destination world with
-            | Some world -> (Unhandled, world)
-            | None -> (Unhandled, world)
+            | Some world -> (Propagate, world)
+            | None -> (Propagate, world)
 
         // OPTIMIZATION: priority annotated as single to decrease GC pressure.
         static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
@@ -176,9 +176,9 @@ module WorldModule =
             let subscriptions = World.getSubscriptionsSorted publishSorter eventName world
             let (_, world) =
                 List.foldWhile
-                    (fun (eventHandled, world) (_, subscriber, subscription) ->
+                    (fun (eventHandling, world) (_, subscriber, subscription) ->
                         let event = { Name = eventName; Publisher = publisher; Subscriber = subscriber; Data = eventData }
-                        if  eventHandled = Handled ||
+                        if  (match eventHandling with Resolved -> true | Propagate -> false) ||
                             (match world.Liveness with Running -> false | Exiting -> true) then
                             None
                         else
@@ -191,9 +191,9 @@ module WorldModule =
                                 | CustomSub fn ->
                                     match World.getOptSimulant event.Subscriber world with
                                     | Some _ -> fn event world
-                                    | None -> (Unhandled, world)
+                                    | None -> (Propagate, world)
                             Some result)
-                    (Unhandled, world)
+                    (Propagate, world)
                     subscriptions
             world
 
@@ -252,7 +252,7 @@ module WorldModule =
                 let sub = CustomSub (fun _ world ->
                     let world = World.unsubscribe removalKey world
                     let world = World.unsubscribe observationKey world
-                    (Unhandled, world))
+                    (Propagate, world))
                 World.subscribe removalKey (RemovingEventName + subscriber) subscriber sub world
 
         static member private updateTransition1 (transition : Transition) =
@@ -316,20 +316,20 @@ module WorldModule =
             if ticks < idlingTime then
                 let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime (incL ticks)
                 let world = World.subscribe SplashScreenTickKey event.Name event.Subscriber subscription world
-                (Unhandled, world)
+                (Propagate, world)
             else
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
                     let world = World.setScreenState selectedScreenAddress OutgoingState world
-                    (Unhandled, world)
+                    (Propagate, world)
                 | None ->
                     trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                    (Handled, { world with Liveness = Exiting })
+                    (Resolved, { world with Liveness = Exiting })
 
         static member internal handleSplashScreenIdle idlingTime event world =
             let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime 0L
             let world = World.subscribe SplashScreenTickKey TickEventName event.Subscriber subscription world
-            (Handled, world)
+            (Resolved, world)
 
         static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
             let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime world

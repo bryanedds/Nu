@@ -44,15 +44,15 @@ module BulletDispatcherModule =
                 let world =
                     if bullet.Age < 28L then World.setEntity event.Subscriber bullet world
                     else snd <| World.removeEntity event.Subscriber bullet world
-                (Unhandled, world)
-            else (Unhandled, world)
+                (Propagate, world)
+            else (Propagate, world)
 
         let collisionHandler event world =
             if World.isGamePlaying world then
                 let bullet = World.getEntity event.Subscriber world
                 let world = snd <| World.removeEntity event.Subscriber bullet world
-                (Unhandled, world)
-            else (Unhandled, world)
+                (Propagate, world)
+            else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
@@ -113,8 +113,8 @@ module EnemyDispatcherModule =
                 let enemy = World.getEntity event.Subscriber world
                 let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then snd <| die event.Subscriber enemy world else world
-                (Unhandled, world)
-            else (Unhandled, world)
+                (Propagate, world)
+            else (Propagate, world)
 
         let collisionHandler event world =
             if World.isGamePlaying world then
@@ -124,9 +124,9 @@ module EnemyDispatcherModule =
                 if isBullet then
                     let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
                     let world = World.playSound HitSound 1.0f world
-                    (Unhandled, world)
-                else (Unhandled, world)
-            else (Unhandled, world)
+                    (Propagate, world)
+                else (Propagate, world)
+            else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
@@ -198,10 +198,10 @@ module PlayerDispatcherModule =
                 if not <| Entity.hasFallen player then
                     if world.TickTime % 6L = 0L then
                         let world = snd <| shootBullet event.Subscriber world
-                        (Unhandled, world)
-                    else (Unhandled, world)
-                else (Unhandled, world)
-            else (Unhandled, world)
+                        (Propagate, world)
+                    else (Propagate, world)
+                else (Propagate, world)
+            else (Propagate, world)
 
         let getLastTimeOnGround (player : Entity) world =
             let physicsId = Entity.getPhysicsId player
@@ -222,8 +222,8 @@ module PlayerDispatcherModule =
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
                     | None -> Vector2 (8000.0f, -30000.0f)
                 let world = World.applyForce force physicsId world
-                (Unhandled, world)
-            else (Unhandled, world)
+                (Propagate, world)
+            else (Propagate, world)
 
         let jumpHandler event world =
             if World.isGamePlaying world then
@@ -234,9 +234,9 @@ module PlayerDispatcherModule =
                     let world = World.setEntity event.Subscriber player world
                     let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
                     let world = World.playSound JumpSound 1.0f world
-                    (Unhandled, world)
-                else (Unhandled, world)
-            else (Unhandled, world)
+                    (Propagate, world)
+                else (Propagate, world)
+            else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
@@ -270,7 +270,7 @@ module StagePlayDispatcherModule =
             else world
 
         let adjustCameraHandler event world =
-            (Unhandled, adjustCamera event.Subscriber world)
+            (Propagate, adjustCamera event.Subscriber world)
 
         let playerFallHandler event world =
             if World.isGamePlaying world then
@@ -280,10 +280,10 @@ module StagePlayDispatcherModule =
                     let oldWorld = world
                     let world = World.playSound DeathSound 1.0f world
                     match World.tryTransitionScreen TitleAddress world with
-                    | Some world -> (Unhandled, world)
-                    | None -> (Unhandled, oldWorld)
-                else (Unhandled, world)
-            else (Unhandled, world)
+                    | Some world -> (Propagate, world)
+                    | None -> (Propagate, oldWorld)
+                else (Propagate, world)
+            else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
 
@@ -334,11 +334,11 @@ module StageScreenModule =
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
             let world = snd <| World.addGroups event.Subscriber groupDescriptors world
             let world = World.playSong DeadBlazeSong 1.0f 0 world
-            (Unhandled, world)
+            (Propagate, world)
 
         let stoppingPlayHandler _ world =
             let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-            (Unhandled, world)
+            (Propagate, world)
 
         let stopPlayHandler event world =
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
@@ -346,7 +346,7 @@ module StageScreenModule =
             let groups = World.getGroups (Address.take 1 event.Subscriber) world
             let groups = Map.filter (fun groupName _ -> List.exists ((=) groupName) groupNames) groups
             let world = snd <| World.removeGroups event.Subscriber groups world
-            (Unhandled, world)
+            (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
 

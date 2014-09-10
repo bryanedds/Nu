@@ -358,7 +358,7 @@ module Program =
             world
 
     let handleNuDownMouseRight (form : NuEditForm) worldChangers refWorld (_ : Event) world =
-        let handled = if World.isGamePlaying world then Unhandled else Handled
+        let handled = if World.isGamePlaying world then Propagate else Resolved
         let mousePosition = World.getMousePositionF world
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
         let editorState = world.ExtData :?> EditorState
@@ -368,7 +368,7 @@ module Program =
 
     let handleNuBeginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
         if not <| canEditWithMouse form world then
-            let handled = if World.isGamePlaying world then Unhandled else Handled
+            let handled = if World.isGamePlaying world then Propagate else Resolved
             let mousePosition = World.getMousePositionF world
             match tryMousePick form mousePosition worldChangers refWorld world with
             | Some (entity, entityAddress) ->
@@ -380,12 +380,12 @@ module Program =
                 let world = { world with ExtData = editorState }
                 (handled, world)
             | None -> (handled, world)
-        else (Unhandled, world)
+        else (Propagate, world)
 
     let handleNuEndEntityDrag (form : NuEditForm) (_ : Event) world =
-        if canEditWithMouse form world then (Unhandled, world)
+        if canEditWithMouse form world then (Propagate, world)
         else
-            let handled = if World.isGamePlaying world then Unhandled else Handled
+            let handled = if World.isGamePlaying world then Propagate else Resolved
             let editorState = world.ExtData :?> EditorState
             match editorState.DragEntityState with
             | DragEntityPosition _
@@ -393,7 +393,7 @@ module Program =
                 let editorState = { editorState with DragEntityState = DragEntityNone }
                 form.propertyGrid.Refresh ()
                 (handled, { world with ExtData = editorState })
-            | DragEntityNone -> (Handled, world)
+            | DragEntityNone -> (Resolved, world)
 
     let handleNuBeginCameraDrag (_ : NuEditForm) (_ : Event) world =
         let mousePosition = World.getMousePositionF world
@@ -402,32 +402,32 @@ module Program =
         let editorState = world.ExtData :?> EditorState
         let editorState = { editorState with DragCameraState = dragState }
         let world = { world with ExtData = editorState }
-        (Handled, world)
+        (Resolved, world)
 
     let handleNuBeginEndCameraDrag (_ : NuEditForm) (_ : Event) world =
         let editorState = world.ExtData :?> EditorState
         match editorState.DragCameraState with
         | DragCameraPosition _ ->
             let editorState = { editorState with DragCameraState = DragCameraNone }
-            (Handled, { world with ExtData = editorState })
-        | DragCameraNone -> (Handled, world)
+            (Resolved, { world with ExtData = editorState })
+        | DragCameraNone -> (Resolved, world)
 
     let handleNuEntityAdd (form : NuEditForm) event world =
         addTreeViewNode form event.Publisher world
-        (Unhandled, world)
+        (Propagate, world)
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
         match form.treeView.Nodes.Find (string event.Publisher, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
-        | null -> (Unhandled, world)
+        | null -> (Propagate, world)
         | :? EntityTypeDescriptorSource as entityTds ->
             if event.Publisher = entityTds.Address then
                 form.propertyGrid.SelectedObject <- null
                 let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
-                (Unhandled, { world with ExtData = editorState })
-            else (Unhandled, world)
+                (Propagate, { world with ExtData = editorState })
+            else (Propagate, world)
         | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
 
     let handleFormExit (form : NuEditForm) (_ : EventArgs) =
