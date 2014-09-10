@@ -173,5 +173,15 @@ module XtensionModule =
 [<RequireQualifiedAccess>]
 module Xtension =
 
-    /// The empty Xtension.
-    let empty = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
+    /// An Xtension that can default and isn't sealed.
+    let unsafe = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
+
+    /// An Xtension that cannot default and is sealed.
+    let safe = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = false; Sealed = true }
+
+    /// An Xtension that cannot default and isn't sealed.
+    let mixed = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = false; Sealed = false }
+
+    /// Make an extension with custom safety.
+    let make canDefault isSealed =
+        { XFields = Map.empty; OptXDispatcherName = None; CanDefault = canDefault; Sealed = isSealed }

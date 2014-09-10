@@ -69,16 +69,16 @@ module AudioModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let s = obj :?> Sound
+        override this.ConvertTo (_, culture, source, _) =
+            let s = source :?> Sound
             String.Format (culture, "{0};{1}", s.SoundAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sound> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Sound> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Sound> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 { SoundAssetName = args.[0]; PackageName = args.[1] } :> obj
 
     /// Converts Song types.
@@ -86,16 +86,16 @@ module AudioModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let s = obj :?> Song
+        override this.ConvertTo (_, culture, source, _) =
+            let s = source :?> Song
             String.Format (culture, "{0};{1}", s.SongAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Song> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Song> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Song> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 { SongAssetName = args.[0]; PackageName = args.[1] } :> obj
 
 [<RequireQualifiedAccess>]

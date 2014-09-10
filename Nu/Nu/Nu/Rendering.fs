@@ -25,18 +25,18 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, _, obj, _) =
-            let bodyType = obj :?> ViewType
+        override this.ConvertTo (_, _, source, _) =
+            let bodyType = source :?> ViewType
             match bodyType with
             | Absolute -> "Absolute" :> obj
             | Relative -> "Relative" :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<ViewType> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<ViewType> then source
             else
-                match obj :?> string with
+                match source :?> string with
                 | "Absolute" -> Absolute :> obj
                 | "Relative" -> Relative :> obj
                 | other -> failwith <| "Unknown ViewType '" + other + "'."
@@ -139,16 +139,16 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let s = obj :?> Image
+        override this.ConvertTo (_, culture, source, _) =
+            let s = source :?> Image
             String.Format (culture, "{0};{1}", s.ImageAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Image> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Image> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 { ImageAssetName = args.[0]; PackageName = args.[1] } :> obj
 
     /// Converts TileMapAsset types.
@@ -156,16 +156,16 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let s = obj :?> TileMapAsset
+        override this.ConvertTo (_, culture, source, _) =
+            let s = source :?> TileMapAsset
             String.Format (culture, "{0};{1}", s.TileMapAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<TileMapAsset> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<TileMapAsset> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 { TileMapAssetName = args.[0]; PackageName = args.[1] } :> obj
 
     /// Converts Font types.
@@ -173,16 +173,16 @@ module RenderingModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let s = obj :?> Font
+        override this.ConvertTo (_, culture, source, _) =
+            let s = source :?> Font
             String.Format (culture, "{0};{1}", s.FontAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Font> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Font> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Font> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 { FontAssetName = args.[0]; PackageName = args.[1] } :> obj
 
 [<RequireQualifiedAccess>]

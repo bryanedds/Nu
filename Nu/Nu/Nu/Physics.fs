@@ -68,19 +68,19 @@ module PhysicsModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, _, obj, _) =
-            let bodyType = obj :?> BodyType
+        override this.ConvertTo (_, _, source, _) =
+            let bodyType = source :?> BodyType
             match bodyType with
             | Static -> "Static" :> obj
             | Kinematic -> "Kinematic" :> obj
             | Dynamic -> "Dynamic" :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<BodyType> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<BodyType> then source
             else
-                match obj :?> string with
+                match source :?> string with
                 | "Static" -> Static :> obj
                 | "Kinematic" -> Kinematic :> obj
                 | "Dynamic" -> Dynamic :> obj

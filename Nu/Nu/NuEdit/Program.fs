@@ -154,7 +154,9 @@ module Program =
                         | "OptOverlayName" ->
                             let oldOptOverlayName = entity.OptOverlayName
                             let entity = setEntityPropertyValue property value entity
-                            synchronizeEntity oldOptOverlayName entityTds.Address entity world
+                            let (entity, world) = synchronizeEntity oldOptOverlayName entityTds.Address entity world
+                            let world = World.setEntity entityTds.Address entity world
+                            (entity, world)
                         | _ ->
                             let entity = setEntityPropertyValue property value entity
                             let world = World.setEntity entityTds.Address entity world
