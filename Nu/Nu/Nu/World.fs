@@ -36,56 +36,65 @@ module WorldModule =
     let private AnyEventNamesCache = Dictionary<Address, Address list> HashIdentity.Structural
 
     type World with
+
+        static member tryIsSelectedScreenIdling world =
+            match World.getOptSelectedScreen world with
+            | Some selectedScreen -> Some <| Screen.isIdling selectedScreen
+            | None -> None
+
+        static member isSelectedScreenIdling world =
+            match World.tryIsSelectedScreenIdling world with
+            | Some answer -> answer
+            | None -> failwith <| "Cannot query state of non-existent selected screen."
         
-        static member private setScreenState address state world =
-            let world = World.withScreen (fun screen -> Screen.setState state screen) address world
-            match state with
-            | IdlingState ->
-                world |>
-                    World.unsubscribe ScreenTransitionDownMouseKey |>
-                    World.unsubscribe ScreenTransitionUpMouseKey
-            | IncomingState | OutgoingState ->
-                world |>
-                    World.subscribe ScreenTransitionDownMouseKey (DownMouseEventName + AnyEventName) address SwallowSub |>
-                    World.subscribe ScreenTransitionUpMouseKey (UpMouseEventName + AnyEventName) address SwallowSub
+        static member private setScreenState state address screen world =
+            let screen = Screen.setState state screen
+            let world =
+                match state with
+                | IdlingState ->
+                    world |>
+                        World.unsubscribe ScreenTransitionDownMouseKey |>
+                        World.unsubscribe ScreenTransitionUpMouseKey
+                | IncomingState | OutgoingState ->
+                    world |>
+                        World.subscribe ScreenTransitionDownMouseKey (DownMouseEventName + AnyEventName) address SwallowSub |>
+                        World.subscribe ScreenTransitionUpMouseKey (UpMouseEventName + AnyEventName) address SwallowSub
+            let world = World.setScreen address screen world
+            (screen, world)
 
-        static member trySelectScreen destination world =
-            if Option.isSome <| World.getOptScreen destination world then
-                let world = World.setScreenState destination IncomingState world
-                let world = World.setOptSelectedScreenAddress (Some destination) world
-                Some world
-            else None
+        static member selectScreen address screen world =
+            let (screen, world) = World.setScreenState IncomingState address screen world
+            let world = World.setOptSelectedScreenAddress (Some address) world
+            (screen, world)
 
-        static member tryTransitionScreen destination world =
-            if Option.isSome <| World.getOptScreen destination world then
-                match World.getOptSelectedScreenAddress world with
-                | Some selectedScreenAddress ->
+        static member tryTransitionScreen destinationAddress destinationScreen world =
+            match World.getOptSelectedScreenAddress world with
+            | Some selectedScreenAddress ->
+                match World.getOptScreen selectedScreenAddress world with
+                | Some selectedScreen ->
                     let subscriptionKey = World.makeSubscriptionKey ()
                     let sub = CustomSub (fun _ world ->
-                        let oldWorld = world
                         let world = World.unsubscribe subscriptionKey world
-                        match World.trySelectScreen destination world with
-                        | Some world -> (Propagate, world)
-                        | None ->
-                            trace <| "Program error: Could not handle screen transition due to non-existent destination screen '" + string destination + "'."
-                            (Propagate, oldWorld))
-                    let world = World.setScreenState selectedScreenAddress OutgoingState world
+                        let world = snd <| World.selectScreen destinationAddress destinationScreen world
+                        (Propagate, world))
+                    let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
                     let world = World.subscribe subscriptionKey (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress sub world
                     Some world
-                | None ->
-                    trace <| "Program Error: Could not handle screen transition due to no selected screen '" + string destination + "'."
-                    None
-            else None
+                | None -> None
+            | None -> None
 
-        static member handleEventAsScreenTransitionFromSplash destination world =
-            match World.trySelectScreen destination world with
-            | Some world -> (Propagate, world)
-            | None -> (Propagate, world)
+        static member handleEventAsScreenTransitionFromSplash destinationAddress world =
+            let destinationScreen = World.getScreen destinationAddress world
+            let world = snd <| World.selectScreen destinationAddress destinationScreen world
+            (Propagate, world)
 
-        static member handleEventAsScreenTransition destination world =
-            match World.tryTransitionScreen destination world with
+        static member handleEventAsScreenTransition destinationAddress world =
+            let destinationScreen = World.getScreen destinationAddress world
+            match World.tryTransitionScreen destinationAddress destinationScreen world with
             | Some world -> (Propagate, world)
-            | None -> (Propagate, world)
+            | None ->
+                trace <| "Program Error: Invalid screen transition for destination address '" + string destinationAddress + "'."
+                (Propagate, world)
 
         // OPTIMIZATION: priority annotated as single to decrease GC pressure.
         static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
@@ -283,7 +292,7 @@ module WorldModule =
                                 let selectedScreen = Screen.setIncoming incoming selectedScreen
                                 let world = World.setScreen selectedScreenAddress selectedScreen world
                                 if finished then
-                                    let world = World.setScreenState selectedScreenAddress IdlingState world
+                                    let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
                                     World.publish4 (FinishIncomingEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 else world
                             | Exiting -> world
@@ -298,7 +307,7 @@ module WorldModule =
                             let selectedScreen = Screen.setOutgoing outgoing selectedScreen
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
-                                let world = World.setScreenState selectedScreenAddress IdlingState world
+                                let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
                                 let world = World.publish4 (DeselectEventName + selectedScreenAddress) selectedScreenAddress NoData world
                                 match world.Liveness with
                                 | Running -> World.publish4 (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress NoData world
@@ -320,8 +329,13 @@ module WorldModule =
             else
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
-                    let world = World.setScreenState selectedScreenAddress OutgoingState world
-                    (Propagate, world)
+                    match World.getOptScreen selectedScreenAddress world with
+                    | Some selectedScreen ->
+                        let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
+                        (Propagate, world)
+                    | None ->
+                        trace "Program Error: Could not handle splash screen tick due to no selected screen."
+                        (Resolved, { world with Liveness = Exiting })
                 | None ->
                     trace "Program Error: Could not handle splash screen tick due to no selected screen."
                     (Resolved, { world with Liveness = Exiting })
@@ -341,12 +355,13 @@ module WorldModule =
             let splashGroupDescriptors = [(splashGroup.Name, splashGroup, Map.singleton splashLabel.Name splashLabel)]
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
             let world = World.observe (FinishIncomingEventName + address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
-            World.observe (FinishOutgoingEventName + address) address (ScreenTransitionFromSplashSub destination) world
+            let world = World.observe (FinishOutgoingEventName + address) address (ScreenTransitionFromSplashSub destination) world
+            (splashScreen, world)
 
         static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
-            let screen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
+            let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
             let (group, entities) = World.loadGroupFromFile groupFileName world
-            snd <| World.addScreen screenAddress screen [(groupName, group, entities)] world
+            World.addScreen screenAddress dissolveScreen [(groupName, group, entities)] world
 
         static member activateGameDispatcher assemblyFileName gameDispatcherFullName world =
             let assembly = Assembly.LoadFrom assemblyFileName
@@ -629,7 +644,7 @@ module WorldModule =
         static member run tryMakeWorld handleUpdate sdlConfig =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
-        static member tryMakeEmpty
+        static member tryMake
             sdlDeps
             (userComponentFactory : IUserComponentFactory)
             interactivity

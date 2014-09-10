@@ -275,14 +275,16 @@ module StagePlayDispatcherModule =
         let playerFallHandler event world =
             if World.isGamePlaying world then
                 let player = getPlayer event.Subscriber world
-                if  Entity.hasFallen player &&
-                    (World.getSelectedScreen world).State = IdlingState then
-                    let oldWorld = world
-                    let world = World.playSound DeathSound 1.0f world
-                    match World.tryTransitionScreen TitleAddress world with
-                    | Some world -> (Propagate, world)
-                    | None -> (Propagate, oldWorld)
-                else (Propagate, world)
+                match World.getOptScreen TitleAddress world with
+                | Some titleScreen ->
+                    if Entity.hasFallen player && World.isSelectedScreenIdling world then
+                        let oldWorld = world
+                        let world = World.playSound DeathSound 1.0f world
+                        match World.tryTransitionScreen TitleAddress titleScreen world with
+                        | Some world -> (Propagate, world)
+                        | None -> (Propagate, oldWorld)
+                    else (Propagate, world)
+                | None -> (Propagate, world)
             else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions

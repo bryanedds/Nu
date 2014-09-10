@@ -35,7 +35,8 @@ module BlazeFlow =
     let handlePlayStage _ world =
         let oldWorld = world
         let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-        match World.tryTransitionScreen StageAddress world with
+        let stageScreen = World.getScreen StageAddress world
+        match World.tryTransitionScreen StageAddress stageScreen world with
         | Some world -> (Propagate, world)
         | None -> (Propagate, oldWorld)
 
@@ -43,7 +44,7 @@ module BlazeFlow =
     let addTitleScreen world =
 
         // this adds a dissolve screen from the specified file with the given parameters
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (Address.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (Address.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
 
         // this subscribes to the event that is raised when the Title screen is selected for
         // display and interaction, and handles the event by playing the song "Machinery"
@@ -63,12 +64,12 @@ module BlazeFlow =
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
-        let world = World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (Address.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName (Address.last CreditsGroupAddress) IncomingTime OutgoingTime CreditsAddress world
         World.subscribe4 ClickCreditsBackEventName Address.empty (ScreenTransitionSub TitleAddress) world
 
     // and so on.
     let addStageScreen world =
-        let world = World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFileName (Address.last StageGroupAddress) IncomingTime StageOutgoingTime StageAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFileName (Address.last StageGroupAddress) IncomingTime StageOutgoingTime StageAddress world
         World.subscribe4 ClickStageBackEventName Address.empty (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
@@ -77,9 +78,9 @@ module BlazeFlow =
         // create our game's component factory
         let blazeComponentFactory = BlazeComponentFactory ()
 
-        // we use World.tryMakeEmpty to create an empty world that we will transform to create the
+        // we use World.tryMake to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMakeEmpty sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false extData
+        let optWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false extData
         match optWorld with
         | Right world ->
 
@@ -93,13 +94,12 @@ module BlazeFlow =
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
-            let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
+            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound NuSplashSound 1.0f world
-            match World.trySelectScreen SplashAddress world with
-            | Some world -> Right world
-            | None -> Left "Splash screen is missing."
+            let world = snd <| World.selectScreen SplashAddress splashScreen world
+            Right world
 
         // propagate error
         | Left _ as left -> left
