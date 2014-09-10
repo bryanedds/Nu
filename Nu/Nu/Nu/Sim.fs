@@ -248,7 +248,7 @@ module SimModule =
               FacetNames = []
               FacetsNp = []
               OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false } }
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true } }
 
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
@@ -277,7 +277,7 @@ module SimModule =
             let id = NuCore.makeId ()
             { Group.Id = id
               Name = match optName with None -> string id | Some name -> name
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
 
     /// The screen type that allows transitioning to and fro other screens, and also hosts the
     /// currently interactive groups of entities.
@@ -325,7 +325,7 @@ module SimModule =
               State = IdlingState
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
@@ -354,7 +354,7 @@ module SimModule =
                 { Id = id
                   Name = match optName with None -> string id | Some name -> name
                   OptSelectedScreenAddress = None
-                  Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
+                  Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
             Reflection.attachFields dispatcher game
             game
 
