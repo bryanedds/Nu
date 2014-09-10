@@ -52,6 +52,7 @@ module OmniFlow =
             let world = addLoadGameScreen world
             let world = addCreditsScreen world
             let world = addFieldScreen world
-            let world = World.selectScreen SplashAddress world
-            Right world
+            match World.trySelectScreen SplashAddress world with
+            | Some world -> Right world
+            | None -> Left "Splash screen is missing."
         | Left _ as left -> left

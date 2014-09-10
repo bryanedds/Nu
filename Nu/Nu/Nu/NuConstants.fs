@@ -23,6 +23,7 @@ module NuConstants =
     let [<Literal>] PackageNodeName = "Package"
     let [<Literal>] AssetNodeName = "Asset"
     let [<Literal>] GroupNodeName = "Group"
+    let [<Literal>] EntitiesNodeName = "Entities"
     let [<Literal>] EntityNodeName = "Entity"
     let [<Literal>] NameAttributeName = "name"
     let [<Literal>] FileNameAttributeName = "fileName"

@@ -1,69 +1,72 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
+    <Name>db215407-5d65-4196-bd8e-b2180afcc2ef</Name>
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
-    <Entity>
-      <Name>182e8445-4882-4145-9d2f-097243c61d18</Name>
-      <Position>168;-175.68</Position>
-      <Depth>1</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>55b8d088-53b2-4f09-b95d-ee95e3ac893b</Name>
-      <Position>680;112.32</Position>
-      <Depth>1</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>6c80b6a0-01c6-470c-843b-419d20d605db</Name>
-      <Position>-152;-15.68001</Position>
-      <Depth>1</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>b9f3e92a-de81-4d3a-82d2-722e7e837a78</Name>
-      <Position>-480;-304</Position>
-      <Depth>-4</Depth>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
-        <Parallax type="System.Single">0.1</Parallax>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage</TileMapAsset>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>bbadb04b-2593-435f-8f67-d724e0295d7a</Name>
-      <Position>-480;-304</Position>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section3;Stage</TileMapAsset>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>d1b42fbd-e6bc-4d6d-8e48-9c823b3f22ca</Name>
-      <Position>96;48.31998</Position>
-      <Depth>1</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>e7882262-4822-43d0-99ed-86abd6f5edcc</Name>
-      <Position>-480;-304</Position>
-      <Depth>-8</Depth>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
-        <Parallax type="System.Single">0.1</Parallax>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage</TileMapAsset>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>f99ae7f9-01ee-47c5-9cb3-fdf3d8f8b4e3</Name>
-      <Position>-415.7759;-175.68</Position>
-      <Depth>1</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
+    <Entities>
+      <Entity>
+        <Name>182e8445-4882-4145-9d2f-097243c61d18</Name>
+        <Position>168;-175.68</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>55b8d088-53b2-4f09-b95d-ee95e3ac893b</Name>
+        <Position>680;112.32</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>6c80b6a0-01c6-470c-843b-419d20d605db</Name>
+        <Position>-152;-15.68001</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>b9f3e92a-de81-4d3a-82d2-722e7e837a78</Name>
+        <Position>-480;-304</Position>
+        <Depth>-4</Depth>
+        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+          <Parallax type="System.Single">0.1</Parallax>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage</TileMapAsset>
+        </Xtension>
+      </Entity>
+      <Entity>
+        <Name>bbadb04b-2593-435f-8f67-d724e0295d7a</Name>
+        <Position>-480;-304</Position>
+        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section3;Stage</TileMapAsset>
+        </Xtension>
+      </Entity>
+      <Entity>
+        <Name>d1b42fbd-e6bc-4d6d-8e48-9c823b3f22ca</Name>
+        <Position>96;48.31998</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>e7882262-4822-43d0-99ed-86abd6f5edcc</Name>
+        <Position>-480;-304</Position>
+        <Depth>-8</Depth>
+        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+          <Parallax type="System.Single">0.1</Parallax>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage</TileMapAsset>
+        </Xtension>
+      </Entity>
+      <Entity>
+        <Name>f99ae7f9-01ee-47c5-9cb3-fdf3d8f8b4e3</Name>
+        <Position>-415.7759;-175.68</Position>
+        <Depth>1</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+    </Entities>
   </Group>
 </Root>

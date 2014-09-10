@@ -1,27 +1,30 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
+    <Name>cd229643-b6fc-4fbc-842d-4b4a4a75bb51</Name>
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
-    <Entity>
-      <Name>Back</Name>
-      <Position>-128;-224</Position>
-      <Depth>10</Depth>
-      <Size>256;64</Size>
-      <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(ButtonDispatcher)">
-        <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
-        <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
-      <Position>-480;-272</Position>
-      <Depth>-100</Depth>
-      <Size>960;544</Size>
-      <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(LabelDispatcher)">
-        <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
-      </Xtension>
-    </Entity>
+    <Entities>
+      <Entity>
+        <Name>Back</Name>
+        <Position>-128;-224</Position>
+        <Depth>10</Depth>
+        <Size>256;64</Size>
+        <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+          <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
+        </Xtension>
+      </Entity>
+      <Entity>
+        <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
+        <Position>-480;-272</Position>
+        <Depth>-100</Depth>
+        <Size>960;544</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(LabelDispatcher)">
+          <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
+        </Xtension>
+      </Entity>
+    </Entities>
   </Group>
 </Root>

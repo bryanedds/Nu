@@ -1,76 +1,79 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
+    <Name>01195dc6-6d08-42fc-ae18-b63b8ae4e0a0</Name>
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
-    <Entity>
-      <Name>0066be26-b4ad-4fda-ad1f-13aba92657c1</Name>
-      <Position>-480;-304</Position>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section0;Stage</TileMapAsset>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
-      <Position>1512;-175.68</Position>
-      <Depth>4</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>33293c93-3553-4875-9efd-3a2ba917c33a</Name>
-      <Position>176;-79.68001</Position>
-      <Depth>4</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>35d5898e-32ef-4026-995b-a81cfbe7dfd2</Name>
-      <Position>-480;-304</Position>
-      <Depth>-8</Depth>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
-        <Parallax type="System.Single">0.1</Parallax>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage</TileMapAsset>
-      </Xtension>
-    </Entity>
-    <Entity>
-      <Name>3a26e4d1-0257-4755-8074-5a5810a8d6d0</Name>
-      <Position>1376;-175.68</Position>
-      <Depth>4</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>642996a9-b2dd-48f5-a76a-25f6d457ef69</Name>
-      <Position>1256;112.32</Position>
-      <Depth>4</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>705dc3f2-8678-426e-8a7a-10c523bb4521</Name>
-      <Position>928;112.32</Position>
-      <Depth>4</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>cf1aabf7-258b-49c3-abaa-84d6479fa1a0</Name>
-      <Position>112;48.31998</Position>
-      <Depth>4</Depth>
-      <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
-    </Entity>
-    <Entity>
-      <Name>f63bf3c3-bb2e-4b09-8c64-1cb9b14aab12</Name>
-      <Position>-480;-304</Position>
-      <Depth>-4</Depth>
-      <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-      <Xtension optXDispatcherName="Some(TileMapDispatcher)">
-        <Parallax type="System.Single">0.1</Parallax>
-        <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage</TileMapAsset>
-      </Xtension>
-    </Entity>
+    <Entities>
+      <Entity>
+        <Name>0066be26-b4ad-4fda-ad1f-13aba92657c1</Name>
+        <Position>-480;-304</Position>
+        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">Section0;Stage</TileMapAsset>
+        </Xtension>
+      </Entity>
+      <Entity>
+        <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
+        <Position>1512;-175.68</Position>
+        <Depth>4</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>33293c93-3553-4875-9efd-3a2ba917c33a</Name>
+        <Position>176;-79.68001</Position>
+        <Depth>4</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>35d5898e-32ef-4026-995b-a81cfbe7dfd2</Name>
+        <Position>-480;-304</Position>
+        <Depth>-8</Depth>
+        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+          <Parallax type="System.Single">0.1</Parallax>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundA;Stage</TileMapAsset>
+        </Xtension>
+      </Entity>
+      <Entity>
+        <Name>3a26e4d1-0257-4755-8074-5a5810a8d6d0</Name>
+        <Position>1376;-175.68</Position>
+        <Depth>4</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>642996a9-b2dd-48f5-a76a-25f6d457ef69</Name>
+        <Position>1256;112.32</Position>
+        <Depth>4</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>705dc3f2-8678-426e-8a7a-10c523bb4521</Name>
+        <Position>928;112.32</Position>
+        <Depth>4</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>cf1aabf7-258b-49c3-abaa-84d6479fa1a0</Name>
+        <Position>112;48.31998</Position>
+        <Depth>4</Depth>
+        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
+      </Entity>
+      <Entity>
+        <Name>f63bf3c3-bb2e-4b09-8c64-1cb9b14aab12</Name>
+        <Position>-480;-304</Position>
+        <Depth>-4</Depth>
+        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+          <Parallax type="System.Single">0.1</Parallax>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">BackgroundB;Stage</TileMapAsset>
+        </Xtension>
+      </Entity>
+    </Entities>
   </Group>
 </Root>

@@ -263,19 +263,25 @@ module StagePlayDispatcherModule =
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
-            let player = getPlayer groupAddress world
-            let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
-            { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
+            if World.isGamePlaying world then
+                let player = getPlayer groupAddress world
+                let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
+                { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
+            else world
 
         let adjustCameraHandler event world =
             (Unhandled, adjustCamera event.Subscriber world)
 
         let playerFallHandler event world =
             let player = getPlayer event.Subscriber world
-            if Entity.hasFallen player && (World.getSelectedScreen world).State = IdlingState then
+            if  World.isGamePlaying world &&
+                Entity.hasFallen player &&
+                (World.getSelectedScreen world).State = IdlingState then
+                let oldWorld = world
                 let world = World.playSound DeathSound 1.0f world
-                let world = World.transitionScreen TitleAddress world
-                (Unhandled, world)
+                match World.tryTransitionScreen TitleAddress world with
+                | Some world -> (Unhandled, world)
+                | None -> (Unhandled, oldWorld)
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions

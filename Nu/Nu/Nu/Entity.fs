@@ -316,9 +316,11 @@ module WorldEntityModule =
                 entity
             writer.WriteEndElement ()
 
-        static member writeEntitiesToXml overlayer writer (entities : Map<_, _>) =
+        static member writeEntitiesToXml overlayer (writer : XmlWriter) (entities : Map<_, _>) =
+            writer.WriteStartElement EntitiesNodeName
             for entityKvp in entities do
                 World.writeEntityToXml overlayer writer entityKvp.Value
+            writer.WriteEndElement ()
 
         static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
 
@@ -369,13 +371,16 @@ module WorldEntityModule =
             entity
 
         static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
-            let entityNodes = parentNode.SelectNodes EntityNodeName
-            Seq.fold
-                (fun entities entityNode ->
-                    let entity = World.readEntityFromXml entityNode defaultDispatcherName world
-                    Map.add entity.Name entity entities)
-                Map.empty
-                (enumerable entityNodes)
+            match parentNode.SelectSingleNode EntitiesNodeName with
+            | null -> Map.empty
+            | entitiesNode ->
+                let entityNodes = entitiesNode.SelectNodes EntityNodeName
+                Seq.fold
+                    (fun entities entityNode ->
+                        let entity = World.readEntityFromXml entityNode defaultDispatcherName world
+                        Map.add entity.Name entity entities)
+                    Map.empty
+                    (enumerable entityNodes)
 
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName
