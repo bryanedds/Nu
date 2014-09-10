@@ -433,7 +433,7 @@ module WorldModule =
                                 | Right (entity, world) ->
                                     Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
                                     World.setEntity address entity world
-                                | Left _ -> world // TODO: consider if we should debug or note here.. or something?
+                                | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
                         (World.getEntities1 world)
