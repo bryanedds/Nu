@@ -77,7 +77,7 @@ module Serialization =
     /// Read a target's property from Xml if possible.
     let readTargetProperty (fieldNode : XmlNode) (target : 'a) =
         match typeof<'a>.GetPropertyWritable fieldNode.Name with
-        | null -> note <| "May not be an issue, but unable to read "
+        | null -> ()
         | property -> tryReadTargetProperty property fieldNode target
 
     /// Read just the target's OptXDispatcherName from Xml.
