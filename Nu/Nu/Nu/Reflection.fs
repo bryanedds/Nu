@@ -54,7 +54,7 @@ module ReflectionModule =
     /// In tandem with the DefineConstant type, grants a nice syntax to define constant XFields.
     let define = { DefineConstant = () }
 
-    /// In tandem with the DefineLiteral type, grants a nice syntax to define variable XFields.
+    /// In tandem with the DefineVariable type, grants a nice syntax to define variable XFields.
     let variable = { DefineVariable = () }
 
 [<RequireQualifiedAccess>]
@@ -74,44 +74,41 @@ module Reflection =
             then baseType :: getBaseTypesExceptObject baseType
             else []
 
-    /// Attach fields to a target.
-    let attachFields fieldDefinitions target =
+    /// Attach fields from the given definitions to a target.
+    let attachFieldsViaDefinitions fieldDefinitions target =
         let targetType = target.GetType ()
-        List.iter
-            (fun fieldDefinition ->
-                let fieldValue = FieldExpression.eval fieldDefinition.FieldExpression
-                match targetType.GetPropertyWritable fieldDefinition.FieldName with
-                | null ->
-                    match targetType.GetPropertyWritable "Xtension" with
-                    | null -> ()
-                    | xtensionProperty ->
-                        match xtensionProperty.GetValue target with
-                        | :? Xtension as xtension ->
-                            let xfields = Map.add fieldDefinition.FieldName fieldValue xtension.XFields
-                            let xtension = { xtension with XFields = xfields }
-                            xtensionProperty.SetValue (target, xtension)
-                        | _ -> ()
-                | property -> property.SetValue (target, fieldValue))
-            fieldDefinitions
+        for fieldDefinition in fieldDefinitions do
+            let fieldValue = FieldExpression.eval fieldDefinition.FieldExpression
+            match targetType.GetPropertyWritable fieldDefinition.FieldName with
+            | null ->
+                match targetType.GetPropertyWritable "Xtension" with
+                | null -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+                | xtensionProperty ->
+                    match xtensionProperty.GetValue target with
+                    | :? Xtension as xtension ->
+                        let xfields = Map.add fieldDefinition.FieldName fieldValue xtension.XFields
+                        let xtension = { xtension with XFields = xfields }
+                        xtensionProperty.SetValue (target, xtension)
+                    | _ -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+            | property -> property.SetValue (target, fieldValue)
+            
 
     /// Detach fields from a target.
-    let detachFields fieldDefinitions target =
+    let detachFieldsViaDefinitions fieldDefinitions target =
         let targetType = target.GetType ()
-        List.iter
-            (fun fieldDefinition ->
-                match targetType.GetPropertyWritable fieldDefinition.FieldName with
-                | null ->
-                    match targetType.GetPropertyWritable "Xtension" with
-                    | null -> ()
-                    | xtensionProperty ->
-                        match xtensionProperty.GetValue target with
-                        | :? Xtension as xtension ->
-                            let xfields = Map.remove fieldDefinition.FieldName xtension.XFields
-                            let xtension = { xtension with XFields = xfields }
-                            xtensionProperty.SetValue (target, xtension)
-                        | _ -> ()
-                | _ -> ())
-            fieldDefinitions
+        for fieldDefinition in fieldDefinitions do
+            match targetType.GetPropertyWritable fieldDefinition.FieldName with
+            | null ->
+                match targetType.GetPropertyWritable "Xtension" with
+                | null -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+                | xtensionProperty ->
+                    match xtensionProperty.GetValue target with
+                    | :? Xtension as xtension ->
+                        let xfields = Map.remove fieldDefinition.FieldName xtension.XFields
+                        let xtension = { xtension with XFields = xfields }
+                        xtensionProperty.SetValue (target, xtension)
+                    | _ -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+            | _ -> ()
 
     /// Get the field definitions of a target type not considering inheritance.
     let getFieldDefinitionsNoInherit (targetType : Type) =
@@ -149,25 +146,25 @@ module Reflection =
         let intrinsicFacetNamesLists = List.rev intrinsicFacetNamesLists
         List.concat intrinsicFacetNamesLists
 
-    /// Get the names of the field definition of a target type.
+    /// Get the names of the field definitions of a target type.
     let getFieldDefinitionNames targetType =
         let fieldDefinitions = getFieldDefinitions targetType
         List.map (fun fieldDefinition -> fieldDefinition.FieldName) fieldDefinitions
 
     /// Attach source's fields to a target.
-    let attachFieldsFromSource source target =
+    let attachFields source target =
         let sourceType = source.GetType ()
         let fieldDefinitions = getFieldDefinitions sourceType
-        attachFields fieldDefinitions target
+        attachFieldsViaDefinitions fieldDefinitions target
 
     /// Detach source's fields to a target.
-    let detachFieldsFromSource source target =
+    let detachFields source target =
         let sourceType = source.GetType ()
         let fieldDefinitions = getFieldDefinitions sourceType
-        detachFields fieldDefinitions target
+        detachFieldsViaDefinitions fieldDefinitions target
 
-    /// Attach intrinsic facets to a target.
-    let attachIntrinsicFacets facetNames target facetMap =
+    /// Attach intrinsic facets to a target by their names.
+    let attachIntrinsicFacetsViaNames facetNames target facetMap =
         let facets =
             List.map
                 (fun facetName ->
@@ -180,26 +177,22 @@ module Reflection =
         | null -> failwith <| "Could not attach facet to type '" + targetType.Name + "'."
         | property ->
             property.SetValue (target, facets)
-            List.iter
-                (fun facet -> attachFieldsFromSource facet target)
-                facets
+            List.iter (fun facet -> attachFields facet target) facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacetsFromSource source target facets =
+    let attachIntrinsicFacets source target facets =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
-        attachIntrinsicFacets instrinsicFacetNames target facets
+        attachIntrinsicFacetsViaNames instrinsicFacetNames target facets
 
     /// Create intrinsic overlays.
     let createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes =
 
         // get the unique, decomposed source types
         let sourceTypeHashSet = HashSet ()
-        List.iter
-            (fun sourceType ->
-                let sourceTypes = sourceType :: getBaseTypesExceptObject sourceType
-                List.iter (fun sourceType -> ignore <| sourceTypeHashSet.Add sourceType) sourceTypes)
-            sourceTypes
+        for sourceType in sourceTypes do
+            for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
+                ignore <| sourceTypeHashSet.Add sourceTypeDecomposed
         let sourceTypes = List.ofSeq sourceTypeHashSet
 
         // get the descriptors needed to construct the overlays
@@ -221,49 +214,45 @@ module Reflection =
         let root = document.CreateElement RootNodeName
 
         // construct the overlay nodes
-        List.iter
-            (fun (overlayName, optBaseName, optFacetNames, definitions, hasFacetNamesField) ->
+        for (overlayName, optBaseName, optFacetNames, definitions, hasFacetNamesField) in overlayDescriptors do
 
-                // make an empty overlay node
-                let overlayNode = document.CreateElement overlayName
+            // make an empty overlay node
+            let overlayNode = document.CreateElement overlayName
 
-                // combine the overlay's include names into a single list
-                let includeNames =
-                    match (optBaseName, optFacetNames) with
-                    | (Some baseName, Some facetNames) -> baseName :: facetNames
-                    | (Some baseName, None) -> [baseName]
-                    | (None, Some facetNames) -> facetNames
-                    | (None, None) -> []
+            // combine the overlay's include names into a single list
+            let includeNames =
+                match (optBaseName, optFacetNames) with
+                | (Some baseName, Some facetNames) -> baseName :: facetNames
+                | (Some baseName, None) -> [baseName]
+                | (None, Some facetNames) -> facetNames
+                | (None, None) -> []
 
-                // construct the "includes" attribute
-                match includeNames with
-                | _ :: _ ->
-                    let includeAttribute = document.CreateAttribute IncludeAttributeName
-                    includeAttribute.InnerText <- string includeNames
-                    ignore <| overlayNode.Attributes.Append includeAttribute
-                | _ -> ()
+            // construct the "includes" attribute
+            match includeNames with
+            | _ :: _ ->
+                let includeAttribute = document.CreateAttribute IncludeAttributeName
+                includeAttribute.InnerText <- string includeNames
+                ignore <| overlayNode.Attributes.Append includeAttribute
+            | _ -> ()
 
-                // construct the field nodes
-                List.iter
-                    (fun definition ->
-                        let fieldNode = document.CreateElement definition.FieldName
-                        match definition.FieldExpression with
-                        | Constant constant ->
-                            let converter = TypeDescriptor.GetConverter definition.FieldType
-                            fieldNode.InnerText <- converter.ConvertToString constant
-                            ignore <| overlayNode.AppendChild fieldNode
-                        | Variable _ -> ())
-                    definitions
+            // construct the field nodes
+            for definition in definitions do
+                let fieldNode = document.CreateElement definition.FieldName
+                match definition.FieldExpression with
+                | Constant constant ->
+                    let converter = TypeDescriptor.GetConverter definition.FieldType
+                    fieldNode.InnerText <- converter.ConvertToString constant
+                    ignore <| overlayNode.AppendChild fieldNode
+                | Variable _ -> ()
 
-                // construct the "FacetNames" node if needed
-                if hasFacetNamesField then
-                    let facetNamesNode = document.CreateElement "FacetNames"
-                    facetNamesNode.InnerText <- string []
-                    ignore <| overlayNode.AppendChild facetNamesNode
+            // construct the "FacetNames" node if needed
+            if hasFacetNamesField then
+                let facetNamesNode = document.CreateElement "FacetNames"
+                facetNamesNode.InnerText <- string []
+                ignore <| overlayNode.AppendChild facetNamesNode
 
-                // append the overlay node
-                ignore <| root.AppendChild overlayNode)
-            overlayDescriptors
+            // append the overlay node
+            ignore <| root.AppendChild overlayNode
 
         // append the root node
         ignore <| document.AppendChild root

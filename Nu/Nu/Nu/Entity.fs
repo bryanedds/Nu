@@ -238,7 +238,7 @@ module WorldEntityModule =
                     | Some address -> facet.Unregister (entity, address, world)
                     | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
-                Reflection.detachFieldsFromSource facet entity
+                Reflection.detachFields facet entity
                 let entity =
                     if syncing then entity
                     else Entity.setFacetNames (List.remove ((=) (Reflection.getTypeName facet)) entity.FacetNames) entity
@@ -255,7 +255,7 @@ module WorldEntityModule =
             | Right facet ->
                 if Entity.isFacetCompatible facet entity then
                     let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
-                    Reflection.attachFieldsFromSource facet entity
+                    Reflection.attachFields facet entity
                     let entity =
                         if syncing then entity
                         else Entity.setFacetNames (Reflection.getTypeName facet :: entity.FacetNames) entity
@@ -300,41 +300,41 @@ module WorldEntityModule =
             | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd optAddress entity world
             | Left _ as left -> left
 
-        static member attachIntrinsicFacets (entity : Entity) world =
+        static member attachIntrinsicFacetsViaNames (entity : Entity) world =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as entityDispatcher ->
                 let entity = { entity with Id = entity.Id } // hacky copy
-                Reflection.attachIntrinsicFacetsFromSource entityDispatcher entity world.Facets
+                Reflection.attachIntrinsicFacets entityDispatcher entity world.Facets
                 entity
             | _ -> failwith <| "No valid entity dispatcher for entity '" + entity.Name + "'."
 
-        static member writeEntityToXml overlayer (writer : XmlWriter) (entity : Entity) =
+        static member writeEntity overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
-            Serialization.writeTargetProperties 
+            Serialization.writePropertiesFromTarget 
                 (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
                 writer
                 entity
             writer.WriteEndElement ()
 
-        static member writeEntitiesToXml overlayer (writer : XmlWriter) (entities : Map<_, _>) =
+        static member writeEntities overlayer (writer : XmlWriter) (entities : Map<_, _>) =
             writer.WriteStartElement EntitiesNodeName
             for entityKvp in entities do
-                World.writeEntityToXml overlayer writer entityKvp.Value
+                World.writeEntity overlayer writer entityKvp.Value
             writer.WriteEndElement ()
 
-        static member readEntityFromXml (entityNode : XmlNode) defaultDispatcherName world =
+        static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
 
             // make the bare entity with name as id
             let entity = Entity.make defaultDispatcherName None
 
             // read in the Xtension.OptXDispatcherName
-            Serialization.readTargetOptXDispatcherName entityNode entity
+            Serialization.readOptXDispatcherNameToTarget entityNode entity
 
             // attach the entity's intrinsic facets
-            let entity = World.attachIntrinsicFacets entity world
+            let entity = World.attachIntrinsicFacetsViaNames entity world
 
             // read the entity's overlay and apply it to its facet names
-            Serialization.readTargetOptOverlayName entityNode entity
+            Serialization.readOptOverlayNameToTarget entityNode entity
             match entity.OptOverlayName with
             | Some overlayName ->
                 let defaultOptDispatcherName = Some typeof<EntityDispatcher>.Name
@@ -342,7 +342,7 @@ module WorldEntityModule =
             | None -> ()
 
             // read the entity's facet names, and synchronize its facets 
-            Serialization.readTargetFacetNames entityNode entity
+            Serialization.readFacetNamesToTarget entityNode entity
             let entity =
                 match World.trySynchronizeFacets [] None entity world with
                 | Right (entity, _) -> entity
@@ -354,7 +354,7 @@ module WorldEntityModule =
                 match Map.tryFind dispatcherName world.Dispatchers with
                 | Some dispatcher ->
                     match dispatcher with
-                    | :? EntityDispatcher -> Reflection.attachFieldsFromSource dispatcher entity
+                    | :? EntityDispatcher -> Reflection.attachFields dispatcher entity
                     | _ -> note <| "Dispatcher '" + dispatcherName + "' is not an entity dispatcher."
                 | None -> note <| "Could not locate dispatcher '" + dispatcherName + "'."
             | None -> ()
@@ -365,28 +365,28 @@ module WorldEntityModule =
             | None -> ()
 
             // read the entity's properties
-            Serialization.readTargetProperties entityNode entity
+            Serialization.readPropertiesToTarget entityNode entity
 
             // return the initialized entity
             entity
 
-        static member readEntitiesFromXml (parentNode : XmlNode) defaultDispatcherName world =
+        static member readEntities (parentNode : XmlNode) defaultDispatcherName world =
             match parentNode.SelectSingleNode EntitiesNodeName with
             | null -> Map.empty
             | entitiesNode ->
                 let entityNodes = entitiesNode.SelectNodes EntityNodeName
                 Seq.fold
                     (fun entities entityNode ->
-                        let entity = World.readEntityFromXml entityNode defaultDispatcherName world
+                        let entity = World.readEntity entityNode defaultDispatcherName world
                         Map.add entity.Name entity entities)
                     Map.empty
                     (enumerable entityNodes)
 
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName
-            let entity = World.attachIntrinsicFacets entity world
+            let entity = World.attachIntrinsicFacetsViaNames entity world
             let entityDispatcher = Map.find dispatcherName world.Dispatchers
-            Reflection.attachFieldsFromSource entityDispatcher entity
+            Reflection.attachFields entityDispatcher entity
             match World.trySynchronizeFacets [] None entity world with
             | Right (entity, _) -> entity
             | Left error -> debug error; entity

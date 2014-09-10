@@ -121,18 +121,18 @@ module WorldGroupModule =
                 ([], world)
                 groupDescriptors
     
-        static member writeGroupToXml overlayer (writer : XmlWriter) group entities =
+        static member writeGroup overlayer (writer : XmlWriter) group entities =
             writer.WriteStartElement typeof<Group>.Name
-            Serialization.writeTargetProperties tautology writer group
-            World.writeEntitiesToXml overlayer writer entities
+            Serialization.writePropertiesFromTarget tautology writer group
+            World.writeEntities overlayer writer entities
     
-        static member readGroupFromXml (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+        static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
             
             // make the bare group with name as id
             let group = Group.make defaultDispatcherName None
             
             // read in the Xtension.OptXDispatcherName
-            Serialization.readTargetOptXDispatcherName groupNode group
+            Serialization.readOptXDispatcherNameToTarget groupNode group
             
             // attach the group's instrinsic fields from its dispatcher if any
             match group.Xtension.OptXDispatcherName with
@@ -140,16 +140,16 @@ module WorldGroupModule =
                 match Map.tryFind dispatcherName world.Dispatchers with
                 | Some dispatcher ->
                     match dispatcher with
-                    | :? GroupDispatcher -> Reflection.attachFieldsFromSource dispatcher group
+                    | :? GroupDispatcher -> Reflection.attachFields dispatcher group
                     | _ -> note <| "Dispatcher '" + dispatcherName + "' is not an group dispatcher."
                 | None -> note <| "Could not locate dispatcher '" + dispatcherName + "'."
             | None -> ()
 
             // read the groups's properties
-            Serialization.readTargetProperties groupNode group
+            Serialization.readPropertiesToTarget groupNode group
             
             // read the group's entities
-            let entities = World.readEntitiesFromXml (groupNode : XmlNode) defaultEntityDispatcherName world
+            let entities = World.readEntities (groupNode : XmlNode) defaultEntityDispatcherName world
 
             // return the initialized group and entities
             (group, entities)
@@ -157,5 +157,5 @@ module WorldGroupModule =
         static member makeGroup dispatcherName optName world =
             let group = Group.make dispatcherName optName
             let groupDispatcher = Map.find dispatcherName world.Dispatchers
-            Reflection.attachFieldsFromSource groupDispatcher group
+            Reflection.attachFields groupDispatcher group
             group

@@ -60,7 +60,7 @@ module Serialization =
         { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
 
     /// Attempt to read a target's property from Xml.
-    let tryReadTargetProperty (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
+    let tryReadPropertyToTarget (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
         if property.PropertyType = typeof<Xtension> then
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
@@ -75,13 +75,13 @@ module Serialization =
                 property.SetValue (target, value)
 
     /// Read a target's property from Xml if possible.
-    let readTargetProperty (fieldNode : XmlNode) (target : 'a) =
+    let readPropertyToTarget (fieldNode : XmlNode) (target : 'a) =
         match typeof<'a>.GetPropertyWritable fieldNode.Name with
         | null -> ()
-        | property -> tryReadTargetProperty property fieldNode target
+        | property -> tryReadPropertyToTarget property fieldNode target
 
     /// Read just the target's OptXDispatcherName from Xml.
-    let readTargetOptXDispatcherName (targetNode : XmlNode) target =
+    let readOptXDispatcherNameToTarget (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let xtensionProperty =
@@ -98,7 +98,7 @@ module Serialization =
         xtensionProperty.SetValue (target, xtension)
 
     /// Read just the target's OptOverlayName from Xml.
-    let readTargetOptOverlayName (targetNode : XmlNode) target =
+    let readOptOverlayNameToTarget (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let optOverlayNameProperty =
@@ -115,7 +115,7 @@ module Serialization =
             optOverlayNameProperty.SetValue (target, optOverlayName)
 
     /// Read just the target's FacetNames from Xml.
-    let readTargetFacetNames (targetNode : XmlNode) target =
+    let readFacetNamesToTarget (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         let facetNamesProperty =
@@ -131,12 +131,12 @@ module Serialization =
             let facetNames = readFacetNames facetNamesNode
             facetNamesProperty.SetValue (target, facetNames)
 
-    /// Read all of a target's properties from Xml.
-    let readTargetProperties (targetNode : XmlNode) target =
+    /// Read all of a target's properties from Xml (except OptOverlayName and FacetNames).
+    let readPropertiesToTarget (targetNode : XmlNode) target =
         for node in targetNode.ChildNodes do
             if  node.Name <> "OptOverlayName" &&
                 node.Name <> "FacetNames" then
-                readTargetProperty node target
+                readPropertyToTarget node target
 
     /// Write an Xtension to Xml.
     // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
@@ -159,7 +159,7 @@ module Serialization =
     /// Write all of a target's properties to Xml.
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-    let writeTargetProperties shouldWriteProperty (writer : XmlWriter) (source : 'a) =
+    let writePropertiesFromTarget shouldWriteProperty (writer : XmlWriter) (source : 'a) =
         let aType = source.GetType ()
         let properties = aType.GetProperties ()
         for property in properties do

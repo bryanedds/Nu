@@ -353,7 +353,7 @@ module SimModule =
                   Name = match optName with None -> string id | Some name -> name
                   OptSelectedScreenAddress = None
                   Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = true; Sealed = false }}
-            Reflection.attachFieldsFromSource dispatcher game
+            Reflection.attachFields dispatcher game
             game
 
         member game.Register (world : World) : Game * World =

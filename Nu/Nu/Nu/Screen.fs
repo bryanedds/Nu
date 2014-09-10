@@ -87,7 +87,7 @@ module WorldScreenModule =
         static member makeScreen dispatcherName optName world =
             let screen = Screen.make dispatcherName optName
             let screenDispatcher = Map.find dispatcherName world.Dispatchers
-            Reflection.attachFieldsFromSource screenDispatcher screen
+            Reflection.attachFields screenDispatcher screen
             screen
 
         static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime world =
