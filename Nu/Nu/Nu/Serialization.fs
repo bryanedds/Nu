@@ -9,15 +9,14 @@ open Nu.NuConstants
 [<RequireQualifiedAccess>]
 module Serialization =
 
-    /// Is a property with the give name persistent?
+    /// Is a property with the given name persistent?
     let isPropertyPersistentByName (propertyName : string) =
         not <| propertyName.EndsWith "Id" && // don't write an Id
         not <| propertyName.EndsWith "Ids" && // don't write multiple Ids
         not <| propertyName.EndsWith "Np" // don't write non-persistent properties
 
-    /// Is the given property writable?
+    /// Is a property with the given name persistent?
     let isPropertyPersistent (property : PropertyInfo) =
-        property.CanWrite &&
         isPropertyPersistentByName property.Name
 
     /// Read an Xtension's fields from Xml.
@@ -39,19 +38,19 @@ module Serialization =
         | null -> None
         | optXDispatcherNameAttribute ->
             let optXDispatcherNameStr = optXDispatcherNameAttribute.InnerText
-            let optStrConverter = TypeDescriptor.GetConverter typeof<string option>
+            let optStrConverter = StringOptionTypeConverter ()
             optStrConverter.ConvertFrom optXDispatcherNameStr :?> string option
 
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optXDispatcherNameStr = node.InnerText
-        let strOptConverter = TypeDescriptor.GetConverter typeof<string option>
+        let strOptConverter = StringOptionTypeConverter ()
         strOptConverter.ConvertFrom optXDispatcherNameStr :?> string option
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNamesStr = node.InnerText
-        let strListConverter = TypeDescriptor.GetConverter typeof<string list>
+        let strListConverter = StringListTypeConverter ()
         strListConverter.ConvertFrom facetNamesStr :?> string list
 
     /// Read an Xtension from Xml.
@@ -78,7 +77,7 @@ module Serialization =
     /// Read a target's property from Xml if possible.
     let readTargetProperty (fieldNode : XmlNode) (target : 'a) =
         match typeof<'a>.GetPropertyWritable fieldNode.Name with
-        | null -> ()
+        | null -> note <| "May not be an issue, but unable to read "
         | property -> tryReadTargetProperty property fieldNode target
 
     /// Read just the target's OptXDispatcherName from Xml.
@@ -90,7 +89,7 @@ module Serialization =
                 (fun (property : PropertyInfo) ->
                     property.Name = "Xtension" &&
                     property.PropertyType = typeof<Xtension> &&
-                    isPropertyPersistent property)
+                    property.CanWrite)
                 targetProperties
         let xtensionNode = targetNode.[xtensionProperty.Name]
         let optXDispatcherName = readOptXDispatcherName xtensionNode
@@ -107,7 +106,7 @@ module Serialization =
                 (fun (property : PropertyInfo) ->
                     property.Name = "OptOverlayName" &&
                     property.PropertyType = typeof<string option> &&
-                    isPropertyPersistent property)
+                    property.CanWrite)
                 targetProperties
         match targetNode.[optOverlayNameProperty.Name] with
         | null -> ()
@@ -124,7 +123,7 @@ module Serialization =
                 (fun (property : PropertyInfo) ->
                     property.Name = "FacetNames" &&
                     property.PropertyType = typeof<string list> &&
-                    isPropertyPersistent property)
+                    property.CanWrite)
                 targetProperties
         match targetNode.[facetNamesProperty.Name] with
         | null -> ()

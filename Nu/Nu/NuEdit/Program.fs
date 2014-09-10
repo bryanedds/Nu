@@ -183,15 +183,19 @@ module Program =
                 | (_, None) -> propertyDescriptors
                 | (Some property, Some entity) ->
                     let xtension = property.GetValue entity :?> Xtension
-                    let xFieldDefinitions =
-                        Seq.map
-                            (fun (xField : KeyValuePair<string, obj>) ->
+                    let xFieldDescriptors =
+                        Seq.fold
+                            (fun xFieldDescriptors (xField : KeyValuePair<string, obj>) ->
                                 let fieldName = xField.Key
-                                let typeName = (xField.Value.GetType ()).FullName
-                                let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
-                                EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor)
+                                if Serialization.isPropertyPersistentByName fieldName then
+                                    let typeName = (xField.Value.GetType ()).FullName
+                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
+                                    let xFieldDescriptor = EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor
+                                    xFieldDescriptor :: xFieldDescriptors
+                                else xFieldDescriptors)
+                            []
                             xtension.XFields
-                    Seq.append xFieldDefinitions propertyDescriptors
+                    Seq.append xFieldDescriptors propertyDescriptors
             List.ofSeq propertyDescriptors
 
     and EntityTypeDescriptor (optSource : obj) =

@@ -49,31 +49,43 @@ module WorldModule =
                     World.subscribe ScreenTransitionDownMouseKey (DownMouseEventName + AnyEventName) address SwallowSub |>
                     World.subscribe ScreenTransitionUpMouseKey (UpMouseEventName + AnyEventName) address SwallowSub
 
-        static member selectScreen destination world =
-            let world = World.setScreenState destination IncomingState world
-            World.setOptSelectedScreenAddress (Some destination) world
+        static member trySelectScreen destination world =
+            if Option.isSome <| World.getOptScreen destination world then
+                let world = World.setScreenState destination IncomingState world
+                let world = World.setOptSelectedScreenAddress (Some destination) world
+                Some world
+            else None
 
-        static member transitionScreen destination world =
-            match World.getOptSelectedScreenAddress world with
-            | Some selectedScreenAddress ->
-                let subscriptionKey = World.makeSubscriptionKey ()
-                let sub = CustomSub (fun _ world ->
-                    let world = World.unsubscribe subscriptionKey world
-                    let world = World.selectScreen destination world
-                    (Unhandled, world))
-                let world = World.setScreenState selectedScreenAddress OutgoingState world
-                World.subscribe subscriptionKey (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress sub world
-            | None ->
-                trace "Program Error: Could not handle screen transition due to no selected screen."
-                { world with Liveness = Exiting }
+        static member tryTransitionScreen destination world =
+            if Option.isSome <| World.getOptScreen destination world then
+                match World.getOptSelectedScreenAddress world with
+                | Some selectedScreenAddress ->
+                    let subscriptionKey = World.makeSubscriptionKey ()
+                    let sub = CustomSub (fun _ world ->
+                        let oldWorld = world
+                        let world = World.unsubscribe subscriptionKey world
+                        match World.trySelectScreen destination world with
+                        | Some world -> (Unhandled, world)
+                        | None ->
+                            trace <| "Program error: Could not handle screen transition due to non-existent destination screen '" + string destination + "'."
+                            (Unhandled, oldWorld))
+                    let world = World.setScreenState selectedScreenAddress OutgoingState world
+                    let world = World.subscribe subscriptionKey (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress sub world
+                    Some world
+                | None ->
+                    trace <| "Program Error: Could not handle screen transition due to no selected screen '" + string destination + "'."
+                    None
+            else None
 
         static member handleEventAsScreenTransitionFromSplash destination world =
-            let world = World.selectScreen destination world
-            (Unhandled, world)
+            match World.trySelectScreen destination world with
+            | Some world -> (Unhandled, world)
+            | None -> (Unhandled, world)
 
         static member handleEventAsScreenTransition destination world =
-            let world = World.transitionScreen destination world
-            (Unhandled, world)
+            match World.tryTransitionScreen destination world with
+            | Some world -> (Unhandled, world)
+            | None -> (Unhandled, world)
 
         // OPTIMIZATION: priority annotated as single to decrease GC pressure.
         static member private sortFstDesc (priority : single, _) (priority2 : single, _) =

@@ -10,8 +10,6 @@ open Nu.NuConstants
 [<AutoOpen>]
 module OverlayerModule =
 
-    // TODO: generate default overlays for dispatchers and facets.
-
     /// Describes the overlay state of a field.
     type OverlayState =
         | Bare
@@ -91,7 +89,7 @@ module Overlayer =
                 | None -> false
             | _ -> false
 
-    let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName (target : 'a) oldOverlayer =
+    let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName target oldOverlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
             (match optOldOverlayName with
@@ -104,7 +102,7 @@ module Overlayer =
                 let value = converter.ConvertFrom valueStr
                 property.SetValue (target, value)
 
-    let private applyOverlayToDotNetProperties optOldOverlayName newOverlayName (target : 'a) oldOverlayer newOverlayer =
+    let private applyOverlayToDotNetProperties optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
@@ -113,6 +111,7 @@ module Overlayer =
                 | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode optOldOverlayName target oldOverlayer
                 | None -> ()
 
+    // TODO: see if this can be decomposed
     let private applyOverlayToXtension optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
@@ -158,7 +157,7 @@ module Overlayer =
             | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode optOldOverlayName target oldOverlayer
             | None -> ()
 
-    /// Apply an overlay to the given target.
+    /// Apply an overlay to the given target (except for any FacetNames field).
     /// Only the properties / fields that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
     let applyOverlay5 optOldOverlayName newOverlayName target oldOverlayer newOverlayer =

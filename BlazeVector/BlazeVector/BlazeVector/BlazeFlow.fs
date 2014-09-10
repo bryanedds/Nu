@@ -33,9 +33,11 @@ module BlazeFlow =
 
     // this function handles playing the stage
     let handlePlayStage _ world =
+        let oldWorld = world
         let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-        let world = World.transitionScreen StageAddress world
-        (Unhandled, world)
+        match World.tryTransitionScreen StageAddress world with
+        | Some world -> (Unhandled, world)
+        | None -> (Unhandled, oldWorld)
 
     // this function adds the BlazeVector title screen to the world
     let addTitleScreen world =
@@ -93,11 +95,11 @@ module BlazeFlow =
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
             let world = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
 
-            // play a neat sound effect, and select the splash screen
+            // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound NuSplashSound 1.0f world
-            let world = World.selectScreen SplashAddress world
+            match World.trySelectScreen SplashAddress world with
+            | Some world -> Right world
+            | None -> Left "Splash screen is missing."
 
-            // return our world within the expected Either type, and we're off!
-            Right world
-
+        // propagate error
         | Left _ as left -> left
