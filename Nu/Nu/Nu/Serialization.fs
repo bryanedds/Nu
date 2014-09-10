@@ -57,7 +57,7 @@ module Serialization =
     let readXtension valueNode =
         let xFields = Map.ofSeq <| readXFields valueNode
         let optXDispatcherName = readOptXDispatcherName valueNode
-        { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = true; Sealed = false }
+        { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = false; Sealed = true }
 
     /// Attempt to read a target's property from Xml.
     let tryReadPropertyToTarget (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
