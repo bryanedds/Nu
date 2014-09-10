@@ -21,7 +21,7 @@ module FieldGroupDispatcherModule =
             { world with Camera = camera }
 
         let adjustFieldCameraHandler event world =
-            (Unhandled, adjustFieldCamera event.Subscriber world)
+            (Propagate, adjustFieldCamera event.Subscriber world)
 
         let moveFieldAvatarHandler event world =
             let feelerAddress = addrlist event.Subscriber [FieldFeelerName]
@@ -34,8 +34,8 @@ module FieldGroupDispatcherModule =
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
                 let world = World.applyLinearImpulse impulseVector (Entity.getPhysicsId avatar) world 
-                (Unhandled, world)
-            else (Unhandled, world)
+                (Propagate, world)
+            else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
 

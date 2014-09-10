@@ -119,9 +119,9 @@ module SimModule =
 
     /// Describes whether or not an event has been handled and should therefore no longer be
     /// propagated.
-    and EventHandled =
-        | Handled
-        | Unhandled
+    and EventHandling =
+        | Resolved
+        | Propagate
 
     /// Describes a game event subscription.
     and [<ReferenceEquality>] Subscription =
@@ -129,7 +129,7 @@ module SimModule =
         | SwallowSub
         | ScreenTransitionSub of desinationScreen : Address
         | ScreenTransitionFromSplashSub of desinationScreen : Address
-        | CustomSub of (Event -> World -> EventHandled * World)
+        | CustomSub of (Event -> World -> EventHandling * World)
 
     /// An entry into the world's subscription map.
     and SubscriptionEntry = Guid * Address * Subscription
