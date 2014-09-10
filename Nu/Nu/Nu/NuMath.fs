@@ -23,16 +23,16 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let v2 = obj :?> Vector2
+        override this.ConvertTo (_, culture, source, _) =
+            let v2 = source :?> Vector2
             String.Format (culture, "{0};{1}", v2.X, v2.Y) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Vector2> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Vector2> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector2 (argFs.[0], argFs.[1]) :> obj
 
@@ -41,16 +41,16 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let v3 = obj :?> Vector3
+        override this.ConvertTo (_, culture, source, _) =
+            let v3 = source :?> Vector3
             String.Format (culture, "{0};{1};{2}", v3.X, v3.Y, v3.Z) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector3> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Vector3> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Vector3> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
 
@@ -59,16 +59,16 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, culture, obj, _) =
-            let v4 = obj :?> Vector4
+        override this.ConvertTo (_, culture, source, _) =
+            let v4 = source :?> Vector4
             String.Format (culture, "{0};{1};{2};{3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector4> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<Vector4> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<Vector4> then source
             else
-                let args = (obj :?> string).Split ';'
+                let args = (source :?> string).Split ';'
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
 
@@ -78,20 +78,20 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, _, obj, _) =
-            let optValue = obj :?> string option
+        override this.ConvertTo (_, _, source, _) =
+            let optValue = source :?> string option
             match optValue with
             | Some value -> "Some(" + string value + ")" :> obj
-            | None -> "None" :> obj
+            | None -> "" :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string option> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<string option> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<string option> then source
             else
-                let valueStr = obj :?> string
+                let valueStr = source :?> string
                 match valueStr with
-                | "None" -> None :> obj
+                | "" -> None :> obj
                 | _ ->
                     let innerStr = valueStr.Substring (5, valueStr.Length - 6)
                     let innerStr = innerStr.Trim ()
@@ -103,18 +103,18 @@ module NuMathModule =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
             destType = typeof<string>
-        override this.ConvertTo (_, _, obj, _) =
-            let value = obj :?> string list
+        override this.ConvertTo (_, _, source, _) =
+            let value = source :?> string list
             let valueStr = String.Join (";", Array.ofList value)
             let valueStr = "[" + valueStr + "]"
-            valueStr:> obj
+            valueStr :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string option> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, obj) =
-            let sourceType = obj.GetType ()
-            if sourceType = typeof<string option> then obj
+        override this.ConvertFrom (_, _, source) =
+            let sourceType = source.GetType ()
+            if sourceType = typeof<string option> then source
             else
-                let valueStr = obj :?> string
+                let valueStr = source :?> string
                 let valueStr = valueStr.Trim ()
                 let valueStr = valueStr.Substring (1, valueStr.Length - 2)
                 let valueStrs = valueStr.Split (';')

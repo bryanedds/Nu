@@ -24,10 +24,6 @@ module Miscellanea =
     /// The invalid Id.
     let [<Literal>] InvalidId = 0L
 
-    /// Perform a ToString operation on anything.
-    let inline string any =
-        any.ToString ()
-
     /// Perform a formatted ToString operation on a formattable object.
     let inline stringf (formattable : IFormattable) format =
         formattable.ToString (format, null)

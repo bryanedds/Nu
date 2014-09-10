@@ -13,12 +13,12 @@ module EitherModule =
         | Left of 'l
         override this.ToString () =
             match this with
-            | Right r -> "Right(" + string r + ")"
-            | Left l -> "Left(" + string l + ")"
+            | Right r -> "Right(" + (r.ToString ()) + ")"
+            | Left l -> "Left(" + (l.ToString ()) + ")"
 
     /// Construct a left value.
     let Left l =
-        debug <| string l
+        debug <| l.ToString ()
         Left l
 
     /// Monadic bind.

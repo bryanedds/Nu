@@ -57,54 +57,55 @@ module Tests =
     let tdc = TestDispatcherContainer ()
 
     let [<Fact>] canAddField () =
-        let xtn = Xtension.empty
+        let xtn = Xtension.unsafe
         let xtn = xtn?TestField <- 5
         let fieldValue = xtn?TestField ()
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] cantAddFieldWhenSealed () =
-        let xtn = { Xtension.empty with Sealed = true }
+        let xtn = Xtension.safe
         Assert.Throws<Exception> (fun () -> ignore <| xtn?TestField <- 0)
 
     let [<Fact>] cantAccessNonexistentField () =
-        let xtn = { Xtension.empty with CanDefault = false }
+        let xtn = Xtension.mixed
         let xtn = xtn?TestField <- 5
         Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField ())
 
     let [<Fact>] missingFieldReturnsDefault () =
-        let xtn = Xtension.empty
+        let xtn = Xtension.unsafe
         let xtn = xtn?TestField <- 0
         let fieldValue = xtn?MissingField ()
         Assert.Equal (0, fieldValue)
 
     let [<Fact>] canAddFieldViaContainingType () =
-        let xtd = { Xtension = Xtension.empty }
+        let xtd = { Xtension = Xtension.unsafe }
         let xtd = xtd?TestField <- 5
         let fieldValue = xtd?TestField ()
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] dispatchingWorks () =
-        let xtn = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
+        let xtn = { Xtension.mixed with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
         let xtn = xtn?Init (xtn, tdc) : Xtension
         let dispatchResult = xtn?Test (xtn, tdc)
         Assert.Equal (dispatchResult, 25)
 
     let [<Fact>] dispatchingFailsAppropriately () =
-        let xtn = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
+        let xtn = { Xtension.safe with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
         Assert.Throws<Exception> (fun () -> ignore <| xtn?MissingDispatch tdc)
 
     let [<Fact>] xtensionSerializationWorks () =
-        let xtn = Xtension.empty
+        let xtn = Xtension.mixed
         let xtn = xtn?TestField <- 5
+        let xtn = { xtn with Sealed = true } // NOTE: equality semantics for Xtension include safety configuration info
         use stream = writeToStream (Serialization.writeXtension tautology) xtn
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
-        let xtnRead = readFromStream (fun node _ -> Serialization.readXtension node) stream Xtension.empty
+        let xtnRead = readFromStream (fun node _ -> Serialization.readXtension node) stream <| Xtension.mixed
         Assert.Equal (xtn, xtnRead)
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
-        let xtd = { Xtension = { Xtension.empty with OptXDispatcherName = Some typeof<TestDispatcher>.Name }}
+        let xtd = { Xtension = { Xtension.mixed with OptXDispatcherName = Some typeof<TestDispatcher>.Name }}
         let xtd = xtd?TestField <- 5
         use stream = writeToStream (Serialization.writePropertiesFromTarget tautology) xtd
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
-        let xtdRead = readFromStream (fun node target -> Serialization.readPropertiesToTarget node target; target) stream { Xtension = Xtension.empty }
+        let xtdRead = readFromStream (fun node target -> Serialization.readPropertiesToTarget node target; target) stream { Xtension = Xtension.mixed }
         Assert.Equal (xtd, xtdRead)
