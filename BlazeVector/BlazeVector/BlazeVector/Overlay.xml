@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
-  
+
   <!-- Add user-defined facet overlays here... -->
 
   <SampleFacetOverlay>
@@ -11,7 +11,7 @@
 
   <!-- Add user-defined dispatcher overlays here... -->
 
-  <SampleDispatcherOverlay include="EntityDispatcher">
+  <SampleDispatcherOverlay include="[EntityDispatcher]">
     <Size>100;100</Size>
     <FacetNames>[SpriteFacet]</FacetNames>
   </SampleDispatcherOverlay>
