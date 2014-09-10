@@ -382,7 +382,7 @@ module WorldModule =
             use writer = XmlWriter.Create (file, writerSettings)
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
-            World.writeGroupToXml world.Overlayer writer group entities
+            World.writeGroup world.Overlayer writer group entities
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
 
@@ -391,7 +391,7 @@ module WorldModule =
             document.Load (fileName : string)
             let rootNode = document.[RootNodeName]
             let groupNode = rootNode.[GroupNodeName]
-            World.readGroupFromXml groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         static member tryReloadOverlays inputDir outputDir world =
             
