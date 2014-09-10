@@ -8,7 +8,7 @@ open BlazeVector.BlazeConstants
 module BlazeFlow =
     
     /// Creates BlazeVector-specific components (dispatchers and facets).
-    /// Allows BlazeVector simulation types to be created in the editor.
+    /// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
     type BlazeComponentFactory () =
         interface IUserComponentFactory with
 

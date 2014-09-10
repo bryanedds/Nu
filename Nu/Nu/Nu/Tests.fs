@@ -57,7 +57,7 @@ module Tests =
     let tdc = TestDispatcherContainer ()
 
     let [<Fact>] canAddField () =
-        let xtn = Xtension.unsafe
+        let xtn = Xtension.empty
         let xtn = xtn?TestField <- 5
         let fieldValue = xtn?TestField ()
         Assert.Equal (5, fieldValue)
@@ -72,13 +72,13 @@ module Tests =
         Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField ())
 
     let [<Fact>] missingFieldReturnsDefault () =
-        let xtn = Xtension.unsafe
+        let xtn = Xtension.empty
         let xtn = xtn?TestField <- 0
         let fieldValue = xtn?MissingField ()
         Assert.Equal (0, fieldValue)
 
     let [<Fact>] canAddFieldViaContainingType () =
-        let xtd = { Xtension = Xtension.unsafe }
+        let xtd = { Xtension = Xtension.empty }
         let xtd = xtd?TestField <- 5
         let fieldValue = xtd?TestField ()
         Assert.Equal (5, fieldValue)

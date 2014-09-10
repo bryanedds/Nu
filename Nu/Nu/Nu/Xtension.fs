@@ -174,7 +174,7 @@ module XtensionModule =
 module Xtension =
 
     /// An Xtension that can default and isn't sealed.
-    let unsafe = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
+    let empty = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = true; Sealed = false }
 
     /// An Xtension that cannot default and is sealed.
     let safe = { XFields = Map.empty; OptXDispatcherName = None; CanDefault = false; Sealed = true }
