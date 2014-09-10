@@ -16,7 +16,7 @@ open Nu.NuConstants
 [<AutoOpen>]
 module InterativityModule =
 
-    /// Describes the current state of the game engine's level of 'interactivity'.
+    /// Describes the game engine's current level of 'interactivity'.
     type Interactivity =
         | Gui
         | GuiAndPhysics
@@ -117,8 +117,7 @@ module SimModule =
           Subscriber : Address
           Data : EventData }
 
-    /// Describes whether or not an event has been handled and should therefore no longer be
-    /// propagated.
+    /// Describes whether an event has been resolved or should be propagated.
     and EventHandling =
         | Resolved
         | Propagate
@@ -316,6 +315,9 @@ module SimModule =
         static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
             screen?Unregister (screen, address, world)
 
+        static member isIdling screen =
+            screen.State = IdlingState
+
         static member make dispatcherName optName =
             let id = NuCore.makeId ()
             { Id = id
@@ -420,10 +422,6 @@ module SimModule =
         static let intrinsicFacetNames = []
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
-
-        // TODO: displace this
-        abstract member AttachIntrinsicFacets : Entity * World -> Entity
-        default dispatcher.AttachIntrinsicFacets (entity, _) = entity
 
         abstract member Register : Entity * Address * World -> Entity * World
         default dispatcher.Register (entity, address, world) =
