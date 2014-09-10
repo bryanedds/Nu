@@ -131,13 +131,13 @@ module EnemyDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (entity, address, world) =
-            let (entity, world) = base.Register (entity, address, world)
+        override dispatcher.Register (enemy, address, world) =
+            let (enemy, world) = base.Register (enemy, address, world)
             let world =
                 world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
                 World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
-            (entity, world)
+            (enemy, world)
 
 [<AutoOpen>]
 module PlayerDispatcherModule =
@@ -241,14 +241,14 @@ module PlayerDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (entity, address, world) =
-            let (entity, world) = base.Register (entity, address, world)
+        override dispatcher.Register (player, address, world) =
+            let (player, world) = base.Register (player, address, world)
             let world =
                 world |>
                 World.observe TickEventName address (CustomSub spawnBulletHandler) |>
                 World.observe TickEventName address (CustomSub movementHandler) |>
                 World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
-            (entity, world)
+            (player, world)
 
 [<AutoOpen>]
 module StagePlayDispatcherModule =
@@ -273,15 +273,16 @@ module StagePlayDispatcherModule =
             (Unhandled, adjustCamera event.Subscriber world)
 
         let playerFallHandler event world =
-            let player = getPlayer event.Subscriber world
-            if  World.isGamePlaying world &&
-                Entity.hasFallen player &&
-                (World.getSelectedScreen world).State = IdlingState then
-                let oldWorld = world
-                let world = World.playSound DeathSound 1.0f world
-                match World.tryTransitionScreen TitleAddress world with
-                | Some world -> (Unhandled, world)
-                | None -> (Unhandled, oldWorld)
+            if World.isGamePlaying world then
+                let player = getPlayer event.Subscriber world
+                if  Entity.hasFallen player &&
+                    (World.getSelectedScreen world).State = IdlingState then
+                    let oldWorld = world
+                    let world = World.playSound DeathSound 1.0f world
+                    match World.tryTransitionScreen TitleAddress world with
+                    | Some world -> (Unhandled, world)
+                    | None -> (Unhandled, oldWorld)
+                else (Unhandled, world)
             else (Unhandled, world)
 
         static member FieldDefinitions = fieldDefinitions
