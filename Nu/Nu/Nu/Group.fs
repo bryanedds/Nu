@@ -51,11 +51,6 @@ module WorldGroupModule =
             match optGroup with
             | Some group -> World.setGroup address group world
             | None -> World.groupRemover address world
-            
-        static member withGroup fn address world = Simulant.withSimulant World.getGroup World.setGroup fn address world
-        static member withGroupAndWorld fn address world = Simulant.withSimulantAndWorld World.getGroup World.setGroup fn address world
-        static member tryWithGroup fn address world = Simulant.tryWithSimulant World.getOptGroup World.setGroup fn address world
-        static member tryWithGroupAndWorld fn address world = Simulant.tryWithSimulantAndWorld World.getOptGroup World.setGroup fn address world
 
         static member getGroups1 world =
             seq {
@@ -97,10 +92,10 @@ module WorldGroupModule =
             (group, world)
 
         static member removeGroupsImmediate screenAddress groups world =
-            Simulant.transformSimulants World.removeGroupImmediate screenAddress groups world
+            World.transformSimulants World.removeGroupImmediate screenAddress groups world
 
         static member removeGroups screenAddress groups world =
-            Simulant.transformSimulants World.removeGroup screenAddress groups world
+            World.transformSimulants World.removeGroup screenAddress groups world
 
         static member addGroup address group entities world =
             let (group, world) =

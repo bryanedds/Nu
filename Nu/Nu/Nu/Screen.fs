@@ -32,11 +32,6 @@ module WorldScreenModule =
             match optScreen with
             | Some screen -> World.setScreen address screen world
             | None -> World.screenRemover address world
-            
-        static member withScreen fn address world = Simulant.withSimulant World.getScreen World.setScreen fn address world
-        static member withScreenAndWorld fn address world = Simulant.withSimulantAndWorld World.getScreen World.setScreen fn address world
-        static member tryWithScreen fn address world = Simulant.tryWithSimulant World.getOptScreen World.setScreen fn address world
-        static member tryWithScreenAndWorld fn address world = Simulant.tryWithSimulantAndWorld World.getOptScreen World.setScreen fn address world
 
         static member getScreens1 world =
             seq {

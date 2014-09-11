@@ -555,6 +555,15 @@ module World =
     /// Query that the physics system is running.
     let isPhysicsRunning world = Interactivity.isPhysicsRunning world.Interactivity
 
+    /// Transform a bunch of simulants in the context of a world.
+    let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
+        Map.fold
+            (fun (simulants, world) simulantName (simulant : 's) ->
+                let (simulant, world) = transform (parentAddress @+ [simulantName]) simulant world
+                (Map.add simulantName simulant simulants, world))
+            (Map.empty, world)
+            simulants
+
     /// Publish an event.
     let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
     
@@ -739,40 +748,6 @@ module Simulant =
 
     let setChild childAdder childRemover address parent child =
         setOptChild childAdder childRemover address parent (Some child)
-
-    let withSimulant getSimulant setSimulant fn address world : World =
-        let simulant = getSimulant address world
-        let simulant = fn simulant
-        setSimulant address simulant world
-
-    let withSimulantAndWorld getSimulant setSimulant fn address world : World =
-        let simulant = getSimulant address world
-        let (simulant, world) = fn simulant
-        setSimulant address simulant world
-
-    let tryWithSimulant getOptSimulant setSimulant fn address world : World =
-        let optSimulant = getOptSimulant address world
-        match optSimulant with
-        | Some simulant ->
-            let simulant = fn simulant
-            setSimulant address simulant world
-        | None -> world
-
-    let tryWithSimulantAndWorld getOptSimulant setSimulant fn address world : World =
-        let optSimulant = getOptSimulant address world
-        match optSimulant with
-        | Some simulant ->
-            let (simulant, world) = fn simulant
-            setSimulant address simulant world
-        | None -> world
-
-    let transformSimulants transform groupAddress simulants world : Map<string, 's> * World =
-        Map.fold
-            (fun (simulants, world) simulantName (simulant : 's) ->
-                let (simulant, world) = transform (groupAddress @+ [simulantName]) simulant world
-                (Map.add simulantName simulant simulants, world))
-            (Map.empty, world)
-            simulants
 
     let toEntity simulant =
         match simulant with

@@ -148,11 +148,6 @@ module WorldEntityModule =
             | Some entity -> World.entityAdder address world entity
             | None -> World.entityRemover address world
 
-        static member withEntity fn address world = Simulant.withSimulant World.getEntity World.setEntity fn address world
-        static member withEntityAndWorld fn address world = Simulant.withSimulantAndWorld World.getEntity World.setEntity fn address world
-        static member tryWithEntity fn address world = Simulant.tryWithSimulant World.getOptEntity World.setEntity fn address world
-        static member tryWithEntityAndWorld fn address world = Simulant.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
-
         static member getEntities1 world =
             seq {
                 for screenKvp in world.Entities do
@@ -195,10 +190,10 @@ module WorldEntityModule =
             (entity, world)
 
         static member removeEntitiesImmediate groupAddress entities world =
-            Simulant.transformSimulants World.removeEntityImmediate groupAddress entities world
+            World.transformSimulants World.removeEntityImmediate groupAddress entities world
 
         static member removeEntities groupAddress entities world =
-            Simulant.transformSimulants World.removeEntity groupAddress entities world
+            World.transformSimulants World.removeEntity groupAddress entities world
 
         static member addEntity address entity world =
             let (entity, world) =
@@ -211,7 +206,7 @@ module WorldEntityModule =
             (entity, world)
 
         static member addEntities groupAddress entities world =
-            Simulant.transformSimulants World.addEntity groupAddress entities world
+            World.transformSimulants World.addEntity groupAddress entities world
 
         static member tryGetFacet facetName world =
             match Map.tryFind facetName world.Facets with
