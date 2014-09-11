@@ -15,7 +15,7 @@ module FieldGroupDispatcherModule =
         static let fieldDefinitions = []
 
         let adjustFieldCamera groupAddress world =
-            let avatarAddress = addrlist groupAddress [FieldAvatarName]
+            let avatarAddress = groupAddress @+ [FieldAvatarName]
             let avatar = World.getEntity avatarAddress world
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             { world with Camera = camera }
@@ -26,10 +26,10 @@ module FieldGroupDispatcherModule =
 
         let moveFieldAvatarHandler event world =
             let (address, _, _) = Event.unwrap<Group, NoData> event
-            let feelerAddress = addrlist address [FieldFeelerName]
+            let feelerAddress = address @+ [FieldFeelerName]
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then
-                let avatarAddress = addrlist address [FieldAvatarName]
+                let avatarAddress = address @+ [FieldAvatarName]
                 let avatar = World.getEntity avatarAddress world
                 let mousePosition = World.getMousePositionF world
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world avatar

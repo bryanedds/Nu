@@ -132,7 +132,7 @@ module Program =
                         let entity = World.getEntity entityTds.Address world
                         let (entity, world) = World.removeEntityImmediate entityTds.Address entity world
                         let entity = { entity with Name = valueStr }
-                        let entityAddress = addrlist EditorGroupAddress [valueStr]
+                        let entityAddress = EditorGroupAddress @+ [valueStr]
                         let world = snd <| World.addEntity entityAddress entity world
                         entityTds.RefWorld := world // must be set for property grid
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
@@ -279,7 +279,7 @@ module Program =
 
     let populateTreeViewNodes (form : NuEditForm) world =
         for entityKvp in World.getEntities EditorGroupAddress world do
-        let entityAddress = addrlist EditorGroupAddress [entityKvp.Key]
+        let entityAddress = EditorGroupAddress @+ [entityKvp.Key]
         addTreeViewNode form entityAddress world
 
     let tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
@@ -324,7 +324,7 @@ module Program =
         let optPicked = Entity.tryPick mousePosition entities world
         match optPicked with
         | Some entity ->
-            let entityAddress = addrlist EditorGroupAddress [entity.Name]
+            let entityAddress = EditorGroupAddress @+ [entity.Name]
             refWorld := world // must be set for property grid
             form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
             tryScrollTreeViewToPropertyGridSelection form
@@ -457,7 +457,7 @@ module Program =
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let entityAddress = addrlist EditorGroupAddress [entity.Name]
+                let entityAddress = EditorGroupAddress @+ [entity.Name]
                 let world = snd <| World.addEntity entityAddress entity world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -571,7 +571,7 @@ module Program =
                     else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let address = addrlist EditorGroupAddress [entity.Name]
+                let address = EditorGroupAddress @+ [entity.Name]
                 snd <| World.addEntity address entity world
             | None -> world)
 

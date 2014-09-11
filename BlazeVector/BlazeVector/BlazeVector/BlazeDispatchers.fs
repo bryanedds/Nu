@@ -104,15 +104,14 @@ module EnemyDispatcherModule =
             World.applyForce force physicsId world
 
         let die address enemy world =
-            let (enemy, world) = World.removeEntity address enemy world
-            let world = World.playSound ExplosionSound 1.0f world
-            (enemy, world)
+            let world = snd <| World.removeEntity address enemy world
+            World.playSound ExplosionSound 1.0f world
 
         let tickHandler event world =
             let (address, enemy, _) = Event.unwrap<Entity, NoData> event
             if World.isGamePlaying world then
                 let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
-                let world = if enemy.Health <= 0 then snd <| die address enemy world else world
+                let world = if enemy.Health <= 0 then die address enemy world else world
                 (Propagate, world)
             else (Propagate, world)
 
@@ -188,7 +187,7 @@ module PlayerDispatcherModule =
             (bullet, world)
 
         let shootBullet playerAddress player world =
-            let bulletAddress = addrlist (Address.allButLast playerAddress) [string <| NuCore.makeId ()]
+            let bulletAddress = Address.allButLast playerAddress @+ [string <| NuCore.makeId ()]
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world
@@ -260,7 +259,7 @@ module StagePlayDispatcherModule =
         static let fieldDefinitions = []
 
         let getPlayer groupAddress world =
-            let playerAddress = addrlist groupAddress [StagePlayerName]
+            let playerAddress = groupAddress @+ [StagePlayerName]
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
