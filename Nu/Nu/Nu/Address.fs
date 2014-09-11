@@ -17,8 +17,11 @@ module AddressModule =
         { AddrList : string list
           AddrListRev : string list }
 
-        static member private listToString (list : string list) =
+        static member internal join (list : string list) =
             String.Join ("/", list)
+
+        static member internal split (str : string) =
+            List.ofArray <| str.Split '/'
 
         /// Make an address from a list of strings.
         static member make list =
@@ -55,11 +58,27 @@ module AddressModule =
             result
         
         override this.ToString () =
-            String.Join ("/", this.AddrList)
+            Address.join this.AddrList
 
     /// Make an address by splitting a string on the '/' character.
-    let addr (str : string) : Address =
-        let list = List.ofArray <| str.Split '/'
+    let ( !* ) (str : string) : Address =
+        let list = Address.split str
+        Address.make list
+
+    /// Split a string on the '/' character and then concatenate it to the front of an address.
+    let ( *@ ) (str : string) address =
+        Address.make <| Address.split str @ address.AddrList
+
+    /// Split a string on the '/' character and then concatenate it to the back of an address.
+    let ( @* ) address (str : string) =
+        Address.make <| address.AddrList @ Address.split str
+
+    /// Split two strings on the '/' character and then surround an address with them.
+    let ( *@* ) (str : string) address (str2 : string) =
+        Address.make <| Address.split str @ address.AddrList @ Address.split str2
+
+    /// Make an address from a list of strings.
+    let (!+) list =
         Address.make list
 
     /// Concatenate a list of strings to the front of an address.

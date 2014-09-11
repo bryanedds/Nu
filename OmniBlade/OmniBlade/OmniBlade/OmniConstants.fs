@@ -23,34 +23,34 @@ module OmniConstants =
     let OutgoingTime = 30L
 
     // splash constants
-    let SplashAddress = addr "Splash"
+    let SplashAddress = !* "Splash"
 
     // title constants
-    let TitleAddress = addr "Title"
+    let TitleAddress = !* "Title"
     let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
-    let TitleGroupAddress = addr "Title/Group"
-    let ClickTitleNewGameEvent = addr "Click/Title/Group/NewGame"
-    let ClickTitleLoadGameEvent = addr "Click/Title/Group/LoadGame"
-    let ClickTitleCreditsEvent = addr "Click/Title/Group/Credits"
-    let ClickTitleExitEvent = addr "Click/Title/Group/Exit"
+    let TitleGroupAddress = !* "Title/Group"
+    let ClickTitleNewGameEvent = !* "Click/Title/Group/NewGame"
+    let ClickTitleLoadGameEvent = !* "Click/Title/Group/LoadGame"
+    let ClickTitleCreditsEvent = !* "Click/Title/Group/Credits"
+    let ClickTitleExitEvent = !* "Click/Title/Group/Exit"
 
     // load game constants
-    let LoadGameAddress = addr "LoadGame"
+    let LoadGameAddress = !* "LoadGame"
     let LoadGameGroupFileName = "Assets/OmniBlade/Groups/LoadGame.nugroup"
-    let LoadGameGroupAddress = addr "LoadGame/Group"
-    let ClickLoadGameBackEvent = addr "Click/LoadGame/Group/Back"
+    let LoadGameGroupAddress = !* "LoadGame/Group"
+    let ClickLoadGameBackEvent = !* "Click/LoadGame/Group/Back"
 
     // credits constants
-    let CreditsAddress = addr "Credits"
+    let CreditsAddress = !* "Credits"
     let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
-    let CreditsGroupAddress = addr "Credits/Group"
-    let ClickCreditsBackEvent = addr "Click/Credits/Group/Back"
+    let CreditsGroupAddress = !* "Credits/Group"
+    let ClickCreditsBackEvent = !* "Click/Credits/Group/Back"
 
     // field constants
-    let FieldAddress = addr "Field"
+    let FieldAddress = !* "Field"
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
-    let FieldGroupAddress = addr "Field/Group"
-    let ClickFieldBackEvent = addr "Click/Field/Group/Back"
+    let FieldGroupAddress = !* "Field/Group"
+    let ClickFieldBackEvent = !* "Click/Field/Group/Back"
 
     // time constants
-    let TimeAddress = addr "Time"
+    let TimeAddress = !* "Time"
