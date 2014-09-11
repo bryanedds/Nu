@@ -30,7 +30,7 @@ module ReflectionModule =
             if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
             if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
                 failwith <|
-                    "Generic field definition lacking too much type information for field '" + fieldName + "'. " +
+                    "Generic field definition lacking type information for field '" + fieldName + "'. " +
                     "Use explicit type annotations on all values that carry incomplete type information such as empty lists."
 
         static member make fieldName fieldType fieldExpression =

@@ -39,9 +39,9 @@ module OmniFlow =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name FieldGroupFileName (Address.last FieldGroupAddress) IncomingTime OutgoingTime FieldAddress world
         World.subscribe4 ClickFieldBackEvent Address.empty (ScreenTransitionSub TitleAddress) world
 
-    let tryMakeOmniBladeWorld sdlDeps extData =
+    let tryMakeOmniBladeWorld sdlDeps userState =
         let omniComponentFactory = OmniComponentFactory ()
-        let optWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false extData
+        let optWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false userState
         match optWorld with
         | Right world ->
             let world = World.hintRenderingPackageUse GuiPackageName world

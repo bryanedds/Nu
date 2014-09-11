@@ -28,7 +28,7 @@ module WorldModule =
             (Resolved, world)
 
         static member handleEventAsExit (world : World) =
-            (Resolved, { world with Liveness = Exiting })
+            (Resolved, World.exit world)
 
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
@@ -54,7 +54,7 @@ module WorldModule =
             not <| World.getSelectedScreenIdling world
 
         static member private setScreenState state address screen world =
-            let screen = Screen.setState state screen
+            let screen = Screen.setScreenState state screen
             let world =
                 match state with
                 | IdlingState ->
@@ -180,8 +180,8 @@ module WorldModule =
 
         static member getSubscriptionsSorted publishSorter eventName world =
             let anyEventNames = World.getAnyEventNames eventName
-            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName world.Subscriptions) anyEventNames
-            let optSubLists = Map.tryFind eventName world.Subscriptions :: optSubLists
+            let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName world.Callbacks.Subscriptions) anyEventNames
+            let optSubLists = Map.tryFind eventName world.Callbacks.Subscriptions :: optSubLists
             let subLists = List.definitize optSubLists
             let subList = List.concat subLists
             publishSorter subList world
@@ -202,7 +202,7 @@ module WorldModule =
                                   OptPublisher = World.getOptSimulant publisherAddress world
                                   Data = eventData }
                             if  (match eventHandling with Propagate -> true | Resolved -> false) &&
-                                (match world.Liveness with Running -> true | Exiting -> false) then
+                                (match world.State.Liveness with Running -> true | Exiting -> false) then
                                 let result =
                                     match subscription with
                                     | ExitSub -> World.handleEventAsExit world
@@ -225,11 +225,12 @@ module WorldModule =
         static member subscribeDefinition subscriptionKey eventName subscriberAddress subscription world =
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriberAddress, subscription)
-                match Map.tryFind eventName world.Subscriptions with
-                | Some subscriptionEntries -> Map.add eventName (subscriptionEntry :: subscriptionEntries) world.Subscriptions
-                | None -> Map.add eventName [subscriptionEntry] world.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (eventName, subscriberAddress) world.Unsubscriptions
-            { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+                match Map.tryFind eventName world.Callbacks.Subscriptions with
+                | Some subscriptionEntries -> Map.add eventName (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
+                | None -> Map.add eventName [subscriptionEntry] world.Callbacks.Subscriptions
+            let unsubscriptions = Map.add subscriptionKey (eventName, subscriberAddress) world.Callbacks.Unsubscriptions
+            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+            { world with Callbacks = callbacks }
 
         /// Subscribe to an event.
         static member subscribe4Definition eventName subscriberAddress subscription world =
@@ -237,9 +238,9 @@ module WorldModule =
 
         /// Unsubscribe from an event.
         static member unsubscribeDefinition subscriptionKey world =
-            match Map.tryFind subscriptionKey world.Unsubscriptions with
+            match Map.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
             | Some (eventName, subscriberAddress) ->
-                match Map.tryFind eventName world.Subscriptions with
+                match Map.tryFind eventName world.Callbacks.Subscriptions with
                 | Some subscriptionList ->
                     let subscriptionList =
                         List.remove
@@ -249,10 +250,11 @@ module WorldModule =
                             subscriptionList
                     let subscriptions = 
                         match subscriptionList with
-                        | [] -> Map.remove eventName world.Subscriptions
-                        | _ -> Map.add eventName subscriptionList world.Subscriptions
-                    let unsubscriptions = Map.remove subscriptionKey world.Unsubscriptions
-                    { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+                        | [] -> Map.remove eventName world.Callbacks.Subscriptions
+                        | _ -> Map.add eventName subscriptionList world.Callbacks.Subscriptions
+                    let unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions
+                    let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+                    { world with Callbacks = callbacks }
                 | None -> world // TODO: consider failure signal
             | None -> world // TODO: consider failure signal
 
@@ -288,19 +290,19 @@ module WorldModule =
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
                     let selectedScreen = World.getScreen selectedScreenAddress world
-                    match selectedScreen.State with
+                    match selectedScreen.ScreenState with
                     | IncomingState ->
                         let world =
                             if selectedScreen.Incoming.TransitionTicks = 0L
                             then World.publish4 (SelectEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                             else world
-                        match world.Liveness with
+                        match world.State.Liveness with
                         | Running ->
                             let world =
                                 if selectedScreen.Incoming.TransitionTicks = 0L
                                 then World.publish4 (StartIncomingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                                 else world
-                            match world.Liveness with
+                            match world.State.Liveness with
                             | Running ->
                                 let (finished, incoming) = World.updateTransition1 selectedScreen.Incoming
                                 let selectedScreen = Screen.setIncoming incoming selectedScreen
@@ -315,7 +317,7 @@ module WorldModule =
                         let world =
                             if selectedScreen.Outgoing.TransitionTicks <> 0L then world
                             else World.publish4 (StartOutgoingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
-                        match world.Liveness with
+                        match world.State.Liveness with
                         | Running ->
                             let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
                             let selectedScreen = Screen.setOutgoing outgoing selectedScreen
@@ -323,14 +325,14 @@ module WorldModule =
                             if finished then
                                 let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
                                 let world = World.publish4 (DeselectEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
-                                match world.Liveness with
+                                match world.State.Liveness with
                                 | Running -> World.publish4 (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                                 | Exiting -> world
                             else world
                         | Exiting -> world
                     | IdlingState -> world
                 | None -> world
-            match world.Liveness with
+            match world.State.Liveness with
             | Running -> handleUpdate world
             | Exiting -> world
 
@@ -349,10 +351,10 @@ module WorldModule =
                         (Propagate, world)
                     | None ->
                         trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                        (Resolved, { world with Liveness = Exiting })
+                        (Resolved, World.exit world)
                 | None ->
                     trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                    (Resolved, { world with Liveness = Exiting })
+                    (Resolved, World.exit world)
 
         static member internal handleSplashScreenIdle idlingTime event world =
             let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime 0L
@@ -376,16 +378,6 @@ module WorldModule =
             let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
             let (group, entities) = World.loadGroupFromFile groupFileName world
             World.addScreen screenAddress dissolveScreen [(groupName, group, entities)] world
-
-        static member activateGameDispatcher assemblyFileName gameDispatcherFullName world =
-            let assembly = Assembly.LoadFrom assemblyFileName
-            let gameDispatcherType = assembly.GetType gameDispatcherFullName
-            let gameDispatcherShortName = gameDispatcherType.Name
-            let gameDispatcher = Activator.CreateInstance gameDispatcherType
-            let dispatchers = Map.add gameDispatcherShortName gameDispatcher world.Dispatchers
-            let world = { world with Dispatchers = dispatchers }
-            let world = { world with Game = { world.Game with Xtension = { world.Game.Xtension with OptXDispatcherName = Some gameDispatcherShortName }}}
-            world.Game.Register world
 
         static member createIntrinsicOverlays dispatchers facets =
 
@@ -411,7 +403,7 @@ module WorldModule =
             use writer = XmlWriter.Create (file, writerSettings)
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
-            World.writeGroup world.Overlayer writer group entities
+            World.writeGroup world.Components.Overlayer writer group entities
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
 
@@ -425,14 +417,15 @@ module WorldModule =
         static member tryReloadOverlays inputDir outputDir world =
             
             // try to reload overlay file
-            let inputOverlayFileName = Path.Combine (inputDir, world.OverlayFileName)
-            let outputOverlayFileName = Path.Combine (outputDir, world.OverlayFileName)
+            let inputOverlayFileName = Path.Combine (inputDir, world.State.OverlayFileName)
+            let outputOverlayFileName = Path.Combine (outputDir, world.State.OverlayFileName)
             try File.Copy (inputOverlayFileName, outputOverlayFileName, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = world.Overlayer
-                let intrinsicOverlays = World.createIntrinsicOverlays world.Dispatchers world.Facets
-                let world = { world with Overlayer = Overlayer.make outputOverlayFileName intrinsicOverlays }
+                let oldOverlayer = world.Components.Overlayer
+                let intrinsicOverlays = World.createIntrinsicOverlays world.Components.Dispatchers world.Components.Facets
+                let overlayer = Overlayer.make outputOverlayFileName intrinsicOverlays
+                let world = World.setOverlayer overlayer world
 
                 // apply overlays to all entities
                 let world =
@@ -442,10 +435,10 @@ module WorldModule =
                             match entity.OptOverlayName with
                             | Some overlayName ->
                                 let oldFacetNames = entity.FacetNames
-                                Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
+                                Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName entity oldOverlayer world.Components.Overlayer
                                 match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
                                 | Right (entity, world) ->
-                                    Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Overlayer
+                                    Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Components.Overlayer
                                     World.setEntity address entity world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
@@ -462,19 +455,19 @@ module WorldModule =
             
             // try to reload asset graph file
             try File.Copy (
-                    Path.Combine (inputDir, world.AssetGraphFileName),
-                    Path.Combine (outputDir, world.AssetGraphFileName), true)
+                    Path.Combine (inputDir, world.State.AssetGraphFileName),
+                    Path.Combine (outputDir, world.State.AssetGraphFileName), true)
 
                 // reload asset graph
-                match Assets.tryBuildAssetGraph inputDir outputDir world.AssetGraphFileName with
+                match Assets.tryBuildAssetGraph inputDir outputDir world.State.AssetGraphFileName with
                 | Right () ->
 
                     // reload asset metadata
-                    match Metadata.tryGenerateAssetMetadataMap world.AssetGraphFileName with
+                    match Metadata.tryGenerateAssetMetadataMap world.State.AssetGraphFileName with
                     | Right assetMetadataMap ->
                     
                         // reload assets
-                        let world = { world with AssetMetadataMap = assetMetadataMap }
+                        let world = World.setAssetMetadataMap assetMetadataMap world
                         let world = World.reloadRenderingAssets world
                         let world = World.reloadAudioAssets world
                         Right world
@@ -489,11 +482,10 @@ module WorldModule =
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
             // processed (integrated, advanced, rendered, played, et al).
-            let world =
-                { world with
-                    AudioMessages = []
-                    RenderMessages = []
-                    PhysicsMessages = [RebuildPhysicsHackMessage] }
+            let world = World.clearRenderingMessages world
+            let world = World.clearAudioMessages world
+            let world = World.clearPhysicsMessages world
+            let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
             let entities = World.getEntities groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->
@@ -503,9 +495,10 @@ module WorldModule =
                 entities
 
         static member private play world =
-            let audioMessages = world.AudioMessages
-            let world = { world with AudioMessages = [] }
-            { world with AudioPlayer = Nu.Audio.play audioMessages world.AudioPlayer }
+            let audioMessages = world.MessageQueues.AudioMessages
+            let world = World.clearAudioMessages world
+            let audioPlayer = Nu.Audio.play audioMessages world.Components.AudioPlayer
+            World.setAudioPlayer audioPlayer world
 
         static member private getGroupRenderDescriptors world entities =
             Map.toValueListBy
@@ -542,7 +535,7 @@ module WorldModule =
                     let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
                     let descriptors = List.concat <| List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
-                    match selectedScreen.State with
+                    match selectedScreen.ScreenState with
                     | IncomingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
                     | OutgoingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Outgoing
                     | IdlingState -> descriptors
@@ -551,13 +544,13 @@ module WorldModule =
 
         static member private render world =
             let renderDescriptors = World.getRenderDescriptors world
-            let renderMessages = world.RenderMessages
-            let world = { world with RenderMessages = [] }
-            let renderer = Nu.Rendering.render world.Camera renderMessages renderDescriptors world.Renderer
-            { world with Renderer = renderer }
+            let renderingMessages = world.MessageQueues.RenderingMessages
+            let world = World.clearRenderingMessages world
+            let renderer = Nu.Rendering.render world.Camera renderingMessages renderDescriptors world.Components.Renderer
+            World.setRenderer renderer world
 
         static member private handleIntegrationMessage world integrationMessage =
-            match world.Liveness with
+            match world.State.Liveness with
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
@@ -582,21 +575,27 @@ module WorldModule =
 
         static member private integrate world =
             if World.isPhysicsRunning world then
-                let physicsMessages = world.PhysicsMessages
-                let world = { world with PhysicsMessages = [] }
-                let integrationMessages = Nu.Physics.integrate physicsMessages world.Integrator
+                let physicsMessages = world.MessageQueues.PhysicsMessages
+                let world = World.clearPhysicsMessages world
+                let integrationMessages = Nu.Physics.integrate physicsMessages world.Components.Integrator
                 World.handleIntegrationMessages integrationMessages world
             else world
 
-        static member private runNextTask world =
-            let task = List.head world.Tasks
-            if task.ScheduledTime = world.TickTime then
+        static member private runTask (tasksNotRun, world) task =
+            if task.ScheduledTime < world.State.TickTime then
+                debug <| "Task leak found for time '" + string world.State.TickTime + "'."
+                (tasksNotRun, world)
+            elif task.ScheduledTime = world.State.TickTime then
                 let world = task.Operation world
-                { world with Tasks = List.tail world.Tasks }
-            else world
+                (tasksNotRun, world)
+            else (task :: tasksNotRun, world)
 
         static member private runTasks world =
-            List.fold (fun world _ -> World.runNextTask world) world world.Tasks
+            let tasks = List.rev world.Callbacks.Tasks
+            let world = World.clearTasks world
+            let (tasksNotRun, world) = List.fold World.runTask ([], world) tasks
+            let tasksNotRun = List.rev tasksNotRun
+            World.restoreTasks tasksNotRun world
 
         // TODO: split this function up
         static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
@@ -607,7 +606,7 @@ module WorldModule =
                     let world =
                         match event.``type`` with
                         | SDL.SDL_EventType.SDL_QUIT ->
-                            { world with Liveness = Exiting }
+                            World.exit world
                         | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                             let mousePosition = Vector2 (single event.button.x, single event.button.y)
                             if World.isMouseButtonDown MouseLeft world
@@ -634,25 +633,31 @@ module WorldModule =
                             let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
                             World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventName Address.empty eventData world
                         | _ -> world
-                    (world.Liveness, world))
+                    (world.State.Liveness, world))
                 (fun world ->
                     let world = World.integrate world
-                    match world.Liveness with
+                    match world.State.Liveness with
                     | Running ->
                         let world = World.publish4 TickEventName Address.empty (NoData ()) world
-                        match world.Liveness with
+                        match world.State.Liveness with
                         | Running ->
                             let world = World.updateTransition handleUpdate world
-                            match world.Liveness with
+                            match world.State.Liveness with
                             | Running ->
                                 let world = World.runTasks world
-                                (world.Liveness, world)
+                                (world.State.Liveness, world)
                             | Exiting -> (Exiting, world)
                         | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world))
-                (fun world -> let world = World.render world in handleRender world)
-                (fun world -> let world = World.play world in { world with TickTime = world.TickTime + 1L })
-                (fun world -> { world with Renderer = Rendering.handleRenderExit world.Renderer })
+                (fun world ->
+                    let world = World.render world
+                    handleRender world)
+                (fun world ->
+                    let world = World.play world
+                    World.incrementTickTime world)
+                (fun world ->
+                    let renderer = Rendering.handleRenderExit world.Components.Renderer
+                    World.setRenderer renderer world)
                 sdlConfig
 
         static member run tryMakeWorld handleUpdate sdlConfig =
@@ -663,7 +668,7 @@ module WorldModule =
             (userComponentFactory : IUserComponentFactory)
             interactivity
             farseerCautionMode
-            extData =
+            userState =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
@@ -716,33 +721,51 @@ module WorldModule =
                 // make intrinsic overlays
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers facets
 
-                // finally, make the world!
+                // make the world's components
+                let components =
+                    { AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
+                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
+                      Integrator = Physics.makeIntegrator farseerCautionMode Gravity
+                      Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
+                      Dispatchers = dispatchers
+                      Facets = facets }
+
+                // make the world's state
+                let state =
+                    { TickTime = 0L
+                      Liveness = Running
+                      Interactivity = interactivity
+                      AssetMetadataMap = assetMetadataMap
+                      AssetGraphFileName = AssetGraphFileName
+                      OverlayFileName = OverlayFileName
+                      UserState = userState }
+
+                // make the world's message queues
+                let messageQueues =
+                    { AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
+                      RenderingMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
+                      PhysicsMessages = [] }
+
+                // make the world's callbacks
+                let callbacks =
+                    { Tasks = []
+                      Subscriptions = Map.empty
+                      Unsubscriptions = Map.empty }
+
+                // make the world itself
                 let world =
                     { Game = Game.make activeGameDispatcherName activeGameDispatcher (Some "Game")
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
-                      TickTime = 0L
-                      Liveness = Running
-                      Interactivity = interactivity
                       Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
-                      Tasks = []
-                      Subscriptions = Map.empty
-                      Unsubscriptions = Map.empty
-                      AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
-                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
-                      Integrator = Physics.makeIntegrator farseerCautionMode Gravity
-                      AssetMetadataMap = assetMetadataMap
-                      Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
-                      AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
-                      RenderMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
-                      PhysicsMessages = []
-                      Dispatchers = dispatchers
-                      Facets = facets
-                      AssetGraphFileName = AssetGraphFileName
-                      OverlayFileName = OverlayFileName
-                      ExtData = extData }
-                let world = snd <| world.Game.Register world
+                      Components = components
+                      State = state
+                      MessageQueues = messageQueues
+                      Callbacks = callbacks }
+
+                // and finally, register the game
+                let world = snd <| Game.register world.Game world
                 Right world
             | Left errorMsg -> Left errorMsg
 

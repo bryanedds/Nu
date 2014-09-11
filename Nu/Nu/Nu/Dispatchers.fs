@@ -143,7 +143,7 @@ module SpriteFacetModule =
 
         override facet.GetQuickSize (entity : Entity, world) =
             let image = entity.SpriteImage
-            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -175,7 +175,7 @@ module AnimatedSpriteFacetModule =
              define? AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
 
         static let getSpriteOptInset (entity : Entity) world =
-            let tile = (int world.TickTime / entity.Stutter) % entity.TileCount
+            let tile = (int world.State.TickTime / entity.Stutter) % entity.TileCount
             let tileI = tile % entity.TileRun
             let tileJ = tile / entity.TileRun
             let tileX = single tileI * entity.TileSize.X
@@ -351,7 +351,7 @@ module ButtonDispatcherModule =
 
         override dispatcher.GetQuickSize (button, world) =
             let image = button.UpImage
-            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -394,7 +394,7 @@ module LabelDispatcherModule =
 
         override dispatcher.GetQuickSize (label, world) =
             let image = label.LabelImage
-            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -461,7 +461,7 @@ module TextDispatcherModule =
 
         override dispatcher.GetQuickSize (text, world) =
             let image = text.BackgroundImage
-            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -555,7 +555,7 @@ module ToggleDispatcherModule =
 
         override dispatcher.GetQuickSize (toggle, world) =
             let image = toggle.OffImage
-            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -681,7 +681,7 @@ module FillBarDispatcherModule =
 
         override dispatcher.GetQuickSize (fillBar, world) =
             let image = fillBar.BorderImage
-            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTextureSizeAsVector2 image.ImageAssetName image.PackageName world.State.AssetMetadataMap with
             | Some size -> size
             | None -> DefaultEntitySize
 
@@ -749,7 +749,7 @@ module TileMapDispatcherModule =
         static member setParallax (value : single) (entity : Entity) : Entity = entity?Parallax <- value
 
         static member makeTileMapData tileMapAsset world =
-            let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap
+            let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap
             let mapSize = Vector2I (map.Width, map.Height)
             let tileSize = Vector2I (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
@@ -820,7 +820,7 @@ module TileMapDispatcherModule =
                           CollisionMask = Physics.toCollisionCategories tm.CollisionMask
                           IsBullet = false
                           IsSensor = false }}
-            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage createBodyMessage world
 
         let registerTilePhysics tm tmd (tl : TmxLayer) tli address ti world _ =
             let td = Entity.makeTileData tm tmd tl ti
@@ -861,7 +861,7 @@ module TileMapDispatcherModule =
                                     if tileSetTile.Properties.ContainsKey CollisionProperty then
                                         let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
                                         let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-                                        { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+                                        World.addPhysicsMessage destroyBodyMessage world
                                     else world
                                 | None -> world)
                             world
@@ -894,7 +894,7 @@ module TileMapDispatcherModule =
             let localRenderDescriptors =
                 if tileMap.Visible then
                     let tileMapAsset = tileMap.TileMapAsset
-                    match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+                    match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap with
                     | Some (_, images, map) ->
                         let layers = List.ofSeq map.Layers
                         let tileSourceSize = Vector2I (map.TileWidth, map.TileHeight)
@@ -931,6 +931,6 @@ module TileMapDispatcherModule =
 
         override dispatcher.GetQuickSize (tileMap, world) =
             let tileMapAsset = tileMap.TileMapAsset
-            match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.AssetMetadataMap with
+            match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap with
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
             | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."

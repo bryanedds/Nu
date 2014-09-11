@@ -5,6 +5,33 @@ open Nu
 open Nu.NuConstants
 
 [<AutoOpen>]
+module ScreenModule =
+
+    type Screen with
+
+        static member setScreenState state screen = { screen with ScreenState = state }
+        static member setIncoming incoming screen = { screen with Incoming = incoming }
+        static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
+
+        static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
+            screen?Register (screen, address, world)
+
+        static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
+            screen?Unregister (screen, address, world)
+
+        static member isIdling screen =
+            screen.ScreenState = IdlingState
+
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
+              ScreenState = IdlingState
+              Incoming = Transition.make Incoming
+              Outgoing = Transition.make Outgoing
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
+
+[<AutoOpen>]
 module WorldScreenModule =
 
     type World with
@@ -60,12 +87,12 @@ module WorldScreenModule =
 
         static member removeScreen address screen world =
             let task =
-                { ScheduledTime = world.TickTime
+                { ScheduledTime = world.State.TickTime
                   Operation = fun world ->
                     match World.getOptScreen address world with
                     | Some screen -> snd <| World.removeScreenImmediate address screen world
                     | None -> world }
-            let world = { world with Tasks = task :: world.Tasks }
+            let world = World.addTask task world
             (screen, world)
 
         static member addScreen address screen groupDescriptors world =
@@ -81,7 +108,7 @@ module WorldScreenModule =
 
         static member makeScreen dispatcherName optName world =
             let screen = Screen.make dispatcherName optName
-            let screenDispatcher = Map.find dispatcherName world.Dispatchers
+            let screenDispatcher = Map.find dispatcherName world.Components.Dispatchers
             Reflection.attachFields screenDispatcher screen
             screen
 

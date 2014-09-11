@@ -8,6 +8,23 @@ open Nu
 open Nu.NuConstants
 
 [<AutoOpen>]
+module GroupModule =
+
+    type Group with
+
+        static member register (address : Address) (group : Group) (world : World) : Group * World =
+            group?Register (group, address, world)
+        
+        static member unregister (address : Address) (group : Group) (world : World) : Group * World =
+            group?Unregister (group, address, world)
+
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Group.Id = id
+              Name = match optName with None -> string id | Some name -> name
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
+
+[<AutoOpen>]
 module WorldGroupModule =
 
     type World with
@@ -83,12 +100,12 @@ module WorldGroupModule =
 
         static member removeGroup address group world =
             let task =
-                { ScheduledTime = world.TickTime
+                { ScheduledTime = world.State.TickTime
                   Operation = fun world ->
                     match World.getOptGroup address world with
                     | Some group -> snd <| World.removeGroupImmediate address group world
                     | None -> world }
-            let world = { world with Tasks = task :: world.Tasks }
+            let world = World.addTask task world
             (group, world)
 
         static member removeGroupsImmediate screenAddress groups world =
@@ -132,7 +149,7 @@ module WorldGroupModule =
             // attach the group's instrinsic fields from its dispatcher if any
             match group.Xtension.OptXDispatcherName with
             | Some dispatcherName ->
-                match Map.tryFind dispatcherName world.Dispatchers with
+                match Map.tryFind dispatcherName world.Components.Dispatchers with
                 | Some dispatcher ->
                     match dispatcher with
                     | :? GroupDispatcher -> Reflection.attachFields dispatcher group
@@ -151,6 +168,6 @@ module WorldGroupModule =
 
         static member makeGroup dispatcherName optName world =
             let group = Group.make dispatcherName optName
-            let groupDispatcher = Map.find dispatcherName world.Dispatchers
+            let groupDispatcher = Map.find dispatcherName world.Components.Dispatchers
             Reflection.attachFields groupDispatcher group
             group

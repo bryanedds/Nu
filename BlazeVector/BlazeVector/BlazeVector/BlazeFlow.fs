@@ -73,14 +73,14 @@ module BlazeFlow =
         World.subscribe4 ClickStageBackEventName Address.empty (ScreenTransitionSub TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
-    let tryMakeBlazeVectorWorld sdlDeps extData =
+    let tryMakeBlazeVectorWorld sdlDeps userState =
 
         // create our game's component factory
         let blazeComponentFactory = BlazeComponentFactory ()
 
         // we use World.tryMake to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false extData
+        let optWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false userState
         match optWorld with
         | Right world ->
 

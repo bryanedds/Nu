@@ -213,48 +213,6 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType entity dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType entity.Xtension dispatcherContainer
 
-        static member setPosition position (entity : Entity) =
-             { entity with Position = position }
-
-        static member setDepth depth (entity : Entity) =
-             { entity with Depth = depth }
-
-        static member setSize size (entity : Entity) =
-             { entity with Size = size }
-
-        static member setRotation rotation (entity : Entity) =
-             { entity with Rotation = rotation }
-
-        static member setVisible visible (entity : Entity) =
-             { entity with Visible = visible }
-
-        static member setFacetNames facets (entity : Entity) =
-             { entity with FacetNames = facets }
-
-        static member setFacetsNp facets (entity : Entity) =
-             { entity with FacetsNp = facets }
-
-        static member isFacetCompatible facet entity =
-            let facetType = facet.GetType ()
-            let facetFieldNames = Reflection.getFieldDefinitionNames facetType
-            let entityFieldNames = Map.toKeyList entity.Xtension.XFields
-            let intersection = List.intersect facetFieldNames entityFieldNames
-            Set.isEmpty intersection
-
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Id = id
-              Name = match optName with None -> string id | Some name -> name
-              Position = Vector2.Zero
-              Depth = 0.0f
-              Size = DefaultEntitySize
-              Rotation = 0.0f
-              Visible = true
-              FacetNames = []
-              FacetsNp = []
-              OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true } }
-
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
@@ -272,24 +230,12 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType group dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType group.Xtension dispatcherContainer
 
-        static member register (address : Address) (group : Group) (world : World) : Group * World =
-            group?Register (group, address, world)
-        
-        static member unregister (address : Address) (group : Group) (world : World) : Group * World =
-            group?Unregister (group, address, world)
-
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Group.Id = id
-              Name = match optName with None -> string id | Some name -> name
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
-
     /// The screen type that allows transitioning to and fro other screens, and also hosts the
     /// currently interactive groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
           Name : string
-          State : ScreenState
+          ScreenState : ScreenState
           Incoming : Transition
           Outgoing : Transition
           Xtension : Xtension }
@@ -304,33 +250,6 @@ module SimModule =
 
         static member dispatchesAs dispatcherTargetType screen dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType screen.Xtension dispatcherContainer
-
-        static member setState state screen =
-             { screen with State = state }
-
-        static member setIncoming incoming screen =
-             { screen with Incoming = incoming }
-
-        static member setOutgoing outgoing screen =
-             { screen with Outgoing = outgoing }
-
-        static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
-            screen?Register (screen, address, world)
-
-        static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
-            screen?Unregister (screen, address, world)
-
-        static member isIdling screen =
-            screen.State = IdlingState
-
-        static member make dispatcherName optName =
-            let id = NuCore.makeId ()
-            { Id = id
-              Name = match optName with None -> string id | Some name -> name
-              State = IdlingState
-              Incoming = Transition.make Incoming
-              Outgoing = Transition.make Outgoing
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
 
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
@@ -350,22 +269,6 @@ module SimModule =
         static member dispatchesAs dispatcherTargetType game dispatcherContainer =
             Xtension.dispatchesAs dispatcherTargetType game.Xtension dispatcherContainer
 
-        static member setOptSelectedScreenAddress optSelectedScreenAddress game =
-             { game with OptSelectedScreenAddress = optSelectedScreenAddress }
-
-        static member make dispatcherName dispatcher optName =
-            let id = NuCore.makeId ()
-            let game =
-                { Id = id
-                  Name = match optName with None -> string id | Some name -> name
-                  OptSelectedScreenAddress = None
-                  Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
-            Reflection.attachFields dispatcher game
-            game
-
-        member game.Register (world : World) : Game * World =
-            game?Register (game, world)
-
     /// Provides a way to make user-defined components.
     and IUserComponentFactory =
         interface
@@ -373,38 +276,53 @@ module SimModule =
             abstract MakeUserFacets : unit -> Map<string, Facet>
             end
 
+    /// The world's components.
+    and [<ReferenceEquality>] Components =
+        { AudioPlayer : AudioPlayer
+          Renderer : Renderer
+          Integrator : Integrator
+          Overlayer : Overlayer
+          Dispatchers : XDispatchers
+          Facets : Map<string, Facet> }
+
+    /// The world's message queues.
+    and [<ReferenceEquality>] MessageQueues =
+        { AudioMessages : AudioMessage rQueue
+          RenderingMessages : RenderMessage rQueue
+          PhysicsMessages : PhysicsMessage rQueue }
+
+    /// The world's higher order facilities.
+    and [<ReferenceEquality>] Callbacks =
+        { Tasks : Task list
+          Subscriptions : SubscriptionEntries
+          Unsubscriptions : UnsubscriptionEntries }
+
+    /// The world's state.
+    and [<ReferenceEquality>] State =
+        { TickTime : int64
+          Liveness : Liveness
+          Interactivity : Interactivity
+          AssetMetadataMap : AssetMetadataMap
+          AssetGraphFileName : string
+          OverlayFileName : string
+          UserState : obj }
+
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
     /// and general configuration data.
-    ///
-    /// TODO: see if the size of this type might have a non-trivial impact on performance.
     and [<ReferenceEquality>] World =
         { Game : Game
           Screens : Map<string, Screen>
           Groups : Map<string, Map<string, Group>>
           Entities : Map<string, Map<string, Map<string, Entity>>>
-          TickTime : int64
-          Liveness : Liveness
-          Interactivity : Interactivity
           Camera : Camera
-          Tasks : Task list
-          Subscriptions : SubscriptionEntries
-          Unsubscriptions : UnsubscriptionEntries
-          AudioPlayer : AudioPlayer
-          Renderer : Renderer
-          Integrator : Integrator
-          AssetMetadataMap : AssetMetadataMap
-          Overlayer : Overlayer
-          AudioMessages : AudioMessage rQueue
-          RenderMessages : RenderMessage rQueue
-          PhysicsMessages : PhysicsMessage rQueue
-          Dispatchers : XDispatchers
-          Facets : Map<string, Facet>
-          AssetGraphFileName : string
-          OverlayFileName : string
-          ExtData : obj }
+          Components : Components
+          MessageQueues : MessageQueues
+          Callbacks : Callbacks
+          State : State }
+
         interface IXDispatcherContainer with
-            member this.GetDispatchers () = this.Dispatchers
+            member this.GetDispatchers () = this.Components.Dispatchers
             end
 
     /// Abstracts over the simulation types (Game, Screen, Group, Entity).
@@ -547,22 +465,8 @@ module EventData =
         | "Unit" -> toNoData eventData :> obj :?> 'd
         | _ -> failwith <| "Invalid event data type '" + typeName + "'."
 
+[<RequireQualifiedAccess>]
 module World =
-
-    /// Query that the engine is in game-playing mode.
-    let isGamePlaying world = Interactivity.isGamePlaying world.Interactivity
-
-    /// Query that the physics system is running.
-    let isPhysicsRunning world = Interactivity.isPhysicsRunning world.Interactivity
-
-    /// Transform a bunch of simulants in the context of a world.
-    let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
-        Map.fold
-            (fun (simulants, world) simulantName (simulant : 's) ->
-                let (simulant, world) = transform (parentAddress @+ [simulantName]) simulant world
-                (Map.add simulantName simulant simulants, world))
-            (Map.empty, world)
-            simulants
 
     /// Publish an event.
     let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
@@ -584,6 +488,150 @@ module World =
     
     /// Keep active a subscription for the lifetime of a simulant.
     let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+
+    /// Transform a bunch of simulants in the context of a world.
+    let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
+        Map.fold
+            (fun (simulants, world) simulantName (simulant : 's) ->
+                let (simulant, world) = transform (parentAddress @+ [simulantName]) simulant world
+                (Map.add simulantName simulant simulants, world))
+            (Map.empty, world)
+            simulants
+
+    /// Set the Camera field of the world.
+    let setCamera camera world =
+        { world with Camera = camera }
+
+    /// Set the AudioPlayer field of the world.
+    let internal setAudioPlayer audioPlayer world =
+        let components = { world.Components with AudioPlayer = audioPlayer }
+        { world with Components = components }
+
+    /// Set the Renderer field of the world.
+    let internal setRenderer renderer world =
+        let components = { world.Components with Renderer = renderer }
+        { world with Components = components }
+
+    /// Set the Integrator field of the world.
+    let internal setIntegrator integrator world =
+        let components = { world.Components with Integrator = integrator }
+        { world with Components = components }
+
+    /// Set the Overlayer field of the world.
+    let internal setOverlayer overlayer world =
+        let components = { world.Components with Overlayer = overlayer }
+        { world with Components = components }
+
+    /// Set the Dispatchers field of the world.
+    let internal setDispatchers dispatchers world =
+        let components = { world.Components with Dispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the Facets field of the world.
+    let internal setFacets facets world =
+        let components = { world.Components with Facets = facets }
+        { world with Components = components }
+
+    /// Clear the audio messages.
+    let clearAudioMessages world =
+        let messageQueues = { world.MessageQueues with AudioMessages = [] }
+        { world with MessageQueues = messageQueues }
+
+    /// Clear the rendering messages.
+    let clearRenderingMessages world =
+        let messageQueues = { world.MessageQueues with RenderingMessages = [] }
+        { world with MessageQueues = messageQueues }
+
+    /// Clear the physics messages.
+    let clearPhysicsMessages world =
+        let messageQueues = { world.MessageQueues with PhysicsMessages = [] }
+        { world with MessageQueues = messageQueues }
+
+    /// Add a physics message to the world.
+    let addPhysicsMessage message world =
+        let messageQueues = { world.MessageQueues with PhysicsMessages = message :: world.MessageQueues.PhysicsMessages }
+        { world with MessageQueues = messageQueues }
+
+    /// Add a rendering message to the world.
+    let addRenderingMessage message world =
+        let messageQueues = { world.MessageQueues with RenderingMessages = message :: world.MessageQueues.RenderingMessages }
+        { world with MessageQueues = messageQueues }
+
+    /// Add an audio message to the world.
+    let addAudioMessage message world =
+        let messageQueues = { world.MessageQueues with AudioMessages = message :: world.MessageQueues.AudioMessages }
+        { world with MessageQueues = messageQueues }
+
+    /// Add a task to be executed by the engine at the specified task tick.
+    let addTask task world =
+        let callbacks = { world.Callbacks with Tasks = task :: world.Callbacks.Tasks }
+        { world with Callbacks = callbacks }
+
+    /// Add multiple task to be executed by the engine at the specified task tick.
+    let addTasks tasks world =
+        let callbacks = { world.Callbacks with Tasks = tasks @ world.Callbacks.Tasks }
+        { world with Callbacks = callbacks }
+
+    /// Restore tasks to be executed by the engine at the specified task tick.
+    let restoreTasks tasks world =
+        let callbacks = { world.Callbacks with Tasks = world.Callbacks.Tasks @ tasks }
+        { world with Callbacks = callbacks }
+
+    /// Clear all tasks.
+    let clearTasks world =
+        let callbacks = { world.Callbacks with Tasks = [] }
+        { world with Callbacks = callbacks }
+
+    /// Add an event subscription.
+    let addSubscription eventName subscription world =
+        let callbacks = { world.Callbacks with Subscriptions = Map.add eventName subscription world.Callbacks.Subscriptions }
+        { world with Callbacks = callbacks }
+
+    /// Add an event unsubscription.
+    let addUnsubscription subscriptionKey unsubscription world =
+        let callbacks = { world.Callbacks with Unsubscriptions = Map.add subscriptionKey unsubscription world.Callbacks.Unsubscriptions }
+        { world with Callbacks = callbacks }
+
+    /// Remove an event subscription.
+    let removeSubscription eventName world =
+        let callbacks = { world.Callbacks with Subscriptions = Map.remove eventName world.Callbacks.Subscriptions }
+        { world with Callbacks = callbacks }
+
+    /// Remove an event unsubscription.
+    let removeUnsubscription subscriptionKey world =
+        let callbacks = { world.Callbacks with Unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions }
+        { world with Callbacks = callbacks }
+
+    /// Increment the TickTime field of the world.
+    let incrementTickTime world =
+        let state = { world.State with TickTime = world.State.TickTime + 1L }
+        { world with State = state }
+
+    /// Place the world into a state such that the app will exit at the end of the current frame.
+    let exit world =
+        let state = { world.State with Liveness = Exiting }
+        { world with State = state }
+
+    /// Query that the engine is in game-playing mode.
+    let isGamePlaying world = Interactivity.isGamePlaying world.State.Interactivity
+
+    /// Query that the physics system is running.
+    let isPhysicsRunning world = Interactivity.isPhysicsRunning world.State.Interactivity
+
+    /// Set the level of the world's interactivity.
+    let setInteractivity interactivity world =
+        let state = { world.State with Interactivity = interactivity }
+        { world with State = state }
+
+    /// Set the AssetMetadataMap field of the world.
+    let setAssetMetadataMap assetMetadataMap world =
+        let state = { world.State with AssetMetadataMap = assetMetadataMap }
+        { world with State = state }
+
+    /// Set the UserState field of the world.
+    let setUserState userState world =
+        let state = { world.State with UserState = userState }
+        { world with State = state }
 
 [<AutoOpen>]
 module WorldInputModule =
@@ -624,37 +672,37 @@ module WorldPhysicsModule =
         /// Send a message to the physics system to create a body with the given physics id.
         static member createBody entityAddress physicsId position rotation bodyProperties world =
             let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; PhysicsId = physicsId; Position = position; Rotation = rotation; BodyProperties = bodyProperties }
-            { world with PhysicsMessages = createBodyMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to destroy a body with the given physics id.
         static member destroyBody physicsId world =
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-            { world with PhysicsMessages = destroyBodyMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage destroyBodyMessage world
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
         static member setPosition position physicsId world =
             let setPositionMessage = SetPositionMessage { PhysicsId = physicsId; Position = position }
-            { world with PhysicsMessages = setPositionMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage setPositionMessage world
 
         /// Send a message to the physics system to set the rotation of a body with the given physics id.
         static member setRotation rotation physicsId world =
             let setRotationMessage = SetRotationMessage { PhysicsId = physicsId; Rotation = rotation }
-            { world with PhysicsMessages = setRotationMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage setRotationMessage world
 
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
         static member setLinearVelocity linearVelocity physicsId world =
             let setLinearVelocityMessage = SetLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
-            { world with PhysicsMessages = setLinearVelocityMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage setLinearVelocityMessage world
 
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
         static member applyLinearImpulse linearImpulse physicsId world =
             let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
-            { world with PhysicsMessages = applyLinearImpulseMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage applyLinearImpulseMessage world
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
         static member applyForce force physicsId world =
             let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
-            { world with PhysicsMessages = applyForceMessage :: world.PhysicsMessages }
+            World.addPhysicsMessage applyForceMessage world
 
 [<AutoOpen>]
 module WorldRenderingModule =
@@ -665,18 +713,18 @@ module WorldRenderingModule =
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
         static member hintRenderingPackageUse packageName world =
             let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { PackageName = packageName }
-            { world with RenderMessages = hintRenderingPackageUseMessage :: world.RenderMessages }
+            World.addRenderingMessage hintRenderingPackageUseMessage world
             
         /// Hint that a rendering package should be unloaded since its assets will not be used
         /// again (or until specified via World.hintRenderingPackageUse).
         static member hintRenderingPackageDisuse packageName world =
             let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { PackageName = packageName }
-            { world with RenderMessages = hintRenderingPackageDisuseMessage :: world.RenderMessages }
+            World.addRenderingMessage hintRenderingPackageDisuseMessage world
             
         /// Send a message to the renderer to reload its rendering assets.
         static member reloadRenderingAssets world =
             let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage
-            { world with RenderMessages = reloadRenderingAssetsMessage :: world.RenderMessages }
+            World.addRenderingMessage reloadRenderingAssetsMessage world
 
 [<AutoOpen>]
 module WorldAudioModule =
@@ -686,7 +734,7 @@ module WorldAudioModule =
         /// Send a message to the audio system to play a song.
         static member playSong song volume timeToFadeOutSongMs world =
             let playSongMessage = PlaySongMessage { Song = song; Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs }
-            { world with AudioMessages = playSongMessage :: world.AudioMessages }
+            World.addAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
         static member playSong6 songAssetName packageName volume timeToFadeOutSongMs world =
@@ -696,7 +744,7 @@ module WorldAudioModule =
         /// Send a message to the audio system to play a sound.
         static member playSound sound volume world =
             let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
-            { world with AudioMessages = playSoundMessage :: world.AudioMessages }
+            World.addAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a sound.
         static member playSound5 soundAssetName packageName volume world =
@@ -706,28 +754,28 @@ module WorldAudioModule =
         /// Send a message to the audio system to fade out a song.
         static member fadeOutSong timeToFadeOutSongMs world =
             let fadeOutSongMessage = FadeOutSongMessage timeToFadeOutSongMs
-            { world with AudioMessages = fadeOutSongMessage :: world.AudioMessages }
+            World.addAudioMessage fadeOutSongMessage world
 
         /// Send a message to the audio system to stop a song.
         static member stopSong world =
-            { world with AudioMessages = StopSongMessage :: world.AudioMessages }
+            World.addAudioMessage StopSongMessage world
             
         /// Hint that an audio asset package with the given name should be loaded. Should be used
         /// to avoid loading assets at inconvenient times (such as in the middle of game play!)
         static member hintAudioPackageUse packageName world =
             let hintAudioPackageUseMessage = HintAudioPackageUseMessage { PackageName = packageName }
-            { world with AudioMessages = hintAudioPackageUseMessage :: world.AudioMessages }
+            World.addAudioMessage hintAudioPackageUseMessage world
             
         /// Hint that an audio package should be unloaded since its assets will not be used again
         /// (or until specified via a HintAudioPackageUseMessage).
         static member hintAudioPackageDisuse packageName world =
             let hintAudioPackageDisuseMessage = HintAudioPackageDisuseMessage { PackageName = packageName }
-            { world with AudioMessages = hintAudioPackageDisuseMessage :: world.AudioMessages }
+            World.addAudioMessage hintAudioPackageDisuseMessage world
 
         /// Send a message to the audio player to reload its audio assets.
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
-            { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }
+            World.addAudioMessage reloadAudioAssetsMessage world
 
 [<RequireQualifiedAccess>]
 module Simulant =

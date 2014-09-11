@@ -18,7 +18,7 @@ module FieldGroupDispatcherModule =
             let avatarAddress = groupAddress @+ [FieldAvatarName]
             let avatar = World.getEntity avatarAddress world
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
-            { world with Camera = camera }
+            World.setCamera camera world
 
         let adjustFieldCameraHandler event world =
             let (address, _, _) = Event.unwrap<Group, NoData> event
@@ -45,7 +45,7 @@ module FieldGroupDispatcherModule =
             let (avatar, world) = base.Register (avatar, address, world)
             let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
             let world = World.observe TickEventName address (CustomSub adjustFieldCameraHandler) world
-            let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+            let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             let world = adjustFieldCamera address world
             (avatar, world)
 
@@ -60,7 +60,7 @@ module BattleGroupDispatcherModule =
 
         override dispatcher.Register (group, address, world) =
             let (group, world) = base.Register (group, address, world)
-            let world = { world with PhysicsMessages = SetGravityMessage Vector2.Zero :: world.PhysicsMessages }
+            let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             (group, world)
 
 [<AutoOpen>]
