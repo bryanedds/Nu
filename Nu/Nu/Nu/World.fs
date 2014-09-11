@@ -491,7 +491,7 @@ module WorldModule =
             let entities = World.getEntities groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->
-                    let entityAddress = addrlist groupAddress [entity.Name]
+                    let entityAddress = groupAddress @+ [entity.Name]
                     Entity.propagatePhysics entityAddress entity world)
                 world
                 entities
@@ -610,13 +610,13 @@ module WorldModule =
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                             let mousePosition = World.getMousePositionF world
                             let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                            let mouseEventName = addrlist DownMouseEventName [string mouseButton]
+                            let mouseEventName = DownMouseEventName @+ [string mouseButton]
                             let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                             World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
                         | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                             let mousePosition = World.getMousePositionF world
                             let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                            let mouseEventName = addrlist UpMouseEventName [string mouseButton]
+                            let mouseEventName = UpMouseEventName @+ [string mouseButton]
                             let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                             World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
                         | SDL.SDL_EventType.SDL_KEYDOWN ->

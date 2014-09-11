@@ -57,33 +57,29 @@ module AddressModule =
         override this.ToString () =
             String.Join ("/", this.AddrList)
 
-    /// Make an address from a list of strings.
-    let make =
-        Address.make
-
     /// Make an address by splitting a string on the '/' character.
     let addr (str : string) : Address =
         let list = List.ofArray <| str.Split '/'
-        make list
+        Address.make list
 
     /// Concatenate a list of strings to the front of an address.
-    let listaddr list address =
-        make <| list @ address.AddrList
+    let (+@) list address =
+        Address.make <| list @ address.AddrList
 
     /// Concatenate a list of strings to the back of an address.
-    let addrlist address list =
-        make <| address.AddrList @ list
+    let (@+) address list =
+        Address.make <| address.AddrList @ list
 
     /// Surround an address with two lists of strings.
-    let listaddrlist list address list2 =
-        make <| list @ address.AddrList @ list2
+    let (+@+) list address list2 =
+        Address.make <| list @ address.AddrList @ list2
 
 [<RequireQualifiedAccess>]
 module Address =
 
     /// The empty address.
     let empty =
-        make []
+        Address.make []
 
     /// Take the head of an address.
     let head address =
@@ -91,7 +87,7 @@ module Address =
         
     /// Take the tail of an address.
     let tail address =
-        make <| List.tail address.AddrList
+        Address.make <| List.tail address.AddrList
 
     /// Take an element of an address.
     let at index address =
@@ -99,13 +95,13 @@ module Address =
 
     /// Map over an address.
     let map mapper address =
-        let addrList = List.map mapper address.AddrList
-        make addrList
+        let list = List.map mapper address.AddrList
+        Address.make list
 
     /// Filter the elements of an address.
     let filter predicate address =
-        let addrList = List.filter predicate address.AddrList
-        make addrList
+        let list = List.filter predicate address.AddrList
+        Address.make list
 
     /// Fold over an address.
     let fold folder state address =
@@ -113,11 +109,11 @@ module Address =
 
     /// Take an address composed of the elements of an address minus a skipped amount of elements.
     let skip n address =
-        make <| List.skip n address.AddrList
+        Address.make <| List.skip n address.AddrList
 
     /// Take an address composed of the given number of elements of an address.
     let take n address =
-        make <| List.take n address.AddrList
+        Address.make <| List.take n address.AddrList
 
     /// Take the last element of an address.
     let last address =
@@ -125,7 +121,7 @@ module Address =
 
     /// Take an address composed of all but the last element of an address.
     let allButLast address =
-        make <| List.allButLast address.AddrList
+        Address.make <| List.allButLast address.AddrList
 
     /// Get the length of an address by its elements.
     let length address =

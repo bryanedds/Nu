@@ -768,7 +768,7 @@ module Simulant =
     let transformSimulants transform groupAddress simulants world : Map<string, 's> * World =
         Map.fold
             (fun (simulants, world) simulantName (simulant : 's) ->
-                let (simulant, world) = transform (addrlist groupAddress [simulantName]) simulant world
+                let (simulant, world) = transform (groupAddress @+ [simulantName]) simulant world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants
