@@ -14,7 +14,7 @@
       </Entity>
       <Entity>
         <Name>028304b9-844f-4f28-949c-0a6897eb2a5b</Name>
-        <Position>1512;-175.68</Position>
+        <Position>1464;-15.6805</Position>
         <Depth>4</Depth>
         <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
         <Xtension optXDispatcherName="Some(EnemyDispatcher)" />

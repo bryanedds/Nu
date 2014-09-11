@@ -16,6 +16,35 @@ module EntityModule =
 
     type Entity with
 
+        static member setPosition position (entity : Entity) = { entity with Position = position }
+        static member setDepth depth (entity : Entity) = { entity with Depth = depth }
+        static member setSize size (entity : Entity) = { entity with Size = size }
+        static member setRotation rotation (entity : Entity) = { entity with Rotation = rotation }
+        static member setVisible visible (entity : Entity) = { entity with Visible = visible }
+        static member setFacetNames facets (entity : Entity) = { entity with FacetNames = facets }
+        static member setFacetsNp facets (entity : Entity) = { entity with FacetsNp = facets }
+
+        static member isFacetCompatible facet (entity : Entity) =
+            let facetType = facet.GetType ()
+            let facetFieldNames = Reflection.getFieldDefinitionNames facetType
+            let entityFieldNames = Map.toKeyList entity.Xtension.XFields
+            let intersection = List.intersect facetFieldNames entityFieldNames
+            Set.isEmpty intersection
+
+        static member make dispatcherName optName =
+            let id = NuCore.makeId ()
+            { Id = id
+              Name = match optName with None -> string id | Some name -> name
+              Position = Vector2.Zero
+              Depth = 0.0f
+              Size = DefaultEntitySize
+              Rotation = 0.0f
+              Visible = true
+              FacetNames = []
+              FacetsNp = []
+              OptOverlayName = Some dispatcherName
+              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true } }
+
         (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
         
         static member register address (entity : Entity) world =
@@ -181,12 +210,12 @@ module WorldEntityModule =
 
         static member removeEntity address entity world =
             let task =
-                { ScheduledTime = world.TickTime
+                { ScheduledTime = world.State.TickTime
                   Operation = fun world ->
                     match World.getOptEntity address world with
                     | Some entity -> snd <| World.removeEntityImmediate address entity world
                     | None -> world }
-            let world = { world with Tasks = task :: world.Tasks }
+            let world = World.addTask task world
             (entity, world)
 
         static member removeEntitiesImmediate groupAddress entities world =
@@ -209,7 +238,7 @@ module WorldEntityModule =
             World.transformSimulants World.addEntity groupAddress entities world
 
         static member tryGetFacet facetName world =
-            match Map.tryFind facetName world.Facets with
+            match Map.tryFind facetName world.Components.Facets with
             | Some facet -> Right <| facet
             | None -> Left <| "Invalid facet name '" + facetName + "'."
 
@@ -245,7 +274,7 @@ module WorldEntityModule =
                 Right (entity, world)
             | None -> Left <| "Failure to remove facet '" + facetName + "' from entity."
 
-        static member tryAddFacet syncing facetName optAddress entity world =
+        static member tryAddFacet syncing facetName optAddress (entity : Entity) world =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if Entity.isFacetCompatible facet entity then
@@ -299,7 +328,7 @@ module WorldEntityModule =
             match Xtension.getDispatcher entity.Xtension world with
             | :? EntityDispatcher as entityDispatcher ->
                 let entity = { entity with Id = entity.Id } // hacky copy
-                Reflection.attachIntrinsicFacets entityDispatcher entity world.Facets
+                Reflection.attachIntrinsicFacets entityDispatcher entity world.Components.Facets
                 entity
             | _ -> failwith <| "No valid entity dispatcher for entity '" + entity.Name + "'."
 
@@ -333,7 +362,8 @@ module WorldEntityModule =
             match entity.OptOverlayName with
             | Some overlayName ->
                 let defaultOptDispatcherName = Some typeof<EntityDispatcher>.Name
-                Overlayer.applyOverlayToFacetNames defaultOptDispatcherName overlayName entity world.Overlayer world.Overlayer
+                let overlayer = world.Components.Overlayer
+                Overlayer.applyOverlayToFacetNames defaultOptDispatcherName overlayName entity overlayer overlayer
             | None -> ()
 
             // read the entity's facet names, and synchronize its facets 
@@ -346,7 +376,7 @@ module WorldEntityModule =
             // attach the entity's instrinsic fields from its dispatcher if any
             match entity.Xtension.OptXDispatcherName with
             | Some dispatcherName ->
-                match Map.tryFind dispatcherName world.Dispatchers with
+                match Map.tryFind dispatcherName world.Components.Dispatchers with
                 | Some dispatcher ->
                     match dispatcher with
                     | :? EntityDispatcher -> Reflection.attachFields dispatcher entity
@@ -356,7 +386,7 @@ module WorldEntityModule =
 
             // apply the entity's overlay
             match entity.OptOverlayName with
-            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Overlayer
+            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Components.Overlayer
             | None -> ()
 
             // read the entity's properties
@@ -380,7 +410,7 @@ module WorldEntityModule =
         static member makeEntity dispatcherName optName world =
             let entity = Entity.make dispatcherName optName
             let entity = World.attachIntrinsicFacetsViaNames entity world
-            let entityDispatcher = Map.find dispatcherName world.Dispatchers
+            let entityDispatcher = Map.find dispatcherName world.Components.Dispatchers
             Reflection.attachFields entityDispatcher entity
             match World.trySynchronizeFacets [] None entity world with
             | Right (entity, _) -> entity

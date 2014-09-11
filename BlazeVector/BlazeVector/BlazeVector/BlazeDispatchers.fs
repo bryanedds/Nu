@@ -96,7 +96,7 @@ module EnemyDispatcherModule =
 
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
-            let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
+            let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Components.Integrator
             let force =
                 match optGroundTangent with
                 | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
@@ -196,7 +196,7 @@ module PlayerDispatcherModule =
             let (address, player, _) = Event.unwrap<Entity, NoData> event
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
-                    if world.TickTime % 6L = 0L then
+                    if world.State.TickTime % 6L = 0L then
                         let world = snd <| shootBullet address player world
                         (Propagate, world)
                     else (Propagate, world)
@@ -205,9 +205,9 @@ module PlayerDispatcherModule =
 
         let getLastTimeOnGround (player : Entity) world =
             let physicsId = Entity.getPhysicsId player
-            if not <| Physics.isBodyOnGround physicsId world.Integrator
+            if not <| Physics.isBodyOnGround physicsId world.Components.Integrator
             then player.LastTimeOnGroundNp
-            else world.TickTime
+            else world.State.TickTime
 
         let movementHandler event world =
             let (address, player, _) = Event.unwrap<Entity, NoData> event
@@ -216,7 +216,7 @@ module PlayerDispatcherModule =
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
                 let world = World.setEntity address player world
                 let physicsId = Entity.getPhysicsId player
-                let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
+                let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Components.Integrator
                 let force =
                     match optGroundTangent with
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
@@ -228,9 +228,9 @@ module PlayerDispatcherModule =
         let jumpHandler event world =
             let (address, player, _) = Event.unwrap<Entity, MouseButtonData> event
             if World.isGamePlaying world then
-                if  world.TickTime >= player.LastTimeJumpNp + 12L &&
-                    world.TickTime <= player.LastTimeOnGroundNp + 10L then
-                    let player = Entity.setLastTimeJumpNp world.TickTime player
+                if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
+                    world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
+                    let player = Entity.setLastTimeJumpNp world.State.TickTime player
                     let world = World.setEntity address player world
                     let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
                     let world = World.playSound JumpSound 1.0f world
@@ -266,7 +266,7 @@ module StagePlayDispatcherModule =
             if World.isGamePlaying world then
                 let player = getPlayer groupAddress world
                 let eyeCenter = Vector2 (player.Position.X + player.Size.X * 0.5f + world.Camera.EyeSize.X * 0.33f, world.Camera.EyeCenter.Y)
-                { world with Camera = { world.Camera with EyeCenter = eyeCenter }}
+                World.setCamera { world.Camera with EyeCenter = eyeCenter } world
             else world
 
         let adjustCameraHandler event world =

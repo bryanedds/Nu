@@ -73,7 +73,7 @@ module OmniStateModule =
 
     type [<StructuralEquality; NoComparison>] Battle =
         { Data : BattleData
-          State : BattleState
+          BattleState : BattleState
           MoveQueue : OmniMove rQueue
           Enemies : OmniCharacter list
           MinorEnemySpawns : int }
