@@ -7,6 +7,6 @@ open Nu
 module NuEditConstants =
 
     let EditorScreenName = "EditorScreen"
-    let EditorScreenAddress = addr EditorScreenName
+    let EditorScreenAddress = !* EditorScreenName
     let EditorGroupName = "EditorGroup"
     let EditorGroupAddress = EditorScreenAddress @+ [EditorGroupName]
