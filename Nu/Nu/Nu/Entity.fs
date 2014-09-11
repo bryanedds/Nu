@@ -148,10 +148,10 @@ module WorldEntityModule =
             | Some entity -> World.entityAdder address world entity
             | None -> World.entityRemover address world
 
-        static member withEntity fn address world = Sim.withSimulant World.getEntity World.setEntity fn address world
-        static member withEntityAndWorld fn address world = Sim.withSimulantAndWorld World.getEntity World.setEntity fn address world
-        static member tryWithEntity fn address world = Sim.tryWithSimulant World.getOptEntity World.setEntity fn address world
-        static member tryWithEntityAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
+        static member withEntity fn address world = Simulant.withSimulant World.getEntity World.setEntity fn address world
+        static member withEntityAndWorld fn address world = Simulant.withSimulantAndWorld World.getEntity World.setEntity fn address world
+        static member tryWithEntity fn address world = Simulant.tryWithSimulant World.getOptEntity World.setEntity fn address world
+        static member tryWithEntityAndWorld fn address world = Simulant.tryWithSimulantAndWorld World.getOptEntity World.setEntity fn address world
 
         static member getEntities1 world =
             seq {
@@ -179,7 +179,7 @@ module WorldEntityModule =
             Entity.unregister address entity world
 
         static member removeEntityImmediate address entity world =
-            let world = World.publish4 (RemovingEventName + address) address NoData world
+            let world = World.publish4 (RemovingEventName + address) address (NoData ()) world
             let (entity, world) = World.unregisterEntity address entity world
             let world = World.setOptEntityWithoutEvent address None world
             (entity, world)
@@ -195,10 +195,10 @@ module WorldEntityModule =
             (entity, world)
 
         static member removeEntitiesImmediate groupAddress entities world =
-            Sim.transformSimulants World.removeEntityImmediate groupAddress entities world
+            Simulant.transformSimulants World.removeEntityImmediate groupAddress entities world
 
         static member removeEntities groupAddress entities world =
-            Sim.transformSimulants World.removeEntity groupAddress entities world
+            Simulant.transformSimulants World.removeEntity groupAddress entities world
 
         static member addEntity address entity world =
             let (entity, world) =
@@ -207,11 +207,11 @@ module WorldEntityModule =
                 | None -> (entity, world)
             let world = World.setEntityWithoutEvent address entity world
             let (entity, world) = World.registerEntity address entity world
-            let world = World.publish4 (AddEventName + address) address NoData world
+            let world = World.publish4 (AddEventName + address) address (NoData ()) world
             (entity, world)
 
         static member addEntities groupAddress entities world =
-            Sim.transformSimulants World.addEntity groupAddress entities world
+            Simulant.transformSimulants World.addEntity groupAddress entities world
 
         static member tryGetFacet facetName world =
             match Map.tryFind facetName world.Facets with

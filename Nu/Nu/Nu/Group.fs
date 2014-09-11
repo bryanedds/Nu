@@ -52,10 +52,10 @@ module WorldGroupModule =
             | Some group -> World.setGroup address group world
             | None -> World.groupRemover address world
             
-        static member withGroup fn address world = Sim.withSimulant World.getGroup World.setGroup fn address world
-        static member withGroupAndWorld fn address world = Sim.withSimulantAndWorld World.getGroup World.setGroup fn address world
-        static member tryWithGroup fn address world = Sim.tryWithSimulant World.getOptGroup World.setGroup fn address world
-        static member tryWithGroupAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptGroup World.setGroup fn address world
+        static member withGroup fn address world = Simulant.withSimulant World.getGroup World.setGroup fn address world
+        static member withGroupAndWorld fn address world = Simulant.withSimulantAndWorld World.getGroup World.setGroup fn address world
+        static member tryWithGroup fn address world = Simulant.tryWithSimulant World.getOptGroup World.setGroup fn address world
+        static member tryWithGroupAndWorld fn address world = Simulant.tryWithSimulantAndWorld World.getOptGroup World.setGroup fn address world
 
         static member getGroups1 world =
             seq {
@@ -79,7 +79,7 @@ module WorldGroupModule =
             Group.unregister address group world
 
         static member removeGroupImmediate address group world =
-            let world = World.publish4 (RemovingEventName + address) address NoData world
+            let world = World.publish4 (RemovingEventName + address) address (NoData ()) world
             let (group, world) = World.unregisterGroup address group world
             let entities = World.getEntities address world
             let world = snd <| World.removeEntitiesImmediate address entities world
@@ -97,10 +97,10 @@ module WorldGroupModule =
             (group, world)
 
         static member removeGroupsImmediate screenAddress groups world =
-            Sim.transformSimulants World.removeGroupImmediate screenAddress groups world
+            Simulant.transformSimulants World.removeGroupImmediate screenAddress groups world
 
         static member removeGroups screenAddress groups world =
-            Sim.transformSimulants World.removeGroup screenAddress groups world
+            Simulant.transformSimulants World.removeGroup screenAddress groups world
 
         static member addGroup address group entities world =
             let (group, world) =
@@ -110,7 +110,7 @@ module WorldGroupModule =
             let world = World.setGroup address group world
             let world = snd <| World.addEntities address entities world
             let (group, world) = World.registerGroup address group world
-            let world = World.publish4 (AddEventName + address) address NoData world
+            let world = World.publish4 (AddEventName + address) address (NoData ()) world
             (group, world)
 
         static member addGroups screenAddress groupDescriptors world =

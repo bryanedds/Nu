@@ -100,6 +100,9 @@ module SimModule =
     and [<StructuralEquality; NoComparison>] OtherData =
         { Obj : obj }
 
+    /// The data for a user-defined event.
+    and NoData = unit
+
     /// The data for an event.
     and [<ReferenceEquality>] EventData =
         | MouseMoveData of MouseMoveData
@@ -108,13 +111,15 @@ module SimModule =
         | EntityCollisionData of EntityCollisionData
         | EntityChangeData of EntityChangeData
         | OtherData of OtherData
-        | NoData
+        | NoData of NoData
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] Event =
         { Name : Address
-          Publisher : Address
-          Subscriber : Address
+          SubscriberAddress : Address
+          Subscriber : Simulant
+          PublisherAddress : Address
+          OptPublisher : Simulant option
           Data : EventData }
 
     /// Describes whether an event has been resolved or should be propagated.
@@ -403,7 +408,7 @@ module SimModule =
             end
 
     /// Abstracts over the simulation types (Game, Screen, Group, Entity).
-    type [<StructuralEquality; NoComparison>] Simulant =
+    and [<StructuralEquality; NoComparison>] Simulant =
         | Game of Game
         | Screen of Screen
         | Group of Group
@@ -508,19 +513,38 @@ module SimModule =
 [<RequireQualifiedAccess>]
 module EventData =
 
-    // TODO: provide rest of convenience functions
-
     /// A convenience function to forcibly extract mouse movement data from an event data abstraction.
     let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + string data + "'."
     
     /// A convenience function to forcibly extract mouse button data from an event data abstraction.
     let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + string data + "'."
     
+    /// A convenience function to forcibly extract keyboard key data from an event data abstraction.
+    let toKeyboardKeyData data = match data with KeyboardKeyData d -> d | _ -> failwith <| "Expected KeyboardKeyData from event data '" + string data + "'."
+
     /// A convenience function to forcibly extract entity collision data from an event data abstraction.
     let toEntityCollisionData data = match data with EntityCollisionData d -> d | _ -> failwith <| "Expected EntityCollisionData from event data '" + string data + "'."
-    
+
+    /// A convenience function to forcibly extract entity change data from an event data abstraction.
+    let toEntityChangeData data = match data with EntityChangeData d -> d | _ -> failwith <| "Expected EntityChangeData from event data '" + string data + "'."
+
     /// A convenience function to forcibly extract user-defined data from an event data abstraction.
     let toOtherData data = match data with OtherData d -> d | _ -> failwith <| "Expected OtherData from event data '" + string data + "'."
+
+    /// A convenience function to forcibly extract no data from an event data abstraction.
+    let toNoData data = match data with NoData d -> d | _ -> failwith <| "Expected NoData from event data '" + string data + "'."
+
+    let toGeneric<'d> eventData =
+        let typeName = typeof<'d>.Name
+        match typeName with
+        | "MouseMoveData" -> toMouseMoveData eventData :> obj :?> 'd
+        | "MouseButtonData" -> toMouseButtonData eventData :> obj :?> 'd
+        | "KeyboardKeyData" -> toKeyboardKeyData eventData :> obj :?> 'd
+        | "EntityCollisionData" -> toEntityCollisionData eventData :> obj :?> 'd
+        | "EntityChangeData" -> toEntityChangeData eventData :> obj :?> 'd
+        | "OtherData" -> toOtherData eventData :> obj :?> 'd
+        | "Unit" -> toNoData eventData :> obj :?> 'd
+        | _ -> failwith <| "Invalid event data type '" + typeName + "'."
 
 module World =
 
@@ -696,7 +720,7 @@ module WorldAudioModule =
             { world with AudioMessages = reloadAudioAssetsMessage :: world.AudioMessages }
 
 [<RequireQualifiedAccess>]
-module Sim =
+module Simulant =
 
     let getOptChild optChildFinder address parent =
         let optChild = optChildFinder address parent
@@ -748,3 +772,39 @@ module Sim =
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants
+
+    let toEntity simulant =
+        match simulant with
+        | Entity entity -> entity
+        | Group _ | Screen _ | Game _ -> failwith "Invalid conversion of simulant to entity."
+
+    let toGroup simulant =
+        match simulant with
+        | Group group -> group
+        | Entity _ | Screen _ | Game _ -> failwith "Invalid conversion of simulant to group."
+
+    let toScreen simulant =
+        match simulant with
+        | Screen screen -> screen
+        | Entity _ | Group _ | Game _ -> failwith "Invalid conversion of simulant to screen."
+
+    let toGame simulant =
+        match simulant with
+        | Game game -> game
+        | Entity _ | Group _ | Screen _ -> failwith "Invalid conversion of simulant to game."
+
+    let toGeneric<'s> simulant =
+        let s = typeof<'s>
+        if s = typeof<Entity> then toEntity simulant :> obj :?> 's
+        elif s = typeof<Group> then toGroup simulant :> obj :?> 's
+        elif s = typeof<Screen> then toScreen simulant :> obj :?> 's
+        elif s = typeof<Game> then toGame simulant :> obj :?> 's
+        else failwith <| "Invalid simulation type '" + s.Name + "'."
+
+[<RequireQualifiedAccess>]
+module Event =
+
+    let unwrap<'s, 'd> event =
+        let eventData = EventData.toGeneric<'d> event.Data
+        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        (event.SubscriberAddress, subscriber, eventData)

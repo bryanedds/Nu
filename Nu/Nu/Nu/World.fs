@@ -181,57 +181,65 @@ module WorldModule =
             publishSorter subList world
 
         /// Publish an event.
-        static member publishDefinition publishSorter eventName publisher eventData world =
+        static member publishDefinition publishSorter eventName publisherAddress eventData world =
             let subscriptions = World.getSubscriptionsSorted publishSorter eventName world
             let (_, world) =
                 List.foldWhile
-                    (fun (eventHandling, world) (_, subscriber, subscription) ->
-                        let event = { Name = eventName; Publisher = publisher; Subscriber = subscriber; Data = eventData }
-                        if  (match eventHandling with Resolved -> true | Propagate -> false) ||
-                            (match world.Liveness with Running -> false | Exiting -> true) then
-                            None
-                        else
-                            let result =
-                                match subscription with
-                                | ExitSub -> World.handleEventAsExit world
-                                | SwallowSub -> World.handleEventAsSwallow world
-                                | ScreenTransitionSub destination -> World.handleEventAsScreenTransition destination world
-                                | ScreenTransitionFromSplashSub destination -> World.handleEventAsScreenTransitionFromSplash destination world
-                                | CustomSub fn ->
-                                    match World.getOptSimulant event.Subscriber world with
-                                    | Some _ -> fn event world
-                                    | None -> (Propagate, world)
-                            Some result)
+                    (fun (eventHandling, world) (_, subscriberAddress, subscription) ->
+                        match World.getOptSimulant subscriberAddress world with
+                        | Some subscriber ->
+                            let event =
+                                { Name = eventName
+                                  SubscriberAddress = subscriberAddress
+                                  Subscriber = subscriber
+                                  PublisherAddress = publisherAddress
+                                  OptPublisher = World.getOptSimulant publisherAddress world
+                                  Data = eventData }
+                            if  (match eventHandling with Propagate -> true | Resolved -> false) &&
+                                (match world.Liveness with Running -> true | Exiting -> false) then
+                                let result =
+                                    match subscription with
+                                    | ExitSub -> World.handleEventAsExit world
+                                    | SwallowSub -> World.handleEventAsSwallow world
+                                    | ScreenTransitionSub destination -> World.handleEventAsScreenTransition destination world
+                                    | ScreenTransitionFromSplashSub destination -> World.handleEventAsScreenTransitionFromSplash destination world
+                                    | CustomSub fn -> fn event world
+                                Some result
+                            else None
+                        | None -> Some (Propagate, world))
                     (Propagate, world)
                     subscriptions
             world
 
         /// Publish an event.
-        static member publish4Definition eventName publisher eventData world =
-            World.publish World.sortSubscriptionsByHierarchy eventName publisher eventData world
+        static member publish4Definition eventName publisherAddress eventData world =
+            World.publish World.sortSubscriptionsByHierarchy eventName publisherAddress eventData world
 
         /// Subscribe to an event.
-        static member subscribeDefinition subscriptionKey eventName subscriber subscription world =
-            let subscriptions = 
+        static member subscribeDefinition subscriptionKey eventName subscriberAddress subscription world =
+            let subscriptions =
+                let subscriptionEntry = (subscriptionKey, subscriberAddress, subscription)
                 match Map.tryFind eventName world.Subscriptions with
-                | Some subscriptionList -> Map.add eventName ((subscriptionKey, subscriber, subscription) :: subscriptionList) world.Subscriptions
-                | None -> Map.add eventName [(subscriptionKey, subscriber, subscription)] world.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (eventName, subscriber) world.Unsubscriptions
+                | Some subscriptionEntries -> Map.add eventName (subscriptionEntry :: subscriptionEntries) world.Subscriptions
+                | None -> Map.add eventName [subscriptionEntry] world.Subscriptions
+            let unsubscriptions = Map.add subscriptionKey (eventName, subscriberAddress) world.Unsubscriptions
             { world with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
 
         /// Subscribe to an event.
-        static member subscribe4Definition eventName subscriber subscription world =
-            World.subscribe (World.makeSubscriptionKey ()) eventName subscriber subscription world
+        static member subscribe4Definition eventName subscriberAddress subscription world =
+            World.subscribe (World.makeSubscriptionKey ()) eventName subscriberAddress subscription world
 
         /// Unsubscribe from an event.
         static member unsubscribeDefinition subscriptionKey world =
             match Map.tryFind subscriptionKey world.Unsubscriptions with
-            | Some (eventName, subscriber) ->
+            | Some (eventName, subscriberAddress) ->
                 match Map.tryFind eventName world.Subscriptions with
                 | Some subscriptionList ->
                     let subscriptionList =
                         List.remove
-                            (fun (subscriptionKey', subscriber', _) -> subscriptionKey' = subscriptionKey && subscriber' = subscriber)
+                            (fun (subscriptionKey', subscriberAddress', _) ->
+                                subscriptionKey' = subscriptionKey &&
+                                subscriberAddress' = subscriberAddress)
                             subscriptionList
                     let subscriptions = 
                         match subscriptionList with
@@ -243,26 +251,26 @@ module WorldModule =
             | None -> world // TODO: consider failure signal
 
         /// Keep active a subscription for the duration of a procedure.
-        static member withSubscriptionDefinition eventName subscriber subscription procedure world =
+        static member withSubscriptionDefinition eventName subscriberAddress subscription procedure world =
             let subscriptionKey = World.makeSubscriptionKey ()
-            let world = World.subscribe subscriptionKey eventName subscriber subscription world
+            let world = World.subscribe subscriptionKey eventName subscriberAddress subscription world
             let world = procedure world
             World.unsubscribe subscriptionKey world
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member observeDefinition eventName subscriber subscription world =
-            if Address.isEmpty subscriber then
+        static member observeDefinition eventName subscriberAddress subscription world =
+            if Address.isEmpty subscriberAddress then
                 debug "Cannot observe events with an anonymous subscriber."
                 world
             else
                 let observationKey = World.makeSubscriptionKey ()
                 let removalKey = World.makeSubscriptionKey ()
-                let world = World.subscribe observationKey eventName subscriber subscription world
+                let world = World.subscribe observationKey eventName subscriberAddress subscription world
                 let sub = CustomSub (fun _ world ->
                     let world = World.unsubscribe removalKey world
                     let world = World.unsubscribe observationKey world
                     (Propagate, world))
-                World.subscribe removalKey (RemovingEventName + subscriber) subscriber sub world
+                World.subscribe removalKey (RemovingEventName + subscriberAddress) subscriberAddress sub world
 
         static member private updateTransition1 (transition : Transition) =
             if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -278,13 +286,13 @@ module WorldModule =
                     | IncomingState ->
                         let world =
                             if selectedScreen.Incoming.TransitionTicks = 0L
-                            then World.publish4 (SelectEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                            then World.publish4 (SelectEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                             else world
                         match world.Liveness with
                         | Running ->
                             let world =
                                 if selectedScreen.Incoming.TransitionTicks = 0L
-                                then World.publish4 (StartIncomingEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                                then World.publish4 (StartIncomingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                                 else world
                             match world.Liveness with
                             | Running ->
@@ -293,14 +301,14 @@ module WorldModule =
                                 let world = World.setScreen selectedScreenAddress selectedScreen world
                                 if finished then
                                     let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                                    World.publish4 (FinishIncomingEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                                    World.publish4 (FinishIncomingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                                 else world
                             | Exiting -> world
                         | Exiting -> world
                     | OutgoingState ->
                         let world =
                             if selectedScreen.Outgoing.TransitionTicks <> 0L then world
-                            else World.publish4 (StartOutgoingEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                            else World.publish4 (StartOutgoingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                         match world.Liveness with
                         | Running ->
                             let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
@@ -308,9 +316,9 @@ module WorldModule =
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
                                 let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                                let world = World.publish4 (DeselectEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                                let world = World.publish4 (DeselectEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                                 match world.Liveness with
-                                | Running -> World.publish4 (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress NoData world
+                                | Running -> World.publish4 (FinishOutgoingEventName + selectedScreenAddress) selectedScreenAddress (NoData ()) world
                                 | Exiting -> world
                             else world
                         | Exiting -> world
@@ -324,7 +332,7 @@ module WorldModule =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
                 let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime (incL ticks)
-                let world = World.subscribe SplashScreenTickKey event.Name event.Subscriber subscription world
+                let world = World.subscribe SplashScreenTickKey event.Name event.SubscriberAddress subscription world
                 (Propagate, world)
             else
                 match World.getOptSelectedScreenAddress world with
@@ -342,7 +350,7 @@ module WorldModule =
 
         static member internal handleSplashScreenIdle idlingTime event world =
             let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime 0L
-            let world = World.subscribe SplashScreenTickKey TickEventName event.Subscriber subscription world
+            let world = World.subscribe SplashScreenTickKey TickEventName event.SubscriberAddress subscription world
             (Resolved, world)
 
         static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
@@ -625,7 +633,7 @@ module WorldModule =
                     let world = World.integrate world
                     match world.Liveness with
                     | Running ->
-                        let world = World.publish4 TickEventName Address.empty NoData world
+                        let world = World.publish4 TickEventName Address.empty (NoData ()) world
                         match world.Liveness with
                         | Running ->
                             let world = World.updateTransition handleUpdate world

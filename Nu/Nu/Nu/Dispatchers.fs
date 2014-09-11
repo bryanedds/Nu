@@ -294,35 +294,29 @@ module ButtonDispatcherModule =
         static let intrinsicFacetNames = []
         
         let handleButtonEventDownMouseLeft event world =
-            if World.isAddressSelected event.Subscriber world then
-                let mouseButtonData = EventData.toMouseButtonData event.Data
-                let button = World.getEntity event.Subscriber world
+            let (address, button, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
-                if button.Enabled && button.Visible then
-                    if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
-                        let button = Entity.setIsDown true button
-                        let world = World.setEntity event.Subscriber button world
-                        let world = World.publish4 (DownEventName + event.Subscriber) event.Subscriber NoData world
-                        (Resolved, world)
-                    else (Propagate, world)
+                if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
+                    let button = Entity.setIsDown true button
+                    let world = World.setEntity address button world
+                    let world = World.publish4 (DownEventName + address) address (NoData ()) world
+                    (Resolved, world)
                 else (Propagate, world)
             else (Propagate, world)
 
         let handleButtonEventUpMouseLeft event world =
-            if World.isAddressSelected event.Subscriber world then
-                let mouseButtonData = EventData.toMouseButtonData event.Data
-                let button = World.getEntity event.Subscriber world
+            let (address, button, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
-                if button.Enabled && button.Visible then
-                    let world =
-                        let button = Entity.setIsDown false button
-                        let world = World.setEntity event.Subscriber button world
-                        World.publish4 (UpEventName + event.Subscriber) event.Subscriber NoData world
-                    if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
-                        let world = World.publish4 (ClickEventName + event.Subscriber) event.Subscriber NoData world
-                        let world = World.playSound button.ClickSound 1.0f world
-                        (Resolved, world)
-                    else (Propagate, world)
+                let world =
+                    let button = Entity.setIsDown false button
+                    let world = World.setEntity address button world
+                    World.publish4 (UpEventName + address) address (NoData ()) world
+                if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
+                    let world = World.publish4 (ClickEventName + address) address (NoData ()) world
+                    let world = World.playSound button.ClickSound 1.0f world
+                    (Resolved, world)
                 else (Propagate, world)
             else (Propagate, world)
 
@@ -503,37 +497,31 @@ module ToggleDispatcherModule =
         static let intrinsicFacetNames = []
         
         let handleToggleEventDownMouseLeft event world =
-            if World.isAddressSelected event.Subscriber world then
-                let mouseButtonData = EventData.toMouseButtonData event.Data
-                let toggle = World.getEntity event.Subscriber world
+            let (address, toggle, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            if World.isAddressSelected address world && toggle.Enabled && toggle.Visible then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
-                if toggle.Enabled && toggle.Visible then
-                    if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                        let toggle = Entity.setIsPressed true toggle
-                        let world = World.setEntity event.Subscriber toggle world
-                        (Resolved, world)
-                    else (Propagate, world)
+                if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
+                    let toggle = Entity.setIsPressed true toggle
+                    let world = World.setEntity address toggle world
+                    (Resolved, world)
                 else (Propagate, world)
             else (Propagate, world)
     
         let handleToggleEventUpMouseLeft event world =
-            if World.isAddressSelected event.Subscriber world then
-                let mouseButtonData = EventData.toMouseButtonData event.Data
-                let toggle = World.getEntity event.Subscriber world
+            let (address, toggle, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.IsPressed then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
-                if toggle.Enabled && toggle.Visible && toggle.IsPressed then
-                    let toggle = Entity.setIsPressed false toggle
-                    if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                        let toggle = Entity.setIsOn (not toggle.IsOn) toggle
-                        let world = World.setEntity event.Subscriber toggle world
-                        let eventName = if toggle.IsOn then OnEventName else OffEventName
-                        let world = World.publish4 (eventName + event.Subscriber) event.Subscriber NoData world
-                        let world = World.playSound toggle.ToggleSound 1.0f world
-                        (Resolved, world)
-                    else
-                        let world = World.setEntity event.Subscriber toggle world
-                        (Propagate, world)
-                else (Propagate, world)
+                let toggle = Entity.setIsPressed false toggle
+                if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
+                    let toggle = Entity.setIsOn (not toggle.IsOn) toggle
+                    let world = World.setEntity address toggle world
+                    let eventName = if toggle.IsOn then OnEventName else OffEventName
+                    let world = World.publish4 (eventName + address) address (NoData ()) world
+                    let world = World.playSound toggle.ToggleSound 1.0f world
+                    (Resolved, world)
+                else
+                    let world = World.setEntity address toggle world
+                    (Propagate, world)
             else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
@@ -589,29 +577,24 @@ module FeelerDispatcherModule =
         static let intrinsicFacetNames = []
 
         let handleFeelerEventDownMouseLeft event world =
-            if World.isAddressSelected event.Subscriber world then
-                let mouseButtonData = EventData.toMouseButtonData event.Data
-                let feeler = World.getEntity event.Subscriber world
+            let (address, feeler, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let mousePositionFeeler = Entity.mouseToEntity mouseButtonData.Position world feeler
-                if feeler.Enabled && feeler.Visible then
-                    if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
-                        let feeler = Entity.setIsTouched true feeler
-                        let world = World.setEntity event.Subscriber feeler world
-                        let world = World.publish4 (TouchEventName + event.Subscriber) event.Subscriber (MouseButtonData mouseButtonData) world
-                        (Resolved, world)
-                    else (Propagate, world)
+                if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
+                    let feeler = Entity.setIsTouched true feeler
+                    let world = World.setEntity address feeler world
+                    let world = World.publish4 (TouchEventName + address) address (MouseButtonData mouseButtonData) world
+                    (Resolved, world)
                 else (Propagate, world)
             else (Propagate, world)
     
         let handleFeelerEventUpMouseLeft event world =
-            if World.isAddressSelected event.Subscriber world then
-                let feeler = World.getEntity event.Subscriber world
-                if feeler.Enabled && feeler.Visible then
-                    let feeler = Entity.setIsTouched false feeler
-                    let world = World.setEntity event.Subscriber feeler world
-                    let world = World.publish4 (ReleaseEventName + event.Subscriber) event.Subscriber NoData world
-                    (Resolved, world)
-                else (Propagate, world)
+            let (address, feeler, _) = Event.unwrap<Entity, MouseButtonData> event
+            if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
+                let feeler = Entity.setIsTouched false feeler
+                let world = World.setEntity address feeler world
+                let world = World.publish4 (ReleaseEventName + address) address (NoData ()) world
+                (Resolved, world)
             else (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
