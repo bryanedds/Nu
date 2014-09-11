@@ -534,6 +534,7 @@ module EventData =
     /// A convenience function to forcibly extract no data from an event data abstraction.
     let toNoData data = match data with NoData d -> d | _ -> failwith <| "Expected NoData from event data '" + string data + "'."
 
+    /// A convenience function to forcibly extract data from an event data abstraction.
     let toGeneric<'d> eventData =
         let typeName = typeof<'d>.Name
         match typeName with

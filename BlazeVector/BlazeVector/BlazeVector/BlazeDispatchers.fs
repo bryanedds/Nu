@@ -279,7 +279,7 @@ module StagePlayDispatcherModule =
                 let player = getPlayer address world
                 match World.getOptScreen TitleAddress world with
                 | Some titleScreen ->
-                    if Entity.hasFallen player && World.isSelectedScreenIdling world then
+                    if Entity.hasFallen player && World.getSelectedScreenIdling world then
                         let oldWorld = world
                         let world = World.playSound DeathSound 1.0f world
                         match World.tryTransitionScreen TitleAddress titleScreen world with
