@@ -37,16 +37,22 @@ module WorldModule =
 
     type World with
 
-        static member tryIsSelectedScreenIdling world =
+        static member tryGetSelectedScreenIdling world =
             match World.getOptSelectedScreen world with
             | Some selectedScreen -> Some <| Screen.isIdling selectedScreen
             | None -> None
 
-        static member isSelectedScreenIdling world =
-            match World.tryIsSelectedScreenIdling world with
+        static member getSelectedScreenIdling world =
+            match World.tryGetSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith <| "Cannot query state of non-existent selected screen."
-        
+
+        static member tryGetSelectedScreenTransitioning world =
+            Option.map not <| World.tryGetSelectedScreenIdling world
+
+        static member getSelectedScreenTransitioning world =
+            not <| World.getSelectedScreenIdling world
+
         static member private setScreenState state address screen world =
             let screen = Screen.setState state screen
             let world =
@@ -710,6 +716,7 @@ module WorldModule =
                 // make intrinsic overlays
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers facets
 
+                // finally, make the world!
                 let world =
                     { Game = Game.make activeGameDispatcherName activeGameDispatcher (Some "Game")
                       Screens = Map.empty
