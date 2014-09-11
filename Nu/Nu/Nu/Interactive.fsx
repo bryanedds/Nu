@@ -23,7 +23,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Metadata.fs"
 #load "Input.fs"
 #load "Sdl.fs"
-#load "Sim.fs"
+#load "Simulant.fs"
 #load "Entity.fs"
 #load "Group.fs"
 #load "Screen.fs"

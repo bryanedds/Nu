@@ -415,17 +415,17 @@ module Program =
         | DragCameraNone -> (Resolved, world)
 
     let handleNuEntityAdd (form : NuEditForm) event world =
-        addTreeViewNode form event.Publisher world
+        addTreeViewNode form event.PublisherAddress world
         (Propagate, world)
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
-        match form.treeView.Nodes.Find (string event.Publisher, true) with
+        match form.treeView.Nodes.Find (string event.PublisherAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
         | null -> (Propagate, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if event.Publisher = entityTds.Address then
+            if event.PublisherAddress = entityTds.Address then
                 form.propertyGrid.SelectedObject <- null
                 let editorState = { (world.ExtData :?> EditorState) with DragEntityState = DragEntityNone }
                 (Propagate, { world with ExtData = editorState })

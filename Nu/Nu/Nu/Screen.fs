@@ -33,10 +33,10 @@ module WorldScreenModule =
             | Some screen -> World.setScreen address screen world
             | None -> World.screenRemover address world
             
-        static member withScreen fn address world = Sim.withSimulant World.getScreen World.setScreen fn address world
-        static member withScreenAndWorld fn address world = Sim.withSimulantAndWorld World.getScreen World.setScreen fn address world
-        static member tryWithScreen fn address world = Sim.tryWithSimulant World.getOptScreen World.setScreen fn address world
-        static member tryWithScreenAndWorld fn address world = Sim.tryWithSimulantAndWorld World.getOptScreen World.setScreen fn address world
+        static member withScreen fn address world = Simulant.withSimulant World.getScreen World.setScreen fn address world
+        static member withScreenAndWorld fn address world = Simulant.withSimulantAndWorld World.getScreen World.setScreen fn address world
+        static member tryWithScreen fn address world = Simulant.tryWithSimulant World.getOptScreen World.setScreen fn address world
+        static member tryWithScreenAndWorld fn address world = Simulant.tryWithSimulantAndWorld World.getOptScreen World.setScreen fn address world
 
         static member getScreens1 world =
             seq {
@@ -56,7 +56,7 @@ module WorldScreenModule =
             Screen.unregister address screen world
 
         static member removeScreenImmediate address screen world =
-            let world = World.publish4 (RemovingEventName + address) address NoData world
+            let world = World.publish4 (RemovingEventName + address) address (NoData ()) world
             let groups = World.getGroups address world
             let world = snd <| World.removeGroupsImmediate address groups world
             let (screen, world) = World.unregisterScreen address screen world
@@ -81,7 +81,7 @@ module WorldScreenModule =
             let world = World.setScreen address screen world
             let world = snd <| World.addGroups address groupDescriptors world
             let (screen, world) = World.registerScreen address screen world
-            let world = World.publish4 (AddEventName + address) address NoData world
+            let world = World.publish4 (AddEventName + address) address (NoData ()) world
             (screen, world)
 
         static member makeScreen dispatcherName optName world =

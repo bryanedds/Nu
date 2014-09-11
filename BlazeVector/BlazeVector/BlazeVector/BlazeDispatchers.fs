@@ -38,19 +38,19 @@ module BulletDispatcherModule =
              typeof<SpriteFacet>.Name]
 
         let tickHandler event world =
+            let (address, bullet, _) = Event.unwrap<Entity, NoData> event
             if World.isGamePlaying world then
-                let bullet = World.getEntity event.Subscriber world
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
-                    if bullet.Age < 28L then World.setEntity event.Subscriber bullet world
-                    else snd <| World.removeEntity event.Subscriber bullet world
+                    if bullet.Age < 28L then World.setEntity address bullet world
+                    else snd <| World.removeEntity address bullet world
                 (Propagate, world)
             else (Propagate, world)
 
         let collisionHandler event world =
+            let (address, bullet, _) = Event.unwrap<Entity, EntityCollisionData> event
             if World.isGamePlaying world then
-                let bullet = World.getEntity event.Subscriber world
-                let world = snd <| World.removeEntity event.Subscriber bullet world
+                let world = snd <| World.removeEntity address bullet world
                 (Propagate, world)
             else (Propagate, world)
 
@@ -109,20 +109,21 @@ module EnemyDispatcherModule =
             (enemy, world)
 
         let tickHandler event world =
+            let (address, enemy, _) = Event.unwrap<Entity, NoData> event
             if World.isGamePlaying world then
-                let enemy = World.getEntity event.Subscriber world
                 let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
-                let world = if enemy.Health <= 0 then snd <| die event.Subscriber enemy world else world
+                let world = if enemy.Health <= 0 then snd <| die address enemy world else world
                 (Propagate, world)
             else (Propagate, world)
 
         let collisionHandler event world =
+            let (address, enemy, collisionData) = Event.unwrap<Entity, EntityCollisionData> event
             if World.isGamePlaying world then
-                let collisionData = EventData.toEntityCollisionData event.Data
                 let collidee = World.getEntity collisionData.Collidee world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world
                 if isBullet then
-                    let world = World.withEntity (fun enemy -> Entity.setHealth (enemy.Health - 1) enemy) event.Subscriber world
+                    let enemy = Entity.setHealth (enemy.Health - 1) enemy
+                    let world = World.setEntity address enemy world
                     let world = World.playSound HitSound 1.0f world
                     (Propagate, world)
                 else (Propagate, world)
@@ -186,18 +187,18 @@ module PlayerDispatcherModule =
             let world = World.playSound ShotSound 1.0f world
             (bullet, world)
 
-        let shootBullet address world =
-            let bulletAddress = addrlist (Address.allButLast address) [string <| NuCore.makeId ()]
-            let playerTransform = world |> World.getEntity address |> Entity.getTransform
+        let shootBullet playerAddress player world =
+            let bulletAddress = addrlist (Address.allButLast playerAddress) [string <| NuCore.makeId ()]
+            let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world
 
         let spawnBulletHandler event world =
+            let (address, player, _) = Event.unwrap<Entity, NoData> event
             if World.isGamePlaying world then
-                let player = World.getEntity event.Subscriber world
                 if not <| Entity.hasFallen player then
                     if world.TickTime % 6L = 0L then
-                        let world = snd <| shootBullet event.Subscriber world
+                        let world = snd <| shootBullet address player world
                         (Propagate, world)
                     else (Propagate, world)
                 else (Propagate, world)
@@ -210,11 +211,11 @@ module PlayerDispatcherModule =
             else world.TickTime
 
         let movementHandler event world =
+            let (address, player, _) = Event.unwrap<Entity, NoData> event
             if World.isGamePlaying world then
-                let player = World.getEntity event.Subscriber world
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
-                let world = World.setEntity event.Subscriber player world
+                let world = World.setEntity address player world
                 let physicsId = Entity.getPhysicsId player
                 let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Integrator
                 let force =
@@ -226,12 +227,12 @@ module PlayerDispatcherModule =
             else (Propagate, world)
 
         let jumpHandler event world =
+            let (address, player, _) = Event.unwrap<Entity, MouseButtonData> event
             if World.isGamePlaying world then
-                let player = World.getEntity event.Subscriber world
                 if  world.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.TickTime <= player.LastTimeOnGroundNp + 10L then
                     let player = Entity.setLastTimeJumpNp world.TickTime player
-                    let world = World.setEntity event.Subscriber player world
+                    let world = World.setEntity address player world
                     let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
                     let world = World.playSound JumpSound 1.0f world
                     (Propagate, world)
@@ -270,11 +271,13 @@ module StagePlayDispatcherModule =
             else world
 
         let adjustCameraHandler event world =
-            (Propagate, adjustCamera event.Subscriber world)
+            let (address, _, _) = Event.unwrap<Group, NoData> event
+            (Propagate, adjustCamera address world)
 
         let playerFallHandler event world =
+            let (address, _, _) = Event.unwrap<Group, NoData> event
             if World.isGamePlaying world then
-                let player = getPlayer event.Subscriber world
+                let player = getPlayer address world
                 match World.getOptScreen TitleAddress world with
                 | Some titleScreen ->
                     if Entity.hasFallen player && World.isSelectedScreenIdling world then
@@ -325,6 +328,7 @@ module StageScreenModule =
             (sectionName, sectionGroup, sectionEntities)
 
         let startPlayHandler event world =
+            let (address, _, _) = Event.unwrap<Screen, NoData> event
             let random = Random ()
             let sectionFileNames = List.toArray SectionFileNames
             let sectionDescriptors =
@@ -334,7 +338,7 @@ module StageScreenModule =
                     yield makeSectionFromFile sectionFileNames.[sectionFileNameIndex] (SectionName + string i) (xShift * single i) world]
             let stagePlayDescriptor = Triple.prepend StagePlayName <| World.loadGroupFromFile StagePlayFileName world
             let groupDescriptors = stagePlayDescriptor :: sectionDescriptors
-            let world = snd <| World.addGroups event.Subscriber groupDescriptors world
+            let world = snd <| World.addGroups address groupDescriptors world
             let world = World.playSong DeadBlazeSong 1.0f 0 world
             (Propagate, world)
 
@@ -343,11 +347,12 @@ module StageScreenModule =
             (Propagate, world)
 
         let stopPlayHandler event world =
+            let (address, _, _) = Event.unwrap<Screen, NoData> event
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
             let groupNames = StagePlayName :: sectionNames
-            let groups = World.getGroups (Address.take 1 event.Subscriber) world
+            let groups = World.getGroups (Address.take 1 address) world
             let groups = Map.filter (fun groupName _ -> List.exists ((=) groupName) groupNames) groups
-            let world = snd <| World.removeGroups event.Subscriber groups world
+            let world = snd <| World.removeGroups address groups world
             (Propagate, world)
 
         static member FieldDefinitions = fieldDefinitions
