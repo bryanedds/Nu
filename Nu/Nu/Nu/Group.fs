@@ -103,7 +103,7 @@ module WorldGroupModule =
             let world = World.setOptGroup address None world
             (group, world)
 
-        static member removeGroup address group world =
+        static member removeGroup address (group : Group) world =
             let task =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world ->

@@ -471,6 +471,7 @@ module EventData =
         | "EntityChangeData" -> toEntityChangeData eventData :> obj :?> 'd
         | "OtherData" -> toOtherData eventData :> obj :?> 'd
         | "Unit" -> toNoData eventData :> obj :?> 'd
+        | "Object" -> eventData :> obj :?> 'd
         | _ -> failwith <| "Invalid event data type '" + typeName + "'."
 
 [<RequireQualifiedAccess>]
@@ -831,6 +832,7 @@ module Simulant =
         elif s = typeof<Group> then toGroup simulant :> obj :?> 's
         elif s = typeof<Screen> then toScreen simulant :> obj :?> 's
         elif s = typeof<Game> then toGame simulant :> obj :?> 's
+        elif s = typeof<obj> then simulant :> obj :?> 's
         else failwith <| "Invalid simulation type '" + s.Name + "'."
 
 [<RequireQualifiedAccess>]

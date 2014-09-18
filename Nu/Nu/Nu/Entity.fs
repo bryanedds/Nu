@@ -213,7 +213,7 @@ module WorldEntityModule =
             let world = World.setOptEntityWithoutEvent address None world
             (entity, world)
 
-        static member removeEntity address entity world =
+        static member removeEntity address (entity : Entity) world =
             let task =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world ->
