@@ -308,13 +308,6 @@ module StageScreenModule =
 
         static let fieldDefinitions = []
 
-        let anonymizeEntities entities =
-            Map.map
-                (fun _ (entity : Entity) ->
-                    let id = NuCore.makeId ()
-                    { entity with Id = id; Name = string id })
-                entities
-
         let shiftEntities xShift entities =
             Map.map
                 (fun _ (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
@@ -322,7 +315,6 @@ module StageScreenModule =
 
         let makeSectionFromFile fileName sectionName xShift world =
             let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName world
-            let sectionEntities = anonymizeEntities sectionEntities
             let sectionEntities = shiftEntities xShift sectionEntities
             (sectionName, sectionGroup, sectionEntities)
 

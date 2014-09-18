@@ -80,6 +80,8 @@
             this.createEntityComboBox = new System.Windows.Forms.ToolStripComboBox();
             this.creationDepthLabel = new System.Windows.Forms.ToolStripLabel();
             this.createDepthTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.createDepthPlusButton = new System.Windows.Forms.ToolStripButton();
+            this.createDepthMinusButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.quickSizeToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
@@ -93,8 +95,6 @@
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
-            this.createDepthMinusButton = new System.Windows.Forms.ToolStripButton();
-            this.createDepthPlusButton = new System.Windows.Forms.ToolStripButton();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -249,7 +249,7 @@
             this.displayPanel.Location = new System.Drawing.Point(0, 0);
             this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
             this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1011, 585);
+            this.displayPanel.Size = new System.Drawing.Size(1012, 585);
             this.displayPanel.TabIndex = 0;
             // 
             // contextMenuStrip
@@ -315,7 +315,7 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1011;
+            this.splitContainer1.SplitterDistance = 1012;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
             // 
@@ -334,7 +334,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(370, 585);
+            this.splitContainer3.Size = new System.Drawing.Size(369, 585);
             this.splitContainer3.SplitterDistance = 384;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -344,7 +344,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 73);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(370, 311);
+            this.propertyGrid.Size = new System.Drawing.Size(369, 311);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -359,7 +359,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(370, 73);
+            this.groupBox1.Size = new System.Drawing.Size(369, 73);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -420,7 +420,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(370, 197);
+            this.treeView.Size = new System.Drawing.Size(369, 197);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -450,8 +450,8 @@
             this.createEntityComboBox,
             this.creationDepthLabel,
             this.createDepthTextBox,
-            this.createDepthPlusButton,
             this.createDepthMinusButton,
+            this.createDepthPlusButton,
             this.toolStripSeparator3,
             this.quickSizeToolStripButton,
             this.toolStripSeparator4,
@@ -556,6 +556,28 @@
             this.createDepthTextBox.Name = "createDepthTextBox";
             this.createDepthTextBox.Size = new System.Drawing.Size(20, 25);
             // 
+            // createDepthPlusButton
+            // 
+            this.createDepthPlusButton.AutoSize = false;
+            this.createDepthPlusButton.AutoToolTip = false;
+            this.createDepthPlusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.createDepthPlusButton.Image = ((System.Drawing.Image)(resources.GetObject("createDepthPlusButton.Image")));
+            this.createDepthPlusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.createDepthPlusButton.Name = "createDepthPlusButton";
+            this.createDepthPlusButton.Size = new System.Drawing.Size(13, 22);
+            this.createDepthPlusButton.Text = "+";
+            // 
+            // createDepthMinusButton
+            // 
+            this.createDepthMinusButton.AutoSize = false;
+            this.createDepthMinusButton.AutoToolTip = false;
+            this.createDepthMinusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.createDepthMinusButton.Image = ((System.Drawing.Image)(resources.GetObject("createDepthMinusButton.Image")));
+            this.createDepthMinusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.createDepthMinusButton.Name = "createDepthMinusButton";
+            this.createDepthMinusButton.Size = new System.Drawing.Size(13, 22);
+            this.createDepthMinusButton.Text = "-";
+            // 
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
@@ -652,28 +674,6 @@
             this.editWhileInteractiveCheckBox.Name = "editWhileInteractiveCheckBox";
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(128, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit while Interactive)";
-            // 
-            // createDepthMinusButton
-            // 
-            this.createDepthMinusButton.AutoSize = false;
-            this.createDepthMinusButton.AutoToolTip = false;
-            this.createDepthMinusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.createDepthMinusButton.Image = ((System.Drawing.Image)(resources.GetObject("createDepthMinusButton.Image")));
-            this.createDepthMinusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.createDepthMinusButton.Name = "createDepthMinusButton";
-            this.createDepthMinusButton.Size = new System.Drawing.Size(13, 22);
-            this.createDepthMinusButton.Text = "-";
-            // 
-            // createDepthPlusButton
-            // 
-            this.createDepthPlusButton.AutoSize = false;
-            this.createDepthPlusButton.AutoToolTip = false;
-            this.createDepthPlusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.createDepthPlusButton.Image = ((System.Drawing.Image)(resources.GetObject("createDepthPlusButton.Image")));
-            this.createDepthPlusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.createDepthPlusButton.Name = "createDepthPlusButton";
-            this.createDepthPlusButton.Size = new System.Drawing.Size(13, 22);
-            this.createDepthPlusButton.Text = "+";
             // 
             // NuEditForm
             // 
