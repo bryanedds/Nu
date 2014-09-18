@@ -770,9 +770,16 @@ module WorldModule =
             | Left errorMsg -> Left errorMsg
 
         static member init () =
+            
+            // ensure the current culture is invaraite
+            System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
+
+            // init the type converters
             NuMath.initTypeConverters ()
             Audio.initTypeConverters ()
             Rendering.initTypeConverters ()
+
+            // assign functions to the pub / sub refs.
             World.publish <- World.publishDefinition
             World.publish4 <- World.publish4Definition
             World.subscribe <- World.subscribeDefinition
