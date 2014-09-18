@@ -187,14 +187,19 @@ module WorldEntityModule =
     
         static member getEntities address world =
             match address.AddrList with
-            | [screenStr; groupStr] ->
-                match Map.tryFind screenStr world.Entities with
+            | [screenName; groupName] ->
+                match Map.tryFind screenName world.Entities with
                 | Some groupMap ->
-                    match Map.tryFind groupStr groupMap with
+                    match Map.tryFind groupName groupMap with
                     | Some entityMap -> entityMap
                     | None -> failwith <| "Invalid entity address '" + string address + "'."
                 | None -> failwith <| "Invalid entity address '" + string address + "'."
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
+
+        static member getEntities3 groupAddress entityNames world =
+            let entityNames = Set.ofSeq entityNames
+            let entitys = World.getEntities groupAddress world
+            Map.filter (fun entityName _ -> Set.contains entityName entityNames) entitys
 
         static member registerEntity address entity world =
             Entity.register address entity world

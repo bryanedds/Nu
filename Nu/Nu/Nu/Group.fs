@@ -78,11 +78,16 @@ module WorldGroupModule =
 
         static member getGroups address world =
             match address.AddrList with
-            | [screenStr] ->
-                match Map.tryFind screenStr world.Groups with
+            | [screenName] ->
+                match Map.tryFind screenName world.Groups with
                 | Some groupMap -> groupMap
                 | None -> failwith <| "Invalid group address '" + string address + "'."
             | _ -> failwith <| "Invalid group address '" + string address + "'."
+
+        static member getGroups3 screenAddress groupNames world =
+            let groupNames = Set.ofSeq groupNames
+            let groups = World.getGroups screenAddress world
+            Map.filter (fun groupName _ -> Set.contains groupName groupNames) groups
 
         static member registerGroup address group world =
             Group.register address group world

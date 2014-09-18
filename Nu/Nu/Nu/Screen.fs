@@ -71,6 +71,11 @@ module WorldScreenModule =
             | [] -> world.Screens
             | _ -> failwith <| "Invalid screen address '" + string address + "'."
 
+        static member getScreens3 gameAddress screenNames world =
+            let screenNames = Set.ofSeq screenNames
+            let screens = World.getGroups gameAddress world
+            Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
+
         static member registerScreen address screen world =
             Screen.register address screen world
 
