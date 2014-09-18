@@ -689,12 +689,26 @@ module FillBarDispatcherModule =
             false
 
 [<AutoOpen>]
+module BoxDispatcherModule =
+
+    type BoxDispatcher () =
+        inherit EntityDispatcher ()
+
+        static let fieldDefinitions = [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+        static let intrinsicFacetNames = [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]
+        static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
+
+[<AutoOpen>]
 module BlockDispatcherModule =
 
     type BlockDispatcher () =
         inherit EntityDispatcher ()
 
-        static let fieldDefinitions = [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+        static let fieldDefinitions =
+            [define? BodyType Static
+             define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+
         static let intrinsicFacetNames = [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames

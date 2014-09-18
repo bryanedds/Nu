@@ -699,6 +699,7 @@ module WorldModule =
                          typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
                          typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
                          typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
+                         typeof<BoxDispatcher>.Name, BoxDispatcher () :> obj
                          typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
                          typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
                          typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
