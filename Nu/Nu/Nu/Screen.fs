@@ -69,7 +69,7 @@ module WorldScreenModule =
         static member getScreens address world =
             match address.AddrList with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid screen address '" + string address + "'."
+            | _ -> failwith <| "Invalid game address '" + string address + "'. Game address is always empty."
 
         static member getScreens3 gameAddress screenNames world =
             let screenNames = Set.ofSeq screenNames

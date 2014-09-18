@@ -185,8 +185,8 @@ module WorldEntityModule =
                             let address = Address.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
                             yield (address, entityKvp.Value) }
     
-        static member getEntities address world =
-            match address.AddrList with
+        static member getEntities groupAddress world =
+            match groupAddress.AddrList with
             | [screenName; groupName] ->
                 match Map.tryFind screenName world.Entities with
                 | Some groupMap ->
@@ -194,7 +194,7 @@ module WorldEntityModule =
                     | Some entityMap -> entityMap
                     | None -> Map.empty
                 | None -> Map.empty
-            | _ -> failwith <| "Invalid entity address '" + string address + "'."
+            | _ -> failwith <| "Invalid group address '" + string groupAddress + "'."
 
         static member getEntities3 groupAddress entityNames world =
             let entityNames = Set.ofSeq entityNames
