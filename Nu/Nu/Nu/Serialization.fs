@@ -16,8 +16,12 @@ module Serialization =
         not <| propertyName.EndsWith "Np" // don't write non-persistent properties
 
     /// Is a property with the given name persistent?
-    let isPropertyPersistent (property : PropertyInfo) =
-        isPropertyPersistentByName property.Name
+    let isPropertyPersistent target (property : PropertyInfo) =
+        isPropertyPersistentByName property.Name &&
+        not (
+            property.Name = NameFieldName &&
+            property.PropertyType = typeof<string> &&
+            Guid.TryParse (property.GetValue target :?> string, ref Guid.Empty))
 
     /// Read an Xtension's fields from Xml.
     let readXFields (valueNode : XmlNode) =
@@ -159,18 +163,18 @@ module Serialization =
     /// Write all of a target's properties to Xml.
     /// NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-    let writePropertiesFromTarget shouldWriteProperty (writer : XmlWriter) (source : 'a) =
-        let aType = source.GetType ()
-        let properties = aType.GetProperties ()
+    let writePropertiesFromTarget shouldWriteProperty (writer : XmlWriter) (target : 'a) =
+        let targetType = target.GetType ()
+        let properties = targetType.GetProperties ()
         for property in properties do
-            let propertyValue = property.GetValue source
+            let propertyValue = property.GetValue target
             match propertyValue with
             | :? Xtension as xtension ->
                 writer.WriteStartElement property.Name
                 writeXtension shouldWriteProperty writer xtension
                 writer.WriteEndElement ()
             | _ ->
-                if  isPropertyPersistent property &&
+                if  isPropertyPersistent target property &&
                     shouldWriteProperty property.Name then
                     let converter = TypeDescriptor.GetConverter property.PropertyType
                     let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string

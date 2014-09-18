@@ -38,15 +38,15 @@ module TripleModule =
 
 module Triple =
 
-    /// Prepend a pair to build a triple.
+    /// Prepend an item to a pair to build a triple.
     let inline prepend a (b, c) =
         (a, b, c)
 
-    /// Insert in a pair to build a triple.
+    /// Insert an item in a pair to build a triple.
     let inline insert b (a, c) =
         (a, b, c)
 
-    /// Append a pair to build a triple.
+    /// Append an item to a pair to build a triple.
     let inline append c (a, b) =
         (a, b, c)
 
