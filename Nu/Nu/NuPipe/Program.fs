@@ -15,5 +15,5 @@ module Program =
                 FailureReturnCode
             | Right () -> SuccessReturnCode
         | _ ->
-            Console.WriteLine "NuPipe.exe requires two parameters (asset graph file name, input directory, and output directory)."
+            Console.WriteLine "NuPipe.exe requires two parameters (input directory and output directory)."
             FailureReturnCode
