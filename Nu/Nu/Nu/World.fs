@@ -771,8 +771,9 @@ module WorldModule =
 
         static member init () =
             
-            // ensure the current culture is invaraite
-            System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
+            // ensure the current culture is invariate
+            System.Threading.Thread.CurrentThread.CurrentCulture <-
+                System.Globalization.CultureInfo.InvariantCulture
 
             // init the type converters
             NuMath.initTypeConverters ()

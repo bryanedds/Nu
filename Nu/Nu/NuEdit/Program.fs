@@ -439,12 +439,12 @@ module Program =
         form.Close ()
 
     let handleFormCreateDepthPlusClick (form : NuEditForm) (_ : EventArgs) =
-        let depth = ref -1.0f // depth becomes 0 on parse failure
+        let depth = ref 0.0f
         ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
         form.createDepthTextBox.Text <- string (!depth + 1.0f)
 
     let handleFormCreateDepthMinusClick (form : NuEditForm) (_ : EventArgs) =
-        let depth = ref 1.0f // depth becomes 0 on parse failure
+        let depth = ref 0.0f
         ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
         form.createDepthTextBox.Text <- string (!depth - 1.0f)
     
