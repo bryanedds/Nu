@@ -226,7 +226,7 @@ module Program =
     
     let getCreationDepth (form : NuEditForm) =
         let creationDepth = ref 0.0f
-        ignore <| Single.TryParse (form.creationDepthTextBox.Text, creationDepth)
+        ignore <| Single.TryParse (form.createDepthTextBox.Text, creationDepth)
         !creationDepth
 
     let getExpansionState (treeView : TreeView) =
@@ -437,6 +437,16 @@ module Program =
 
     let handleFormExit (form : NuEditForm) (_ : EventArgs) =
         form.Close ()
+
+    let handleFormCreateDepthPlusClick (form : NuEditForm) (_ : EventArgs) =
+        let depth = ref -1.0f // depth becomes 0 on parse failure
+        ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
+        form.createDepthTextBox.Text <- string (!depth + 1.0f)
+
+    let handleFormCreateDepthMinusClick (form : NuEditForm) (_ : EventArgs) =
+        let depth = ref 1.0f // depth becomes 0 on parse failure
+        ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
+        form.createDepthTextBox.Text <- string (!depth - 1.0f)
     
     let handleFormTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
@@ -784,11 +794,13 @@ module Program =
         form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
         form.positionSnapTextBox.Text <- string DefaultPositionSnap
         form.rotationSnapTextBox.Text <- string DefaultRotationSnap
-        form.creationDepthTextBox.Text <- string DefaultCreationDepth
+        form.createDepthTextBox.Text <- string DefaultCreationDepth
         // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
         // necessary if we can figure out how to keep SDL from stealing input events...
         form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
+        form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
+        form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
         form.treeView.AfterSelect.Add (handleFormTreeViewNodeSelect form worldChangers refWorld)
         form.createEntityButton.Click.Add (handleFormCreate false form worldChangers refWorld)
         form.createToolStripMenuItem.Click.Add (handleFormCreate false form worldChangers refWorld)
