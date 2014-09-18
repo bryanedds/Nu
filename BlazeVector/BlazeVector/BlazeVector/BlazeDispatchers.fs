@@ -116,7 +116,7 @@ module EnemyDispatcherModule =
             else (Propagate, world)
 
         let collisionHandler event world =
-            let (address, enemy : Entity, collisionData) = Event.unwrap event
+            let (address, enemy : Entity, collisionData : CollisionData) = Event.unwrap event
             if World.isGamePlaying world then
                 let collidee = World.getEntity collisionData.Collidee world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world

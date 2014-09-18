@@ -562,7 +562,7 @@ module WorldModule =
                     | Some _ ->
                         let collisionAddress = CollisionEventName + bodyCollisionMessage.EntityAddress
                         let collisionData =
-                            EntityCollisionData
+                            CollisionData
                                 { Normal = bodyCollisionMessage.Normal
                                   Speed = bodyCollisionMessage.Speed
                                   Collidee = bodyCollisionMessage.EntityAddress2 }
