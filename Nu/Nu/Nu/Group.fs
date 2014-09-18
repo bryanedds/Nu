@@ -76,13 +76,13 @@ module WorldGroupModule =
                         let address = Address.make [screenKvp.Key; groupKvp.Key]
                         yield (address, groupKvp.Value) }
 
-        static member getGroups address world =
-            match address.AddrList with
+        static member getGroups screenAddress world =
+            match screenAddress.AddrList with
             | [screenName] ->
                 match Map.tryFind screenName world.Groups with
                 | Some groupMap -> groupMap
                 | None -> Map.empty
-            | _ -> failwith <| "Invalid group address '" + string address + "'."
+            | _ -> failwith <| "Invalid screen address '" + string screenAddress + "'."
 
         static member getGroups3 screenAddress groupNames world =
             let groupNames = Set.ofSeq groupNames
