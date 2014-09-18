@@ -48,7 +48,7 @@ module BulletDispatcherModule =
             else (Propagate, world)
 
         let collisionHandler event world =
-            let (address, bullet, _) = Event.unwrap event
+            let (address, bullet : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let world = snd <| World.removeEntity address bullet world
                 (Propagate, world)
@@ -349,7 +349,7 @@ module StageScreenModule =
             let (address, _, _) = Event.unwrap event
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
             let groupNames = StagePlayName :: sectionNames
-            let groups = World.getGroups3 (Address.take 1 address) groupNames world
+            let groups = World.getGroups3 address groupNames world
             let world = snd <| World.removeGroups address groups world
             (Propagate, world)
 
