@@ -349,8 +349,7 @@ module StageScreenModule =
             let (address, _, _) = Event.unwrap<Screen, NoData> event
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
             let groupNames = StagePlayName :: sectionNames
-            let groups = World.getGroups (Address.take 1 address) world
-            let groups = Map.filter (fun groupName _ -> List.exists ((=) groupName) groupNames) groups
+            let groups = World.getGroups3 (Address.take 1 address) groupNames world
             let world = snd <| World.removeGroups address groups world
             (Propagate, world)
 
