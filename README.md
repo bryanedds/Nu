@@ -13,7 +13,7 @@ This repository hosts several projects, including -
 
 Here is some media on the Nu Game Engine -
 
-![Screenshot](BlazeVector/Media/PlayingABitOfBlazeVector.png?raw=true)
+![Screenshot](BlazeVector/Promotional/PlayingABitOfBlazeVector.png?raw=true)
 Blasting away in BlazeVector!
 
 
