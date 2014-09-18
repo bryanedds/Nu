@@ -206,6 +206,14 @@ module Physics =
     let private toPhysicsV2 (v2 : Vector2) =
         Framework.Vector2 (toPhysics v2.X, toPhysics v2.Y)
 
+    let private toPhysicsPolygonDiameter value =
+        let value = toPhysics value
+        value - Settings.PolygonRadius * 2.0f
+
+    let private toPhysicsPolygonRadius value =
+        let value = toPhysics value
+        value - Settings.PolygonRadius
+
     let private toPhysicsBodyType bodyType =
         match bodyType with
         | Static -> Dynamics.BodyType.Static
@@ -344,8 +352,8 @@ module Physics =
         let body =
             Factories.BodyFactory.CreateRectangle (
                 integrator.PhysicsContext,
-                toPhysics <| boxShape.Extent.X * 2.0f,
-                toPhysics <| boxShape.Extent.Y * 2.0f,
+                toPhysicsPolygonDiameter <| boxShape.Extent.X * 2.0f,
+                toPhysicsPolygonDiameter <| boxShape.Extent.Y * 2.0f,
                 createBodyMessage.BodyProperties.Density,
                 toPhysicsV2 boxShape.Center,
                 0.0f,
@@ -358,7 +366,7 @@ module Physics =
         let body =
             Factories.BodyFactory.CreateCircle (
                 integrator.PhysicsContext,
-                toPhysics circleShape.Radius,
+                toPhysicsPolygonRadius circleShape.Radius,
                 createBodyMessage.BodyProperties.Density,
                 toPhysicsV2 circleShape.Center,
                 toPhysicsBodyType createBodyMessage.BodyProperties.BodyType,
@@ -370,8 +378,8 @@ module Physics =
         let body =
             Factories.BodyFactory.CreateCapsule (
                 integrator.PhysicsContext,
-                toPhysics capsuleShape.Height,
-                toPhysics capsuleShape.Radius,
+                toPhysicsPolygonDiameter capsuleShape.Height,
+                toPhysicsPolygonRadius capsuleShape.Radius,
                 createBodyMessage.BodyProperties.Density,
                 toPhysicsV2 capsuleShape.Center,
                 0.0f,
