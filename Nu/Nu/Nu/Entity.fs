@@ -192,8 +192,8 @@ module WorldEntityModule =
                 | Some groupMap ->
                     match Map.tryFind groupName groupMap with
                     | Some entityMap -> entityMap
-                    | None -> failwith <| "Invalid entity address '" + string address + "'."
-                | None -> failwith <| "Invalid entity address '" + string address + "'."
+                    | None -> Map.empty
+                | None -> Map.empty
             | _ -> failwith <| "Invalid entity address '" + string address + "'."
 
         static member getEntities3 groupAddress entityNames world =
