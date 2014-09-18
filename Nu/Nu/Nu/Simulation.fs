@@ -384,7 +384,15 @@ module SimModule =
                 entity.FacetsNp
 
         abstract member GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = DefaultEntitySize
+        default dispatcher.GetQuickSize (entity, world) =
+            List.fold
+                (fun maxSize (facet : Facet) ->
+                    let quickSize = facet.GetQuickSize (entity, world)
+                    Vector2(
+                        Math.Max (quickSize.X, maxSize.X),
+                        Math.Max (quickSize.Y, maxSize.Y)))
+                Vector2.One
+                entity.FacetsNp
 
         abstract member IsTransformRelative : Entity * World -> bool
         default dispatcher.IsTransformRelative (_, _) = true
