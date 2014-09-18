@@ -99,7 +99,6 @@ module XtensionModule =
 
                 // check if dynamic member is an existing field
                 match Map.tryFind memberName xtension.XFields with
-
                 | Some field ->
                     
                     // return field directly if the return type matches, otherwise the default value for that type
@@ -159,7 +158,7 @@ module XtensionModule =
             { xtension with XFields = xFields }
 
     /// A collection of objects that can handle dynamically dispatched messages via reflection.
-    /// These are just POFSO types, except without any data (the data they use would be in a related
+    /// These are just POFSOs, except without any data (the data they use would be in a related
     /// value's XField).
     and XDispatchers =
         Map<string, obj>

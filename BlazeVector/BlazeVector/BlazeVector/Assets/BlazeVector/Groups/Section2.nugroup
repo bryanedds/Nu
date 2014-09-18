@@ -1,18 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Name>02d504ea-9306-4784-b6d4-1a46f2925d47</Name>
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entities>
       <Entity>
-        <Name>01fe2a56-0051-42ef-aded-a4291554a684</Name>
         <Position>-160;-15.68001</Position>
         <Depth>1</Depth>
         <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
         <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
       </Entity>
       <Entity>
-        <Name>1f2779ea-85b5-4a79-b828-782db21a72fb</Name>
         <Position>-480;-304</Position>
         <Depth>-8</Depth>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
@@ -22,7 +19,6 @@
         </Xtension>
       </Entity>
       <Entity>
-        <Name>44f0d7f2-3501-47b7-887e-5a09c8491fd7</Name>
         <Position>-480;-304</Position>
         <Depth>-4</Depth>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
@@ -32,28 +28,24 @@
         </Xtension>
       </Entity>
       <Entity>
-        <Name>620c2b56-2458-4f31-b496-279128df032a</Name>
         <Position>-424;-175.68</Position>
         <Depth>1</Depth>
         <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
         <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
       </Entity>
       <Entity>
-        <Name>9cd59eb0-0e7b-43e8-8475-0048d573d763</Name>
         <Position>160;48.31998</Position>
         <Depth>1</Depth>
         <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
         <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
       </Entity>
       <Entity>
-        <Name>daac566d-fb08-4a7d-8501-f3793f785716</Name>
         <Position>1256;112.32</Position>
         <Depth>1</Depth>
         <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
         <Xtension optXDispatcherName="Some(EnemyDispatcher)" />
       </Entity>
       <Entity>
-        <Name>e9de3a7d-af7a-4526-a218-ead6e7f8de2e</Name>
         <Position>-480;-304</Position>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
         <Xtension optXDispatcherName="Some(TileMapDispatcher)">

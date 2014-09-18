@@ -33,7 +33,6 @@
         <Xtension optXDispatcherName="Some(FeelerDispatcher)" />
       </Entity>
       <Entity>
-        <Name>be5eff5e-18e8-4ec9-9370-0994fb4d6565</Name>
         <Depth>1</Depth>
         <Position>0;0</Position>
         <Size>1200;1200</Size>
@@ -43,7 +42,6 @@
         </Xtension>
       </Entity>
       <Entity>
-        <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
         <Depth>-1</Depth>
         <Position>-480;-272</Position>
         <Size>960;544</Size>
