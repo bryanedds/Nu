@@ -90,7 +90,7 @@ module WorldScreenModule =
             let world = World.setOptScreen address None world
             (screen, world)
 
-        static member removeScreen address screen world =
+        static member removeScreen address (screen : Screen) world =
             let task =
                 { ScheduledTime = world.State.TickTime
                   Operation = fun world ->

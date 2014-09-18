@@ -294,7 +294,7 @@ module ButtonDispatcherModule =
         static let intrinsicFacetNames = []
         
         let handleButtonEventDownMouseLeft event world =
-            let (address, button, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, button : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
                 if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
@@ -306,7 +306,7 @@ module ButtonDispatcherModule =
             else (Propagate, world)
 
         let handleButtonEventUpMouseLeft event world =
-            let (address, button, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, button : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
                 let world =
@@ -497,7 +497,7 @@ module ToggleDispatcherModule =
         static let intrinsicFacetNames = []
         
         let handleToggleEventDownMouseLeft event world =
-            let (address, toggle, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, toggle : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
                 if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
@@ -508,7 +508,7 @@ module ToggleDispatcherModule =
             else (Propagate, world)
     
         let handleToggleEventUpMouseLeft event world =
-            let (address, toggle, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, toggle : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.IsPressed then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
                 let toggle = Entity.setIsPressed false toggle
@@ -577,7 +577,7 @@ module FeelerDispatcherModule =
         static let intrinsicFacetNames = []
 
         let handleFeelerEventDownMouseLeft event world =
-            let (address, feeler, mouseButtonData) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, feeler : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let mousePositionFeeler = Entity.mouseToEntity mouseButtonData.Position world feeler
                 if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
@@ -589,7 +589,7 @@ module FeelerDispatcherModule =
             else (Propagate, world)
     
         let handleFeelerEventUpMouseLeft event world =
-            let (address, feeler, _) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, feeler : Entity, _) = Event.unwrap event
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let feeler = Entity.setIsTouched false feeler
                 let world = World.setEntity address feeler world
@@ -689,17 +689,6 @@ module FillBarDispatcherModule =
             false
 
 [<AutoOpen>]
-module BoxDispatcherModule =
-
-    type BoxDispatcher () =
-        inherit EntityDispatcher ()
-
-        static let fieldDefinitions = [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
-        static let intrinsicFacetNames = [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]
-        static member FieldDefinitions = fieldDefinitions
-        static member IntrinsicFacetNames = intrinsicFacetNames
-
-[<AutoOpen>]
 module BlockDispatcherModule =
 
     type BlockDispatcher () =
@@ -709,6 +698,17 @@ module BlockDispatcherModule =
             [define? BodyType Static
              define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
 
+        static let intrinsicFacetNames = [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]
+        static member FieldDefinitions = fieldDefinitions
+        static member IntrinsicFacetNames = intrinsicFacetNames
+
+[<AutoOpen>]
+module BoxDispatcherModule =
+
+    type BoxDispatcher () =
+        inherit EntityDispatcher ()
+
+        static let fieldDefinitions = [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
         static let intrinsicFacetNames = [typeof<RigidBodyFacet>.Name; typeof<SpriteFacet>.Name]
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames

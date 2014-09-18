@@ -21,11 +21,11 @@ module FieldGroupDispatcherModule =
             World.setCamera camera world
 
         let adjustFieldCameraHandler event world =
-            let (address, _, _) = Event.unwrap<Group, NoData> event
+            let (address, _, _) = Event.unwrap event
             (Propagate, adjustFieldCamera address world)
 
         let moveFieldAvatarHandler event world =
-            let (address, _, _) = Event.unwrap<Group, NoData> event
+            let (address, _, _) = Event.unwrap event
             let feelerAddress = address @+ [FieldFeelerName]
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then

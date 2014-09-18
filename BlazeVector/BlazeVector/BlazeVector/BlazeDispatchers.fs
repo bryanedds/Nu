@@ -38,7 +38,7 @@ module BulletDispatcherModule =
              typeof<SpriteFacet>.Name]
 
         let tickHandler event world =
-            let (address, bullet, _) = Event.unwrap<Entity, NoData> event
+            let (address, bullet : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
@@ -48,7 +48,7 @@ module BulletDispatcherModule =
             else (Propagate, world)
 
         let collisionHandler event world =
-            let (address, bullet, _) = Event.unwrap<Entity, EntityCollisionData> event
+            let (address, bullet, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let world = snd <| World.removeEntity address bullet world
                 (Propagate, world)
@@ -108,7 +108,7 @@ module EnemyDispatcherModule =
             World.playSound ExplosionSound 1.0f world
 
         let tickHandler event world =
-            let (address, enemy, _) = Event.unwrap<Entity, NoData> event
+            let (address, enemy, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die address enemy world else world
@@ -116,7 +116,7 @@ module EnemyDispatcherModule =
             else (Propagate, world)
 
         let collisionHandler event world =
-            let (address, enemy, collisionData) = Event.unwrap<Entity, EntityCollisionData> event
+            let (address, enemy : Entity, collisionData) = Event.unwrap event
             if World.isGamePlaying world then
                 let collidee = World.getEntity collisionData.Collidee world
                 let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee world
@@ -193,7 +193,7 @@ module PlayerDispatcherModule =
             propelBullet bullet world
 
         let spawnBulletHandler event world =
-            let (address, player, _) = Event.unwrap<Entity, NoData> event
+            let (address, player, _) = Event.unwrap event
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
@@ -210,7 +210,7 @@ module PlayerDispatcherModule =
             else world.State.TickTime
 
         let movementHandler event world =
-            let (address, player, _) = Event.unwrap<Entity, NoData> event
+            let (address, player, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
@@ -226,7 +226,7 @@ module PlayerDispatcherModule =
             else (Propagate, world)
 
         let jumpHandler event world =
-            let (address, player, _) = Event.unwrap<Entity, MouseButtonData> event
+            let (address, player : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
@@ -270,11 +270,11 @@ module StagePlayDispatcherModule =
             else world
 
         let adjustCameraHandler event world =
-            let (address, _, _) = Event.unwrap<Group, NoData> event
+            let (address, _, _) = Event.unwrap event
             (Propagate, adjustCamera address world)
 
         let playerFallHandler event world =
-            let (address, _, _) = Event.unwrap<Group, NoData> event
+            let (address, _, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let player = getPlayer address world
                 match World.getOptScreen TitleAddress world with
@@ -327,7 +327,7 @@ module StageScreenModule =
             (sectionName, sectionGroup, sectionEntities)
 
         let startPlayHandler event world =
-            let (address, _, _) = Event.unwrap<Screen, NoData> event
+            let (address, _, _) = Event.unwrap event
             let random = Random ()
             let sectionFileNames = List.toArray SectionFileNames
             let sectionDescriptors =
@@ -346,7 +346,7 @@ module StageScreenModule =
             (Propagate, world)
 
         let stopPlayHandler event world =
-            let (address, _, _) = Event.unwrap<Screen, NoData> event
+            let (address, _, _) = Event.unwrap event
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + string i]
             let groupNames = StagePlayName :: sectionNames
             let groups = World.getGroups3 (Address.take 1 address) groupNames world
