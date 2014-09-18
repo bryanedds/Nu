@@ -86,8 +86,8 @@ module SimModule =
     type [<StructuralEquality; NoComparison>] KeyboardKeyData =
         { ScanCode : uint32 }
 
-    /// The data for an entity collision event.
-    type [<StructuralEquality; NoComparison>] EntityCollisionData =
+    /// The data for a collision event.
+    type [<StructuralEquality; NoComparison>] CollisionData =
         { Normal : Vector2
           Speed : single
           Collidee : Address }
@@ -108,7 +108,7 @@ module SimModule =
         | MouseMoveData of MouseMoveData
         | MouseButtonData of MouseButtonData
         | KeyboardKeyData of KeyboardKeyData
-        | EntityCollisionData of EntityCollisionData
+        | CollisionData of CollisionData
         | EntityChangeData of EntityChangeData
         | OtherData of OtherData
         | NoData of NoData
@@ -448,8 +448,8 @@ module EventData =
     /// A convenience function to forcibly extract keyboard key data from an event data abstraction.
     let toKeyboardKeyData data = match data with KeyboardKeyData d -> d | _ -> failwith <| "Expected KeyboardKeyData from event data '" + string data + "'."
 
-    /// A convenience function to forcibly extract entity collision data from an event data abstraction.
-    let toEntityCollisionData data = match data with EntityCollisionData d -> d | _ -> failwith <| "Expected EntityCollisionData from event data '" + string data + "'."
+    /// A convenience function to forcibly extract collision data from an event data abstraction.
+    let toCollisionData data = match data with CollisionData d -> d | _ -> failwith <| "Expected CollisionData from event data '" + string data + "'."
 
     /// A convenience function to forcibly extract entity change data from an event data abstraction.
     let toEntityChangeData data = match data with EntityChangeData d -> d | _ -> failwith <| "Expected EntityChangeData from event data '" + string data + "'."
@@ -467,7 +467,7 @@ module EventData =
         | "MouseMoveData" -> toMouseMoveData eventData :> obj :?> 'd
         | "MouseButtonData" -> toMouseButtonData eventData :> obj :?> 'd
         | "KeyboardKeyData" -> toKeyboardKeyData eventData :> obj :?> 'd
-        | "EntityCollisionData" -> toEntityCollisionData eventData :> obj :?> 'd
+        | "CollisionData" -> toCollisionData eventData :> obj :?> 'd
         | "EntityChangeData" -> toEntityChangeData eventData :> obj :?> 'd
         | "OtherData" -> toOtherData eventData :> obj :?> 'd
         | "Unit" -> toNoData eventData :> obj :?> 'd
