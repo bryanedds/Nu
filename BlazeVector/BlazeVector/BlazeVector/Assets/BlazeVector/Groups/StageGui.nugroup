@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
-    <Name>cd229643-b6fc-4fbc-842d-4b4a4a75bb51</Name>
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entities>
       <Entity>
@@ -16,7 +15,6 @@
         </Xtension>
       </Entity>
       <Entity>
-        <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
         <Position>-480;-272</Position>
         <Depth>-100</Depth>
         <Size>960;544</Size>

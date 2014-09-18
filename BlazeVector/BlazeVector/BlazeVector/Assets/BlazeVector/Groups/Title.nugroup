@@ -34,7 +34,6 @@
         </Xtension>
       </Entity>
       <Entity>
-        <Name>ab49acf2-cf7d-49eb-a3d3-b1df3e111304</Name>
         <Position>-320;96</Position>
         <Size>640;128</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
@@ -43,7 +42,6 @@
         </Xtension>
       </Entity>
       <Entity>
-        <Name>da8a90e7-0322-462f-a783-7eb98967d640</Name>
         <Position>-480;-272</Position>
         <Depth>-1</Depth>
         <Size>960;544</Size>
