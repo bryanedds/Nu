@@ -252,7 +252,7 @@ module Program =
 
     let addTreeViewNode (form : NuEditForm) entityAddress world =
         let entity = World.getEntity entityAddress world
-        let entityGroupName = Option.getOrDefault entity.Xtension.OptXDispatcherName "[No Dispatcher]"
+        let entityGroupName = Reflection.getTypeName entity.DispatcherNp
         let treeGroup = form.treeView.Nodes.[entityGroupName]
         if not <| treeGroup.Nodes.ContainsKey (string entityAddress) then
             let treeNode = TreeNode entity.Name
@@ -266,12 +266,12 @@ module Program =
     let populateCreateComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in world.Components.Dispatchers do
-            if Xtension.dispatchesAs2 typeof<EntityDispatcher> dispatcherKvp.Value then
+            if Reflection.dispatchesAs typeof<EntityDispatcher> dispatcherKvp.Value then
                 ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
 
     let populateTreeViewGroups (form : NuEditForm) world =
         for dispatcherKvp in world.Components.Dispatchers do
-            if Xtension.dispatchesAs2 typeof<EntityDispatcher> dispatcherKvp.Value then
+            if Reflection.dispatchesAs typeof<EntityDispatcher> dispatcherKvp.Value then
                 let treeGroup = TreeNode dispatcherKvp.Key
                 treeGroup.Name <- treeGroup.Text
                 ignore <| form.treeView.Nodes.Add treeGroup

@@ -1,48 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
-    <Xtension optXDispatcherName="Some(GroupDispatcher)" />
+  <Group dispatcherName="GroupDispatcher">
     <Entities>
-      <Entity>
+      <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Position>-128;-224</Position>
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+        <Xtension>
           <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
           <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="TextDispatcher">
         <Position>-320;96</Position>
         <Size>640;128</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <Xtension>
           <Text type="System.String">Credits</Text>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="TextDispatcher">
         <Position>-320;0</Position>
         <Size>640;64</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <Xtension>
           <Text type="System.String">Code + Music + SFX: Bryan Edds</Text>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="LabelDispatcher">
         <Position>-480;-272</Position>
         <Depth>-1</Depth>
         <Size>960;544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(LabelDispatcher)">
+        <Xtension>
           <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="TextDispatcher">
         <Position>-320;-96</Position>
         <Size>640;64</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <Xtension>
           <Text type="System.String">Art: MindChamber</Text>
         </Xtension>
       </Entity>

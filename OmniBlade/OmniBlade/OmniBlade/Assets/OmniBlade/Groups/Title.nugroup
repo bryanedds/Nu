@@ -1,63 +1,62 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
-    <Xtension optXDispatcherName="Some(GroupDispatcher)" />
+  <Group dispatcherName="GroupDispatcher">
     <Entities>
-      <Entity>
+      <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
         <Position>-128;-160</Position>
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+        <Xtension>
           <DownImage type="Nu.RenderingModule+Image">CreditsButtonDown;Gui</DownImage>
           <UpImage type="Nu.RenderingModule+Image">CreditsButtonUp;Gui</UpImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
         <Position>-128;-224</Position>
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+        <Xtension>
           <DownImage type="Nu.RenderingModule+Image">ExitButtonDown;Gui</DownImage>
           <UpImage type="Nu.RenderingModule+Image">ExitButtonUp;Gui</UpImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
         <Position>-128;-96</Position>
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+        <Xtension>
           <DownImage type="Nu.RenderingModule+Image">LoadGameButtonDown;Gui</DownImage>
           <UpImage type="Nu.RenderingModule+Image">LoadGameButtonUp;Gui</UpImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
         <Position>-128;-32</Position>
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+        <Xtension>
           <DownImage type="Nu.RenderingModule+Image">NewGameButtonDown;Gui</DownImage>
           <UpImage type="Nu.RenderingModule+Image">NewGameButtonUp;Gui</UpImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="TextDispatcher">
         <Position>-320;96</Position>
         <Size>640;128</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(TextDispatcher)">
+        <Xtension>
           <BackgroundImage type="Nu.RenderingModule+Image">Image4;Default</BackgroundImage>
           <Text type="System.String">OmniBlade</Text>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="LabelDispatcher">
         <Depth>-1</Depth>
         <Position>-480;-272</Position>
         <Size>960;544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(LabelDispatcher)">
+        <Xtension>
           <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
         </Xtension>
       </Entity>

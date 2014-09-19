@@ -257,3 +257,11 @@ module Reflection =
         // append the root node
         ignore <| document.AppendChild root
         document
+
+    /// Queries that the target type offers dispatcher behavior congruent to the given dispatcher.
+    let dispatchesAs (dispatcherTargetType : Type) dispatcher =
+        let dispatcherType = dispatcher.GetType ()
+        let result =
+            dispatcherTargetType = dispatcherType ||
+            dispatcherType.IsSubclassOf dispatcherTargetType
+        result

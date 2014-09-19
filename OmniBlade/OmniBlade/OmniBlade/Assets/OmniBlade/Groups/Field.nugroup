@@ -1,52 +1,50 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
-    <Xtension optXDispatcherName="Some(FieldGroupDispatcher)" />
+  <Group dispatcherName="FieldGroupDispatcher">
     <Entities>
-      <Entity>
+      <Entity dispatcherName="AvatarDispatcher">
         <Name>Avatar</Name>
         <Depth>2</Depth>
         <Position>600.3199;600</Position>
         <Size>64;64</Size>
         <OptOverlayName>Some(AvatarDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(AvatarDispatcher)">
+        <Xtension>
           <SpriteImage type="Nu.RenderingModule+Image">Image7;Default</SpriteImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Depth>10</Depth>
         <Position>-128;-224</Position>
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(ButtonDispatcher)">
+        <Xtension>
           <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
           <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="FeelerDispatcher">
         <Name>Feeler</Name>
         <Depth>-5</Depth>
         <Position>-480;-272</Position>
         <Size>960;544</Size>
         <OptOverlayName>Some(FeelerDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(FeelerDispatcher)" />
       </Entity>
-      <Entity>
+      <Entity dispatcherName="TileMapDispatcher">
         <Depth>1</Depth>
         <Position>0;0</Position>
         <Size>1200;1200</Size>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(TileMapDispatcher)">
+        <Xtension>
           <TileMapAsset type="Nu.RenderingModule+TileMapAsset">TileMap;Default</TileMapAsset>
         </Xtension>
       </Entity>
-      <Entity>
+      <Entity dispatcherName="LabelDispatcher">
         <Depth>-1</Depth>
         <Position>-480;-272</Position>
         <Size>960;544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(LabelDispatcher)">
+        <Xtension>
           <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
         </Xtension>
       </Entity>

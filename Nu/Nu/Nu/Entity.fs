@@ -24,6 +24,60 @@ module EntityModule =
         static member setFacetNames facets (entity : Entity) = { entity with FacetNames = facets }
         static member setFacetsNp facets (entity : Entity) = { entity with FacetsNp = facets }
 
+        static member register address (entity : Entity) world =
+            let (entity, world) = entity.DispatcherNp.Register (entity, address, world)
+            List.fold
+                (fun (entity, world) (facet : Facet) -> facet.Register (entity, address, world))
+                (entity, world)
+                entity.FacetsNp
+        
+        static member unregister address (entity : Entity) world =
+            let (entity, world) = entity.DispatcherNp.Unregister (entity, address, world)
+            List.fold
+                (fun (entity, world) (facet : Facet) -> facet.Unregister (entity, address, world))
+                (entity, world)
+                entity.FacetsNp
+        
+        static member propagatePhysics address (entity : Entity) world =
+            let world = entity.DispatcherNp.PropagatePhysics (entity, address, world)
+            List.fold
+                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world))
+                world
+                entity.FacetsNp
+        
+        static member handleBodyTransformMessage address message (entity : Entity) world =
+            let (entity, world) = entity.DispatcherNp.HandleBodyTransformMessage (entity, address, message, world)
+            List.fold
+                (fun (entity, world) (facet : Facet) -> facet.HandleBodyTransformMessage (entity, address, message, world))
+                (entity, world)
+                entity.FacetsNp
+        
+        static member getRenderDescriptors (entity : Entity) world =
+            let renderDescriptors = entity.DispatcherNp.GetRenderDescriptors (entity, world)
+            List.fold
+                (fun renderDescriptors (facet : Facet) ->
+                    let descriptors = facet.GetRenderDescriptors (entity, world)
+                    descriptors @ renderDescriptors)
+                renderDescriptors
+                entity.FacetsNp
+        
+        static member getQuickSize  (entity : Entity) world =
+            let quickSize = entity.DispatcherNp.GetQuickSize (entity, world)
+            List.fold
+                (fun (maxSize : Vector2) (facet : Facet) ->
+                    let quickSize = facet.GetQuickSize (entity, world)
+                    Vector2(
+                        Math.Max (quickSize.X, maxSize.X),
+                        Math.Max (quickSize.Y, maxSize.Y)))
+                quickSize
+                entity.FacetsNp
+        
+        static member getPickingPriority (entity : Entity) world =
+            entity.DispatcherNp.GetPickingPriority (entity, world)
+        
+        static member isTransformRelative (entity : Entity) world =
+            entity.DispatcherNp.IsTransformRelative (entity, world)
+
         static member isFacetCompatible facet (entity : Entity) =
             let facetType = facet.GetType ()
             let facetFieldNames = Reflection.getFieldDefinitionNames facetType
@@ -31,7 +85,7 @@ module EntityModule =
             let intersection = List.intersect facetFieldNames entityFieldNames
             Set.isEmpty intersection
 
-        static member make dispatcherName optName =
+        static member make dispatcherName dispatcher optName =
             let id = NuCore.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
@@ -40,52 +94,11 @@ module EntityModule =
               Size = DefaultEntitySize
               Rotation = 0.0f
               Visible = true
+              DispatcherNp = dispatcher
               FacetNames = []
               FacetsNp = []
               OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true } }
-
-        (* OPTIMIZATION: The following dispatch forwarders are optimized. *)
-        
-        static member register address (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.Register (entity, address, world)
-            | _ -> failwith "Due to optimization in Entity.register, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member unregister address (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.Unregister (entity, address, world)
-            | _ -> failwith "Due to optimization in Entity.unregister, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member propagatePhysics address (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.PropagatePhysics (entity, address, world)
-            | _ -> failwith "Due to optimization in Entity.propagatePhysics, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member handleBodyTransformMessage address message (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.HandleBodyTransformMessage (entity, address, message, world)
-            | _ -> failwith "Due to optimization in Entity.handleBodyTransformMessage, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member getRenderDescriptors (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.GetRenderDescriptors (entity, world)
-            | _ -> failwith "Due to optimization in Entity.getRenderDescriptors, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member getQuickSize  (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.GetQuickSize (entity, world)
-            | _ -> failwith "Due to optimization in Entity.getQuickSize, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member getPickingPriority (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.GetPickingPriority (entity, world)
-            | _ -> failwith "Due to optimization in Entity.getPickingPriority, an entity's base dispatcher must be an EntityDispatcher."
-        
-        static member isTransformRelative (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as dispatcher -> dispatcher.IsTransformRelative (entity, world)
-            | _ -> failwith "Due to optimization in Entity.isTransformRelative, an entity's base dispatcher must be an EntityDispatcher."
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
@@ -330,15 +343,13 @@ module WorldEntityModule =
             | Left _ as left -> left
 
         static member attachIntrinsicFacetsViaNames (entity : Entity) world =
-            match Xtension.getDispatcher entity.Xtension world with
-            | :? EntityDispatcher as entityDispatcher ->
-                let entity = { entity with Id = entity.Id } // hacky copy
-                Reflection.attachIntrinsicFacets entityDispatcher entity world.Components.Facets
-                entity
-            | _ -> failwith <| "No valid entity dispatcher for entity '" + entity.Name + "'."
+            let entity = { entity with Id = entity.Id } // hacky copy
+            Reflection.attachIntrinsicFacets entity.DispatcherNp entity world.Components.Facets
+            entity
 
         static member writeEntity overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name
+            writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget 
                 (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
                 writer
@@ -353,11 +364,19 @@ module WorldEntityModule =
 
         static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
 
-            // make the bare entity with name as id
-            let entity = Entity.make defaultDispatcherName None
+            // read in the dispatcher name and create the dispatcher
+            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName entityNode
+            let (dispatcherName, dispatcher) =
+                match Map.tryFind dispatcherName world.Components.Dispatchers with
+                | Some dispatcher -> (dispatcherName, dispatcher :?> EntityDispatcher)
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<EntityDispatcher>.Name
+                    let dispatcher = Map.find dispatcherName world.Components.Dispatchers
+                    (dispatcherName, dispatcher :?> EntityDispatcher)
 
-            // read in the Xtension.OptXDispatcherName
-            Serialization.readOptXDispatcherNameToTarget entityNode entity
+            // make the bare entity with name as id
+            let entity = Entity.make dispatcherName dispatcher None
 
             // attach the entity's intrinsic facets
             let entity = World.attachIntrinsicFacetsViaNames entity world
@@ -379,15 +398,7 @@ module WorldEntityModule =
                 | Left error -> debug error; entity
 
             // attach the entity's instrinsic fields from its dispatcher if any
-            match entity.Xtension.OptXDispatcherName with
-            | Some dispatcherName ->
-                match Map.tryFind dispatcherName world.Components.Dispatchers with
-                | Some dispatcher ->
-                    match dispatcher with
-                    | :? EntityDispatcher -> Reflection.attachFields dispatcher entity
-                    | _ -> note <| "Dispatcher '" + dispatcherName + "' is not an entity dispatcher."
-                | None -> note <| "Could not locate dispatcher '" + dispatcherName + "'."
-            | None -> ()
+            Reflection.attachFields dispatcher entity
 
             // apply the entity's overlay
             match entity.OptOverlayName with
@@ -413,10 +424,10 @@ module WorldEntityModule =
                     (enumerable entityNodes)
 
         static member makeEntity dispatcherName optName world =
-            let entity = Entity.make dispatcherName optName
+            let dispatcher = Map.find dispatcherName world.Components.Dispatchers :?> EntityDispatcher
+            let entity = Entity.make dispatcherName dispatcher optName
             let entity = World.attachIntrinsicFacetsViaNames entity world
-            let entityDispatcher = Map.find dispatcherName world.Components.Dispatchers
-            Reflection.attachFields entityDispatcher entity
+            Reflection.attachFields dispatcher entity
             match World.trySynchronizeFacets [] None entity world with
             | Right (entity, _) -> entity
             | Left error -> debug error; entity

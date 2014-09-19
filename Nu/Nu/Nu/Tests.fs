@@ -20,21 +20,6 @@ module Tests =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-        static member dispatchesAs dispatcherTargetType this dispatcherContainer =
-            Xtension.dispatchesAs dispatcherTargetType this.Xtension dispatcherContainer
-
-    type TestDispatcher () =
-        member dispatcher.Init (xtn : Xtension, _ : IXDispatcherContainer) =
-            xtn?InittedField <- 5
-        member dispatcher.Test (xtn : Xtension, _ : IXDispatcherContainer) =
-            xtn?InittedField () * 5
-
-    type TestDispatcherContainer () =
-        let testDispatcher = (TestDispatcher ()) :> obj
-        let testDispatchers = Map.singleton typeof<TestDispatcher>.Name testDispatcher
-        interface IXDispatcherContainer with
-            member this.GetDispatchers () = testDispatchers
-
     let writeToStream write source =
         let memoryStream = new MemoryStream ()
         let xmlWriterSettings = XmlWriterSettings ()
@@ -52,9 +37,6 @@ module Tests =
         let xmlDocument = let emptyDoc = XmlDocument () in (emptyDoc.Load xmlReader; emptyDoc)
         let result = read (xmlDocument.SelectSingleNode RootNodeName) target
         result
-
-    // globalization is fine since this object is stateless.
-    let tdc = TestDispatcherContainer ()
 
     let [<Fact>] canAddField () =
         let xtn = Xtension.empty
@@ -83,16 +65,6 @@ module Tests =
         let fieldValue = xtd?TestField ()
         Assert.Equal (5, fieldValue)
 
-    let [<Fact>] dispatchingWorks () =
-        let xtn = { Xtension.mixed with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
-        let xtn = xtn?Init (xtn, tdc) : Xtension
-        let dispatchResult = xtn?Test (xtn, tdc)
-        Assert.Equal (dispatchResult, 25)
-
-    let [<Fact>] dispatchingFailsAppropriately () =
-        let xtn = { Xtension.safe with OptXDispatcherName = Some typeof<TestDispatcher>.Name }
-        Assert.Throws<Exception> (fun () -> ignore <| xtn?MissingDispatch tdc)
-
     let [<Fact>] xtensionSerializationWorks () =
         let xtn = Xtension.mixed
         let xtn = xtn?TestField <- 5
@@ -103,7 +75,7 @@ module Tests =
         Assert.Equal (xtn, xtnRead)
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
-        let xtd = { Xtension = { Xtension.mixed with OptXDispatcherName = Some typeof<TestDispatcher>.Name }}
+        let xtd = { Xtension = Xtension.mixed }
         let xtd = xtd?TestField <- 5
         use stream = writeToStream (Serialization.writePropertiesFromTarget tautology) xtd
         ignore <| stream.Seek (0L, SeekOrigin.Begin)

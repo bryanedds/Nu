@@ -678,14 +678,13 @@ module WorldModule =
                 let userDispatchers = userComponentFactory.MakeUserDispatchers ()
 
                 // infer the active game dispatcher
-                let defaultGameDispatcher = GameDispatcher () :> obj
+                let defaultGameDispatcher = GameDispatcher ()
                 let userDispatcherList = Map.toValueList userDispatchers
                 let isGameDispatcher = fun (dispatcher : obj) -> match dispatcher with :? GameDispatcher -> true | _ -> false
                 let activeGameDispatcher =
                     match List.tryFind isGameDispatcher userDispatcherList with
-                    | Some userGameDispatcher -> userGameDispatcher
+                    | Some userGameDispatcher -> userGameDispatcher :?> GameDispatcher
                     | None -> defaultGameDispatcher
-                let activeGameDispatcherName = Reflection.getTypeName activeGameDispatcher
 
                 // make dispatchers
                 // TODO: see if we can reflectively generate this
@@ -705,7 +704,7 @@ module WorldModule =
                          typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
                          typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
                          typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
-                         typeof<GameDispatcher>.Name, defaultGameDispatcher]
+                         typeof<GameDispatcher>.Name, defaultGameDispatcher :> obj]
                 let userDispatchers = userComponentFactory.MakeUserDispatchers ()
                 let dispatchers = Map.addMany (Map.toSeq userDispatchers) defaultDispatchers
 
@@ -755,7 +754,7 @@ module WorldModule =
 
                 // make the world itself
                 let world =
-                    { Game = Game.make activeGameDispatcherName activeGameDispatcher (Some "Game")
+                    { Game = Game.make activeGameDispatcher (Some "Game")
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
