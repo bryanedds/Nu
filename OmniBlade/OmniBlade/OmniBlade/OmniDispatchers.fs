@@ -41,7 +41,7 @@ module FieldGroupDispatcherModule =
 
         static member FieldDefinitions = fieldDefinitions
 
-        override dispatcher.Register (avatar, address, world) =
+        override dispatcher.Register (address, avatar, world) =
             let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
             let world = World.observe TickEventName address (CustomSub adjustFieldCameraHandler) world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
@@ -57,7 +57,7 @@ module BattleGroupDispatcherModule =
         static let fieldDefinitions = []
         static member FieldDefinitions = fieldDefinitions
 
-        override dispatcher.Register (group, _, world) =
+        override dispatcher.Register (_, group, world) =
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             (group, world)
 

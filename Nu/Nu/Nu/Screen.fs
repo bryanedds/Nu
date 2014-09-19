@@ -14,10 +14,10 @@ module ScreenModule =
         static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
 
         static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
-            screen.DispatcherNp.Register (screen, address, world)
+            screen.DispatcherNp.Register (address, screen, world)
 
         static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
-            screen.DispatcherNp.Unregister (screen, address, world)
+            screen.DispatcherNp.Unregister (address, screen, world)
 
         static member isIdling screen =
             screen.ScreenState = IdlingState

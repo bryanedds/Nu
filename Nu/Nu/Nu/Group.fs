@@ -13,10 +13,10 @@ module GroupModule =
     type Group with
 
         static member register (address : Address) (group : Group) (world : World) : Group * World =
-            group.DispatcherNp.Register (group, address, world)
+            group.DispatcherNp.Register (address, group, world)
         
         static member unregister (address : Address) (group : Group) (world : World) : Group * World =
-            group.DispatcherNp.Unregister (group, address, world)
+            group.DispatcherNp.Unregister (address, group, world)
 
         static member make dispatcher optName =
             let id = NuCore.makeId ()

@@ -13,33 +13,33 @@ module RigidBodyFacetModule =
     type Entity with
 
         member entity.MinorId = entity?MinorId : Guid
-        static member setMinorId (value : Guid) (entity : Entity) : Entity = entity?MinorId <- value
+        static member setMinorId (value : Guid) (entity : Entity) = entity?MinorId <- value
         member entity.BodyType = entity?BodyType : BodyType
-        static member setBodyType (value : BodyType) (entity : Entity) : Entity = entity?BodyType <- value
+        static member setBodyType (value : BodyType) (entity : Entity) = entity?BodyType <- value
         member entity.Density = entity?Density : single
-        static member setDensity (value : single) (entity : Entity) : Entity = entity?Density <- value
+        static member setDensity (value : single) (entity : Entity) = entity?Density <- value
         member entity.Friction = entity?Friction : single
-        static member setFriction (value : single) (entity : Entity) : Entity = entity?Friction <- value
+        static member setFriction (value : single) (entity : Entity) = entity?Friction <- value
         member entity.Restitution = entity?Restitution : single
-        static member setRestitution (value : single) (entity : Entity) : Entity = entity?Restitution <- value
+        static member setRestitution (value : single) (entity : Entity) = entity?Restitution <- value
         member entity.FixedRotation = entity?FixedRotation : bool
-        static member setFixedRotation (value : bool) (entity : Entity) : Entity = entity?FixedRotation <- value
+        static member setFixedRotation (value : bool) (entity : Entity) = entity?FixedRotation <- value
         member entity.LinearDamping = entity?LinearDamping : single
-        static member setLinearDamping (value : single) (entity : Entity) : Entity = entity?LinearDamping <- value
+        static member setLinearDamping (value : single) (entity : Entity) = entity?LinearDamping <- value
         member entity.AngularDamping = entity?AngularDamping : single
-        static member setAngularDamping (value : single) (entity : Entity) : Entity = entity?AngularDamping <- value
+        static member setAngularDamping (value : single) (entity : Entity) = entity?AngularDamping <- value
         member entity.GravityScale = entity?GravityScale : single
-        static member setGravityScale (value : single) (entity : Entity) : Entity = entity?GravityScale <- value
+        static member setGravityScale (value : single) (entity : Entity) = entity?GravityScale <- value
         member entity.CollisionCategories = entity?CollisionCategories : string
-        static member setCollisionCategories (value : string) (entity : Entity) : Entity = entity?CollisionCategories <- value
+        static member setCollisionCategories (value : string) (entity : Entity) = entity?CollisionCategories <- value
         member entity.CollisionMask = entity?CollisionMask : string
-        static member setCollisionMask (value : string) (entity : Entity) : Entity = entity?CollisionMask <- value
+        static member setCollisionMask (value : string) (entity : Entity) = entity?CollisionMask <- value
         member entity.CollisionExpression = entity?CollisionExpression : string
-        static member setCollisionExpr (value : string) (entity : Entity) : Entity = entity?CollisionExpr <- value
+        static member setCollisionExpr (value : string) (entity : Entity) = entity?CollisionExpr <- value
         member entity.IsBullet = entity?IsBullet : bool
-        static member setIsBullet (value : bool) (entity : Entity) : Entity = entity?IsBullet <- value
+        static member setIsBullet (value : bool) (entity : Entity) = entity?IsBullet <- value
         member entity.IsSensor = entity?IsSensor : bool
-        static member setIsSensor (value : bool) (entity : Entity) : Entity = entity?IsSensor <- value
+        static member setIsSensor (value : bool) (entity : Entity) = entity?IsSensor <- value
 
         static member getPhysicsId (entity : Entity) =
             PhysicsId (entity.Id, entity.MinorId)
@@ -68,7 +68,7 @@ module RigidBodyFacetModule =
 
         static member FieldDefinitions = fieldDefinitions
 
-        override facet.RegisterPhysics (entity, address, world) =
+        override facet.RegisterPhysics (address, entity, world) =
             let bodyProperties = 
                 { Shape = getBodyShape entity
                   BodyType = entity.BodyType
@@ -88,14 +88,14 @@ module RigidBodyFacetModule =
             let rotation = entity.Rotation
             World.createBody address physicsId position rotation bodyProperties world
 
-        override facet.UnregisterPhysics (entity, _, world) =
+        override facet.UnregisterPhysics (_, entity, world) =
             World.destroyBody (Entity.getPhysicsId entity) world
 
-        override facet.PropagatePhysics (entity, address, world) =
-            let world = facet.UnregisterPhysics (entity, address, world)
-            facet.RegisterPhysics (entity, address, world)
+        override facet.PropagatePhysics (address, entity, world) =
+            let world = facet.UnregisterPhysics (address, entity, world)
+            facet.RegisterPhysics (address, entity, world)
 
-        override facet.HandleBodyTransformMessage (entity, address, message : BodyTransformMessage, world) =
+        override facet.HandleBodyTransformMessage (message, address, entity, world) =
             // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
             if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
                 let entity =
@@ -113,9 +113,9 @@ module SpriteFacetModule =
     type Entity with
 
         member entity.ViewType = entity?ViewType : ViewType
-        static member setViewType (value : ViewType) (entity : Entity) : Entity = entity?ViewType <- value
+        static member setViewType (value : ViewType) (entity : Entity) = entity?ViewType <- value
         member entity.SpriteImage = entity?SpriteImage : Image
-        static member setSpriteImage (value : Image) (entity : Entity) : Entity = entity?SpriteImage <- value
+        static member setSpriteImage (value : Image) (entity : Entity) = entity?SpriteImage <- value
 
     type SpriteFacet () =
         inherit Facet ()
@@ -153,15 +153,15 @@ module AnimatedSpriteFacetModule =
     type Entity with
 
         member entity.Stutter = entity?Stutter : int
-        static member setStutter (value : int) (entity : Entity) : Entity = entity?Stutter <- value
+        static member setStutter (value : int) (entity : Entity) = entity?Stutter <- value
         member entity.TileCount = entity?TileCount : int
-        static member setTileCount (value : int) (entity : Entity) : Entity = entity?TileCount <- value
+        static member setTileCount (value : int) (entity : Entity) = entity?TileCount <- value
         member entity.TileRun = entity?TileRun : int
-        static member setTileRun (value : int) (entity : Entity) : Entity = entity?TileRun <- value
+        static member setTileRun (value : int) (entity : Entity) = entity?TileRun <- value
         member entity.TileSize = entity?TileSize : Vector2
-        static member setTileSize (value : Vector2) (entity : Entity) : Entity = entity?TileSize <- value
+        static member setTileSize (value : Vector2) (entity : Entity) = entity?TileSize <- value
         member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage : Image
-        static member setAnimatedSpriteImage (value : Image) (entity : Entity) : Entity = entity?AnimatedSpriteImage <- value
+        static member setAnimatedSpriteImage (value : Image) (entity : Entity) = entity?AnimatedSpriteImage <- value
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
@@ -258,7 +258,7 @@ module GuiDispatcherModule =
     type Entity with
         
         member gui.Enabled = gui?Enabled : bool
-        static member setEnabled (value : bool) (gui : Entity) : Entity = gui?Enabled <- value
+        static member setEnabled (value : bool) (gui : Entity) = gui?Enabled <- value
 
     type [<AbstractClass>] GuiDispatcher () =
         inherit EntityDispatcher ()
@@ -274,13 +274,13 @@ module ButtonDispatcherModule =
     type Entity with
 
         member button.IsDown = button?IsDown : bool
-        static member setIsDown (value : bool) (button : Entity) : Entity = button?IsDown <- value
+        static member setIsDown (value : bool) (button : Entity) = button?IsDown <- value
         member button.UpImage = button?UpImage : Image
-        static member setUpImage (value : Image) (button : Entity) : Entity = button?UpImage <- value
+        static member setUpImage (value : Image) (button : Entity) = button?UpImage <- value
         member button.DownImage = button?DownImage : Image
-        static member setDownImage (value : Image) (button : Entity) : Entity = button?DownImage <- value
+        static member setDownImage (value : Image) (button : Entity) = button?DownImage <- value
         member button.ClickSound = button?ClickSound : Sound
-        static member setClickSound (value : Sound) (button : Entity) : Entity = button?ClickSound <- value
+        static member setClickSound (value : Sound) (button : Entity) = button?ClickSound <- value
 
     type ButtonDispatcher () =
         inherit GuiDispatcher ()
@@ -323,7 +323,7 @@ module ButtonDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (button, address, world) =
+        override dispatcher.Register (address, button, world) =
             let world =
                 world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleButtonEventDownMouseLeft) |>
@@ -360,7 +360,7 @@ module LabelDispatcherModule =
     type Entity with
 
         member label.LabelImage = label?LabelImage : Image
-        static member setLabelImage (value : Image) (label : Entity) : Entity = label?LabelImage <- value
+        static member setLabelImage (value : Image) (label : Entity) = label?LabelImage <- value
 
     type LabelDispatcher () =
         inherit GuiDispatcher ()
@@ -399,16 +399,16 @@ module TextDispatcherModule =
 
     type Entity with
 
-        member text.Text = text?Text : string
-        static member setText (value : string) (text : Entity) : Entity = text?Text <- value
+        member text.Text : string = text?Text
+        static member setText (value : string) (text : Entity) = text?Text <- value
         member text.TextFont = text?TextFont : Font
-        static member setTextFont (value : Font) (text : Entity) : Entity = text?TextFont <- value
+        static member setTextFont (value : Font) (text : Entity) = text?TextFont <- value
         member text.TextOffset = text?TextOffset : Vector2
-        static member setTextOffset (value : Vector2) (text : Entity) : Entity = text?TextOffset <- value
+        static member setTextOffset (value : Vector2) (text : Entity) = text?TextOffset <- value
         member text.TextColor = text?TextColor : Vector4
-        static member setTextColor (value : Vector4) (text : Entity) : Entity = text?TextColor <- value
+        static member setTextColor (value : Vector4) (text : Entity) = text?TextColor <- value
         member text.BackgroundImage = text?BackgroundImage : Image
-        static member setBackgroundImage (value : Image) (text : Entity) : Entity = text?BackgroundImage <- value
+        static member setBackgroundImage (value : Image) (text : Entity) = text?BackgroundImage <- value
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -464,15 +464,15 @@ module ToggleDispatcherModule =
     type Entity with
 
         member toggle.IsOn = toggle?IsOn : bool
-        static member setIsOn (value : bool) (toggle : Entity) : Entity = toggle?IsOn <- value
+        static member setIsOn (value : bool) (toggle : Entity) = toggle?IsOn <- value
         member toggle.IsPressed = toggle?IsPressed : bool
-        static member setIsPressed (value : bool) (toggle : Entity) : Entity = toggle?IsPressed <- value
+        static member setIsPressed (value : bool) (toggle : Entity) = toggle?IsPressed <- value
         member toggle.OffImage = toggle?OffImage : Image
-        static member setOffImage (value : Image) (toggle : Entity) : Entity = toggle?OffImage <- value
+        static member setOffImage (value : Image) (toggle : Entity) = toggle?OffImage <- value
         member toggle.OnImage = toggle?OnImage : Image
-        static member setOnImage (value : Image) (toggle : Entity) : Entity = toggle?OnImage <- value
+        static member setOnImage (value : Image) (toggle : Entity) = toggle?OnImage <- value
         member toggle.ToggleSound = toggle?ToggleSound : Sound
-        static member setToggleSound (value : Sound) (toggle : Entity) : Entity = toggle?ToggleSound <- value
+        static member setToggleSound (value : Sound) (toggle : Entity) = toggle?ToggleSound <- value
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
@@ -517,7 +517,7 @@ module ToggleDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (toggle, address, world) =
+        override dispatcher.Register (address, toggle, world) =
             let world =
                 world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleToggleEventDownMouseLeft) |>
@@ -554,7 +554,7 @@ module FeelerDispatcherModule =
     type Entity with
 
         member feeler.IsTouched = feeler?IsTouched : bool
-        static member setIsTouched (value : bool) (feeler : Entity) : Entity = feeler?IsTouched <- value
+        static member setIsTouched (value : bool) (feeler : Entity) = feeler?IsTouched <- value
 
     type FeelerDispatcher () =
         inherit GuiDispatcher ()
@@ -586,7 +586,7 @@ module FeelerDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (feeler, address, world) =
+        override dispatcher.Register (address, feeler, world) =
             let world =
                 world |>
                 World.observe DownMouseLeftEventName address (CustomSub handleFeelerEventDownMouseLeft) |>
@@ -605,13 +605,13 @@ module FillBarDispatcherModule =
     type Entity with
     
         member fillBar.Fill = fillBar?Fill : single
-        static member setFill (value : single) (fillBar : Entity) : Entity = fillBar?Fill <- value
+        static member setFill (value : single) (fillBar : Entity) = fillBar?Fill <- value
         member fillBar.FillInset = fillBar?FillInset : single
-        static member setFillInset (value : single) (fillBar : Entity) : Entity = fillBar?FillInset <- value
+        static member setFillInset (value : single) (fillBar : Entity) = fillBar?FillInset <- value
         member fillBar.FillImage = fillBar?FillImage : Image
-        static member setFillImage (value : Image) (fillBar : Entity) : Entity = fillBar?FillImage <- value
+        static member setFillImage (value : Image) (fillBar : Entity) = fillBar?FillImage <- value
         member fillBar.BorderImage = fillBar?BorderImage : Image
-        static member setBorderImage (value : Image) (fillBar : Entity) : Entity = fillBar?BorderImage <- value
+        static member setBorderImage (value : Image) (fillBar : Entity) = fillBar?BorderImage <- value
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
@@ -740,9 +740,9 @@ module TileMapDispatcherModule =
     type Entity with
 
         member entity.TileMapAsset = entity?TileMapAsset : TileMapAsset
-        static member setTileMapAsset (value : TileMapAsset) (entity : Entity) : Entity = entity?TileMapAsset <- value
+        static member setTileMapAsset (value : TileMapAsset) (entity : Entity) = entity?TileMapAsset <- value
         member entity.Parallax = entity?Parallax : single
-        static member setParallax (value : single) (entity : Entity) : Entity = entity?Parallax <- value
+        static member setParallax (value : single) (entity : Entity) = entity?Parallax <- value
 
         static member makeTileMapData tileMapAsset world =
             let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap
@@ -837,7 +837,7 @@ module TileMapDispatcherModule =
                     tileLayer.Tiles
             else world
 
-        let registerTileMapPhysics (tileMap : Entity) address world =
+        let registerTileMapPhysics address (tileMap : Entity) world =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (registerTileLayerPhysics address tileMap tileMapData)
@@ -869,18 +869,18 @@ module TileMapDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (tileMap, address, world) =
-            let world = registerTileMapPhysics tileMap address world
+        override dispatcher.Register (address, tileMap, world) =
+            let world = registerTileMapPhysics address tileMap world
             (tileMap, world)
 
-        override dispatcher.Unregister (tileMap, _, world) =
+        override dispatcher.Unregister (_, tileMap, world) =
             let world = unregisterTileMapPhysics tileMap world
             (tileMap, world)
             
-        override dispatcher.PropagatePhysics (tileMap, address, world) =
+        override dispatcher.PropagatePhysics (address, tileMap, world) =
             world |>
                 unregisterTileMapPhysics tileMap |>
-                registerTileMapPhysics tileMap address
+                registerTileMapPhysics address tileMap
 
         override dispatcher.GetRenderDescriptors (tileMap, world) =
             if tileMap.Visible then
