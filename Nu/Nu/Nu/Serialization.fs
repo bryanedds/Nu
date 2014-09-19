@@ -36,14 +36,11 @@ module Serialization =
                 else failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'.")
             childNodes
 
-    /// Read an optXDispatcherName from an xml node.
-    let readOptXDispatcherName (node : XmlNode) =
-        match node.Attributes.[OptXDispatcherNameAttributeName] with
-        | null -> None
-        | optXDispatcherNameAttribute ->
-            let optXDispatcherNameStr = optXDispatcherNameAttribute.InnerText
-            let optStrConverter = StringOptionTypeConverter ()
-            optStrConverter.ConvertFrom optXDispatcherNameStr :?> string option
+    /// Read dispatcherName from an xml node.
+    let readDispatcherName defaultDispatcherName (node : XmlNode) =
+        match node.Attributes.[DispatcherNameAttributeName] with
+        | null -> defaultDispatcherName
+        | dispatcherNameAttribute -> dispatcherNameAttribute.InnerText
 
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
@@ -60,16 +57,14 @@ module Serialization =
     /// Read an Xtension from Xml.
     let readXtension valueNode =
         let xFields = Map.ofSeq <| readXFields valueNode
-        let optXDispatcherName = readOptXDispatcherName valueNode
-        { XFields = xFields; OptXDispatcherName = optXDispatcherName; CanDefault = false; Sealed = true }
+        { XFields = xFields; CanDefault = false; Sealed = true }
 
     /// Attempt to read a target's property from Xml.
     let tryReadPropertyToTarget (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
         if property.PropertyType = typeof<Xtension> then
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
-            let optXDispatcherName = readOptXDispatcherName valueNode
-            let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields; OptXDispatcherName = optXDispatcherName }
+            let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields }
             property.SetValue (target, xtension)
         else
             let valueStr = valueNode.InnerText
@@ -83,23 +78,6 @@ module Serialization =
         match typeof<'a>.GetPropertyWritable fieldNode.Name with
         | null -> ()
         | property -> tryReadPropertyToTarget property fieldNode target
-
-    /// Read just the target's OptXDispatcherName from Xml.
-    let readOptXDispatcherNameToTarget (targetNode : XmlNode) target =
-        let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties ()
-        let xtensionProperty =
-            Array.find
-                (fun (property : PropertyInfo) ->
-                    property.Name = "Xtension" &&
-                    property.PropertyType = typeof<Xtension> &&
-                    property.CanWrite)
-                targetProperties
-        let xtensionNode = targetNode.[xtensionProperty.Name]
-        let optXDispatcherName = readOptXDispatcherName xtensionNode
-        let xtension = xtensionProperty.GetValue target :?> Xtension
-        let xtension = { xtension with OptXDispatcherName = optXDispatcherName }
-        xtensionProperty.SetValue (target, xtension)
 
     /// Read just the target's OptOverlayName from Xml.
     let readOptOverlayNameToTarget (targetNode : XmlNode) target =
@@ -146,7 +124,6 @@ module Serialization =
     // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
-        writer.WriteAttributeString (OptXDispatcherNameAttributeName, string xtension.OptXDispatcherName)
         for xField in xtension.XFields do
             let xFieldName = xField.Key
             if  isPropertyPersistentByName xFieldName &&

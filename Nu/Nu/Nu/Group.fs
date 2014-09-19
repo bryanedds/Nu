@@ -13,16 +13,17 @@ module GroupModule =
     type Group with
 
         static member register (address : Address) (group : Group) (world : World) : Group * World =
-            group?Register (group, address, world)
+            group.DispatcherNp.Register (group, address, world)
         
         static member unregister (address : Address) (group : Group) (world : World) : Group * World =
-            group?Unregister (group, address, world)
+            group.DispatcherNp.Unregister (group, address, world)
 
-        static member make dispatcherName optName =
+        static member make dispatcher optName =
             let id = NuCore.makeId ()
             { Group.Id = id
               Name = match optName with None -> string id | Some name -> name
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
+              DispatcherNp = dispatcher
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
 [<AutoOpen>]
 module WorldGroupModule =
@@ -138,29 +139,30 @@ module WorldGroupModule =
                 ([], world)
                 groupDescriptors
     
-        static member writeGroup overlayer (writer : XmlWriter) group entities =
+        static member writeGroup overlayer (writer : XmlWriter) (group : Group) entities =
             writer.WriteStartElement typeof<Group>.Name
+            writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology writer group
             World.writeEntities overlayer writer entities
     
         static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+
+            // read in the dispatcher name and create the dispatcher
+            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName groupNode
+            let dispatcher =
+                match Map.tryFind dispatcherName world.Components.Dispatchers with
+                | Some dispatcher -> dispatcher :?> GroupDispatcher
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<GroupDispatcher>.Name
+                    let dispatcher = Map.find dispatcherName world.Components.Dispatchers
+                    dispatcher :?> GroupDispatcher
             
             // make the bare group with name as id
-            let group = Group.make defaultDispatcherName None
-            
-            // read in the Xtension.OptXDispatcherName
-            Serialization.readOptXDispatcherNameToTarget groupNode group
+            let group = Group.make dispatcher None
             
             // attach the group's instrinsic fields from its dispatcher if any
-            match group.Xtension.OptXDispatcherName with
-            | Some dispatcherName ->
-                match Map.tryFind dispatcherName world.Components.Dispatchers with
-                | Some dispatcher ->
-                    match dispatcher with
-                    | :? GroupDispatcher -> Reflection.attachFields dispatcher group
-                    | _ -> note <| "Dispatcher '" + dispatcherName + "' is not an group dispatcher."
-                | None -> note <| "Could not locate dispatcher '" + dispatcherName + "'."
-            | None -> ()
+            Reflection.attachFields group.DispatcherNp group
 
             // read the groups's properties
             Serialization.readPropertiesToTarget groupNode group
@@ -172,7 +174,8 @@ module WorldGroupModule =
             (group, entities)
 
         static member makeGroup dispatcherName optName world =
-            let group = Group.make dispatcherName optName
+            let dispatcher = Map.find dispatcherName world.Components.Dispatchers :?> GroupDispatcher
+            let group = Group.make dispatcher optName
             let groupDispatcher = Map.find dispatcherName world.Components.Dispatchers
             Reflection.attachFields groupDispatcher group
             group

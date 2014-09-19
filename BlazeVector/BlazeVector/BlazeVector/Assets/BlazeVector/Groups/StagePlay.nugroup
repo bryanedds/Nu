@@ -1,14 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
-  <Group>
-    <Xtension optXDispatcherName="Some(StagePlayDispatcher)" />
+  <Group dispatcherName="StagePlayDispatcher">
     <Entities>
-      <Entity>
+      <Entity dispatcherName="PlayerDispatcher">
         <Name>Player</Name>
         <Position>-300;-175.6805</Position>
         <Depth>1</Depth>
         <OptOverlayName>Some(PlayerDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some(PlayerDispatcher)">
+        <Xtension>
           <LastTimeJump type="System.Int64">-9223372036854775808</LastTimeJump>
           <LastTimeOnGround type="System.Int64">-9223372036854775808</LastTimeOnGround>
         </Xtension>

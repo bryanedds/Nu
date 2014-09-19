@@ -14,22 +14,23 @@ module ScreenModule =
         static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
 
         static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
-            screen?Register (screen, address, world)
+            screen.DispatcherNp.Register (screen, address, world)
 
         static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
-            screen?Unregister (screen, address, world)
+            screen.DispatcherNp.Unregister (screen, address, world)
 
         static member isIdling screen =
             screen.ScreenState = IdlingState
 
-        static member make dispatcherName optName =
+        static member make dispatcher optName =
             let id = NuCore.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               ScreenState = IdlingState
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
-              Xtension = { XFields = Map.empty; OptXDispatcherName = Some dispatcherName; CanDefault = false; Sealed = true }}
+              DispatcherNp = dispatcher
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -112,9 +113,9 @@ module WorldScreenModule =
             (screen, world)
 
         static member makeScreen dispatcherName optName world =
-            let screen = Screen.make dispatcherName optName
-            let screenDispatcher = Map.find dispatcherName world.Components.Dispatchers
-            Reflection.attachFields screenDispatcher screen
+            let dispatcher = Map.find dispatcherName world.Components.Dispatchers :?> ScreenDispatcher
+            let screen = Screen.make dispatcher optName
+            Reflection.attachFields dispatcher screen
             screen
 
         static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime world =
