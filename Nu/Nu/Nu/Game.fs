@@ -13,7 +13,7 @@ module GameModule =
             game.DispatcherNp.Register (game, world)
 
         static member setOptSelectedScreenAddress optSelectedScreenAddress game =
-             { game with OptSelectedScreenAddress = optSelectedScreenAddress }
+            { game with OptSelectedScreenAddress = optSelectedScreenAddress }
 
         static member make dispatcher optName =
             let id = NuCore.makeId ()

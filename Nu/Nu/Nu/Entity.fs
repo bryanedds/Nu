@@ -21,34 +21,32 @@ module EntityModule =
         static member setSize size (entity : Entity) = { entity with Size = size }
         static member setRotation rotation (entity : Entity) = { entity with Rotation = rotation }
         static member setVisible visible (entity : Entity) = { entity with Visible = visible }
-        static member setFacetNames facets (entity : Entity) = { entity with FacetNames = facets }
-        static member setFacetsNp facets (entity : Entity) = { entity with FacetsNp = facets }
 
         static member register address (entity : Entity) world =
-            let (entity, world) = entity.DispatcherNp.Register (entity, address, world)
+            let (entity, world) = entity.DispatcherNp.Register (address, entity, world)
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.Register (entity, address, world))
+                (fun (entity, world) (facet : Facet) -> facet.Register (address, entity, world))
                 (entity, world)
                 entity.FacetsNp
         
         static member unregister address (entity : Entity) world =
-            let (entity, world) = entity.DispatcherNp.Unregister (entity, address, world)
+            let (entity, world) = entity.DispatcherNp.Unregister (address, entity, world)
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.Unregister (entity, address, world))
+                (fun (entity, world) (facet : Facet) -> facet.Unregister (address, entity, world))
                 (entity, world)
                 entity.FacetsNp
         
         static member propagatePhysics address (entity : Entity) world =
-            let world = entity.DispatcherNp.PropagatePhysics (entity, address, world)
+            let world = entity.DispatcherNp.PropagatePhysics (address, entity, world)
             List.fold
-                (fun world (facet : Facet) -> facet.PropagatePhysics (entity, address, world))
+                (fun world (facet : Facet) -> facet.PropagatePhysics (address, entity, world))
                 world
                 entity.FacetsNp
         
-        static member handleBodyTransformMessage address message (entity : Entity) world =
-            let (entity, world) = entity.DispatcherNp.HandleBodyTransformMessage (entity, address, message, world)
+        static member handleBodyTransformMessage message address (entity : Entity) world =
+            let (entity, world) = entity.DispatcherNp.HandleBodyTransformMessage (message, address, entity, world)
             List.fold
-                (fun (entity, world) (facet : Facet) -> facet.HandleBodyTransformMessage (entity, address, message, world))
+                (fun (entity, world) (facet : Facet) -> facet.HandleBodyTransformMessage (message, address, entity, world))
                 (entity, world)
                 entity.FacetsNp
         
@@ -277,14 +275,14 @@ module WorldEntityModule =
             | Some facet ->
                 let (entity, world) =
                     match optAddress with
-                    | Some address -> facet.Unregister (entity, address, world)
+                    | Some address -> facet.Unregister (address, entity, world)
                     | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
                 Reflection.detachFields facet entity
                 let entity =
                     if syncing then entity
-                    else Entity.setFacetNames (List.remove ((=) (Reflection.getTypeName facet)) entity.FacetNames) entity
-                let entity = Entity.setFacetsNp (List.remove ((=) facet) entity.FacetsNp) entity
+                    else { entity with FacetNames = List.remove ((=) (Reflection.getTypeName facet)) entity.FacetNames }
+                let entity = { entity with FacetsNp = List.remove ((=) facet) entity.FacetsNp }
                 let world =
                     match optAddress with
                     | Some address -> World.setEntity address entity world
@@ -296,14 +294,14 @@ module WorldEntityModule =
             match World.tryGetFacet facetName world with
             | Right facet ->
                 if Entity.isFacetCompatible facet entity then
-                    let entity = Entity.setFacetsNp (facet :: entity.FacetsNp) entity
+                    let entity = { entity with FacetsNp = facet :: entity.FacetsNp }
                     Reflection.attachFields facet entity
                     let entity =
                         if syncing then entity
-                        else Entity.setFacetNames (Reflection.getTypeName facet :: entity.FacetNames) entity
+                        else { entity with FacetNames = Reflection.getTypeName facet :: entity.FacetNames }
                     match optAddress with
                     | Some address ->
-                        let (entity, world) = facet.Register (entity, address, world)
+                        let (entity, world) = facet.Register (address, entity, world)
                         let world = World.setEntity address entity world
                         Right (entity, world)
                     | None -> Right (entity, world)

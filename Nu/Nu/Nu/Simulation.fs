@@ -300,27 +300,27 @@ module SimModule =
         static let fieldDefinitions = []
         static member FieldDefinitions = fieldDefinitions
 
-        abstract member Register : Entity * Address * World -> Entity * World
-        default facet.Register (entity, address, world) =
-            let world = facet.RegisterPhysics (entity, address, world)
+        abstract member Register : Address * Entity * World -> Entity * World
+        default facet.Register (address, entity, world) =
+            let world = facet.RegisterPhysics (address, entity, world)
             (entity, world)
 
-        abstract member Unregister : Entity * Address * World -> Entity * World
-        default facet.Unregister (entity, address, world) =
-            let world = facet.UnregisterPhysics (entity, address, world)
+        abstract member Unregister : Address * Entity * World -> Entity * World
+        default facet.Unregister (address, entity, world) =
+            let world = facet.UnregisterPhysics (address, entity, world)
             (entity, world)
 
-        abstract member RegisterPhysics : Entity * Address * World -> World
+        abstract member RegisterPhysics : Address * Entity * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
-        abstract member UnregisterPhysics : Entity * Address * World -> World
+        abstract member UnregisterPhysics : Address * Entity * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
 
-        abstract member PropagatePhysics : Entity * Address * World -> World
+        abstract member PropagatePhysics : Address * Entity * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
-        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> Entity * World
-        default facet.HandleBodyTransformMessage (entity, _, _, world) = (entity, world)
+        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
+        default facet.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default facet.GetRenderDescriptors (_, _) = []
@@ -342,17 +342,17 @@ module SimModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        abstract member Register : Entity * Address * World -> Entity * World
-        default dispatcher.Register (entity, _, world) = (entity, world)
+        abstract member Register : Address * Entity * World -> Entity * World
+        default dispatcher.Register (_, entity, world) = (entity, world)
 
-        abstract member Unregister : Entity * Address * World -> Entity * World
-        default dispatcher.Unregister (entity, _, world) = (entity, world)
+        abstract member Unregister : Address * Entity * World -> Entity * World
+        default dispatcher.Unregister (_, entity, world) = (entity, world)
 
-        abstract member PropagatePhysics : Entity * Address * World -> World
+        abstract member PropagatePhysics : Address * Entity * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
-        abstract member HandleBodyTransformMessage : Entity * Address * BodyTransformMessage * World -> Entity * World
-        default dispatcher.HandleBodyTransformMessage (entity, _, _, world) = (entity, world)
+        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
+        default dispatcher.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (_, _) = []
@@ -371,22 +371,22 @@ module SimModule =
         static let fieldDefinitions = []
         static member FieldDefinitions = fieldDefinitions
 
-        abstract member Register : Group * Address * World -> Group * World
-        default dispatcher.Register (group, _, world) = (group, world)
+        abstract member Register : Address * Group * World -> Group * World
+        default dispatcher.Register (_, group, world) = (group, world)
 
-        abstract member Unregister : Group * Address * World -> Group * World
-        default dispatcher.Unregister (group, _, world) = (group, world)
+        abstract member Unregister : Address * Group * World -> Group * World
+        default dispatcher.Unregister (_, group, world) = (group, world)
 
     and ScreenDispatcher () =
 
         static let fieldDefinitions = []
         static member FieldDefinitions = fieldDefinitions
 
-        abstract member Register : Screen * Address * World -> Screen * World
-        default dispatcher.Register (screen, _, world) = (screen, world)
+        abstract member Register : Address * Screen * World -> Screen * World
+        default dispatcher.Register (_, screen, world) = (screen, world)
 
-        abstract member Unregister : Screen * Address * World -> Screen * World
-        default dispatcher.Unregister (screen, _, world) = (screen, world)
+        abstract member Unregister : Address * Screen * World -> Screen * World
+        default dispatcher.Unregister (_, screen, world) = (screen, world)
 
     and GameDispatcher () =
 

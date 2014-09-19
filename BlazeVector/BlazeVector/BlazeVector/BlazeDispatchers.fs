@@ -2,7 +2,6 @@
 open System
 open System.Collections
 open OpenTK
-open Microsoft.Xna
 open FarseerPhysics
 open FarseerPhysics.Dynamics
 open Prime
@@ -17,7 +16,7 @@ module BulletDispatcherModule =
     type Entity with
 
         member bullet.Age = bullet?Age : int64
-        static member setAge (value : int64) (bullet : Entity) : Entity = bullet?Age <- value
+        static member setAge (value : int64) (bullet : Entity) = bullet?Age <- value
 
     type BulletDispatcher () =
         inherit EntityDispatcher ()
@@ -57,10 +56,10 @@ module BulletDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (entity, address, world) =
+        override dispatcher.Register (address, bullet, world) =
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
-            (entity, world)
+            (bullet, world)
 
 [<AutoOpen>]
 module EnemyDispatcherModule =
@@ -68,7 +67,7 @@ module EnemyDispatcherModule =
     type Entity with
 
         member enemy.Health = enemy?Health : int
-        static member setHealth (value : int) (enemy : Entity) : Entity = enemy?Health <- value
+        static member setHealth (value : int) (enemy : Entity) = enemy?Health <- value
 
         static member hasAppeared camera (enemy : Entity) =
             enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
@@ -130,7 +129,7 @@ module EnemyDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (enemy, address, world) =
+        override dispatcher.Register (address, enemy, world) =
             let world =
                 world |>
                 World.observe TickEventName address (CustomSub tickHandler) |>
@@ -143,10 +142,10 @@ module PlayerDispatcherModule =
     type Entity with
 
         member player.LastTimeOnGroundNp = player?LastTimeOnGroundNp : int64
-        static member setLastTimeOnGroundNp (value : int64) (player : Entity) : Entity = player?LastTimeOnGroundNp <- value
+        static member setLastTimeOnGroundNp (value : int64) (player : Entity) = player?LastTimeOnGroundNp <- value
         member player.LastTimeJumpNp = player?LastTimeJumpNp : int64
-        static member setLastTimeJumpNp (value : int64) (player : Entity) : Entity = player?LastTimeJumpNp <- value
-        
+        static member setLastTimeJumpNp (value : int64) (player : Entity) = player?LastTimeJumpNp <- value
+
         static member hasFallen (player : Entity) =
             player.Position.Y < -600.0f
 
@@ -239,7 +238,7 @@ module PlayerDispatcherModule =
         static member FieldDefinitions = fieldDefinitions
         static member IntrinsicFacetNames = intrinsicFacetNames
 
-        override dispatcher.Register (player, address, world) =
+        override dispatcher.Register (address, player, world) =
             let world =
                 world |>
                 World.observe TickEventName address (CustomSub spawnBulletHandler) |>
@@ -288,7 +287,7 @@ module StagePlayDispatcherModule =
 
         static member FieldDefinitions = fieldDefinitions
 
-        override dispatcher.Register (group, address, world) =
+        override dispatcher.Register (address, group, world) =
             let world =
                 world |>
                 World.observe TickEventName address (CustomSub adjustCameraHandler) |>
@@ -343,7 +342,7 @@ module StageScreenModule =
 
         static member FieldDefinitions = fieldDefinitions
 
-        override dispatcher.Register (screen, address, world) =
+        override dispatcher.Register (address, screen, world) =
             let world =
                 world |>
                 World.observe (SelectEventName + address) address (CustomSub startPlayHandler) |>
