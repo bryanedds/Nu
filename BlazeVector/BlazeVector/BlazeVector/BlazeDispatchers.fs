@@ -81,12 +81,12 @@ module EnemyModule =
                 | None -> Vector2 (-2000.0f, -30000.0f)
             World.applyForce force physicsId world
 
-        let die address enemy world =
+        let die address (enemy : Entity) world =
             let world = snd <| World.removeEntity address enemy world
             World.playSound ExplosionSound 1.0f world
 
         let tickHandler event world =
-            let (address, enemy, _) = Event.unwrap event
+            let (address, enemy : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die address enemy world else world
@@ -159,14 +159,14 @@ module PlayerModule =
             let world = World.playSound ShotSound 1.0f world
             (bullet, world)
 
-        let shootBullet playerAddress player world =
+        let shootBullet playerAddress (player : Entity) world =
             let bulletAddress = Address.allButLast playerAddress @+ [string <| Core.makeId ()]
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world
 
         let spawnBulletHandler event world =
-            let (address, player, _) = Event.unwrap event
+            let (address, player : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
@@ -182,7 +182,7 @@ module PlayerModule =
             else world.State.TickTime
 
         let movementHandler event world =
-            let (address, player, _) = Event.unwrap event
+            let (address, player : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
