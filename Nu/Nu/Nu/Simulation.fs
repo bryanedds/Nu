@@ -636,6 +636,34 @@ module WorldPhysicsModule =
 
     type World with
 
+        /// Does the world contain the body with the given physics id?
+        static member bodyExists physicsId world =
+            Physics.bodyExists physicsId world.Components.Integrator
+
+        /// Get the contact normals of the body with the given physics id.
+        static member getBodyContactNormals physicsId world =
+            Physics.getBodyContactNormals physicsId world.Components.Integrator
+
+        /// Get the linear velocity of the body with the given physics id.
+        static member getBodyLinearVelocity physicsId world =
+            Physics.getBodyLinearVelocity physicsId world.Components.Integrator
+
+        /// Get the contact normals where the body with the given physics id is touching the ground.
+        static member getBodyGroundContactNormals physicsId world =
+            Physics.getBodyGroundContactNormals physicsId world.Components.Integrator
+
+        /// Try to get a contact normal where the body with the given physics id is touching the ground.
+        static member getOptBodyGroundContactNormal physicsId world =
+            Physics.getOptBodyGroundContactNormal physicsId world.Components.Integrator
+
+        /// Try to get a contact tangent where the body with the given physics id is touching the ground.
+        static member getOptBodyGroundContactTangent physicsId world =
+            Physics.getOptBodyGroundContactTangent physicsId world.Components.Integrator
+
+        /// Query that the body with the give physics id is on the ground.
+        static member isBodyOnGround physicsId world =
+            Physics.isBodyOnGround physicsId world.Components.Integrator
+
         /// Send a message to the physics system to create a body with the given physics id.
         static member createBody entityAddress physicsId position rotation bodyProperties world =
             let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; PhysicsId = physicsId; Position = position; Rotation = rotation; BodyProperties = bodyProperties }

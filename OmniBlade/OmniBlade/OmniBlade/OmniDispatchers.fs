@@ -33,7 +33,7 @@ module OmniDispatchersModule =
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
-                let world = World.applyLinearImpulse impulseVector (Entity.getPhysicsId avatar) world 
+                let world = World.applyLinearImpulse impulseVector avatar.PhysicsId world 
                 (Propagate, world)
             else (Propagate, world)
 
