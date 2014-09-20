@@ -101,7 +101,7 @@ module BlazeDispatchersModule =
             let (address, enemy : Entity, collisionData : CollisionData) = Event.unwrap event
             if World.isGamePlaying world then
                 let collidee = World.getEntity collisionData.Collidee world
-                let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee
+                let isBullet = Reflection.dispatchesAs typeof<BulletDispatcher> collidee.DispatcherNp
                 if isBullet then
                     let enemy = Entity.setHealth (enemy.Health - 1) enemy
                     let world = World.setEntity address enemy world

@@ -18,6 +18,9 @@ module Miscellanea =
     /// No matter what you pass it, it returns false.
     let inline absurdity _ = false
 
+    /// Convert any value to an obj.
+    let inline objectify x = x :> obj
+
     /// A generic identification code type.
     type Id = int64
 
@@ -70,23 +73,13 @@ module Miscellanea =
         let bytes = Array.create<byte> 8 (byte 0)
         Guid (m, int16 (n >>> 16), int16 n, bytes)
 
-    /// Try to find a type by its name from all the loaded assemblies. Time-intensive.
-    let tryFindType typeName =
-        match Type.GetType typeName with
-        | null ->
-            let allAssemblies = AppDomain.CurrentDomain.GetAssemblies ()
-            let types =
-                Seq.choose
-                    (fun (assembly : Assembly) -> match assembly.GetType typeName with null -> None | aType -> Some aType)
-                    allAssemblies
-            Seq.tryFind (fun _ -> true) types 
-        | aType -> Some aType
-
-    /// Find a type by its name from all the loaded assemblies. Time-intensive.
-    let findType typeName =
-        match tryFindType typeName with
-        | Some aType -> aType
-        | None -> failwith <| "Could not find type with name '" + typeName + "'."
+    /// Combine the contents of two maps, taking an item from the second map in the case of a key
+    /// conflict.
+    let inline (^^) map map2 =
+        Map.fold
+            (fun map key value -> Map.add key value map)
+            map
+            map2
 
     /// Along with the Symbol binding, is used to elaborate the name of a symbol without using a
     /// string literal.

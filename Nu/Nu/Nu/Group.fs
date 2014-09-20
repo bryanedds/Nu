@@ -150,13 +150,12 @@ module WorldGroupModule =
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Serialization.readDispatcherName defaultDispatcherName groupNode
             let dispatcher =
-                match Map.tryFind dispatcherName world.Components.Dispatchers with
-                | Some dispatcher -> dispatcher :?> GroupDispatcher
+                match Map.tryFind dispatcherName world.Components.GroupDispatchers with
+                | Some dispatcher -> dispatcher
                 | None ->
                     note <| "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GroupDispatcher>.Name
-                    let dispatcher = Map.find dispatcherName world.Components.Dispatchers
-                    dispatcher :?> GroupDispatcher
+                    Map.find dispatcherName world.Components.GroupDispatchers
             
             // make the bare group with name as id
             let group = Group.make dispatcher None
@@ -174,8 +173,7 @@ module WorldGroupModule =
             (group, entities)
 
         static member makeGroup dispatcherName optName world =
-            let dispatcher = Map.find dispatcherName world.Components.Dispatchers :?> GroupDispatcher
+            let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
             let group = Group.make dispatcher optName
-            let groupDispatcher = Map.find dispatcherName world.Components.Dispatchers
-            Reflection.attachFields groupDispatcher group
+            Reflection.attachFields dispatcher group
             group

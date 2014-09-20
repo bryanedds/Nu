@@ -8,17 +8,16 @@ open OmniBlade.OmniConstants
 module OmniFlow =
 
     type OmniComponentFactory () =
+        inherit UserComponentFactory ()
 
-        interface IUserComponentFactory with
+        override dispatcher.MakeGroupDispatchers () =
+            Map.ofList
+                [typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> GroupDispatcher
+                 typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> GroupDispatcher]
 
-            member dispatcher.MakeUserDispatchers () =
-                Map.ofList
-                    [typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> obj
-                     typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> obj
-                     typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> obj]
-
-            member dispatcher.MakeUserFacets () =
-                Map.empty
+        override dispatcher.MakeGameDispatchers () =
+            Map.ofList
+                [typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> GameDispatcher]
 
     let addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFileName (Address.last TitleGroupAddress) IncomingTime OutgoingTime TitleAddress world
