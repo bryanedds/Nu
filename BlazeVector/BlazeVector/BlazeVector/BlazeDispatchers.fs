@@ -11,27 +11,12 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
-module EntityExtensionsModule =
+module BulletModule =
 
     type Entity with
 
         member entity.Age = entity?Age : int64
         static member setAge (value : int64) (entity : Entity) = entity?Age <- value
-        member entity.Health = entity?Health : int
-        static member setHealth (value : int) (entity : Entity) = entity?Health <- value
-        member entity.LastTimeOnGroundNp = entity?LastTimeOnGroundNp : int64
-        static member setLastTimeOnGroundNp (value : int64) (entity : Entity) = entity?LastTimeOnGroundNp <- value
-        member entity.LastTimeJumpNp = entity?LastTimeJumpNp : int64
-        static member setLastTimeJumpNp (value : int64) (entity : Entity) = entity?LastTimeJumpNp <- value
-
-        static member hasAppeared camera (entity : Entity) =
-            entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
-
-        static member hasFallen (entity : Entity) =
-            entity.Position.Y < -600.0f
-
-[<AutoOpen>]
-module BlazeDispatchersModule =
 
     type BulletDispatcher () =
         inherit EntityDispatcher ()
@@ -72,6 +57,17 @@ module BlazeDispatchersModule =
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
             (bullet, world)
+
+[<AutoOpen>]
+module EnemyModule =
+
+    type Entity with
+
+        member entity.Health = entity?Health : int
+        static member setHealth (value : int) (entity : Entity) = entity?Health <- value
+
+        static member hasAppeared camera (entity : Entity) =
+            entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
     type EnemyDispatcher () =
         inherit EntityDispatcher ()
@@ -133,6 +129,19 @@ module BlazeDispatchersModule =
                 World.observe TickEventName address (CustomSub tickHandler) |>
                 World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
             (enemy, world)
+
+[<AutoOpen>]
+module PlayerModule =
+
+    type Entity with
+
+        member entity.LastTimeOnGroundNp = entity?LastTimeOnGroundNp : int64
+        static member setLastTimeOnGroundNp (value : int64) (entity : Entity) = entity?LastTimeOnGroundNp <- value
+        member entity.LastTimeJumpNp = entity?LastTimeJumpNp : int64
+        static member setLastTimeJumpNp (value : int64) (entity : Entity) = entity?LastTimeJumpNp <- value
+
+        static member hasFallen (entity : Entity) =
+            entity.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
@@ -228,6 +237,9 @@ module BlazeDispatchersModule =
                 World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
             (player, world)
 
+[<AutoOpen>]
+module StagePlayModule =
+
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
 
@@ -269,6 +281,9 @@ module BlazeDispatchersModule =
                 World.observe TickEventName address (CustomSub playerFallHandler)
             let world = adjustCamera address world
             (group, world)
+
+[<AutoOpen>]
+module StageScreenModule =
 
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
@@ -317,6 +332,9 @@ module BlazeDispatchersModule =
                 World.observe (StartOutgoingEventName + address) address (CustomSub stoppingPlayHandler) |>
                 World.observe (DeselectEventName + address) address (CustomSub stopPlayHandler)
             (screen, world)
+
+[<AutoOpen>]
+module BlazeVectorModule =
 
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeVectorDispatcher () =
