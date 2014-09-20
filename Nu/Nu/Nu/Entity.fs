@@ -44,13 +44,6 @@ module EntityModule =
                 world
                 entity.FacetsNp
         
-        static member handleBodyTransformMessage message address (entity : Entity) world =
-            let (entity, world) = entity.DispatcherNp.HandleBodyTransformMessage (message, address, entity, world)
-            List.fold
-                (fun (entity, world) (facet : Facet) -> facet.HandleBodyTransformMessage (message, address, entity, world))
-                (entity, world)
-                entity.FacetsNp
-        
         static member getRenderDescriptors (entity : Entity) world =
             let renderDescriptors = entity.DispatcherNp.GetRenderDescriptors (entity, world)
             List.fold
@@ -343,6 +336,18 @@ module WorldEntityModule =
             let entity = { entity with Id = entity.Id } // hacky copy
             Reflection.attachIntrinsicFacets entity.DispatcherNp entity world.Components.Facets
             entity
+        
+        static member handleBodyTransformMessage (message : BodyTransformMessage) address (entity : Entity) world =
+            // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
+            if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
+                let entity =
+                    entity |>
+                        // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
+                        Entity.setPosition (message.Position - entity.Size * 0.5f) |>
+                        Entity.setRotation message.Rotation
+                let world = World.setEntity address entity world
+                (entity, world)
+            else (entity, world)
 
         static member writeEntity overlayer (writer : XmlWriter) (entity : Entity) =
             writer.WriteStartElement typeof<Entity>.Name

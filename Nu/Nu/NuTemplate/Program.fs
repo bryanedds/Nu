@@ -5,6 +5,12 @@ open Nu
 open Nu.Constants
 module Program =
 
+    // this is a factory that creates user-defined components such as dispatchers of various sorts
+    // and facets. Currently, there are no overrides for its factory methods since there are no
+    // user-defined dispatchers defined yet for this project.
+    type $safeprojectname$ComponentFactory () =
+        inherit UserComponentFactory ()
+
     // this the entry point for the your Nu application
     let [<EntryPoint>] main _ =
     
@@ -40,16 +46,12 @@ module Program =
         // this is a callback that attempts to make 'the world' in a functional programming
         // sense. In a Nu game, the world is represented as a complex record type named World.
         let tryMakeWorld sdlDeps =
-            
-            // Component factories are the means by which user-defined dispatchers and facets are
-            // made available for creation by the engine, as well as NuEdit. Since there are no
-            // user-defined dispatchers or facets here, the empty component factory is used. To
-            // inject your own dispatchers and facets, you must make you own class that implements
-            // the IUserComponentFactory interface properly.
-            //
-            // Finally, any user-defined game dispatcher returned from a user-defined component
-            // factory will be used as your game's dispatcher.
-            let userComponentFactory = EmptyComponentFactory ()
+
+            // A component factory is the means by which user-defined dispatchers and facets are
+            // made available for creation by the engine, as well as by NuEdit. Note that any
+            // user-defined game dispatcher returned from a user-defined component factory will
+            // be used as your game's dispatcher.
+            let userComponentFactory = $safeprojectname$ComponentFactory ()
             
             // here is an attempt to make the world using SDL dependencies that will be created
             // from the invoking function using the SDL configuration that we defined above, the

@@ -556,7 +556,7 @@ module WorldModule =
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
                     match World.getOptEntity bodyTransformMessage.EntityAddress world with
-                    | Some entity -> snd <| Entity.handleBodyTransformMessage bodyTransformMessage bodyTransformMessage.EntityAddress entity world
+                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage bodyTransformMessage.EntityAddress entity world
                     | None -> world
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match World.getOptEntity bodyCollisionMessage.EntityAddress world with

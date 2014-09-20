@@ -10,7 +10,7 @@ open Nu.Constants
 [<AutoOpen>]
 module ReflectionModule =
 
-    /// An evaluatable expression for defining an XField.
+    /// An evaluatable expression for defining a field.
     type [<NoEquality; NoComparison>] FieldExpression =
         | Constant of obj
         | Variable of (unit -> obj)
@@ -37,24 +37,24 @@ module ReflectionModule =
             FieldDefinition.validate fieldName fieldType fieldExpression
             { FieldName = fieldName; FieldType = fieldType; FieldExpression = fieldExpression }
 
-    /// In tandem with the define literal, grants a nice syntax to define constant XFields.
+    /// In tandem with the define literal, grants a nice syntax to define constant fields.
     type DefineConstant =
         { DefineConstant : unit }
         static member (?) (_, fieldName) =
             fun (constant : 'c) ->
                 FieldDefinition.make fieldName typeof<'c> (Constant constant)
 
-    /// In tandem with the variable literal, grants a nice syntax to define variable XFields.
+    /// In tandem with the variable literal, grants a nice syntax to define variable fields.
     type DefineVariable =
         { DefineVariable : unit }
         static member (?) (_, fieldName) =
             fun (variable : unit -> 'v) ->
                 FieldDefinition.make fieldName typeof<'v> (Variable (fun () -> variable () :> obj))
 
-    /// In tandem with the DefineConstant type, grants a nice syntax to define constant XFields.
+    /// In tandem with the DefineConstant type, grants a nice syntax to define constant fields.
     let define = { DefineConstant = () }
 
-    /// In tandem with the DefineVariable type, grants a nice syntax to define variable XFields.
+    /// In tandem with the DefineVariable type, grants a nice syntax to define variable fields.
     let variable = { DefineVariable = () }
 
 [<RequireQualifiedAccess>]
