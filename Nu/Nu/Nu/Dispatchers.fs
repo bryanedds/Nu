@@ -40,9 +40,7 @@ module RigidBodyFacetModule =
         static member setIsBullet (value : bool) (entity : Entity) = entity?IsBullet <- value
         member entity.IsSensor = entity?IsSensor : bool
         static member setIsSensor (value : bool) (entity : Entity) = entity?IsSensor <- value
-
-        static member getPhysicsId (entity : Entity) =
-            PhysicsId (entity.Id, entity.MinorId)
+        member entity.PhysicsId = PhysicsId (entity.Id, entity.MinorId)
 
     type RigidBodyFacet () =
         inherit Facet ()
@@ -81,13 +79,12 @@ module RigidBodyFacetModule =
                   CollisionMask = Physics.toCollisionCategories entity.CollisionMask
                   IsBullet = entity.IsBullet
                   IsSensor = entity.IsSensor }
-            let physicsId = Entity.getPhysicsId entity
             let position = entity.Position + entity.Size * 0.5f
             let rotation = entity.Rotation
-            World.createBody address physicsId position rotation bodyProperties world
+            World.createBody address entity.PhysicsId position rotation bodyProperties world
 
         override facet.UnregisterPhysics (_, entity, world) =
-            World.destroyBody (Entity.getPhysicsId entity) world
+            World.destroyBody entity.PhysicsId world
 
         override facet.PropagatePhysics (address, entity, world) =
             let world = facet.UnregisterPhysics (address, entity, world)

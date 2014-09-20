@@ -63,18 +63,18 @@ module EnemyModule =
 
     type Entity with
 
-        member entity.Health = entity?Health : int
-        static member setHealth (value : int) (entity : Entity) = entity?Health <- value
-
-        static member hasAppeared camera (entity : Entity) =
-            entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
+        member enemy.Health = enemy?Health : int
+        static member setHealth (value : int) (enemy : Entity) = enemy?Health <- value
 
     type EnemyDispatcher () =
         inherit EntityDispatcher ()
+        
+        let hasAppeared camera (enemy : Entity) =
+            enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
-        let move enemy world =
-            let physicsId = Entity.getPhysicsId enemy
-            let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Components.Integrator
+        let move (enemy : Entity) world =
+            let physicsId = enemy.PhysicsId
+            let optGroundTangent = World.getOptBodyGroundContactTangent physicsId world
             let force =
                 match optGroundTangent with
                 | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
@@ -88,7 +88,7 @@ module EnemyModule =
         let tickHandler event world =
             let (address, enemy, _) = Event.unwrap event
             if World.isGamePlaying world then
-                let world = if Entity.hasAppeared world.Camera enemy then move enemy world else world
+                let world = if hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die address enemy world else world
                 (Propagate, world)
             else (Propagate, world)
@@ -135,13 +135,13 @@ module PlayerModule =
 
     type Entity with
 
-        member entity.LastTimeOnGroundNp = entity?LastTimeOnGroundNp : int64
-        static member setLastTimeOnGroundNp (value : int64) (entity : Entity) = entity?LastTimeOnGroundNp <- value
-        member entity.LastTimeJumpNp = entity?LastTimeJumpNp : int64
-        static member setLastTimeJumpNp (value : int64) (entity : Entity) = entity?LastTimeJumpNp <- value
+        member player.LastTimeOnGroundNp = player?LastTimeOnGroundNp : int64
+        static member setLastTimeOnGroundNp (value : int64) (player : Entity) = player?LastTimeOnGroundNp <- value
+        member player.LastTimeJumpNp = player?LastTimeJumpNp : int64
+        static member setLastTimeJumpNp (value : int64) (player : Entity) = player?LastTimeJumpNp <- value
 
-        static member hasFallen (entity : Entity) =
-            entity.Position.Y < -600.0f
+        static member hasFallen (player : Entity) =
+            player.Position.Y < -600.0f
 
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
@@ -154,8 +154,8 @@ module PlayerModule =
                     Entity.setDepth playerTransform.Depth
             World.addEntity bulletAddress bullet world
 
-        let propelBullet bullet world =
-            let world = World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) (Entity.getPhysicsId bullet) world
+        let propelBullet (bullet : Entity) world =
+            let world = World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world
             let world = World.playSound ShotSound 1.0f world
             (bullet, world)
 
@@ -177,8 +177,7 @@ module PlayerModule =
             else (Propagate, world)
 
         let getLastTimeOnGround (player : Entity) world =
-            let physicsId = Entity.getPhysicsId player
-            if not <| Physics.isBodyOnGround physicsId world.Components.Integrator
+            if not <| World.isBodyOnGround player.PhysicsId world
             then player.LastTimeOnGroundNp
             else world.State.TickTime
 
@@ -188,8 +187,8 @@ module PlayerModule =
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
                 let world = World.setEntity address player world
-                let physicsId = Entity.getPhysicsId player
-                let optGroundTangent = Physics.getOptGroundContactTangent physicsId world.Components.Integrator
+                let physicsId = player.PhysicsId
+                let optGroundTangent = World.getOptBodyGroundContactTangent physicsId world
                 let force =
                     match optGroundTangent with
                     | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
@@ -205,7 +204,7 @@ module PlayerModule =
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
                     let player = Entity.setLastTimeJumpNp world.State.TickTime player
                     let world = World.setEntity address player world
-                    let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) (Entity.getPhysicsId player) world
+                    let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
                     let world = World.playSound JumpSound 1.0f world
                     (Propagate, world)
                 else (Propagate, world)

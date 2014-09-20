@@ -250,7 +250,7 @@ module Physics =
         List.ofSeq contacts
 
     /// Does the integrator contain the body with the given physics id?
-    let hasBody physicsId integrator =
+    let bodyExists physicsId integrator =
         integrator.Bodies.ContainsKey physicsId
 
     /// Get the contact normals of the body with the given physics id.
@@ -263,12 +263,12 @@ module Physics =
             contacts
 
     /// Get the linear velocity of the body with the given physics id.
-    let getLinearVelocity physicsId integrator =
+    let getBodyLinearVelocity physicsId integrator =
         let body = integrator.Bodies.[physicsId]
         toPixelV2 body.LinearVelocity
 
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    let getGroundContactNormals physicsId integrator =
+    let getBodyGroundContactNormals physicsId integrator =
         let normals = getBodyContactNormals physicsId integrator
         List.filter
             (fun normal ->
@@ -277,8 +277,8 @@ module Physics =
             normals
 
     /// Try to get a contact normal where the body with the given physics id is touching the ground.
-    let getOptGroundContactNormal physicsId integrator =
-        let groundNormals = getGroundContactNormals physicsId integrator
+    let getOptBodyGroundContactNormal physicsId integrator =
+        let groundNormals = getBodyGroundContactNormals physicsId integrator
         match groundNormals with
         | [] -> None
         | _ :: _ ->
@@ -286,14 +286,14 @@ module Physics =
             Some averageNormal
 
     /// Try to get a contact tangent where the body with the given physics id is touching the ground.
-    let getOptGroundContactTangent physicsId integrator =
-        match getOptGroundContactNormal physicsId integrator with
+    let getOptBodyGroundContactTangent physicsId integrator =
+        match getOptBodyGroundContactNormal physicsId integrator with
         | Some normal -> Some <| Vector2 (normal.Y, -normal.X)
         | None -> None
 
     /// Query that the body with the give physics id is on the ground.
     let isBodyOnGround physicsId integrator =
-        let groundNormals = getGroundContactNormals physicsId integrator
+        let groundNormals = getBodyGroundContactNormals physicsId integrator
         not <| List.isEmpty groundNormals
 
     /// Convert a category expression to a value that represents collision categories.
