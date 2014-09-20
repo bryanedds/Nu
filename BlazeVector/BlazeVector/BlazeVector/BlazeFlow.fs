@@ -12,25 +12,25 @@ module BlazeFlow =
     type BlazeComponentFactory () =
         inherit UserComponentFactory ()
 
+        // make our game-specific entity dispatchers...
         override dispatcher.MakeEntityDispatchers () =
-            // make our game-specific entity dispatchers
             Map.ofList
                 [typeof<BulletDispatcher>.Name, BulletDispatcher () :> EntityDispatcher
                  typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher
                  typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher]
 
+        // make our game-specific group dispatchers...
         override dispatcher.MakeGroupDispatchers () =
-            // make our game-specific group dispatchers
             Map.ofList
                 [typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> GroupDispatcher]
 
+        // make our game-specific screen dispatchers...
         override dispatcher.MakeScreenDispatchers () =
-            // make our game-specific screen dispatchers
             Map.ofList
                 [typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> ScreenDispatcher]
 
+        // make our game-specific game dispatchers...
         override dispatcher.MakeGameDispatchers () =
-            // make our game-specific game dispatchers
             Map.ofList
                 [typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> GameDispatcher]
 
