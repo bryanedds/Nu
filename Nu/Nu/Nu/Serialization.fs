@@ -29,7 +29,7 @@ module Serialization =
         Seq.map
             (fun (xNode : XmlNode) ->
                 let typeName = xNode.Attributes.[TypeAttributeName].InnerText
-                let aType = findType typeName
+                let aType = Reflection.findType typeName
                 let xValueStr = xNode.InnerText
                 let converter = TypeDescriptor.GetConverter aType
                 if converter.CanConvertFrom typeof<string> then (xNode.Name, converter.ConvertFrom xValueStr)

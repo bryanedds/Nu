@@ -113,7 +113,7 @@ module WorldScreenModule =
             (screen, world)
 
         static member makeScreen dispatcherName optName world =
-            let dispatcher = Map.find dispatcherName world.Components.Dispatchers :?> ScreenDispatcher
+            let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
             let screen = Screen.make dispatcher optName
             Reflection.attachFields dispatcher screen
             screen

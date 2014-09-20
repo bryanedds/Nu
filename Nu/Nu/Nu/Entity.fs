@@ -364,13 +364,13 @@ module WorldEntityModule =
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Serialization.readDispatcherName defaultDispatcherName entityNode
             let (dispatcherName, dispatcher) =
-                match Map.tryFind dispatcherName world.Components.Dispatchers with
-                | Some dispatcher -> (dispatcherName, dispatcher :?> EntityDispatcher)
+                match Map.tryFind dispatcherName world.Components.EntityDispatchers with
+                | Some dispatcher -> (dispatcherName, dispatcher)
                 | None ->
                     note <| "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<EntityDispatcher>.Name
-                    let dispatcher = Map.find dispatcherName world.Components.Dispatchers
-                    (dispatcherName, dispatcher :?> EntityDispatcher)
+                    let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
+                    (dispatcherName, dispatcher)
 
             // make the bare entity with name as id
             let entity = Entity.make dispatcherName dispatcher None
@@ -421,7 +421,7 @@ module WorldEntityModule =
                     (enumerable entityNodes)
 
         static member makeEntity dispatcherName optName world =
-            let dispatcher = Map.find dispatcherName world.Components.Dispatchers :?> EntityDispatcher
+            let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
             let entity = Entity.make dispatcherName dispatcher optName
             let entity = World.attachIntrinsicFacetsViaNames entity world
             Reflection.attachFields dispatcher entity

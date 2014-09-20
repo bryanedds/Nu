@@ -153,6 +153,92 @@ module SimModule =
         { ScheduledTime : int64
           Operation : World -> World }
 
+    /// The default dispatcher for entities.
+    and EntityDispatcher () =
+
+        static member FieldDefinitions =
+            [define? Position Vector2.Zero
+             define? Depth 0.0f
+             define? Size DefaultEntitySize
+             define? Rotation 0.0f
+             define? Visible true]
+
+        abstract member Register : Address * Entity * World -> Entity * World
+        default dispatcher.Register (_, entity, world) = (entity, world)
+
+        abstract member Unregister : Address * Entity * World -> Entity * World
+        default dispatcher.Unregister (_, entity, world) = (entity, world)
+
+        abstract member PropagatePhysics : Address * Entity * World -> World
+        default dispatcher.PropagatePhysics (_, _, world) = world
+
+        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
+        default dispatcher.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
+
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default dispatcher.GetRenderDescriptors (_, _) = []
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default dispatcher.GetQuickSize (_, _) = Vector2.One
+
+        abstract member GetPickingPriority : Entity * World -> single
+        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
+
+    /// The default dispatcher for groups.
+    and GroupDispatcher () =
+
+        abstract member Register : Address * Group * World -> Group * World
+        default dispatcher.Register (_, group, world) = (group, world)
+
+        abstract member Unregister : Address * Group * World -> Group * World
+        default dispatcher.Unregister (_, group, world) = (group, world)
+
+    /// The default dispatcher for screens.
+    and ScreenDispatcher () =
+
+        abstract member Register : Address * Screen * World -> Screen * World
+        default dispatcher.Register (_, screen, world) = (screen, world)
+
+        abstract member Unregister : Address * Screen * World -> Screen * World
+        default dispatcher.Unregister (_, screen, world) = (screen, world)
+
+    /// The default dispatcher for games.
+    and GameDispatcher () =
+
+        abstract member Register : Game * World -> Game * World
+        default dispatcher.Register (game, world) = (game, world)
+
+    /// Dynamically augments an entity's behavior in a composable way.
+    and Facet () =
+
+        abstract member Register : Address * Entity * World -> Entity * World
+        default facet.Register (address, entity, world) =
+            let world = facet.RegisterPhysics (address, entity, world)
+            (entity, world)
+
+        abstract member Unregister : Address * Entity * World -> Entity * World
+        default facet.Unregister (address, entity, world) =
+            let world = facet.UnregisterPhysics (address, entity, world)
+            (entity, world)
+
+        abstract member RegisterPhysics : Address * Entity * World -> World
+        default facet.RegisterPhysics (_, _, world) = world
+
+        abstract member UnregisterPhysics : Address * Entity * World -> World
+        default facet.UnregisterPhysics (_, _, world) = world
+
+        abstract member PropagatePhysics : Address * Entity * World -> World
+        default facet.PropagatePhysics (_, _, world) = world
+
+        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
+        default facet.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
+
+        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
+        default facet.GetRenderDescriptors (_, _) = []
+
+        abstract member GetQuickSize : Entity * World -> Vector2
+        default facet.GetQuickSize (_, _) = DefaultEntitySize
+
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, avatars, blocks, and things of that sort.
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
@@ -177,9 +263,6 @@ module SimModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-        static member dispatchesAs dispatcherTargetType entity =
-            Reflection.dispatchesAs dispatcherTargetType entity.DispatcherNp
-
     /// Forms logical groups of entities.
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
@@ -193,9 +276,6 @@ module SimModule =
         static member (?<-) (this : Group, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
-
-        static member dispatchesAs dispatcherTargetType group =
-            Reflection.dispatchesAs dispatcherTargetType group.DispatcherNp
 
     /// The screen type that allows transitioning to and fro other screens, and also hosts the
     /// currently interactive groups of entities.
@@ -215,9 +295,6 @@ module SimModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-        static member dispatchesAs dispatcherTargetType screen =
-            Reflection.dispatchesAs dispatcherTargetType screen.DispatcherNp
-
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
@@ -233,15 +310,12 @@ module SimModule =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
 
-        static member dispatchesAs dispatcherTargetType game =
-            Reflection.dispatchesAs dispatcherTargetType game.DispatcherNp
-
-    /// Provides a way to make user-defined components.
-    and IUserComponentFactory =
-        interface
-            abstract MakeUserDispatchers : unit -> Map<string, obj>
-            abstract MakeUserFacets : unit -> Map<string, Facet>
-            end
+    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
+    and [<StructuralEquality; NoComparison>] Simulant =
+        | Game of Game
+        | Screen of Screen
+        | Group of Group
+        | Entity of Entity
 
     /// The world's components.
     and [<ReferenceEquality>] Components =
@@ -249,7 +323,10 @@ module SimModule =
           Renderer : Renderer
           Integrator : Integrator
           Overlayer : Overlayer
-          Dispatchers : Map<string, obj>
+          EntityDispatchers : Map<string, EntityDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
+          ScreenDispatchers : Map<string, ScreenDispatcher>
+          GameDispatchers : Map<string, GameDispatcher>
           Facets : Map<string, Facet> }
 
     /// The world's message queues.
@@ -288,101 +365,18 @@ module SimModule =
           Callbacks : Callbacks
           State : State }
 
-    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
-    and [<StructuralEquality; NoComparison>] Simulant =
-        | Game of Game
-        | Screen of Screen
-        | Group of Group
-        | Entity of Entity
-
-    /// Dynamically augments an entity's behavior in a composable way.
-    and Facet () =
-
-        abstract member Register : Address * Entity * World -> Entity * World
-        default facet.Register (address, entity, world) =
-            let world = facet.RegisterPhysics (address, entity, world)
-            (entity, world)
-
-        abstract member Unregister : Address * Entity * World -> Entity * World
-        default facet.Unregister (address, entity, world) =
-            let world = facet.UnregisterPhysics (address, entity, world)
-            (entity, world)
-
-        abstract member RegisterPhysics : Address * Entity * World -> World
-        default facet.RegisterPhysics (_, _, world) = world
-
-        abstract member UnregisterPhysics : Address * Entity * World -> World
-        default facet.UnregisterPhysics (_, _, world) = world
-
-        abstract member PropagatePhysics : Address * Entity * World -> World
-        default facet.PropagatePhysics (_, _, world) = world
-
-        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
-        default facet.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
-
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default facet.GetRenderDescriptors (_, _) = []
-
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default facet.GetQuickSize (_, _) = DefaultEntitySize
-
-    /// The default dispatcher for entities.
-    and EntityDispatcher () =
-
-        static member FieldDefinitions =
-            [define? Position Vector2.Zero
-             define? Depth 0.0f
-             define? Size DefaultEntitySize
-             define? Rotation 0.0f
-             define? Visible true]
-
-        abstract member Register : Address * Entity * World -> Entity * World
-        default dispatcher.Register (_, entity, world) = (entity, world)
-
-        abstract member Unregister : Address * Entity * World -> Entity * World
-        default dispatcher.Unregister (_, entity, world) = (entity, world)
-
-        abstract member PropagatePhysics : Address * Entity * World -> World
-        default dispatcher.PropagatePhysics (_, _, world) = world
-
-        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
-        default dispatcher.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
-
-        abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
-        default dispatcher.GetRenderDescriptors (_, _) = []
-
-        abstract member GetQuickSize : Entity * World -> Vector2
-        default dispatcher.GetQuickSize (_, _) = Vector2.One
-
-        abstract member GetPickingPriority : Entity * World -> single
-        default dispatcher.GetPickingPriority (entity, _) = entity.Depth
-
-    and GroupDispatcher () =
-
-        abstract member Register : Address * Group * World -> Group * World
-        default dispatcher.Register (_, group, world) = (group, world)
-
-        abstract member Unregister : Address * Group * World -> Group * World
-        default dispatcher.Unregister (_, group, world) = (group, world)
-
-    and ScreenDispatcher () =
-
-        abstract member Register : Address * Screen * World -> Screen * World
-        default dispatcher.Register (_, screen, world) = (screen, world)
-
-        abstract member Unregister : Address * Screen * World -> Screen * World
-        default dispatcher.Unregister (_, screen, world) = (screen, world)
-
-    and GameDispatcher () =
-
-        abstract member Register : Game * World -> Game * World
-        default dispatcher.Register (game, world) = (game, world)
-
-    /// A factory that makes no components.
-    type EmptyComponentFactory () =
-        interface IUserComponentFactory with
-            member dispatcher.MakeUserDispatchers () = Map.empty
-            member dispatcher.MakeUserFacets () = Map.empty
+    /// Provides a way to make user-defined components.
+    and UserComponentFactory () =
+        abstract MakeEntityDispatchers : unit -> Map<string, EntityDispatcher>
+        default this.MakeEntityDispatchers () = Map.empty
+        abstract MakeGroupDispatchers : unit -> Map<string, GroupDispatcher>
+        default this.MakeGroupDispatchers () = Map.empty
+        abstract MakeScreenDispatchers : unit -> Map<string, ScreenDispatcher>
+        default this.MakeScreenDispatchers () = Map.empty
+        abstract MakeGameDispatchers : unit -> Map<string, GameDispatcher>
+        default this.MakeGameDispatchers () = Map.empty
+        abstract MakeFacets : unit -> Map<string, Facet>
+        default this.MakeFacets () = Map.empty
 
 [<RequireQualifiedAccess>]
 module EventData =
@@ -446,6 +440,13 @@ module World =
     /// Keep active a subscription for the lifetime of a simulant.
     let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
 
+    /// Get all of a world's dispatchers.
+    let getDispatchers world =
+        Map.map Map.objectify world.Components.EntityDispatchers ^^
+        Map.map Map.objectify world.Components.GroupDispatchers ^^
+        Map.map Map.objectify world.Components.ScreenDispatchers ^^
+        Map.map Map.objectify world.Components.GameDispatchers
+
     /// Transform a bunch of simulants in the context of a world.
     let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
         Map.fold
@@ -479,9 +480,24 @@ module World =
         let components = { world.Components with Overlayer = overlayer }
         { world with Components = components }
 
-    /// Set the Dispatchers field of the world.
-    let internal setDispatchers dispatchers world =
-        let components = { world.Components with Dispatchers = dispatchers }
+    /// Set the EntityDispatchers field of the world.
+    let internal setEntityDispatchers dispatchers world =
+        let components = { world.Components with EntityDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the GroupDispatchers field of the world.
+    let internal setGroupDispatchers dispatchers world =
+        let components = { world.Components with GroupDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the ScreenDispatchers field of the world.
+    let internal setScreenDispatchers dispatchers world =
+        let components = { world.Components with ScreenDispatchers = dispatchers }
+        { world with Components = components }
+
+    /// Set the GameDispatchers field of the world.
+    let internal setGameDispatchers dispatchers world =
+        let components = { world.Components with GameDispatchers = dispatchers }
         { world with Components = components }
 
     /// Set the Facets field of the world.
@@ -776,6 +792,7 @@ module Simulant =
 
     let toGeneric<'s> simulant =
         let s = typeof<'s>
+        // OPTIMIZATION: Entity type is most common and therefore checked first.
         if s = typeof<Entity> then toEntity simulant :> obj :?> 's
         elif s = typeof<Group> then toGroup simulant :> obj :?> 's
         elif s = typeof<Screen> then toScreen simulant :> obj :?> 's
@@ -786,7 +803,8 @@ module Simulant =
 [<RequireQualifiedAccess>]
 module Event =
 
+    /// Unwrap commonly-useful values of an event.
     let unwrap<'s, 'd> event =
-        let eventData = EventData.toGeneric<'d> event.Data
         let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        let eventData = EventData.toGeneric<'d> event.Data
         (event.SubscriberAddress, subscriber, eventData)

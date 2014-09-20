@@ -3,6 +3,7 @@
 
 [<RequireQualifiedAccess>]
 module Map
+open Prime
 
 /// Make a singleton map.
 let singleton key value =
@@ -70,3 +71,7 @@ let toValueList map =
 /// Convert a list of a map's values by a function.
 let toValueListBy by map =
     toListBy (by << snd) map
+
+/// Convert any map value to an obj.
+let inline objectify _ x =
+    objectify x

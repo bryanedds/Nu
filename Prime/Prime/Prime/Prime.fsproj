@@ -62,6 +62,7 @@
     <Compile Include="Log.fs" />
     <Compile Include="ReferenceEquality.fs" />
     <Compile Include="Miscellanea.fs" />
+    <Compile Include="Reflection.fs" />
     <Compile Include="Sectioning.fs" />
     <Compile Include="Option.fs" />
     <Compile Include="Either.fs" />

@@ -81,7 +81,7 @@ module Program =
         inherit PropertyDescriptor ((match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name), Array.empty)
 
         let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name
-        let propertyType = match property with EntityXFieldDescriptor x -> findType x.TypeName | EntityPropertyInfo p -> p.PropertyType
+        let propertyType = match property with EntityXFieldDescriptor x -> Reflection.findType x.TypeName | EntityPropertyInfo p -> p.PropertyType
         let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
 
         /// Synchonize an entity after an overlay change.
@@ -265,16 +265,14 @@ module Program =
 
     let populateCreateComboBox (form : NuEditForm) world =
         form.createEntityComboBox.Items.Clear ()
-        for dispatcherKvp in world.Components.Dispatchers do
-            if Reflection.dispatchesAs typeof<EntityDispatcher> dispatcherKvp.Value then
-                ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
+        for dispatcherKvp in world.Components.EntityDispatchers do
+            ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
 
     let populateTreeViewGroups (form : NuEditForm) world =
-        for dispatcherKvp in world.Components.Dispatchers do
-            if Reflection.dispatchesAs typeof<EntityDispatcher> dispatcherKvp.Value then
-                let treeGroup = TreeNode dispatcherKvp.Key
-                treeGroup.Name <- treeGroup.Text
-                ignore <| form.treeView.Nodes.Add treeGroup
+        for dispatcherKvp in world.Components.EntityDispatchers do
+            let treeGroup = TreeNode dispatcherKvp.Key
+            treeGroup.Name <- treeGroup.Text
+            ignore <| form.treeView.Nodes.Add treeGroup
         let noneGroup = TreeNode "[No Dispatcher]"
         ignore <| form.treeView.Nodes.Add noneGroup
 
@@ -617,7 +615,7 @@ module Program =
             | ("", _) -> ignore <| MessageBox.Show "Enter an XField name."; world
             | (_, "") -> ignore <| MessageBox.Show "Enter a type name."; world
             | (xFieldName, typeName) ->
-                match tryFindType typeName with
+                match Reflection.tryFindType typeName with
                 | Some aType ->
                     let selectedObject = form.propertyGrid.SelectedObject
                     match selectedObject with
@@ -780,14 +778,14 @@ module Program =
             let assemblyTypes = assembly.GetTypes ()
             let optDispatcherType =
                 Array.tryFind
-                    (fun (aType : Type) -> aType.GetInterface typeof<IUserComponentFactory>.Name <> null)
+                    (fun (aType : Type) -> aType.GetInterface typeof<UserComponentFactory>.Name <> null)
                     assemblyTypes
             match optDispatcherType with
             | Some aType ->
-                let userComponentFactory = Activator.CreateInstance aType :?> IUserComponentFactory
+                let userComponentFactory = Activator.CreateInstance aType :?> UserComponentFactory
                 (directoryName, userComponentFactory)
-            | None -> (".", EmptyComponentFactory () :> IUserComponentFactory)
-        else (".", EmptyComponentFactory () :> IUserComponentFactory)
+            | None -> (".", UserComponentFactory ())
+        else (".", UserComponentFactory ())
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()

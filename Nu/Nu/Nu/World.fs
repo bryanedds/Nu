@@ -423,7 +423,8 @@ module WorldModule =
 
                 // cache old overlayer and make new one
                 let oldOverlayer = world.Components.Overlayer
-                let intrinsicOverlays = World.createIntrinsicOverlays world.Components.Dispatchers world.Components.Facets
+                let dispatchers = World.getDispatchers world
+                let intrinsicOverlays = World.createIntrinsicOverlays dispatchers world.Components.Facets
                 let overlayer = Overlayer.make outputOverlayFileName intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
@@ -665,7 +666,7 @@ module WorldModule =
 
         static member tryMake
             sdlDeps
-            (userComponentFactory : IUserComponentFactory)
+            (userComponentFactory : UserComponentFactory)
             interactivity
             farseerCautionMode
             userState =
@@ -674,52 +675,70 @@ module WorldModule =
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
             | Right assetMetadataMap ->
 
-                // make user dispatchers
-                let userDispatchers = userComponentFactory.MakeUserDispatchers ()
+                // make user components
+                let userEntityDispatchers = userComponentFactory.MakeEntityDispatchers ()
+                let userGroupDispatchers = userComponentFactory.MakeGroupDispatchers ()
+                let userScreenDispatchers = userComponentFactory.MakeScreenDispatchers ()
+                let userGameDispatchers = userComponentFactory.MakeGameDispatchers ()
+                let userFacets = userComponentFactory.MakeFacets ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
-                let userDispatcherList = Map.toValueList userDispatchers
-                let isGameDispatcher = fun (dispatcher : obj) -> match dispatcher with :? GameDispatcher -> true | _ -> false
                 let activeGameDispatcher =
-                    match List.tryFind isGameDispatcher userDispatcherList with
-                    | Some userGameDispatcher -> userGameDispatcher :?> GameDispatcher
-                    | None -> defaultGameDispatcher
+                    match Map.toValueList userGameDispatchers with
+                    | [] -> defaultGameDispatcher
+                    | [singlet] -> singlet
+                    | head :: _ ->
+                        debug <|
+                            "Received more than one GameDispatcher from userComponentFactory. " +
+                            "Defaulting to '" + Reflection.getTypeName head + "'."
+                        head
 
-                // make dispatchers
-                // TODO: see if we can reflectively generate this
-                let defaultDispatchers =
+                // make entity dispatchers
+                // TODO: see if we can reflectively generate these
+                let defaultEntityDispatchers =
                     Map.ofList
-                        [typeof<EntityDispatcher>.Name, EntityDispatcher () :> obj
-                         typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> obj
-                         typeof<LabelDispatcher>.Name, LabelDispatcher () :> obj
-                         typeof<TextDispatcher>.Name, TextDispatcher () :> obj
-                         typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> obj
-                         typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> obj
-                         typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> obj
-                         typeof<BlockDispatcher>.Name, BlockDispatcher () :> obj
-                         typeof<BoxDispatcher>.Name, BoxDispatcher () :> obj
-                         typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> obj
-                         typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> obj
-                         typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> obj
-                         typeof<GroupDispatcher>.Name, GroupDispatcher () :> obj
-                         typeof<ScreenDispatcher>.Name, ScreenDispatcher () :> obj
-                         typeof<GameDispatcher>.Name, defaultGameDispatcher :> obj]
-                let userDispatchers = userComponentFactory.MakeUserDispatchers ()
-                let dispatchers = Map.addMany (Map.toSeq userDispatchers) defaultDispatchers
+                        [typeof<EntityDispatcher>.Name, EntityDispatcher ()
+                         typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> EntityDispatcher
+                         typeof<LabelDispatcher>.Name, LabelDispatcher () :> EntityDispatcher
+                         typeof<TextDispatcher>.Name, TextDispatcher () :> EntityDispatcher
+                         typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> EntityDispatcher
+                         typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> EntityDispatcher
+                         typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> EntityDispatcher
+                         typeof<BlockDispatcher>.Name, BlockDispatcher () :> EntityDispatcher
+                         typeof<BoxDispatcher>.Name, BoxDispatcher () :> EntityDispatcher
+                         typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> EntityDispatcher
+                         typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> EntityDispatcher
+                         typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> EntityDispatcher]
+                let entityDispatchers = Map.addMany (Map.toSeq userEntityDispatchers) defaultEntityDispatchers
+
+                // make group dispatchers
+                let defaultGroupDispatchers = Map.ofList [typeof<GroupDispatcher>.Name, GroupDispatcher ()]
+                let groupDispatchers = Map.addMany (Map.toSeq userGroupDispatchers) defaultGroupDispatchers
+
+                // make screen dispatchers
+                let defaultScreenDispatchers = Map.ofList [typeof<ScreenDispatcher>.Name, ScreenDispatcher ()]
+                let screenDispatchers = Map.addMany (Map.toSeq userScreenDispatchers) defaultScreenDispatchers
+
+                // make game dispatchers
+                let defaultGameDispatchers = Map.ofList [typeof<GameDispatcher>.Name, defaultGameDispatcher]
+                let gameDispatchers = Map.addMany (Map.toSeq userGameDispatchers) defaultGameDispatchers
 
                 // make facets
-                // TODO: see if we can reflectively generate this
                 let defaultFacets =
                     Map.ofList
                         [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
                          typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet
                          typeof<UIFacet>.Name, UIFacet () :> Facet]
-                let userFacets = userComponentFactory.MakeUserFacets ()
                 let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
 
                 // make intrinsic overlays
+                let dispatchers =
+                    Map.map Map.objectify entityDispatchers ^^
+                    Map.map Map.objectify groupDispatchers ^^
+                    Map.map Map.objectify screenDispatchers ^^
+                    Map.map Map.objectify gameDispatchers
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers facets
 
                 // make the world's components
@@ -728,7 +747,10 @@ module WorldModule =
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
                       Integrator = Physics.makeIntegrator farseerCautionMode Gravity
                       Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
-                      Dispatchers = dispatchers
+                      EntityDispatchers = entityDispatchers
+                      GroupDispatchers = groupDispatchers
+                      ScreenDispatchers = screenDispatchers
+                      GameDispatchers = gameDispatchers
                       Facets = facets }
 
                 // make the world's state

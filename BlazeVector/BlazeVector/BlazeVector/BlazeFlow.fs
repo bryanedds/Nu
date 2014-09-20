@@ -10,21 +10,31 @@ module BlazeFlow =
     /// Creates BlazeVector-specific components (dispatchers and facets).
     /// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
     type BlazeComponentFactory () =
-        interface IUserComponentFactory with
+        inherit UserComponentFactory ()
 
-            member dispatcher.MakeUserDispatchers () =
-                // make our game's specific dispatchers
-                Map.ofList
-                    [typeof<BulletDispatcher>.Name, BulletDispatcher () :> obj
-                     typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> obj
-                     typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> obj
-                     typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> obj
-                     typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> obj
-                     typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> obj]
+        override dispatcher.MakeEntityDispatchers () =
+            // make our game-specific entity dispatchers
+            Map.ofList
+                [typeof<BulletDispatcher>.Name, BulletDispatcher () :> EntityDispatcher
+                 typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher
+                 typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher]
 
-            member dispatcher.MakeUserFacets () =
-                // currently we have no game-specific facets to create...
-                Map.empty
+        override dispatcher.MakeGroupDispatchers () =
+            // make our game-specific group dispatchers
+            Map.ofList
+                [typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> GroupDispatcher]
+
+        override dispatcher.MakeScreenDispatchers () =
+            // make our game-specific screen dispatchers
+            Map.ofList
+                [typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> ScreenDispatcher]
+
+        override dispatcher.MakeGameDispatchers () =
+            // make our game-specific game dispatchers
+            Map.ofList
+                [typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> GameDispatcher]
+
+        // currently we have no game-specific facets to create, so no need to override MakeFacets.
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
