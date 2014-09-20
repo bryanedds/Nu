@@ -172,9 +172,6 @@ module SimModule =
         abstract member PropagatePhysics : Address * Entity * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
-        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
-        default dispatcher.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
-
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default dispatcher.GetRenderDescriptors (_, _) = []
 
@@ -230,9 +227,6 @@ module SimModule =
         abstract member PropagatePhysics : Address * Entity * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
-        abstract member HandleBodyTransformMessage : BodyTransformMessage * Address * Entity * World -> Entity * World
-        default facet.HandleBodyTransformMessage (_, _, entity, world) = (entity, world)
-
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
         default facet.GetRenderDescriptors (_, _) = []
 
@@ -250,8 +244,8 @@ module SimModule =
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
           ViewType : ViewType
-          FacetNames : string list
           DispatcherNp : EntityDispatcher
+          FacetNames : string list
           FacetsNp : Facet list
           OptOverlayName : string option
           Xtension : Xtension } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.

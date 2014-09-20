@@ -13,8 +13,7 @@ module Tests =
         { Xtension : Xtension }
 
         static member (?) (this : TestXtended, memberName) =
-            fun args ->
-                Xtension.(?) (this.Xtension, memberName) args
+            Xtension.(?) (this.Xtension, memberName)
 
         static member (?<-) (this : TestXtended, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
@@ -41,7 +40,7 @@ module Tests =
     let [<Fact>] canAddField () =
         let xtn = Xtension.empty
         let xtn = xtn?TestField <- 5
-        let fieldValue = xtn?TestField ()
+        let fieldValue = xtn?TestField
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] cantAddFieldWhenSealed () =
@@ -51,18 +50,18 @@ module Tests =
     let [<Fact>] cantAccessNonexistentField () =
         let xtn = Xtension.mixed
         let xtn = xtn?TestField <- 5
-        Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField ())
+        Assert.Throws<Exception> (fun () -> ignore <| xtn?TetField)
 
     let [<Fact>] missingFieldReturnsDefault () =
         let xtn = Xtension.empty
         let xtn = xtn?TestField <- 0
-        let fieldValue = xtn?MissingField ()
+        let fieldValue = xtn?MissingField
         Assert.Equal (0, fieldValue)
 
     let [<Fact>] canAddFieldViaContainingType () =
         let xtd = { Xtension = Xtension.empty }
         let xtd = xtd?TestField <- 5
-        let fieldValue = xtd?TestField ()
+        let fieldValue = xtd?TestField
         Assert.Equal (5, fieldValue)
 
     let [<Fact>] xtensionSerializationWorks () =

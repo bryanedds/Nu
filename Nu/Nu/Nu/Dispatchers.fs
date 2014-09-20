@@ -93,18 +93,6 @@ module RigidBodyFacetModule =
             let world = facet.UnregisterPhysics (address, entity, world)
             facet.RegisterPhysics (address, entity, world)
 
-        override facet.HandleBodyTransformMessage (message, address, entity, world) =
-            // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
-            if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
-                let entity =
-                    entity |>
-                        // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                        Entity.setPosition (message.Position - entity.Size * 0.5f) |>
-                        Entity.setRotation message.Rotation
-                let world = World.setEntity address entity world
-                (entity, world)
-            else (entity, world)
-
 [<AutoOpen>]
 module SpriteFacetModule =
 
