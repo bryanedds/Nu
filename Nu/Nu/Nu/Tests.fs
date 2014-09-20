@@ -4,7 +4,7 @@ open System.IO
 open System.Xml
 open Xunit
 open Prime
-open Nu.NuConstants
+open Nu.Constants
 module Tests =
 
     /// TODO: test more stuff from Nu.

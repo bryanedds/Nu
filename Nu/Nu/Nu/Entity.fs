@@ -9,7 +9,7 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module EntityModule =
@@ -82,7 +82,7 @@ module EntityModule =
             Set.isEmpty intersection
 
         static member make dispatcherName dispatcher optName =
-            let id = NuCore.makeId ()
+            let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               Position = Vector2.Zero

@@ -2,7 +2,7 @@
 open System
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module ScreenModule =
@@ -23,7 +23,7 @@ module ScreenModule =
             screen.ScreenState = IdlingState
 
         static member make dispatcher optName =
-            let id = NuCore.makeId ()
+            let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> string id | Some name -> name
               ScreenState = IdlingState

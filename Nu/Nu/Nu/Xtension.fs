@@ -7,7 +7,7 @@ open System.Reflection
 open System.ComponentModel
 open Microsoft.FSharp.Reflection
 open Prime
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module XtensionModule =

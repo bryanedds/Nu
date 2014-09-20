@@ -4,7 +4,7 @@
 namespace OmniBlade
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 module OmniConstants =
 
     // misc constants

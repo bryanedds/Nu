@@ -2,7 +2,7 @@
 open OpenTK
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 open OmniBlade
 open OmniBlade.OmniConstants
 

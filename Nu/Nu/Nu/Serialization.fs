@@ -4,7 +4,7 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open Prime
-open Nu.NuConstants
+open Nu.Constants
 
 [<RequireQualifiedAccess>]
 module Serialization =

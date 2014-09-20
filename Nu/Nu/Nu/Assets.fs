@@ -3,7 +3,7 @@ open System
 open System.Xml
 open System.IO
 open Prime
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module AssetsModule =

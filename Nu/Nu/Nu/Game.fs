@@ -2,7 +2,7 @@
 open System
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module GameModule =
@@ -16,7 +16,7 @@ module GameModule =
             { game with OptSelectedScreenAddress = optSelectedScreenAddress }
 
         static member make dispatcher optName =
-            let id = NuCore.makeId ()
+            let id = Core.makeId ()
             let game =
                 { Id = id
                   Name = match optName with None -> string id | Some name -> name

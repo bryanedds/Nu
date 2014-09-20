@@ -6,10 +6,10 @@ open System
 open System.ComponentModel
 open OpenTK
 open Prime
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
-module NuMathModule =
+module MathModule =
 
     /// Describes all the elements of a 2d transformation.
     type [<StructuralEquality; NoComparison>] Transform =
@@ -165,7 +165,7 @@ module Matrix3 =
         m
 
 [<RequireQualifiedAccess>]
-module NuMath =
+module Math =
 
     /// Initializes the type converters found in NuMathModule.
     let initTypeConverters () =

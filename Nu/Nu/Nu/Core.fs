@@ -7,7 +7,7 @@ open System.Configuration
 open Prime
 
 [<AutoOpen>]
-module NuCoreModule =
+module CoreModule =
 
     /// Specifies the screen-clearing routine.
     type ScreenClear =
@@ -20,7 +20,7 @@ module NuCoreModule =
         | Exiting
 
 [<RequireQualifiedAccess>]
-module NuCore =
+module Core =
 
     /// The invalid Id.
     let InvalidId = Guid.Empty

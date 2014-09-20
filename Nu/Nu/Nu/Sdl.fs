@@ -5,7 +5,7 @@ open System.Threading
 open SDL2
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module SdlModule =

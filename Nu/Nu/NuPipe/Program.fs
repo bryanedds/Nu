@@ -3,7 +3,7 @@ open System
 open System.IO
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 module Program =
 
     let [<EntryPoint>] main argv =

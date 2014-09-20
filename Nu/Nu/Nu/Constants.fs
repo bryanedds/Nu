@@ -6,7 +6,7 @@ open System
 open OpenTK
 open Nu
 
-module NuConstants =
+module Constants =
 
     let [<Literal>] NameFieldName = "Name"
     let [<Literal>] RootNodeName = "Root"
@@ -87,5 +87,5 @@ module NuConstants =
     let ScreenPublishingPriority = GamePublishingPriority * 0.5f
     let GroupPublishingPriority = ScreenPublishingPriority * 0.5f
     let EntityPublishingPriority = GroupPublishingPriority * 0.5f
-    let ResolutionX = NuCore.getResolutionOrDefault true 960
-    let ResolutionY = NuCore.getResolutionOrDefault false 544
+    let ResolutionX = Core.getResolutionOrDefault true 960
+    let ResolutionY = Core.getResolutionOrDefault false 544
