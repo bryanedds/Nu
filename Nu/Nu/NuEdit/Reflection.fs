@@ -9,13 +9,13 @@ open Nu
 open NuEdit
 
 [<AutoOpen>]
-module NuEditReflectionModule =
+module ReflectionModule =
 
     type EntityProperty =
         | EntityXFieldDescriptor of XFieldDescriptor
         | EntityPropertyInfo of PropertyInfo
 
-module NuEditReflection =
+module Reflection =
 
     let containsProperty<'t> (property : PropertyInfo) =
         let properties = typeof<'t>.GetProperties property.Name

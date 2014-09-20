@@ -4,7 +4,7 @@
 namespace NuEdit
 open Prime
 open Nu
-module NuEditConstants =
+module Constants =
 
     let EditorScreenName = "EditorScreen"
     let EditorScreenAddress = !* EditorScreenName
