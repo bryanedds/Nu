@@ -20,8 +20,8 @@ open Microsoft.FSharp.Reflection
 open Prime
 open Nu
 open Nu.Constants
-open NuEdit.NuEditConstants
-open NuEdit.NuEditReflection
+open NuEdit.Constants
+open NuEdit.Reflection
 
 [<AutoOpen>]
 module ProgramModule =
