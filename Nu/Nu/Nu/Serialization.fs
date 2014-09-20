@@ -44,9 +44,9 @@ module Serialization =
 
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
-        let optXDispatcherNameStr = node.InnerText
+        let optOverlayNameStr = node.InnerText
         let strOptConverter = StringOptionTypeConverter ()
-        strOptConverter.ConvertFrom optXDispatcherNameStr :?> string option
+        strOptConverter.ConvertFrom optOverlayNameStr :?> string option
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
@@ -129,11 +129,11 @@ module Serialization =
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName then
                 let xValue = xField.Value
-                let xDispatcher = xValue.GetType ()
-                let xConverter = TypeDescriptor.GetConverter xDispatcher
+                let xValueType = xValue.GetType ()
+                let xConverter = TypeDescriptor.GetConverter xValueType
                 let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
                 writer.WriteStartElement xFieldName
-                writer.WriteAttributeString (TypeAttributeName, xDispatcher.FullName)
+                writer.WriteAttributeString (TypeAttributeName, xValueType.FullName)
                 writer.WriteString xValueStr
                 writer.WriteEndElement ()
 
