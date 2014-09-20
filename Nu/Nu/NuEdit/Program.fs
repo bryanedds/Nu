@@ -459,8 +459,8 @@ module Program =
 
     let handleFormCreate atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            try let entityXDispatcherName = form.createEntityComboBox.Text
-                let entity = World.makeEntity entityXDispatcherName None world
+            try let entityDispatcherName = form.createEntityComboBox.Text
+                let entity = World.makeEntity entityDispatcherName None world
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
@@ -770,7 +770,7 @@ module Program =
     let selectTargetDirectoryAndMakeUserComponentFactory () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
-        openDialog.Title <- "Select your game's executable file to make its assets and XDispatchers available in the editor (or cancel for defaults)."
+        openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)."
         if openDialog.ShowDialog () = DialogResult.OK then
             let directoryName = Path.GetDirectoryName openDialog.FileName
             Directory.SetCurrentDirectory directoryName
