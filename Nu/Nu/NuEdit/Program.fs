@@ -778,7 +778,7 @@ module Program =
             let assemblyTypes = assembly.GetTypes ()
             let optDispatcherType =
                 Array.tryFind
-                    (fun (aType : Type) -> aType.GetInterface typeof<UserComponentFactory>.Name <> null)
+                    (fun (aType : Type) -> aType.IsSubclassOf typeof<UserComponentFactory>)
                     assemblyTypes
             match optDispatcherType with
             | Some aType ->
