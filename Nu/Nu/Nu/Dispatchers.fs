@@ -220,7 +220,11 @@ module EntityDispatcherModule =
 
         static member mouseToEntity position world (entity : Entity) =
             let positionScreen = Camera.mouseToScreen position world.Camera
-            let view = (match entity.ViewType with Relative -> Camera.getViewRelativeF | Absolute -> Camera.getViewAbsoluteF) world.Camera
+            let getView =
+                match entity.ViewType with
+                | Relative -> Camera.getViewRelativeF
+                | Absolute -> Camera.getViewAbsoluteF
+            let view = getView world.Camera
             let positionEntity = positionScreen * view
             positionEntity
 
@@ -654,8 +658,13 @@ module BoxDispatcherModule =
 
     type BoxDispatcher () =
         inherit EntityDispatcher ()
+
         static member FieldDefinitions =
             [define? SpriteImage { ImageAssetName = "Image3"; PackageName = DefaultPackageName }]
+
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<SpriteFacet>.Name]
 
 [<AutoOpen>]
 module AvatarDispatcherModule =
