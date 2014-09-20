@@ -41,26 +41,27 @@ module Camera =
         let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
         Matrix3.CreateFromTranslation translationI
 
-    /// Get the bounds of the camera's sight.
-    let getRelativeBounds camera =
+    /// Get the bounds of the camera's sight relative to its position.
+    let getViewBoundsRelative camera =
         Vector4 (
             camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
             camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
             camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
             camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
-    /// Get the bounds of the camera's sight.
-    let getAbsoluteBounds camera =
+    /// Get the bounds of the camera's sight not relative to its position.
+    let getViewBoundsAbsolute camera =
         Vector4 (
             camera.EyeSize.X * -0.5f,
             camera.EyeSize.Y * -0.5f,
             camera.EyeSize.X * 0.5f,
             camera.EyeSize.Y * 0.5f)
 
+    /// Get the bounds of the camera's sight.
     let getViewBounds viewType camera =
         match viewType with
-        | Relative -> getRelativeBounds camera
-        | Absolute -> getAbsoluteBounds camera
+        | Relative -> getViewBoundsRelative camera
+        | Absolute -> getViewBoundsAbsolute camera
 
     /// Query that the given bounds is within the camera's sight.
     let inView viewType (bounds : Vector4) camera =
