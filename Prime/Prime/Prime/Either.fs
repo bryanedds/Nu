@@ -16,11 +16,6 @@ module EitherModule =
             | Right r -> "Right(" + (r.ToString ()) + ")"
             | Left l -> "Left(" + (l.ToString ()) + ")"
 
-    /// Construct a left value.
-    let Left l =
-        debug <| l.ToString ()
-        Left l
-
     /// Monadic bind.
     let inline (>>=) either fn =
         match either with

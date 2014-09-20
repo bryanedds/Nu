@@ -11,30 +11,30 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 
 [<AutoOpen>]
-module BulletDispatcherModule =
+module EntityExtensionsModule =
 
     type Entity with
 
-        member bullet.Age = bullet?Age : int64
-        static member setAge (value : int64) (bullet : Entity) = bullet?Age <- value
+        member entity.Age = entity?Age : int64
+        static member setAge (value : int64) (entity : Entity) = entity?Age <- value
+        member entity.Health = entity?Health : int
+        static member setHealth (value : int) (entity : Entity) = entity?Health <- value
+        member entity.LastTimeOnGroundNp = entity?LastTimeOnGroundNp : int64
+        static member setLastTimeOnGroundNp (value : int64) (entity : Entity) = entity?LastTimeOnGroundNp <- value
+        member entity.LastTimeJumpNp = entity?LastTimeJumpNp : int64
+        static member setLastTimeJumpNp (value : int64) (entity : Entity) = entity?LastTimeJumpNp <- value
+
+        static member hasAppeared camera (entity : Entity) =
+            entity.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
+
+        static member hasFallen (entity : Entity) =
+            entity.Position.Y < -600.0f
+
+[<AutoOpen>]
+module BlazeDispatchersModule =
 
     type BulletDispatcher () =
         inherit EntityDispatcher ()
-
-        static let fieldDefinitions =
-            [define? Size <| Vector2 (24.0f, 24.0f)
-             define? Density 0.25f
-             define? Restitution 0.5f
-             define? LinearDamping 0.0f
-             define? GravityScale 0.0f
-             define? IsBullet true
-             define? CollisionExpression "Circle"
-             define? SpriteImage PlayerBulletImage
-             define? Age 0L]
-
-        static let intrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<SpriteFacet>.Name]
 
         let tickHandler event world =
             let (address, bullet : Entity, _) = Event.unwrap event
@@ -53,44 +53,28 @@ module BulletDispatcherModule =
                 (Propagate, world)
             else (Propagate, world)
 
-        static member FieldDefinitions = fieldDefinitions
-        static member IntrinsicFacetNames = intrinsicFacetNames
+        static member FieldDefinitions =
+            [define? Size <| Vector2 (24.0f, 24.0f)
+             define? Density 0.25f
+             define? Restitution 0.5f
+             define? LinearDamping 0.0f
+             define? GravityScale 0.0f
+             define? IsBullet true
+             define? CollisionExpression "Circle"
+             define? SpriteImage PlayerBulletImage
+             define? Age 0L]
+
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<SpriteFacet>.Name]
 
         override dispatcher.Register (address, bullet, world) =
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
             (bullet, world)
 
-[<AutoOpen>]
-module EnemyDispatcherModule =
-
-    type Entity with
-
-        member enemy.Health = enemy?Health : int
-        static member setHealth (value : int) (enemy : Entity) = enemy?Health <- value
-
-        static member hasAppeared camera (enemy : Entity) =
-            enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
-
     type EnemyDispatcher () =
         inherit EntityDispatcher ()
-
-        static let fieldDefinitions =
-            [define? Size <| Vector2 (48.0f, 96.0f)
-             define? FixedRotation true
-             define? LinearDamping 3.0f
-             define? GravityScale 0.0f
-             define? CollisionExpression "Capsule"
-             define? Stutter 8
-             define? TileCount 6
-             define? TileRun 4
-             define? TileSize <| Vector2 (48.0f, 96.0f)
-             define? AnimatedSpriteImage EnemyImage
-             define? Health 6]
-
-        static let intrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
 
         let move enemy world =
             let physicsId = Entity.getPhysicsId enemy
@@ -126,8 +110,22 @@ module EnemyDispatcherModule =
                 else (Propagate, world)
             else (Propagate, world)
 
-        static member FieldDefinitions = fieldDefinitions
-        static member IntrinsicFacetNames = intrinsicFacetNames
+        static member FieldDefinitions =
+            [define? Size <| Vector2 (48.0f, 96.0f)
+             define? FixedRotation true
+             define? LinearDamping 3.0f
+             define? GravityScale 0.0f
+             define? CollisionExpression "Capsule"
+             define? Stutter 8
+             define? TileCount 6
+             define? TileRun 4
+             define? TileSize <| Vector2 (48.0f, 96.0f)
+             define? AnimatedSpriteImage EnemyImage
+             define? Health 6]
+
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (address, enemy, world) =
             let world =
@@ -136,39 +134,8 @@ module EnemyDispatcherModule =
                 World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
             (enemy, world)
 
-[<AutoOpen>]
-module PlayerDispatcherModule =
-
-    type Entity with
-
-        member player.LastTimeOnGroundNp = player?LastTimeOnGroundNp : int64
-        static member setLastTimeOnGroundNp (value : int64) (player : Entity) = player?LastTimeOnGroundNp <- value
-        member player.LastTimeJumpNp = player?LastTimeJumpNp : int64
-        static member setLastTimeJumpNp (value : int64) (player : Entity) = player?LastTimeJumpNp <- value
-
-        static member hasFallen (player : Entity) =
-            player.Position.Y < -600.0f
-
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
-
-        static let fieldDefinitions =
-            [define? Size <| Vector2 (48.0f, 96.0f)
-             define? FixedRotation true
-             define? LinearDamping 3.0f
-             define? GravityScale 0.0f
-             define? CollisionExpression "Capsule"
-             define? Stutter 3
-             define? TileCount 16
-             define? TileRun 4
-             define? TileSize <| Vector2 (48.0f, 96.0f)
-             define? AnimatedSpriteImage PlayerImage
-             define? LastTimeOnGroundNp Int64.MinValue
-             define? LastTimeJumpNp Int64.MinValue]
-
-        static let intrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             typeof<AnimatedSpriteFacet>.Name]
 
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
@@ -235,8 +202,23 @@ module PlayerDispatcherModule =
                 else (Propagate, world)
             else (Propagate, world)
 
-        static member FieldDefinitions = fieldDefinitions
-        static member IntrinsicFacetNames = intrinsicFacetNames
+        static member FieldDefinitions =
+            [define? Size <| Vector2 (48.0f, 96.0f)
+             define? FixedRotation true
+             define? LinearDamping 3.0f
+             define? GravityScale 0.0f
+             define? CollisionExpression "Capsule"
+             define? Stutter 3
+             define? TileCount 16
+             define? TileRun 4
+             define? TileSize <| Vector2 (48.0f, 96.0f)
+             define? AnimatedSpriteImage PlayerImage
+             define? LastTimeOnGroundNp Int64.MinValue
+             define? LastTimeJumpNp Int64.MinValue]
+
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<AnimatedSpriteFacet>.Name]
 
         override dispatcher.Register (address, player, world) =
             let world =
@@ -246,13 +228,8 @@ module PlayerDispatcherModule =
                 World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
             (player, world)
 
-[<AutoOpen>]
-module StagePlayDispatcherModule =
-
     type StagePlayDispatcher () =
         inherit GroupDispatcher ()
-
-        static let fieldDefinitions = []
 
         let getPlayer groupAddress world =
             let playerAddress = groupAddress @+ [StagePlayerName]
@@ -285,8 +262,6 @@ module StagePlayDispatcherModule =
                 | None -> (Propagate, world)
             else (Propagate, world)
 
-        static member FieldDefinitions = fieldDefinitions
-
         override dispatcher.Register (address, group, world) =
             let world =
                 world |>
@@ -295,13 +270,8 @@ module StagePlayDispatcherModule =
             let world = adjustCamera address world
             (group, world)
 
-[<AutoOpen>]
-module StageScreenModule =
-
     type StageScreenDispatcher () =
         inherit ScreenDispatcher ()
-
-        static let fieldDefinitions = []
 
         let shiftEntities xShift entities =
             Map.map
@@ -340,8 +310,6 @@ module StageScreenModule =
             let world = snd <| World.removeGroups address groups world
             (Propagate, world)
 
-        static member FieldDefinitions = fieldDefinitions
-
         override dispatcher.Register (address, screen, world) =
             let world =
                 world |>
@@ -350,12 +318,6 @@ module StageScreenModule =
                 World.observe (DeselectEventName + address) address (CustomSub stopPlayHandler)
             (screen, world)
 
-[<AutoOpen>]
-module BlazeVectorDispatcherModule =
-
     /// The custom type for BlazeVector's game dispatcher.
     type BlazeVectorDispatcher () =
         inherit GameDispatcher ()
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions

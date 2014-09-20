@@ -21,6 +21,7 @@ module EntityModule =
         static member setSize size (entity : Entity) = { entity with Size = size }
         static member setRotation rotation (entity : Entity) = { entity with Rotation = rotation }
         static member setVisible visible (entity : Entity) = { entity with Visible = visible }
+        static member setViewType viewType (entity : Entity) = { entity with ViewType = viewType }
 
         static member register address (entity : Entity) world =
             let (entity, world) = entity.DispatcherNp.Register (address, entity, world)
@@ -73,9 +74,6 @@ module EntityModule =
         static member getPickingPriority (entity : Entity) world =
             entity.DispatcherNp.GetPickingPriority (entity, world)
         
-        static member isTransformRelative (entity : Entity) world =
-            entity.DispatcherNp.IsTransformRelative (entity, world)
-
         static member isFacetCompatible facet (entity : Entity) =
             let facetType = facet.GetType ()
             let facetFieldNames = Reflection.getFieldDefinitionNames facetType
@@ -92,6 +90,7 @@ module EntityModule =
               Size = DefaultEntitySize
               Rotation = 0.0f
               Visible = true
+              ViewType = Relative
               DispatcherNp = dispatcher
               FacetNames = []
               FacetsNp = []

@@ -42,20 +42,35 @@ module Camera =
         Matrix3.CreateFromTranslation translationI
 
     /// Get the bounds of the camera's sight.
-    let getBounds camera =
+    let getRelativeBounds camera =
         Vector4 (
             camera.EyeCenter.X - camera.EyeSize.X * 0.5f,
             camera.EyeCenter.Y - camera.EyeSize.Y * 0.5f,
             camera.EyeCenter.X + camera.EyeSize.X * 0.5f,
             camera.EyeCenter.Y + camera.EyeSize.Y * 0.5f)
 
-    /// Query that the given bounds is within the camera's sight.
-    let inView (bounds : Vector4) camera =
-        NuMath.isBoundsInBounds bounds <| getBounds camera
+    /// Get the bounds of the camera's sight.
+    let getAbsoluteBounds camera =
+        Vector4 (
+            camera.EyeSize.X * -0.5f,
+            camera.EyeSize.Y * -0.5f,
+            camera.EyeSize.X * 0.5f,
+            camera.EyeSize.Y * 0.5f)
+
+    let getViewBounds viewType camera =
+        match viewType with
+        | Relative -> getRelativeBounds camera
+        | Absolute -> getAbsoluteBounds camera
 
     /// Query that the given bounds is within the camera's sight.
-    let inView3 (position : Vector2) (size : Vector2) camera =
-        NuMath.isBoundsInBounds3 position size <| getBounds camera
+    let inView viewType (bounds : Vector4) camera =
+        let viewBounds = getViewBounds viewType camera
+        NuMath.isBoundsInBounds bounds viewBounds
+
+    /// Query that the given bounds is within the camera's sight.
+    let inView3 viewType (position : Vector2) (size : Vector2) camera =
+        let viewBounds = getViewBounds viewType camera
+        NuMath.isBoundsInBounds3 position size viewBounds
 
     /// Transform the given mouse position to the camera's sight.
     let mouseToScreen (position : Vector2) camera =

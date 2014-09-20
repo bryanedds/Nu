@@ -7,12 +7,10 @@ open OmniBlade
 open OmniBlade.OmniConstants
 
 [<AutoOpen>]
-module FieldGroupDispatcherModule =
+module OmniDispatchersModule =
 
     type FieldGroupDispatcher () =
         inherit GroupDispatcher ()
-
-        static let fieldDefinitions = []
 
         let adjustFieldCamera groupAddress world =
             let avatarAddress = groupAddress @+ [FieldAvatarName]
@@ -39,8 +37,6 @@ module FieldGroupDispatcherModule =
                 (Propagate, world)
             else (Propagate, world)
 
-        static member FieldDefinitions = fieldDefinitions
-
         override dispatcher.Register (address, avatar, world) =
             let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
             let world = World.observe TickEventName address (CustomSub adjustFieldCameraHandler) world
@@ -48,24 +44,12 @@ module FieldGroupDispatcherModule =
             let world = adjustFieldCamera address world
             (avatar, world)
 
-[<AutoOpen>]
-module BattleGroupDispatcherModule =
-
     type BattleGroupDispatcher () =
         inherit GroupDispatcher ()
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
 
         override dispatcher.Register (_, group, world) =
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             (group, world)
 
-[<AutoOpen>]
-module OmniBladeDispatcherModule =
-
     type OmniBladeDispatcher () =
         inherit GameDispatcher ()
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
