@@ -714,7 +714,8 @@ module WorldModule =
                     Map.ofList
                         [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
-                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
+                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet
+                         typeof<UIFacet>.Name, UIFacet () :> Facet]
                 let userFacets = userComponentFactory.MakeUserFacets ()
                 let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
 

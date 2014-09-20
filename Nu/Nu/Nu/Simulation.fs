@@ -163,6 +163,7 @@ module SimModule =
           Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
+          ViewType : ViewType
           FacetNames : string list
           DispatcherNp : EntityDispatcher
           FacetsNp : Facet list
@@ -297,9 +298,6 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
-
         abstract member Register : Address * Entity * World -> Entity * World
         default facet.Register (address, entity, world) =
             let world = facet.RegisterPhysics (address, entity, world)
@@ -331,16 +329,12 @@ module SimModule =
     /// The default dispatcher for entities.
     and EntityDispatcher () =
 
-        static let fieldDefinitions =
+        static member FieldDefinitions =
             [define? Position Vector2.Zero
              define? Depth 0.0f
              define? Size DefaultEntitySize
              define? Rotation 0.0f
              define? Visible true]
-
-        static let intrinsicFacetNames = []
-        static member FieldDefinitions = fieldDefinitions
-        static member IntrinsicFacetNames = intrinsicFacetNames
 
         abstract member Register : Address * Entity * World -> Entity * World
         default dispatcher.Register (_, entity, world) = (entity, world)
@@ -360,16 +354,10 @@ module SimModule =
         abstract member GetQuickSize : Entity * World -> Vector2
         default dispatcher.GetQuickSize (_, _) = Vector2.One
 
-        abstract member IsTransformRelative : Entity * World -> bool
-        default dispatcher.IsTransformRelative (_, _) = true
-
         abstract member GetPickingPriority : Entity * World -> single
         default dispatcher.GetPickingPriority (entity, _) = entity.Depth
 
     and GroupDispatcher () =
-
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
 
         abstract member Register : Address * Group * World -> Group * World
         default dispatcher.Register (_, group, world) = (group, world)
@@ -379,9 +367,6 @@ module SimModule =
 
     and ScreenDispatcher () =
 
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
-
         abstract member Register : Address * Screen * World -> Screen * World
         default dispatcher.Register (_, screen, world) = (screen, world)
 
@@ -390,9 +375,6 @@ module SimModule =
 
     and GameDispatcher () =
 
-        static let fieldDefinitions = []
-        static member FieldDefinitions = fieldDefinitions
-        
         abstract member Register : Game * World -> Game * World
         default dispatcher.Register (game, world) = (game, world)
 

@@ -60,6 +60,9 @@ module ReflectionModule =
 [<RequireQualifiedAccess>]
 module Reflection =
 
+    let private fieldDefinitionsCache =
+        Dictionary<Type, FieldDefinition list> ()
+
     /// Get the type name of a target.
     let getTypeName target =
         let targetType = target.GetType ()
@@ -111,20 +114,27 @@ module Reflection =
             | _ -> ()
 
     /// Get the field definitions of a target type not considering inheritance.
+    /// OPTIMIZATION: Memoized for efficiency since FieldDefinitions properties will likely return
+    /// a newly constructed list.
     let getFieldDefinitionsNoInherit (targetType : Type) =
-        match targetType.GetProperty ("FieldDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
-        | null -> failwith <| "Could not get static property FieldDefinitions from type '" + targetType.Name + "'."
-        | fieldDefinitionsProperty ->
-            let fieldDefinitions = fieldDefinitionsProperty.GetValue null
-            match fieldDefinitions with
-            | :? (obj list) as fieldDefinitions when List.isEmpty fieldDefinitions -> []
-            | :? (FieldDefinition list) as fieldDefinitions -> fieldDefinitions
-            | _ -> failwith <| "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
+        let refFieldDefinitions = ref []
+        if fieldDefinitionsCache.TryGetValue (targetType, refFieldDefinitions) then !refFieldDefinitions
+        else
+            let fieldDefinitions =
+                match targetType.GetProperty ("FieldDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
+                | null -> []
+                | fieldDefinitionsProperty ->
+                    match fieldDefinitionsProperty.GetValue null with
+                    | :? (obj list) as definitions when List.isEmpty definitions -> []
+                    | :? (FieldDefinition list) as definitions -> definitions
+                    | _ -> failwith <| "FieldDefinitions property for type '" + targetType.Name + "' must be of type FieldDefinition list."
+            fieldDefinitionsCache.Add (targetType, fieldDefinitions)
+            fieldDefinitions
 
     /// Get the intrinsic facet names of a target type not considering inheritance.
     let getIntrinsicFacetNamesNoInherit (targetType : Type) =
         match targetType.GetProperty ("IntrinsicFacetNames", BindingFlags.Static ||| BindingFlags.Public) with
-        | null -> failwith <| "Could not get static property IntrinsicFacetNames from type '" + targetType.Name + "'."
+        | null -> []
         | intrinsicFacetNamesProperty ->
             let intrinsicFacetNames = intrinsicFacetNamesProperty.GetValue null
             match intrinsicFacetNames with
