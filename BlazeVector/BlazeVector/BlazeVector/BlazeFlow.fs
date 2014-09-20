@@ -2,7 +2,7 @@
 open System
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 open BlazeVector
 open BlazeVector.BlazeConstants
 module BlazeFlow =

@@ -1,6 +1,6 @@
 ﻿namespace BlazeVector
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 module BlazeConstants =
 
     // misc constants. These, and the following constants, will be explained in depth later. Just

@@ -19,7 +19,7 @@ open System.Xml.Serialization
 open Microsoft.FSharp.Reflection
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 open NuEdit.NuEditConstants
 open NuEdit.NuEditReflection
 
@@ -576,7 +576,7 @@ module Program =
             | Some entity ->
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
-                let id = NuCore.makeId ()
+                let id = Core.makeId ()
                 let entity = { entity with Id = id; Name = string id }
                 let entityPosition =
                     if atMouse

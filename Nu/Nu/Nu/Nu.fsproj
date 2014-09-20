@@ -63,9 +63,9 @@
   <ItemGroup>
     <Compile Include="RQueue.fs" />
     <Compile Include="Address.fs" />
-    <Compile Include="NuCore.fs" />
-    <Compile Include="NuConstants.fs" />
-    <Compile Include="NuMath.fs" />
+    <Compile Include="Core.fs" />
+    <Compile Include="Constants.fs" />
+    <Compile Include="Math.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="Serialization.fs" />

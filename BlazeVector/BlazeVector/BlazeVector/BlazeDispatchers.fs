@@ -6,7 +6,7 @@ open FarseerPhysics
 open FarseerPhysics.Dynamics
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 open BlazeVector
 open BlazeVector.BlazeConstants
 
@@ -151,7 +151,7 @@ module BlazeDispatchersModule =
             (bullet, world)
 
         let shootBullet playerAddress player world =
-            let bulletAddress = Address.allButLast playerAddress @+ [string <| NuCore.makeId ()]
+            let bulletAddress = Address.allButLast playerAddress @+ [string <| Core.makeId ()]
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world

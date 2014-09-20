@@ -14,7 +14,7 @@ open OpenTK
 open TiledSharp
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module WorldModule =
@@ -799,7 +799,7 @@ module WorldModule =
                 System.Globalization.CultureInfo.InvariantCulture
 
             // init the type converters
-            NuMath.initTypeConverters ()
+            Math.initTypeConverters ()
             Audio.initTypeConverters ()
             Rendering.initTypeConverters ()
 

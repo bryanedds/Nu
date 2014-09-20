@@ -5,7 +5,7 @@ open System.Reflection
 open System.ComponentModel
 open System.Collections.Generic
 open Prime
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module OverlayerModule =

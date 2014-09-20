@@ -5,7 +5,7 @@ open System.Xml
 open System.Reflection
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module GroupModule =
@@ -19,7 +19,7 @@ module GroupModule =
             group.DispatcherNp.Unregister (address, group, world)
 
         static member make dispatcher optName =
-            let id = NuCore.makeId ()
+            let id = Core.makeId ()
             { Group.Id = id
               Name = match optName with None -> string id | Some name -> name
               DispatcherNp = dispatcher

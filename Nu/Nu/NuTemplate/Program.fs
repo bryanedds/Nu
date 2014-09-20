@@ -2,7 +2,7 @@
 open SDL2
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 module Program =
 
     // this the entry point for the your Nu application

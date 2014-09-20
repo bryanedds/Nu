@@ -29,7 +29,7 @@ module Camera =
         Matrix3.Identity
 
     /// The relative view of the camera with original single values. Due to the problems with
-    /// SDL_RenderCopyEx as described in NuMath.fs, using this function to decide on sprite
+    /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelativeF camera =
         let translation = camera.EyeCenter
@@ -66,12 +66,12 @@ module Camera =
     /// Query that the given bounds is within the camera's sight.
     let inView viewType (bounds : Vector4) camera =
         let viewBounds = getViewBounds viewType camera
-        NuMath.isBoundsInBounds bounds viewBounds
+        Math.isBoundsInBounds bounds viewBounds
 
     /// Query that the given bounds is within the camera's sight.
     let inView3 viewType (position : Vector2) (size : Vector2) camera =
         let viewBounds = getViewBounds viewType camera
-        NuMath.isBoundsInBounds3 position size viewBounds
+        Math.isBoundsInBounds3 position size viewBounds
 
     /// Transform the given mouse position to the camera's sight.
     let mouseToScreen (position : Vector2) camera =

@@ -12,9 +12,13 @@
 System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Debug"
 
 #load "RQueue.fs"
-#load "NuCore.fs"
-#load "NuConstants.fs"
-#load "NuMath.fs"
+#load "Core.fs"
+#load "Constants.fs"
+#load "Math.fs"
+#load "Xtension.fs"
+#load "Overlayer.fs"
+#load "Serialization.fs"
+#load "Reflection.fs"
 #load "Camera.fs"
 #load "Assets.fs"
 #load "Physics.fs"
@@ -23,7 +27,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Metadata.fs"
 #load "Input.fs"
 #load "Sdl.fs"
-#load "Simulant.fs"
+#load "Simulation.fs"
 #load "Entity.fs"
 #load "Group.fs"
 #load "Screen.fs"
@@ -36,4 +40,4 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
-open NuConstants
+open Nu.Constants

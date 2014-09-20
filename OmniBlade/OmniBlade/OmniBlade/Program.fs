@@ -4,7 +4,7 @@ open SDL2
 open OpenTK
 open TiledSharp
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 open OmniBlade
 module Program =
 

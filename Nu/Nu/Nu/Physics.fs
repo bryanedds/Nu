@@ -10,7 +10,7 @@ open OpenTK
 open Microsoft.Xna
 open Prime
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module PhysicsModule =
@@ -188,11 +188,11 @@ module Physics =
 
     /// The invalid physics id.
     let InvalidId =
-        PhysicsId (NuCore.InvalidId, NuCore.InvalidId)
+        PhysicsId (Core.InvalidId, Core.InvalidId)
 
     /// Make a PhysicsId for an external entity.
     let makeId (entityId : Guid) =
-        PhysicsId (entityId, NuCore.makeId ())
+        PhysicsId (entityId, Core.makeId ())
 
     let private toPixel value =
         value * PhysicsToPixelRatio

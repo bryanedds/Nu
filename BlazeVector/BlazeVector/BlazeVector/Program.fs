@@ -2,7 +2,7 @@
 open System
 open SDL2
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 open BlazeVector
 module Program =
 

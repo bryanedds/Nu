@@ -5,7 +5,7 @@ open OpenTK
 open Prime
 open TiledSharp
 open Nu
-open Nu.NuConstants
+open Nu.Constants
 
 [<AutoOpen>]
 module RigidBodyFacetModule =
@@ -51,7 +51,7 @@ module RigidBodyFacetModule =
             Physics.evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
 
         static member FieldDefinitions =
-            [variable? MinorId <| fun () -> NuCore.makeId ()
+            [variable? MinorId <| fun () -> Core.makeId ()
              define? BodyType Dynamic
              define? Density NormalDensity
              define? Friction 0.0f
@@ -229,7 +229,7 @@ module EntityDispatcherModule =
             positionEntity
 
         static member setPositionSnapped snap position (entity : Entity) =
-            let snapped = NuMath.snap2F snap position
+            let snapped = Math.snap2F snap position
             Entity.setPosition snapped entity
 
         static member getTransform (entity : Entity) =
@@ -239,7 +239,7 @@ module EntityDispatcherModule =
               Rotation = entity.Rotation }
 
         static member setTransform positionSnap rotationSnap transform (entity : Entity) =
-            let transform = NuMath.snapTransform positionSnap rotationSnap transform
+            let transform = Math.snapTransform positionSnap rotationSnap transform
             entity |>
                 Entity.setPosition transform.Position |>
                 Entity.setDepth transform.Depth |>
@@ -257,7 +257,7 @@ module EntityDispatcherModule =
                 (fun entity ->
                     let positionEntity = Entity.mouseToEntity position world entity
                     let transform = Entity.getTransform entity
-                    let picked = NuMath.isPointInBounds3 positionEntity transform.Position transform.Size
+                    let picked = Math.isPointInBounds3 positionEntity transform.Position transform.Size
                     picked)
                 entitiesSorted
 
@@ -282,7 +282,7 @@ module ButtonDispatcherModule =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
-                if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size then
+                if Math.isPointInBounds3 mousePositionButton button.Position button.Size then
                     let button = Entity.setIsDown true button
                     let world = World.setEntity address button world
                     let world = World.publish4 (DownEventName + address) address (NoData ()) world
@@ -298,7 +298,7 @@ module ButtonDispatcherModule =
                     let button = Entity.setIsDown false button
                     let world = World.setEntity address button world
                     World.publish4 (UpEventName + address) address (NoData ()) world
-                if NuMath.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
+                if Math.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
                     let world = World.publish4 (ClickEventName + address) address (NoData ()) world
                     let world = World.playSound button.ClickSound 1.0f world
                     (Resolved, world)
@@ -463,7 +463,7 @@ module ToggleDispatcherModule =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
-                if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
+                if Math.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                     let toggle = Entity.setIsPressed true toggle
                     let world = World.setEntity address toggle world
                     (Resolved, world)
@@ -475,7 +475,7 @@ module ToggleDispatcherModule =
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.IsPressed then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
                 let toggle = Entity.setIsPressed false toggle
-                if NuMath.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
+                if Math.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                     let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                     let world = World.setEntity address toggle world
                     let eventName = if toggle.IsOn then OnEventName else OffEventName
@@ -540,7 +540,7 @@ module FeelerDispatcherModule =
             let (address, feeler : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let mousePositionFeeler = Entity.mouseToEntity mouseButtonData.Position world feeler
-                if NuMath.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
+                if Math.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
                     let feeler = Entity.setIsTouched true feeler
                     let world = World.setEntity address feeler world
                     let world = World.publish4 (TouchEventName + address) address (MouseButtonData mouseButtonData) world
