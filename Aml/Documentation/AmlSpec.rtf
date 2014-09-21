@@ -3,11 +3,11 @@
 }
 {\colortbl;\red255\green255\blue255;\red255\green0\blue0;\red0\green0\blue255;\red0\green128\blue0;
 \red0\green77\blue187;}
-\vieww18940\viewh16600\viewkind0
+\vieww14160\viewh16600\viewkind0
 \deftab720
 \pard\tx4320\pardeftab720
 
-\f0\b\fs28 \cf0 AML - A Modular Language.
+\f0\b\fs28 \cf0 AML \'96 A Modular Language.
 \b0  A declarative-first foundation for building declarative languages for .NET. Specialized for different languages through a Language Module (LM). The language is lexically-scoped and strongly dynamically-typed. As much as possible, it is built to enable automated refactoring and reasoning about programs. It features a highly-simplified lisp-style condition system for imperative error handling (called 'interventions').\
 \
 \ul Text Color Key\
@@ -18,8 +18,9 @@ Red text means the described feature is not yet implemented.\
 \
 \ul Syntax Overview\ulnone \
 \
+\pard\tx4320\pardeftab720\li4676\fi-4677
 
-\f1 ; blah	Line comment.\
+\f1 \cf0 ; blah	Line comment.\
 #| blah \cf2 #| blah |#\cf0 |#	Multiline comment \cf2 (nests)\cf0 .\
 \
 (fn 5)	Function application (AKA, operation).\
@@ -169,11 +170,15 @@ Further, custom code can be used to imperatively intevene in the creation of mat
 
 \f1 (intervene\
     (causesViolation)\
-    (:v/eval problem); Intervene on eval violation, returning the original violation.\
-    (:v/reader problem hide: #t); Intervene on a reader violation, returning the original violation, and hide the violation from further intervention.\
-    (:v (violation ":v/x" "y" ()))); Intervene on any violation, returning a new violation.\
+\pard\pardeftab720\li3903\fi-3904
+\cf0     (:v/eval problem); Intervene on eval violation, returning the original violation.\
+\pard\pardeftab720\li5725\fi-5726
+\cf0     (:v/reader problem hide: #t); Intervene on a reader violation, returning the original violation, and hide the violation from further intervention.\
+\pard\pardeftab720\li6221\fi-6222
+\cf0     (:v (violation ":v/x" "y" ()))); Intervene on any violation, returning a new violation.\
+\pard\pardeftab720
 
-\f0 \
+\f0 \cf0 \
 Intervention sets up expression to be evaluated when the matching violation is created in the call stack. If the matching vioation is created, the result of the expression is returned instead of the newly created violation down in the calling code.\
 \
 \cf3 TODO: consider implementing a hide syntax like -\
@@ -246,7 +251,7 @@ Protocol signatures may use only normal args.\
 \
 For efficiency, AML has a compiler that is similarly pluggable as the language itself. Just as AML has LM plug-ins, the compiler (AMLC) has LMC plug-ins. Both LMs and LMCs must be written by the end user if he wishes to have a compiling language \cf3 (however there may be a way to have compiled AML code called out to uncompiled LM code, so maybe a missing LMC would not disallow compilation)\cf2 . Initially, the compiler will produce untyped code. Later, as time permits, it will produce some typed code leveraging explicit and inferred constraints. Finally, it will work along-side the symbolic evaluator to strip out contracts where proven enforced at compile-time. Whole program optimization a la SML would also be nice :)\cf0 \
 \
-\cf2 \ul \ulc2 Editing / Debugging:\ulnone \
+\cf2 \ul Editing / Debugging:\ulnone \
 \
 AML uses Visual Studio as an editor and debugger.\cf0 \
 \pard\pardeftab720
@@ -276,19 +281,18 @@ To see LOTS more good sample AML code, read the Stdlib files :)\
 \pard\tx4320\pardeftab720
 
 \i0 \cf0 \
-\ul Syntax Overview\ulnone \
-\
-
-\f1 [attribute ...]	Describes a single attribute.\
-[group ...]	Describes a group of attributes.\
-\pard\tx4331\pardeftab720
-\cf0 [collection ...]	Describes a collection of attributes.\
 \pard\tx4320\pardeftab720
-\cf0 [repeater ...]	Describes a collection of attributes whose number is parameterized and whose parameters are iteratively specified.\
+\cf0 \ul Syntax Overview\ulnone \
+\
+\pard\tx4320\pardeftab720\li4685\fi-4686
+
+\f1 \cf0 [attribute ...]	Describes a single attribute.\
+[group ...]	Describes a group of attributes.\
+[collection ...]	Describes a collection of attributes.\
+[repeater ...]	Describes a collection of attributes whose number is parameterized and whose parameters are iteratively specified.\
 [source ...]	Describes a single source.\
 [transient ...]	Describes a transient source.\
-\pard\tx4331\pardeftab720
-\cf0 [spawnlet ...]	Describes a spawnlet source.\
+[spawnlet ...]	Describes a spawnlet source.\
 \
 \{info ...\} |\
 \{origin ...\} |\
@@ -321,7 +325,7 @@ $any.actor.x	Literal address of x attribute of any object with an actor attribut
 
 \f0 \cf0 \ul \ulc0 \
 \pard\pardeftab720
-\cf0 \ulc0 Components\
+\cf0 Components\
 \ulnone \
 Through a declarative syntax, 'DAL components' can be registered with DAL. These components expose special built-in attributes, and have the ability to automatically side-effect outward purely by merit of their existence (such as sending drawing instructions to a video buffer) and to be separately affected inward (such as synchronization to the results of a separate physics engine, or updating state as a result of an input device).\
 \
@@ -340,11 +344,14 @@ Outward side-effecting of separate components can be optionally parallelized to 
     [[attribute position v2Zero]\
      [attribute scale v2One]]]]\
 \
-[group actor [translation]; describes an actor as a group of attributes with a translation parameter\
-    [[source transform [asGroup transformation [[attribute position (+ (v 1f 1f) translation)]]]]\
+\pard\pardeftab720\li4684\fi-4685
+\cf0 [group actor [translation]; describes an actor as a group of attributes with a translation parameter\
+\pard\pardeftab720\li849\fi-850
+\cf0     [[source transform [asGroup transformation [[attribute position (+ (v 1f 1f) translation)]]]]\
      [attribute mass 100f]; attribute mass left at this default doesn't get serialized\
      [attribute actorsCreated \{tally $any.actor.creation\}]]]\
-\
+\pard\pardeftab720
+\cf0 \
 [group screen []\
     [[attribute localActor [source actor [(v2 5f 5f)]]]\
      [collection actors\
@@ -357,12 +364,17 @@ Outward side-effecting of separate components can be optionally parallelized to 
         [[attribute transform\
              [[attribute position\
                   (sum \{base\}\
-                       \{aggregate $global.tick (+ state gravity) v2Zero\}\
+\pard\pardeftab720\li3854\fi-3855
+\cf0                        \{aggregate $global.tick (+ state gravity) v2Zero\}\
                        \{aggregate %my.collision (+ state (v2Of (* \{info %desc.force\} 0.5)) v2Zero\})]]]\
-                       ; aggregate's body expression gets three implicitly-bound variables; 'value', 'oldValue', and 'state'. Events that come from components have a descriptor value with arbitrary members pertinent to the event's specifics (such as '%desc.normal' for a collision normal).\
-\
-[source anActor [asGroup physicalActor []]]; declaratively instantiates an actor attribute with name anActor for the life of the program\
-\
+\pard\pardeftab720\li4200\fi-4201
+\cf0                        ; aggregate's body expression gets three implicitly-bound variables; 'value', 'oldValue', and 'state'. Events that come from components have a descriptor value with arbitrary members pertinent to the event's specifics (such as '%desc.normal' for a collision normal).\
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\li7555\fi-7556
+\cf0 [source anActor [asGroup physicalActor []]]; declaratively instantiates an actor attribute with name anActor for the life of the program\
+\pard\pardeftab720
+\cf0 \
 [source aScreen\
     [asGroup screen\
         [[collection actors\
@@ -377,12 +389,16 @@ Outward side-effecting of separate components can be optionally parallelized to 
         [[attribute position\
             (+ \{instant $player.transform.position\}\
                (v2 0f \{aggregate $global.tick (+ state bulletSpeed) 0f\}))\
-            updateLimit: 1]]; updateLimit limits the number of times an attribute can be updated per tick - useful for breaking update cycles\
-\
+\pard\pardeftab720\li5036\fi-5037
+\cf0             updateLimit: 1]]; updateLimit limits the number of times an attribute can be updated per tick - useful for breaking update cycles\
+\pard\pardeftab720
+\cf0 \
 [source currentScore\
     [asAttribute intValue\
-        \{aggregate $any.enemy.health (+ state \{instant %origin.points\}) 0 when: (= (instant %origin.health\} 0)\}]]]\
-\
+\pard\pardeftab720\li1665\fi-1666
+\cf0         \{aggregate $any.enemy.health (+ state \{instant %origin.points\}) 0 when: (= (instant %origin.health\} 0)\}]]]\
+\pard\pardeftab720
+\cf0 \
 [usingComponent "c:/..." "MyLM"]\
 \
 [group reactionExamples []\
@@ -413,9 +429,9 @@ It seems like DAL should be able to be automatically networked for multiple inte
 \b0 \cf0 \
 \
 \pard\pardeftab720
-\cf0 \ul \ulc0 Syntax Overview\ulnone \
+\cf0 \ul Syntax Overview\ulnone \
 \
-\pard\tx4320\pardeftab720
+\pard\tx4320\pardeftab720\li4673\fi-4674
 
 \f1 \cf0 $v	GOLORP variable name.\
 [fact xyz [...]]	Fact about a relationship.\
@@ -458,11 +474,13 @@ It seems like DAL should be able to be automatically networked for multiple inte
 \cf0 \
 \ul Syntax Overview\ulnone \
 \
+\pard\tx4320\pardeftab720\li4676\fi-4677
 
-\f1 [transaction xyz ...]	Defines a transaction block.\
+\f1 \cf0 [transaction xyz ...]	Defines a transaction block.\
 \{doSomething "xyz"\}	Transactional statement (allows side-effects that can be undone).\
+\pard\tx4320\pardeftab720
 
-\f0 \
+\f0 \cf0 \
 \ul Notes\ulnone \
 \
 Transactional statements always returns :success, :failure, :skipped, or :rollbackAborted.\
@@ -470,22 +488,34 @@ Transactional statements always returns :success, :failure, :skipped, or :rollba
 \cf0 \
 \ul Hypothetical TSL Code\ulnone \
 \
+\pard\pardeftab720\li5396\fi-5397
 
-\f1 [new counter 0]				; create a transactionally mutable variable. It can be rolled back after setting\
-\
-[transaction makeMyFile [myDir myFile]	; executes statements in order, undoing them if a later one fails.\
-  [\{makeDir myDir\}				; skipped if myDir already exists, with roll-back doing nothing\
-   \{change counter (inc counter)\}\
+\f1 \cf0 [new counter 0]				; create a transactionally mutable variable. It can be rolled back after setting\
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\li6809\fi-6810
+\cf0 [transaction makeMyFile [myDir myFile]	; executes statements in order, undoing them if a later one fails.\
+\pard\pardeftab720\li6115\fi-6116
+\cf0   [\{makeDir myDir\}				; skipped if myDir already exists, with roll-back doing nothing\
+\pard\pardeftab720
+\cf0    \{change counter (inc counter)\}\
    \{changeDir myDir\}\
-   \{++ counter\}				; \{++ ...\} is a simpler way to increment a variable than \{change ... (inc ...)\}\
-   \{makeFile myFile "Hello, file!"\}	; skipped if myFile already exists and has exactly the "Hello, file!" contents\
-   \{++ counter\}]]\
+\pard\pardeftab720\li5374\fi-5375
+\cf0    \{++ counter\}				; \{++ ...\} is a simpler way to increment a variable than \{change ... (inc ...)\}\
+\pard\pardeftab720\li6809\fi-6810
+\cf0    \{makeFile myFile "Hello, file!"\}	; skipped if myFile already exists and has exactly the "Hello, file!" contents\
+\pard\pardeftab720
+\cf0    \{++ counter\}]]\
 \
-\{makeMyFile "c:/myDir" "c:/myFile"\}	; executes the transaction\
-\
-#| counter will be either 0 or 3 here, and file transactions will have either completed entirely or had no effect, except in the extremely rare case of :rollbackAborted. |#\
+\pard\pardeftab720\li6809\fi-6810
+\cf0 \{makeMyFile "c:/myDir" "c:/myFile"\}	; executes the transaction\
+\pard\pardeftab720
+\cf0 \
+\pard\pardeftab720\li505\fi-506
+\cf0 #| counter will be either 0 or 3 here, and file transactions will have either completed entirely or had no effect, except in the extremely rare case of :rollbackAborted. |#\
+\pard\pardeftab720
 
-\f0 \
+\f0 \cf0 \
 \pard\pardeftab720
 
 \b \cf2 DWF \'96 Declarative Windows Forms.
@@ -527,8 +557,10 @@ Here are examples -\
   reduce #+ nums\
 \
 defRec: foldRight (folder state seq) where? ((fun folder) (sequence seq))\
-  doc? "Perform a right-associative fold over a sequence. NOTE: this function is not currently tail-recursive."\
-  if\
+\pard\pardeftab720\li1332\fi-1333
+\cf0   doc? "Perform a right-associative fold over a sequence. NOTE: this function is not currently tail-recursive."\
+\pard\pardeftab720
+\cf0   if\
     isDone seq\
     state\
     let\
@@ -539,25 +571,33 @@ defRec: foldRight (folder state seq) where? ((fun folder) (sequence seq))\
 \
 object: anonymous\
   class: bullet\
-  while: value! player.shoot && tally! global.tick < 1000 && not (value! my.collision))\
-  attributes:\
-    position: value! player.transform.position + (v2 0f (aggregate! global.tick (+ state bulletSpeed) 0f))\
-    ; and so on...\
+\pard\pardeftab720\li1486\fi-1487
+\cf0   while: value! player.shoot && tally! global.tick < 1000 && not (value! my.collision))\
+\pard\pardeftab720
+\cf0   attributes:\
+\pard\pardeftab720\li2325\fi-2326
+\cf0     position: value! player.transform.position + (v2 0f (aggregate! global.tick (+ state bulletSpeed) 0f))\
+\pard\pardeftab720
+\cf0     ; and so on...\
 \
 object: currentScore\
   class: intValue\
   attributes:\
     value:\
-      aggregate! any.enemy.health (+ state source.points) 0 when? source.health = 0\
+\pard\pardeftab720\li1349\fi-1350
+\cf0       aggregate! any.enemy.health (+ state source.points) 0 when? source.health = 0\
+\pard\pardeftab720
 
-\f0 \
+\f0 \cf0 \
 Here\'92s a more java-like syntax which might be better if the type system stays dynamic. The meaning of a bracket, paren, or curly depends on whether it is post-fixed to a symbol. If it is, it\'92s a call, otherwise, it\'92s a grouping. Precedence tightening is not done with parens, but with banana clips, such as (|1 + 2|) * 3.\
 \
 
 \f1 defRec[\
   foldRight [folder state seq] where: [[fun folder] [sequence seq]]\
-  doc: "Perform a right-associative fold over a sequence. NOTE: this function is not currently tail-recursive."\
-  if(isDone(seq)\
+\pard\pardeftab720\li1331\fi-1332
+\cf0   doc: "Perform a right-associative fold over a sequence. NOTE: this function is not currently tail-recursive."\
+\pard\pardeftab720
+\cf0   if(isDone(seq)\
      state\
      let((elem peek(seq))\
          (nextSeq next(seq))\
@@ -567,15 +607,20 @@ Here\'92s a more java-like syntax which might be better if the type system stays
 object[\
   anonymous\
   class[bullet]\
-  while[value\{player.shoot\} && tally\{global.tick\} < 1000 && not(value\{my.collision\})]\
-  attributes[\
-    position[player.transform.position + \{v2 0f (aggregate\{global.tick (+ state bulletSpeed) 0f\})\}]\
-    #| and so on... |#]]\
+\pard\pardeftab720\li1346\fi-1347
+\cf0   while[value\{player.shoot\} && tally\{global.tick\} < 1000 && not(value\{my.collision\})]\
+\pard\pardeftab720
+\cf0   attributes[\
+\pard\pardeftab720\li2165\fi-2166
+\cf0     position[player.transform.position + \{v2 0f (aggregate\{global.tick (+ state bulletSpeed) 0f\})\}]\
+\pard\pardeftab720
+\cf0     #| and so on... |#]]\
 \
 object[\
   currentScore\
   class[intValue]\
   attributes[\
     value[\
-      aggregate\{any.enemy.health (+ state source.points) 0 when: source.health = 0\}]]]\
+\pard\pardeftab720\li2670\fi-2671
+\cf0       aggregate\{any.enemy.health (+ state source.points) 0 when: source.health = 0\}]]]\
 }
