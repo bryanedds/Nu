@@ -141,6 +141,10 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
+        let [<Literal>] WalkForce = 8000.0f
+        let [<Literal>] FallForce = -30000.0f
+        let [<Literal>] ClimbForce = 12000.0f
+
         let createBullet bulletAddress (playerTransform : Transform) world =
             let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
@@ -181,19 +185,16 @@ module PlayerModule =
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
-                let world = World.setEntity address player world
                 let physicsId = player.PhysicsId
                 let optGroundTangent = World.getOptBodyGroundContactTangent physicsId world
-                let walkForce = 8000.0f
-                let fallForce = -30000.0f
-                let climbForce = 12000.0f
                 let force =
                     match optGroundTangent with
                     | Some groundTangent ->
-                        let downForce = if groundTangent.Y > 0.0f then climbForce else 0.0f
-                        Vector2.Multiply (groundTangent, Vector2 (walkForce, downForce))
-                    | None -> Vector2 (walkForce, fallForce)
+                        let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
+                        Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
+                    | None -> Vector2 (WalkForce, FallForce)
                 let world = World.applyForce force physicsId world
+                let world = World.setEntity address player world
                 (Propagate, world)
             else (Propagate, world)
 
@@ -203,9 +204,9 @@ module PlayerModule =
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
                     let player = Entity.setLastTimeJumpNp world.State.TickTime player
-                    let world = World.setEntity address player world
                     let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
                     let world = World.playSound JumpSound 1.0f world
+                    let world = World.setEntity address player world
                     (Propagate, world)
                 else (Propagate, world)
             else (Propagate, world)
