@@ -675,29 +675,29 @@ module WorldPhysicsModule =
             World.addPhysicsMessage destroyBodyMessage world
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
-        static member setPosition position physicsId world =
-            let setPositionMessage = SetPositionMessage { PhysicsId = physicsId; Position = position }
-            World.addPhysicsMessage setPositionMessage world
+        static member setBodyPosition position physicsId world =
+            let setBodyPositionMessage = SetBodyPositionMessage { PhysicsId = physicsId; Position = position }
+            World.addPhysicsMessage setBodyPositionMessage world
 
         /// Send a message to the physics system to set the rotation of a body with the given physics id.
-        static member setRotation rotation physicsId world =
-            let setRotationMessage = SetRotationMessage { PhysicsId = physicsId; Rotation = rotation }
-            World.addPhysicsMessage setRotationMessage world
+        static member setBodyRotation rotation physicsId world =
+            let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
+            World.addPhysicsMessage setBodyRotationMessage world
 
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
-        static member setLinearVelocity linearVelocity physicsId world =
-            let setLinearVelocityMessage = SetLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
-            World.addPhysicsMessage setLinearVelocityMessage world
+        static member setBodyLinearVelocity linearVelocity physicsId world =
+            let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
+            World.addPhysicsMessage setBodyLinearVelocityMessage world
 
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
-        static member applyLinearImpulse linearImpulse physicsId world =
-            let applyLinearImpulseMessage = ApplyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
-            World.addPhysicsMessage applyLinearImpulseMessage world
+        static member applyBodyLinearImpulse linearImpulse physicsId world =
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
+            World.addPhysicsMessage applyBodyLinearImpulseMessage world
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
-        static member applyForce force physicsId world =
-            let applyForceMessage = ApplyForceMessage { PhysicsId = physicsId; Force = force }
-            World.addPhysicsMessage applyForceMessage world
+        static member applyBodyForce force physicsId world =
+            let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
+            World.addPhysicsMessage applyBodyForceMessage world
 
 [<AutoOpen>]
 module WorldRenderingModule =

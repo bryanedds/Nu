@@ -115,27 +115,27 @@ module PhysicsModule =
         { PhysicsId : PhysicsId }
 
     /// A message to the physics system to destroy a body.
-    type [<StructuralEquality; NoComparison>] SetPositionMessage =
+    type [<StructuralEquality; NoComparison>] SetBodyPositionMessage =
         { PhysicsId : PhysicsId
           Position : Vector2 }
 
     /// A message to the physics system to set the rotation of a body.
-    type [<StructuralEquality; NoComparison>] SetRotationMessage =
+    type [<StructuralEquality; NoComparison>] SetBodyRotationMessage =
         { PhysicsId : PhysicsId
           Rotation : single }
 
     /// A message to the physics system to set the linear velocity of a body.
-    type [<StructuralEquality; NoComparison>] SetLinearVelocityMessage =
+    type [<StructuralEquality; NoComparison>] SetBodyLinearVelocityMessage =
         { PhysicsId : PhysicsId
           LinearVelocity : Vector2 }
 
     /// A message to the physics system to apply a linear impulse to a body.
-    type [<StructuralEquality; NoComparison>] ApplyLinearImpulseMessage =
+    type [<StructuralEquality; NoComparison>] ApplyBodyLinearImpulseMessage =
         { PhysicsId : PhysicsId
           LinearImpulse : Vector2 }
 
     /// A message to the physics system to apply a force to a body.
-    type [<StructuralEquality; NoComparison>] ApplyForceMessage =
+    type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
         { PhysicsId : PhysicsId
           Force : Vector2 }
 
@@ -159,11 +159,11 @@ module PhysicsModule =
     type [<StructuralEquality; NoComparison>] PhysicsMessage =
         | CreateBodyMessage of CreateBodyMessage
         | DestroyBodyMessage of DestroyBodyMessage
-        | SetPositionMessage of SetPositionMessage
-        | SetRotationMessage of SetRotationMessage
-        | SetLinearVelocityMessage of SetLinearVelocityMessage
-        | ApplyLinearImpulseMessage of ApplyLinearImpulseMessage
-        | ApplyForceMessage of ApplyForceMessage
+        | SetBodyPositionMessage of SetBodyPositionMessage
+        | SetBodyRotationMessage of SetBodyRotationMessage
+        | SetBodyLinearVelocityMessage of SetBodyLinearVelocityMessage
+        | ApplyBodyLinearImpulseMessage of ApplyBodyLinearImpulseMessage
+        | ApplyBodyForceMessage of ApplyBodyForceMessage
         | SetGravityMessage of Vector2
         | RebuildPhysicsHackMessage
 
@@ -435,45 +435,45 @@ module Physics =
         elif not integrator.RebuildingHack then
              debug <| "Could not destroy non-existent body with PhysicsId = " + string destroyBodyMessage.PhysicsId + "'."
 
-    let private setPosition (setPositionMessage : SetPositionMessage) integrator =
+    let private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
-        if  integrator.Bodies.TryGetValue (setPositionMessage.PhysicsId, body) then
-            (!body).Position <- toPhysicsV2 setPositionMessage.Position
-        else debug <| "Could not set position of non-existent body with PhysicsId = " + string setPositionMessage.PhysicsId + "'."
+        if  integrator.Bodies.TryGetValue (setBodyPositionMessage.PhysicsId, body) then
+            (!body).Position <- toPhysicsV2 setBodyPositionMessage.Position
+        else debug <| "Could not set position of non-existent body with PhysicsId = " + string setBodyPositionMessage.PhysicsId + "'."
 
-    let private setRotation (setRotationMessage : SetRotationMessage) integrator =
+    let private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
-        if  integrator.Bodies.TryGetValue (setRotationMessage.PhysicsId, body) then
-            (!body).Rotation <- setRotationMessage.Rotation
-        else debug <| "Could not set rotation of non-existent body with PhysicsId = " + string setRotationMessage.PhysicsId + "'."
+        if  integrator.Bodies.TryGetValue (setBodyRotationMessage.PhysicsId, body) then
+            (!body).Rotation <- setBodyRotationMessage.Rotation
+        else debug <| "Could not set rotation of non-existent body with PhysicsId = " + string setBodyRotationMessage.PhysicsId + "'."
 
-    let private setLinearVelocity (setLinearVelocityMessage : SetLinearVelocityMessage) integrator =
+    let private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
-        if  integrator.Bodies.TryGetValue (setLinearVelocityMessage.PhysicsId, body) then
-            (!body).LinearVelocity <- toPhysicsV2 setLinearVelocityMessage.LinearVelocity
-        else debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + string setLinearVelocityMessage.PhysicsId + "'."
+        if  integrator.Bodies.TryGetValue (setBodyLinearVelocityMessage.PhysicsId, body) then
+            (!body).LinearVelocity <- toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+        else debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + string setBodyLinearVelocityMessage.PhysicsId + "'."
 
-    let private applyLinearImpulse (applyLinearImpulseMessage : ApplyLinearImpulseMessage) integrator =
+    let private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
-        if  integrator.Bodies.TryGetValue (applyLinearImpulseMessage.PhysicsId, body) then
-            (!body).ApplyLinearImpulse (toPhysicsV2 applyLinearImpulseMessage.LinearImpulse)
-        else debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + string applyLinearImpulseMessage.PhysicsId + "'."
+        if  integrator.Bodies.TryGetValue (applyBodyLinearImpulseMessage.PhysicsId, body) then
+            (!body).ApplyLinearImpulse (toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
+        else debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + string applyBodyLinearImpulseMessage.PhysicsId + "'."
 
-    let private applyForce applyForceMessage integrator =
+    let private applyBodyForce applyBodyForceMessage integrator =
         let body = ref Unchecked.defaultof<Dynamics.Body>
-        if  integrator.Bodies.TryGetValue (applyForceMessage.PhysicsId, body) then
-            (!body).ApplyForce (toPhysicsV2 applyForceMessage.Force)
-        else debug <| "Could not apply force to non-existent body with PhysicsId = " + string applyForceMessage.PhysicsId + "'."
+        if  integrator.Bodies.TryGetValue (applyBodyForceMessage.PhysicsId, body) then
+            (!body).ApplyForce (toPhysicsV2 applyBodyForceMessage.Force)
+        else debug <| "Could not apply force to non-existent body with PhysicsId = " + string applyBodyForceMessage.PhysicsId + "'."
 
     let private handlePhysicsMessage integrator physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> createBody createBodyMessage integrator
         | DestroyBodyMessage destroyBodyMessage -> destroyBody destroyBodyMessage integrator
-        | SetPositionMessage setPositionMessage -> setPosition setPositionMessage integrator
-        | SetRotationMessage setRotationMessage -> setRotation setRotationMessage integrator
-        | SetLinearVelocityMessage setLinearVelocityMessage -> setLinearVelocity setLinearVelocityMessage integrator
-        | ApplyLinearImpulseMessage applyLinearImpulseMessage -> applyLinearImpulse applyLinearImpulseMessage integrator
-        | ApplyForceMessage applyForceMessage -> applyForce applyForceMessage integrator
+        | SetBodyPositionMessage setBodyPositionMessage -> setBodyPosition setBodyPositionMessage integrator
+        | SetBodyRotationMessage setBodyRotationMessage -> setBodyRotation setBodyRotationMessage integrator
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> setBodyLinearVelocity setBodyLinearVelocityMessage integrator
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> applyBodyLinearImpulse applyBodyLinearImpulseMessage integrator
+        | ApplyBodyForceMessage applyBodyForceMessage -> applyBodyForce applyBodyForceMessage integrator
         | SetGravityMessage gravity -> integrator.PhysicsContext.Gravity <- toPhysicsV2 gravity
         | RebuildPhysicsHackMessage ->
             integrator.RebuildingHack <- true
