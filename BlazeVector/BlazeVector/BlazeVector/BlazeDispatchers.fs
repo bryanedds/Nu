@@ -74,7 +74,7 @@ module EnemyModule =
 
         let move (enemy : Entity) world =
             let force = Vector2 (-2000.0f, -20000.0f)
-            World.applyForce force enemy.PhysicsId world
+            World.applyBodyForce force enemy.PhysicsId world
 
         let die address (enemy : Entity) world =
             let world = snd <| World.removeEntity address enemy world
@@ -154,7 +154,7 @@ module PlayerModule =
             World.addEntity bulletAddress bullet world
 
         let propelBullet (bullet : Entity) world =
-            let world = World.applyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world
+            let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world
             let world = World.playSound ShotSound 1.0f world
             (bullet, world)
 
@@ -193,7 +193,7 @@ module PlayerModule =
                         let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
                         Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
                     | None -> Vector2 (WalkForce, FallForce)
-                let world = World.applyForce force physicsId world
+                let world = World.applyBodyForce force physicsId world
                 let world = World.setEntity address player world
                 (Propagate, world)
             else (Propagate, world)
@@ -204,7 +204,7 @@ module PlayerModule =
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
                     let player = Entity.setLastTimeJumpNp world.State.TickTime player
-                    let world = World.applyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
+                    let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
                     let world = World.playSound JumpSound 1.0f world
                     let world = World.setEntity address player world
                     (Propagate, world)
