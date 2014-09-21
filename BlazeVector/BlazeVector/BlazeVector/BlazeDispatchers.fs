@@ -73,13 +73,8 @@ module EnemyModule =
             enemy.Position.X - (camera.EyeCenter.X + camera.EyeSize.X * 0.5f) < 0.0f
 
         let move (enemy : Entity) world =
-            let physicsId = enemy.PhysicsId
-            let optGroundTangent = World.getOptBodyGroundContactTangent physicsId world
-            let force =
-                match optGroundTangent with
-                | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (-2000.0f, if groundTangent.Y > 0.0f then 8000.0f else 0.0f))
-                | None -> Vector2 (-2000.0f, -30000.0f)
-            World.applyForce force physicsId world
+            let force = Vector2 (-2000.0f, -20000.0f)
+            World.applyForce force enemy.PhysicsId world
 
         let die address (enemy : Entity) world =
             let world = snd <| World.removeEntity address enemy world
@@ -189,10 +184,15 @@ module PlayerModule =
                 let world = World.setEntity address player world
                 let physicsId = player.PhysicsId
                 let optGroundTangent = World.getOptBodyGroundContactTangent physicsId world
+                let walkForce = 8000.0f
+                let fallForce = -30000.0f
+                let climbForce = 12000.0f
                 let force =
                     match optGroundTangent with
-                    | Some groundTangent -> Vector2.Multiply (groundTangent, Vector2 (8000.0f, if groundTangent.Y > 0.0f then 12000.0f else 0.0f))
-                    | None -> Vector2 (8000.0f, -30000.0f)
+                    | Some groundTangent ->
+                        let downForce = if groundTangent.Y > 0.0f then climbForce else 0.0f
+                        Vector2.Multiply (groundTangent, Vector2 (walkForce, downForce))
+                    | None -> Vector2 (walkForce, fallForce)
                 let world = World.applyForce force physicsId world
                 (Propagate, world)
             else (Propagate, world)
