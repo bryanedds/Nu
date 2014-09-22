@@ -388,7 +388,7 @@ module WorldEntityModule =
             match entity.OptOverlayName with
             | Some overlayName ->
                 let defaultOptDispatcherName = Some typeof<EntityDispatcher>.Name
-                let overlayer = world.Components.Overlayer
+                let overlayer = world.State.Overlayer
                 Overlayer.applyOverlayToFacetNames defaultOptDispatcherName overlayName entity overlayer overlayer
             | None -> ()
 
@@ -404,7 +404,7 @@ module WorldEntityModule =
 
             // apply the entity's overlay
             match entity.OptOverlayName with
-            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.Components.Overlayer
+            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.State.Overlayer
             | None -> ()
 
             // read the entity's properties

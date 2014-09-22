@@ -21,6 +21,13 @@ module BulletModule =
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
+#if false // expiremental code - ignore
+        let testHandler (e : Either<_, _>) world =
+            match e with
+            | Right _ -> (Propagate, world)
+            | Left _ -> (Propagate, world)
+#endif
+
         let tickHandler event world =
             let (address, bullet : Entity, _) = Event.unwrap event
             if World.isGamePlaying world then
@@ -54,6 +61,17 @@ module BulletModule =
              typeof<SpriteFacet>.Name]
 
         override dispatcher.Register (address, bullet, world) =
+
+#if false // expiremental code - ignore
+            let world =
+                Event.observe TickEventName address ^^
+                Event.extractAS<Entity> ^^
+                Event.filter (fun _ world -> World.isGamePlaying world) ^^
+                Event.map (fun x _ -> x) ^^
+                Event.either (CollisionEventName + address) address ^^
+                Event.handler testHandler world
+#endif
+
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
             (bullet, world)

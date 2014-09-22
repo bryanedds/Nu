@@ -73,6 +73,15 @@ module SimModule =
               TransitionType = transitionType
               OptDissolveImage = None }
 
+    /// A mockable subsystem container.
+    type ISubsystems =
+        abstract AudioPlayer : AudioPlayer
+        abstract SetAudioPlayer : AudioPlayer -> ISubsystems
+        abstract Renderer : Renderer
+        abstract SetRenderer : Renderer -> ISubsystems
+        abstract Integrator : Integrator
+        abstract SetIntegrator : Integrator -> ISubsystems
+
     /// The data for a mouse move event.
     type [<StructuralEquality; NoComparison>] MouseMoveData =
         { Position : Vector2 }
@@ -127,13 +136,16 @@ module SimModule =
         | Resolved
         | Propagate
 
+    and CustomSub =
+        Event -> World -> EventHandling * World
+
     /// Describes a game event subscription.
     and [<ReferenceEquality>] Subscription =
         | ExitSub
         | SwallowSub
         | ScreenTransitionSub of desinationScreen : Address
         | ScreenTransitionFromSplashSub of desinationScreen : Address
-        | CustomSub of (Event -> World -> EventHandling * World)
+        | CustomSub of CustomSub
 
     /// An entry into the world's subscription map.
     and SubscriptionEntry = Guid * Address * Subscription
@@ -313,15 +325,24 @@ module SimModule =
 
     /// The world's components.
     and [<ReferenceEquality>] Components =
-        { AudioPlayer : AudioPlayer
-          Renderer : Renderer
-          Integrator : Integrator
-          Overlayer : Overlayer
-          EntityDispatchers : Map<string, EntityDispatcher>
+        { EntityDispatchers : Map<string, EntityDispatcher>
           GroupDispatchers : Map<string, GroupDispatcher>
           ScreenDispatchers : Map<string, ScreenDispatcher>
           GameDispatchers : Map<string, GameDispatcher>
           Facets : Map<string, Facet> }
+
+    /// The world's subsystems.
+    and [<ReferenceEquality>] Subsystems =
+        { AudioPlayer : AudioPlayer
+          Renderer : Renderer
+          Integrator : Integrator }
+        interface ISubsystems with
+            member this.AudioPlayer = this.AudioPlayer
+            member this.SetAudioPlayer audioPlayer = { this with AudioPlayer = audioPlayer } :> ISubsystems
+            member this.Renderer = this.Renderer
+            member this.SetRenderer renderer = { this with Renderer = renderer } :> ISubsystems
+            member this.Integrator = this.Integrator
+            member this.SetIntegrator integrator = { this with Integrator = integrator } :> ISubsystems
 
     /// The world's message queues.
     and [<ReferenceEquality>] MessageQueues =
@@ -333,7 +354,8 @@ module SimModule =
     and [<ReferenceEquality>] Callbacks =
         { Tasks : Task list
           Subscriptions : SubscriptionEntries
-          Unsubscriptions : UnsubscriptionEntries }
+          Unsubscriptions : UnsubscriptionEntries
+          CallbackStates : Map<Guid, obj> }
 
     /// The world's state.
     and [<ReferenceEquality>] State =
@@ -342,6 +364,7 @@ module SimModule =
           Interactivity : Interactivity
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFileName : string
+          Overlayer : Overlayer
           OverlayFileName : string
           UserState : obj }
 
@@ -355,6 +378,7 @@ module SimModule =
           Entities : Map<string, Map<string, Map<string, Entity>>>
           Camera : Camera
           Components : Components
+          Subsystems : ISubsystems
           MessageQueues : MessageQueues
           Callbacks : Callbacks
           State : State }
@@ -436,9 +460,9 @@ module World =
 
     /// Get all of a world's dispatchers.
     let getDispatchers world =
-        Map.map Map.objectify world.Components.EntityDispatchers ^^
-        Map.map Map.objectify world.Components.GroupDispatchers ^^
-        Map.map Map.objectify world.Components.ScreenDispatchers ^^
+        Map.map Map.objectify world.Components.EntityDispatchers @@
+        Map.map Map.objectify world.Components.GroupDispatchers @@
+        Map.map Map.objectify world.Components.ScreenDispatchers @@
         Map.map Map.objectify world.Components.GameDispatchers
 
     /// Transform a bunch of simulants in the context of a world.
@@ -453,26 +477,6 @@ module World =
     /// Set the Camera field of the world.
     let setCamera camera world =
         { world with Camera = camera }
-
-    /// Set the AudioPlayer field of the world.
-    let internal setAudioPlayer audioPlayer world =
-        let components = { world.Components with AudioPlayer = audioPlayer }
-        { world with Components = components }
-
-    /// Set the Renderer field of the world.
-    let internal setRenderer renderer world =
-        let components = { world.Components with Renderer = renderer }
-        { world with Components = components }
-
-    /// Set the Integrator field of the world.
-    let internal setIntegrator integrator world =
-        let components = { world.Components with Integrator = integrator }
-        { world with Components = components }
-
-    /// Set the Overlayer field of the world.
-    let internal setOverlayer overlayer world =
-        let components = { world.Components with Overlayer = overlayer }
-        { world with Components = components }
 
     /// Set the EntityDispatchers field of the world.
     let internal setEntityDispatchers dispatchers world =
@@ -498,6 +502,21 @@ module World =
     let internal setFacets facets world =
         let components = { world.Components with Facets = facets }
         { world with Components = components }
+
+    /// Set the AudioPlayer field of the world.
+    let internal setAudioPlayer audioPlayer world =
+        let subsystems = world.Subsystems.SetAudioPlayer audioPlayer
+        { world with Subsystems = subsystems }
+
+    /// Set the Renderer field of the world.
+    let internal setRenderer renderer world =
+        let subsystems = world.Subsystems.SetRenderer renderer
+        { world with Subsystems = subsystems }
+
+    /// Set the Integrator field of the world.
+    let internal setIntegrator integrator world =
+        let subsystems = world.Subsystems.SetIntegrator integrator
+        { world with Subsystems = subsystems }
 
     /// Clear the audio messages.
     let clearAudioMessages world =
@@ -569,6 +588,26 @@ module World =
         let callbacks = { world.Callbacks with Unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions }
         { world with Callbacks = callbacks }
 
+    /// Add callback state to the world.
+    let addCallbackState key state world =
+        let callbacks = { world.Callbacks with CallbackStates = Map.add key (state :> obj) world.Callbacks.CallbackStates }
+        { world with Callbacks = callbacks }
+
+    /// Remove callback state from the world.
+    let removeCallbackState key world =
+        let callbacks = { world.Callbacks with CallbackStates = Map.remove key world.Callbacks.CallbackStates }
+        { world with Callbacks = callbacks }
+
+    /// Get callback state from the world.
+    let getCallbackState<'a> key world =
+        let state = Map.find key world.Callbacks.CallbackStates
+        state :?> 'a
+
+    /// Set the Overlayer field of the world.
+    let internal setOverlayer overlayer world =
+        let state = { world.State with Overlayer = overlayer }
+        { world with State = state }
+
     /// Increment the TickTime field of the world.
     let incrementTickTime world =
         let state = { world.State with TickTime = world.State.TickTime + 1L }
@@ -638,31 +677,31 @@ module WorldPhysicsModule =
 
         /// Does the world contain the body with the given physics id?
         static member bodyExists physicsId world =
-            Physics.bodyExists physicsId world.Components.Integrator
+            Physics.bodyExists physicsId world.Subsystems.Integrator
 
         /// Get the contact normals of the body with the given physics id.
         static member getBodyContactNormals physicsId world =
-            Physics.getBodyContactNormals physicsId world.Components.Integrator
+            Physics.getBodyContactNormals physicsId world.Subsystems.Integrator
 
         /// Get the linear velocity of the body with the given physics id.
         static member getBodyLinearVelocity physicsId world =
-            Physics.getBodyLinearVelocity physicsId world.Components.Integrator
+            Physics.getBodyLinearVelocity physicsId world.Subsystems.Integrator
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         static member getBodyGroundContactNormals physicsId world =
-            Physics.getBodyGroundContactNormals physicsId world.Components.Integrator
+            Physics.getBodyGroundContactNormals physicsId world.Subsystems.Integrator
 
         /// Try to get a contact normal where the body with the given physics id is touching the ground.
         static member getOptBodyGroundContactNormal physicsId world =
-            Physics.getOptBodyGroundContactNormal physicsId world.Components.Integrator
+            Physics.getOptBodyGroundContactNormal physicsId world.Subsystems.Integrator
 
         /// Try to get a contact tangent where the body with the given physics id is touching the ground.
         static member getOptBodyGroundContactTangent physicsId world =
-            Physics.getOptBodyGroundContactTangent physicsId world.Components.Integrator
+            Physics.getOptBodyGroundContactTangent physicsId world.Subsystems.Integrator
 
         /// Query that the body with the give physics id is on the ground.
         static member isBodyOnGround physicsId world =
-            Physics.isBodyOnGround physicsId world.Components.Integrator
+            Physics.isBodyOnGround physicsId world.Subsystems.Integrator
 
         /// Send a message to the physics system to create a body with the given physics id.
         static member createBody entityAddress physicsId position rotation bodyProperties world =
@@ -830,3 +869,82 @@ module Event =
         let subscriber = Simulant.toGeneric<'s> event.Subscriber
         let eventData = EventData.toGeneric<'d> event.Data
         (event.SubscriberAddress, subscriber, eventData)
+
+    let extract<'s, 'd> (handler : (Address * 's * 'd * Event) -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let handler = fun event world ->
+            let (a, s : 's, d : 'd) = unwrap event
+            handler (a, s, d, event) world
+        (handler, unsubscriber, world)
+
+    let extractAS<'s> (handler : (Address * 's) -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let handler = fun event world ->
+            let (a, s : 's, _) = unwrap event
+            handler (a, s) world
+        (handler, unsubscriber, world)
+
+    let filter pred (handler : 'a -> World -> EventHandling * World, unsubscriber, world : World) =
+        let handler = fun (value : 'a) world ->
+            if pred value world then handler value world
+            else (Propagate, world)
+        (handler, unsubscriber, world)
+
+    let map (mapper : 'a -> World -> 'b) (handler : 'b -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let handler = fun (value : 'a) world ->
+            let result = mapper value world
+            handler result world
+        (handler, unsubscriber, world)
+
+    let fold (folder : 'a -> 'b -> World -> 'a) (state : 'a) (handler : 'a -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let key = Guid.NewGuid ()
+        let world = World.addCallbackState key state world
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in unsubscriber world
+        let handler = fun (value : 'b) world ->
+            let state = World.getCallbackState key world
+            let state = folder state value world
+            let world = World.addCallbackState key state world
+            handler state world
+        (handler, unsubscriber, world)
+
+    let subscribe eventName subscriberAddress (handler : Event -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let key = Guid.NewGuid ()
+        let unsubscriber = fun world -> let world = World.unsubscribe key world in unsubscriber world
+        let world = World.subscribe key eventName subscriberAddress (CustomSub handler) world
+        (handler, unsubscriber, world)
+
+    let both eventName subscriberAddress (handler : 'a * Event -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let key = Guid.NewGuid ()
+        let unsubscriber2 = fun world -> World.unsubscribe key world
+        let handler2 = fun event world ->
+            let key = Guid.NewGuid ()
+            let handler3 = fun event2 world -> let world = unsubscriber2 world in handler (event, event2) world
+            let world = World.subscribe key eventName subscriberAddress (CustomSub handler3) world
+            (Propagate, world)
+        let unsubscriber3 world = let world = unsubscriber2 world in unsubscriber world
+        (handler2, unsubscriber3, world)
+
+    let either eventName subscriberAddress (handler : Either<Event, 'a> -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let key = Guid.NewGuid ()
+        let handler2 = fun value world -> handler (Right value) world
+        let handler3 = fun value world -> handler (Left value) world
+        let world = World.subscribe key eventName subscriberAddress (CustomSub handler3) world
+        let unsubscriber2 world = let world = World.unsubscribe key world in unsubscriber world
+        (handler2, unsubscriber2, world)
+    
+    let lifetime address (handler : 'a -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        let key = Guid.NewGuid ()
+        let unsubscribeHandler = fun _ world ->
+            let world = World.unsubscribe key world
+            let world = unsubscriber world
+            (Propagate, world)
+        let world = World.subscribe key (RemovingEventName + address) address (CustomSub unsubscribeHandler) world
+        let unsubscriber = fun world -> let world = World.unsubscribe key world in unsubscriber world
+        (handler, unsubscriber, world)
+
+    let observe eventName subscriberAddress (handler : Event -> World -> EventHandling * World, unsubscriber : World -> World, world : World) =
+        __c ^^
+        lifetime subscriberAddress ^^
+        subscribe eventName subscriberAddress ^^
+        (handler, unsubscriber, world)
+
+    let handler handler world =
+        (handler, (fun world -> world), world)

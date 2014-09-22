@@ -403,7 +403,7 @@ module WorldModule =
             use writer = XmlWriter.Create (file, writerSettings)
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
-            World.writeGroup world.Components.Overlayer writer group entities
+            World.writeGroup world.State.Overlayer writer group entities
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
 
@@ -422,7 +422,7 @@ module WorldModule =
             try File.Copy (inputOverlayFileName, outputOverlayFileName, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = world.Components.Overlayer
+                let oldOverlayer = world.State.Overlayer
                 let dispatchers = World.getDispatchers world
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers world.Components.Facets
                 let overlayer = Overlayer.make outputOverlayFileName intrinsicOverlays
@@ -436,10 +436,10 @@ module WorldModule =
                             match entity.OptOverlayName with
                             | Some overlayName ->
                                 let oldFacetNames = entity.FacetNames
-                                Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName entity oldOverlayer world.Components.Overlayer
+                                Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName entity oldOverlayer world.State.Overlayer
                                 match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
                                 | Right (entity, world) ->
-                                    Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.Components.Overlayer
+                                    Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.State.Overlayer
                                     World.setEntity address entity world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
@@ -498,7 +498,7 @@ module WorldModule =
         static member private play world =
             let audioMessages = world.MessageQueues.AudioMessages
             let world = World.clearAudioMessages world
-            let audioPlayer = Nu.Audio.play audioMessages world.Components.AudioPlayer
+            let audioPlayer = Nu.Audio.play audioMessages world.Subsystems.AudioPlayer
             World.setAudioPlayer audioPlayer world
 
         static member private getGroupRenderDescriptors world entities =
@@ -547,7 +547,7 @@ module WorldModule =
             let renderDescriptors = World.getRenderDescriptors world
             let renderingMessages = world.MessageQueues.RenderingMessages
             let world = World.clearRenderingMessages world
-            let renderer = Nu.Rendering.render world.Camera renderingMessages renderDescriptors world.Components.Renderer
+            let renderer = Nu.Rendering.render world.Camera renderingMessages renderDescriptors world.Subsystems.Renderer
             World.setRenderer renderer world
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -578,7 +578,7 @@ module WorldModule =
             if World.isPhysicsRunning world then
                 let physicsMessages = world.MessageQueues.PhysicsMessages
                 let world = World.clearPhysicsMessages world
-                let integrationMessages = Nu.Physics.integrate physicsMessages world.Components.Integrator
+                let integrationMessages = Nu.Physics.integrate physicsMessages world.Subsystems.Integrator
                 World.handleIntegrationMessages integrationMessages world
             else world
 
@@ -657,7 +657,7 @@ module WorldModule =
                     let world = World.play world
                     World.incrementTickTime world)
                 (fun world ->
-                    let renderer = Rendering.handleRenderExit world.Components.Renderer
+                    let renderer = Rendering.handleRenderExit world.Subsystems.Renderer
                     World.setRenderer renderer world)
                 sdlConfig
 
@@ -735,33 +735,25 @@ module WorldModule =
 
                 // make intrinsic overlays
                 let dispatchers =
-                    Map.map Map.objectify entityDispatchers ^^
-                    Map.map Map.objectify groupDispatchers ^^
-                    Map.map Map.objectify screenDispatchers ^^
+                    Map.map Map.objectify entityDispatchers @@
+                    Map.map Map.objectify groupDispatchers @@
+                    Map.map Map.objectify screenDispatchers @@
                     Map.map Map.objectify gameDispatchers
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers facets
 
                 // make the world's components
                 let components =
-                    { AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
-                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
-                      Integrator = Physics.makeIntegrator farseerCautionMode Gravity
-                      Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
-                      EntityDispatchers = entityDispatchers
+                    { EntityDispatchers = entityDispatchers
                       GroupDispatchers = groupDispatchers
                       ScreenDispatchers = screenDispatchers
                       GameDispatchers = gameDispatchers
                       Facets = facets }
 
-                // make the world's state
-                let state =
-                    { TickTime = 0L
-                      Liveness = Running
-                      Interactivity = interactivity
-                      AssetMetadataMap = assetMetadataMap
-                      AssetGraphFileName = AssetGraphFileName
-                      OverlayFileName = OverlayFileName
-                      UserState = userState }
+                // make the world's subsystems
+                let subsystems =
+                    { AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
+                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
+                      Integrator = Physics.makeIntegrator farseerCautionMode Gravity }
 
                 // make the world's message queues
                 let messageQueues =
@@ -773,7 +765,19 @@ module WorldModule =
                 let callbacks =
                     { Tasks = []
                       Subscriptions = Map.empty
-                      Unsubscriptions = Map.empty }
+                      Unsubscriptions = Map.empty
+                      CallbackStates = Map.empty }
+
+                // make the world's state
+                let state =
+                    { TickTime = 0L
+                      Liveness = Running
+                      Interactivity = interactivity
+                      AssetMetadataMap = assetMetadataMap
+                      AssetGraphFileName = AssetGraphFileName
+                      Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
+                      OverlayFileName = OverlayFileName
+                      UserState = userState }
 
                 // make the world itself
                 let world =
@@ -783,9 +787,10 @@ module WorldModule =
                       Entities = Map.empty
                       Camera = let eyeSize = Vector2 (single sdlDeps.Config.ViewW, single sdlDeps.Config.ViewH) in { EyeCenter = Vector2.Zero; EyeSize = eyeSize }
                       Components = components
-                      State = state
+                      Subsystems = subsystems
                       MessageQueues = messageQueues
-                      Callbacks = callbacks }
+                      Callbacks = callbacks
+                      State = state }
 
                 // and finally, register the game
                 let world = snd <| Game.register world.Game world
