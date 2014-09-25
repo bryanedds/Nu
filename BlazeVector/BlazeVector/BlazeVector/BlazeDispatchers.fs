@@ -63,9 +63,9 @@ module BulletModule =
 
             let world =
                 observe TickEventName ^^
-                map unwrapAS ^^
                 filter isGamePlaying ^^
-                either (CollisionEventName + address) ^^
+                map unwrapAS ^^
+                orWith (CollisionEventName + address) ^^
                 using address testHandler world
 
             let world = World.observe TickEventName address (CustomSub tickHandler) world

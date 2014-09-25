@@ -877,12 +877,6 @@ module Event =
         (event.SubscriberAddress, subscriber, eventData, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapASD<'s, 'd> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
-        let eventData = EventData.toGeneric<'d> event.Data
-        (event.SubscriberAddress, subscriber, eventData)
-
-    /// Unwrap commonly-useful values of an event.
     let unwrapASE<'s> event =
         let subscriber = Simulant.toGeneric<'s> event.Subscriber
         (event.SubscriberAddress, subscriber, event)
@@ -905,6 +899,12 @@ module Event =
     /// Unwrap commonly-useful values of an event.
     let unwrapAE event =
         (event.SubscriberAddress, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapSD<'s, 'd> event =
+        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        let eventData = EventData.toGeneric<'d> event.Data
+        (subscriber, eventData)
 
     /// Unwrap commonly-useful values of an event.
     let unwrapSE<'s> event =
