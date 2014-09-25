@@ -21,12 +21,10 @@ module BulletModule =
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
-#if false // expiremental code - ignore
-        let testHandler (e : Either<_, _>) world =
+        let testHandler (e : Either<_, Address * Entity>) world =
             match e with
             | Right _ -> (Propagate, world)
             | Left _ -> (Propagate, world)
-#endif
 
         let tickHandler event world =
             let (address, bullet : Entity, _) = Event.unwrap event
@@ -62,15 +60,12 @@ module BulletModule =
 
         override dispatcher.Register (address, bullet, world) =
 
-#if false // expiremental code - ignore
             let world =
-                Event.observe TickEventName address ^^
-                Event.extractAS<Entity> ^^
-                Event.filter (fun _ world -> World.isGamePlaying world) ^^
-                Event.map (fun x _ -> x) ^^
-                Event.either (CollisionEventName + address) address ^^
-                Event.handler testHandler world
-#endif
+                Event.observe TickEventName ^^
+                Event.map (fun e _ -> Event.unwrapAS e) ^^
+                Event.filter (fun _ w -> World.isGamePlaying w) ^^
+                Event.either (CollisionEventName + address) ^^
+                Event.handlet address testHandler world
 
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world

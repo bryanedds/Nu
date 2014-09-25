@@ -91,12 +91,12 @@ module Program =
                 let entity = { entity with Id = entity.Id } // hacky copy for in-place mutation
                 let (entity, world) =
                     let oldFacetNames = entity.FacetNames
-                    let overlayer = world.Components.Overlayer
+                    let overlayer = world.State.Overlayer
                     Overlayer.applyOverlayToFacetNames oldOptOverlayName overlayName entity overlayer overlayer
                     match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
                     | Right (entity, world) -> (entity, world)
                     | Left error -> debug error; (entity, world)
-                Overlayer.applyOverlay oldOptOverlayName overlayName entity world.Components.Overlayer
+                Overlayer.applyOverlay oldOptOverlayName overlayName entity world.State.Overlayer
                 let world = World.setEntity address entity world
                 (entity, world)
             | None -> (entity, world)
