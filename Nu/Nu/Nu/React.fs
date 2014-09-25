@@ -14,14 +14,15 @@ module React =
         static member make<'a> subscriberAddress (handler : 'a -> World -> EventHandling * World) unsubscriber world =
             { SubscriberAddress = subscriberAddress; Handler = handler; Unsubscriber = unsubscriber; World = world }
 
-    // unwrap combinators
-    let unwrapASDE<'s, 'd> event (_ : World) = Event.unwrapASDE<'s, 'd> event
-    let unwrapASD<'s, 'd> event (_ : World) = Event.unwrapASD<'s, 'd> event
+    // event unwrap combinators
+    let unwrap<'s, 'd> event (_ : World) = Event.unwrapASDE<'s, 'd> event
+    let unwrapASD<'s, 'd> event (_ : World) = Event.unwrap<'s, 'd> event
     let unwrapASE<'s> event (_ : World) = Event.unwrapASE<'s> event
     let unwrapADE<'d> event (_ : World) = Event.unwrapADE<'d> event
     let unwrapAS<'s> event (_ : World) = Event.unwrapAS<'s> event
     let unwrapAD<'d> event (_ : World) = Event.unwrapAD<'d> event
     let unwrapAE event (_ : World) = Event.unwrapAE event
+    let unwrapSD<'s, 'd> event (_ : World) = Event.unwrapSD<'s, 'd> event
     let unwrapSE<'s> event (_ : World) = Event.unwrapSE<'s> event
     let unwrapDE<'d> event (_ : World) = Event.unwrapDE<'d> event
     let unwrapA event (_ : World) = Event.unwrapA event
@@ -31,7 +32,7 @@ module React =
     // other common combinators
     let isGamePlaying _ world = World.isGamePlaying world
     let isPhysicsRunning _ world = World.isPhysicsRunning world
-    let isAddressSelected event world = World.isAddressSelected event.SubscriberAddress world
+    let isSelected event world = World.isAddressSelected event.SubscriberAddress world
 
     let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
         let handler = fun value world -> reactor.Handler (mapper value world) world
@@ -76,7 +77,7 @@ module React =
             reactor.Handler state world
         Reactor.make reactor.SubscriberAddress handler unsubscriber world
 
-    let both eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
+    let andWith eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
         let unsubscriber = fun world -> World.unsubscribe key world
         let handler = fun event world ->
@@ -87,7 +88,7 @@ module React =
         let unsubscriber world = let world = unsubscriber world in reactor.Unsubscriber world
         Reactor.make reactor.SubscriberAddress handler unsubscriber reactor.World
 
-    let either eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
+    let orWith eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
         let handlerRight = fun value world -> reactor.Handler (Right value) world
         let handlerLeft = fun value world -> reactor.Handler (Left value) world
@@ -122,4 +123,3 @@ module React =
 
     let observe eventName reactor =
         (observeCombinator eventName reactor).World
-
