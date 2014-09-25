@@ -7,6 +7,7 @@ open FarseerPhysics.Dynamics
 open Prime
 open Nu
 open Nu.Constants
+open Nu.React
 open BlazeVector
 open BlazeVector.BlazeConstants
 
@@ -61,11 +62,11 @@ module BulletModule =
         override dispatcher.Register (address, bullet, world) =
 
             let world =
-                Event.observe TickEventName ^^
-                Event.map (fun e _ -> Event.unwrapAS e) ^^
-                Event.filter (fun _ w -> World.isGamePlaying w) ^^
-                Event.either (CollisionEventName + address) ^^
-                Event.handlet address testHandler world
+                observe TickEventName ^^
+                map (fun e _ -> Event.unwrapAS e) ^^
+                filter (fun _ w -> World.isGamePlaying w) ^^
+                either (CollisionEventName + address) ^^
+                using address testHandler world
 
             let world = World.observe TickEventName address (CustomSub tickHandler) world
             let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world

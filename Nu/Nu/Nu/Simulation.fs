@@ -864,15 +864,6 @@ module Simulant =
 [<RequireQualifiedAccess>]
 module Event =
 
-    type [<ReferenceEquality>] 'a Handlet =
-        { SubscriberAddress : Address
-          Handler : 'a -> World -> EventHandling * World
-          Unsubscribe : World -> World
-          World : World }
-
-        static member make<'a> subscriberAddress (handler : 'a -> World -> EventHandling * World) unsubscribe world =
-            { SubscriberAddress = subscriberAddress; Handler = handler; Unsubscribe = unsubscribe; World = world }
-
     /// Unwrap commonly-useful values of an event.
     let unwrap<'s, 'd> event =
         let subscriber = Simulant.toGeneric<'s> event.Subscriber
@@ -880,96 +871,159 @@ module Event =
         (event.SubscriberAddress, subscriber, eventData)
 
     /// Unwrap commonly-useful values of an event.
+    let unwrapASDE<'s, 'd> event =
+        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        let eventData = EventData.toGeneric<'d> event.Data
+        (event.SubscriberAddress, subscriber, eventData, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapASD<'s, 'd> event =
+        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        let eventData = EventData.toGeneric<'d> event.Data
+        (event.SubscriberAddress, subscriber, eventData)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapASE<'s> event =
+        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        (event.SubscriberAddress, subscriber, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapADE<'d> event =
+        let eventData = EventData.toGeneric<'d> event.Data
+        (event.SubscriberAddress, eventData, event)
+
+    /// Unwrap commonly-useful values of an event.
     let unwrapAS<'s> event =
         let subscriber = Simulant.toGeneric<'s> event.Subscriber
         (event.SubscriberAddress, subscriber)
 
-    let map (mapper : 'a -> World -> 'b) (handlet : 'b Handlet) : 'a Handlet =
-        let handler = fun value world -> handlet.Handler (mapper value world) world
-        Handlet.make handlet.SubscriberAddress handler handlet.Unsubscribe handlet.World
+    /// Unwrap commonly-useful values of an event.
+    let unwrapAD<'d> event =
+        let eventData = EventData.toGeneric<'d> event.Data
+        (event.SubscriberAddress, eventData)
 
-    let filter pred (handlet : 'a Handlet) : 'a Handlet =
+    /// Unwrap commonly-useful values of an event.
+    let unwrapAE<'s> event =
+        (event.SubscriberAddress, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapSE<'s> event =
+        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+        (subscriber, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapDE<'d> event =
+        (EventData.toGeneric<'d> event.Data, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapA<'s> event =
+        event.SubscriberAddress
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapS<'s> event =
+        Simulant.toGeneric<'s> event.Subscriber
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapD<'d> event =
+        EventData.toGeneric<'d> event.Data
+
+module React =
+
+    type [<ReferenceEquality>] 'a Reactor =
+        { SubscriberAddress : Address
+          Handler : 'a -> World -> EventHandling * World
+          Unsubscriber : World -> World
+          World : World }
+
+        static member make<'a> subscriberAddress (handler : 'a -> World -> EventHandling * World) unsubscriber world =
+            { SubscriberAddress = subscriberAddress; Handler = handler; Unsubscriber = unsubscriber; World = world }
+
+    let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
+        let handler = fun value world -> reactor.Handler (mapper value world) world
+        Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
+
+    let filter pred (reactor : 'a Reactor) : 'a Reactor =
         let handler = fun (value : 'a) world ->
-            if pred value world then handlet.Handler value world
+            if pred value world then reactor.Handler value world
             else (Propagate, world)
-        Handlet.make handlet.SubscriberAddress handler handlet.Unsubscribe handlet.World
+        Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
 
-    let mapFst (mapper : 'a -> World -> 'b) (handlet : ('b * 'u) Handlet) : ('a * 'u) Handlet =
-        map (fun (a, u) world -> (mapper a world, u)) handlet
+    let mapFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'u) Reactor) : ('a * 'u) Reactor =
+        map (fun (a, u) world -> (mapper a world, u)) reactor
 
-    let mapSnd (mapper : 'a -> World -> 'b) (handlet : ('u * 'b) Handlet) : ('u * 'a) Handlet =
-        map (fun (u, a) world -> (u, mapper a world)) handlet
+    let mapSnd (mapper : 'a -> World -> 'b) (reactor : ('u * 'b) Reactor) : ('u * 'a) Reactor =
+        map (fun (u, a) world -> (u, mapper a world)) reactor
 
-    let mapLeft (mapper : 'a -> World -> 'b) (handlet : Either<'b, 'u> Handlet) : Either<'a, 'u> Handlet =
+    let mapLeft (mapper : 'a -> World -> 'b) (reactor : Either<'b, 'u> Reactor) : Either<'a, 'u> Reactor =
         map
             (fun either world ->
                 match either with
                 | Right u -> Right u
                 | Left a -> Left <| mapper a world)
-            handlet
+            reactor
 
-    let mapRight (mapper : 'a -> World -> 'b) (handlet : Either<'u, 'b> Handlet) : Either<'u, 'a> Handlet =
+    let mapRight (mapper : 'a -> World -> 'b) (reactor : Either<'u, 'b> Reactor) : Either<'u, 'a> Reactor =
         map
             (fun either world ->
                 match either with
                 | Right a -> Right <| mapper a world
                 | Left u -> Left u)
-            handlet
+            reactor
 
-    let fold (folder : 'a -> 'b -> World -> 'a) (state : 'a) (handlet : 'a Handlet) : 'b Handlet =
+    let fold (folder : 'a -> 'b -> World -> 'a) (state : 'a) (reactor : 'a Reactor) : 'b Reactor =
         let key = Guid.NewGuid ()
-        let world = World.addCallbackState key state handlet.World
-        let unsubscribe = fun world -> let world = World.removeCallbackState key world in handlet.Unsubscribe world
+        let world = World.addCallbackState key state reactor.World
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
         let handler = fun (value : 'b) world ->
             let state = World.getCallbackState key world
             let state = folder state value world
             let world = World.addCallbackState key state world
-            handlet.Handler state world
-        Handlet.make handlet.SubscriberAddress handler unsubscribe world
+            reactor.Handler state world
+        Reactor.make reactor.SubscriberAddress handler unsubscriber world
 
-    let both eventName (handlet : ('a * Event) Handlet) : 'a Handlet =
+    let both eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
-        let unsubscribe = fun world -> World.unsubscribe key world
+        let unsubscriber = fun world -> World.unsubscribe key world
         let handler = fun event world ->
             let key = Guid.NewGuid ()
-            let handler3 = fun event2 world -> let world = unsubscribe world in handlet.Handler (event, event2) world
-            let world = World.subscribe key eventName handlet.SubscriberAddress (CustomSub handler3) world
+            let handler3 = fun event2 world -> let world = unsubscriber world in reactor.Handler (event, event2) world
+            let world = World.subscribe key eventName reactor.SubscriberAddress (CustomSub handler3) world
             (Propagate, world)
-        let unsubscribe world = let world = unsubscribe world in handlet.Unsubscribe world
-        Handlet.make handlet.SubscriberAddress handler unsubscribe handlet.World
+        let unsubscriber world = let world = unsubscriber world in reactor.Unsubscriber world
+        Reactor.make reactor.SubscriberAddress handler unsubscriber reactor.World
 
-    let either eventName (handlet : Either<Event, 'a> Handlet) : 'a Handlet =
+    let either eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
-        let handlerRight = fun value world -> handlet.Handler (Right value) world
-        let handlerLeft = fun value world -> handlet.Handler (Left value) world
-        let world = World.subscribe key eventName handlet.SubscriberAddress (CustomSub handlerLeft) handlet.World
-        let unsubscribe world = let world = World.unsubscribe key world in handlet.Unsubscribe world
-        Handlet.make handlet.SubscriberAddress handlerRight unsubscribe world
+        let handlerRight = fun value world -> reactor.Handler (Right value) world
+        let handlerLeft = fun value world -> reactor.Handler (Left value) world
+        let world = World.subscribe key eventName reactor.SubscriberAddress (CustomSub handlerLeft) reactor.World
+        let unsubscriber world = let world = World.unsubscribe key world in reactor.Unsubscriber world
+        Reactor.make reactor.SubscriberAddress handlerRight unsubscriber world
     
-    let lifetime (handlet : 'a Handlet) : 'a Handlet =
+    let lifetime (reactor : 'a Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
         let handler = fun _ world ->
             let world = World.unsubscribe key world
-            let world = handlet.Unsubscribe world
+            let world = reactor.Unsubscriber world
             (Propagate, world)
-        let world = World.subscribe key (RemovingEventName + handlet.SubscriberAddress) handlet.SubscriberAddress (CustomSub handler) handlet.World
-        let unsubscribe = fun world -> let world = World.unsubscribe key world in handlet.Unsubscribe world
-        Handlet.make handlet.SubscriberAddress handlet.Handler unsubscribe world
+        let world = World.subscribe key (RemovingEventName + reactor.SubscriberAddress) reactor.SubscriberAddress (CustomSub handler) reactor.World
+        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
+        Reactor.make reactor.SubscriberAddress reactor.Handler unsubscriber world
 
-    let subscribeCombinator eventName (handlet : Event Handlet) : Event Handlet =
+    let using subscriberAddress handler world =
+        Reactor.make subscriberAddress handler (fun world -> world) world
+
+    let subscribeCombinator eventName (reactor : Event Reactor) : Event Reactor =
         let key = Guid.NewGuid ()
-        let unsubscribe = fun world -> let world = World.unsubscribe key world in handlet.Unsubscribe world
-        let world = World.subscribe key eventName handlet.SubscriberAddress (CustomSub handlet.Handler) handlet.World
-        Handlet.make handlet.SubscriberAddress handlet.Handler unsubscribe world
+        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
+        let world = World.subscribe key eventName reactor.SubscriberAddress (CustomSub reactor.Handler) reactor.World
+        Reactor.make reactor.SubscriberAddress reactor.Handler unsubscriber world
 
-    let observeCombinator eventName (handlet : Event Handlet) : Event Handlet =
-        lifetime ^^ subscribeCombinator eventName ^^ handlet
+    let observeCombinator eventName (reactor : Event Reactor) : Event Reactor =
+        lifetime ^^ subscribeCombinator eventName ^^ reactor
 
-    let subscribe eventName handlet =
-        (subscribeCombinator eventName handlet).World
+    let subscribe eventName reactor =
+        (subscribeCombinator eventName reactor).World
 
-    let observe eventName handlet =
-        (observeCombinator eventName handlet).World
-
-    let handlet subscriberAddress handler world =
-        Handlet.make subscriberAddress handler (fun world -> world) world
+    let observe eventName reactor =
+        (observeCombinator eventName reactor).World
