@@ -63,8 +63,8 @@ module BulletModule =
 
             let world =
                 observe TickEventName ^^
-                map (fun e _ -> Event.unwrapAS e) ^^
-                filter (fun _ w -> World.isGamePlaying w) ^^
+                map unwrapAS ^^
+                filter isGamePlaying ^^
                 either (CollisionEventName + address) ^^
                 using address testHandler world
 

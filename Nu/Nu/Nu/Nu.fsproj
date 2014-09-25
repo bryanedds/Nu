@@ -83,6 +83,7 @@
     <Compile Include="Group.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Game.fs" />
+    <Compile Include="React.fs" />
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />
     <Compile Include="Tests.fs" />
