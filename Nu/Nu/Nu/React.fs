@@ -38,12 +38,6 @@ module React =
         let handler = fun value world -> reactor.Handler (mapper value world) world
         Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
 
-    let filter pred (reactor : 'a Reactor) : 'a Reactor =
-        let handler = fun (value : 'a) world ->
-            if pred value world then reactor.Handler value world
-            else (Propagate, world)
-        Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
-
     let mapFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'u) Reactor) : ('a * 'u) Reactor =
         map (fun (a, u) world -> (mapper a world, u)) reactor
 
@@ -66,18 +60,48 @@ module React =
                 | Left u -> Left u)
             reactor
 
-    let fold (folder : 'a -> 'b -> World -> 'a) (state : 'a) (reactor : 'a Reactor) : 'b Reactor =
+    let filter pred (reactor : 'a Reactor) : 'a Reactor =
+        let handler = fun (value : 'a) world ->
+            if pred value world then reactor.Handler value world
+            else (Propagate, world)
+        Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
+
+    let scan (scanner : 'a -> 'b -> World -> 'a) (state : 'a) (reactor : 'a Reactor) : 'b Reactor =
         let key = Guid.NewGuid ()
         let world = World.addCallbackState key state reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
         let handler = fun (value : 'b) world ->
             let state = World.getCallbackState key world
-            let state = folder state value world
+            let state = scanner state value world
             let world = World.addCallbackState key state world
             reactor.Handler state world
         Reactor.make reactor.SubscriberAddress handler unsubscriber world
 
-    let andWith eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
+    let scan2 (scanner : 'a -> 'a -> World -> 'a) (reactor : 'a Reactor) : 'a Reactor =
+        let key = Guid.NewGuid ()
+        let world = World.addCallbackState key None reactor.World
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
+        let handler = fun (value : 'a) world ->
+            let optState = World.getCallbackState key world
+            let state = match optState with Some state -> state | None -> value
+            let state = scanner state value world
+            let world = World.addCallbackState key (Some state) world
+            reactor.Handler state world
+        Reactor.make reactor.SubscriberAddress handler unsubscriber world
+
+    let track (tracker : 'a -> World -> 'a * bool) (state : 'a) (reactor : 'b Reactor) : 'b Reactor =
+        let key = Guid.NewGuid ()
+        let world = World.addCallbackState key state reactor.World
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
+        let handler = fun (value : 'b) world ->
+            let state = World.getCallbackState key world
+            let (state, tracked) = tracker state world
+            let world = World.addCallbackState key state world
+            if tracked then reactor.Handler value world
+            else (Propagate, world)
+        Reactor.make reactor.SubscriberAddress handler unsubscriber world
+
+    let zip eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
         let unsubscriber = fun world -> World.unsubscribe key world
         let handler = fun event world ->
@@ -88,7 +112,7 @@ module React =
         let unsubscriber world = let world = unsubscriber world in reactor.Unsubscriber world
         Reactor.make reactor.SubscriberAddress handler unsubscriber reactor.World
 
-    let orWith eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
+    let choice eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
         let key = Guid.NewGuid ()
         let handlerRight = fun value world -> reactor.Handler (Right value) world
         let handlerLeft = fun value world -> reactor.Handler (Left value) world
@@ -116,10 +140,23 @@ module React =
         Reactor.make reactor.SubscriberAddress reactor.Handler unsubscriber world
 
     let observeCombinator eventName (reactor : Event Reactor) : Event Reactor =
-        lifetime ^^ subscribeCombinator eventName ^^ reactor
+        lifetime ^^ subscribeCombinator eventName reactor
 
     let subscribe eventName reactor =
         (subscribeCombinator eventName reactor).World
 
     let observe eventName reactor =
         (observeCombinator eventName reactor).World
+
+    let inline sum r = scan2 (fun m n _ -> m + n) r
+    let inline average r = scan2 (fun (n : 'numerator, d) v _ -> let n = n + v in (n, d + 1)) r
+    let take n r = track (fun m _ -> (m + 1, m < n)) 0 r
+    let skip n r = track (fun m _ -> (m + 1, m >= n)) 0 r
+    let head r = take 1 r
+    let tail r = skip 1 r
+    let nth n r = skip n ^^ head r
+    let search p r = filter p ^^ head r
+    let distinct r = scan (fun (_, s) v _ -> if Set.contains v s then (None, s) else (Some v, Set.add v s)) (None, Set.empty) r
+    let mapi r = scan (fun (_, i) v _ -> (v, i + 1)) r
+    let max r = scan (fun u v _ -> if u < v then v else u) r
+    let min r = scan (fun u v _ -> if v < u then v else u) r
