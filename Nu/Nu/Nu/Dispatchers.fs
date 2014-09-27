@@ -183,8 +183,8 @@ module UIFacetModule =
 
     type Entity with
         
-        member gui.Enabled = gui?Enabled : bool
-        static member setEnabled (value : bool) (gui : Entity) = gui?Enabled <- value
+        member ui.Enabled = ui?Enabled : bool
+        static member setEnabled (value : bool) (ui : Entity) = ui?Enabled <- value
 
     type UIFacet () =
         inherit Facet ()

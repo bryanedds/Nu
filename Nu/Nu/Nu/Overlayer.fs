@@ -186,3 +186,6 @@ module Overlayer =
             let imported = overlays.ImportNode (node, true)
             ignore <| overlays.DocumentElement.AppendChild imported
         { Overlays = overlays }
+
+    /// Make an empty Overlayer.
+    let makeEmpty () = { Overlays = XmlDocument () }

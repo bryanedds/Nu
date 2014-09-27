@@ -40,10 +40,10 @@ module OmniFlow =
 
     let tryMakeOmniBladeWorld sdlDeps userState =
         let omniComponentFactory = OmniComponentFactory ()
-        let optWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false userState
+        let optWorld = World.tryMake sdlDeps omniComponentFactory UIAndPhysics false userState
         match optWorld with
         | Right world ->
-            let world = World.hintRenderingPackageUse GuiPackageName world
+            let world = World.hintRenderingPackageUse UIPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
             let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world

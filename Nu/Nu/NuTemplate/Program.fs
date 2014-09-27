@@ -58,7 +58,7 @@ module Program =
             // component factory above, a boolean that protects from a Farseer physics bug but
             // slows down the engine badly, and a value that could have been used to user-defined
             // data to the world had we needed it (we don't, so we pass unit).
-            World.tryMake sdlDeps userComponentFactory GuiAndPhysicsAndGamePlay false ()
+            World.tryMake sdlDeps userComponentFactory UIAndPhysicsAndGamePlay false ()
             
         // this is a callback that specifies your game's unique behavior when updating the world
         // every tick. The World value is the state of the world after the callback has transformed
