@@ -22,7 +22,7 @@ module React =
 
     let track4
         (tracker : 'c -> 'a -> World -> 'c * bool)
-        (plus : 'c -> 'b)
+        (tranformer : 'c -> 'b)
         (state : 'c)
         (reactor : 'b Reactor) :
         'a Reactor =
@@ -33,7 +33,7 @@ module React =
             let state = World.getCallbackState key world
             let (state, tracked) = tracker state value world
             let world = World.addCallbackState key state world
-            if tracked then reactor.Handler (plus state) world
+            if tracked then reactor.Handler (tranformer state) world
             else (Propagate, world)
         Reactor.make reactor.ReactAddress handler unsubscriber world
 
@@ -148,39 +148,46 @@ module React =
         Reactor.make reactor.ReactAddress handler reactor.Unsubscriber reactor.World
 
     let augment f s r = track (fun b w -> (f b w, true)) s r
-    let scan4 f p s r = track4 (fun c a w -> (f c a w, true)) p s r
+    let scan4 f g s r = track4 (fun c a w -> (f c a w, true)) g s r
     let scan2 f r = track2 (fun a a2 w -> (f a a2 w, true)) r
     let scan f s r = scan4 f id s r
 
     (* Advanced Combinators *)
 
-    let organize reactor =
-        scan
-            (fun (_, s) v _ ->
-                if Set.contains v s
-                then (None, s)
-                else (Some v, Set.add v s))
-            (None, Set.empty)
-            reactor
-
     let inline average (reactor : 'a Reactor) : 'a Reactor =
         scan4
-            (fun (_ : 'a, n : 'a, d : 'a) v _ ->
-                let n = n + v
+            (fun (_ : 'a, n : 'a, d : 'a) a _ ->
+                let n = n + a
                 let d = d + GenericOne
                 (n / d, n, d))
             Triple.fst
             (GenericZero, GenericZero, GenericZero)
             reactor
-    
-    let group reactor : 'v Reactor =
+
+    let organize (reactor : ('a option * ('a Set)) Reactor) : 'a Reactor =
         scan
-            (fun (_, _, s) v _ ->
-                if Set.contains v s
-                then (v, false, s)
-                else (v, true, Set.add v s))
-            (Unchecked.defaultof<'v>, false, Set.empty)
+            (fun (_, s) a _ ->
+                if Set.contains a s
+                then (None, s)
+                else (Some a, Set.add a s))
+            (None, Set.empty)
             reactor
+
+    let group (reactor : ('a * bool * ('a Set)) Reactor) : 'a Reactor =
+        scan
+            (fun (_, _, s) a _ ->
+                if Set.contains a s
+                then (a, false, s)
+                else (a, true, Set.add a s))
+            (Unchecked.defaultof<'a>, false, Set.empty)
+            reactor
+    
+    let pairwise (r : ('a * 'a) Reactor) : 'a Reactor =
+        track4
+            (fun (o, _) a _ -> ((o, a), Option.isSome o))
+            (fun (o, c) -> (Option.get o, c))
+            (None, Unchecked.defaultof<'a>)
+            r
 
     let inline sum r = scan2 (fun m n _ -> m + n) r
     let take n r = track (fun m _ -> (m + 1, m < n)) 0 r
@@ -191,10 +198,9 @@ module React =
     let search p r = filter p ^^ head r
     let choose r = filter (fun o _ -> Option.isSome o) r
     let mapi r = augment (fun i _ -> i + 1) 0 r
-    let max r = scan2 (fun u v _ -> if u < v then v else u) r
-    let min r = scan2 (fun u v _ -> if v < u then v else u) r
-    let distinct r = organize ^^ map (fun v _ -> fst v) ^^ choose r
-    //let pairwise r = track (fun o _ -> match o with Some v -> (v, true) | None ->  )
+    let max r = scan2 (fun m n _ -> if m < n then n else m) r
+    let min r = scan2 (fun m n _ -> if n < m then n else m) r
+    let distinct r = organize ^^ map (fun a _ -> fst a) ^^ choose r
 
     (* Map Combinators *)
 
