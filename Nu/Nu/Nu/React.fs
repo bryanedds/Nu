@@ -1,20 +1,203 @@
 ﻿namespace Nu
 open System
+open LanguagePrimitives
 open Prime
 open Nu.Constants
 
-module React =
+[<AutoOpen>]
+module ReactModule =
 
     type [<ReferenceEquality>] 'a Reactor =
-        { SubscriberAddress : Address
+        { ReactAddress : Address
           Handler : 'a -> World -> EventHandling * World
           Unsubscriber : World -> World
           World : World }
 
         static member make<'a> subscriberAddress (handler : 'a -> World -> EventHandling * World) unsubscriber world =
-            { SubscriberAddress = subscriberAddress; Handler = handler; Unsubscriber = unsubscriber; World = world }
+            { ReactAddress = subscriberAddress; Handler = handler; Unsubscriber = unsubscriber; World = world }
 
-    // event unwrap combinators
+module React =
+
+    (* Subscribing Combinators *)
+
+    let track4
+        (tracker : 'c -> 'a -> World -> 'c * bool)
+        (plus : 'c -> 'b)
+        (state : 'c)
+        (reactor : 'b Reactor) :
+        'a Reactor =
+        let key = Guid.NewGuid ()
+        let world = World.addCallbackState key state reactor.World
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
+        let handler = fun (value : 'a) world ->
+            let state = World.getCallbackState key world
+            let (state, tracked) = tracker state value world
+            let world = World.addCallbackState key state world
+            if tracked then reactor.Handler (plus state) world
+            else (Propagate, world)
+        Reactor.make reactor.ReactAddress handler unsubscriber world
+
+    let track2
+        (tracker : 'a -> 'a -> World -> 'a * bool)
+        (reactor : 'a Reactor) :
+        'a Reactor =
+        let key = Guid.NewGuid ()
+        let world = World.addCallbackState key None reactor.World
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
+        let handler = fun (value : 'a) world ->
+            let optState = World.getCallbackState key world
+            let state = match optState with Some state -> state | None -> value
+            let (state, tracked) = tracker state value world
+            let world = World.addCallbackState key (Some state) world
+            if tracked then reactor.Handler state world
+            else (Propagate, world)
+        Reactor.make reactor.ReactAddress handler unsubscriber world
+
+    let track
+        (tracker : 'a -> World -> 'a * bool)
+        (state : 'a)
+        (reactor : 'b Reactor) :
+        'b Reactor =
+        let key = Guid.NewGuid ()
+        let world = World.addCallbackState key state reactor.World
+        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
+        let handler = fun (value : 'b) world ->
+            let state = World.getCallbackState key world
+            let (state, tracked) = tracker state world
+            let world = World.addCallbackState key state world
+            if tracked then reactor.Handler value world
+            else (Propagate, world)
+        Reactor.make reactor.ReactAddress handler unsubscriber world
+
+    let zip eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
+        let key = Guid.NewGuid ()
+        let unsubscriber = fun world -> World.unsubscribe key world
+        let handler = fun event world ->
+            let key = Guid.NewGuid ()
+            let handler3 = fun event2 world -> let world = unsubscriber world in reactor.Handler (event, event2) world
+            let world = World.subscribe key eventName reactor.ReactAddress (CustomSub handler3) world
+            (Propagate, world)
+        let unsubscriber world = let world = unsubscriber world in reactor.Unsubscriber world
+        Reactor.make reactor.ReactAddress handler unsubscriber reactor.World
+
+    let choice eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
+        let key = Guid.NewGuid ()
+        let handlerRight = fun value world -> reactor.Handler (Right value) world
+        let handlerLeft = fun value world -> reactor.Handler (Left value) world
+        let world = World.subscribe key eventName reactor.ReactAddress (CustomSub handlerLeft) reactor.World
+        let unsubscriber world = let world = World.unsubscribe key world in reactor.Unsubscriber world
+        Reactor.make reactor.ReactAddress handlerRight unsubscriber world
+
+    let lifetime (reactor : 'a Reactor) : 'a Reactor =
+        let key = Guid.NewGuid ()
+        let handler = fun _ world ->
+            let world = World.unsubscribe key world
+            let world = reactor.Unsubscriber world
+            (Propagate, world)
+        let world = World.subscribe key (RemovingEventName + reactor.ReactAddress) reactor.ReactAddress (CustomSub handler) reactor.World
+        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
+        Reactor.make reactor.ReactAddress reactor.Handler unsubscriber world
+
+    let subscribeCombinator eventName (reactor : Event Reactor) : Event Reactor =
+        let key = Guid.NewGuid ()
+        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
+        let world = World.subscribe key eventName reactor.ReactAddress (CustomSub reactor.Handler) reactor.World
+        Reactor.make reactor.ReactAddress reactor.Handler unsubscriber world
+
+    let subscribe eventName reactor =
+        (subscribeCombinator eventName reactor).World
+
+    let observeCombinator eventName (reactor : Event Reactor) : Event Reactor =
+        lifetime ^^ subscribeCombinator eventName reactor
+
+    let observe eventName reactor =
+        (observeCombinator eventName reactor).World
+
+    (* Primitive Combinators *)
+    
+    let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
+        let handler = fun value world -> reactor.Handler (mapper value world) world
+        Reactor.make reactor.ReactAddress handler reactor.Unsubscriber reactor.World
+
+    let mapFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'c) Reactor) : ('a * 'c) Reactor =
+        map (fun (a, c) world -> (mapper a world, c)) reactor
+
+    let mapSnd (mapper : 'a -> World -> 'b) (reactor : ('c * 'b) Reactor) : ('c * 'a) Reactor =
+        map (fun (c, a) world -> (c, mapper a world)) reactor
+
+    let mapOverLeft (mapper : 'a -> World -> 'b) (reactor : Either<'b, 'c> Reactor) : Either<'a, 'c> Reactor =
+        map
+            (fun either world ->
+                match either with
+                | Right c -> Right c
+                | Left a -> Left <| mapper a world)
+            reactor
+
+    let mapOverRight (mapper : 'a -> World -> 'b) (reactor : Either<'c, 'b> Reactor) : Either<'c, 'a> Reactor =
+        map
+            (fun either world ->
+                match either with
+                | Right a -> Right <| mapper a world
+                | Left c -> Left c)
+            reactor
+
+    let filter pred (reactor : 'a Reactor) : 'a Reactor =
+        let handler = fun (value : 'a) world ->
+            if pred value world then reactor.Handler value world
+            else (Propagate, world)
+        Reactor.make reactor.ReactAddress handler reactor.Unsubscriber reactor.World
+
+    let augment f s r = track (fun b w -> (f b w, true)) s r
+    let scan4 f p s r = track4 (fun c a w -> (f c a w, true)) p s r
+    let scan2 f r = track2 (fun a a2 w -> (f a a2 w, true)) r
+    let scan f s r = scan4 f id s r
+
+    (* Advanced Combinators *)
+
+    let organize reactor =
+        scan
+            (fun (_, s) v _ ->
+                if Set.contains v s
+                then (None, s)
+                else (Some v, Set.add v s))
+            (None, Set.empty)
+            reactor
+
+    let inline average (reactor : 'a Reactor) : 'a Reactor =
+        scan4
+            (fun (_ : 'a, n : 'a, d : 'a) v _ ->
+                let n = n + v
+                let d = d + GenericOne
+                (n / d, n, d))
+            Triple.fst
+            (GenericZero, GenericZero, GenericZero)
+            reactor
+    
+    let group reactor : 'v Reactor =
+        scan
+            (fun (_, _, s) v _ ->
+                if Set.contains v s
+                then (v, false, s)
+                else (v, true, Set.add v s))
+            (Unchecked.defaultof<'v>, false, Set.empty)
+            reactor
+
+    let inline sum r = scan2 (fun m n _ -> m + n) r
+    let take n r = track (fun m _ -> (m + 1, m < n)) 0 r
+    let skip n r = track (fun m _ -> (m + 1, m >= n)) 0 r
+    let head r = take 1 r
+    let tail r = skip 1 r
+    let nth n r = skip n ^^ head r
+    let search p r = filter p ^^ head r
+    let choose r = filter (fun o _ -> Option.isSome o) r
+    let mapi r = augment (fun i _ -> i + 1) 0 r
+    let max r = scan2 (fun u v _ -> if u < v then v else u) r
+    let min r = scan2 (fun u v _ -> if v < u then v else u) r
+    let distinct r = organize ^^ map (fun v _ -> fst v) ^^ choose r
+    //let pairwise r = track (fun o _ -> match o with Some v -> (v, true) | None ->  )
+
+    (* Map Combinators *)
+
     let unwrap<'s, 'd> event (_ : World) = Event.unwrapASDE<'s, 'd> event
     let unwrapASD<'s, 'd> event (_ : World) = Event.unwrap<'s, 'd> event
     let unwrapASE<'s> event (_ : World) = Event.unwrapASE<'s> event
@@ -29,134 +212,12 @@ module React =
     let unwrapS<'s> event (_ : World) = Event.unwrapS<'s> event
     let unwrapD<'d> event (_ : World) = Event.unwrapD<'d> event
 
-    // other common combinators
+    (* Filter Combinators *)
+
     let isGamePlaying _ world = World.isGamePlaying world
     let isPhysicsRunning _ world = World.isPhysicsRunning world
-    let isSelected event world = World.isAddressSelected event.SubscriberAddress world
+    let isSelected event world = World.isAddressSelected event.ReactAddress world
 
-    let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
-        let handler = fun value world -> reactor.Handler (mapper value world) world
-        Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
+    (* Initializing Combinator *)
 
-    let mapFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'u) Reactor) : ('a * 'u) Reactor =
-        map (fun (a, u) world -> (mapper a world, u)) reactor
-
-    let mapSnd (mapper : 'a -> World -> 'b) (reactor : ('u * 'b) Reactor) : ('u * 'a) Reactor =
-        map (fun (u, a) world -> (u, mapper a world)) reactor
-
-    let mapLeft (mapper : 'a -> World -> 'b) (reactor : Either<'b, 'u> Reactor) : Either<'a, 'u> Reactor =
-        map
-            (fun either world ->
-                match either with
-                | Right u -> Right u
-                | Left a -> Left <| mapper a world)
-            reactor
-
-    let mapRight (mapper : 'a -> World -> 'b) (reactor : Either<'u, 'b> Reactor) : Either<'u, 'a> Reactor =
-        map
-            (fun either world ->
-                match either with
-                | Right a -> Right <| mapper a world
-                | Left u -> Left u)
-            reactor
-
-    let filter pred (reactor : 'a Reactor) : 'a Reactor =
-        let handler = fun (value : 'a) world ->
-            if pred value world then reactor.Handler value world
-            else (Propagate, world)
-        Reactor.make reactor.SubscriberAddress handler reactor.Unsubscriber reactor.World
-
-    let scan (scanner : 'a -> 'b -> World -> 'a) (state : 'a) (reactor : 'a Reactor) : 'b Reactor =
-        let key = Guid.NewGuid ()
-        let world = World.addCallbackState key state reactor.World
-        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
-        let handler = fun (value : 'b) world ->
-            let state = World.getCallbackState key world
-            let state = scanner state value world
-            let world = World.addCallbackState key state world
-            reactor.Handler state world
-        Reactor.make reactor.SubscriberAddress handler unsubscriber world
-
-    let scan2 (scanner : 'a -> 'a -> World -> 'a) (reactor : 'a Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
-        let world = World.addCallbackState key None reactor.World
-        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
-        let handler = fun (value : 'a) world ->
-            let optState = World.getCallbackState key world
-            let state = match optState with Some state -> state | None -> value
-            let state = scanner state value world
-            let world = World.addCallbackState key (Some state) world
-            reactor.Handler state world
-        Reactor.make reactor.SubscriberAddress handler unsubscriber world
-
-    let track (tracker : 'a -> World -> 'a * bool) (state : 'a) (reactor : 'b Reactor) : 'b Reactor =
-        let key = Guid.NewGuid ()
-        let world = World.addCallbackState key state reactor.World
-        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
-        let handler = fun (value : 'b) world ->
-            let state = World.getCallbackState key world
-            let (state, tracked) = tracker state world
-            let world = World.addCallbackState key state world
-            if tracked then reactor.Handler value world
-            else (Propagate, world)
-        Reactor.make reactor.SubscriberAddress handler unsubscriber world
-
-    let zip eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
-        let unsubscriber = fun world -> World.unsubscribe key world
-        let handler = fun event world ->
-            let key = Guid.NewGuid ()
-            let handler3 = fun event2 world -> let world = unsubscriber world in reactor.Handler (event, event2) world
-            let world = World.subscribe key eventName reactor.SubscriberAddress (CustomSub handler3) world
-            (Propagate, world)
-        let unsubscriber world = let world = unsubscriber world in reactor.Unsubscriber world
-        Reactor.make reactor.SubscriberAddress handler unsubscriber reactor.World
-
-    let choice eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
-        let handlerRight = fun value world -> reactor.Handler (Right value) world
-        let handlerLeft = fun value world -> reactor.Handler (Left value) world
-        let world = World.subscribe key eventName reactor.SubscriberAddress (CustomSub handlerLeft) reactor.World
-        let unsubscriber world = let world = World.unsubscribe key world in reactor.Unsubscriber world
-        Reactor.make reactor.SubscriberAddress handlerRight unsubscriber world
-    
-    let lifetime (reactor : 'a Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
-        let handler = fun _ world ->
-            let world = World.unsubscribe key world
-            let world = reactor.Unsubscriber world
-            (Propagate, world)
-        let world = World.subscribe key (RemovingEventName + reactor.SubscriberAddress) reactor.SubscriberAddress (CustomSub handler) reactor.World
-        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
-        Reactor.make reactor.SubscriberAddress reactor.Handler unsubscriber world
-
-    let using subscriberAddress handler world =
-        Reactor.make subscriberAddress handler (fun world -> world) world
-
-    let subscribeCombinator eventName (reactor : Event Reactor) : Event Reactor =
-        let key = Guid.NewGuid ()
-        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
-        let world = World.subscribe key eventName reactor.SubscriberAddress (CustomSub reactor.Handler) reactor.World
-        Reactor.make reactor.SubscriberAddress reactor.Handler unsubscriber world
-
-    let observeCombinator eventName (reactor : Event Reactor) : Event Reactor =
-        lifetime ^^ subscribeCombinator eventName reactor
-
-    let subscribe eventName reactor =
-        (subscribeCombinator eventName reactor).World
-
-    let observe eventName reactor =
-        (observeCombinator eventName reactor).World
-
-    let inline sum r = scan2 (fun m n _ -> m + n) r
-    let inline average r = scan2 (fun (n : 'numerator, d) v _ -> let n = n + v in (n, d + 1)) r
-    let take n r = track (fun m _ -> (m + 1, m < n)) 0 r
-    let skip n r = track (fun m _ -> (m + 1, m >= n)) 0 r
-    let head r = take 1 r
-    let tail r = skip 1 r
-    let nth n r = skip n ^^ head r
-    let search p r = filter p ^^ head r
-    let distinct r = scan (fun (_, s) v _ -> if Set.contains v s then (None, s) else (Some v, Set.add v s)) (None, Set.empty) r
-    let mapi r = scan (fun (_, i) v _ -> (v, i + 1)) r
-    let max r = scan (fun u v _ -> if u < v then v else u) r
-    let min r = scan (fun u v _ -> if v < u then v else u) r
+    let using subscriberAddress handler world = Reactor.make subscriberAddress handler id world

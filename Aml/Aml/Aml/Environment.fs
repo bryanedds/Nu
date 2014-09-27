@@ -60,7 +60,7 @@ module Environment =
         let env =
             List.fold
                 (fun env initialType ->
-                    let typeName = a__ initialType : string
+                    let typeName = Triple.fst initialType : string
                     let rawTypeName = typeName.Substring TypePrefixStr.Length
                     instantiateEquatable rawTypeName env)
                 env
