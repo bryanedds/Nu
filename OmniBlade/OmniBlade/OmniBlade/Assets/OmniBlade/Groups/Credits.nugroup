@@ -9,8 +9,8 @@
         <Size>256;64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">BackButtonDown;Gui</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">BackButtonUp;Gui</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">BackButtonDown;UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">BackButtonUp;UI</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">

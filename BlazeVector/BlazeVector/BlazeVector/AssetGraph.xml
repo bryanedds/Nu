@@ -17,19 +17,19 @@
     <Asset name="Song" fileName="Assets/Default/Song.ogg" associations="[Audio]"/>
     <Asset name="TileMap" fileName="Assets/Default/TileMap.tmx" associations="[]"/>
   </Package>
-  <Package name="Gui">
+  <Package name="UI">
     <Asset name="CreditsGroup" fileName="Assets/BlazeVector/Groups/Credits.nugroup" associations="[]"/>
     <Asset name="TitleGroup" fileName="Assets/BlazeVector/Groups/Title.nugroup" associations="[]"/>
-    <Asset name="BackButtonUp" fileName="Assets/BlazeVector/Gui/BackButtonUp.png" associations="[Rendering]"/>
-    <Asset name="BackButtonDown" fileName="Assets/BlazeVector/Gui/BackButtonDown.png" associations="[Rendering]"/>
-    <Asset name="CreditsButtonUp" fileName="Assets/BlazeVector/Gui/CreditsButtonUp.png" associations="[Rendering]"/>
-    <Asset name="CreditsButtonDown" fileName="Assets/BlazeVector/Gui/CreditsButtonDown.png" associations="[Rendering]"/>
-    <Asset name="ExitButtonUp" fileName="Assets/BlazeVector/Gui/ExitButtonUp.png" associations="[Rendering]"/>
-    <Asset name="ExitButtonDown" fileName="Assets/BlazeVector/Gui/ExitButtonDown.png" associations="[Rendering]"/>
-    <Asset name="PlayButtonUp" fileName="Assets/BlazeVector/Gui/PlayButtonUp.png" associations="[Rendering]"/>
-    <Asset name="PlayButtonDown" fileName="Assets/BlazeVector/Gui/PlayButtonDown.png" associations="[Rendering]"/>
-    <Asset name="Machinery" fileName="Assets/BlazeVector/Gui/Machinery.ogg" associations="[Audio]"/>
-    <Asset name="Nu" fileName="Assets/BlazeVector/Gui/Nu.wav" associations="[Audio]"/>
+    <Asset name="BackButtonUp" fileName="Assets/BlazeVector/UI/BackButtonUp.png" associations="[Rendering]"/>
+    <Asset name="BackButtonDown" fileName="Assets/BlazeVector/UI/BackButtonDown.png" associations="[Rendering]"/>
+    <Asset name="CreditsButtonUp" fileName="Assets/BlazeVector/UI/CreditsButtonUp.png" associations="[Rendering]"/>
+    <Asset name="CreditsButtonDown" fileName="Assets/BlazeVector/UI/CreditsButtonDown.png" associations="[Rendering]"/>
+    <Asset name="ExitButtonUp" fileName="Assets/BlazeVector/UI/ExitButtonUp.png" associations="[Rendering]"/>
+    <Asset name="ExitButtonDown" fileName="Assets/BlazeVector/UI/ExitButtonDown.png" associations="[Rendering]"/>
+    <Asset name="PlayButtonUp" fileName="Assets/BlazeVector/UI/PlayButtonUp.png" associations="[Rendering]"/>
+    <Asset name="PlayButtonDown" fileName="Assets/BlazeVector/UI/PlayButtonDown.png" associations="[Rendering]"/>
+    <Asset name="Machinery" fileName="Assets/BlazeVector/UI/Machinery.ogg" associations="[Audio]"/>
+    <Asset name="Nu" fileName="Assets/BlazeVector/UI/Nu.wav" associations="[Audio]"/>
   </Package>
   <Package name="Stage">
     <Asset name="Player" fileName="Assets/BlazeVector/Stage/Player.png" associations="[Rendering]"/>
@@ -55,7 +55,7 @@
     <Asset name="Hit" fileName="Assets/BlazeVector/Stage/Hit.wav" associations="[Audio]"/>
     <Asset name="Explosion" fileName="Assets/BlazeVector/Stage/Explosion.wav" associations="[Audio]"/>
     <Asset name="Death" fileName="Assets/BlazeVector/Stage/Death.wav" associations="[Audio]"/>
-    <Asset name="StageGui" fileName="Assets/BlazeVector/Groups/StageGui.nugroup" associations="[]"/>
+    <Asset name="StageUI" fileName="Assets/BlazeVector/Groups/StageUI.nugroup" associations="[]"/>
     <Asset name="StagePlay" fileName="Assets/BlazeVector/Groups/StagePlay.nugroup" associations="[]"/>
   </Package>
   <Package name="Group">

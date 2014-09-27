@@ -5,7 +5,7 @@ module BlazeConstants =
 
     // misc constants. These, and the following constants, will be explained in depth later. Just
     // scan over them for now, or look at them in the debugger on your own.
-    let GuiPackageName = "Gui"
+    let UIPackageName = "UI"
     let StagePackageName = "Stage"
     let StagePlayerName = "Player"
     let StagePlayName = "StagePlay"
@@ -19,8 +19,8 @@ module BlazeConstants =
     let SectionCount = 32
 
     // asset constants
-    let NuSplashSound = { SoundAssetName = "Nu"; PackageName = GuiPackageName }
-    let MachinerySong = { SongAssetName = "Machinery"; PackageName = GuiPackageName }
+    let NuSplashSound = { SoundAssetName = "Nu"; PackageName = UIPackageName }
+    let MachinerySong = { SongAssetName = "Machinery"; PackageName = UIPackageName }
     let DeadBlazeSong = { SongAssetName = "DeadBlaze"; PackageName = StagePackageName }
     let HitSound = { SoundAssetName = "Hit"; PackageName = StagePackageName }
     let ExplosionSound = { SoundAssetName = "Explosion"; PackageName = StagePackageName }
@@ -54,7 +54,7 @@ module BlazeConstants =
 
     // stage constants
     let StageAddress = !* "Stage"
-    let StageGroupFileName = "Assets/BlazeVector/Groups/StageGui.nugroup"
+    let StageGroupFileName = "Assets/BlazeVector/Groups/StageUI.nugroup"
     let StageGroupAddress = !* "Stage/Group"
     let ClickStageBackEventName = !* "Click/Stage/Group/Back"
 

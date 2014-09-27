@@ -781,7 +781,7 @@ module WorldModule =
 
                 // make the world itself
                 let world =
-                    { Game = Game.make activeGameDispatcher (Some "Game")
+                    { Game = Game.make activeGameDispatcher <| Some "Game"
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
@@ -796,6 +796,65 @@ module WorldModule =
                 let world = snd <| Game.register world.Game world
                 Right world
             | Left errorMsg -> Left errorMsg
+
+        static member makeEmpty () =
+
+            // the default game dispatcher
+            let gameDispatcher = GameDispatcher ()
+
+            // make the world's components
+            let components =
+                { EntityDispatchers = Map.empty
+                  GroupDispatchers = Map.empty
+                  ScreenDispatchers = Map.empty
+                  GameDispatchers = Map.singleton (Reflection.getTypeName gameDispatcher) gameDispatcher
+                  Facets = Map.empty }
+
+            // make the world's subsystems
+            let subsystems =
+                { OptAudioPlayer = None
+                  OptRenderer = None
+                  OptIntegrator = None }
+
+            // make the world's message queues
+            let messageQueues =
+                { AudioMessages = []
+                  RenderingMessages = []
+                  PhysicsMessages = [] }
+
+            // make the world's callbacks
+            let callbacks =
+                { Tasks = []
+                  Subscriptions = Map.empty
+                  Unsubscriptions = Map.empty
+                  CallbackStates = Map.empty }
+
+            // make the world's state
+            let state =
+                { TickTime = 0L
+                  Liveness = Running
+                  Interactivity = UIOnly
+                  AssetMetadataMap = Metadata.generateEmptyAssetMetadataMap ()
+                  AssetGraphFileName = String.Empty
+                  Overlayer = Overlayer.makeEmpty ()
+                  OverlayFileName = String.Empty
+                  UserState = () }
+
+            // make the world itself
+            let world =
+                { Game = Game.make gameDispatcher <| Some "Game"
+                  Screens = Map.empty
+                  Groups = Map.empty
+                  Entities = Map.empty
+                  Camera = { EyeCenter = Vector2.Zero; EyeSize = Vector2 (single ResolutionXDefault, single ResolutionYDefault) }
+                  Components = components
+                  Subsystems = subsystems
+                  MessageQueues = messageQueues
+                  Callbacks = callbacks
+                  State = state }
+
+            // and finally, register the game
+            snd <| Game.register world.Game world
 
         static member init () =
             

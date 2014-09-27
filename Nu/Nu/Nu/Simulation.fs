@@ -18,9 +18,9 @@ module InterativityModule =
 
     /// Describes the game engine's current level of 'interactivity'.
     type Interactivity =
-        | Gui
-        | GuiAndPhysics
-        | GuiAndPhysicsAndGamePlay
+        | UIOnly
+        | UIAndPhysics
+        | UIAndPhysicsAndGamePlay
 
 [<RequireQualifiedAccess>]
 module Interactivity =
@@ -28,16 +28,16 @@ module Interactivity =
     /// Query that the engine is in game-playing mode.
     let isGamePlaying interactivity =
         match interactivity with
-        | Gui -> false
-        | GuiAndPhysics -> false
-        | GuiAndPhysicsAndGamePlay -> true
+        | UIOnly -> false
+        | UIAndPhysics -> false
+        | UIAndPhysicsAndGamePlay -> true
 
     /// Query that the physics system is running.
     let isPhysicsRunning interactivity =
         match interactivity with
-        | Gui -> false
-        | GuiAndPhysics -> true
-        | GuiAndPhysicsAndGamePlay -> true
+        | UIOnly -> false
+        | UIAndPhysics -> true
+        | UIAndPhysicsAndGamePlay -> true
 
 [<AutoOpen>]
 module TransitionTypeModule =
@@ -344,6 +344,19 @@ module SimModule =
             member this.Integrator = this.Integrator
             member this.SetIntegrator integrator = { this with Integrator = integrator } :> ISubsystems
 
+    /// The world's mockable subsystems for testing.
+    and [<ReferenceEquality>] MockableSubsystems =
+        { OptAudioPlayer : AudioPlayer option
+          OptRenderer : Renderer option
+          OptIntegrator : Integrator option }
+        interface ISubsystems with
+            member this.AudioPlayer = Option.get this.OptAudioPlayer
+            member this.SetAudioPlayer audioPlayer = { this with OptAudioPlayer = Some audioPlayer } :> ISubsystems
+            member this.Renderer = Option.get this.OptRenderer
+            member this.SetRenderer renderer = { this with OptRenderer = Some renderer } :> ISubsystems
+            member this.Integrator = Option.get this.OptIntegrator
+            member this.SetIntegrator integrator = { this with OptIntegrator = Some integrator } :> ISubsystems
+
     /// The world's message queues.
     and [<ReferenceEquality>] MessageQueues =
         { AudioMessages : AudioMessage rQueue
@@ -371,6 +384,8 @@ module SimModule =
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
     /// needed to implement a game, messages to by consumed by the various engine sub-systems,
     /// and general configuration data.
+    ///
+    /// TODO: attempt to implement with Fsharpx.PersistentHashMap with hash cached in Address type.
     and [<ReferenceEquality>] World =
         { Game : Game
           Screens : Map<string, Screen>

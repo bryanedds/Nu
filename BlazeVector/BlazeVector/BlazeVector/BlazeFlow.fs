@@ -90,12 +90,12 @@ module BlazeFlow =
 
         // we use World.tryMake to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false userState
+        let optWorld = World.tryMake sdlDeps blazeComponentFactory UIAndPhysicsAndGamePlay false userState
         match optWorld with
         | Right world ->
 
-            // hint to the renderer that the Gui package should be loaded up front
-            let world = World.hintRenderingPackageUse GuiPackageName world
+            // hint to the renderer that the UI package should be loaded up front
+            let world = World.hintRenderingPackageUse UIPackageName world
             
             // add our UI screens to the world
             let world = addTitleScreen world
