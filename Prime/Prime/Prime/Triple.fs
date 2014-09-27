@@ -36,7 +36,17 @@ module TripleModule =
         match triple with
         | (_, b, c) -> (b, c)
 
+[<RequireQualifiedAccess>]
 module Triple =
+
+    /// The first item in a triple.
+    let fst = a__
+    
+    /// The second item in a triple.
+    let snd = _b_
+    
+    /// The third item in a triple.
+    let thd = __c
 
     /// Prepend an item to a pair to build a triple.
     let inline prepend a (b, c) =
