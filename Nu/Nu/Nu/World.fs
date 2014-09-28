@@ -578,7 +578,7 @@ module WorldModule =
             if World.isPhysicsRunning world then
                 let physicsMessages = world.MessageQueues.PhysicsMessages
                 let world = World.clearPhysicsMessages world
-                let integrationMessages = Nu.Physics.integrate physicsMessages world.Subsystems.Integrator
+                let integrationMessages = world.Subsystems.Integrator.Integrate physicsMessages
                 World.handleIntegrationMessages integrationMessages world
             else world
 
@@ -753,7 +753,7 @@ module WorldModule =
                 let subsystems =
                     { AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
                       Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
-                      Integrator = Physics.makeIntegrator farseerCautionMode Gravity }
+                      Integrator = Integrator.make farseerCautionMode Gravity }
 
                 // make the world's message queues
                 let messageQueues =
@@ -812,9 +812,9 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                { OptAudioPlayer = None
-                  OptRenderer = None
-                  OptIntegrator = None }
+                { AudioPlayer = None
+                  Renderer = None
+                  Integrator = { MockIntegrator = () }}
 
             // make the world's message queues
             let messageQueues =
