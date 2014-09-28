@@ -498,7 +498,7 @@ module WorldModule =
         static member private play world =
             let audioMessages = world.MessageQueues.AudioMessages
             let world = World.clearAudioMessages world
-            let audioPlayer = Nu.Audio.play audioMessages world.Subsystems.AudioPlayer
+            let audioPlayer = world.Subsystems.AudioPlayer.Play audioMessages 
             World.setAudioPlayer audioPlayer world
 
         static member private getGroupRenderDescriptors world entities =
@@ -547,7 +547,7 @@ module WorldModule =
             let renderDescriptors = World.getRenderDescriptors world
             let renderingMessages = world.MessageQueues.RenderingMessages
             let world = World.clearRenderingMessages world
-            let renderer = Nu.Rendering.render world.Camera renderingMessages renderDescriptors world.Subsystems.Renderer
+            let renderer = world.Subsystems.Renderer.Render (world.Camera, renderingMessages, renderDescriptors)
             World.setRenderer renderer world
 
         static member private handleIntegrationMessage world integrationMessage =
@@ -657,7 +657,7 @@ module WorldModule =
                     let world = World.play world
                     World.incrementTickTime world)
                 (fun world ->
-                    let renderer = Rendering.handleRenderExit world.Subsystems.Renderer
+                    let renderer = world.Subsystems.Renderer.HandleRenderExit () 
                     World.setRenderer renderer world)
                 sdlConfig
 
@@ -751,8 +751,8 @@ module WorldModule =
 
                 // make the world's subsystems
                 let subsystems =
-                    { AudioPlayer = Audio.makeAudioPlayer AssetGraphFileName
-                      Renderer = Rendering.makeRenderer sdlDeps.RenderContext AssetGraphFileName
+                    { AudioPlayer = AudioPlayer.make AssetGraphFileName
+                      Renderer = Renderer.make sdlDeps.RenderContext AssetGraphFileName
                       Integrator = Integrator.make farseerCautionMode Gravity }
 
                 // make the world's message queues
@@ -812,8 +812,8 @@ module WorldModule =
 
             // make the world's subsystems
             let subsystems =
-                { AudioPlayer = None
-                  Renderer = None
+                { AudioPlayer = { MockAudioPlayer  = () }
+                  Renderer = { MockRenderer = () }
                   Integrator = { MockIntegrator = () }}
 
             // make the world's message queues
