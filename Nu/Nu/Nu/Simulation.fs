@@ -73,15 +73,6 @@ module SimModule =
               TransitionType = transitionType
               OptDissolveImage = None }
 
-    /// A mockable subsystem container.
-    type ISubsystems =
-        abstract AudioPlayer : AudioPlayer
-        abstract SetAudioPlayer : AudioPlayer -> ISubsystems
-        abstract Renderer : Renderer
-        abstract SetRenderer : Renderer -> ISubsystems
-        abstract Integrator : Integrator
-        abstract SetIntegrator : Integrator -> ISubsystems
-
     /// The data for a mouse move event.
     type [<StructuralEquality; NoComparison>] MouseMoveData =
         { Position : Vector2 }
@@ -335,27 +326,7 @@ module SimModule =
     and [<ReferenceEquality>] Subsystems =
         { AudioPlayer : AudioPlayer
           Renderer : Renderer
-          Integrator : Integrator }
-        interface ISubsystems with
-            member this.AudioPlayer = this.AudioPlayer
-            member this.SetAudioPlayer audioPlayer = { this with AudioPlayer = audioPlayer } :> ISubsystems
-            member this.Renderer = this.Renderer
-            member this.SetRenderer renderer = { this with Renderer = renderer } :> ISubsystems
-            member this.Integrator = this.Integrator
-            member this.SetIntegrator integrator = { this with Integrator = integrator } :> ISubsystems
-
-    /// The world's mockable subsystems for testing.
-    and [<ReferenceEquality>] MockableSubsystems =
-        { OptAudioPlayer : AudioPlayer option
-          OptRenderer : Renderer option
-          OptIntegrator : Integrator option }
-        interface ISubsystems with
-            member this.AudioPlayer = Option.get this.OptAudioPlayer
-            member this.SetAudioPlayer audioPlayer = { this with OptAudioPlayer = Some audioPlayer } :> ISubsystems
-            member this.Renderer = Option.get this.OptRenderer
-            member this.SetRenderer renderer = { this with OptRenderer = Some renderer } :> ISubsystems
-            member this.Integrator = Option.get this.OptIntegrator
-            member this.SetIntegrator integrator = { this with OptIntegrator = Some integrator } :> ISubsystems
+          Integrator : IIntegrator }
 
     /// The world's message queues.
     and [<ReferenceEquality>] MessageQueues =
@@ -393,7 +364,7 @@ module SimModule =
           Entities : Map<string, Map<string, Map<string, Entity>>>
           Camera : Camera
           Components : Components
-          Subsystems : ISubsystems
+          Subsystems : Subsystems
           MessageQueues : MessageQueues
           Callbacks : Callbacks
           State : State }
@@ -520,17 +491,17 @@ module World =
 
     /// Set the AudioPlayer field of the world.
     let internal setAudioPlayer audioPlayer world =
-        let subsystems = world.Subsystems.SetAudioPlayer audioPlayer
+        let subsystems = { world.Subsystems with AudioPlayer = audioPlayer }
         { world with Subsystems = subsystems }
 
     /// Set the Renderer field of the world.
     let internal setRenderer renderer world =
-        let subsystems = world.Subsystems.SetRenderer renderer
+        let subsystems = { world.Subsystems with Renderer = renderer }
         { world with Subsystems = subsystems }
 
     /// Set the Integrator field of the world.
     let internal setIntegrator integrator world =
-        let subsystems = world.Subsystems.SetIntegrator integrator
+        let subsystems = { world.Subsystems with Integrator = integrator }
         { world with Subsystems = subsystems }
 
     /// Clear the audio messages.
@@ -692,31 +663,31 @@ module WorldPhysicsModule =
 
         /// Does the world contain the body with the given physics id?
         static member bodyExists physicsId world =
-            Physics.bodyExists physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.BodyExists physicsId
 
         /// Get the contact normals of the body with the given physics id.
         static member getBodyContactNormals physicsId world =
-            Physics.getBodyContactNormals physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.GetBodyContactNormals physicsId
 
         /// Get the linear velocity of the body with the given physics id.
         static member getBodyLinearVelocity physicsId world =
-            Physics.getBodyLinearVelocity physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.GetBodyLinearVelocity physicsId
 
         /// Get the contact normals where the body with the given physics id is touching the ground.
         static member getBodyGroundContactNormals physicsId world =
-            Physics.getBodyGroundContactNormals physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.GetBodyGroundContactNormals physicsId
 
         /// Try to get a contact normal where the body with the given physics id is touching the ground.
         static member getOptBodyGroundContactNormal physicsId world =
-            Physics.getOptBodyGroundContactNormal physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.GetBodyOptGroundContactNormal physicsId
 
         /// Try to get a contact tangent where the body with the given physics id is touching the ground.
         static member getOptBodyGroundContactTangent physicsId world =
-            Physics.getOptBodyGroundContactTangent physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.GetBodyOptGroundContactTangent physicsId
 
         /// Query that the body with the give physics id is on the ground.
         static member isBodyOnGround physicsId world =
-            Physics.isBodyOnGround physicsId world.Subsystems.Integrator
+            world.Subsystems.Integrator.IsBodyOnGround physicsId
 
         /// Send a message to the physics system to create a body with the given physics id.
         static member createBody entityAddress physicsId position rotation bodyProperties world =
