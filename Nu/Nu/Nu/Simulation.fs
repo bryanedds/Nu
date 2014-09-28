@@ -324,8 +324,8 @@ module SimModule =
 
     /// The world's subsystems.
     and [<ReferenceEquality>] Subsystems =
-        { AudioPlayer : AudioPlayer
-          Renderer : Renderer
+        { AudioPlayer : IAudioPlayer
+          Renderer : IRenderer
           Integrator : IIntegrator }
 
     /// The world's message queues.

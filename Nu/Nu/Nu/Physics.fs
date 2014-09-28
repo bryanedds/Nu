@@ -172,6 +172,7 @@ module PhysicsModule =
         | BodyCollisionMessage of BodyCollisionMessage
         | BodyTransformMessage of BodyTransformMessage
 
+    /// The physics integrator. Represent the physics system in Nu.
     type IIntegrator =
         /// Query that the integrator contain the body with the given physics id.
         abstract BodyExists : PhysicsId -> bool
@@ -190,8 +191,7 @@ module PhysicsModule =
         /// Integrate (or 'tick') the physics system one frame.
         abstract Integrate : PhysicsMessage rQueue -> IntegrationMessage list
 
-    /// The physics integrator. Represent the physics system in Nu.
-    /// NOTE: you should never access the PhysicsContext from outside the physics system.
+    /// The primary implementation of IIntegrator.
     type [<ReferenceEquality>] Integrator =
         private
             { PhysicsContext : Dynamics.World
@@ -419,6 +419,7 @@ module PhysicsModule =
                               Rotation = body.Rotation }
                     integrator.IntegrationMessages.Add bodyTransformMessage
 
+        /// Make an integrator.
         static member make farseerCautionMode gravity =
             let integrator =
                 { PhysicsContext = FarseerPhysics.Dynamics.World (Integrator.toPhysicsV2 gravity)
@@ -430,65 +431,66 @@ module PhysicsModule =
 
         interface IIntegrator with
         
-            member this.BodyExists physicsId =
-                this.Bodies.ContainsKey physicsId
+            member integrator.BodyExists physicsId =
+                integrator.Bodies.ContainsKey physicsId
         
-            member this.GetBodyContactNormals physicsId =
-                let contacts = Integrator.getBodyContacts physicsId this
+            member integrator.GetBodyContactNormals physicsId =
+                let contacts = Integrator.getBodyContacts physicsId integrator
                 List.map
                     (fun (contact : Contact) ->
                         let (normal, _) = Integrator.getNormalAndManifold contact
                         Vector2 (normal.X, normal.Y))
                     contacts
         
-            member this.GetBodyLinearVelocity physicsId =
-                let body = this.Bodies.[physicsId]
+            member integrator.GetBodyLinearVelocity physicsId =
+                let body = integrator.Bodies.[physicsId]
                 Integrator.toPixelV2 body.LinearVelocity
             
-            member this.GetBodyGroundContactNormals physicsId =
-                let normals = (this :> IIntegrator).GetBodyContactNormals physicsId
+            member integrator.GetBodyGroundContactNormals physicsId =
+                let normals = (integrator :> IIntegrator).GetBodyContactNormals physicsId
                 List.filter
                     (fun normal ->
                         let theta = Vector2.Dot (normal, Vector2.UnitY) |> double |> Math.Acos |> Math.Abs
                         theta < Math.PI * 0.25)
                     normals
             
-            member this.GetBodyOptGroundContactNormal physicsId =
-                let groundNormals = (this :> IIntegrator).GetBodyGroundContactNormals physicsId
+            member integrator.GetBodyOptGroundContactNormal physicsId =
+                let groundNormals = (integrator :> IIntegrator).GetBodyGroundContactNormals physicsId
                 match groundNormals with
                 | [] -> None
                 | _ :: _ ->
                     let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                     Some averageNormal
             
-            member this.GetBodyOptGroundContactTangent physicsId =
-                match (this :> IIntegrator).GetBodyOptGroundContactNormal physicsId with
+            member integrator.GetBodyOptGroundContactTangent physicsId =
+                match (integrator :> IIntegrator).GetBodyOptGroundContactNormal physicsId with
                 | Some normal -> Some <| Vector2 (normal.Y, -normal.X)
                 | None -> None
             
-            member this.IsBodyOnGround physicsId =
-                let groundNormals = (this :> IIntegrator).GetBodyGroundContactNormals physicsId
+            member integrator.IsBodyOnGround physicsId =
+                let groundNormals = (integrator :> IIntegrator).GetBodyGroundContactNormals physicsId
                 not <| List.isEmpty groundNormals
             
-            member this.Integrate physicsMessages =
-                Integrator.handlePhysicsMessages physicsMessages this
-                this.PhysicsContext.Step PhysicsStepRate
-                Integrator.createTransformMessages this
-                let messages = List.ofSeq this.IntegrationMessages
-                this.IntegrationMessages.Clear ()
+            member integrator.Integrate physicsMessages =
+                Integrator.handlePhysicsMessages physicsMessages integrator
+                integrator.PhysicsContext.Step PhysicsStepRate
+                Integrator.createTransformMessages integrator
+                let messages = List.ofSeq integrator.IntegrationMessages
+                integrator.IntegrationMessages.Clear ()
                 messages
 
+    /// The mock implementation of IIntegrator.
     type MockIntegrator =
         { MockIntegrator : unit }
         interface IIntegrator with
-            member this.BodyExists _ = false
-            member this.GetBodyContactNormals _ = failwith "No bodies in MockIntegrator"
-            member this.GetBodyLinearVelocity _ = failwith "No bodies in MockIntegrator"
-            member this.GetBodyGroundContactNormals _ = failwith "No bodies in MockIntegrator"
-            member this.GetBodyOptGroundContactNormal _ = failwith "No bodies in MockIntegrator"
-            member this.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockIntegrator"
-            member this.IsBodyOnGround _ = failwith "No bodies in MockIntegrator"
-            member this.Integrate _ = []
+            member integrator.BodyExists _ = false
+            member integrator.GetBodyContactNormals _ = failwith "No bodies in MockIntegrator"
+            member integrator.GetBodyLinearVelocity _ = failwith "No bodies in MockIntegrator"
+            member integrator.GetBodyGroundContactNormals _ = failwith "No bodies in MockIntegrator"
+            member integrator.GetBodyOptGroundContactNormal _ = failwith "No bodies in MockIntegrator"
+            member integrator.GetBodyOptGroundContactTangent _ = failwith "No bodies in MockIntegrator"
+            member integrator.IsBodyOnGround _ = failwith "No bodies in MockIntegrator"
+            member integrator.Integrate _ = []
 
 [<RequireQualifiedAccess>]
 module Physics =
