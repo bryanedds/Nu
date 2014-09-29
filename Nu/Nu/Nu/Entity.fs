@@ -204,10 +204,10 @@ module WorldEntityModule =
             let entitys = World.getEntities groupAddress world
             Map.filter (fun entityName _ -> Set.contains entityName entityNames) entitys
 
-        static member registerEntity address entity world =
+        static member private registerEntity address entity world =
             Entity.register address entity world
 
-        static member unregisterEntity address entity world =
+        static member private unregisterEntity address entity world =
             Entity.unregister address entity world
 
         static member removeEntityImmediate address entity world =
@@ -245,18 +245,18 @@ module WorldEntityModule =
         static member addEntities groupAddress entities world =
             World.transformSimulants World.addEntity groupAddress entities world
 
-        static member tryGetFacet facetName world =
+        static member private tryGetFacet facetName world =
             match Map.tryFind facetName world.Components.Facets with
             | Some facet -> Right <| facet
             | None -> Left <| "Invalid facet name '" + facetName + "'."
 
-        static member getFacetNamesToAdd oldFacetNames newFacetNames =
+        static member private getFacetNamesToAdd oldFacetNames newFacetNames =
             let newFacetNames = Set.ofList newFacetNames
             let oldFacetNames = Set.ofList oldFacetNames
             let facetNamesToAdd = Set.difference newFacetNames oldFacetNames
             List.ofSeq facetNamesToAdd
 
-        static member getFacetNamesToRemove oldFacetNames newFacetNames =
+        static member private getFacetNamesToRemove oldFacetNames newFacetNames =
             let newFacetNames = Set.ofList newFacetNames
             let oldFacetNames = Set.ofList oldFacetNames
             let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
@@ -332,12 +332,12 @@ module WorldEntityModule =
             | Right (entity, world) -> World.tryAddFacets true facetNamesToAdd optAddress entity world
             | Left _ as left -> left
 
-        static member attachIntrinsicFacetsViaNames (entity : Entity) world =
+        static member private attachIntrinsicFacetsViaNames (entity : Entity) world =
             let entity = { entity with Id = entity.Id } // hacky copy
             Reflection.attachIntrinsicFacets entity.DispatcherNp entity world.Components.Facets
             entity
         
-        static member handleBodyTransformMessage (message : BodyTransformMessage) address (entity : Entity) world =
+        static member internal handleBodyTransformMessage (message : BodyTransformMessage) address (entity : Entity) world =
             // OPTIMIZATION: entity is not changed (avoiding a change entity event) if position and rotation haven't changed.
             if entity.Position <> message.Position || entity.Rotation <> message.Rotation then
                 let entity =

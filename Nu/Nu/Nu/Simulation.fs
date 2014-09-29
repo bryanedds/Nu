@@ -444,12 +444,17 @@ module World =
     /// Keep active a subscription for the lifetime of a simulant.
     let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
 
-    /// Get all of a world's dispatchers.
-    let getDispatchers world =
-        Map.map Map.objectify world.Components.EntityDispatchers @@
-        Map.map Map.objectify world.Components.GroupDispatchers @@
-        Map.map Map.objectify world.Components.ScreenDispatchers @@
-        Map.map Map.objectify world.Components.GameDispatchers
+    /// Make a key used to track an unsubscription with a subscription.
+    let makeSubscriptionKey () =
+        Guid.NewGuid ()
+
+    /// Make a callback key used to track callback states.
+    let makeCallbackKey () =
+        Guid.NewGuid ()
+
+    /// Set the Camera field of the world.
+    let setCamera camera world =
+        { world with Camera = camera }
 
     /// Transform a bunch of simulants in the context of a world.
     let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
@@ -460,9 +465,12 @@ module World =
             (Map.empty, world)
             simulants
 
-    /// Set the Camera field of the world.
-    let setCamera camera world =
-        { world with Camera = camera }
+    /// Get all of a world's dispatchers.
+    let internal getDispatchers world =
+        Map.map Map.objectify world.Components.EntityDispatchers @@
+        Map.map Map.objectify world.Components.GroupDispatchers @@
+        Map.map Map.objectify world.Components.ScreenDispatchers @@
+        Map.map Map.objectify world.Components.GameDispatchers
 
     /// Set the EntityDispatchers field of the world.
     let internal setEntityDispatchers dispatchers world =
@@ -505,17 +513,17 @@ module World =
         { world with Subsystems = subsystems }
 
     /// Clear the audio messages.
-    let clearAudioMessages world =
+    let internal clearAudioMessages world =
         let messageQueues = { world.MessageQueues with AudioMessages = [] }
         { world with MessageQueues = messageQueues }
 
     /// Clear the rendering messages.
-    let clearRenderingMessages world =
+    let internal clearRenderingMessages world =
         let messageQueues = { world.MessageQueues with RenderingMessages = [] }
         { world with MessageQueues = messageQueues }
 
     /// Clear the physics messages.
-    let clearPhysicsMessages world =
+    let internal clearPhysicsMessages world =
         let messageQueues = { world.MessageQueues with PhysicsMessages = [] }
         { world with MessageQueues = messageQueues }
 
@@ -545,33 +553,13 @@ module World =
         { world with Callbacks = callbacks }
 
     /// Restore tasks to be executed by the engine at the specified task tick.
-    let restoreTasks tasks world =
+    let internal restoreTasks tasks world =
         let callbacks = { world.Callbacks with Tasks = world.Callbacks.Tasks @ tasks }
         { world with Callbacks = callbacks }
 
     /// Clear all tasks.
-    let clearTasks world =
+    let internal clearTasks world =
         let callbacks = { world.Callbacks with Tasks = [] }
-        { world with Callbacks = callbacks }
-
-    /// Add an event subscription.
-    let addSubscription eventName subscription world =
-        let callbacks = { world.Callbacks with Subscriptions = Map.add eventName subscription world.Callbacks.Subscriptions }
-        { world with Callbacks = callbacks }
-
-    /// Add an event unsubscription.
-    let addUnsubscription subscriptionKey unsubscription world =
-        let callbacks = { world.Callbacks with Unsubscriptions = Map.add subscriptionKey unsubscription world.Callbacks.Unsubscriptions }
-        { world with Callbacks = callbacks }
-
-    /// Remove an event subscription.
-    let removeSubscription eventName world =
-        let callbacks = { world.Callbacks with Subscriptions = Map.remove eventName world.Callbacks.Subscriptions }
-        { world with Callbacks = callbacks }
-
-    /// Remove an event unsubscription.
-    let removeUnsubscription subscriptionKey world =
-        let callbacks = { world.Callbacks with Unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions }
         { world with Callbacks = callbacks }
 
     /// Add callback state to the world.
@@ -595,7 +583,7 @@ module World =
         { world with State = state }
 
     /// Increment the TickTime field of the world.
-    let incrementTickTime world =
+    let internal incrementTickTime world =
         let state = { world.State with TickTime = world.State.TickTime + 1L }
         { world with State = state }
 
@@ -631,11 +619,11 @@ module WorldInputModule =
     type World with
 
         /// Convert a MouseButton to SDL's representation.
-        static member toSdlMouseButton mouseButton =
+        static member internal toSdlMouseButton mouseButton =
             MouseState.toSdlButton mouseButton
 
         /// Convert SDL's representation of a mouse button to a MouseButton.
-        static member toNuMouseButton mouseButton =
+        static member internal toNuMouseButton mouseButton =
             MouseState.toNuButton mouseButton
 
         /// Query that the given mouse button is down.
@@ -678,11 +666,11 @@ module WorldPhysicsModule =
             world.Subsystems.Integrator.GetBodyGroundContactNormals physicsId
 
         /// Try to get a contact normal where the body with the given physics id is touching the ground.
-        static member getOptBodyGroundContactNormal physicsId world =
+        static member getBodyOptGroundContactNormal physicsId world =
             world.Subsystems.Integrator.GetBodyOptGroundContactNormal physicsId
 
         /// Try to get a contact tangent where the body with the given physics id is touching the ground.
-        static member getOptBodyGroundContactTangent physicsId world =
+        static member getBodyOptGroundContactTangent physicsId world =
             world.Subsystems.Integrator.GetBodyOptGroundContactTangent physicsId
 
         /// Query that the body with the give physics id is on the ground.

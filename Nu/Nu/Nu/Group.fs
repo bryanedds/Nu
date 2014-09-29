@@ -90,10 +90,10 @@ module WorldGroupModule =
             let groups = World.getGroups screenAddress world
             Map.filter (fun groupName _ -> Set.contains groupName groupNames) groups
 
-        static member registerGroup address group world =
+        static member private registerGroup address group world =
             Group.register address group world
 
-        static member unregisterGroup address group world =
+        static member private unregisterGroup address group world =
             Group.unregister address group world
 
         static member removeGroupImmediate address group world =

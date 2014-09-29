@@ -21,9 +21,6 @@ module WorldModule =
 
     type World with
 
-        static member makeSubscriptionKey () =
-            Guid.NewGuid ()
-
         static member handleEventAsSwallow (world : World) =
             (Resolved, world)
 
@@ -37,21 +34,21 @@ module WorldModule =
 
     type World with
 
-        static member tryGetSelectedScreenIdling world =
+        static member tryGetIsSelectedScreenIdling world =
             match World.getOptSelectedScreen world with
             | Some selectedScreen -> Some <| Screen.isIdling selectedScreen
             | None -> None
 
-        static member getSelectedScreenIdling world =
-            match World.tryGetSelectedScreenIdling world with
+        static member isSelectedScreenIdling world =
+            match World.tryGetIsSelectedScreenIdling world with
             | Some answer -> answer
             | None -> failwith <| "Cannot query state of non-existent selected screen."
 
-        static member tryGetSelectedScreenTransitioning world =
-            Option.map not <| World.tryGetSelectedScreenIdling world
+        static member tryGetIsSelectedScreenTransitioning world =
+            Option.map not <| World.tryGetIsSelectedScreenIdling world
 
-        static member getSelectedScreenTransitioning world =
-            not <| World.getSelectedScreenIdling world
+        static member isSelectedScreenTransitioning world =
+            not <| World.isSelectedScreenIdling world
 
         static member private setScreenState state address screen world =
             let screen = Screen.setScreenState state screen
@@ -124,14 +121,14 @@ module WorldModule =
             | [_; _; _] -> Option.map Entity <| World.getOptEntity address world
             | _ -> failwith <| "Invalid simulant address '" + string address + "'."
 
-        static member getPublishingPriority getEntityPublishingPriority simulant world =
+        static member private getPublishingPriority getEntityPublishingPriority simulant world =
             match simulant with
             | Game _ -> GamePublishingPriority
             | Screen _ -> ScreenPublishingPriority
             | Group _ -> GroupPublishingPriority
             | Entity entity -> getEntityPublishingPriority entity world
 
-        static member getSubscriptions getEntityPublishingPriority subscriptions world =
+        static member private getSubscriptions getEntityPublishingPriority subscriptions world =
             List.fold
                 (fun subscriptions (key, address, subscription) ->
                     match World.getOptSimulant address world with
@@ -143,25 +140,25 @@ module WorldModule =
                 []
                 subscriptions
 
-        static member sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
+        static member private sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
             let subscriptions = World.getSubscriptions getEntityPublishingPriority subscriptions world
             let subscriptions = List.sortWith World.sortFstDesc subscriptions
             List.map snd subscriptions
 
-        static member sortSubscriptionsByPickingPriority subscriptions world =
+        static member private sortSubscriptionsByPickingPriority subscriptions world =
             World.sortSubscriptionsBy
                 (fun (entity : Entity) world -> Entity.getPickingPriority entity world)
                 subscriptions
                 world
 
-        static member sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
+        static member private sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
             World.sortSubscriptionsBy
                 (fun _ _ -> EntityPublishingPriority)
                 subscriptions
                 world
 
         // OPTIMIZATION: uses memoization.
-        static member getAnyEventNames eventName =
+        static member private getAnyEventNames eventName =
             match eventName.AddrList with
             | [] -> failwith "Event name cannot be empty."
             | _ :: _ ->
@@ -178,7 +175,7 @@ module WorldModule =
                     AnyEventNamesCache.Add (anyEventNamesKey, anyEventNames)
                     anyEventNames
 
-        static member getSubscriptionsSorted publishSorter eventName world =
+        static member private getSubscriptionsSorted publishSorter eventName world =
             let anyEventNames = World.getAnyEventNames eventName
             let optSubLists = List.map (fun anyEventName -> Map.tryFind anyEventName world.Callbacks.Subscriptions) anyEventNames
             let optSubLists = Map.tryFind eventName world.Callbacks.Subscriptions :: optSubLists
@@ -187,7 +184,7 @@ module WorldModule =
             publishSorter subList world
 
         /// Publish an event.
-        static member publishDefinition publishSorter eventName publisherAddress eventData world =
+        static member private publishDefinition publishSorter eventName publisherAddress eventData world =
             let subscriptions = World.getSubscriptionsSorted publishSorter eventName world
             let (_, world) =
                 List.foldWhile
@@ -218,11 +215,11 @@ module WorldModule =
             world
 
         /// Publish an event.
-        static member publish4Definition eventName publisherAddress eventData world =
+        static member private publish4Definition eventName publisherAddress eventData world =
             World.publish World.sortSubscriptionsByHierarchy eventName publisherAddress eventData world
 
         /// Subscribe to an event.
-        static member subscribeDefinition subscriptionKey eventName subscriberAddress subscription world =
+        static member private subscribeDefinition subscriptionKey eventName subscriberAddress subscription world =
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriberAddress, subscription)
                 match Map.tryFind eventName world.Callbacks.Subscriptions with
@@ -233,11 +230,11 @@ module WorldModule =
             { world with Callbacks = callbacks }
 
         /// Subscribe to an event.
-        static member subscribe4Definition eventName subscriberAddress subscription world =
+        static member private subscribe4Definition eventName subscriberAddress subscription world =
             World.subscribe (World.makeSubscriptionKey ()) eventName subscriberAddress subscription world
 
         /// Unsubscribe from an event.
-        static member unsubscribeDefinition subscriptionKey world =
+        static member private unsubscribeDefinition subscriptionKey world =
             match Map.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
             | Some (eventName, subscriberAddress) ->
                 match Map.tryFind eventName world.Callbacks.Subscriptions with
@@ -259,14 +256,14 @@ module WorldModule =
             | None -> world // TODO: consider failure signal
 
         /// Keep active a subscription for the duration of a procedure.
-        static member withSubscriptionDefinition eventName subscriberAddress subscription procedure world =
+        static member private withSubscriptionDefinition eventName subscriberAddress subscription procedure world =
             let subscriptionKey = World.makeSubscriptionKey ()
             let world = World.subscribe subscriptionKey eventName subscriberAddress subscription world
             let world = procedure world
             World.unsubscribe subscriptionKey world
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member observeDefinition eventName subscriberAddress subscription world =
+        static member private observeDefinition eventName subscriberAddress subscription world =
             if Address.isEmpty subscriberAddress then
                 debug "Cannot observe events with an anonymous subscriber."
                 world
@@ -285,7 +282,7 @@ module WorldModule =
             else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
 
         // TODO: split this function up...
-        static member internal updateTransition handleUpdate world =
+        static member private updateTransition handleUpdate world =
             let world =
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
@@ -379,7 +376,7 @@ module WorldModule =
             let (group, entities) = World.loadGroupFromFile groupFileName world
             World.addScreen screenAddress dissolveScreen [(groupName, group, entities)] world
 
-        static member createIntrinsicOverlays dispatchers facets =
+        static member private createIntrinsicOverlays dispatchers facets =
 
             let hasFacetNamesField = fun sourceType ->
                 sourceType = typeof<EntityDispatcher>

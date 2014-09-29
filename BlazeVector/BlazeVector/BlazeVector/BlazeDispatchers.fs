@@ -200,7 +200,7 @@ module PlayerModule =
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
                 let physicsId = player.PhysicsId
-                let optGroundTangent = World.getOptBodyGroundContactTangent physicsId world
+                let optGroundTangent = World.getBodyOptGroundContactTangent physicsId world
                 let force =
                     match optGroundTangent with
                     | Some groundTangent ->
@@ -278,7 +278,7 @@ module StagePlayModule =
                 let player = getPlayer address world
                 match World.getOptScreen TitleAddress world with
                 | Some titleScreen ->
-                    if Entity.hasFallen player && World.getSelectedScreenIdling world then
+                    if Entity.hasFallen player && World.isSelectedScreenIdling world then
                         let oldWorld = world
                         let world = World.playSound DeathSound 1.0f world
                         match World.tryTransitionScreen TitleAddress titleScreen world with
