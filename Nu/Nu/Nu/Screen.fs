@@ -77,10 +77,10 @@ module WorldScreenModule =
             let screens = World.getGroups gameAddress world
             Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
 
-        static member registerScreen address screen world =
+        static member private registerScreen address screen world =
             Screen.register address screen world
 
-        static member unregisterScreen address screen world =
+        static member private unregisterScreen address screen world =
             Screen.unregister address screen world
 
         static member removeScreenImmediate address screen world =

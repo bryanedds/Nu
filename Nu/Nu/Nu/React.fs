@@ -26,7 +26,7 @@ module React =
         (state : 'c)
         (reactor : 'b Reactor) :
         'a Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeCallbackKey ()
         let world = World.addCallbackState key state reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
         let handler = fun (value : 'a) world ->
@@ -41,7 +41,7 @@ module React =
         (tracker : 'a -> 'a -> World -> 'a * bool)
         (reactor : 'a Reactor) :
         'a Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeCallbackKey ()
         let world = World.addCallbackState key None reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
         let handler = fun (value : 'a) world ->
@@ -58,7 +58,7 @@ module React =
         (state : 'a)
         (reactor : 'b Reactor) :
         'b Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeCallbackKey ()
         let world = World.addCallbackState key state reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
         let handler = fun (value : 'b) world ->
@@ -70,10 +70,10 @@ module React =
         Reactor.make reactor.ReactAddress handler unsubscriber world
 
     let zip eventName (reactor : ('a * Event) Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeSubscriptionKey ()
         let unsubscriber = fun world -> World.unsubscribe key world
         let handler = fun event world ->
-            let key = Guid.NewGuid ()
+            let key = World.makeSubscriptionKey ()
             let handler3 = fun event2 world -> let world = unsubscriber world in reactor.Handler (event, event2) world
             let world = World.subscribe key eventName reactor.ReactAddress (CustomSub handler3) world
             (Propagate, world)
@@ -81,7 +81,7 @@ module React =
         Reactor.make reactor.ReactAddress handler unsubscriber reactor.World
 
     let choice eventName (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeSubscriptionKey ()
         let handlerRight = fun value world -> reactor.Handler (Right value) world
         let handlerLeft = fun value world -> reactor.Handler (Left value) world
         let world = World.subscribe key eventName reactor.ReactAddress (CustomSub handlerLeft) reactor.World
@@ -89,7 +89,7 @@ module React =
         Reactor.make reactor.ReactAddress handlerRight unsubscriber world
 
     let lifetime (reactor : 'a Reactor) : 'a Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeSubscriptionKey ()
         let handler = fun _ world ->
             let world = World.unsubscribe key world
             let world = reactor.Unsubscriber world
@@ -99,7 +99,7 @@ module React =
         Reactor.make reactor.ReactAddress reactor.Handler unsubscriber world
 
     let subscribeCombinator eventName (reactor : Event Reactor) : Event Reactor =
-        let key = Guid.NewGuid ()
+        let key = World.makeSubscriptionKey ()
         let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
         let world = World.subscribe key eventName reactor.ReactAddress (CustomSub reactor.Handler) reactor.World
         Reactor.make reactor.ReactAddress reactor.Handler unsubscriber world
