@@ -29,7 +29,7 @@ module React =
         let key = World.makeCallbackKey ()
         let world = World.addCallbackState key state reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
-        let handler = fun (value : 'a) world ->
+        let handler = fun value world ->
             let state = World.getCallbackState key world
             let (state, tracked) = tracker state value world
             let world = World.addCallbackState key state world
@@ -44,7 +44,7 @@ module React =
         let key = World.makeCallbackKey ()
         let world = World.addCallbackState key None reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
-        let handler = fun (value : 'a) world ->
+        let handler = fun value world ->
             let optState = World.getCallbackState key world
             let state = match optState with Some state -> state | None -> value
             let (state, tracked) = tracker state value world
@@ -61,7 +61,7 @@ module React =
         let key = World.makeCallbackKey ()
         let world = World.addCallbackState key state reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
-        let handler = fun (value : 'b) world ->
+        let handler = fun value world ->
             let state = World.getCallbackState key world
             let (state, tracked) = tracker state world
             let world = World.addCallbackState key state world
