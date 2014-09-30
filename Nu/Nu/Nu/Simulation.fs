@@ -608,10 +608,20 @@ module World =
         let state = { world.State with AssetMetadataMap = assetMetadataMap }
         { world with State = state }
 
+    /// Get the UserState field of the world, casted to 'u.
+    let getUserState world : 'u =
+        world.State.UserState :?> 'u
+
     /// Set the UserState field of the world.
-    let setUserState userState world =
+    let setUserState (userState : 'u) world =
         let state = { world.State with UserState = userState }
         { world with State = state }
+
+    /// Transform the UserState field of the world.
+    let transformUserState (transformer : 'u -> 'u) world =
+        let state = getUserState world
+        let state = transformer state
+        setUserState state world
 
 [<AutoOpen>]
 module WorldInputModule =

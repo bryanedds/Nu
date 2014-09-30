@@ -140,18 +140,18 @@ module WorldModule =
                 []
                 subscriptions
 
-        static member private sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
+        static member sortSubscriptionsBy getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world =
             let subscriptions = World.getSubscriptions getEntityPublishingPriority subscriptions world
             let subscriptions = List.sortWith World.sortFstDesc subscriptions
             List.map snd subscriptions
 
-        static member private sortSubscriptionsByPickingPriority subscriptions world =
+        static member sortSubscriptionsByPickingPriority subscriptions world =
             World.sortSubscriptionsBy
                 (fun (entity : Entity) world -> Entity.getPickingPriority entity world)
                 subscriptions
                 world
 
-        static member private sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
+        static member sortSubscriptionsByHierarchy (subscriptions : SubscriptionEntry list) world =
             World.sortSubscriptionsBy
                 (fun _ _ -> EntityPublishingPriority)
                 subscriptions
@@ -159,13 +159,10 @@ module WorldModule =
 
         // OPTIMIZATION: uses memoization.
         static member private getAnyEventNames eventName =
-            match eventName.AddrList with
-            | [] -> failwith "Event name cannot be empty."
-            | _ :: _ ->
+            if not <| Address.isEmpty eventName then
                 let anyEventNamesKey = Address.allButLast eventName
                 let refAnyEventNames = ref Unchecked.defaultof<Address list>
-                if AnyEventNamesCache.TryGetValue (anyEventNamesKey, refAnyEventNames) then !refAnyEventNames
-                else
+                if not <| AnyEventNamesCache.TryGetValue (anyEventNamesKey, refAnyEventNames) then
                     let eventNameList = eventName.AddrList
                     let anyEventNameList = AnyEventName.AddrList
                     let anyEventNames =
@@ -174,6 +171,8 @@ module WorldModule =
                             yield Address.make subNameList]
                     AnyEventNamesCache.Add (anyEventNamesKey, anyEventNames)
                     anyEventNames
+                else !refAnyEventNames
+            else failwith "Event name cannot be empty."
 
         static member private getSubscriptionsSorted publishSorter eventName world =
             let anyEventNames = World.getAnyEventNames eventName
@@ -220,14 +219,16 @@ module WorldModule =
 
         /// Subscribe to an event.
         static member private subscribeDefinition subscriptionKey eventName subscriberAddress subscription world =
-            let subscriptions =
-                let subscriptionEntry = (subscriptionKey, subscriberAddress, subscription)
-                match Map.tryFind eventName world.Callbacks.Subscriptions with
-                | Some subscriptionEntries -> Map.add eventName (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                | None -> Map.add eventName [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (eventName, subscriberAddress) world.Callbacks.Unsubscriptions
-            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
-            { world with Callbacks = callbacks }
+            if not <| Address.isEmpty eventName then
+                let subscriptions =
+                    let subscriptionEntry = (subscriptionKey, subscriberAddress, subscription)
+                    match Map.tryFind eventName world.Callbacks.Subscriptions with
+                    | Some subscriptionEntries -> Map.add eventName (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
+                    | None -> Map.add eventName [subscriptionEntry] world.Callbacks.Subscriptions
+                let unsubscriptions = Map.add subscriptionKey (eventName, subscriberAddress) world.Callbacks.Unsubscriptions
+                let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+                { world with Callbacks = callbacks }
+            else failwith "Event name cannot be empty."
 
         /// Subscribe to an event.
         static member private subscribe4Definition eventName subscriberAddress subscription world =
@@ -264,10 +265,7 @@ module WorldModule =
 
         /// Keep active a subscription for the lifetime of a simulant.
         static member private observeDefinition eventName subscriberAddress subscription world =
-            if Address.isEmpty subscriberAddress then
-                debug "Cannot observe events with an anonymous subscriber."
-                world
-            else
+            if not <| Address.isEmpty subscriberAddress then
                 let observationKey = World.makeSubscriptionKey ()
                 let removalKey = World.makeSubscriptionKey ()
                 let world = World.subscribe observationKey eventName subscriberAddress subscription world
@@ -276,6 +274,7 @@ module WorldModule =
                     let world = World.unsubscribe observationKey world
                     (Propagate, world))
                 World.subscribe removalKey (RemovingEventName + subscriberAddress) subscriberAddress sub world
+            else failwith "Cannot observe events with an anonymous subscriber."
 
         static member private updateTransition1 (transition : Transition) =
             if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
@@ -794,7 +793,7 @@ module WorldModule =
                 Right world
             | Left errorMsg -> Left errorMsg
 
-        static member makeEmpty () =
+        static member makeEmpty (userState : 'u) =
 
             // the default game dispatcher
             let gameDispatcher = GameDispatcher ()
@@ -835,7 +834,7 @@ module WorldModule =
                   AssetGraphFileName = String.Empty
                   Overlayer = Overlayer.makeEmpty ()
                   OverlayFileName = String.Empty
-                  UserState = () }
+                  UserState = userState }
 
             // make the world itself
             let world =
