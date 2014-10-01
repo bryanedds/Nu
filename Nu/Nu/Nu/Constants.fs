@@ -8,6 +8,10 @@ open Nu
 
 module Constants =
 
+    let [<Literal>] DefaultGameName = "Game"
+    let [<Literal>] DefaultScreenName = "Screen"
+    let [<Literal>] DefaultGroupName = "Group"
+    let [<Literal>] DefaultEntityName = "Entity"
     let [<Literal>] NameFieldName = "Name"
     let [<Literal>] RootNodeName = "Root"
     let [<Literal>] TypeAttributeName = "type"
