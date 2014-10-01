@@ -54,10 +54,10 @@ module React =
         Reactor.make reactor.ReactAddress handler unsubscriber world
 
     let track
-        (tracker : 'a -> World -> 'a * bool)
-        (state : 'a)
-        (reactor : 'b Reactor) :
-        'b Reactor =
+        (tracker : 'b -> World -> 'b * bool)
+        (state : 'b)
+        (reactor : 'a Reactor) :
+        'a Reactor =
         let key = World.makeCallbackKey ()
         let world = World.addCallbackState key state reactor.World
         let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscriber world
@@ -98,20 +98,14 @@ module React =
         let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
         Reactor.make reactor.ReactAddress reactor.Handler unsubscriber world
 
-    let subscribeCombinator eventName (reactor : Event Reactor) : Event Reactor =
+    let subscribe eventName (reactor : Event Reactor) : Event Reactor =
         let key = World.makeSubscriptionKey ()
         let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscriber world
         let world = World.subscribe key eventName reactor.ReactAddress (CustomSub reactor.Handler) reactor.World
         Reactor.make reactor.ReactAddress reactor.Handler unsubscriber world
 
-    let subscribe eventName reactor =
-        (subscribeCombinator eventName reactor).World
-
-    let observeCombinator eventName (reactor : Event Reactor) : Event Reactor =
-        lifetime ^^ subscribeCombinator eventName reactor
-
-    let observe eventName reactor =
-        (observeCombinator eventName reactor).World
+    let observe eventName (reactor : Event Reactor) : Event Reactor =
+        lifetime ^^ subscribe eventName reactor
 
     (* Primitive Combinators *)
     
@@ -148,9 +142,9 @@ module React =
         Reactor.make reactor.ReactAddress handler reactor.Unsubscriber reactor.World
 
     let augment f s r = track (fun b w -> (f b w, true)) s r
-    let scan4 f g s r = track4 (fun c a w -> (f c a w, true)) g s r
+    let scan4 (f : 'b -> 'a -> World -> 'b) g s (r : 'c Reactor) = track4 (fun c a w -> (f c a w, true)) g s r
     let scan2 f r = track2 (fun a a2 w -> (f a a2 w, true)) r
-    let scan f s r = scan4 f id s r
+    let scan (f : 'b -> 'a -> World -> 'b) s r = scan4 f id s r
 
     (* Advanced Combinators *)
 
@@ -217,6 +211,7 @@ module React =
     let unwrapA event (_ : World) = Event.unwrapA event
     let unwrapS<'s> event (_ : World) = Event.unwrapS<'s> event
     let unwrapD<'d> event (_ : World) = Event.unwrapD<'d> event
+    let unwrapV event (_ : World) : 'd = UserData.get ^^ Event.unwrapD event
 
     (* Filter Combinators *)
 
