@@ -166,7 +166,8 @@ module SimModule =
              define? Depth 0.0f
              define? Size DefaultEntitySize
              define? Rotation 0.0f
-             define? Visible true]
+             define? Visible true
+             define? Visible Relative]
 
         abstract member Register : Address * Entity * World -> Entity * World
         default dispatcher.Register (_, entity, world) = (entity, world)
