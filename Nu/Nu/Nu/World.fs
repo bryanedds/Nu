@@ -578,7 +578,7 @@ module WorldModule =
                 World.handleIntegrationMessages integrationMessages world
             else world
 
-        static member private runTask (tasksNotRun, world) task =
+        static member private processTask (tasksNotRun, world) task =
             if task.ScheduledTime < world.State.TickTime then
                 debug <| "Task leak found for time '" + string world.State.TickTime + "'."
                 (tasksNotRun, world)
@@ -587,74 +587,82 @@ module WorldModule =
                 (tasksNotRun, world)
             else (task :: tasksNotRun, world)
 
-        static member private runTasks world =
+        static member private processTasks world =
             let tasks = List.rev world.Callbacks.Tasks
             let world = World.clearTasks world
-            let (tasksNotRun, world) = List.fold World.runTask ([], world) tasks
+            let (tasksNotRun, world) = List.fold World.processTask ([], world) tasks
             let tasksNotRun = List.rev tasksNotRun
             World.restoreTasks tasksNotRun world
 
-        // TODO: split this function up
-        static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
-            Sdl.run
-                (fun sdlDeps -> tryMakeWorld sdlDeps)
-                (fun refEvent world ->
-                    let event = !refEvent
-                    let world =
-                        match event.``type`` with
-                        | SDL.SDL_EventType.SDL_QUIT ->
-                            World.exit world
-                        | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                            let mousePosition = Vector2 (single event.button.x, single event.button.y)
-                            if World.isMouseButtonDown MouseLeft world
-                            then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName Address.empty (MouseMoveData { Position = mousePosition }) world
-                            else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName Address.empty (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
-                        | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                            let mousePosition = World.getMousePositionF world
-                            let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                            let mouseEventName = DownMouseEventName @+ [string mouseButton]
-                            let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
-                            World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
-                        | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                            let mousePosition = World.getMousePositionF world
-                            let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                            let mouseEventName = UpMouseEventName @+ [string mouseButton]
-                            let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
-                            World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
-                        | SDL.SDL_EventType.SDL_KEYDOWN ->
-                            let key = event.key.keysym
-                            let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
-                            World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventName Address.empty eventData world
-                        | SDL.SDL_EventType.SDL_KEYUP ->
-                            let key = event.key.keysym
-                            let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
-                            World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventName Address.empty eventData world
-                        | _ -> world
-                    (world.State.Liveness, world))
-                (fun world ->
-                    let world = World.integrate world
+        static member processInput (event : SDL.SDL_Event) world =
+            let world =
+                match event.``type`` with
+                | SDL.SDL_EventType.SDL_QUIT ->
+                    World.exit world
+                | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                    let mousePosition = Vector2 (single event.button.x, single event.button.y)
+                    if World.isMouseButtonDown MouseLeft world
+                    then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventName Address.empty (MouseMoveData { Position = mousePosition }) world
+                    else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventName Address.empty (MouseButtonData { Position = mousePosition; Button = MouseLeft }) world
+                | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
+                    let mousePosition = World.getMousePositionF world
+                    let mouseButton = World.toNuMouseButton <| uint32 event.button.button
+                    let mouseEventName = DownMouseEventName @+ [string mouseButton]
+                    let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
+                    World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
+                | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
+                    let mousePosition = World.getMousePositionF world
+                    let mouseButton = World.toNuMouseButton <| uint32 event.button.button
+                    let mouseEventName = UpMouseEventName @+ [string mouseButton]
+                    let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
+                    World.publish World.sortSubscriptionsByPickingPriority mouseEventName Address.empty eventData world
+                | SDL.SDL_EventType.SDL_KEYDOWN ->
+                    let key = event.key.keysym
+                    let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
+                    World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventName Address.empty eventData world
+                | SDL.SDL_EventType.SDL_KEYUP ->
+                    let key = event.key.keysym
+                    let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
+                    World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventName Address.empty eventData world
+                | _ -> world
+            (world.State.Liveness, world)
+
+        static member processUpdate handleUpdate world =
+            let world = World.integrate world
+            match world.State.Liveness with
+            | Running ->
+                let world = World.publish4 TickEventName Address.empty (NoData ()) world
+                match world.State.Liveness with
+                | Running ->
+                    let world = World.updateTransition handleUpdate world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.publish4 TickEventName Address.empty (NoData ()) world
-                        match world.State.Liveness with
-                        | Running ->
-                            let world = World.updateTransition handleUpdate world
-                            match world.State.Liveness with
-                            | Running ->
-                                let world = World.runTasks world
-                                (world.State.Liveness, world)
-                            | Exiting -> (Exiting, world)
-                        | Exiting -> (Exiting, world)
-                    | Exiting -> (Exiting, world))
-                (fun world ->
-                    let world = World.render world
-                    handleRender world)
-                (fun world ->
-                    let world = World.play world
-                    World.incrementTickTime world)
-                (fun world ->
-                    let renderer = world.Subsystems.Renderer.HandleRenderExit () 
-                    World.setRenderer renderer world)
+                        let world = World.processTasks world
+                        (world.State.Liveness, world)
+                    | Exiting -> (Exiting, world)
+                | Exiting -> (Exiting, world)
+            | Exiting -> (Exiting, world)
+
+        static member processRender handleRender world =
+            let world = World.render world
+            handleRender world
+
+        static member processPlay world =
+            let world = World.play world
+            World.incrementTickTime world
+
+        static member exitRender world =
+            let renderer = world.Subsystems.Renderer.HandleRenderExit () 
+            World.setRenderer renderer world
+
+        static member run4 tryMakeWorld handleUpdate handleRender sdlConfig =
+            Sdl.run
+                tryMakeWorld
+                World.processInput
+                (World.processUpdate handleUpdate)
+                (World.processRender handleRender)
+                World.processPlay
+                World.exitRender
                 sdlConfig
 
         static member run tryMakeWorld handleUpdate sdlConfig =
