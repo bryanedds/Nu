@@ -55,8 +55,8 @@ module BulletModule =
              typeof<SpriteFacet>.Name]
 
         override dispatcher.Register (address, bullet, world) =
-            let world = World.observe TickEventName address (CustomSub tickHandler) world
-            let world = World.observe (CollisionEventName + address) address (CustomSub collisionHandler) world
+            let world = World.observe TickEventAddress address (CustomSub tickHandler) world
+            let world = World.observe (CollisionEventAddress + address) address (CustomSub collisionHandler) world
             (bullet, world)
 
 [<AutoOpen>]
@@ -122,8 +122,8 @@ module EnemyModule =
         override dispatcher.Register (address, enemy, world) =
             let world =
                 world |>
-                World.observe TickEventName address (CustomSub tickHandler) |>
-                World.observe (CollisionEventName + address) address (CustomSub collisionHandler)
+                World.observe TickEventAddress address (CustomSub tickHandler) |>
+                World.observe (CollisionEventAddress + address) address (CustomSub collisionHandler)
             (enemy, world)
 
 [<AutoOpen>]
@@ -233,9 +233,9 @@ module PlayerModule =
         override dispatcher.Register (address, player, world) =
             let world =
                 world |>
-                World.observe TickEventName address (CustomSub spawnBulletHandler) |>
-                World.observe TickEventName address (CustomSub movementHandler) |>
-                World.observe DownMouseLeftEventName address (CustomSub jumpHandler)
+                World.observe TickEventAddress address (CustomSub spawnBulletHandler) |>
+                World.observe TickEventAddress address (CustomSub movementHandler) |>
+                World.observe DownMouseLeftEventAddress address (CustomSub jumpHandler)
             (player, world)
 
 [<AutoOpen>]
@@ -278,8 +278,8 @@ module StagePlayModule =
         override dispatcher.Register (address, group, world) =
             let world =
                 world |>
-                World.observe TickEventName address (CustomSub adjustCameraHandler) |>
-                World.observe TickEventName address (CustomSub playerFallHandler)
+                World.observe TickEventAddress address (CustomSub adjustCameraHandler) |>
+                World.observe TickEventAddress address (CustomSub playerFallHandler)
             let world = adjustCamera address world
             (group, world)
 
@@ -329,9 +329,9 @@ module StageScreenModule =
         override dispatcher.Register (address, screen, world) =
             let world =
                 world |>
-                World.observe (SelectEventName + address) address (CustomSub startPlayHandler) |>
-                World.observe (StartOutgoingEventName + address) address (CustomSub stoppingPlayHandler) |>
-                World.observe (DeselectEventName + address) address (CustomSub stopPlayHandler)
+                World.observe (SelectEventAddress + address) address (CustomSub startPlayHandler) |>
+                World.observe (StartOutgoingEventAddress + address) address (CustomSub stoppingPlayHandler) |>
+                World.observe (DeselectEventAddress + address) address (CustomSub stopPlayHandler)
             (screen, world)
 
 [<AutoOpen>]

@@ -270,7 +270,7 @@ module ButtonDispatcherModule =
                 if Math.isPointInBounds3 mousePositionButton button.Position button.Size then
                     let button = Entity.setIsDown true button
                     let world = World.setEntity address button world
-                    let world = World.publish4 (DownEventName + address) address (NoData ()) world
+                    let world = World.publish4 (DownEventAddress + address) address (NoData ()) world
                     (Resolved, world)
                 else (Propagate, world)
             else (Propagate, world)
@@ -282,9 +282,9 @@ module ButtonDispatcherModule =
                 let world =
                     let button = Entity.setIsDown false button
                     let world = World.setEntity address button world
-                    World.publish4 (UpEventName + address) address (NoData ()) world
+                    World.publish4 (UpEventAddress + address) address (NoData ()) world
                 if Math.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
-                    let world = World.publish4 (ClickEventName + address) address (NoData ()) world
+                    let world = World.publish4 (ClickEventAddress + address) address (NoData ()) world
                     let world = World.playSound button.ClickSound 1.0f world
                     (Resolved, world)
                 else (Propagate, world)
@@ -302,8 +302,8 @@ module ButtonDispatcherModule =
         override dispatcher.Register (address, button, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventName address (CustomSub handleButtonEventDownMouseLeft) |>
-                World.observe UpMouseLeftEventName address (CustomSub handleButtonEventUpMouseLeft)
+                World.observe DownMouseLeftEventAddress address (CustomSub handleButtonEventDownMouseLeft) |>
+                World.observe UpMouseLeftEventAddress address (CustomSub handleButtonEventUpMouseLeft)
             (button, world)
 
         override dispatcher.GetRenderDescriptors (button, _) =
@@ -463,8 +463,8 @@ module ToggleDispatcherModule =
                 if Math.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
                     let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                     let world = World.setEntity address toggle world
-                    let eventName = if toggle.IsOn then OnEventName else OffEventName
-                    let world = World.publish4 (eventName + address) address (NoData ()) world
+                    let eventAddress = if toggle.IsOn then OnEventAddress else OffEventAddress
+                    let world = World.publish4 (eventAddress + address) address (NoData ()) world
                     let world = World.playSound toggle.ToggleSound 1.0f world
                     (Resolved, world)
                 else
@@ -485,8 +485,8 @@ module ToggleDispatcherModule =
         override dispatcher.Register (address, toggle, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventName address (CustomSub handleToggleEventDownMouseLeft) |>
-                World.observe UpMouseLeftEventName address (CustomSub handleToggleEventUpMouseLeft)
+                World.observe DownMouseLeftEventAddress address (CustomSub handleToggleEventDownMouseLeft) |>
+                World.observe UpMouseLeftEventAddress address (CustomSub handleToggleEventUpMouseLeft)
             (toggle, world)
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
@@ -528,7 +528,7 @@ module FeelerDispatcherModule =
                 if Math.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
                     let feeler = Entity.setIsTouched true feeler
                     let world = World.setEntity address feeler world
-                    let world = World.publish4 (TouchEventName + address) address (MouseButtonData mouseButtonData) world
+                    let world = World.publish4 (TouchEventAddress + address) address (MouseButtonData mouseButtonData) world
                     (Resolved, world)
                 else (Propagate, world)
             else (Propagate, world)
@@ -538,7 +538,7 @@ module FeelerDispatcherModule =
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let feeler = Entity.setIsTouched false feeler
                 let world = World.setEntity address feeler world
-                let world = World.publish4 (ReleaseEventName + address) address (NoData ()) world
+                let world = World.publish4 (ReleaseEventAddress + address) address (NoData ()) world
                 (Resolved, world)
             else (Propagate, world)
 
@@ -551,8 +551,8 @@ module FeelerDispatcherModule =
         override dispatcher.Register (address, feeler, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventName address (CustomSub handleFeelerEventDownMouseLeft) |>
-                World.observe UpMouseLeftEventName address (CustomSub handleFeelerEventUpMouseLeft)
+                World.observe DownMouseLeftEventAddress address (CustomSub handleFeelerEventDownMouseLeft) |>
+                World.observe UpMouseLeftEventAddress address (CustomSub handleFeelerEventUpMouseLeft)
             (feeler, world)
 
         override dispatcher.GetQuickSize (_, _) =

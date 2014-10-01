@@ -38,8 +38,8 @@ module OmniDispatchersModule =
             else (Propagate, world)
 
         override dispatcher.Register (address, avatar, world) =
-            let world = World.observe TickEventName address (CustomSub moveFieldAvatarHandler) world
-            let world = World.observe TickEventName address (CustomSub adjustFieldCameraHandler) world
+            let world = World.observe TickEventAddress address (CustomSub moveFieldAvatarHandler) world
+            let world = World.observe TickEventAddress address (CustomSub adjustFieldCameraHandler) world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             let world = adjustFieldCamera address world
             (avatar, world)

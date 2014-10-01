@@ -9,7 +9,13 @@ open Nu
 open Nu.Constants
 module WorldTests =
 
-    let TestEventName = !* "Test"
+    let TestEventAddress = !* "Test"
+    let TestEntityName = "TestEntity"
+    let TestGroupName = "TestGroup"
+    let TestScreenName = "TestScreen"
+    let TestEntityAddress = !+ [TestScreenName; TestGroupName; TestEntityName]
+    let TestGroupAddress = !+ [TestScreenName; TestGroupName]
+    let TestScreenAddress = !+ [TestScreenName]
     let incUserStateAndPropagate _ world = (Propagate, World.transformUserState incI world)
     let incUserStateAndResolve _ world = (Resolved, World.transformUserState incI world)
 
@@ -28,39 +34,54 @@ module WorldTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
-        let world = World.publish4 TestEventName Address.empty (NoData ()) world
+        let world = World.subscribe4 TestEventAddress Address.empty (CustomSub incUserStateAndPropagate) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
+
+    let [<Fact>] entitySubscribeWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let world = snd <| World.addScreen TestScreenAddress screen [(TestGroupName, group, Map.singleton TestEntityName entity)] world
+        let handler = fun event world ->
+            let entity = Event.unwrapS<Entity> event
+            let world = World.setUserState entity.Name world
+            (Propagate, world)
+        let world = World.subscribe4 TestEventAddress TestEntityAddress (CustomSub handler) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        Assert.Equal<string> (TestEntityName, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
-        let world = World.publish4 TestEventName Address.empty (NoData ()) world
-        let world = World.publish4 TestEventName Address.empty (NoData ()) world
+        let world = World.subscribe4 TestEventAddress Address.empty (CustomSub incUserStateAndPropagate) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
-        let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
-        let world = World.publish4 TestEventName Address.empty (NoData ()) world
+        let world = World.subscribe4 TestEventAddress Address.empty (CustomSub incUserStateAndPropagate) world
+        let world = World.subscribe4 TestEventAddress Address.empty (CustomSub incUserStateAndPropagate) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndResolve) world
-        let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
-        let world = World.publish4 TestEventName Address.empty (NoData ()) world
+        let world = World.subscribe4 TestEventAddress Address.empty (CustomSub incUserStateAndResolve) world
+        let world = World.subscribe4 TestEventAddress Address.empty (CustomSub incUserStateAndPropagate) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let key = World.makeSubscriptionKey ()
         let world = World.makeEmpty 0
-        let world = World.subscribe key TestEventName Address.empty (CustomSub incUserStateAndResolve) world
+        let world = World.subscribe key TestEventAddress Address.empty (CustomSub incUserStateAndResolve) world
         let world = World.unsubscribe key world
-        let world = World.publish4 TestEventName Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (0, World.getUserState world)

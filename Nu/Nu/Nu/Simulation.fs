@@ -117,7 +117,7 @@ module SimModule =
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] Event =
-        { Name : Address
+        { Address : Address
           SubscriberAddress : Address
           Subscriber : Simulant
           PublisherAddress : Address

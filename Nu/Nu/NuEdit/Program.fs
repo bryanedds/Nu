@@ -845,13 +845,13 @@ module Program =
             let editorGroupDescriptors = [(EditorGroupName, editorGroup, Map.empty)]
             let world = snd <| World.addScreen EditorScreenAddress screen editorGroupDescriptors world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
-            let world = World.subscribe4 DownMouseRightEventName Address.empty (CustomSub <| handleNuDownMouseRight form worldChangers refWorld) world
-            let world = World.subscribe4 DownMouseLeftEventName Address.empty (CustomSub <| handleNuBeginEntityDrag form worldChangers refWorld) world
-            let world = World.subscribe4 UpMouseLeftEventName Address.empty (CustomSub <| handleNuEndEntityDrag form) world
-            let world = World.subscribe4 DownMouseCenterEventName Address.empty (CustomSub <| handleNuBeginCameraDrag form) world
-            let world = World.subscribe4 UpMouseCenterEventName Address.empty (CustomSub <| handleNuBeginEndCameraDrag form) world
-            let world = World.subscribe4 (AddEventName + EditorGroupAddress + AnyEventName) Address.empty (CustomSub <| handleNuEntityAdd form) world
-            let world = World.subscribe4 (RemovingEventName + EditorGroupAddress + AnyEventName) Address.empty (CustomSub <| handleNuEntityRemoving form) world
+            let world = World.subscribe4 DownMouseRightEventAddress Address.empty (CustomSub <| handleNuDownMouseRight form worldChangers refWorld) world
+            let world = World.subscribe4 DownMouseLeftEventAddress Address.empty (CustomSub <| handleNuBeginEntityDrag form worldChangers refWorld) world
+            let world = World.subscribe4 UpMouseLeftEventAddress Address.empty (CustomSub <| handleNuEndEntityDrag form) world
+            let world = World.subscribe4 DownMouseCenterEventAddress Address.empty (CustomSub <| handleNuBeginCameraDrag form) world
+            let world = World.subscribe4 UpMouseCenterEventAddress Address.empty (CustomSub <| handleNuBeginEndCameraDrag form) world
+            let world = World.subscribe4 (AddEventAddress + EditorGroupAddress + AnyEventAddress) Address.empty (CustomSub <| handleNuEntityAdd form) world
+            let world = World.subscribe4 (RemovingEventAddress + EditorGroupAddress + AnyEventAddress) Address.empty (CustomSub <| handleNuEntityRemoving form) world
             Right world
         | Left errorMsg -> Left errorMsg
 
