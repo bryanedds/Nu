@@ -2,6 +2,7 @@
 open System
 open System.IO
 open System.Xml
+open SDL2
 open Xunit
 open Prime
 open Nu
@@ -12,9 +13,17 @@ module WorldTests =
     let incUserStateAndPropagate _ world = (Propagate, World.transformUserState incI world)
     let incUserStateAndResolve _ world = (Resolved, World.transformUserState incI world)
 
-    let [<Fact>] worldDoesntExplode () =
+    let [<Fact>] emptyWorldDoesntExplode () =
         World.init ()
-        ignore <| World.makeEmpty ()
+        let world = World.makeEmpty ()
+        match World.processInput (SDL.SDL_Event ()) world with
+        | (Running, world) ->
+            match World.processUpdate id world with
+            | (Running, world) ->
+                let world = World.processRender id world
+                ignore <| World.processPlay world
+            | (Exiting, _) -> failwith "Test should not reach here."
+        | (Exiting, _) -> failwith "Test should not reach here."
 
     let [<Fact>] subscribeWorks () =
         World.init ()
@@ -100,7 +109,7 @@ module WorldTests =
             React.subscribe TestEventName ^^
             React.map React.unwrapV ^^
             React.scan (fun b a _ -> b + a) 0 ^^
-            React.using Address.empty (fun data world -> (Propagate, World.setUserState data world)) world
+            React.using Address.empty (fun a world -> (Propagate, World.setUserState a world)) world
         let world = World.publish4 TestEventName Address.empty (UserData { UserValue = 1 }) reactor.World
         let world = World.publish4 TestEventName Address.empty (UserData { UserValue = 2 }) world
         Assert.Equal (3, World.getUserState world)
@@ -110,17 +119,8 @@ module WorldTests =
         let world = World.makeEmpty 0
         let reactor =
             React.subscribe TestEventName ^^
-            React.scan2 (fun e _ _ -> e) ^^
+            React.scan2 (fun a _ _ -> a) ^^
             React.using Address.empty (fun _ world -> (Propagate, world)) world
         let world = World.publish4 TestEventName Address.empty (NoData ()) reactor.World
         let world = reactor.Unsubscriber world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
-
-    (*
-            let world =
-                subscribe TickEventName ^^
-                filter isGamePlaying ^^
-                map unwrapAS ^^
-                choice (CollisionEventName + address) ^^
-                using address testHandler world
-                *)
