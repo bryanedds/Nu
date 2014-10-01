@@ -97,11 +97,12 @@ module AudioModule =
 
     /// The primary implementation of IAudioPlayer.
     type [<ReferenceEquality>] AudioPlayer =
-        { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
-          AudioAssetMap : AudioAsset AssetMap
-          OptCurrentSong : PlaySongMessage option
-          OptNextPlaySong : PlaySongMessage option
-          AssetGraphFileName : string }
+        private
+            { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
+              AudioAssetMap : AudioAsset AssetMap
+              OptCurrentSong : PlaySongMessage option
+              OptNextPlaySong : PlaySongMessage option
+              AssetGraphFileName : string }
 
         static member private haltSound () =
             ignore <| SDL_mixer.Mix_HaltMusic ()
