@@ -97,7 +97,7 @@ module WorldGroupModule =
             Group.unregister address group world
 
         static member removeGroupImmediate address group world =
-            let world = World.publish4 (RemovingEventName + address) address (NoData ()) world
+            let world = World.publish4 (RemovingEventAddress + address) address (NoData ()) world
             let (group, world) = World.unregisterGroup address group world
             let entities = World.getEntities address world
             let world = snd <| World.removeEntitiesImmediate address entities world
@@ -128,7 +128,7 @@ module WorldGroupModule =
             let world = World.setGroup address group world
             let world = snd <| World.addEntities address entities world
             let (group, world) = World.registerGroup address group world
-            let world = World.publish4 (AddEventName + address) address (NoData ()) world
+            let world = World.publish4 (AddEventAddress + address) address (NoData ()) world
             (group, world)
 
         static member addGroups screenAddress groupDescriptors world =
