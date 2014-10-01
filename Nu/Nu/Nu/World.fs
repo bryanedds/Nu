@@ -276,6 +276,26 @@ module WorldModule =
                 World.subscribe removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress sub world
             else failwith "Cannot observe events with an anonymous subscriber."
 
+        static member saveGroupToFile group entities fileName world =
+            use file = File.Open (fileName, FileMode.Create)
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
+            // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+            use writer = XmlWriter.Create (file, writerSettings)
+            writer.WriteStartDocument ()
+            writer.WriteStartElement RootNodeName
+            World.writeGroup world.State.Overlayer writer group entities
+            writer.WriteEndElement ()
+            writer.WriteEndDocument ()
+
+        static member loadGroupFromFile fileName world =
+            let document = XmlDocument ()
+            document.Load (fileName : string)
+            let rootNode = document.[RootNodeName]
+            let groupNode = rootNode.[GroupNodeName]
+            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+
         static member private updateTransition1 (transition : Transition) =
             if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
             else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
@@ -364,16 +384,17 @@ module WorldModule =
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage image splashLabel
-            let splashGroupDescriptors = [(splashGroup.Name, splashGroup, Map.singleton splashLabel.Name splashLabel)]
+            let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
             let world = World.observe (FinishIncomingEventAddress + address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
             let world = World.observe (FinishOutgoingEventAddress + address) address (ScreenTransitionFromSplashSub destination) world
             (splashScreen, world)
 
-        static member addDissolveScreenFromFile screenDispatcherName groupFileName groupName incomingTime outgoingTime screenAddress world =
+        static member addDissolveScreenFromFile screenDispatcherName groupFileName incomingTime outgoingTime screenAddress world =
             let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
             let (group, entities) = World.loadGroupFromFile groupFileName world
-            World.addScreen screenAddress dissolveScreen [(groupName, group, entities)] world
+            let dissolveGroupDescriptors = Map.singleton group.Name (group, entities)
+            World.addScreen screenAddress dissolveScreen dissolveGroupDescriptors world
 
         static member private createIntrinsicOverlays dispatchers facets =
 
@@ -389,26 +410,6 @@ module WorldModule =
             let sources = facets @ dispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Reflection.createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes
-
-        static member saveGroupToFile group entities fileName world =
-            use file = File.Open (fileName, FileMode.Create)
-            let writerSettings = XmlWriterSettings ()
-            writerSettings.Indent <- true
-            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-            // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-            use writer = XmlWriter.Create (file, writerSettings)
-            writer.WriteStartDocument ()
-            writer.WriteStartElement RootNodeName
-            World.writeGroup world.State.Overlayer writer group entities
-            writer.WriteEndElement ()
-            writer.WriteEndDocument ()
-
-        static member loadGroupFromFile fileName world =
-            let document = XmlDocument ()
-            document.Load (fileName : string)
-            let rootNode = document.[RootNodeName]
-            let groupNode = rootNode.[GroupNodeName]
-            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
         static member tryReloadOverlays inputDir outputDir world =
             
@@ -785,7 +786,7 @@ module WorldModule =
 
                 // make the world itself
                 let world =
-                    { Game = Game.make activeGameDispatcher <| Some "Game"
+                    { Game = Game.make activeGameDispatcher <| Some DefaultGameName
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
@@ -849,7 +850,7 @@ module WorldModule =
 
             // make the world itself
             let world =
-                { Game = Game.make gameDispatcher <| Some "Game"
+                { Game = Game.make gameDispatcher <| Some DefaultGameName
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty

@@ -132,8 +132,8 @@ module WorldGroupModule =
             (group, world)
 
         static member addGroups screenAddress groupDescriptors world =
-            List.fold
-                (fun (groups, world) (groupName, group, entities) ->
+            Map.fold
+                (fun (groups, world) groupName (group, entities) ->
                     let (group, world) = World.addGroup (screenAddress @+ [groupName]) group entities world
                     (group :: groups, world))
                 ([], world)
