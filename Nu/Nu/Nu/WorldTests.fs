@@ -16,14 +16,14 @@ module WorldTests =
         World.init ()
         ignore <| World.makeEmpty ()
 
-    let [<Fact>] publishWorks () =
+    let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
         let world = World.publish4 TestEventName Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
-    let [<Fact>] publishTwiceWorks () =
+    let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
@@ -31,7 +31,7 @@ module WorldTests =
         let world = World.publish4 TestEventName Address.empty (NoData ()) world
         Assert.Equal (2, World.getUserState world)
 
-    let [<Fact>] publishWithTwoSubscribesWorks () =
+    let [<Fact>] subscribeTwiceAndPublishWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndPropagate) world
@@ -39,7 +39,7 @@ module WorldTests =
         let world = World.publish4 TestEventName Address.empty (NoData ()) world
         Assert.Equal (2, World.getUserState world)
 
-    let [<Fact>] publishWithResolutionWorks () =
+    let [<Fact>] subscribeWithResolutionWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventName Address.empty (CustomSub incUserStateAndResolve) world
@@ -47,7 +47,7 @@ module WorldTests =
         let world = World.publish4 TestEventName Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
-    let [<Fact>] publishWithUnsubscribeWorks () =
+    let [<Fact>] unsubscribeWorks () =
         World.init ()
         let key = World.makeSubscriptionKey ()
         let world = World.makeEmpty 0
@@ -55,3 +55,72 @@ module WorldTests =
         let world = World.unsubscribe key world
         let world = World.publish4 TestEventName Address.empty (NoData ()) world
         Assert.Equal (0, World.getUserState world)
+
+    let [<Fact>] reactSubscribeWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let reactor = React.subscribe TestEventName ^^ React.using Address.empty incUserStateAndPropagate world
+        let world = World.publish4 TestEventName Address.empty (NoData ()) reactor.World
+        Assert.Equal (1, World.getUserState world)
+
+    let [<Fact>] reactUnsubscribeWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let reactor = React.subscribe TestEventName ^^ React.using Address.empty incUserStateAndPropagate world
+        let world = reactor.Unsubscriber reactor.World
+        let world = World.publish4 TestEventName Address.empty (NoData ()) world
+        Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
+        Assert.Equal (0, World.getUserState world)
+
+    let [<Fact>] reactFilterWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let reactor =
+            React.filter (fun _ world -> World.getUserState world = 0) ^^
+            React.using Address.empty incUserStateAndPropagate world
+        let reactor = React.subscribe TestEventName reactor
+        let reactor = React.subscribe TestEventName reactor
+        let world = World.publish4 TestEventName Address.empty (NoData ()) reactor.World
+        Assert.Equal (1, World.getUserState world)
+
+    let [<Fact>] reactMapWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let reactor =
+            React.subscribe TestEventName ^^
+            React.map React.unwrapV ^^
+            React.using Address.empty (fun a world -> (Propagate, World.setUserState a world)) world
+        let world = World.publish4 TestEventName Address.empty (UserData { UserValue = 0 }) reactor.World
+        Assert.Equal (0, World.getUserState world)
+
+    let [<Fact>] reactScanWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let reactor =
+            React.subscribe TestEventName ^^
+            React.map React.unwrapV ^^
+            React.scan (fun b a _ -> b + a) 0 ^^
+            React.using Address.empty (fun data world -> (Propagate, World.setUserState data world)) world
+        let world = World.publish4 TestEventName Address.empty (UserData { UserValue = 1 }) reactor.World
+        let world = World.publish4 TestEventName Address.empty (UserData { UserValue = 2 }) world
+        Assert.Equal (3, World.getUserState world)
+
+    let [<Fact>] reactScanDoesntLeaveGarbage () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let reactor =
+            React.subscribe TestEventName ^^
+            React.scan2 (fun e _ _ -> e) ^^
+            React.using Address.empty (fun _ world -> (Propagate, world)) world
+        let world = World.publish4 TestEventName Address.empty (NoData ()) reactor.World
+        let world = reactor.Unsubscriber world
+        Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
+
+    (*
+            let world =
+                subscribe TickEventName ^^
+                filter isGamePlaying ^^
+                map unwrapAS ^^
+                choice (CollisionEventName + address) ^^
+                using address testHandler world
+                *)

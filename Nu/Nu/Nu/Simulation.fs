@@ -97,8 +97,10 @@ module SimModule =
         { OldEntity : Entity }
 
     /// The data for a user-defined event.
-    and [<StructuralEquality; NoComparison>] OtherData =
-        { Obj : obj }
+    and [<StructuralEquality; NoComparison>] UserData =
+        { UserValue : obj }
+        static member get userData : 'u = userData.UserValue :?> 'u
+        static member transform (transformer : 'u -> 'v) userData = { UserValue = transformer <| UserData.get userData }
 
     /// The data for a user-defined event.
     and NoData = unit
@@ -110,7 +112,7 @@ module SimModule =
         | KeyboardKeyData of KeyboardKeyData
         | CollisionData of CollisionData
         | EntityChangeData of EntityChangeData
-        | OtherData of OtherData
+        | UserData of UserData
         | NoData of NoData
 
     /// An event used by Nu's purely functional event system.
@@ -401,7 +403,7 @@ module EventData =
     let toEntityChangeData data = match data with EntityChangeData d -> d | _ -> failwith <| "Expected EntityChangeData from event data '" + string data + "'."
 
     /// A convenience function to forcibly extract user-defined data from an event data abstraction.
-    let toOtherData data = match data with OtherData d -> d | _ -> failwith <| "Expected OtherData from event data '" + string data + "'."
+    let toUserData data = match data with UserData d -> d | _ -> failwith <| "Expected UserData from event data '" + string data + "'."
 
     /// A convenience function to forcibly extract no data from an event data abstraction.
     let toNoData data = match data with NoData d -> d | _ -> failwith <| "Expected NoData from event data '" + string data + "'."
@@ -415,7 +417,7 @@ module EventData =
         | "KeyboardKeyData" -> toKeyboardKeyData eventData :> obj :?> 'd
         | "CollisionData" -> toCollisionData eventData :> obj :?> 'd
         | "EntityChangeData" -> toEntityChangeData eventData :> obj :?> 'd
-        | "OtherData" -> toOtherData eventData :> obj :?> 'd
+        | "UserData" -> toUserData eventData :> obj :?> 'd
         | "Unit" -> toNoData eventData :> obj :?> 'd
         | "Object" -> eventData :> obj :?> 'd
         | _ -> failwith <| "Invalid event data type '" + typeName + "'."
@@ -618,7 +620,7 @@ module World =
         { world with State = state }
 
     /// Transform the UserState field of the world.
-    let transformUserState (transformer : 'u -> 'u) world =
+    let transformUserState (transformer : 'u -> 'v) world =
         let state = getUserState world
         let state = transformer state
         setUserState state world
