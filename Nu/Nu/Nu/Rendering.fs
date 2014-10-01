@@ -157,9 +157,10 @@ module RenderingModule =
 
     /// The primary implementation of IRenderer.
     type [<ReferenceEquality>] Renderer =
-        { RenderContext : nativeint
-          RenderAssetMap : RenderAsset AssetMap
-          AssetGraphFileName : string }
+        private
+            { RenderContext : nativeint
+              RenderAssetMap : RenderAsset AssetMap
+              AssetGraphFileName : string }
 
         static member private freeRenderAsset renderAsset =
             match renderAsset with
