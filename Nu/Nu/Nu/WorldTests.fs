@@ -38,21 +38,6 @@ module WorldTests =
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
-    let [<Fact>] entitySubscribeWorks () =
-        World.init ()
-        let world = World.makeEmpty 0
-        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
-        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
-        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
-        let world = snd <| World.addScreen TestScreenAddress screen [(TestGroupName, group, Map.singleton TestEntityName entity)] world
-        let handler = fun event world ->
-            let entity = Event.unwrapS<Entity> event
-            let world = World.setUserState entity.Name world
-            (Propagate, world)
-        let world = World.subscribe4 TestEventAddress TestEntityAddress (CustomSub handler) world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
-        Assert.Equal<string> (TestEntityName, World.getUserState world)
-
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
@@ -85,3 +70,19 @@ module WorldTests =
         let world = World.unsubscribe key world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (0, World.getUserState world)
+
+    let [<Fact>] entitySubscribeWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let descriptors = Map.singleton group.Name (group, Map.singleton entity.Name entity)
+        let world = snd <| World.addScreen TestScreenAddress screen descriptors world
+        let handler = fun event world ->
+            let entity = Event.unwrapS<Entity> event
+            let world = World.setUserState entity.Name world
+            (Propagate, world)
+        let world = World.subscribe4 TestEventAddress TestEntityAddress (CustomSub handler) world
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        Assert.Equal<string> (TestEntityName, World.getUserState world)

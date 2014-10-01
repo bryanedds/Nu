@@ -28,7 +28,6 @@ module OmniConstants =
     // title constants
     let TitleAddress = !* "Title"
     let TitleGroupFileName = "Assets/OmniBlade/Groups/Title.nugroup"
-    let TitleGroupAddress = !* "Title/Group"
     let ClickTitleNewGameEvent = !* "Click/Title/Group/NewGame"
     let ClickTitleLoadGameEvent = !* "Click/Title/Group/LoadGame"
     let ClickTitleCreditsEvent = !* "Click/Title/Group/Credits"
@@ -37,19 +36,16 @@ module OmniConstants =
     // load game constants
     let LoadGameAddress = !* "LoadGame"
     let LoadGameGroupFileName = "Assets/OmniBlade/Groups/LoadGame.nugroup"
-    let LoadGameGroupAddress = !* "LoadGame/Group"
     let ClickLoadGameBackEvent = !* "Click/LoadGame/Group/Back"
 
     // credits constants
     let CreditsAddress = !* "Credits"
     let CreditsGroupFileName = "Assets/OmniBlade/Groups/Credits.nugroup"
-    let CreditsGroupAddress = !* "Credits/Group"
     let ClickCreditsBackEvent = !* "Click/Credits/Group/Back"
 
     // field constants
     let FieldAddress = !* "Field"
     let FieldGroupFileName = "Assets/OmniBlade/Groups/Field.nugroup"
-    let FieldGroupAddress = !* "Field/Group"
     let ClickFieldBackEvent = !* "Click/Field/Group/Back"
 
     // time constants

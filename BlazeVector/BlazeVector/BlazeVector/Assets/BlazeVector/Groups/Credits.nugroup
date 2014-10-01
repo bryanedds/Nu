@@ -1,7 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group dispatcherName="GroupDispatcher">
+    <Name>Group</Name>
+    <Xtension />
     <Entities>
+      <Entity dispatcherName="LabelDispatcher">
+        <Position>-480;-272</Position>
+        <Depth>-1</Depth>
+        <Size>960;544</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
+        </Xtension>
+      </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Position>-128;-224</Position>
@@ -26,15 +37,6 @@
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
         <Xtension>
           <Text type="System.String">Code + Music + SFX: Bryan Edds</Text>
-        </Xtension>
-      </Entity>
-      <Entity dispatcherName="LabelDispatcher">
-        <Position>-480;-272</Position>
-        <Depth>-1</Depth>
-        <Size>960;544</Size>
-        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-        <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">

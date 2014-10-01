@@ -1,6 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Root>
   <Group>
+    <Name>Group</Name>
     <Xtension optXDispatcherName="Some(GroupDispatcher)" />
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">

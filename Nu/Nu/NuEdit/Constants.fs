@@ -2,11 +2,12 @@
 // Copyright (C) Bryan Edds, 2013-2014.
 
 namespace NuEdit
+open System
 open Prime
 open Nu
 module Constants =
 
     let EditorScreenName = "EditorScreen"
     let EditorScreenAddress = !* EditorScreenName
-    let EditorGroupName = "EditorGroup"
-    let EditorGroupAddress = EditorScreenAddress @+ [EditorGroupName]
+    let AddEntityKey = Guid.NewGuid ()
+    let RemovingEntityKey = Guid.NewGuid ()
