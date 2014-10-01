@@ -221,4 +221,4 @@ module React =
 
     (* Initializing Combinator *)
 
-    let using subscriberAddress handler world = Reactor.make subscriberAddress handler id world
+    let unto subscriberAddress handler world = Reactor.make subscriberAddress handler id world
