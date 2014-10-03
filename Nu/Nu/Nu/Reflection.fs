@@ -161,6 +161,21 @@ module Reflection =
         let fieldDefinitions = getFieldDefinitions targetType
         List.map (fun fieldDefinition -> fieldDefinition.FieldName) fieldDefinitions
 
+    /// Get a map of the counts of the field definitions names.
+    let getFieldDefinitionNameCounts fieldDefinitions =
+        Map.fold
+            (fun map _ definitions ->
+                List.fold
+                    (fun map definition ->
+                        let definitionName = definition.FieldName
+                        match Map.tryFind definitionName map with
+                        | Some count -> Map.add definitionName (count + 1) map
+                        | None -> Map.add definitionName 1 map)
+                    map
+                    definitions)
+            Map.empty
+            fieldDefinitions
+
     /// Attach source's fields to a target.
     let attachFields source target =
         let sourceType = source.GetType ()

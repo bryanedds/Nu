@@ -54,7 +54,7 @@ module AddressModule =
         override this.GetHashCode () =
             let mutable result = 0
             for name in this.AddrList do
-                result <- result ^^^ (name.GetHashCode ())
+                result <- result ^^^ hash name
             result
         
         override this.ToString () =

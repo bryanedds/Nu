@@ -21,6 +21,9 @@ module Miscellanea =
     /// Convert any value to an obj.
     let inline objectify x = x :> obj
 
+    /// Convert any value to its type.
+    let inline getType x = x.GetType ()
+
     /// A generic identification code type.
     type Id = int64
 
