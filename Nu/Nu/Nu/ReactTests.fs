@@ -24,7 +24,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let reactor = React.subscribe TestEventAddress ^^ React.unto Address.empty incUserStateAndPropagate world
-        let world = reactor.Unsubscriber reactor.World
+        let world = reactor.Unsubscribe reactor.World
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
@@ -70,5 +70,5 @@ module ReactTests =
             React.scan2 (fun a _ _ -> a) ^^
             React.unto Address.empty (fun _ world -> (Propagate, world)) world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) reactor.World
-        let world = reactor.Unsubscriber world
+        let world = reactor.Unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
