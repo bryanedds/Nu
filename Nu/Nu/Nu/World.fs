@@ -21,14 +21,16 @@ module WorldModule =
 
     type World with
 
-        static member handleEventAsSwallow (world : World) =
+        static member handleAsSwallow _ (world : World) =
             (Resolved, world)
 
-        static member handleEventAsExit (world : World) =
+        static member handleAsExit _ (world : World) =
             (Resolved, World.exit world)
 
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
+    let private ScreenTransitionDownKeyboardKeyKey = World.makeSubscriptionKey ()
+    let private ScreenTransitionUpKeyboardKeyKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
     let private AnyEventAddressesCache = Dictionary<Address, Address list> HashIdentity.Structural
 
@@ -57,11 +59,15 @@ module WorldModule =
                 | IdlingState ->
                     world |>
                         World.unsubscribe ScreenTransitionDownMouseKey |>
-                        World.unsubscribe ScreenTransitionUpMouseKey
+                        World.unsubscribe ScreenTransitionUpMouseKey |>
+                        World.unsubscribe ScreenTransitionDownKeyboardKeyKey |>
+                        World.unsubscribe ScreenTransitionUpKeyboardKeyKey
                 | IncomingState | OutgoingState ->
                     world |>
-                        World.subscribe ScreenTransitionDownMouseKey (DownMouseEventAddress + AnyEventAddress) address SwallowSub |>
-                        World.subscribe ScreenTransitionUpMouseKey (UpMouseEventAddress + AnyEventAddress) address SwallowSub
+                        World.subscribe ScreenTransitionDownMouseKey (DownMouseEventAddress + AnyEventAddress) address World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionUpMouseKey (UpMouseEventAddress + AnyEventAddress) address World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionDownKeyboardKeyKey (DownKeyboardKeyEventAddress + AnyEventAddress) address World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionUpKeyboardKeyKey (UpKeyboardKeyEventAddress + AnyEventAddress) address World.handleAsSwallow
             let world = World.setScreen address screen world
             (screen, world)
 
@@ -76,22 +82,22 @@ module WorldModule =
                 match World.getOptScreen selectedScreenAddress world with
                 | Some selectedScreen ->
                     let subscriptionKey = World.makeSubscriptionKey ()
-                    let sub = CustomSub (fun _ world ->
+                    let subscription = fun _ world ->
                         let world = World.unsubscribe subscriptionKey world
                         let world = snd <| World.selectScreen destinationAddress destinationScreen world
-                        (Propagate, world))
+                        (Propagate, world)
                     let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
-                    let world = World.subscribe subscriptionKey (FinishOutgoingEventAddress + selectedScreenAddress) selectedScreenAddress sub world
+                    let world = World.subscribe subscriptionKey (FinishOutgoingEventAddress + selectedScreenAddress) selectedScreenAddress subscription world
                     Some world
                 | None -> None
             | None -> None
 
-        static member handleEventAsScreenTransitionFromSplash destinationAddress world =
+        static member handleAsScreenTransitionFromSplash destinationAddress _ world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationAddress destinationScreen world
             (Propagate, world)
 
-        static member handleEventAsScreenTransition destinationAddress world =
+        static member handleAsScreenTransition destinationAddress _ world =
             let destinationScreen = World.getScreen destinationAddress world
             match World.tryTransitionScreen destinationAddress destinationScreen world with
             | Some world -> (Propagate, world)
@@ -199,13 +205,7 @@ module WorldModule =
                                   Data = eventData }
                             if  (match eventHandling with Propagate -> true | Resolved -> false) &&
                                 (match world.State.Liveness with Running -> true | Exiting -> false) then
-                                let result =
-                                    match subscription with
-                                    | ExitSub -> World.handleEventAsExit world
-                                    | SwallowSub -> World.handleEventAsSwallow world
-                                    | ScreenTransitionSub destination -> World.handleEventAsScreenTransition destination world
-                                    | ScreenTransitionFromSplashSub destination -> World.handleEventAsScreenTransitionFromSplash destination world
-                                    | CustomSub fn -> fn event world
+                                let result = subscription event world
                                 Some result
                             else None
                         | None -> Some (Propagate, world))
@@ -269,11 +269,11 @@ module WorldModule =
                 let observationKey = World.makeSubscriptionKey ()
                 let removalKey = World.makeSubscriptionKey ()
                 let world = World.subscribe observationKey eventAddress subscriberAddress subscription world
-                let sub = CustomSub (fun _ world ->
+                let subscription = fun _ world ->
                     let world = World.unsubscribe removalKey world
                     let world = World.unsubscribe observationKey world
-                    (Propagate, world))
-                World.subscribe removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress sub world
+                    (Propagate, world)
+                World.subscribe removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress subscription world
             else failwith "Cannot observe events with an anonymous subscriber."
 
         static member saveGroupToFile group entities fileName world =
@@ -355,7 +355,7 @@ module WorldModule =
         static member private handleSplashScreenIdleTick idlingTime ticks event world =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
-                let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime (incL ticks)
+                let subscription = World.handleSplashScreenIdleTick idlingTime (incL ticks)
                 let world = World.subscribe SplashScreenTickKey event.Address event.SubscriberAddress subscription world
                 (Propagate, world)
             else
@@ -373,7 +373,7 @@ module WorldModule =
                     (Resolved, World.exit world)
 
         static member internal handleSplashScreenIdle idlingTime event world =
-            let subscription = CustomSub <| World.handleSplashScreenIdleTick idlingTime 0L
+            let subscription = World.handleSplashScreenIdleTick idlingTime 0L
             let world = World.subscribe SplashScreenTickKey TickEventAddress event.SubscriberAddress subscription world
             (Resolved, world)
 
@@ -386,8 +386,8 @@ module WorldModule =
             let splashLabel = Entity.setLabelImage image splashLabel
             let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
-            let world = World.observe (FinishIncomingEventAddress + address) address (CustomSub <| World.handleSplashScreenIdle idlingTime) world
-            let world = World.observe (FinishOutgoingEventAddress + address) address (ScreenTransitionFromSplashSub destination) world
+            let world = World.observe (FinishIncomingEventAddress + address) address (World.handleSplashScreenIdle idlingTime) world
+            let world = World.observe (FinishOutgoingEventAddress + address) address (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
         static member addDissolveScreenFromFile screenDispatcherName groupFileName incomingTime outgoingTime screenAddress world =
