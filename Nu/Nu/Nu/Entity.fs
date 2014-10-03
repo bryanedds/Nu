@@ -262,6 +262,40 @@ module WorldEntityModule =
             let facetNamesToRemove = Set.difference oldFacetNames newFacetNames
             List.ofSeq facetNamesToRemove
 
+        static member private getEntityFieldDefinitions (entity : Entity) =
+            let containers = objectify entity.DispatcherNp :: List.map objectify entity.FacetsNp
+            let containerTypes = List.map getType containers
+            Map.ofListBy (fun (aType : Type) -> (aType.Name, Reflection.getFieldDefinitions aType)) containerTypes
+
+        static member private getEntityFieldDefinitionNamesToDetach entity facetToRemove =
+
+            // get the field definition name counts of the current, complete entity
+            let fieldDefinitions = World.getEntityFieldDefinitions entity
+            let fieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts fieldDefinitions
+
+            // get the field definition name counts of the facet to remove
+            let facetType = facetToRemove.GetType ()
+            let facetFieldDefinitions = Map.singleton facetType.Name <| Reflection.getFieldDefinitions facetType
+            let facetFieldDefinitionNameCounts = Reflection.getFieldDefinitionNameCounts facetFieldDefinitions
+
+            // compute the difference of the counts
+            let finalFieldDefinitionNameCounts =
+                Map.map
+                    (fun fieldName fieldCount ->
+                        match Map.tryFind fieldName facetFieldDefinitionNameCounts with
+                        | Some facetFieldCount -> fieldCount - facetFieldCount
+                        | None -> fieldCount)
+                    fieldDefinitionNameCounts
+
+            // build a set of all field names where the final counts are negative
+            Map.fold
+                (fun fieldNamesToDetach fieldName fieldCount ->
+                    if fieldCount < 0
+                    then Set.add fieldName fieldNamesToDetach
+                    else fieldNamesToDetach)
+                Set.empty
+                finalFieldDefinitionNameCounts
+
         static member tryRemoveFacet syncing facetName optAddress entity world =
             match List.tryFind (fun facet -> Reflection.getTypeName facet = facetName) entity.FacetsNp with
             | Some facet ->
