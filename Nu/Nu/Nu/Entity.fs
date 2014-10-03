@@ -380,7 +380,7 @@ module WorldEntityModule =
             // make the bare entity with name as id
             let entity = Entity.make dispatcherName dispatcher None
 
-            // attach the entity's intrinsic facets
+            // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
 
             // read the entity's overlay and apply it to its facet names
@@ -392,14 +392,14 @@ module WorldEntityModule =
                 Overlayer.applyOverlayToFacetNames defaultOptDispatcherName overlayName entity overlayer overlayer
             | None -> ()
 
-            // read the entity's facet names, and synchronize its facets 
+            // read the entity's facet names, synchronize its facets, and attach their fields
             Serialization.readFacetNamesToTarget entityNode entity
             let entity =
                 match World.trySynchronizeFacets [] None entity world with
                 | Right (entity, _) -> entity
                 | Left error -> debug error; entity
 
-            // attach the entity's instrinsic fields from its dispatcher if any
+            // attach the entity's dispatcher fields
             Reflection.attachFields dispatcher entity
 
             // apply the entity's overlay

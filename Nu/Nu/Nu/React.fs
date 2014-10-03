@@ -75,7 +75,7 @@ module React =
         let handleEvent = fun event world ->
             let key = World.makeSubscriptionKey ()
             let handleEvent2 = fun event2 world -> let world = unsubscriber world in reactor.HandleEvent (event, event2) world
-            let world = World.subscribe key eventAddress reactor.ReactAddress (CustomSub handleEvent2) world
+            let world = World.subscribe key eventAddress reactor.ReactAddress handleEvent2 world
             (Propagate, world)
         let unsubscriber world = let world = unsubscriber world in reactor.Unsubscribe world
         Reactor.make reactor.ReactAddress handleEvent unsubscriber reactor.World
@@ -84,7 +84,7 @@ module React =
         let key = World.makeSubscriptionKey ()
         let handleRight = fun value world -> reactor.HandleEvent (Right value) world
         let handleLeft = fun value world -> reactor.HandleEvent (Left value) world
-        let world = World.subscribe key eventAddress reactor.ReactAddress (CustomSub handleLeft) reactor.World
+        let world = World.subscribe key eventAddress reactor.ReactAddress handleLeft reactor.World
         let unsubscriber world = let world = World.unsubscribe key world in reactor.Unsubscribe world
         Reactor.make reactor.ReactAddress handleRight unsubscriber world
 
@@ -94,14 +94,14 @@ module React =
             let world = World.unsubscribe key world
             let world = reactor.Unsubscribe world
             (Propagate, world)
-        let world = World.subscribe key (RemovingEventAddress + reactor.ReactAddress) reactor.ReactAddress (CustomSub handleEvent) reactor.World
+        let world = World.subscribe key (RemovingEventAddress + reactor.ReactAddress) reactor.ReactAddress handleEvent reactor.World
         let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
         Reactor.make reactor.ReactAddress reactor.HandleEvent unsubscriber world
 
     let subscribe eventAddress (reactor : Event Reactor) : Event Reactor =
         let key = World.makeSubscriptionKey ()
         let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
-        let world = World.subscribe key eventAddress reactor.ReactAddress (CustomSub reactor.HandleEvent) reactor.World
+        let world = World.subscribe key eventAddress reactor.ReactAddress reactor.HandleEvent reactor.World
         Reactor.make reactor.ReactAddress reactor.HandleEvent unsubscriber world
 
     let observe eventAddress (reactor : Event Reactor) : Event Reactor =

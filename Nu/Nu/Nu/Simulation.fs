@@ -129,16 +129,9 @@ module SimModule =
         | Resolved
         | Propagate
 
-    and CustomSub =
-        Event -> World -> EventHandling * World
-
     /// Describes a game event subscription.
-    and [<ReferenceEquality>] Subscription =
-        | ExitSub
-        | SwallowSub
-        | ScreenTransitionSub of desinationScreen : Address
-        | ScreenTransitionFromSplashSub of desinationScreen : Address
-        | CustomSub of CustomSub
+    and Subscription =
+        Event -> World -> EventHandling * World
 
     /// An entry into the world's subscription map.
     and SubscriptionEntry = Guid * Address * Subscription
@@ -167,7 +160,7 @@ module SimModule =
              define? Size DefaultEntitySize
              define? Rotation 0.0f
              define? Visible true
-             define? Visible Relative]
+             define? ViewType Relative]
 
         abstract member Register : Address * Entity * World -> Entity * World
         default dispatcher.Register (_, entity, world) = (entity, world)

@@ -291,7 +291,8 @@ module ButtonDispatcherModule =
             else (Propagate, world)
 
         static member FieldDefinitions =
-            [define? IsDown false
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+             define? IsDown false
              define? UpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
              define? DownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
              define? ClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
@@ -302,8 +303,8 @@ module ButtonDispatcherModule =
         override dispatcher.Register (address, button, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventAddress address (CustomSub handleButtonEventDownMouseLeft) |>
-                World.observe UpMouseLeftEventAddress address (CustomSub handleButtonEventUpMouseLeft)
+                World.observe DownMouseLeftEventAddress address handleButtonEventDownMouseLeft |>
+                World.observe UpMouseLeftEventAddress address handleButtonEventUpMouseLeft
             (button, world)
 
         override dispatcher.GetRenderDescriptors (button, _) =
@@ -339,7 +340,8 @@ module LabelDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+             define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
             [typeof<UIFacet>.Name]
@@ -385,7 +387,8 @@ module TextDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? Text String.Empty
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+             define? Text String.Empty
              define? TextFont { FontAssetName = "Font"; PackageName = DefaultPackageName }
              define? TextOffset Vector2.Zero
              define? TextColor Vector4.One
@@ -473,7 +476,8 @@ module ToggleDispatcherModule =
             else (Propagate, world)
 
         static member FieldDefinitions =
-            [define? IsOn false
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+             define? IsOn false
              define? IsPressed false
              define? OffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
              define? OnImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
@@ -485,8 +489,8 @@ module ToggleDispatcherModule =
         override dispatcher.Register (address, toggle, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventAddress address (CustomSub handleToggleEventDownMouseLeft) |>
-                World.observe UpMouseLeftEventAddress address (CustomSub handleToggleEventUpMouseLeft)
+                World.observe DownMouseLeftEventAddress address handleToggleEventDownMouseLeft |>
+                World.observe UpMouseLeftEventAddress address handleToggleEventUpMouseLeft
             (toggle, world)
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
@@ -543,7 +547,8 @@ module FeelerDispatcherModule =
             else (Propagate, world)
 
         static member FieldDefinitions =
-            [define? IsTouched false]
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+             define? IsTouched false]
 
         static member IntrinsicFacetNames =
             [typeof<UIFacet>.Name]
@@ -551,8 +556,8 @@ module FeelerDispatcherModule =
         override dispatcher.Register (address, feeler, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventAddress address (CustomSub handleFeelerEventDownMouseLeft) |>
-                World.observe UpMouseLeftEventAddress address (CustomSub handleFeelerEventUpMouseLeft)
+                World.observe DownMouseLeftEventAddress address handleFeelerEventDownMouseLeft |>
+                World.observe UpMouseLeftEventAddress address handleFeelerEventUpMouseLeft
             (feeler, world)
 
         override dispatcher.GetQuickSize (_, _) =
@@ -583,7 +588,7 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member FieldDefinitions =
-            [define? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
              define? FillInset 0.0f
              define? FillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName }
              define? BorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }]
