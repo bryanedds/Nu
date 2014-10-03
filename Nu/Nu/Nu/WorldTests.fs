@@ -79,10 +79,10 @@ module WorldTests =
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
         let descriptors = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let world = snd <| World.addScreen TestScreenAddress screen descriptors world
-        let handler = fun event world ->
+        let handleEvent = fun event world ->
             let entity = Event.unwrapS<Entity> event
             let world = World.setUserState entity.Name world
             (Propagate, world)
-        let world = World.subscribe4 TestEventAddress TestEntityAddress (CustomSub handler) world
+        let world = World.subscribe4 TestEventAddress TestEntityAddress (CustomSub handleEvent) world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal<string> (TestEntityName, World.getUserState world)

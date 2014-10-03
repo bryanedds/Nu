@@ -18,11 +18,11 @@ module OmniDispatchersModule =
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             World.setCamera camera world
 
-        let adjustFieldCameraHandler event world =
+        let handleAdjustFieldCamera event world =
             let (address, _, _) = Event.unwrap event
             (Propagate, adjustFieldCamera address world)
 
-        let moveFieldAvatarHandler event world =
+        let handleMoveFieldAvatar event world =
             let (address, _, _) = Event.unwrap event
             let feelerAddress = address @+ [FieldFeelerName]
             let feeler = World.getEntity feelerAddress world
@@ -38,8 +38,8 @@ module OmniDispatchersModule =
             else (Propagate, world)
 
         override dispatcher.Register (address, avatar, world) =
-            let world = World.observe TickEventAddress address (CustomSub moveFieldAvatarHandler) world
-            let world = World.observe TickEventAddress address (CustomSub adjustFieldCameraHandler) world
+            let world = World.observe TickEventAddress address (CustomSub handleMoveFieldAvatar) world
+            let world = World.observe TickEventAddress address (CustomSub handleAdjustFieldCamera) world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             let world = adjustFieldCamera address world
             (avatar, world)
