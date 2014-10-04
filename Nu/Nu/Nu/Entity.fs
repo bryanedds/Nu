@@ -66,13 +66,16 @@ module EntityModule =
         
         static member getPickingPriority (entity : Entity) world =
             entity.DispatcherNp.GetPickingPriority (entity, world)
-        
+
         static member isFacetCompatible facet (entity : Entity) =
             let facetType = facet.GetType ()
-            let facetFieldNames = Reflection.getFieldDefinitionNames facetType
-            let entityFieldNames = Map.toKeyList entity.Xtension.XFields
-            let intersection = List.intersect facetFieldNames entityFieldNames
-            Set.isEmpty intersection
+            let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
+            List.notExists
+                (fun definition ->
+                    match Map.tryFind definition.FieldName entity.Xtension.XFields with
+                    | Some field -> field.GetType () <> definition.FieldType
+                    | None -> false)
+                facetFieldDefinitions
 
         static member make dispatcherName dispatcher optName =
             let id = Core.makeId ()
@@ -290,7 +293,7 @@ module WorldEntityModule =
             // build a set of all field names where the final counts are negative
             Map.fold
                 (fun fieldNamesToDetach fieldName fieldCount ->
-                    if fieldCount < 0
+                    if fieldCount = 0
                     then Set.add fieldName fieldNamesToDetach
                     else fieldNamesToDetach)
                 Set.empty
@@ -304,7 +307,8 @@ module WorldEntityModule =
                     | Some address -> facet.Unregister (address, entity, world)
                     | None -> (entity, world)
                 let entity = { entity with Id = entity.Id } // hacky copy
-                Reflection.detachFields facet entity
+                let fieldNames = World.getEntityFieldDefinitionNamesToDetach entity facet
+                Reflection.detachFieldsViaNames fieldNames entity
                 let entity =
                     if syncing then entity
                     else { entity with FacetNames = List.remove ((=) (Reflection.getTypeName facet)) entity.FacetNames }

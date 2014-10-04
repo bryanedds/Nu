@@ -94,23 +94,22 @@ module Reflection =
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
             | property -> property.SetValue (target, fieldValue)
-            
 
     /// Detach fields from a target.
-    let detachFieldsViaDefinitions fieldDefinitions target =
+    let detachFieldsViaNames fieldNames target =
         let targetType = target.GetType ()
-        for fieldDefinition in fieldDefinitions do
-            match targetType.GetPropertyWritable fieldDefinition.FieldName with
+        for fieldName in fieldNames do
+            match targetType.GetPropertyWritable fieldName with
             | null ->
                 match targetType.GetPropertyWritable "Xtension" with
-                | null -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+                | null -> failwith <| "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xfields = Map.remove fieldDefinition.FieldName xtension.XFields
+                        let xfields = Map.remove fieldName xtension.XFields
                         let xtension = { xtension with XFields = xfields }
                         xtensionProperty.SetValue (target, xtension)
-                    | _ -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
+                    | _ -> failwith <| "Invalid field '" + fieldName + "' for target type '" + targetType.Name + "'."
             | _ -> ()
 
     /// Get the field definitions of a target type not considering inheritance.
@@ -185,8 +184,8 @@ module Reflection =
     /// Detach source's fields to a target.
     let detachFields source target =
         let sourceType = source.GetType ()
-        let fieldDefinitions = getFieldDefinitions sourceType
-        detachFieldsViaDefinitions fieldDefinitions target
+        let fieldNames = getFieldDefinitionNames sourceType
+        detachFieldsViaNames fieldNames target
 
     /// Attach intrinsic facets to a target by their names.
     let attachIntrinsicFacetsViaNames facetNames target facetMap =
