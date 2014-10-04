@@ -29,19 +29,16 @@ module EitherModule =
         | Left _ -> either
 
     /// Bind that allows handling of failure.
-    let inline (>>=??) (either : Either<_, _>) fn : Either<_, _> =
-        fn either
+    let inline (>>=??) (either : Either<_, _>) fn : Either<_, _> = fn either
 
 module Either =
 
     /// Monadic return.
-    let inline returnM r =
-        Right r
+    let inline returnM r = Right r
 
     /// Monadic returnFrom.
     /// TODO: ensure this is defined correctly!
-    let inline returnFrom r =
-        r
+    let inline returnFrom r = r
 
     /// Builds an either monad.
     type EitherBuilder () =
@@ -87,6 +84,18 @@ module Either =
         Seq.fold
             (fun rights either -> match either with Right _ -> rights | Left right -> right :: rights)
             eithers
+
+    /// Map over the left side of an either value.
+    let mapLeft mapper either =
+        match either with
+        | Right r -> Right r
+        | Left l -> Left <| mapper l
+
+    /// Map over the right side of an either value.
+    let mapRight mapper either =
+        match either with
+        | Right r -> Right <| mapper r
+        | Left l -> Left l
 
     /// Split a sequences of eithers into a pair of left and right value lists.
     let split eithers =

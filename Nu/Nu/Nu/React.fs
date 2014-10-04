@@ -108,6 +108,12 @@ module React =
         lifetime ^^ subscribe eventAddress reactor
 
     (* Primitive Combinators *)
+
+    let filter pred (reactor : 'a Reactor) : 'a Reactor =
+        let handleEvent = fun (value : 'a) world ->
+            if pred value world then reactor.HandleEvent value world
+            else (Propagate, world)
+        Reactor.make reactor.ReactAddress handleEvent reactor.Unsubscribe reactor.World
     
     let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
         let handleEvent = fun value world -> reactor.HandleEvent (mapper value world) world
@@ -120,26 +126,10 @@ module React =
         map (fun (c, a) world -> (c, mapper a world)) reactor
 
     let mapOverLeft (mapper : 'a -> World -> 'b) (reactor : Either<'b, 'c> Reactor) : Either<'a, 'c> Reactor =
-        map
-            (fun either world ->
-                match either with
-                | Right c -> Right c
-                | Left a -> Left <| mapper a world)
-            reactor
+        map (fun either world -> Either.mapLeft (fun a -> mapper a world) either) reactor
 
     let mapOverRight (mapper : 'a -> World -> 'b) (reactor : Either<'c, 'b> Reactor) : Either<'c, 'a> Reactor =
-        map
-            (fun either world ->
-                match either with
-                | Right a -> Right <| mapper a world
-                | Left c -> Left c)
-            reactor
-
-    let filter pred (reactor : 'a Reactor) : 'a Reactor =
-        let handleEvent = fun (value : 'a) world ->
-            if pred value world then reactor.HandleEvent value world
-            else (Propagate, world)
-        Reactor.make reactor.ReactAddress handleEvent reactor.Unsubscribe reactor.World
+        map (fun either world -> Either.mapRight (fun a -> mapper a world) either) reactor
 
     let augment f s r = track (fun b w -> (f b w, true)) s r
     let scan4 (f : 'b -> 'a -> World -> 'b) g s (r : 'c Reactor) = track4 (fun c a w -> (f c a w, true)) g s r
