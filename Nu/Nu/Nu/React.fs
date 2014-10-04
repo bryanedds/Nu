@@ -113,10 +113,10 @@ module React =
         let handleEvent = fun value world -> reactor.HandleEvent (mapper value world) world
         Reactor.make reactor.ReactAddress handleEvent reactor.Unsubscribe reactor.World
 
-    let mapFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'c) Reactor) : ('a * 'c) Reactor =
+    let mapOverFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'c) Reactor) : ('a * 'c) Reactor =
         map (fun (a, c) world -> (mapper a world, c)) reactor
 
-    let mapSnd (mapper : 'a -> World -> 'b) (reactor : ('c * 'b) Reactor) : ('c * 'a) Reactor =
+    let mapOverSnd (mapper : 'a -> World -> 'b) (reactor : ('c * 'b) Reactor) : ('c * 'a) Reactor =
         map (fun (c, a) world -> (c, mapper a world)) reactor
 
     let mapOverLeft (mapper : 'a -> World -> 'b) (reactor : Either<'b, 'c> Reactor) : Either<'a, 'c> Reactor =
