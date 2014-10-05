@@ -264,7 +264,7 @@ module WorldModule =
             World.unsubscribe subscriptionKey world
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member private observeDefinition eventAddress subscriberAddress subscription world =
+        static member private monitorDefinition eventAddress subscriberAddress subscription world =
             if not <| Address.isEmpty subscriberAddress then
                 let observationKey = World.makeSubscriptionKey ()
                 let removalKey = World.makeSubscriptionKey ()
@@ -274,7 +274,7 @@ module WorldModule =
                     let world = World.unsubscribe observationKey world
                     (Propagate, world)
                 World.subscribe removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress subscription world
-            else failwith "Cannot observe events with an anonymous subscriber."
+            else failwith "Cannot monitor events with an anonymous subscriber."
 
         static member saveGroupToFile group entities fileName world =
             use file = File.Open (fileName, FileMode.Create)
@@ -386,8 +386,8 @@ module WorldModule =
             let splashLabel = Entity.setLabelImage image splashLabel
             let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
-            let world = World.observe (FinishIncomingEventAddress + address) address (World.handleSplashScreenIdle idlingTime) world
-            let world = World.observe (FinishOutgoingEventAddress + address) address (World.handleAsScreenTransitionFromSplash destination) world
+            let world = World.monitor (FinishIncomingEventAddress + address) address (World.handleSplashScreenIdle idlingTime) world
+            let world = World.monitor (FinishOutgoingEventAddress + address) address (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
         static member addDissolveScreenFromFile screenDispatcherName groupFileName incomingTime outgoingTime screenAddress world =
@@ -882,4 +882,4 @@ module WorldModule =
             World.subscribe4 <- World.subscribe4Definition
             World.unsubscribe <- World.unsubscribeDefinition
             World.withSubscription <- World.withSubscriptionDefinition
-            World.observe <- World.observeDefinition
+            World.monitor <- World.monitorDefinition

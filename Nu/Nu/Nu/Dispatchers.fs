@@ -303,8 +303,8 @@ module ButtonDispatcherModule =
         override dispatcher.Register (address, button, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventAddress address handleButtonEventDownMouseLeft |>
-                World.observe UpMouseLeftEventAddress address handleButtonEventUpMouseLeft
+                World.monitor DownMouseLeftEventAddress address handleButtonEventDownMouseLeft |>
+                World.monitor UpMouseLeftEventAddress address handleButtonEventUpMouseLeft
             (button, world)
 
         override dispatcher.GetRenderDescriptors (button, _) =
@@ -489,8 +489,8 @@ module ToggleDispatcherModule =
         override dispatcher.Register (address, toggle, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventAddress address handleToggleEventDownMouseLeft |>
-                World.observe UpMouseLeftEventAddress address handleToggleEventUpMouseLeft
+                World.monitor DownMouseLeftEventAddress address handleToggleEventDownMouseLeft |>
+                World.monitor UpMouseLeftEventAddress address handleToggleEventUpMouseLeft
             (toggle, world)
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
@@ -556,8 +556,8 @@ module FeelerDispatcherModule =
         override dispatcher.Register (address, feeler, world) =
             let world =
                 world |>
-                World.observe DownMouseLeftEventAddress address handleFeelerEventDownMouseLeft |>
-                World.observe UpMouseLeftEventAddress address handleFeelerEventUpMouseLeft
+                World.monitor DownMouseLeftEventAddress address handleFeelerEventDownMouseLeft |>
+                World.monitor UpMouseLeftEventAddress address handleFeelerEventUpMouseLeft
             (feeler, world)
 
         override dispatcher.GetQuickSize (_, _) =

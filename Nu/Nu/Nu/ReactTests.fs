@@ -7,6 +7,7 @@ open Xunit
 open Prime
 open Nu
 open Nu.Constants
+open Nu.React
 module ReactTests =
 
     let TestEventAddress = !* "Test"
@@ -16,15 +17,16 @@ module ReactTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor = React.subscribe TestEventAddress ^^ React.unto Address.empty incUserStateAndPropagate world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) reactor.World
+        let world = subscribeUpon TestEventAddress world ^^ using Address.empty incUserStateAndPropagate
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor = React.subscribe TestEventAddress ^^ React.unto Address.empty incUserStateAndPropagate world
-        let world = reactor.Unsubscribe reactor.World
+        let reactor = upon TestEventAddress ^^ using Address.empty incUserStateAndPropagate
+        let world = subscribe world reactor
+        let world = unsubscribe world reactor
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
@@ -33,32 +35,33 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let reactor =
-            React.filter (fun _ world -> World.getUserState world = 0) ^^
-            React.unto Address.empty incUserStateAndPropagate world
-        let reactor = React.subscribe TestEventAddress reactor
-        let reactor = React.subscribe TestEventAddress reactor
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) reactor.World
+            upon TestEventAddress ^^
+            filter (fun _ world -> World.getUserState world = 0) ^^
+            using Address.empty incUserStateAndPropagate
+        let world = subscribe world reactor
+        let world = subscribe world reactor
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor =
-            React.subscribe TestEventAddress ^^
-            React.map React.unwrapV ^^
-            React.unto Address.empty (fun a world -> (Propagate, World.setUserState a world)) world
-        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 0 }) reactor.World
+        let world =
+            subscribeUpon TestEventAddress world ^^
+            map unwrapV ^^
+            using Address.empty (fun a world -> (Propagate, World.setUserState a world))
+        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 0 }) world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] scanWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor =
-            React.subscribe TestEventAddress ^^
-            React.map React.unwrapV ^^
-            React.scan (fun b a _ -> b + a) 0 ^^
-            React.unto Address.empty (fun a world -> (Propagate, World.setUserState a world)) world
-        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 1 }) reactor.World
+        let world =
+            subscribeUpon TestEventAddress world ^^
+            map unwrapV ^^
+            scan (fun b a _ -> b + a) 0 ^^
+            using Address.empty (fun a world -> (Propagate, World.setUserState a world))
+        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 1 }) world
         let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 2 }) world
         Assert.Equal (3, World.getUserState world)
 
@@ -66,9 +69,10 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let reactor =
-            React.subscribe TestEventAddress ^^
-            React.scan2 (fun a _ _ -> a) ^^
-            React.unto Address.empty (fun _ world -> (Propagate, world)) world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) reactor.World
-        let world = reactor.Unsubscribe world
+            upon TestEventAddress ^^
+            scan2 (fun a _ _ -> a) ^^
+            using Address.empty (fun _ world -> (Propagate, world))
+        let world = subscribe world reactor
+        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = unsubscribe world reactor
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
