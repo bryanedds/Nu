@@ -10,11 +10,18 @@ module ReactModule =
     type [<ReferenceEquality>] 'a Reactor =
         { ReactAddress : Address
           HandleEvent : 'a -> World -> EventHandling * World
-          Unsubscribe : World -> World
-          World : World }
+          Subscribe : World -> World
+          Unsubscribe : World -> World }
 
-        static member make<'a> subscriberAddress (handleEvent : 'a -> World -> EventHandling * World) unsubscriber world =
-            { ReactAddress = subscriberAddress; HandleEvent = handleEvent; Unsubscribe = unsubscriber; World = world }
+        static member make<'a>
+            subscriberAddress
+            (handleEvent : 'a -> World -> EventHandling * World)
+            subscribe
+            unsubscribe =
+            { ReactAddress = subscriberAddress
+              HandleEvent = handleEvent
+              Subscribe = subscribe
+              Unsubscribe = unsubscribe }
 
 module React =
 
@@ -27,23 +34,31 @@ module React =
         (reactor : 'b Reactor) :
         'a Reactor =
         let key = World.makeCallbackKey ()
-        let world = World.addCallbackState key state reactor.World
-        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscribe world
+        let subscribe = fun world ->
+            let world = World.addCallbackState key state world
+            reactor.Subscribe world
+        let unsubscribe = fun world ->
+            let world = World.removeCallbackState key world
+            reactor.Unsubscribe world
         let handleEvent = fun value world ->
             let state = World.getCallbackState key world
             let (state, tracked) = tracker state value world
             let world = World.addCallbackState key state world
             if tracked then reactor.HandleEvent (tranformer state) world
             else (Propagate, world)
-        Reactor.make reactor.ReactAddress handleEvent unsubscriber world
+        Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
 
     let track2
         (tracker : 'a -> 'a -> World -> 'a * bool)
         (reactor : 'a Reactor) :
         'a Reactor =
         let key = World.makeCallbackKey ()
-        let world = World.addCallbackState key None reactor.World
-        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscribe world
+        let subscribe = fun world ->
+            let world = World.addCallbackState key None world
+            reactor.Subscribe world
+        let unsubscribe = fun world ->
+            let world = World.removeCallbackState key world
+            reactor.Unsubscribe world
         let handleEvent = fun value world ->
             let optState = World.getCallbackState key world
             let state = match optState with Some state -> state | None -> value
@@ -51,7 +66,7 @@ module React =
             let world = World.addCallbackState key (Some state) world
             if tracked then reactor.HandleEvent state world
             else (Propagate, world)
-        Reactor.make reactor.ReactAddress handleEvent unsubscriber world
+        Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
 
     let track
         (tracker : 'b -> World -> 'b * bool)
@@ -59,34 +74,40 @@ module React =
         (reactor : 'a Reactor) :
         'a Reactor =
         let key = World.makeCallbackKey ()
-        let world = World.addCallbackState key state reactor.World
-        let unsubscriber = fun world -> let world = World.removeCallbackState key world in reactor.Unsubscribe world
+        let subscribe = fun world ->
+            let world = World.addCallbackState key state world
+            reactor.Subscribe world
+        let unsubscribe = fun world ->
+            let world = World.removeCallbackState key world
+            reactor.Unsubscribe world
         let handleEvent = fun value world ->
             let state = World.getCallbackState key world
             let (state, tracked) = tracker state world
             let world = World.addCallbackState key state world
             if tracked then reactor.HandleEvent value world
             else (Propagate, world)
-        Reactor.make reactor.ReactAddress handleEvent unsubscriber world
-
-    let zip eventAddress (reactor : ('a * Event) Reactor) : 'a Reactor =
-        let key = World.makeSubscriptionKey ()
-        let unsubscriber = fun world -> World.unsubscribe key world
-        let handleEvent = fun event world ->
-            let key = World.makeSubscriptionKey ()
-            let handleEvent2 = fun event2 world -> let world = unsubscriber world in reactor.HandleEvent (event, event2) world
-            let world = World.subscribe key eventAddress reactor.ReactAddress handleEvent2 world
-            (Propagate, world)
-        let unsubscriber world = let world = unsubscriber world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress handleEvent unsubscriber reactor.World
+        Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
 
     let choice eventAddress (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
         let key = World.makeSubscriptionKey ()
         let handleRight = fun value world -> reactor.HandleEvent (Right value) world
         let handleLeft = fun value world -> reactor.HandleEvent (Left value) world
-        let world = World.subscribe key eventAddress reactor.ReactAddress handleLeft reactor.World
-        let unsubscriber world = let world = World.unsubscribe key world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress handleRight unsubscriber world
+        let subscribe = fun world ->
+            let world = World.subscribe key eventAddress reactor.ReactAddress handleLeft world
+            reactor.Subscribe world
+        let unsubscribe world = let world = World.unsubscribe key world in reactor.Unsubscribe world
+        Reactor.make reactor.ReactAddress handleRight subscribe unsubscribe
+
+    let zip eventAddress (reactor : ('a * Event) Reactor) : 'a Reactor =
+        let key = World.makeSubscriptionKey ()
+        let unsubscribe = fun world -> World.unsubscribe key world
+        let handleEvent = fun a world ->
+            let key = World.makeSubscriptionKey ()
+            let handleEvent2 = fun event world -> let world = unsubscribe world in reactor.HandleEvent (a, event) world
+            let world = World.subscribe key eventAddress reactor.ReactAddress handleEvent2 world
+            (Propagate, world)
+        let unsubscribe world = let world = unsubscribe world in reactor.Unsubscribe world
+        Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe unsubscribe
 
     let lifetime (reactor : 'a Reactor) : 'a Reactor =
         let key = World.makeSubscriptionKey ()
@@ -94,18 +115,40 @@ module React =
             let world = World.unsubscribe key world
             let world = reactor.Unsubscribe world
             (Propagate, world)
-        let world = World.subscribe key (RemovingEventAddress + reactor.ReactAddress) reactor.ReactAddress handleEvent reactor.World
-        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress reactor.HandleEvent unsubscriber world
+        let subscribe = fun world ->
+            let world = World.subscribe key (RemovingEventAddress + reactor.ReactAddress) reactor.ReactAddress handleEvent world
+            reactor.Subscribe world
+        let unsubscribe = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
+        Reactor.make reactor.ReactAddress reactor.HandleEvent subscribe unsubscribe
 
-    let subscribe eventAddress (reactor : Event Reactor) : Event Reactor =
+    let upon eventAddress (reactor : Event Reactor) : Event Reactor =
         let key = World.makeSubscriptionKey ()
-        let unsubscriber = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
-        let world = World.subscribe key eventAddress reactor.ReactAddress reactor.HandleEvent reactor.World
-        Reactor.make reactor.ReactAddress reactor.HandleEvent unsubscriber world
+        let subscribe = fun world ->
+            let world = World.subscribe key eventAddress reactor.ReactAddress reactor.HandleEvent world
+            reactor.Subscribe world
+        let unsubscribe = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
+        Reactor.make reactor.ReactAddress reactor.HandleEvent subscribe unsubscribe
 
-    let observe eventAddress (reactor : Event Reactor) : Event Reactor =
-        lifetime ^^ subscribe eventAddress reactor
+    let lifetimeUpon eventAddress (reactor : Event Reactor) : Event Reactor =
+        lifetime ^^ upon eventAddress reactor
+
+    let subscribe world reactor =
+        reactor.Subscribe world
+
+    let monitor world reactor =
+        let reactor = lifetime reactor
+        subscribe world reactor
+
+    let unsubscribe world reactor =
+        reactor.Unsubscribe world
+
+    let subscribeUpon eventAddress world reactor =
+        let reactor = upon eventAddress reactor
+        subscribe world reactor
+
+    let monitorUpon eventAddress world reactor =
+        let reactor = lifetimeUpon eventAddress reactor
+        subscribe world reactor
 
     (* Primitive Combinators *)
 
@@ -113,11 +156,11 @@ module React =
         let handleEvent = fun (value : 'a) world ->
             if pred value world then reactor.HandleEvent value world
             else (Propagate, world)
-        Reactor.make reactor.ReactAddress handleEvent reactor.Unsubscribe reactor.World
+        Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe reactor.Unsubscribe
     
     let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
         let handleEvent = fun value world -> reactor.HandleEvent (mapper value world) world
-        Reactor.make reactor.ReactAddress handleEvent reactor.Unsubscribe reactor.World
+        Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe reactor.Unsubscribe
 
     let mapOverFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'c) Reactor) : ('a * 'c) Reactor =
         map (fun (a, c) world -> (mapper a world, c)) reactor
@@ -211,4 +254,5 @@ module React =
 
     (* Initializing Combinator *)
 
-    let unto subscriberAddress handleEvent world = Reactor.make subscriberAddress handleEvent id world
+    let using subscriberAddress handleEvent =
+        Reactor.make subscriberAddress handleEvent id id

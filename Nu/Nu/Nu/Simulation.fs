@@ -438,7 +438,7 @@ module World =
     let mutable withSubscription = Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
     
     /// Keep active a subscription for the lifetime of a simulant.
-    let mutable observe = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+    let mutable monitor = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
 
     /// Make a key used to track an unsubscription with a subscription.
     let makeSubscriptionKey () =
