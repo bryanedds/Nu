@@ -1,4 +1,5 @@
-﻿#r "System.Configuration"
+﻿#nowarn "9"
+#r "System.Configuration"
 
 (* IMPORTANT NOTE: change these paths to make this script run with your Nu installation! *)
 #r "C:/Development/FPWorks/Prime/xUnit/xunit.dll"
@@ -9,6 +10,7 @@
 #r "C:/Development/FPWorks/Nu/Farseer/FarseerPhysics.dll"
 #r "C:/Development/FPWorks/Nu/SDL2#/Debug/SDL2#.dll"
 #r "C:/Development/FPWorks/Nu/TiledSharp/Debug/TiledSharp.dll"
+#r "C:/Development/FPWorks/SDL2Addendum/SDL2Addendum/SDL2Addendum/bin/Debug/SDL2Addendum.dll"
 System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Debug"
 
 #load "RQueue.fs"

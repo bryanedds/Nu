@@ -5,6 +5,7 @@ open System.Reflection
 open System.ComponentModel
 open System.Collections.Generic
 open Prime
+open Nu
 open Nu.Constants
 
 [<AutoOpen>]

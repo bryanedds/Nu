@@ -2,6 +2,7 @@
 open System
 open LanguagePrimitives
 open Prime
+open Nu
 open Nu.Constants
 
 [<AutoOpen>]

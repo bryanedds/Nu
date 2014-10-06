@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open Nu
 module Program =
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
