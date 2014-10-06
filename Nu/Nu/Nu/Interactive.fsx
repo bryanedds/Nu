@@ -12,6 +12,7 @@
 System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Debug"
 
 #load "RQueue.fs"
+#load "Address.fs"
 #load "Core.fs"
 #load "Constants.fs"
 #load "Math.fs"
