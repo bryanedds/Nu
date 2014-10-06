@@ -4,6 +4,7 @@ open System.ComponentModel
 open System.Reflection
 open System.Xml
 open Prime
+open Nu
 open Nu.Constants
 
 [<RequireQualifiedAccess>]

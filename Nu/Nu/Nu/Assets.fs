@@ -3,6 +3,7 @@ open System
 open System.Xml
 open System.IO
 open Prime
+open Nu
 open Nu.Constants
 
 [<AutoOpen>]

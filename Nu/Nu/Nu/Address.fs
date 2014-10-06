@@ -6,6 +6,7 @@ open System
 open System.Configuration
 open System.Text
 open Prime
+open Nu
 
 [<AutoOpen>]
 module AddressModule =

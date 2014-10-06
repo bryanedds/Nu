@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Reflection
 open System.Xml
 open Prime
+open Nu
 open Nu.Constants
 
 [<AutoOpen>]

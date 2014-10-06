@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Configuration
 open Prime
+open Nu
 
 [<AutoOpen>]
 module CoreModule =
