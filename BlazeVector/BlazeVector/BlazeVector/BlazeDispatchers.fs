@@ -2,6 +2,7 @@
 open System
 open System.Collections
 open OpenTK
+open SDL2
 open FarseerPhysics
 open FarseerPhysics.Dynamics
 open Prime
@@ -212,6 +213,12 @@ module PlayerModule =
                 else (Propagate, world)
             else (Propagate, world)
 
+        let handleJumpByKeyboardKey event world =
+            let keyboardKeyData = Event.unwrapD event
+            match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.IsRepeat) with
+            | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
+            | _ -> (Propagate, world)
+
         static member FieldDefinitions =
             [define? Size <| Vector2 (48.0f, 96.0f)
              define? FixedRotation true
@@ -235,7 +242,8 @@ module PlayerModule =
                 world |>
                 World.monitor TickEventAddress address handleSpawnBullet |>
                 World.monitor TickEventAddress address handleMovement |>
-                World.monitor DownMouseLeftEventAddress address handleJump
+                World.monitor DownMouseLeftEventAddress address handleJump |>
+                World.monitor DownKeyboardKeyEventAddress address handleJumpByKeyboardKey
             (player, world)
 
 [<AutoOpen>]

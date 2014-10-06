@@ -84,7 +84,8 @@ module SimModule =
 
     /// The data for a keyboard key event.
     type [<StructuralEquality; NoComparison>] KeyboardKeyData =
-        { ScanCode : uint32 }
+        { ScanCode : int
+          IsRepeat : bool }
 
     /// The data for a collision event.
     type [<StructuralEquality; NoComparison>] CollisionData =

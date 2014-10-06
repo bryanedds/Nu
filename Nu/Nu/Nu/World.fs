@@ -618,12 +618,14 @@ module WorldModule =
                     let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                     World.publish World.sortSubscriptionsByPickingPriority mouseEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
-                    let key = event.key.keysym
-                    let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
+                    let keyboard = event.key
+                    let key = keyboard.keysym
+                    let eventData = KeyboardKeyData { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0 }
                     World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_KEYUP ->
-                    let key = event.key.keysym
-                    let eventData = KeyboardKeyData { ScanCode = uint32 key.scancode }
+                    let keyboard = event.key
+                    let key = keyboard.keysym
+                    let eventData = KeyboardKeyData { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0 }
                     World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventAddress Address.empty eventData world
                 | _ -> world
             (world.State.Liveness, world)
