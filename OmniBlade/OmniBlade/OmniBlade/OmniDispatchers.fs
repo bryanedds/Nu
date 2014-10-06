@@ -1,5 +1,6 @@
 ﻿namespace OmniBlade
 open OpenTK
+open SDL2
 open Prime
 open Nu
 open Nu.Constants
@@ -8,6 +9,8 @@ open OmniBlade.OmniConstants
 
 [<AutoOpen>]
 module OmniDispatchersModule =
+
+    let [<Literal>] KeyboardMovementForce = 400.0f
 
     type FieldGroupDispatcher () =
         inherit GroupDispatcher ()
@@ -19,23 +22,34 @@ module OmniDispatchersModule =
             World.setCamera camera world
 
         let handleAdjustFieldCamera event world =
-            let (address, _, _) = Event.unwrap event
+            let address = Event.unwrapA event
             (Propagate, adjustFieldCamera address world)
 
         let handleMoveFieldAvatar event world =
-            let (address, _, _) = Event.unwrap event
+            let address = Event.unwrapA event
+            let avatarAddress = address @+ [FieldAvatarName]
             let feelerAddress = address @+ [FieldFeelerName]
+            let avatar = World.getEntity avatarAddress world
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then
-                let avatarAddress = address @+ [FieldAvatarName]
-                let avatar = World.getEntity avatarAddress world
                 let mousePosition = World.getMousePositionF world
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world avatar
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
                 let world = World.applyBodyLinearImpulse impulseVector avatar.PhysicsId world 
                 (Propagate, world)
-            else (Propagate, world)
+            else
+                let mutable impulseVector = Vector2.Zero // NOTE: beware the mutation!
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then
+                    impulseVector <- impulseVector + Vector2 (-KeyboardMovementForce, 0.0f)
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then
+                    impulseVector <- impulseVector + Vector2 (KeyboardMovementForce, 0.0f)
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then
+                    impulseVector <- impulseVector + Vector2 (0.0f, KeyboardMovementForce)
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then
+                    impulseVector <- impulseVector + Vector2 (0.0f, -KeyboardMovementForce)
+                let world = World.applyBodyLinearImpulse impulseVector avatar.PhysicsId world 
+                (Propagate, world)
 
         override dispatcher.Register (address, avatar, world) =
             let world = World.monitor TickEventAddress address handleMoveFieldAvatar world
