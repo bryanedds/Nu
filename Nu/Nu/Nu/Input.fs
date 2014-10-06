@@ -11,11 +11,15 @@ module MouseButtonModule =
         | MouseLeft
         | MouseCenter
         | MouseRight
+        | MouseX1
+        | MouseX2
         override this.ToString () =
             match this with
             | MouseLeft -> "Left"
             | MouseCenter -> "Center"
             | MouseRight -> "Right"
+            | MouseX1 -> "X1"
+            | MouseX2 -> "X2"
 
 [<RequireQualifiedAccess>]
 module MouseState =
@@ -26,6 +30,8 @@ module MouseState =
         | MouseLeft -> SDL.SDL_BUTTON_LEFT
         | MouseCenter -> SDL.SDL_BUTTON_MIDDLE
         | MouseRight -> SDL.SDL_BUTTON_RIGHT
+        | MouseX1 -> SDL.SDL_BUTTON_X1
+        | MouseX2 -> SDL.SDL_BUTTON_X2
 
     /// Convert SDL's representation of a mouse button to a MouseButton.
     let toNuButton mouseButton =
@@ -33,6 +39,8 @@ module MouseState =
         | SDL2.SDL.SDL_BUTTON_LEFT -> MouseLeft
         | SDL2.SDL.SDL_BUTTON_MIDDLE -> MouseCenter
         | SDL2.SDL.SDL_BUTTON_RIGHT -> MouseRight
+        | SDL2.SDL.SDL_BUTTON_X1 -> MouseX1
+        | SDL2.SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
 
     /// Query that the given mouse button is down.
