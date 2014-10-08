@@ -11,8 +11,8 @@ open Nu.React
 module ReactTests =
 
     let TestEventAddress = !* "Test"
-    let incUserStateAndPropagate _ world = (Propagate, World.transformUserState incI world)
-    let incUserStateAndResolve _ world = (Resolved, World.transformUserState incI world)
+    let incUserStateAndPropagate _ world = (Propagate, World.transformUserState inc world)
+    let incUserStateAndResolve _ world = (Resolved, World.transformUserState inc world)
 
     let [<Fact>] subscribeWorks () =
         World.init ()
