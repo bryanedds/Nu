@@ -39,16 +39,13 @@ module OmniDispatchersModule =
                 let world = World.applyBodyLinearImpulse impulseVector avatar.PhysicsId world 
                 (Propagate, world)
             else
-                let mutable impulseVector = Vector2.Zero // NOTE: beware the mutation!
-                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then
-                    impulseVector <- impulseVector + Vector2 (-KeyboardMovementForce, 0.0f)
-                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then
-                    impulseVector <- impulseVector + Vector2 (KeyboardMovementForce, 0.0f)
-                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then
-                    impulseVector <- impulseVector + Vector2 (0.0f, KeyboardMovementForce)
-                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then
-                    impulseVector <- impulseVector + Vector2 (0.0f, -KeyboardMovementForce)
-                let world = World.applyBodyLinearImpulse impulseVector avatar.PhysicsId world 
+                let impulses =
+                    [(if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Vector2 (-KeyboardMovementForce, 0.0f) else Vector2.Zero)
+                     (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Vector2 (KeyboardMovementForce, 0.0f) else Vector2.Zero)
+                     (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Vector2 (0.0f, KeyboardMovementForce) else Vector2.Zero)
+                     (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Vector2 (0.0f, -KeyboardMovementForce) else Vector2.Zero)]
+                let impulse = List.reduce (+) impulses
+                let world = World.applyBodyLinearImpulse impulse avatar.PhysicsId world 
                 (Propagate, world)
 
         override dispatcher.Register (address, avatar, world) =
