@@ -6,16 +6,16 @@ namespace Prime
 [<AutoOpen>]
 module Sectioning =
 
-    /// Sectioned unsigned long decrement.
+    /// The generic zero value.
     let inline zero () = LanguagePrimitives.GenericZero
 
-    /// Sectioned unsigned long decrement.
+    /// The generic one value.
     let inline one () = LanguagePrimitives.GenericOne
 
-    /// Sectioned unsigned long decrement.
+    /// Generic increment.
     let inline inc n = n + one ()
 
-    /// Sectioned unsigned long decrement.
+    /// Generic decrement.
     let inline dec n = n - one ()
 
     /// Sectioned list cons.
