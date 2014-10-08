@@ -186,10 +186,10 @@ module React =
         scan4
             (fun (_ : 'a, n : 'a, d : 'a) a _ ->
                 let n = n + a
-                let d = d + GenericOne
+                let d = d + one ()
                 (n / d, n, d))
             Triple.fst
-            (GenericZero, GenericZero, GenericZero)
+            (zero (), zero (), zero ())
             reactor
 
     let organize (reactor : ('a option * ('a Set)) Reactor) : 'a Reactor =

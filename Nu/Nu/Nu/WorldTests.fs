@@ -16,8 +16,8 @@ module WorldTests =
     let TestEntityAddress = !+ [TestScreenName; TestGroupName; TestEntityName]
     let TestGroupAddress = !+ [TestScreenName; TestGroupName]
     let TestScreenAddress = !+ [TestScreenName]
-    let incUserStateAndPropagate _ world = (Propagate, World.transformUserState incI world)
-    let incUserStateAndResolve _ world = (Resolved, World.transformUserState incI world)
+    let incUserStateAndPropagate _ world = (Propagate, World.transformUserState inc world)
+    let incUserStateAndResolve _ world = (Resolved, World.transformUserState inc world)
 
     let [<Fact>] emptyWorldDoesntExplode () =
         World.init ()

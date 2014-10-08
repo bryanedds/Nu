@@ -355,7 +355,7 @@ module WorldModule =
         static member private handleSplashScreenIdleTick idlingTime ticks event world =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
-                let subscription = World.handleSplashScreenIdleTick idlingTime (incL ticks)
+                let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
                 let world = World.subscribe SplashScreenTickKey event.Address event.SubscriberAddress subscription world
                 (Propagate, world)
             else

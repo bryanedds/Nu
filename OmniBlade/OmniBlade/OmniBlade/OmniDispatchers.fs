@@ -44,7 +44,7 @@ module OmniDispatchersModule =
                      (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Vector2 (KeyboardMovementForce, 0.0f) else Vector2.Zero)
                      (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Vector2 (0.0f, KeyboardMovementForce) else Vector2.Zero)
                      (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Vector2 (0.0f, -KeyboardMovementForce) else Vector2.Zero)]
-                let impulse = List.reduce (+) impulses
+                let impulse = List.reduce add impulses
                 let world = World.applyBodyLinearImpulse impulse avatar.PhysicsId world 
                 (Propagate, world)
 
