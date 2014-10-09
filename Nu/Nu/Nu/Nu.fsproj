@@ -91,6 +91,7 @@
     <Compile Include="ReactTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
+    <None Include="App.config" />
     <None Include="libfreetype-6.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -154,6 +155,9 @@
     </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharpx.Collections">
+      <HintPath>..\..\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\FSharpx.Core\FSharpx.Core.dll</HintPath>
