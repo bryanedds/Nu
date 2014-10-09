@@ -35,14 +35,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuTemplate", "..\..\Nu\Nu\N
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDL2Addendum", "..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj", "{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuGame1", "NuGame1\NuGame1.fsproj", "{8C929CB5-D39A-46BA-ADDC-C3DE22748087}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuGame2", "NuGame2\NuGame2.fsproj", "{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuGame3", "NuGame3\NuGame3.fsproj", "{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NuGame4", "NuGame4\NuGame4.fsproj", "{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -107,30 +99,6 @@ Global
 		{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}.Optimized|Any CPU.Build.0 = Release|Any CPU
 		{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8C929CB5-D39A-46BA-ADDC-C3DE22748087}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8C929CB5-D39A-46BA-ADDC-C3DE22748087}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8C929CB5-D39A-46BA-ADDC-C3DE22748087}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
-		{8C929CB5-D39A-46BA-ADDC-C3DE22748087}.Optimized|Any CPU.Build.0 = Release|Any CPU
-		{8C929CB5-D39A-46BA-ADDC-C3DE22748087}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8C929CB5-D39A-46BA-ADDC-C3DE22748087}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
-		{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}.Optimized|Any CPU.Build.0 = Release|Any CPU
-		{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4327DA0D-3CBB-4EE8-AF25-7553C8E5048D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
-		{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}.Optimized|Any CPU.Build.0 = Release|Any CPU
-		{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9832ED7D-82C1-4DC2-9A15-1DD01AF56B1F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}.Optimized|Any CPU.ActiveCfg = Release|Any CPU
-		{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}.Optimized|Any CPU.Build.0 = Release|Any CPU
-		{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5CFEBEC1-2675-4FCE-B3E8-1E7F9C72FEF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
