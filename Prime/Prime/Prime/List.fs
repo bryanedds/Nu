@@ -343,3 +343,8 @@ let rec inline compareStrings (list : string list) (list2 : string list) =
         let result = head.CompareTo head2
         if result = 0 then compare tail tail2
         else result
+
+/// Hash a list.
+/// NOTE: May be a pessimization.
+let inline hash list =
+    List.fold (fun hashValue name -> hashValue ^^^ hash name) 0 list

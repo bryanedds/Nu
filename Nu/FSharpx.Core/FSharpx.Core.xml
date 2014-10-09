@@ -2334,7 +2334,7 @@ O(log n) amortized time. Returns a new heap of the elements trailing the head.
 </member>
 <member name="M:FSharpx.Collections.Heap`1.Rev">
 <summary>
-O(n). Returns heap reversed.
+O(n log n). Returns heap reversed.
 </summary>
 </member>
 <member name="M:FSharpx.Collections.Heap`1.Merge(FSharpx.Collections.Heap{`0})">
@@ -2896,7 +2896,7 @@ O(1) amortized, O(n), worst case. Returns option first element and tail.
 </member>
 <member name="M:FSharpx.Collections.DequeModule.toSeq``1(FSharpx.Collections.Deque{``0})">
 <summary>
-O(n). Returns a seq of the deque elements.
+O(n). Views the given deque as a sequence.
 </summary>
 </member>
 <member name="M:FSharpx.Collections.DequeModule.uncons``1(FSharpx.Collections.Deque{``0})">
@@ -3042,6 +3042,11 @@ O(log n) amortized time. Returns option head element and tail.
 O(log n) amortized time. Returns the head element and tail.
 </summary>
 </member>
+<member name="M:FSharpx.Collections.HeapModule.toSeq``1(FSharpx.Collections.Heap{``0})">
+<summary>
+O(n). Views the given heap as a sequence.
+</summary>
+</member>
 <member name="M:FSharpx.Collections.HeapModule.tryTail``1(FSharpx.Collections.Heap{``0})">
 <summary>
 O(log n) amortized time. Returns option heap of the elements trailing the head.
@@ -3059,7 +3064,7 @@ O(n). Returns heap reversed.
 </member>
 <member name="M:FSharpx.Collections.HeapModule.ofSeq``1(System.Boolean,System.Collections.Generic.IEnumerable{``0})">
 <summary>
-O(n). Returns heap from the sequence.
+O(n log n). Returns heap, bool isDescending, from the sequence.
 </summary>
 </member>
 <member name="M:FSharpx.Collections.HeapModule.tryMerge``1(FSharpx.Collections.Heap{``0},FSharpx.Collections.Heap{``0})">
@@ -3369,6 +3374,12 @@ O(1). Test if a list is empty.  Forces the evaluation of
 <summary>
  List monoid
 </summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
 </member>
 <member name="M:FSharpx.Collections.List.merge``1(Microsoft.FSharp.Collections.FSharpList{``0},Microsoft.FSharp.Collections.FSharpList{``0})">
 <summary>
@@ -3716,6 +3727,11 @@ O(1) amortized, O(n) worst-case. Returns option first element and tail.
 O(1) amortized, O(n) worst-case. Returns the first element and tail.
 </summary>
 </member>
+<member name="M:FSharpx.Collections.QueueModule.toSeq``1(FSharpx.Collections.Queue{``0})">
+<summary>
+O(n). Views the given queue as a sequence.
+</summary>
+</member>
 <member name="M:FSharpx.Collections.QueueModule.tryTail``1(FSharpx.Collections.Queue{``0})">
 <summary>
 O(1) amortized, O(n) worst-case. Returns option queue of the elements trailing the first element
@@ -3807,6 +3823,11 @@ O(1). Returns a new queue with the element added to the end. (enqueue)
  O(1). Returns tuple last element and random access list without last item
 </summary>
 </member>
+<member name="M:FSharpx.Collections.RandomAccessListModule.toSeq``1(FSharpx.Collections.RandomAccessList{``0})">
+<summary>
+O(n). Views the given random access list as a sequence.
+</summary>
+</member>
 <member name="M:FSharpx.Collections.RandomAccessListModule.tryTail``1(FSharpx.Collections.RandomAccessList{``0})">
 <summary>
  O(n). Returns option random access list without the last item.
@@ -3891,6 +3912,12 @@ O(1). Returns random access list of no elements.
 
 </member>
 <member name="T:FSharpx.Collections.RandomAccessListModule">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
 
 </member>
 <member name="M:FSharpx.Collections.Seq.page``1(System.Int32,System.Int32,System.Collections.Generic.IEnumerable{``0})">
@@ -4049,6 +4076,11 @@ O(1). Returns random access list of no elements.
 <member name="M:FSharpx.Collections.VectorModule.unconj``1(FSharpx.Collections.Vector{``0})">
 <summary>
  O(1). Returns tuple last element and vector without last item
+</summary>
+</member>
+<member name="M:FSharpx.Collections.VectorModule.toSeq``1(FSharpx.Collections.Vector{``0})">
+<summary>
+O(n). Views the given vector as a sequence.
 </summary>
 </member>
 <member name="M:FSharpx.Collections.VectorModule.singleton``1(``0)">
@@ -12746,6 +12778,9 @@ O(1), worst case. Returns a new random access list with the element added to the
 <member name="">
 
 </member>
+<member name="">
+
+</member>
 <member name="M:FSharpx.RegexModule.tryMatchWithOptions(System.Text.RegularExpressions.RegexOptions,System.String,System.String)">
 <summary>
 flags:RegexOptions -&gt; pattern:string -&gt; input:string -&gt; Regex.ActiveMatch option
@@ -13522,6 +13557,37 @@ flags:RegexOptions -&gt; pattern:string -&gt; input:string -&gt; Regex.ActiveMat
 <summary>
  Returns if the string is null or empty
 </summary>
+</member>
+<member name="M:FSharpx.Strings.joinWords(Microsoft.FSharp.Collections.FSharpList{System.String})">
+<summary>
+ Folds the string list by seperating entries with a single space
+</summary>
+</member>
+<member name="M:FSharpx.Strings.toWords(System.String)">
+<summary>
+ Splits a string based on whitespace (spaces, tabs, and newlines)
+</summary>
+</member>
+<member name="M:FSharpx.Strings.joinLines(Microsoft.FSharp.Collections.FSharpList{System.String})">
+<summary>
+ Creates newline seperated string from the string list
+</summary>
+</member>
+<member name="M:FSharpx.Strings.toLines(System.String)">
+<summary>
+ Splits a string based on newlines 
+</summary>
+</member>
+<member name="M:FSharpx.Strings.splitBy(Microsoft.FSharp.Core.FSharpFunc{System.Char,System.Boolean},System.String)">
+<summary>
+ Returns a sequence of strings split by the predicate    
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
 </member>
 <member name="M:FSharpx.Strings.separatedBy(System.String,System.Collections.Generic.IEnumerable{System.String})">
 <summary>

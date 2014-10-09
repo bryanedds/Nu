@@ -93,6 +93,9 @@
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
+    <Reference Include="FSharpx.Collections">
+      <HintPath>..\..\..\Nu\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
+    </Reference>
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
     </Reference>
