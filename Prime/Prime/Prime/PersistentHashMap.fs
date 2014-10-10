@@ -26,6 +26,8 @@ let toKeyList map =
 let ofList (list : List<_>) =
     PersistentHashMap.ofSeq list
 
+// TODO: implement this efficiently, that is, without having to do two look-ups or having to
+// catch an exception if the key is not present (may require changing FSharpx source...)
 let tryFind key map =
     if PersistentHashMap.containsKey key map
     then Some <| PersistentHashMap.find key map
