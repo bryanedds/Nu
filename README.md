@@ -19,7 +19,6 @@ This repository hosts several projects, including -
 - the programming language **Aml**, a common language for building DSLs on top of using F#.
 - the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
 - the sample game **BlazeVector**.
-- the game **OmniBlade** that I just barely started on (currently working to get funding for this).
 
 Here is some media on the Nu Game Engine -
 
