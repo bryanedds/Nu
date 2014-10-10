@@ -1,5 +1,15 @@
-FP Works Repository
-===================
+FP Works repository featuring the Nu Game Engine!
+=
+
+What is the **Nu Game Engine**?
+
+*"The Nu Game Engine is a game development platform that aims to drastically improve lives of programmers by providing a vastly superior programming model for games.*
+
+*"The author believes that there are only two ways to solve a programming problem; a) through human intellect, and b) through human suffering. The game industry has become a nightmare for programmers because it more and more leverages the latter to achieve its goals. There's a reason that the average burn rate for game developers is 5 years.*
+
+*"However, the author also believes there is a real, practical path back to the former - and that is through functional programming. The Nu Game Engine is the first practical game engine to fully leverage functional programming. Once Nu achieves its aims, not only will incalculable man-hours of misery be allieviated, but the cost of developing games will be reduced to a fraction of what they are today.*
+
+*"Of course, there's still much work to be done, and with the help of your sponsorship (see below), Nu will become the premiere functional game development engine!"*
 
 ![Screenshot](BlazeVector/Promotional/BlastingAwayInBlazeVector.png?raw=true "Nu Game Engine demo game BlazeVector")
 
@@ -9,7 +19,6 @@ This repository hosts several projects, including -
 - the programming language **Aml**, a common language for building DSLs on top of using F#.
 - the small but potentially useful F# code library **Prime** (interesting features, but lacks unit tests).
 - the sample game **BlazeVector**.
-- the game **OmniBlade** that I just barely started on (currently working to get funding for this).
 
 Here is some media on the Nu Game Engine -
 
@@ -47,8 +56,6 @@ Sponsors
 
 The **Nu Game Engine** is looking for sponsors! If you're interested in sponsoring development for what I hope will become **the world's first mainstream functional game engine**, please contact me at bryanedds@gmail.com . Otherwise, I'll just have to work on it in my spare time, which can be erratic :S
 
-**OmniBlade** is also looking for sponsors!
-
 Project Vlog
 ============
 
@@ -77,5 +84,5 @@ THE SOFTWARE.
 End of License
 ==============
 
-License TL;DR: The code in this repositoryis free and open source,
+License TL;DR: The code in this repository is free and open source,
 but the art (images, music, sound effects, etc.) is not.
