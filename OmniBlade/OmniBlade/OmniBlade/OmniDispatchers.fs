@@ -23,7 +23,7 @@ module OmniDispatchersModule =
 
         let handleAdjustFieldCamera event world =
             let address = Event.unwrapA event
-            (Propagate, adjustFieldCamera address world)
+            (Cascade, adjustFieldCamera address world)
 
         let handleMoveFieldAvatar event world =
             let address = Event.unwrapA event
@@ -37,7 +37,7 @@ module OmniDispatchersModule =
                 let avatarCenter = avatar.Position + avatar.Size * 0.5f
                 let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
                 let world = World.applyBodyLinearImpulse impulseVector avatar.PhysicsId world 
-                (Propagate, world)
+                (Cascade, world)
             else
                 let impulses =
                     [(if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Vector2 (-KeyboardMovementForce, 0.0f) else Vector2.Zero)
@@ -46,7 +46,7 @@ module OmniDispatchersModule =
                      (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Vector2 (0.0f, -KeyboardMovementForce) else Vector2.Zero)]
                 let impulse = List.reduce add impulses
                 let world = World.applyBodyLinearImpulse impulse avatar.PhysicsId world 
-                (Propagate, world)
+                (Cascade, world)
 
         override dispatcher.Register (address, avatar, world) =
             let world = World.monitor TickEventAddress address handleMoveFieldAvatar world

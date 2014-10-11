@@ -125,10 +125,10 @@ module SimModule =
           OptPublisher : Simulant option
           Data : EventData }
 
-    /// Describes whether an event has been resolved or should be propagated.
+    /// Describes whether an event has been resolved or should cascade.
     and EventHandling =
-        | Resolved
-        | Propagate
+        | Resolve
+        | Cascade
 
     /// Describes a game event subscription.
     and Subscription =

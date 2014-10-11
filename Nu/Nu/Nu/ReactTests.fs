@@ -11,20 +11,20 @@ open Nu.React
 module ReactTests =
 
     let TestEventAddress = !* "Test"
-    let incUserStateAndPropagate _ world = (Propagate, World.transformUserState inc world)
-    let incUserStateAndResolve _ world = (Resolved, World.transformUserState inc world)
+    let incUserStateAndCascade _ world = (Cascade, World.transformUserState inc world)
+    let incUserStateAndResolve _ world = (Resolve, World.transformUserState inc world)
 
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = subscribeUpon TestEventAddress world ^^ using Address.empty incUserStateAndPropagate
+        let world = subscribeUpon TestEventAddress world ^^ using Address.empty incUserStateAndCascade
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor = upon TestEventAddress ^^ using Address.empty incUserStateAndPropagate
+        let reactor = upon TestEventAddress ^^ using Address.empty incUserStateAndCascade
         let world = subscribe world reactor
         let world = unsubscribe world reactor
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
@@ -37,7 +37,7 @@ module ReactTests =
         let reactor =
             upon TestEventAddress ^^
             filter (fun _ world -> World.getUserState world = 0) ^^
-            using Address.empty incUserStateAndPropagate
+            using Address.empty incUserStateAndCascade
         let world = subscribe world reactor
         let world = subscribe world reactor
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
@@ -49,7 +49,7 @@ module ReactTests =
         let world =
             subscribeUpon TestEventAddress world ^^
             map unwrapV ^^
-            using Address.empty (fun a world -> (Propagate, World.setUserState a world))
+            using Address.empty (fun a world -> (Cascade, World.setUserState a world))
         let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 0 }) world
         Assert.Equal (0, World.getUserState world)
 
@@ -60,7 +60,7 @@ module ReactTests =
             subscribeUpon TestEventAddress world ^^
             map unwrapV ^^
             scan (fun b a _ -> b + a) 0 ^^
-            using Address.empty (fun a world -> (Propagate, World.setUserState a world))
+            using Address.empty (fun a world -> (Cascade, World.setUserState a world))
         let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 1 }) world
         let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 2 }) world
         Assert.Equal (3, World.getUserState world)
@@ -71,7 +71,7 @@ module ReactTests =
         let reactor =
             upon TestEventAddress ^^
             scan2 (fun a _ _ -> a) ^^
-            using Address.empty (fun _ world -> (Propagate, world))
+            using Address.empty (fun _ world -> (Cascade, world))
         let world = subscribe world reactor
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         let world = unsubscribe world reactor

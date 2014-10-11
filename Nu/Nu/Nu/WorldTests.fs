@@ -16,8 +16,8 @@ module WorldTests =
     let TestEntityAddress = !+ [TestScreenName; TestGroupName; TestEntityName]
     let TestGroupAddress = !+ [TestScreenName; TestGroupName]
     let TestScreenAddress = !+ [TestScreenName]
-    let incUserStateAndPropagate _ world = (Propagate, World.transformUserState inc world)
-    let incUserStateAndResolve _ world = (Resolved, World.transformUserState inc world)
+    let incUserStateAndCascade _ world = (Cascade, World.transformUserState inc world)
+    let incUserStateAndResolve _ world = (Resolve, World.transformUserState inc world)
 
     let [<Fact>] emptyWorldDoesntExplode () =
         World.init ()
@@ -34,14 +34,14 @@ module WorldTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndPropagate world
+        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndPropagate world
+        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (2, World.getUserState world)
@@ -49,8 +49,8 @@ module WorldTests =
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndPropagate world
-        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndPropagate world
+        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
+        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (2, World.getUserState world)
 
@@ -58,7 +58,7 @@ module WorldTests =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndResolve world
-        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndPropagate world
+        let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal (1, World.getUserState world)
 
@@ -82,7 +82,7 @@ module WorldTests =
         let handleEvent = fun event world ->
             let entity = Event.unwrapS<Entity> event
             let world = World.setUserState entity.Name world
-            (Propagate, world)
+            (Cascade, world)
         let world = World.subscribe4 TestEventAddress TestEntityAddress handleEvent world
         let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
         Assert.Equal<string> (TestEntityName, World.getUserState world)

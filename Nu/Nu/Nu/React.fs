@@ -46,7 +46,7 @@ module React =
             let (state, tracked) = tracker state value world
             let world = World.addCallbackState key state world
             if tracked then reactor.HandleEvent (tranformer state) world
-            else (Propagate, world)
+            else (Cascade, world)
         Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
 
     let track2
@@ -66,7 +66,7 @@ module React =
             let (state, tracked) = tracker state value world
             let world = World.addCallbackState key (Some state) world
             if tracked then reactor.HandleEvent state world
-            else (Propagate, world)
+            else (Cascade, world)
         Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
 
     let track
@@ -86,7 +86,7 @@ module React =
             let (state, tracked) = tracker state world
             let world = World.addCallbackState key state world
             if tracked then reactor.HandleEvent value world
-            else (Propagate, world)
+            else (Cascade, world)
         Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
 
     let choice eventAddress (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
@@ -106,7 +106,7 @@ module React =
             let key = World.makeSubscriptionKey ()
             let handleEvent2 = fun event world -> let world = unsubscribe world in reactor.HandleEvent (a, event) world
             let world = World.subscribe key eventAddress reactor.ReactAddress handleEvent2 world
-            (Propagate, world)
+            (Cascade, world)
         let unsubscribe world = let world = unsubscribe world in reactor.Unsubscribe world
         Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe unsubscribe
 
@@ -115,7 +115,7 @@ module React =
         let handleEvent = fun _ world ->
             let world = World.unsubscribe key world
             let world = reactor.Unsubscribe world
-            (Propagate, world)
+            (Cascade, world)
         let subscribe = fun world ->
             let world = World.subscribe key (RemovingEventAddress + reactor.ReactAddress) reactor.ReactAddress handleEvent world
             reactor.Subscribe world
@@ -156,7 +156,7 @@ module React =
     let filter pred (reactor : 'a Reactor) : 'a Reactor =
         let handleEvent = fun (value : 'a) world ->
             if pred value world then reactor.HandleEvent value world
-            else (Propagate, world)
+            else (Cascade, world)
         Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe reactor.Unsubscribe
     
     let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =

@@ -22,10 +22,10 @@ module WorldModule =
     type World with
 
         static member handleAsSwallow _ (world : World) =
-            (Resolved, world)
+            (Resolve, world)
 
         static member handleAsExit _ (world : World) =
-            (Resolved, World.exit world)
+            (Resolve, World.exit world)
 
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
@@ -85,7 +85,7 @@ module WorldModule =
                     let subscription = fun _ world ->
                         let world = World.unsubscribe subscriptionKey world
                         let world = snd <| World.selectScreen destinationAddress destinationScreen world
-                        (Propagate, world)
+                        (Cascade, world)
                     let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
                     let world = World.subscribe subscriptionKey (FinishOutgoingEventAddress + selectedScreenAddress) selectedScreenAddress subscription world
                     Some world
@@ -95,15 +95,15 @@ module WorldModule =
         static member handleAsScreenTransitionFromSplash destinationAddress _ world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationAddress destinationScreen world
-            (Propagate, world)
+            (Cascade, world)
 
         static member handleAsScreenTransition destinationAddress _ world =
             let destinationScreen = World.getScreen destinationAddress world
             match World.tryTransitionScreen destinationAddress destinationScreen world with
-            | Some world -> (Propagate, world)
+            | Some world -> (Cascade, world)
             | None ->
                 trace <| "Program Error: Invalid screen transition for destination address '" + string destinationAddress + "'."
-                (Propagate, world)
+                (Cascade, world)
 
         // OPTIMIZATION: priority annotated as single to decrease GC pressure.
         static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
@@ -203,13 +203,13 @@ module WorldModule =
                                   PublisherAddress = publisherAddress
                                   OptPublisher = World.getOptSimulant publisherAddress world
                                   Data = eventData }
-                            if  (match eventHandling with Propagate -> true | Resolved -> false) &&
+                            if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                                 (match world.State.Liveness with Running -> true | Exiting -> false) then
                                 let result = subscription event world
                                 Some result
                             else None
-                        | None -> Some (Propagate, world))
-                    (Propagate, world)
+                        | None -> Some (Cascade, world))
+                    (Cascade, world)
                     subscriptions
             world
 
@@ -272,7 +272,7 @@ module WorldModule =
                 let subscription = fun _ world ->
                     let world = World.unsubscribe removalKey world
                     let world = World.unsubscribe observationKey world
-                    (Propagate, world)
+                    (Cascade, world)
                 World.subscribe removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress subscription world
             else failwith "Cannot monitor events with an anonymous subscriber."
 
@@ -357,25 +357,25 @@ module WorldModule =
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
                 let world = World.subscribe SplashScreenTickKey event.Address event.SubscriberAddress subscription world
-                (Propagate, world)
+                (Cascade, world)
             else
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
                     match World.getOptScreen selectedScreenAddress world with
                     | Some selectedScreen ->
                         let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
-                        (Propagate, world)
+                        (Cascade, world)
                     | None ->
                         trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                        (Resolved, World.exit world)
+                        (Resolve, World.exit world)
                 | None ->
                     trace "Program Error: Could not handle splash screen tick due to no selected screen."
-                    (Resolved, World.exit world)
+                    (Resolve, World.exit world)
 
         static member internal handleSplashScreenIdle idlingTime event world =
             let subscription = World.handleSplashScreenIdleTick idlingTime 0L
             let world = World.subscribe SplashScreenTickKey TickEventAddress event.SubscriberAddress subscription world
-            (Resolved, world)
+            (Resolve, world)
 
         static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
             let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime world
