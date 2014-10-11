@@ -30,15 +30,15 @@ module BulletModule =
                 let world =
                     if bullet.Age < 28L then World.setEntity address bullet world
                     else snd <| World.removeEntity address bullet world
-                (Propagate, world)
-            else (Propagate, world)
+                (Cascade, world)
+            else (Cascade, world)
 
         let handleCollision event world =
             let (address, bullet : Entity) = Event.unwrapAS event
             if World.isGamePlaying world then
                 let world = snd <| World.removeEntity address bullet world
-                (Propagate, world)
-            else (Propagate, world)
+                (Cascade, world)
+            else (Cascade, world)
 
         static member FieldDefinitions =
             [define? Size <| Vector2 (24.0f, 24.0f)
@@ -87,8 +87,8 @@ module EnemyModule =
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die address enemy world else world
-                (Propagate, world)
-            else (Propagate, world)
+                (Cascade, world)
+            else (Cascade, world)
 
         let handleCollision event world =
             let (address, enemy : Entity, collisionData) = Event.unwrap event
@@ -99,9 +99,9 @@ module EnemyModule =
                     let enemy = Entity.setHealth (enemy.Health - 1) enemy
                     let world = World.setEntity address enemy world
                     let world = World.playSound HitSound 1.0f world
-                    (Propagate, world)
-                else (Propagate, world)
-            else (Propagate, world)
+                    (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
 
         static member FieldDefinitions =
             [define? Size <| Vector2 (48.0f, 96.0f)
@@ -172,10 +172,10 @@ module PlayerModule =
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
                         let world = snd <| shootBullet address player world
-                        (Propagate, world)
-                    else (Propagate, world)
-                else (Propagate, world)
-            else (Propagate, world)
+                        (Cascade, world)
+                    else (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
 
         let getLastTimeOnGround (player : Entity) world =
             if not <| World.isBodyOnGround player.PhysicsId world
@@ -197,8 +197,8 @@ module PlayerModule =
                     | None -> Vector2 (WalkForce, FallForce)
                 let world = World.applyBodyForce force physicsId world
                 let world = World.setEntity address player world
-                (Propagate, world)
-            else (Propagate, world)
+                (Cascade, world)
+            else (Cascade, world)
 
         let handleJump event world =
             let (address, player : Entity) = Event.unwrapAS event
@@ -209,15 +209,15 @@ module PlayerModule =
                     let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
                     let world = World.playSound JumpSound 1.0f world
                     let world = World.setEntity address player world
-                    (Propagate, world)
-                else (Propagate, world)
-            else (Propagate, world)
+                    (Cascade, world)
+                else (Cascade, world)
+            else (Cascade, world)
 
         let handleJumpByKeyboardKey event world =
             let keyboardKeyData = Event.unwrapD event
             match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.IsRepeat) with
             | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
-            | _ -> (Propagate, world)
+            | _ -> (Cascade, world)
 
         static member FieldDefinitions =
             [define? Size <| Vector2 (48.0f, 96.0f)
@@ -265,7 +265,7 @@ module StagePlayModule =
 
         let handleAdjustCamera event world =
             let address = Event.unwrapA event
-            (Propagate, adjustCamera address world)
+            (Cascade, adjustCamera address world)
 
         let handlePlayerFall event world =
             let address = Event.unwrapA event
@@ -277,11 +277,11 @@ module StagePlayModule =
                         let oldWorld = world
                         let world = World.playSound DeathSound 1.0f world
                         match World.tryTransitionScreen TitleAddress titleScreen world with
-                        | Some world -> (Propagate, world)
-                        | None -> (Propagate, oldWorld)
-                    else (Propagate, world)
-                | None -> (Propagate, world)
-            else (Propagate, world)
+                        | Some world -> (Cascade, world)
+                        | None -> (Cascade, oldWorld)
+                    else (Cascade, world)
+                | None -> (Cascade, world)
+            else (Cascade, world)
 
         override dispatcher.Register (address, group, world) =
             let world =
@@ -320,11 +320,11 @@ module StageScreenModule =
             let groupDescriptors = Map.ofList <| stagePlayDescriptor :: sectionDescriptors
             let world = snd <| World.addGroups address groupDescriptors world
             let world = World.playSong DeadBlazeSong 1.0f 0 world
-            (Propagate, world)
+            (Cascade, world)
 
         let handleStoppingPlay _ world =
             let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-            (Propagate, world)
+            (Cascade, world)
 
         let handleStopPlay event world =
             let address = Event.unwrapA event
@@ -332,7 +332,7 @@ module StageScreenModule =
             let groupNames = StagePlayName :: sectionNames
             let groups = World.getGroups3 address groupNames world
             let world = snd <| World.removeGroups address groups world
-            (Propagate, world)
+            (Cascade, world)
 
         override dispatcher.Register (address, screen, world) =
             let world =

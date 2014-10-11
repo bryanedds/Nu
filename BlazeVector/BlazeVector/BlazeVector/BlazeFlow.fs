@@ -39,7 +39,7 @@ module BlazeFlow =
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
         let world = World.playSong MachinerySong 1.0f 0 world
-        (Propagate, world)
+        (Cascade, world)
 
     // this function handles playing the stage
     let handlePlayStage _ world =
@@ -47,8 +47,8 @@ module BlazeFlow =
         let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
         let stageScreen = World.getScreen StageAddress world
         match World.tryTransitionScreen StageAddress stageScreen world with
-        | Some world -> (Propagate, world)
-        | None -> (Propagate, oldWorld)
+        | Some world -> (Cascade, world)
+        | None -> (Cascade, oldWorld)
 
     // this function adds the BlazeVector title screen to the world
     let addTitleScreen world =
