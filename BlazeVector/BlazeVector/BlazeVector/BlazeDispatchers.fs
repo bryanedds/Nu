@@ -143,7 +143,7 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        let [<Literal>] WalkForce = 800.0f
+        let [<Literal>] WalkForce = 8000.0f
         let [<Literal>] FallForce = -30000.0f
         let [<Literal>] ClimbForce = 12000.0f
 
