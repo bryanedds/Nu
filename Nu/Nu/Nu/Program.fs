@@ -11,6 +11,7 @@ module Program =
     50% decrease in speed as compared to the dev machine. However, this can be mitigated in a few
     ways with approximate speed-ups -
 
+    2x gain - Run in 64-bit mode on Windows (https://twitter.com/pgatilov/status/523343373634371584)
     2x gain - Run app at 30fps instead of 60
     2x gain - put physics and rendering each in another process
     1.5x gain - compile with .NET Native
@@ -38,6 +39,15 @@ module Program =
     
     A simulation that would put physics on another thread should likely do so in a different app
     domain with communication via .NET remoting to make 100% sure that no sharing is happening. *)
+
+    (* IDEA: Simplified networking...
+
+    For networking, perhaps instead of having a World value that synchronizes across players, the true
+    value of the world will be on one machine, and only messages like input will come from players and
+    messages for rendering / audio will go back to them.
+
+    Perhaps not realistic, but just an idea. *)
+    
    
     // apparently a side-effect is needed to avoid the empty program warning
     Console.Write "Running Nu.exe"

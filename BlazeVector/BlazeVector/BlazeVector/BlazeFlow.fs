@@ -75,7 +75,7 @@ module BlazeFlow =
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFileName IncomingTime OutgoingTime CreditsAddress world
-        World.subscribe4 ClickCreditsBackEventAddress Address.empty (World.handleAsScreenTransition  TitleAddress) world
+        World.subscribe4 ClickCreditsBackEventAddress Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     // and so on.
     let addStageScreen world =
