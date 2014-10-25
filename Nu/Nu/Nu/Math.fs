@@ -39,13 +39,12 @@ module MathModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<ViewType> then source
-            else
+            if source.GetType () <> typeof<ViewType> then
                 match source :?> string with
                 | "Absolute" -> Absolute :> obj
                 | "Relative" -> Relative :> obj
                 | other -> failwith <| "Unknown ViewType '" + other + "'."
+            else source
 
     /// Converts Vector2 types.
     type Vector2TypeConverter () =
@@ -58,12 +57,11 @@ module MathModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Vector2> then source
-            else
+            if source.GetType () <> typeof<Vector2> then
                 let args = (source :?> string).Split ';'
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector2 (argFs.[0], argFs.[1]) :> obj
+            else source
 
     /// Converts Vector3 types.
     type Vector3TypeConverter () =
@@ -76,12 +74,11 @@ module MathModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector3> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Vector3> then source
-            else
+            if source.GetType () <> typeof<Vector3> then
                 let args = (source :?> string).Split ';'
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
+            else source
 
     /// Converts Vector4 types.
     type Vector4TypeConverter () =
@@ -94,12 +91,11 @@ module MathModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector4> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Vector4> then source
-            else
+            if source.GetType () <> typeof<Vector4> then
                 let args = (source :?> string).Split ';'
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
+            else source
 
     /// Converts string option types.
     /// TODO: find a better place for this?
@@ -115,9 +111,7 @@ module MathModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string option> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<string option> then source
-            else
+            if source.GetType () <> typeof<string option> then
                 let valueStr = source :?> string
                 match valueStr with
                 | "" -> None :> obj
@@ -125,6 +119,7 @@ module MathModule =
                     let innerStr = valueStr.Substring (5, valueStr.Length - 6)
                     let innerStr = innerStr.Trim ()
                     Some innerStr :> obj
+            else source
 
     /// Converts string list types.
     /// TODO: find a better place for this?
@@ -140,9 +135,7 @@ module MathModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string option> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<string option> then source
-            else
+            if source.GetType () <> typeof<string option> then
                 let valueStr = source :?> string
                 let valueStr = valueStr.Trim ()
                 let valueStr = valueStr.Substring (1, valueStr.Length - 2)
@@ -151,6 +144,7 @@ module MathModule =
                 let valueStrs = Array.filter (fun (valueStr : string) -> valueStr.Length <> 0) valueStrs
                 let value = List.ofArray valueStrs
                 value :> obj
+            else source
 
 module Matrix3 =
 
@@ -185,12 +179,12 @@ module Math =
 
     /// Snap an int value to an offset.
     let snap offset value =
-        if offset = 0 then value
-        else
+        if offset <> 0 then
             let rem = ref 0
             let div = Math.DivRem (value, offset, rem)
             let rem = if !rem < offset / 2 then 0 else offset
             div * offset + rem
+        else value
 
     /// Snap an radian value to an offset.
     let snapR offset value =

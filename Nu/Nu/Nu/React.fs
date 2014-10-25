@@ -192,7 +192,7 @@ module React =
             (zero (), zero (), zero ())
             reactor
 
-    let organize (reactor : ('a option * ('a Set)) Reactor) : 'a Reactor =
+    let organize (reactor : ('a option * 'a Set) Reactor) : 'a Reactor =
         scan
             (fun (_, s) a _ ->
                 if Set.contains a s
@@ -201,7 +201,7 @@ module React =
             (None, Set.empty)
             reactor
 
-    let group (reactor : ('a * bool * ('a Set)) Reactor) : 'a Reactor =
+    let group (reactor : ('a * bool * 'a Set) Reactor) : 'a Reactor =
         scan
             (fun (_, _, s) a _ ->
                 if Set.contains a s

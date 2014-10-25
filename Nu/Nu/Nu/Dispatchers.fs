@@ -291,7 +291,7 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
              define? IsDown false
              define? UpImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
              define? DownImage { ImageAssetName = "Image2"; PackageName = DefaultPackageName }
@@ -340,7 +340,7 @@ module LabelDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
              define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
@@ -387,7 +387,7 @@ module TextDispatcherModule =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
              define? Text String.Empty
              define? TextFont { FontAssetName = "Font"; PackageName = DefaultPackageName }
              define? TextOffset Vector2.Zero
@@ -476,7 +476,7 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
              define? IsOn false
              define? IsPressed false
              define? OffImage { ImageAssetName = "Image"; PackageName = DefaultPackageName }
@@ -547,7 +547,7 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
              define? IsTouched false]
 
         static member IntrinsicFacetNames =
@@ -588,7 +588,8 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcherdefine? Fill 0.0f
+            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
+             define? Fill 0.0f
              define? FillInset 0.0f
              define? FillImage { ImageAssetName = "Image9"; PackageName = DefaultPackageName }
              define? BorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }]

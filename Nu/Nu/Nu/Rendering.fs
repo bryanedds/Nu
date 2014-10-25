@@ -108,11 +108,10 @@ module RenderingModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Image> then source
-            else
+            if source.GetType () <> typeof<Image> then
                 let args = (source :?> string).Split ';'
                 { ImageAssetName = args.[0]; PackageName = args.[1] } :> obj
+            else source
 
     /// Converts TileMapAsset types.
     type TileMapAssetTypeConverter () =
@@ -125,11 +124,10 @@ module RenderingModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<TileMapAsset> then source
-            else
+            if source.GetType () <> typeof<TileMapAsset> then
                 let args = (source :?> string).Split ';'
                 { TileMapAssetName = args.[0]; PackageName = args.[1] } :> obj
+            else source
 
     /// Converts Font types.
     type FontTypeConverter () =
@@ -142,11 +140,10 @@ module RenderingModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Font> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Font> then source
-            else
+            if source.GetType () <> typeof<Font> then
                 let args = (source :?> string).Split ';'
                 { FontAssetName = args.[0]; PackageName = args.[1] } :> obj
+            else source
 
     /// The renderer. Represents the rendering system in Nu generally.
     type IRenderer =

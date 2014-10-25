@@ -58,19 +58,19 @@ module XtensionModule =
         /// Example -   let parallax = entity?Parallax : single
         static member (?) (xtension, memberName) : 'r =
 
-                // check if dynamic member is an existing field
-                match Map.tryFind memberName xtension.XFields with
-                | Some field ->
-                    
-                    // return field directly if the return type matches, otherwise the default value for that type
-                    match field with
-                    | :? 'r as fieldValue -> fieldValue
-                    | _ -> Xtension.tryGetDefaultValue xtension memberName
+            // check if dynamic member is an existing field
+            match Map.tryFind memberName xtension.XFields with
+            | Some field ->
+                
+                // return field directly if the return type matches, otherwise the default value for that type
+                match field with
+                | :? 'r as fieldValue -> fieldValue
+                | _ -> Xtension.tryGetDefaultValue xtension memberName
 
-                | None ->
+            | None ->
 
-                    // presume we're looking for a field that doesn't exist, so try to get the default value
-                    Xtension.tryGetDefaultValue xtension memberName
+                // presume we're looking for a field that doesn't exist, so try to get the default value
+                Xtension.tryGetDefaultValue xtension memberName
 
         /// The dynamic assignment operator for an Xtension.
         /// Example - let entity = entity.Position <- Vector2 (4.0, 5.0).
