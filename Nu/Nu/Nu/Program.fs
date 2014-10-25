@@ -42,9 +42,9 @@ module Program =
 
     (* IDEA: Simplified networking...
 
-    For networking, perhaps instead of having a World value that synchronizes across players, the true
-    value of the world will be on one machine, and only messages like input will come from players and
-    messages for rendering / audio will go back to them.
+    For networking, perhaps instead of having a useful Game value that synchronizes across players,
+    the true value of the world will be on one machine, and only messages like input will come from
+    players and messages for rendering / audio will go back to them.
 
     Perhaps not realistic, but just an idea. *)
     
