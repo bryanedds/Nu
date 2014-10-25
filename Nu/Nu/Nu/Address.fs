@@ -61,7 +61,7 @@ module AddressModule =
 
         /// Make an address from a list of strings.
         static member make list =
-            let keys = List.map (fun name -> NameKey.make name) list
+            let keys = List.map NameKey.make list
             let hash = List.fold (fun hash key -> hash ^^^ key.NKHash) 0 keys
             { AddrList = list; AddrListRev = List.rev list; AddrNameKeys = keys; AddrHash = hash }
 

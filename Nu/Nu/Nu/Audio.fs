@@ -67,11 +67,10 @@ module AudioModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sound> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Sound> then source
-            else
+            if source.GetType () <> typeof<Sound> then
                 let args = (source :?> string).Split ';'
                 { SoundAssetName = args.[0]; PackageName = args.[1] } :> obj
+            else source
 
     /// Converts Song types.
     type SongTypeConverter () =
@@ -84,11 +83,10 @@ module AudioModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Song> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<Song> then source
-            else
+            if source.GetType () <> typeof<Song> then
                 let args = (source :?> string).Split ';'
                 { SongAssetName = args.[0]; PackageName = args.[1] } :> obj
+            else source
 
     /// The audio player. Represents the audio system of Nu generally.
     type IAudioPlayer =

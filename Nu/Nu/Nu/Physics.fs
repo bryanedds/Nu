@@ -77,14 +77,13 @@ module PhysicsModule =
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
-            let sourceType = source.GetType ()
-            if sourceType = typeof<BodyType> then source
-            else
+            if source.GetType () <> typeof<BodyType> then
                 match source :?> string with
                 | "Static" -> Static :> obj
                 | "Kinematic" -> Kinematic :> obj
                 | "Dynamic" -> Dynamic :> obj
                 | other -> failwith <| "Unknown BodyType '" + other + "'."
+            else source
 
     /// The properties needed to describe a physical body.
     type [<StructuralEquality; NoComparison>] BodyProperties =
