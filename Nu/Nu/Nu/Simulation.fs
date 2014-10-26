@@ -51,7 +51,7 @@ module TransitionTypeModule =
 [<AutoOpen>]
 module ScreenStateModule =
 
-    /// The state of a screen in regards to its transitions.
+    /// The state of a screen in regards to its transition.
     type [<StructuralEquality; NoComparison>] ScreenState =
         | IncomingState
         | OutgoingState

@@ -7,7 +7,7 @@ open Nu
 module OmniStateModule =
 
     type [<StructuralEquality; NoComparison>] OmniCharacter =
-        { Id : Id
+        { Id : Id // should this just be a Guid instead?
           Data : OmniCharacterData
           PartyAvailabilityAndPresence : OmniPartyAvailabilityAndPresenceType
           Hp : int // hp max is calculated

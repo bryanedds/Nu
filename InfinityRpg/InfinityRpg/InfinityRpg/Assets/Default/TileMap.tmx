@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="50" height="50" tilewidth="24" tileheight="24">
+ <tileset firstgid="1" name="TileSet" tilewidth="24" tileheight="24">
+  <properties>
+   <property name="PackageName" value="Default"/>
+   <property name="ImageAssetName" value="TileSet"/>
+  </properties>
+  <image source="TileSet.png" trans="ff00ff" width="192" height="217"/>
+  <tile id="0">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="11">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="13">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="16">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="17">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="19">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="38">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="39">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+  <tile id="44">
+   <properties>
+    <property name="C" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <layer name="Bottom" width="50" height="50">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+  <data encoding="base64" compression="zlib">
+   eJztmdtqwzAMhkPutiWDdaOwdTftBjvkPfr+j7QELFCFbR1sJR7k4qe1Hcv5HCm2nLHrusdZY9AQfnHdqGjH12iVsykZa+nfBw2Rul7R3ndlHCmbkrGW/vdBQ6QO9MW002ssHDGbYJcba+l/CHoJnEdU943+D5E+qWssHIeMXW6spf8l6C6wPoTyx6z3oDPhwG34GpgLrY7oPqRKcTwFzucCDpgLqX+AYO4+Z/0KleKgsnDAXHD+QRWbO05eHD+KuUxpqsAxkDotx9ry4nid9TbrlChblLPpxXEm/WjZopxNLw6IjylRtihnM8WB18EYB25vOT64dRC3txwf3Dq4tF9De4vxIXmX07Uh5vNbx8fWfl4rPtYeH3yjVDtHPY6SPMXCAe85LO28tcBRwwda4SgdsxUO2I94cfQK4fxXywH7ES8Oa/6r5YD9iheHNf/VcMA+gD5HjQ/kOCAHsOS/lvWDjp167jEfkHBY1qEaHNzzxz5A9+5eHJK8gY59STxvvG7gsjS35O4ll39I8gbpHGImHF+T0BZ3L7n8Q5I31Dz3ydni7qU0/5ByWHx0y/hIjV3qo63ER6mPrhEftc59crbWiA/u3EfDUcOWNT64cx8NRw1blvjInftIc62TwFYJR+m5k5Sj9llq7XMGSX7n8c1k50hzcN9pPc7oPTgkuch/4ICc49rd5iBQLn1Xr8Hh8S12C46ttHO0JcqhPZdqRcDxB4/X7+0=
+  </data>
+ </layer>
+ <layer name="Top" width="50" height="50" opacity="0.49">
+  <data encoding="base64" compression="zlib">
+   eJzt2L0KgCAUQOGGaqpepaG/Idp6/2fqDroEIopwr3I+OLSJQoPXrrPl1N5AIZzDllrPsUqba5cO3e1ku6Rbet33KbRuLw3SWGg9LZM0S4v2RgAAQBX8HSg1a3cmfwdKjTsT/wD/AAAAAACExWZGa7NhSGxmZDYEgPbkvHla6C/nzdNCrfkAc/4JNQ==
+  </data>
+ </layer>
+</map>
