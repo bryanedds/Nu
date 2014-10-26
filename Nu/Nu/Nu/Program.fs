@@ -11,7 +11,7 @@ module Program =
     50% decrease in speed as compared to the dev machine. However, this can be mitigated in a few
     ways with approximate speed-ups -
 
-    2x gain - Run in 64-bit mode on Windows (https://twitter.com/pgatilov/status/523343373634371584)
+    ? gain - Run in 64-bit mode on Windows (https://twitter.com/pgatilov/status/523343373634371584)
     2x gain - Run app at 30fps instead of 60
     2x gain - put physics and rendering each in another process
     1.5x gain - compile with .NET Native
@@ -48,6 +48,5 @@ module Program =
 
     Perhaps not realistic, but just an idea. *)
     
-   
     // apparently a side-effect is needed to avoid the empty program warning
     Console.Write "Running Nu.exe"
