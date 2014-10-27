@@ -6,14 +6,14 @@ open Nu
 [<AutoOpen>]
 module OmniTypesModule =
 
-    type [<StructuralEquality; StructuralComparisonAttribute>] OmniElementType =
+    type [<StructuralEquality; StructuralComparison>] OmniElementType =
         | OmniFire
         | OmniIce
         | OmniLightning
         | OmniDark
         | OmniHoly
 
-    type [<StructuralEquality; StructuralComparisonAttribute>] OmniStatusType =
+    type [<StructuralEquality; StructuralComparison>] OmniStatusType =
         | OmniStrong
         | OmniGifted
         | OmniShell
