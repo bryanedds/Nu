@@ -66,6 +66,8 @@ module CharacterStateModule =
         | Poison
         | Immunity // immunizes against status changes
 
+    // NOTE: this seems to be a weird type; I can't specify a Consume type without also specifying
+    // a ConsumableType, for example. Whether this is a real problem remains to be seen.
     type ActionType =
         | Attack
         | Defend // auto counters at rate of counter stat
