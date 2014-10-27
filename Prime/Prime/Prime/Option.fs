@@ -7,6 +7,7 @@ namespace Prime
 module Option =
 
     /// Concatenate an option option.
+    /// TODO: consider renaming this to 'join' as in monadic join.
     let inline concat opt =
         match opt with
         | Some (Some s) -> Some s

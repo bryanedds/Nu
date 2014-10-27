@@ -1,6 +1,7 @@
 ﻿namespace InfinityRpg
 open System
 open OpenTK
+open Prime
 open Nu
 
 [<AutoOpen>]
@@ -42,28 +43,44 @@ module MetamapModule =
             let destination = Cardinality.walk source cardinality
             (random, destination)
 
-        static member stumbleForever (random : Random) (source : Vector2I) =
-            Seq.unfold
-                (fun random -> Some <| (Cardinality.stumble random source, random))
-                random
+        static member tryStumbleUntil predicate limit (random : Random) (source : Vector2I) =
+            let take = if limit < 0 then id else Seq.take limit
+            let stumblings =
+                take <|
+                    Seq.unfold
+                        (fun random -> Some (Cardinality.stumble random source, random))
+                        random
+            Seq.tryFind predicate stumblings
 
-        static member stumbleUntil predicate limit (random : Random) (source : Vector2I) =
-            let taker = if limit < 0 then id else Seq.take limit
-            let attempts = taker <| Cardinality.stumbleForever random source
-            Seq.tryFind predicate attempts
-
-        static member wanderForever (random : Random) (source : Vector2I) =
-            Seq.unfold
-                (fun (random, source) -> Some <| (Cardinality.stumbleForever random source, (random, source)))
-                (random, source)
-
-        static member wanderUntil predicate limit stumbleLimit (random : Random) (source : Vector2I) =
-            let taker = if limit < 0 then id else Seq.take limit
-            let seq = 
+        static member wander stumbleLimit (random : Random) (source : Vector2I) =
+            let stumblePredicate = fun trail (_, destination) -> Set.ofList trail |> Set.contains destination |> not
+            Seq.definitize <|
                 Seq.unfold
-                    (fun (random, source) -> Some (Cardinality.stumbleUntil predicate stumbleLimit random source, (random, source)))
-                    (random, source)
-            taker seq
+                    (fun ((random, trail), source) -> Some (Cardinality.tryStumbleUntil (stumblePredicate trail) stumbleLimit random source, ((random, source :: trail), source)))
+                    ((random, []), source)
+
+        static member tryWanderUntil predicate tryLimit stumbleLimit (random : Random) (source : Vector2I) =
+            let take = if tryLimit < 0 then id else Seq.take tryLimit
+            let wanderings =
+                take <|
+                    Seq.unfold
+                        (fun (random, source) -> Some (Cardinality.wander stumbleLimit random source, (random, source)))
+                        (random, source)
+            Seq.tryFind predicate wanderings
+
+        static member tryJourney (random : Random) (source : Vector2I) =
+            let minLength = 10;
+            let maxLength = 15;
+            let tryLimit = 100;
+            let stumbleLimit = 100;
+            let predicate = fun (trail : (Random * Vector2I) seq) ->
+                let trail = List.ofSeq <| Seq.take maxLength trail
+                if List.length trail >= minLength then
+                    let sites = List.map snd trail
+                    let uniqueSites = Set.ofList sites
+                    List.length sites = Set.count uniqueSites
+                else false
+            Cardinality.tryWanderUntil predicate tryLimit stumbleLimit random source
 
     type Metapiece<'k when 'k : comparison> =
         { ClosedSides : Cardinality Set
