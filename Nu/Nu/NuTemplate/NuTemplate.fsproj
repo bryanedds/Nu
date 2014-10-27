@@ -21,10 +21,12 @@
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>5</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <DocumentationFile>bin\Debug\$safeprojectname$.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,10 +34,12 @@
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>5</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <DocumentationFile>bin\Release\$safeprojectname$.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

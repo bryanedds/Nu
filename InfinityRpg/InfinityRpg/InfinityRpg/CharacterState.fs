@@ -5,26 +5,26 @@ open Nu
 [<AutoOpen>]
 module CharacterStateModule =
 
-    type [<StructuralEquality; StructuralComparisonAttribute>] ElementType =
+    type ElementType =
         | Fire
         | Ice
         | Lightning
 
-    type [<StructuralEquality; StructuralComparisonAttribute>] StatusType =
+    type StatusType =
         | Defending // also implies countering
         | Poison
         | Mute
         | Sleep
 
-    type [<StructuralEquality; NoComparison>] EquipmentType =
+    type EquipmentType =
         | Sword
         | Armor
         | Relic
 
-    type [<StructuralEquality; NoComparison>] ConsumableType =
+    type ConsumableType =
         | Herb
 
-    type [<StructuralEquality; NoComparison>] KeyItemType =
+    type KeyItemType =
         | Feather // jump
         | Gills // swim in shallow water
         | Hammer // smash obstacles
@@ -32,23 +32,23 @@ module CharacterStateModule =
         | Wings // fly in overworld
         | Raft // navigate over deep water
 
-    type [<StructuralEquality; NoComparison>] ItemType =
+    type ItemType =
         | Equipment of EquipmentType
         | Consumable of ConsumableType
         | KeyItem of KeyItemType
 
-    type [<StructuralEquality; NoComparison>] TargetType =
+    type TargetType =
         | SingleTarget of Range : int * SelfOnly : bool
         | RadiusTarget of Range : int * SelfOnly : bool * Diameter : int
         | LineTarget of Range : int
         | QuarterScreenTarget
         | FullScreenTarget
 
-    type [<StructuralEquality; NoComparison>] EffectType =
+    type EffectType =
         | Physical
         | Magical
 
-    type [<StructuralEquality; NoComparison>] SpecialType =
+    type SpecialType =
         | Spark
         | Bomb
         | DragonBreath
@@ -66,70 +66,70 @@ module CharacterStateModule =
         | Poison
         | Immunity // immunizes against status changes
 
-    type [<StructuralEquality; NoComparison>] InteractionType =
+    type InteractionType =
         | Attack
         | Defend // auto counters at rate of counter-stat
         | Consume of ConsumableType
         | Special of SpecialType
         | Interact // general interaction such as talking to NPCs
 
-    type [<StructuralEquality; NoComparison>] WeaponType =
+    type WeaponType =
         | BentSword
         | WindCutter
         | BigMeany
 
-    type [<StructuralEquality; NoComparison>] ArmorType =
+    type ArmorType =
         | HobosClobos
         | LeatherHide
         | ChainMail
 
-    type [<StructuralEquality; NoComparison>] RelicType =
+    type RelicType =
         | WussInBoots
         | BlingRing
         | MagicPorkRinds
 
-    type [<StructuralEquality; NoComparison>] CharacterType =
+    type CharacterType =
         | Player
         | Slimebo
         | Skelebone
         | Dargon
 
-    type [<StructuralEquality; NoComparison>] EquipmentRatingData =
+    type EquipmentRatingData =
         { Level : int
           PhysicalRating : single // physical power = Level * PhysicalRating
           MagicalRating : single } // magical power = Level * MagicalRating
 
-    type [<StructuralEquality; NoComparison>] WeaponData =
+    type WeaponData =
         { EquipmentRating : EquipmentRatingData }
 
-    type [<StructuralEquality; NoComparison>] ArmorData =
+    type ArmorData =
         { EquipmentRating : EquipmentRatingData }
 
-    type [<StructuralEquality; NoComparison>] RelicData =
+    type RelicData =
         { EquipmentRating : EquipmentRatingData }
 
-    type [<StructuralEquality; NoComparison>] EquipmentData =
+    type EquipmentData =
         | WeaponData of WeaponData
         | ArmorData of ArmorData
         | RelicData of RelicData
 
-    type [<StructuralEquality; NoComparison>] ConsumableData =
+    type ConsumableData =
         { ConsumableData : unit }
 
-    type [<StructuralEquality; NoComparison>] KeyItemData =
+    type KeyItemData =
         { KeyItemData : unit }
 
-    type [<StructuralEquality; NoComparison>] BasicItemData =
+    type BasicItemData =
         | EquipmentData of EquipmentData
         | ConsumableData of ConsumableData
         | KeyItemData of KeyItemData
 
-    type [<StructuralEquality; NoComparison>] ItemData =
+    type ItemData =
         { Name : string
           Description : string
           BasicData : BasicItemData }
 
-    type [<StructuralEquality; NoComparison>] InteractionData =
+    type InteractionData =
         { Name : string
           InteractionType : InteractionType
           SpecialType : SpecialType
@@ -142,25 +142,25 @@ module CharacterStateModule =
           RemoveStatusType : StatusType Set
           TargetType : TargetType }
 
-    type [<StructuralEquality; NoComparison>] CharacterRatingData =
+    type CharacterRatingData =
         { BaseExperience : int // used to calculate base level for all instances of character
           PhysicalRating : int // physical power is calculated based on level
           MagicRating : int // magic power is calculated based on level
           StaminaRating : int // hp max is calculated based on level
           WillRating : int } // sp max is calculated based on level
 
-    type [<StructuralEquality; NoComparison>] RewardData =
+    type RewardData =
         { Experience : int
           Gold : int }
 
-    type [<StructuralEquality; NoComparison>] CharacterData =
+    type CharacterData =
         { Name : string
           CharacterType : CharacterType
           CharacterRating : CharacterRatingData
           BaseInteractions : InteractionData list // base level for all instances of character
           Reward : RewardData }
 
-    type [<StructuralEquality; NoComparison>] Character =
+    type Character =
         { Id : Guid
           CharacterType : CharacterType
           HitPoints : int // hp max is calculated
@@ -175,7 +175,7 @@ module CharacterStateModule =
           EquippedRelics : RelicType list
           AddedExperience : int } // level is calculated from base experience + added experience
 
-    type [<StructuralEquality; NoComparison>] CharacterAction =
+    type CharacterAction =
         | Interacting of InteractionType
         | Navigating
         | Standing

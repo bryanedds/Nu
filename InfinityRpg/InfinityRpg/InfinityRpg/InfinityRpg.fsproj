@@ -21,10 +21,12 @@
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>5</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <DocumentationFile>bin\Debug\InfinityRpg.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,7 +34,7 @@
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
+    <WarningLevel>5</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <DocumentationFile>bin\Release\InfinityRpg.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -60,7 +62,8 @@
     <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\"</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="InfinityState.fs" />
+    <Compile Include="OverworldState.fs" />
+    <Compile Include="CharacterState.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">
