@@ -3,7 +3,7 @@ open System
 open Nu
 
 [<AutoOpen>]
-module InfinityStateModule =
+module CharacterStateModule =
 
     type [<StructuralEquality; StructuralComparisonAttribute>] ElementType =
         | Fire
@@ -11,7 +11,7 @@ module InfinityStateModule =
         | Lightning
 
     type [<StructuralEquality; StructuralComparisonAttribute>] StatusType =
-        | Defending
+        | Defending // also implies countering
         | Poison
         | Mute
         | Sleep
@@ -71,7 +71,7 @@ module InfinityStateModule =
         | Defend // auto counters at rate of counter-stat
         | Consume of ConsumableType
         | Special of SpecialType
-        | Investigate // might also talk to NPCs
+        | Interact // general interaction such as talking to NPCs
 
     type [<StructuralEquality; NoComparison>] WeaponType =
         | BentSword
@@ -137,7 +137,6 @@ module InfinityStateModule =
           SpecialPointCost : int
           SuccessRate : single
           Curative : bool
-          Defending : bool // also implies countering
           ElementType : ElementType
           AddStatusType : StatusType Set
           RemoveStatusType : StatusType Set
@@ -148,7 +147,6 @@ module InfinityStateModule =
           PhysicalRating : int // physical power is calculated based on level
           MagicRating : int // magic power is calculated based on level
           StaminaRating : int // hp max is calculated based on level
-          AgilityRating : int // tt gain is calculated based on level
           WillRating : int } // sp max is calculated based on level
 
     type [<StructuralEquality; NoComparison>] RewardData =
@@ -175,9 +173,9 @@ module InfinityStateModule =
           EquippedWeapon : WeaponType option
           EquippedArmor : ArmorType option
           EquippedRelics : RelicType list
-          GainedExperience : int } // level is calculated from base experience + gained experience
+          AddedExperience : int } // level is calculated from base experience + added experience
 
-    type [<StructuralEquality; NoComparison>] CharacterActionState =
-        | CharacterInteraction of InteractionType
-        | CharacterNavigate
-        | CharacterIdle
+    type [<StructuralEquality; NoComparison>] CharacterAction =
+        | Interacting of InteractionType
+        | Navigating
+        | Standing
