@@ -52,7 +52,7 @@ module CharacterStateModule =
         | Spark
         | Bomb
         | DragonBreath
-        | Snowball
+        | Plasma
         | Volt
         | PowerUp
         | PowerDown
@@ -66,7 +66,7 @@ module CharacterStateModule =
         | Poison
         | Immunity // immunizes against status changes
 
-    // NOTE: this seems to be a weird type; I can't specify a Consume type without also specifying
+    // NOTE: this seems to be a wierd type; I can't specify the Consume type without also specifying
     // a ConsumableType, for example. Whether this is a real problem remains to be seen.
     type ActionType =
         | Attack
@@ -117,7 +117,7 @@ module CharacterStateModule =
 
     type ArmorData =
         { EquipmentRating : EquipmentRatingData }
-
+           
     type RelicData =
         { EquipmentRating : EquipmentRatingData }
 
