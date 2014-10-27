@@ -43,8 +43,8 @@ module MetamapModule =
             let destination = Cardinality.walk source cardinality
             (random, destination)
 
-        static member tryStumbleUntil predicate limit (random : Random) (source : Vector2I) =
-            let take = if limit < 0 then id else Seq.take limit
+        static member tryStumbleUntil predicate tryLimit (random : Random) (source : Vector2I) =
+            let take = if tryLimit < 0 then id else Seq.take tryLimit
             let stumblings =
                 take <|
                     Seq.unfold
