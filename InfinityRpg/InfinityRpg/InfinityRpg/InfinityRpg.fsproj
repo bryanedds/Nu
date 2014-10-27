@@ -62,7 +62,7 @@
     <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\"</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="OverworldState.fs" />
+    <Compile Include="MetamapState.fs" />
     <Compile Include="CharacterState.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
