@@ -6,18 +6,18 @@ open Nu
 module CharacterStateModule =
 
     type ElementType =
-        | Fire
-        | Ice
-        | Lightning
+        | Fire // beats nothing; strongest
+        | Water // beats fire, lightning; weakest
+        | Lightning // beats water
 
     type StatusType =
-        | Defending // also implies countering
+        | Defend // also implies countering
         | Poison
         | Mute
         | Sleep
 
     type EquipmentType =
-        | Sword
+        | Weapon
         | Armor
         | Relic
 
@@ -38,10 +38,10 @@ module CharacterStateModule =
         | KeyItem of KeyItemType
 
     type TargetType =
-        | SingleTarget of Range : int * SelfOnly : bool
-        | RadiusTarget of Range : int * SelfOnly : bool * Diameter : int
-        | LineTarget of Range : int
-        | QuarterScreenTarget
+        | SingleTarget of Distance : int * SelfOnly : bool
+        | RangeTarget of Distance : int * SelfOnly : bool * Range : int
+        | LineTarget of Distance : int
+        | QuarterScreenTarget // in one of four cardinal directions like <, >, ^, or v
         | FullScreenTarget
 
     type EffectType =
@@ -66,9 +66,9 @@ module CharacterStateModule =
         | Poison
         | Immunity // immunizes against status changes
 
-    type InteractionType =
+    type ActionType =
         | Attack
-        | Defend // auto counters at rate of counter-stat
+        | Defend // auto counters at rate of counter stat
         | Consume of ConsumableType
         | Special of SpecialType
         | Interact // general interaction such as talking to NPCs
@@ -93,6 +93,17 @@ module CharacterStateModule =
         | Slimebo
         | Skelebone
         | Dargon
+
+    type SpecialData =
+        { SpecialType : SpecialType
+          EffectType : EffectType
+          SpecialPointCost : int
+          SuccessRate : single
+          Curative : bool
+          ElementType : ElementType
+          AddStatusType : StatusType Set
+          RemoveStatusType : StatusType Set
+          TargetType : TargetType }
 
     type EquipmentRatingData =
         { Level : int
@@ -129,18 +140,9 @@ module CharacterStateModule =
           Description : string
           BasicData : BasicItemData }
 
-    type InteractionData =
+    type ActionData =
         { Name : string
-          InteractionType : InteractionType
-          SpecialType : SpecialType
-          EffectType : EffectType
-          SpecialPointCost : int
-          SuccessRate : single
-          Curative : bool
-          ElementType : ElementType
-          AddStatusType : StatusType Set
-          RemoveStatusType : StatusType Set
-          TargetType : TargetType }
+          ActionType : ActionType }
 
     type CharacterRatingData =
         { BaseExperience : int // used to calculate base level for all instances of character
@@ -157,7 +159,7 @@ module CharacterStateModule =
         { Name : string
           CharacterType : CharacterType
           CharacterRating : CharacterRatingData
-          BaseInteractions : InteractionData list // base level for all instances of character
+          BaseActions : ActionData list // base actions for all instances of character
           Reward : RewardData }
 
     type Character =
@@ -175,7 +177,7 @@ module CharacterStateModule =
           EquippedRelics : RelicType list
           AddedExperience : int } // level is calculated from base experience + added experience
 
-    type CharacterAction =
-        | Interacting of InteractionType
+    type CharacterState =
+        | Acting of ActionData
         | Navigating
         | Standing
