@@ -42,25 +42,23 @@ module Assets =
     /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
         let attributes = node.Attributes
-        let optName = attributes.GetNamedItem NameAttributeName
-        match optName with
+        match attributes.GetNamedItem FilePathAttributeName with
         | null -> None
-        | name ->
-            let optFilePath = attributes.GetNamedItem FilePathAttributeName
-            match optFilePath with
+        | filePath ->
+            let name =
+                match attributes.GetNamedItem NameAttributeName with
+                | null -> Path.GetFileNameWithoutExtension filePath.InnerText
+                | name -> name.InnerText
+            match attributes.GetNamedItem AssociationsAttributeName with
             | null -> None
-            | filePath ->
-                let optAssociations = attributes.GetNamedItem AssociationsAttributeName
-                match optAssociations with
-                | null -> None
-                | associations ->
-                    let converter = StringListTypeConverter ()
-                    let associationList = converter.ConvertFromString associations.InnerText :?> string list
-                    Some {
-                        Name = name.InnerText
-                        FilePath = filePath.InnerText
-                        Associations = associationList
-                        PackageName = node.ParentNode.Name }
+            | associations ->
+                let converter = StringListTypeConverter ()
+                let associationList = converter.ConvertFromString associations.InnerText :?> string list
+                Some {
+                    Name = name
+                    FilePath = filePath.InnerText
+                    Associations = associationList
+                    PackageName = node.ParentNode.Name }
 
     /// Attempt to load all the assets from a package Xml node.
     let tryLoadAssetsFromPackageNode optAssociation (node : XmlNode) =
@@ -123,8 +121,7 @@ module Assets =
     let tryLoadAssetsFromPackage optAssociation packageName (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
-            let optRootNode = document.[RootNodeName]
-            match optRootNode with
+            match document.[RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
@@ -145,8 +142,7 @@ module Assets =
     let tryLoadAssetsFromPackages optAssociation packageNames (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
-            let optRootNode = document.[RootNodeName]
-            match optRootNode with
+            match document.[RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| enumerable rootNode.ChildNodes
@@ -164,8 +160,7 @@ module Assets =
     let tryLoadAssetsFromDocument optAssociation (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
-            let optRootNode = document.[RootNodeName]
-            match optRootNode with
+            match document.[RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode -> tryLoadAssetsFromRootNode optAssociation rootNode
         with exn -> Left <| string exn
@@ -185,8 +180,7 @@ module Assets =
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDir outputDir assetGraphFilePath =
         let assetGraphFilePath = Path.Combine (inputDir, assetGraphFilePath)
-        let eitherAssets = tryLoadAssetsFromDocument None assetGraphFilePath
-        match eitherAssets with
+        match tryLoadAssetsFromDocument None assetGraphFilePath with
         | Right assets ->
             try Right <| buildAssets inputDir outputDir assets
             with exn -> Left <| string exn
