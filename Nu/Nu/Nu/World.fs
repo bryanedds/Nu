@@ -411,11 +411,11 @@ module WorldModule =
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Reflection.createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes
 
-        static member tryReloadOverlays inputDir outputDir world =
+        static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // try to reload overlay file
-            let inputOverlayFilePath = Path.Combine (inputDir, world.State.OverlayFilePath)
-            let outputOverlayFilePath = Path.Combine (outputDir, world.State.OverlayFilePath)
+            let inputOverlayFilePath = Path.Combine (inputDirectory, world.State.OverlayFilePath)
+            let outputOverlayFilePath = Path.Combine (outputDirectory, world.State.OverlayFilePath)
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
@@ -449,15 +449,15 @@ module WorldModule =
             // propagate error
             with exn -> Left <| string exn
 
-        static member tryReloadAssets inputDir outputDir world =
+        static member tryReloadAssets inputDirectory outputDirectory world =
             
             // try to reload asset graph file
             try File.Copy (
-                    Path.Combine (inputDir, world.State.AssetGraphFilePath),
-                    Path.Combine (outputDir, world.State.AssetGraphFilePath), true)
+                    Path.Combine (inputDirectory, world.State.AssetGraphFilePath),
+                    Path.Combine (outputDirectory, world.State.AssetGraphFilePath), true)
 
                 // reload asset graph
-                match Assets.tryBuildAssetGraph inputDir outputDir world.State.AssetGraphFilePath with
+                match Assets.tryBuildAssetGraph inputDirectory outputDirectory world.State.AssetGraphFilePath with
                 | Right () ->
 
                     // reload asset metadata
