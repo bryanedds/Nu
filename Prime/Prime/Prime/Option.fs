@@ -15,7 +15,7 @@ module Option =
         | None -> None
 
     /// Get an option's value, or missing that, return a default value.
-    let getOrDefault opt aDefault =
+    let getOrDefault aDefault opt =
         match opt with
         | Some value -> value
         | None -> aDefault
