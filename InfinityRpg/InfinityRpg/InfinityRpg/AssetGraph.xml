@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <Package name="Default">
-    <Assets directory="Assets/Default" extension="png" associations="[Rendering]"/>
+    <Assets directory="Assets/Default" extension="png" refinements="[Identity]" associations="[Rendering]"/>
     <Assets directory="Assets/Default" extension="wav" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="tmx" associations="[]"/>

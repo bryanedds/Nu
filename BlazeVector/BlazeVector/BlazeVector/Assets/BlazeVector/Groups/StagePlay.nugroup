@@ -5,7 +5,7 @@
     <Entities>
       <Entity dispatcherName="PlayerDispatcher">
         <Name>Player</Name>
-        <Position>-300;-175.6805</Position>
+        <Position>-300, -175.6805</Position>
         <Depth>1</Depth>
         <OptOverlayName>Some(PlayerDispatcher)</OptOverlayName>
         <Xtension>
