@@ -1,10 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <Package name="Default">
+    <Asset name="Font" file="Assets/Default/FreeMonoBold.032.ttf" associations="[Rendering]"/>
     <Assets directory="Assets/Default" extension="png" associations="[Rendering]"/>
     <Assets directory="Assets/Default" extension="wav" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="tmx" associations="[]"/>
-    <Asset name="Font" file="Assets/Default/FreeMonoBold.032.ttf" associations="[Rendering]"/>
+  </Package>
+  <Package name="Test">
+    <Assets directory="Assets/Test" extension="psd" refinements="[PsdToPng]" associations="[Rendering]"/>
   </Package>
 </Root>

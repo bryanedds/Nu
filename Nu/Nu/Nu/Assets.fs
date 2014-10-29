@@ -2,6 +2,7 @@
 open System
 open System.Xml
 open System.IO
+open ImageMagick
 open Prime
 open Nu
 open Nu.Constants
@@ -13,6 +14,7 @@ module AssetsModule =
     type [<StructuralEquality; NoComparison>] Asset =
         { Name : string
           FilePath : string
+          Refinements : string list
           Associations : string list
           PackageName : string }
 
@@ -49,15 +51,19 @@ module Assets =
                 match attributes.GetNamedItem NameAttributeName with
                 | null -> Path.GetFileNameWithoutExtension filePath.InnerText
                 | name -> name.InnerText
+            let refinements =
+                match attributes.GetNamedItem RefinementsAttributeName with
+                | null -> []
+                | refinements -> (StringListTypeConverter ()).ConvertFromString refinements.InnerText :?> string list
             match attributes.GetNamedItem AssociationsAttributeName with
             | null -> None
             | associations ->
-                let converter = StringListTypeConverter ()
-                let associationList = converter.ConvertFromString associations.InnerText :?> string list
+                let associations = (StringListTypeConverter ()).ConvertFromString associations.InnerText :?> string list
                 Some {
                     Name = name
                     FilePath = filePath.InnerText
-                    Associations = associationList
+                    Refinements = refinements
+                    Associations = associations
                     PackageName = node.ParentNode.Name }
 
     /// Attempt to load assets from the given Xml node.
@@ -73,18 +79,23 @@ module Assets =
             match attributes.GetNamedItem ExtensionAttributeName with
             | null -> None
             | extension ->
+                let refinements =
+                    match attributes.GetNamedItem RefinementsAttributeName with
+                    | null -> []
+                    | refinements -> (StringListTypeConverter ()).ConvertFromString refinements.InnerText :?> string list
                 match attributes.GetNamedItem AssociationsAttributeName with
                 | null -> None
                 | associations ->
                     let converter = StringListTypeConverter ()
-                    let associationList = converter.ConvertFromString associations.InnerText :?> string list
+                    let associations = converter.ConvertFromString associations.InnerText :?> string list
                     try let filePaths = Directory.GetFiles (directoryPath.InnerText, "*." + extension.InnerText, searchOption)
                         let assets =
                             Array.map
                                 (fun filePath ->
                                     { Name = Path.GetFileNameWithoutExtension filePath
                                       FilePath = filePath
-                                      Associations = associationList
+                                      Associations = associations
+                                      Refinements = refinements
                                       PackageName = node.ParentNode.Name })
                                 filePaths
                         Some <| List.ofArray assets
@@ -203,19 +214,44 @@ module Assets =
         with exn -> Left <| string exn
 
     /// Build all the assets.
-    let buildAssets inputDirectory outputDirectory assets =
+    let buildAssets inputDirectory tempDirectory outputDirectory fullBuild assets =
+        
         // right now this function only copies if newer
         for asset in assets do
+            
+            // find asset file path
             let assetFilePath = Path.Combine (inputDirectory, asset.FilePath)
+            
+            // set up output directory
             let outputFilePath = Path.Combine (outputDirectory, asset.FilePath)
-            let outputDirectoryectory = Path.GetDirectoryName outputFilePath
-            ignore <| Directory.CreateDirectory outputDirectoryectory
-            if  not <| File.Exists outputFilePath ||
+            let outputDirectoryName = Path.GetDirectoryName outputFilePath
+            ignore <| Directory.CreateDirectory outputDirectoryName
+            
+            // process file if it exists and is newer
+            if  fullBuild || 
+                not <| File.Exists outputFilePath ||
                 File.GetLastWriteTimeUtc assetFilePath > File.GetLastWriteTimeUtc outputFilePath then
-                File.Copy (assetFilePath, outputFilePath, true)
+                match asset.Refinements with
+                | [PsdToPngRefinementName] ->
+
+                    // set up temp directory
+                    let tempFilePath = Path.Combine (tempDirectory, PsdToPngRefinementName, asset.FilePath)
+                    let tempDirectoryName = Path.GetDirectoryName tempFilePath
+                    ignore <| Directory.CreateDirectory tempDirectoryName
+
+                    // convert from pdn to png format
+                    let convertedTempFilePath = Path.ChangeExtension (tempFilePath, "png")
+                    let convertedOutputFilePath = Path.ChangeExtension (outputFilePath, "png")
+                    use image = new MagickImage (assetFilePath)
+                    image.Write convertedTempFilePath
+
+                    // copy file to output directory
+                    File.Copy (convertedTempFilePath, convertedOutputFilePath, true)
+
+                | _ -> File.Copy (assetFilePath, outputFilePath, true)
 
     /// Attempt to build all the assets found in the given asset graph.
-    let tryBuildAssetGraph inputDirectory outputDirectory assetGraphFilePath =
+    let tryBuildAssetGraph inputDirectory tempDirectory outputDirectory fullBuild assetGraphFilePath =
         let currentDirectory = Directory.GetCurrentDirectory ()
         let eitherAssets =
             try Directory.SetCurrentDirectory inputDirectory
@@ -223,6 +259,6 @@ module Assets =
             finally Directory.SetCurrentDirectory currentDirectory
         match eitherAssets with
         | Right assets ->
-            try Right <| buildAssets inputDirectory outputDirectory assets
+            try Right <| buildAssets inputDirectory tempDirectory outputDirectory fullBuild assets
             with exn -> Left <| string exn
         | Left error -> Left error
