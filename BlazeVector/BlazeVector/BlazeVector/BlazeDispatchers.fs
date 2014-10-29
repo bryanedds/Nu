@@ -302,21 +302,21 @@ module StageScreenModule =
                 (fun _ (entity : Entity) -> Entity.setPosition (entity.Position + Vector2 (xShift, 0.0f)) entity)
                 entities
 
-        let makeSectionFromFile fileName sectionName xShift world =
-            let (sectionGroup, sectionEntities) = World.loadGroupFromFile fileName world
+        let makeSectionFromFile filePath sectionName xShift world =
+            let (sectionGroup, sectionEntities) = World.loadGroupFromFile filePath world
             let sectionEntities = shiftEntities xShift sectionEntities
             (sectionName, (sectionGroup, sectionEntities))
 
         let handleStartPlay event world =
             let address = Event.unwrapA event
             let random = Random ()
-            let sectionFileNames = List.toArray SectionFileNames
+            let sectionFilePaths = List.toArray SectionFilePaths
             let sectionDescriptors =
                 [for i in 0 .. SectionCount do
                     let xShift = 2048.0f
-                    let sectionFileNameIndex = if i = 0 then 0 else random.Next () % sectionFileNames.Length
-                    yield makeSectionFromFile sectionFileNames.[sectionFileNameIndex] (SectionName + string i) (xShift * single i) world]
-            let stagePlayDescriptor = (StagePlayName, World.loadGroupFromFile StagePlayFileName world)
+                    let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
+                    yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + string i) (xShift * single i) world]
+            let stagePlayDescriptor = (StagePlayName, World.loadGroupFromFile StagePlayFilePath world)
             let groupDescriptors = Map.ofList <| stagePlayDescriptor :: sectionDescriptors
             let world = snd <| World.addGroups address groupDescriptors world
             let world = World.playSong DeadBlazeSong 1.0f 0 world

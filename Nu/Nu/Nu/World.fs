@@ -276,8 +276,8 @@ module WorldModule =
                 World.subscribe removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress subscription world
             else failwith "Cannot monitor events with an anonymous subscriber."
 
-        static member saveGroupToFile group entities fileName world =
-            use file = File.Open (fileName, FileMode.Create)
+        static member saveGroupToFile group entities filePath world =
+            use file = File.Open (filePath, FileMode.Create)
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
@@ -289,9 +289,9 @@ module WorldModule =
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
 
-        static member loadGroupFromFile fileName world =
+        static member loadGroupFromFile filePath world =
             let document = XmlDocument ()
-            document.Load (fileName : string)
+            document.Load (filePath : string)
             let rootNode = document.[RootNodeName]
             let groupNode = rootNode.[GroupNodeName]
             World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
@@ -390,9 +390,9 @@ module WorldModule =
             let world = World.monitor (FinishOutgoingEventAddress + address) address (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
-        static member addDissolveScreenFromFile screenDispatcherName groupFileName incomingTime outgoingTime screenAddress world =
+        static member addDissolveScreenFromFile screenDispatcherName groupFilePath incomingTime outgoingTime screenAddress world =
             let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
-            let (group, entities) = World.loadGroupFromFile groupFileName world
+            let (group, entities) = World.loadGroupFromFile groupFilePath world
             let dissolveGroupDescriptors = Map.singleton group.Name (group, entities)
             World.addScreen screenAddress dissolveScreen dissolveGroupDescriptors world
 
@@ -414,15 +414,15 @@ module WorldModule =
         static member tryReloadOverlays inputDir outputDir world =
             
             // try to reload overlay file
-            let inputOverlayFileName = Path.Combine (inputDir, world.State.OverlayFileName)
-            let outputOverlayFileName = Path.Combine (outputDir, world.State.OverlayFileName)
-            try File.Copy (inputOverlayFileName, outputOverlayFileName, true)
+            let inputOverlayFilePath = Path.Combine (inputDir, world.State.OverlayFilePath)
+            let outputOverlayFilePath = Path.Combine (outputDir, world.State.OverlayFilePath)
+            try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
                 let oldOverlayer = world.State.Overlayer
                 let dispatchers = World.getDispatchers world
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers world.Components.Facets
-                let overlayer = Overlayer.make outputOverlayFileName intrinsicOverlays
+                let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
                 // apply overlays to all entities
@@ -453,15 +453,15 @@ module WorldModule =
             
             // try to reload asset graph file
             try File.Copy (
-                    Path.Combine (inputDir, world.State.AssetGraphFileName),
-                    Path.Combine (outputDir, world.State.AssetGraphFileName), true)
+                    Path.Combine (inputDir, world.State.AssetGraphFilePath),
+                    Path.Combine (outputDir, world.State.AssetGraphFilePath), true)
 
                 // reload asset graph
-                match Assets.tryBuildAssetGraph inputDir outputDir world.State.AssetGraphFileName with
+                match Assets.tryBuildAssetGraph inputDir outputDir world.State.AssetGraphFilePath with
                 | Right () ->
 
                     // reload asset metadata
-                    match Metadata.tryGenerateAssetMetadataMap world.State.AssetGraphFileName with
+                    match Metadata.tryGenerateAssetMetadataMap world.State.AssetGraphFilePath with
                     | Right assetMetadataMap ->
                     
                         // reload assets
@@ -679,7 +679,7 @@ module WorldModule =
             userState =
 
             // attempt to generate asset metadata so the rest of the world can be created
-            match Metadata.tryGenerateAssetMetadataMap AssetGraphFileName with
+            match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
             | Right assetMetadataMap ->
 
                 // make user components
@@ -758,8 +758,8 @@ module WorldModule =
 
                 // make the world's subsystems
                 let subsystems =
-                    { AudioPlayer = AudioPlayer.make AssetGraphFileName
-                      Renderer = Renderer.make sdlDeps.RenderContext AssetGraphFileName
+                    { AudioPlayer = AudioPlayer.make AssetGraphFilePath
+                      Renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
                       Integrator = Integrator.make farseerCautionMode Gravity }
 
                 // make the world's message queues
@@ -781,9 +781,9 @@ module WorldModule =
                       Liveness = Running
                       Interactivity = interactivity
                       AssetMetadataMap = assetMetadataMap
-                      AssetGraphFileName = AssetGraphFileName
-                      Overlayer = Overlayer.make OverlayFileName intrinsicOverlays
-                      OverlayFileName = OverlayFileName
+                      AssetGraphFilePath = AssetGraphFilePath
+                      Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays
+                      OverlayFilePath = OverlayFilePath
                       UserState = userState }
 
                 // make the world itself
@@ -845,9 +845,9 @@ module WorldModule =
                   Liveness = Running
                   Interactivity = UIOnly
                   AssetMetadataMap = Metadata.generateEmptyAssetMetadataMap ()
-                  AssetGraphFileName = String.Empty
+                  AssetGraphFilePath = String.Empty
                   Overlayer = Overlayer.makeEmpty ()
-                  OverlayFileName = String.Empty
+                  OverlayFilePath = String.Empty
                   UserState = userState }
 
             // make the world itself

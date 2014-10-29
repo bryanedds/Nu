@@ -12,7 +12,7 @@ module AssetsModule =
     /// Describes a game asset, such as a texture, sound, or model in detail.
     type [<StructuralEquality; NoComparison>] Asset =
         { Name : string
-          FileName : string
+          FilePath : string
           Associations : string list
           PackageName : string }
 
@@ -46,10 +46,10 @@ module Assets =
         match optName with
         | null -> None
         | name ->
-            let optFileName = attributes.GetNamedItem FileNameAttributeName
-            match optFileName with
+            let optFilePath = attributes.GetNamedItem FilePathAttributeName
+            match optFilePath with
             | null -> None
-            | fileName ->
+            | filePath ->
                 let optAssociations = attributes.GetNamedItem AssociationsAttributeName
                 match optAssociations with
                 | null -> None
@@ -58,7 +58,7 @@ module Assets =
                     let associationList = converter.ConvertFromString associations.InnerText :?> string list
                     Some {
                         Name = name.InnerText
-                        FileName = fileName.InnerText
+                        FilePath = filePath.InnerText
                         Associations = associationList
                         PackageName = node.ParentNode.Name }
 
@@ -120,9 +120,9 @@ module Assets =
             | _ :: _ -> Left <| "Error(s) when loading assets '" + String.Join ("; ", errors) + "'."
 
     /// Attempt to load all the assets from a package.
-    let tryLoadAssetsFromPackage optAssociation packageName (assetGraphFileName : string) =
+    let tryLoadAssetsFromPackage optAssociation packageName (assetGraphFilePath : string) =
         try let document = XmlDocument ()
-            document.Load assetGraphFileName
+            document.Load assetGraphFilePath
             let optRootNode = document.[RootNodeName]
             match optRootNode with
             | null -> Left "Root node is missing from asset graph."
@@ -142,9 +142,9 @@ module Assets =
 
     /// Attempt to load all the assets from multiple packages.
     /// TODO: test this function!
-    let tryLoadAssetsFromPackages optAssociation packageNames (assetGraphFileName : string) =
+    let tryLoadAssetsFromPackages optAssociation packageNames (assetGraphFilePath : string) =
         try let document = XmlDocument ()
-            document.Load assetGraphFileName
+            document.Load assetGraphFilePath
             let optRootNode = document.[RootNodeName]
             match optRootNode with
             | null -> Left "Root node is missing from asset graph."
@@ -161,9 +161,9 @@ module Assets =
         with exn -> Left <| string exn
 
     /// Try to load all the assets from an asset graph document.
-    let tryLoadAssetsFromDocument optAssociation (assetGraphFileName : string) =
+    let tryLoadAssetsFromDocument optAssociation (assetGraphFilePath : string) =
         try let document = XmlDocument ()
-            document.Load assetGraphFileName
+            document.Load assetGraphFilePath
             let optRootNode = document.[RootNodeName]
             match optRootNode with
             | null -> Left "Root node is missing from asset graph."
@@ -174,8 +174,8 @@ module Assets =
     let buildAssets inputDir outputDir assets =
         // right now this function only copies if newer
         for asset in assets do
-            let assetFilePath = Path.Combine (inputDir, asset.FileName)
-            let outputFilePath = Path.Combine (outputDir, asset.FileName)
+            let assetFilePath = Path.Combine (inputDir, asset.FilePath)
+            let outputFilePath = Path.Combine (outputDir, asset.FilePath)
             let outputDirectory = Path.GetDirectoryName outputFilePath
             ignore <| Directory.CreateDirectory outputDirectory
             if  not <| File.Exists outputFilePath ||
@@ -183,8 +183,8 @@ module Assets =
                 File.Copy (assetFilePath, outputFilePath, true)
 
     /// Attempt to build all the assets found in the given asset graph.
-    let tryBuildAssetGraph inputDir outputDir assetGraphFileName =
-        let assetGraphFilePath = Path.Combine (inputDir, assetGraphFileName)
+    let tryBuildAssetGraph inputDir outputDir assetGraphFilePath =
+        let assetGraphFilePath = Path.Combine (inputDir, assetGraphFilePath)
         let eitherAssets = tryLoadAssetsFromDocument None assetGraphFilePath
         match eitherAssets with
         | Right assets ->

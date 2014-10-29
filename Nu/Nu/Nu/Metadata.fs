@@ -43,29 +43,29 @@ module Metadata =
             raise <| TileSetPropertyNotFoundException errorMessage
 
     let private generateTextureMetadata asset =
-        if not <| File.Exists asset.FileName then
-            let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FileName + "'."
+        if not <| File.Exists asset.FilePath then
+            let errorMessage = "Failed to load Bitmap due to missing file '" + asset.FilePath + "'."
             trace errorMessage
             InvalidMetadata errorMessage
         else
-            try use bitmap = new Bitmap (asset.FileName) in TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
+            try use bitmap = new Bitmap (asset.FilePath) in TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
             with _ as exn ->
-                let errorMessage = "Failed to load Bitmap '" + asset.FileName + "' due to '" + string exn + "'."
+                let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to '" + string exn + "'."
                 trace errorMessage
                 InvalidMetadata errorMessage
 
     let private generateTileMapMetadata asset =
-        try let tmxMap = TmxMap asset.FileName
+        try let tmxMap = TmxMap asset.FilePath
             let tileSets = List.ofSeq tmxMap.Tilesets
             let tileSetImages = List.map getTileSetProperties tileSets
-            TileMapMetadata (asset.FileName, tileSetImages, tmxMap)
+            TileMapMetadata (asset.FilePath, tileSetImages, tmxMap)
         with _ as exn ->
-            let errorMessage = "Failed to load TmxMap '" + asset.FileName + "' due to '" + string exn + "'."
+            let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to '" + string exn + "'."
             trace errorMessage
             InvalidMetadata errorMessage
 
     let private generateAssetMetadata asset =
-        let extension = Path.GetExtension asset.FileName
+        let extension = Path.GetExtension asset.FilePath
         let metadata =
             match extension with
             | ".bmp"
@@ -98,12 +98,12 @@ module Metadata =
             packageNodes
 
     /// Attempt to generate an asset metadata map from the given asset graph.
-    let tryGenerateAssetMetadataMap assetGraphFileName =
+    let tryGenerateAssetMetadataMap assetGraphFilePath =
         try let document = XmlDocument ()
-            document.Load (assetGraphFileName : string) 
+            document.Load (assetGraphFilePath : string) 
             let optRootNode = document.[RootNodeName]
             match optRootNode with
-            | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFileName + "'."
+            | null -> Left <| "Root node is missing from asset graph file '" + assetGraphFilePath + "'."
             | rootNode ->
                 let possiblePackageNodes = List.ofSeq <| rootNode.OfType<XmlNode> ()
                 let packageNodes = List.filter (fun (node : XmlNode) -> node.Name = PackageNodeName) possiblePackageNodes
@@ -149,7 +149,7 @@ module Metadata =
     let tryGetTileMapMetadata assetName packageName assetMetadataMap =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
-        | Some (TileMapMetadata (fileName, images, tmxMap)) -> Some (fileName, images, tmxMap)
+        | Some (TileMapMetadata (filePath, images, tmxMap)) -> Some (filePath, images, tmxMap)
         | None -> None
         | _ -> None
 

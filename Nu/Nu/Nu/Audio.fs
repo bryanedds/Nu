@@ -100,7 +100,7 @@ module AudioModule =
               AudioAssetMap : AudioAsset AssetMap
               OptCurrentSong : PlaySongMessage option
               OptNextPlaySong : PlaySongMessage option
-              AssetGraphFileName : string }
+              AssetGraphFilePath : string }
 
         static member private haltSound () =
             ignore <| SDL_mixer.Mix_HaltMusic ()
@@ -110,26 +110,26 @@ module AudioModule =
                 ignore <| SDL_mixer.Mix_HaltChannel i
     
         static member private tryLoadAudioAsset2 (asset : Asset) =
-            let extension = Path.GetExtension asset.FileName
+            let extension = Path.GetExtension asset.FilePath
             match extension with
             | ".wav" ->
-                let optWav = SDL_mixer.Mix_LoadWAV asset.FileName
+                let optWav = SDL_mixer.Mix_LoadWAV asset.FilePath
                 if optWav <> IntPtr.Zero then Some (asset.Name, WavAsset optWav)
                 else
                     let errorMsg = SDL.SDL_GetError ()
-                    trace <| "Could not load wav '" + asset.FileName + "' due to '" + errorMsg + "'."
+                    trace <| "Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'."
                     None
             | ".ogg" ->
-                let optOgg = SDL_mixer.Mix_LoadMUS asset.FileName
+                let optOgg = SDL_mixer.Mix_LoadMUS asset.FilePath
                 if optOgg <> IntPtr.Zero then Some (asset.Name, OggAsset optOgg)
                 else
                     let errorMsg = SDL.SDL_GetError ()
-                    trace <| "Could not load ogg '" + asset.FileName + "' due to '" + errorMsg + "'."
+                    trace <| "Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'."
                     None
             | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
     
         static member private tryLoadAudioPackage packageName audioPlayer =
-            let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName audioPlayer.AssetGraphFileName
+            let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName audioPlayer.AssetGraphFilePath
             match optAssets with
             | Right assets ->
                 let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets
@@ -143,7 +143,7 @@ module AudioModule =
                     let audioAssetMap = Map.ofSeq audioAssets
                     { audioPlayer with AudioAssetMap = Map.add packageName audioAssetMap audioPlayer.AudioAssetMap }
             | Left error ->
-                trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, audioPlayer.AssetGraphFileName) + "'."
+                trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + string (packageName, audioPlayer.AssetGraphFilePath) + "'."
                 audioPlayer
             
         static member private tryLoadAudioAsset packageName assetName audioPlayer =
@@ -262,13 +262,13 @@ module AudioModule =
                 AudioPlayer.tryUpdateNextSong
     
         /// Make an AudioPlayer.
-        static member make assetGraphFileName =
+        static member make assetGraphFilePath =
             let audioPlayer =
                 { AudioContext = ()
                   AudioAssetMap = Map.empty
                   OptCurrentSong = None
                   OptNextPlaySong = None
-                  AssetGraphFileName = assetGraphFileName }
+                  AssetGraphFilePath = assetGraphFilePath }
             audioPlayer :> IAudioPlayer
 
         interface IAudioPlayer with

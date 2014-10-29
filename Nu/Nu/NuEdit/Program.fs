@@ -410,11 +410,11 @@ module Program =
         let world = World.unsubscribe AddEntityKey world
         World.unsubscribe RemovingEntityKey world
 
-    let trySaveFile fileName world =
+    let trySaveFile filePath world =
         try let groupAddress = (World.getUserState world).GroupAddress
             let group = World.getGroup groupAddress world
             let entities = World.getEntities groupAddress world
-            World.saveGroupToFile group entities fileName world
+            World.saveGroupToFile group entities filePath world
         with exn ->
             ignore <|
                 MessageBox.Show
@@ -423,7 +423,7 @@ module Program =
                      MessageBoxButtons.OK,
                      MessageBoxIcon.Error)
 
-    let tryLoadFile (form : NuEditForm) fileName world =
+    let tryLoadFile (form : NuEditForm) filePath world =
         try // remove current group
             let editorState = World.getUserState world
             let world = unsubscribeFromEntityEvents world
@@ -432,7 +432,7 @@ module Program =
             let world = snd <| World.removeGroupImmediate groupAddress group world
             
             // load and add group
-            let (group, entities) = World.loadGroupFromFile fileName world
+            let (group, entities) = World.loadGroupFromFile filePath world
             let groupAddress = EditorScreenAddress @+ [group.Name]
             let editorState = { editorState with GroupAddress = groupAddress }
             let world = World.setUserState editorState world
@@ -440,7 +440,7 @@ module Program =
             let world = subscribeToEntityEvents form world
 
             // update save file name
-            form.saveFileDialog.FileName <- Path.GetFileName fileName
+            form.saveFileDialog.FileName <- Path.GetFileName filePath
             world
         with exn ->
             ignore <|

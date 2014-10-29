@@ -180,9 +180,9 @@ module Overlayer =
 
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.
-    let make (fileName : string) (intrinsicOverlays : XmlDocument) =
+    let make (filePath : string) (intrinsicOverlays : XmlDocument) =
         let overlays = XmlDocument ()
-        overlays.Load fileName
+        overlays.Load filePath
         for node in intrinsicOverlays.DocumentElement.ChildNodes do
             let imported = overlays.ImportNode (node, true)
             ignore <| overlays.DocumentElement.AppendChild imported

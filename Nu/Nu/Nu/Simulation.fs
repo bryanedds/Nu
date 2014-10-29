@@ -344,9 +344,9 @@ module SimModule =
           Liveness : Liveness
           Interactivity : Interactivity
           AssetMetadataMap : AssetMetadataMap
-          AssetGraphFileName : string
+          AssetGraphFilePath : string
           Overlayer : Overlayer
-          OverlayFileName : string
+          OverlayFilePath : string
           UserState : obj }
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies
