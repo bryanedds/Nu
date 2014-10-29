@@ -197,6 +197,7 @@ let distinctBy by list =
     List.ofSeq results
 
 /// Get the last item from a list.
+/// TODO: speed this up with a single iteration?
 let last list =
     let length = List.length list
     List.nth list (length - 1)
