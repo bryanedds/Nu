@@ -533,7 +533,7 @@ module Physics =
                 let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
                 PolygonShape { Vertices = vertices; Center = Vector2.Zero }
             with :? NotSupportedException ->
-                trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0;0.0 | 0.0;1.0 | 1.0;1.0 | 1.0;0.0'"
+                trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon ? 0.0, 0.0 | 0.0, 1.0 | 1.0, 1.0 | 1.0, 0.0'"
                 defaultShape
         | _ ->
             trace <| "Invalid tile collision expression '" + expr + "'."

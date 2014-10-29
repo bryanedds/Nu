@@ -6,47 +6,47 @@
       <Entity dispatcherName="AvatarDispatcher">
         <Name>Avatar</Name>
         <Depth>2</Depth>
-        <Position>600.3199;600</Position>
-        <Size>64;64</Size>
+        <Position>600.3199, 600</Position>
+        <Size>64, 64</Size>
         <OptOverlayName>Some(AvatarDispatcher)</OptOverlayName>
         <Xtension>
-          <SpriteImage type="Nu.RenderingModule+Image">Image7;Default</SpriteImage>
+          <SpriteImage type="Nu.RenderingModule+Image">Image7, Default</SpriteImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Depth>10</Depth>
-        <Position>-128;-224</Position>
-        <Size>256;64</Size>
+        <Position>-128, -224</Position>
+        <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">BackButtonDown;UI</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">BackButtonUp;UI</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">BackButtonDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">BackButtonUp, UI</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="FeelerDispatcher">
         <Name>Feeler</Name>
         <Depth>-5</Depth>
-        <Position>-480;-272</Position>
-        <Size>960;544</Size>
+        <Position>-480, -272</Position>
+        <Size>960, 544</Size>
         <OptOverlayName>Some(FeelerDispatcher)</OptOverlayName>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Depth>1</Depth>
-        <Position>0;0</Position>
-        <Size>1200;1200</Size>
+        <Position>0, 0</Position>
+        <Size>1200, 1200</Size>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
         <Xtension>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">TileMap;Default</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">TileMap, Default</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Depth>-1</Depth>
-        <Position>-480;-272</Position>
-        <Size>960;544</Size>
+        <Position>-480, -272</Position>
+        <Size>960, 544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">Image8, Default</LabelImage>
         </Xtension>
       </Entity>
     </Entities>

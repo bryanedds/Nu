@@ -53,12 +53,13 @@ module MathModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let v2 = source :?> Vector2
-            String.Format (culture, "{0};{1}", v2.X, v2.Y) :> obj
+            String.Format (culture, "{0}, {1}", v2.X, v2.Y) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector2> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Vector2> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector2 (argFs.[0], argFs.[1]) :> obj
             else source
@@ -70,12 +71,13 @@ module MathModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let v3 = source :?> Vector3
-            String.Format (culture, "{0};{1};{2}", v3.X, v3.Y, v3.Z) :> obj
+            String.Format (culture, "{0}, {1}, {2}", v3.X, v3.Y, v3.Z) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector3> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Vector3> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
             else source
@@ -87,12 +89,13 @@ module MathModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let v4 = source :?> Vector4
-            String.Format (culture, "{0};{1};{2};{3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
+            String.Format (culture, "{0}, {1}, {2}, {3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Vector4> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Vector4> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
             else source
@@ -139,8 +142,8 @@ module MathModule =
                 let valueStr = source :?> string
                 let valueStr = valueStr.Trim ()
                 let valueStr = valueStr.Substring (1, valueStr.Length - 2)
-                let valueStrs = valueStr.Split (';')
-                let valueStrs = Array.map (fun (valueStr : string) -> valueStr.Trim ()) valueStrs
+                let valueStrs = valueStr.Split ';'
+                let valueStrs = Array.map (fun (args : string) -> args.Trim ()) valueStrs
                 let valueStrs = Array.filter (fun (valueStr : string) -> valueStr.Length <> 0) valueStrs
                 let value = List.ofArray valueStrs
                 value :> obj

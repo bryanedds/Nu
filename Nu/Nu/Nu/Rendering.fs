@@ -104,12 +104,13 @@ module RenderingModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let s = source :?> Image
-            String.Format (culture, "{0};{1}", s.ImageAssetName, s.PackageName) :> obj
+            String.Format (culture, "{0}, {1}", s.ImageAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Image> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 { ImageAssetName = args.[0]; PackageName = args.[1] } :> obj
             else source
 
@@ -120,12 +121,13 @@ module RenderingModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let s = source :?> TileMapAsset
-            String.Format (culture, "{0};{1}", s.TileMapAssetName, s.PackageName) :> obj
+            String.Format (culture, "{0}, {1}", s.TileMapAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Image> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<TileMapAsset> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 { TileMapAssetName = args.[0]; PackageName = args.[1] } :> obj
             else source
 
@@ -136,12 +138,13 @@ module RenderingModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let s = source :?> Font
-            String.Format (culture, "{0};{1}", s.FontAssetName, s.PackageName) :> obj
+            String.Format (culture, "{0}, {1}", s.FontAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Font> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Font> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 { FontAssetName = args.[0]; PackageName = args.[1] } :> obj
             else source
 

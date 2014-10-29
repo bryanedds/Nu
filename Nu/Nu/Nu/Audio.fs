@@ -63,12 +63,13 @@ module AudioModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let s = source :?> Sound
-            String.Format (culture, "{0};{1}", s.SoundAssetName, s.PackageName) :> obj
+            String.Format (culture, "{0}, {1}", s.SoundAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Sound> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Sound> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 { SoundAssetName = args.[0]; PackageName = args.[1] } :> obj
             else source
 
@@ -79,12 +80,13 @@ module AudioModule =
             destType = typeof<string>
         override this.ConvertTo (_, culture, source, _) =
             let s = source :?> Song
-            String.Format (culture, "{0};{1}", s.SongAssetName, s.PackageName) :> obj
+            String.Format (culture, "{0}, {1}", s.SongAssetName, s.PackageName) :> obj
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<Song> || sourceType = typeof<string>
         override this.ConvertFrom (_, _, source) =
             if source.GetType () <> typeof<Song> then
-                let args = (source :?> string).Split ';'
+                let args = (source :?> string).Split ','
+                let args = Array.map (fun (args : string) -> args.Trim ()) args
                 { SongAssetName = args.[0]; PackageName = args.[1] } :> obj
             else source
 

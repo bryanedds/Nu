@@ -5,43 +5,43 @@
     <Xtension />
     <Entities>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-480;-272</Position>
+        <Position>-480, -272</Position>
         <Depth>-1</Depth>
-        <Size>960;544</Size>
+        <Size>960, 544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">Image8;Default</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">Image8, Default</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>-128;-224</Position>
-        <Size>256;64</Size>
+        <Position>-128, -224</Position>
+        <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">BackButtonDown;UI</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">BackButtonUp;UI</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">BackButtonDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">BackButtonUp, UI</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320;96</Position>
-        <Size>640;128</Size>
+        <Position>-320, 96</Position>
+        <Size>640, 128</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
         <Xtension>
           <Text type="System.String">Credits</Text>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320;0</Position>
-        <Size>640;64</Size>
+        <Position>-320, 0</Position>
+        <Size>640, 64</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
         <Xtension>
           <Text type="System.String">Code + Music + SFX: Bryan Edds</Text>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
-        <Position>-320;-96</Position>
-        <Size>640;64</Size>
+        <Position>-320, -96</Position>
+        <Size>640, 64</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
         <Xtension>
           <Text type="System.String">Art: MindChamber</Text>
