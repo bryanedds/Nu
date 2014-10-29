@@ -59,7 +59,7 @@
     <PreBuildEvent />
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\"</PostBuildEvent>
+    <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(ProjectDir)\PipeTemp" "$(TargetDir)\" False</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="MetamapState.fs" />

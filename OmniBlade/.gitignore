@@ -41,6 +41,7 @@ Thumbs.db
 #####################
 bin/
 obj/
+PipeTemp/
 
 ###############################
 # Generated Asset Directories #

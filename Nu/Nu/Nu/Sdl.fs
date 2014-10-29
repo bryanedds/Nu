@@ -48,7 +48,7 @@ module Sdl =
         let error = SDL.SDL_GetError ()
         if initResult <> 0 && error <> "CoInitialize() DirectX error -2147417850" then
             trace <| "SDL2# initialization failed due to '" + error + "'."
-            FailureReturnCode
+            FailureExitCode
         else
             let result = action ()
             destroy ()
@@ -60,7 +60,7 @@ module Sdl =
         if resource = IntPtr.Zero then
             let error = SDL.SDL_GetError ()
             trace <| "SDL2# resource creation failed due to '" + error + "'."
-            FailureReturnCode
+            FailureExitCode
         else
             let result = action resource
             destroy resource
@@ -72,7 +72,7 @@ module Sdl =
         if resource <> 0 then
             let error = SDL.SDL_GetError ()
             trace <| "SDL2# global resource creation failed due to '" + error + "'."
-            FailureReturnCode
+            FailureExitCode
         else
             let result = action ()
             destroy ()
@@ -156,7 +156,7 @@ module Sdl =
                                     match optWorld with
                                     | Right world ->
                                         run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
-                                        SuccessReturnCode
+                                        SuccessExitCode
                                     | Left errorMsg ->
                                         trace errorMsg
-                                        FailureReturnCode))))))
+                                        FailureExitCode))))))

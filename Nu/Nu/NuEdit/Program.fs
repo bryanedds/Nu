@@ -42,7 +42,8 @@ module ProgramModule =
         | DragCameraNone
 
     type EditorState =
-        { TargetDirectory : string
+        { TempDirectory : string
+          TargetDirectory : string
           GroupAddress : Address
           RightClickPosition : Vector2
           DragEntityState : DragEntityState
@@ -686,9 +687,11 @@ module Program =
 
     let handleFormReloadAssets (_ : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let targetDirectory = (world.State.UserState :?> EditorState).TargetDirectory
+            let editorState = world.State.UserState :?> EditorState
+            let targetDirectory = editorState.TargetDirectory
+            let tempDirectory = editorState.TempDirectory
             let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
-            match World.tryReloadAssets assetSourceDirectory targetDirectory world with
+            match World.tryReloadAssets assetSourceDirectory tempDirectory targetDirectory world with
             | Right world -> world
             | Left error ->
                 ignore <|
@@ -844,10 +847,11 @@ module Program =
         form.Show ()
         form
 
-    let tryMakeEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
+    let tryMakeEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
         let groupAddress = EditorScreenAddress @+ [DefaultGroupName]
         let editorState =
-            { TargetDirectory = targetDirectory
+            { TempDirectory = tempDirectory
+              TargetDirectory = targetDirectory
               GroupAddress = groupAddress
               RightClickPosition = Vector2.Zero
               DragEntityState = DragEntityNone
@@ -872,8 +876,8 @@ module Program =
             Right world
         | Left errorMsg -> Left errorMsg
 
-    let tryCreateEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
-        match tryMakeEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
+    let tryCreateEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
+        match tryMakeEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
         | Right world ->
             populateCreateComboBox form world
             populateTreeViewGroups form world
@@ -884,6 +888,7 @@ module Program =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
+        let tempDirectory = "PipeTemp"
         let (targetDirectory, userComponentFactory) = selectTargetDirectoryAndMakeUserComponentFactory ()
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
@@ -896,7 +901,7 @@ module Program =
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
             (fun sdlDeps ->
-                match tryCreateEditorWorld targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
+                match tryCreateEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
                 | Right world as right ->
                     refWorld := world
                     right
