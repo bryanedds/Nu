@@ -9,13 +9,13 @@ module BlazeConstants =
     let StagePackageName = "Stage"
     let StagePlayerName = "Player"
     let StagePlayName = "StagePlay"
-    let StagePlayFileName = "Assets/BlazeVector/Groups/StagePlay.nugroup"
+    let StagePlayFilePath = "Assets/BlazeVector/Groups/StagePlay.nugroup"
     let SectionName = "Section"
-    let Section0FileName = "Assets/BlazeVector/Groups/Section0.nugroup"
-    let Section1FileName = "Assets/BlazeVector/Groups/Section1.nugroup"
-    let Section2FileName = "Assets/BlazeVector/Groups/Section2.nugroup"
-    let Section3FileName = "Assets/BlazeVector/Groups/Section3.nugroup"
-    let SectionFileNames = [Section0FileName; Section1FileName; Section2FileName; Section3FileName]
+    let Section0FilePath = "Assets/BlazeVector/Groups/Section0.nugroup"
+    let Section1FilePath = "Assets/BlazeVector/Groups/Section1.nugroup"
+    let Section2FilePath = "Assets/BlazeVector/Groups/Section2.nugroup"
+    let Section3FilePath = "Assets/BlazeVector/Groups/Section3.nugroup"
+    let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]
     let SectionCount = 32
 
     // asset constants
@@ -45,7 +45,7 @@ module BlazeConstants =
 
     // title constants
     let TitleAddress = !* "Title"
-    let TitleGroupFileName = "Assets/BlazeVector/Groups/Title.nugroup"
+    let TitleGroupFilePath = "Assets/BlazeVector/Groups/Title.nugroup"
     let SelectTitleEventAddress = !* "Select/Title"
     let ClickTitlePlayEventAddress = !* "Click/Title/Group/Play"
     let ClickTitleCreditsEventAddress = !* "Click/Title/Group/Credits"
@@ -53,10 +53,10 @@ module BlazeConstants =
 
     // stage constants
     let StageAddress = !* "Stage"
-    let StageGroupFileName = "Assets/BlazeVector/Groups/StageUI.nugroup"
+    let StageGroupFilePath = "Assets/BlazeVector/Groups/StageUI.nugroup"
     let ClickStageBackEventAddress = !* "Click/Stage/Group/Back"
 
     // credits constants
     let CreditsAddress = !* "Credits"
-    let CreditsGroupFileName = "Assets/BlazeVector/Groups/Credits.nugroup"
+    let CreditsGroupFilePath = "Assets/BlazeVector/Groups/Credits.nugroup"
     let ClickCreditsBackEventAddress = !* "Click/Credits/Group/Back"

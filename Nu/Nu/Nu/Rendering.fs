@@ -157,7 +157,7 @@ module RenderingModule =
         private
             { RenderContext : nativeint
               RenderAssetMap : RenderAsset AssetMap
-              AssetGraphFileName : string }
+              AssetGraphFilePath : string }
 
         static member private freeRenderAsset renderAsset =
             match renderAsset with
@@ -165,33 +165,33 @@ module RenderingModule =
             | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
         static member private tryLoadRenderAsset2 renderContext (asset : Asset) =
-            let extension = Path.GetExtension asset.FileName
+            let extension = Path.GetExtension asset.FilePath
             match extension with
             | ".bmp"
             | ".png" ->
-                let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FileName)
+                let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
                 if optTexture <> IntPtr.Zero then Some (asset.Name, TextureAsset optTexture)
                 else
                     let errorMsg = SDL.SDL_GetError ()
-                    trace <| "Could not load texture '" + asset.FileName + "' due to '" + errorMsg + "'."
+                    trace <| "Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'."
                     None
             | ".ttf" ->
-                let fileFirstName = Path.GetFileNameWithoutExtension asset.FileName
+                let fileFirstName = Path.GetFileNameWithoutExtension asset.FilePath
                 let fileFirstNameLength = String.length fileFirstName
                 if fileFirstNameLength >= 3 then
                     let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
                     let fontSize = ref 0
                     if Int32.TryParse (fontSizeText, fontSize) then
-                        let optFont = SDL_ttf.TTF_OpenFont (asset.FileName, !fontSize)
+                        let optFont = SDL_ttf.TTF_OpenFont (asset.FilePath, !fontSize)
                         if optFont <> IntPtr.Zero
                         then Some (asset.Name, FontAsset (optFont, !fontSize))
-                        else trace <| "Could not load font due to unparsable font size in file name '" + asset.FileName + "'."; None
-                    else trace <| "Could not load font due to file name being too short: '" + asset.FileName + "'."; None
-                else trace <| "Could not load font '" + asset.FileName + "'."; None
+                        else trace <| "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
+                    else trace <| "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
+                else trace <| "Could not load font '" + asset.FilePath + "'."; None
             | _ -> trace <| "Could not load render asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
         static member private tryLoadRenderPackage packageName renderer =
-            let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName renderer.AssetGraphFileName
+            let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName renderer.AssetGraphFilePath
             match optAssets with
             | Right assets ->
                 let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -431,11 +431,11 @@ module RenderingModule =
                 renderer
 
         /// Make a Renderer.
-        static member make renderContext assetGraphFileName =
+        static member make renderContext assetGraphFilePath =
             let renderer =
                 { RenderContext = renderContext
                   RenderAssetMap = Map.empty
-                  AssetGraphFileName = assetGraphFileName }
+                  AssetGraphFilePath = assetGraphFilePath }
             renderer :> IRenderer
 
         interface IRenderer with

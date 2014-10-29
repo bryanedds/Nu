@@ -60,7 +60,7 @@ module OmniDataModule =
 
     type [<StructuralEquality; NoComparison>] FieldData =
         { Name : string
-          GroupFileName : string }
+          GroupFilePath : string }
 
     type [<StructuralEquality; NoComparison>] BattleData =
         { Name : string
