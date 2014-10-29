@@ -42,7 +42,7 @@ module Assets =
     /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
         let attributes = node.Attributes
-        match attributes.GetNamedItem FilePathAttributeName with
+        match attributes.GetNamedItem FileAttributeName with
         | null -> None
         | filePath ->
             let name =
@@ -60,14 +60,51 @@ module Assets =
                     Associations = associationList
                     PackageName = node.ParentNode.Name }
 
+    /// Attempt to load assets from the given Xml node.
+    let tryLoadAssetsFromAssetsNode (node : XmlNode) =
+        let attributes = node.Attributes
+        match attributes.GetNamedItem DirectoryAttributeName with
+        | null -> None
+        | directoryPath ->
+            let searchOption =
+                match attributes.GetNamedItem RecursiveAttributeName with
+                | null -> SearchOption.TopDirectoryOnly
+                | isRecursive -> if isRecursive.InnerText = string true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
+            match attributes.GetNamedItem ExtensionAttributeName with
+            | null -> None
+            | extension ->
+                match attributes.GetNamedItem AssociationsAttributeName with
+                | null -> None
+                | associations ->
+                    let converter = StringListTypeConverter ()
+                    let associationList = converter.ConvertFromString associations.InnerText :?> string list
+                    try let filePaths = Directory.GetFiles (directoryPath.InnerText, "*." + extension.InnerText, searchOption)
+                        let assets =
+                            Array.map
+                                (fun filePath ->
+                                    { Name = Path.GetFileNameWithoutExtension filePath
+                                      FilePath = filePath
+                                      Associations = associationList
+                                      PackageName = node.ParentNode.Name })
+                                filePaths
+                        Some <| List.ofArray assets
+                    with exn -> debug <| "Invalid folder path '" + directoryPath.InnerText + "'."; None
+
     /// Attempt to load all the assets from a package Xml node.
     let tryLoadAssetsFromPackageNode optAssociation (node : XmlNode) =
         let assets =
             List.fold
-                (fun assets assetNode ->
-                    match tryLoadAssetFromAssetNode assetNode with
-                    | Some asset -> asset :: assets
-                    | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assets)
+                (fun assets (assetNode : XmlNode) ->
+                    match assetNode.Name with
+                    | AssetNodeName ->
+                        match tryLoadAssetFromAssetNode assetNode with
+                        | Some asset -> asset :: assets
+                        | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assets
+                    | AssetsNodeName ->
+                        match tryLoadAssetsFromAssetsNode assetNode with
+                        | Some loadedAssets -> loadedAssets @ assets
+                        | None -> debug <| "Invalid assets node in '" + node.Name + "' in asset graph."; assets
+                    | invalidNodeType -> debug <| "Invalid package child node type '" + invalidNodeType + "'."; assets)
                 []
                 (List.ofSeq <| enumerable node.ChildNodes)
         let associatedAssets =
@@ -166,22 +203,26 @@ module Assets =
         with exn -> Left <| string exn
 
     /// Build all the assets.
-    let buildAssets inputDir outputDir assets =
+    let buildAssets inputDirectory outputDirectory assets =
         // right now this function only copies if newer
         for asset in assets do
-            let assetFilePath = Path.Combine (inputDir, asset.FilePath)
-            let outputFilePath = Path.Combine (outputDir, asset.FilePath)
-            let outputDirectory = Path.GetDirectoryName outputFilePath
-            ignore <| Directory.CreateDirectory outputDirectory
+            let assetFilePath = Path.Combine (inputDirectory, asset.FilePath)
+            let outputFilePath = Path.Combine (outputDirectory, asset.FilePath)
+            let outputDirectoryectory = Path.GetDirectoryName outputFilePath
+            ignore <| Directory.CreateDirectory outputDirectoryectory
             if  not <| File.Exists outputFilePath ||
                 File.GetLastWriteTimeUtc assetFilePath > File.GetLastWriteTimeUtc outputFilePath then
                 File.Copy (assetFilePath, outputFilePath, true)
 
     /// Attempt to build all the assets found in the given asset graph.
-    let tryBuildAssetGraph inputDir outputDir assetGraphFilePath =
-        let assetGraphFilePath = Path.Combine (inputDir, assetGraphFilePath)
-        match tryLoadAssetsFromDocument None assetGraphFilePath with
+    let tryBuildAssetGraph inputDirectory outputDirectory assetGraphFilePath =
+        let currentDirectory = Directory.GetCurrentDirectory ()
+        let eitherAssets =
+            try Directory.SetCurrentDirectory inputDirectory
+                tryLoadAssetsFromDocument None assetGraphFilePath    
+            finally Directory.SetCurrentDirectory currentDirectory
+        match eitherAssets with
         | Right assets ->
-            try Right <| buildAssets inputDir outputDir assets
+            try Right <| buildAssets inputDirectory outputDirectory assets
             with exn -> Left <| string exn
         | Left error -> Left error

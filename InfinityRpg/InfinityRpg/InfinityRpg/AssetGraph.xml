@@ -1,20 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <Package name="Default">
-    <Asset filePath="Assets/Default/Image.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image2.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image3.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image4.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image5.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image6.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image7.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image8.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image9.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Image10.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/TileSet.png" associations="[Rendering]"/>
-    <Asset filePath="Assets/Default/Sound.wav" associations="[Audio]"/>
-    <Asset filePath="Assets/Default/Song.ogg" associations="[Audio]"/>
-    <Asset filePath="Assets/Default/TileMap.tmx" associations="[]"/>
-    <Asset name="Font" filePath="Assets/Default/FreeMonoBold.032.ttf" associations="[Rendering]"/>
+    <Assets directory="Assets/Default" extension="png" associations="[Rendering]"/>
+    <Assets directory="Assets/Default" extension="wav" associations="[Audio]"/>
+    <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
+    <Assets directory="Assets/Default" extension="tmx" associations="[]"/>
+    <Asset name="Font" file="Assets/Default/FreeMonoBold.032.ttf" associations="[Rendering]"/>
   </Package>
 </Root>
