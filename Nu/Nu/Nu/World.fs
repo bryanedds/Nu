@@ -449,7 +449,7 @@ module WorldModule =
             // propagate error
             with exn -> Left <| string exn
 
-        static member tryReloadAssets inputDirectory tempDirectory outputDirectory world =
+        static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
             
             // try to reload asset graph file
             try File.Copy (
@@ -457,7 +457,7 @@ module WorldModule =
                     Path.Combine (outputDirectory, world.State.AssetGraphFilePath), true)
 
                 // reload asset graph
-                match Assets.tryBuildAssetGraph inputDirectory tempDirectory outputDirectory false world.State.AssetGraphFilePath with
+                match Assets.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory false world.State.AssetGraphFilePath with
                 | Right () ->
 
                     // reload asset metadata
