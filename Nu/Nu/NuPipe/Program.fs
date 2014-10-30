@@ -8,9 +8,9 @@ module Program =
 
     let [<EntryPoint>] main argv =
         match argv with
-        | [|inputDirectory; tempDirectory; outputDirectory; fullBuildStr|] ->
+        | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
             let fullBuild = fullBuildStr = string true
-            match Assets.tryBuildAssetGraph inputDirectory tempDirectory outputDirectory fullBuild AssetGraphFilePath with
+            match Assets.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild AssetGraphFilePath with
             | Left error -> Console.WriteLine error; FailureExitCode
             | Right () -> SuccessExitCode
         | _ -> Console.WriteLine "NuPipe.exe requires two parameters (input directory and output directory)."; FailureExitCode

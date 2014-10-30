@@ -213,52 +213,82 @@ module Assets =
             | rootNode -> tryLoadAssetsFromRootNode optAssociation rootNode
         with exn -> Left <| string exn
 
+    /// Apply a single refinement to an asset.
+    let refineAsset5 intermediateFileSubpath intermediateDirectory refinementDirectory fullBuild refinement =
+
+        // build the intermediate file path
+        let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
+
+        // build the refinement file subpath
+        let refinementFileSubpath =
+            match refinement with
+            | PsdToPngRefinementName -> Path.ChangeExtension (intermediateFileSubpath, "png")
+            | _ -> intermediateFileSubpath
+
+        // build the refinement file path
+        let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
+
+        // refine the asset if needed
+        if  fullBuild ||
+            not <| File.Exists refinementFilePath ||
+            File.GetLastWriteTimeUtc intermediateFilePath > File.GetLastWriteTimeUtc refinementFilePath then
+            
+            // ensure any refinement file path is valid
+            ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName refinementFilePath
+            
+            // refine the asset
+            match refinement with
+            | PsdToPngRefinementName ->
+                use image = new MagickImage (intermediateFilePath)
+                image.Write refinementFilePath
+            | OldSchoolRefinementName ->
+                use image = new MagickImage (intermediateFilePath)
+                image.Scale (Percentage 400)
+                image.Write refinementFilePath
+            | _ -> debug <| "Invalid refinement '" + refinement + "'."
+
+        // return the refinement locations
+        (refinementFileSubpath, refinementDirectory)
+
+    /// Apply all refinements to an asset.
+    let refineAsset inputDirectory refinementDirectory fullBuild asset =
+        List.fold
+            (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
+                refineAsset5 intermediateFileSubpath intermediateDirectory refinementDirectory fullBuild refinement)
+            (asset.FilePath, inputDirectory)
+            asset.Refinements
+
     /// Build all the assets.
-    let buildAssets inputDirectory tempDirectory outputDirectory fullBuild assets =
-        
-        // right now this function only copies if newer
+    let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets =
+
+        // build assets
         for asset in assets do
-            
-            // find asset file path
-            let assetFilePath = Path.Combine (inputDirectory, asset.FilePath)
-            
-            // set up output directory
-            let outputFilePath = Path.Combine (outputDirectory, asset.FilePath)
-            let outputDirectoryName = Path.GetDirectoryName outputFilePath
-            ignore <| Directory.CreateDirectory outputDirectoryName
-            
-            // process file if it exists and is newer
-            if  fullBuild || 
-                not <| File.Exists outputFilePath ||
-                File.GetLastWriteTimeUtc assetFilePath > File.GetLastWriteTimeUtc outputFilePath then
-                match asset.Refinements with
-                | [PsdToPngRefinementName] ->
 
-                    // set up temp directory
-                    let tempFilePath = Path.Combine (tempDirectory, PsdToPngRefinementName, asset.FilePath)
-                    let tempDirectoryName = Path.GetDirectoryName tempFilePath
-                    ignore <| Directory.CreateDirectory tempDirectoryName
+            // refine asset if needed
+            let (intermediateFileSubpath, intermediateDirectory) =
+                if not <| List.isEmpty asset.Refinements
+                then refineAsset inputDirectory refinementDirectory fullBuild asset
+                else (asset.FilePath, inputDirectory)
 
-                    // convert from pdn to png format
-                    let convertedTempFilePath = Path.ChangeExtension (tempFilePath, "png")
-                    let convertedOutputFilePath = Path.ChangeExtension (outputFilePath, "png")
-                    use image = new MagickImage (assetFilePath)
-                    image.Write convertedTempFilePath
-
-                    // copy file to output directory
-                    File.Copy (convertedTempFilePath, convertedOutputFilePath, true)
-
-                | _ -> File.Copy (assetFilePath, outputFilePath, true)
+            // copy the intermediate asset to output
+            let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
+            let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
+            ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName outputFilePath
+            File.Copy (intermediateFilePath, outputFilePath, true)
 
     /// Attempt to build all the assets found in the given asset graph.
-    let tryBuildAssetGraph inputDirectory tempDirectory outputDirectory fullBuild assetGraphFilePath =
+    let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =
+        
+        // attempt to load assets from the input directory
         let currentDirectory = Directory.GetCurrentDirectory ()
         let eitherAssets =
             try Directory.SetCurrentDirectory inputDirectory
                 tryLoadAssetsFromDocument None assetGraphFilePath    
             finally Directory.SetCurrentDirectory currentDirectory
+
+        // attempt to build assets
         match eitherAssets with
         | Right assets ->
-            try Right <| buildAssets inputDirectory tempDirectory outputDirectory fullBuild assets
+            try Right <| buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets
             with exn -> Left <| string exn
         | Left error -> Left error

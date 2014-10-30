@@ -42,8 +42,8 @@ module ProgramModule =
         | DragCameraNone
 
     type EditorState =
-        { TempDirectory : string
-          TargetDirectory : string
+        { TargetDirectory : string
+          RefinementDirectory : string
           GroupAddress : Address
           RightClickPosition : Vector2
           DragEntityState : DragEntityState
@@ -689,9 +689,9 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             let editorState = world.State.UserState :?> EditorState
             let targetDirectory = editorState.TargetDirectory
-            let tempDirectory = editorState.TempDirectory
+            let refinementDirectory = editorState.RefinementDirectory
             let assetSourceDirectory = Path.Combine (targetDirectory, "..\\..")
-            match World.tryReloadAssets assetSourceDirectory tempDirectory targetDirectory world with
+            match World.tryReloadAssets assetSourceDirectory targetDirectory refinementDirectory world with
             | Right world -> world
             | Left error ->
                 ignore <|
@@ -847,11 +847,11 @@ module Program =
         form.Show ()
         form
 
-    let tryMakeEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
+    let tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory =
         let groupAddress = EditorScreenAddress @+ [DefaultGroupName]
         let editorState =
-            { TempDirectory = tempDirectory
-              TargetDirectory = targetDirectory
+            { TargetDirectory = targetDirectory
+              RefinementDirectory = refinementDirectory
               GroupAddress = groupAddress
               RightClickPosition = Vector2.Zero
               DragEntityState = DragEntityNone
@@ -876,8 +876,8 @@ module Program =
             Right world
         | Left errorMsg -> Left errorMsg
 
-    let tryCreateEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory =
-        match tryMakeEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
+    let tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory =
+        match tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory with
         | Right world ->
             populateCreateComboBox form world
             populateTreeViewGroups form world
@@ -888,8 +888,8 @@ module Program =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let tempDirectory = "PipeTemp"
         let (targetDirectory, userComponentFactory) = selectTargetDirectoryAndMakeUserComponentFactory ()
+        let refinementDirectory = "Refinement"
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
         let sdlRendererFlags = enum<SDL.SDL_RendererFlags> (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED ||| int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
@@ -901,7 +901,7 @@ module Program =
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
             (fun sdlDeps ->
-                match tryCreateEditorWorld tempDirectory targetDirectory form worldChangers refWorld sdlDeps userComponentFactory with
+                match tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory with
                 | Right world as right ->
                     refWorld := world
                     right
