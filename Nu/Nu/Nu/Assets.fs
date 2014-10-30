@@ -71,7 +71,7 @@ module Assets =
         let attributes = node.Attributes
         match attributes.GetNamedItem DirectoryAttributeName with
         | null -> None
-        | directoryPath ->
+        | directory ->
             let searchOption =
                 match attributes.GetNamedItem RecursiveAttributeName with
                 | null -> SearchOption.TopDirectoryOnly
@@ -88,7 +88,7 @@ module Assets =
                 | associations ->
                     let converter = StringListTypeConverter ()
                     let associations = converter.ConvertFromString associations.InnerText :?> string list
-                    try let filePaths = Directory.GetFiles (directoryPath.InnerText, "*." + extension.InnerText, searchOption)
+                    try let filePaths = Directory.GetFiles (directory.InnerText, "*." + extension.InnerText, searchOption)
                         let assets =
                             Array.map
                                 (fun filePath ->
@@ -99,7 +99,7 @@ module Assets =
                                       PackageName = node.ParentNode.Name })
                                 filePaths
                         Some <| List.ofArray assets
-                    with exn -> debug <| "Invalid folder path '" + directoryPath.InnerText + "'."; None
+                    with exn -> debug <| "Invalid folder path '" + directory.InnerText + "'."; None
 
     /// Attempt to load all the assets from a package Xml node.
     let tryLoadAssetsFromPackageNode optAssociation (node : XmlNode) =
@@ -274,7 +274,8 @@ module Assets =
             let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
             let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
             ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName outputFilePath
-            File.Copy (intermediateFilePath, outputFilePath, true)
+            try File.Copy (intermediateFilePath, outputFilePath, true)
+            with _ -> () // just ignore copy issues due to assets possibly having a lock on them
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =
