@@ -71,23 +71,21 @@ module Assets =
             let associations = converter.ConvertFromString associations.InnerText :?> string list
             Some associations
 
-    let private getAssetExtension usingRawAssets refinements rawAssetExtension =
-        if usingRawAssets then
-            let builtAssetExtension =
-                List.fold
-                    (fun builtAssetExtension refinement ->
-                        match refinement with
-                        | PsdToPng -> "png"
-                        | OldSchool -> builtAssetExtension)
-                    rawAssetExtension
-                    refinements
-            builtAssetExtension
+    let private getAssetExtension2 rawAssetExtension refinement =
+        match refinement with
+        | PsdToPng -> "png"
+        | OldSchool -> rawAssetExtension
+
+    let private getAssetExtension usingRawAssets rawAssetExtension refinements =
+        if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
         else rawAssetExtension
 
     let private tryGetAssetExtension usingRawAssets refinements (node : XmlNode) =
         match node.Attributes.GetNamedItem ExtensionAttributeName with
         | null -> None
-        | rawAssetExtension -> Some <| getAssetExtension usingRawAssets refinements rawAssetExtension.InnerText
+        | rawAssetExtension -> 
+            let extension = getAssetExtension usingRawAssets rawAssetExtension.InnerText refinements
+            Some extension
 
     let private getAssetSearchOption (node : XmlNode) =
         match node.Attributes.GetNamedItem RecursiveAttributeName with
@@ -266,19 +264,16 @@ module Assets =
     let refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
+        let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
         let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
 
         // build the refinement file path
-        let refinementFileSubpath =
-            match refinement with
-            | PsdToPng -> Path.ChangeExtension (intermediateFileSubpath, "png")
-            | OldSchool -> intermediateFileSubpath
+        let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
+        let refinementFileSubpath = Path.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
         let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
 
-        // ensure the refinement file path is valid
-        ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName refinementFilePath
-            
         // refine the asset
+        ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName refinementFilePath
         match refinement with
         | PsdToPng ->
             use image = new MagickImage (intermediateFilePath)
@@ -288,7 +283,7 @@ module Assets =
             image.Scale (Percentage 400)
             image.Write refinementFilePath
 
-        // return the refinement localities
+        // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
@@ -311,11 +306,11 @@ module Assets =
             let inputFilePath = Path.Combine (inputDirectory, inputFileSubpath)
 
             // build the output file path
-            let outputFileExtension = getAssetExtension true asset.Refinements inputFileExtension
+            let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
             let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
             let outputFilePath = Path.Combine (outputDirectory, outputFileSubpath)
 
-            // build the asset if out of date
+            // build the asset if fully building or if it's out of date
             if  fullBuild ||
                 not <| File.Exists outputFilePath ||
                 File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
