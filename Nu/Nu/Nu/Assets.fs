@@ -7,6 +7,8 @@ open Prime
 open Nu
 open Nu.Constants
 
+// TODO: clean the shit out of this code. It is riddled with duplication and abstraction leaks.
+
 [<AutoOpen>]
 module AssetsModule =
 
@@ -41,54 +43,91 @@ module AssetsModule =
 [<RequireQualifiedAccess>]
 module Assets =
 
+    let private tryGetAssetFilePath (node : XmlNode) =
+        match node.Attributes.GetNamedItem FileAttributeName with
+        | null -> None
+        | filePath -> Some filePath.InnerText
+
+    let private tryGetAssetDirectory (node : XmlNode) =
+        match node.Attributes.GetNamedItem DirectoryAttributeName with
+        | null -> None
+        | directory -> Some directory.InnerText
+
+    let private tryGetAssetAssociations (node : XmlNode) =
+        match node.Attributes.GetNamedItem AssociationsAttributeName with
+        | null -> None
+        | associations ->
+            let converter = StringListTypeConverter ()
+            let associations = converter.ConvertFromString associations.InnerText :?> string list
+            Some associations
+
+    let private tryGetAssetExtension refined refinements unrefinedExtension =
+        if refined then
+            let refinedExtension =
+                List.fold
+                    (fun refinedExtension refinement ->
+                        match refinement with
+                        | PsdToPngRefinementName -> "png"
+                        | _ -> refinedExtension)
+                    unrefinedExtension
+                    refinements
+            Some refinedExtension
+        else Some unrefinedExtension
+
+    let private tryGetAssetExtensionFromAssetNode refined refinements (node : XmlNode) =
+        match node.Attributes.GetNamedItem ExtensionAttributeName with
+        | null -> None
+        | unrefinedExtensionNode -> tryGetAssetExtension refined refinements unrefinedExtensionNode.InnerText
+
+    let private tryGetAssetExtensionFromFilePath refined refinements filePath =
+        let unrefinedExtension = Path.GetExtension filePath
+        tryGetAssetExtension refined refinements unrefinedExtension
+
+    let private getAssetSearchOption (node : XmlNode) =
+        match node.Attributes.GetNamedItem RecursiveAttributeName with
+        | null -> SearchOption.TopDirectoryOnly
+        | isRecursive -> if isRecursive.InnerText = string true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
+
+    let private getAssetName filePath (node : XmlNode) =
+        match node.Attributes.GetNamedItem NameAttributeName with
+        | null -> Path.GetFileNameWithoutExtension filePath
+        | name -> name.InnerText
+
+    let private getAssetRefinements (node : XmlNode) =
+        match node.Attributes.GetNamedItem RefinementsAttributeName with
+        | null -> []
+        | refinements ->
+            let converter = StringListTypeConverter ()
+            converter.ConvertFromString refinements.InnerText :?> string list
+
     /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
-        let attributes = node.Attributes
-        match attributes.GetNamedItem FileAttributeName with
-        | null -> None
-        | filePath ->
-            let name =
-                match attributes.GetNamedItem NameAttributeName with
-                | null -> Path.GetFileNameWithoutExtension filePath.InnerText
-                | name -> name.InnerText
-            let refinements =
-                match attributes.GetNamedItem RefinementsAttributeName with
-                | null -> []
-                | refinements -> (StringListTypeConverter ()).ConvertFromString refinements.InnerText :?> string list
-            match attributes.GetNamedItem AssociationsAttributeName with
-            | null -> None
-            | associations ->
-                let associations = (StringListTypeConverter ()).ConvertFromString associations.InnerText :?> string list
+        match tryGetAssetFilePath node with
+        | Some filePath ->
+            let name = getAssetName filePath node
+            let refinements = getAssetRefinements node
+            match tryGetAssetAssociations node with
+            | Some associations ->
                 Some {
                     Name = name
-                    FilePath = filePath.InnerText
+                    FilePath = filePath
                     Refinements = refinements
                     Associations = associations
                     PackageName = node.ParentNode.Name }
+            | None -> None
+        | None -> None
 
     /// Attempt to load assets from the given Xml node.
-    let tryLoadAssetsFromAssetsNode (node : XmlNode) =
-        let attributes = node.Attributes
-        match attributes.GetNamedItem DirectoryAttributeName with
-        | null -> None
-        | directory ->
-            let searchOption =
-                match attributes.GetNamedItem RecursiveAttributeName with
-                | null -> SearchOption.TopDirectoryOnly
-                | isRecursive -> if isRecursive.InnerText = string true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
-            match attributes.GetNamedItem ExtensionAttributeName with
-            | null -> None
-            | extension ->
-                let refinements =
-                    match attributes.GetNamedItem RefinementsAttributeName with
-                    | null -> []
-                    | refinements -> (StringListTypeConverter ()).ConvertFromString refinements.InnerText :?> string list
-                match attributes.GetNamedItem AssociationsAttributeName with
-                | null -> None
-                | associations ->
-                    let converter = StringListTypeConverter ()
-                    let associations = converter.ConvertFromString associations.InnerText :?> string list
-                    try let filePaths = Directory.GetFiles (directory.InnerText, "*." + extension.InnerText, searchOption)
+    let tryLoadAssetsFromAssetsNode refined (node : XmlNode) =
+        match tryGetAssetDirectory node with
+        | Some directory ->
+            let searchOption = getAssetSearchOption node
+            let refinements = getAssetRefinements node
+            match tryGetAssetExtensionFromAssetNode refined refinements node with
+            | Some extension ->
+                match tryGetAssetAssociations node with
+                | Some associations ->
+                    try let filePaths = Directory.GetFiles (directory, "*." + extension, searchOption)
                         let assets =
                             Array.map
                                 (fun filePath ->
@@ -99,10 +138,13 @@ module Assets =
                                       PackageName = node.ParentNode.Name })
                                 filePaths
                         Some <| List.ofArray assets
-                    with exn -> debug <| "Invalid folder path '" + directory.InnerText + "'."; None
+                    with exn -> debug <| "Invalid directory '" + directory + "'."; None
+                | None -> None
+            | None -> None
+        | None -> None
 
     /// Attempt to load all the assets from a package Xml node.
-    let tryLoadAssetsFromPackageNode optAssociation (node : XmlNode) =
+    let tryLoadAssetsFromPackageNode refined optAssociation (node : XmlNode) =
         let assets =
             List.fold
                 (fun assets (assetNode : XmlNode) ->
@@ -112,7 +154,7 @@ module Assets =
                         | Some asset -> asset :: assets
                         | None -> debug <| "Invalid asset node in '" + node.Name + "' in asset graph."; assets
                     | AssetsNodeName ->
-                        match tryLoadAssetsFromAssetsNode assetNode with
+                        match tryLoadAssetsFromAssetsNode refined assetNode with
                         | Some loadedAssets -> loadedAssets @ assets
                         | None -> debug <| "Invalid assets node in '" + node.Name + "' in asset graph."; assets
                     | invalidNodeType -> debug <| "Invalid package child node type '" + invalidNodeType + "'."; assets)
@@ -125,7 +167,7 @@ module Assets =
         List.ofSeq associatedAssets
 
     /// Attempt to load all the assets from the document root Xml node.
-    let tryLoadAssetsFromRootNode optAssociation (node : XmlNode) =
+    let tryLoadAssetsFromRootNode refined optAssociation (node : XmlNode) =
         let possiblePackageNodes = List.ofSeq <| enumerable node.ChildNodes
         let packageNodes =
             List.fold
@@ -137,7 +179,7 @@ module Assets =
         let assetLists =
             List.fold
                 (fun assetLists packageNode ->
-                    let assets = tryLoadAssetsFromPackageNode optAssociation packageNode
+                    let assets = tryLoadAssetsFromPackageNode refined optAssociation packageNode
                     assets :: assetLists)
                 []
                 packageNodes
@@ -146,7 +188,7 @@ module Assets =
 
     /// Attempt to load all the assets from multiple package Xml nodes.
     /// TODO: test this function!
-    let tryLoadAssetsFromPackageNodes optAssociation nodes =
+    let tryLoadAssetsFromPackageNodes refined optAssociation nodes =
         let packageNames = List.map (fun (node : XmlNode) -> node.Name) nodes
         match packageNames with
         | [] ->
@@ -156,7 +198,7 @@ module Assets =
             let eitherPackageAssetLists =
                 List.map
                     (fun (node : XmlNode) ->
-                        match tryLoadAssetsFromRootNode optAssociation node with
+                        match tryLoadAssetsFromRootNode refined optAssociation node with
                         | Right assets -> Right (node.Name, assets)
                         | Left error -> Left error)
                     nodes
@@ -166,7 +208,7 @@ module Assets =
             | _ :: _ -> Left <| "Error(s) when loading assets '" + String.Join ("; ", errors) + "'."
 
     /// Attempt to load all the assets from a package.
-    let tryLoadAssetsFromPackage optAssociation packageName (assetGraphFilePath : string) =
+    let tryLoadAssetsFromPackage refined optAssociation packageName (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
             match document.[RootNodeName] with
@@ -181,13 +223,13 @@ module Assets =
                         possiblePackageNodes
                 match packageNodes with
                 | [] -> Left <| "Package node '" + packageName + "' is missing from asset graph."
-                | [packageNode] -> Right <| tryLoadAssetsFromPackageNode optAssociation packageNode
+                | [packageNode] -> Right <| tryLoadAssetsFromPackageNode refined optAssociation packageNode
                 | _ :: _ -> Left <| "Multiple packages with the same name '" + packageName + "' is an error."
         with exn -> Left <| string exn
 
     /// Attempt to load all the assets from multiple packages.
     /// TODO: test this function!
-    let tryLoadAssetsFromPackages optAssociation packageNames (assetGraphFilePath : string) =
+    let tryLoadAssetsFromPackages refined optAssociation packageNames (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
             match document.[RootNodeName] with
@@ -201,16 +243,16 @@ module Assets =
                             node.Name = PackageNodeName &&
                             Set.contains (node.Attributes.GetNamedItem NameAttributeName).InnerText packageNameSet)
                         possiblePackageNodes
-                tryLoadAssetsFromPackageNodes optAssociation packageNodes
+                tryLoadAssetsFromPackageNodes refined optAssociation packageNodes
         with exn -> Left <| string exn
 
     /// Try to load all the assets from an asset graph document.
-    let tryLoadAssetsFromDocument optAssociation (assetGraphFilePath : string) =
+    let tryLoadAssetsFromDocument refined optAssociation (assetGraphFilePath : string) =
         try let document = XmlDocument ()
             document.Load assetGraphFilePath
             match document.[RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
-            | rootNode -> tryLoadAssetsFromRootNode optAssociation rootNode
+            | rootNode -> tryLoadAssetsFromRootNode refined optAssociation rootNode
         with exn -> Left <| string exn
 
     /// Apply a single refinement to an asset.
@@ -284,7 +326,7 @@ module Assets =
         let currentDirectory = Directory.GetCurrentDirectory ()
         let eitherAssets =
             try Directory.SetCurrentDirectory inputDirectory
-                tryLoadAssetsFromDocument None assetGraphFilePath    
+                tryLoadAssetsFromDocument false None assetGraphFilePath    
             finally Directory.SetCurrentDirectory currentDirectory
 
         // attempt to build assets

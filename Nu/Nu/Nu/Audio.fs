@@ -131,7 +131,7 @@ module AudioModule =
             | _ -> trace <| "Could not load audio asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
     
         static member private tryLoadAudioPackage packageName audioPlayer =
-            let optAssets = Assets.tryLoadAssetsFromPackage (Some AudioAssociation) packageName audioPlayer.AssetGraphFilePath
+            let optAssets = Assets.tryLoadAssetsFromPackage true (Some AudioAssociation) packageName audioPlayer.AssetGraphFilePath
             match optAssets with
             | Right assets ->
                 let optAudioAssets = List.map AudioPlayer.tryLoadAudioAsset2 assets

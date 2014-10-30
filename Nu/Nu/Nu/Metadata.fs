@@ -83,7 +83,7 @@ module Metadata =
                 (fun assets (node : XmlNode) ->
                     match node.Name with
                     | AssetNodeName -> match Assets.tryLoadAssetFromAssetNode node with Some asset -> asset :: assets | None -> assets
-                    | AssetsNodeName -> match Assets.tryLoadAssetsFromAssetsNode node with Some assets' -> assets' @ assets | None -> assets
+                    | AssetsNodeName -> match Assets.tryLoadAssetsFromAssetsNode true node with Some assets' -> assets' @ assets | None -> assets
                     | _ -> [])
                 []
                 (List.ofSeq <| packageNode.OfType<XmlNode> ())

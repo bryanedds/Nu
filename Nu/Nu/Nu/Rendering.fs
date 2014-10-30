@@ -194,7 +194,7 @@ module RenderingModule =
             | _ -> trace <| "Could not load render asset '" + string asset + "' due to unknown extension '" + extension + "'."; None
 
         static member private tryLoadRenderPackage packageName renderer =
-            let optAssets = Assets.tryLoadAssetsFromPackage (Some RenderingAssociation) packageName renderer.AssetGraphFilePath
+            let optAssets = Assets.tryLoadAssetsFromPackage true (Some RenderingAssociation) packageName renderer.AssetGraphFilePath
             match optAssets with
             | Right assets ->
                 let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
