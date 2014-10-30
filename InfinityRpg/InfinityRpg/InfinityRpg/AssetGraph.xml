@@ -7,4 +7,7 @@
     <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="tmx" associations="[]"/>
   </Package>
+  <Package name="UI">
+    <Assets directory="Assets/UI" extension="psd" refinements="[PsdToPng; OldSchool]" associations="[Rendering]"/>
+  </Package>
 </Root>
