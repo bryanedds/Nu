@@ -266,9 +266,9 @@ module Assets =
 
             // refine asset if needed
             let (intermediateFileSubpath, intermediateDirectory) =
-                if not <| List.isEmpty asset.Refinements
-                then refineAsset inputDirectory refinementDirectory fullBuild asset
-                else (asset.FilePath, inputDirectory)
+                if List.isEmpty asset.Refinements
+                then (asset.FilePath, inputDirectory)
+                else refineAsset inputDirectory refinementDirectory fullBuild asset
 
             // copy the intermediate asset to output
             let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
