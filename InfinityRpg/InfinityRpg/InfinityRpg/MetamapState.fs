@@ -8,8 +8,8 @@ open Nu
 module MetamapModule =
 
     // TODO: see if we can get a proper immutable random type to avoid some of the likely
-    // surprising behavior that will happen here with System.Random mixed with the use of infinite
-    // sequences.
+    // surprising behavior that will happen here with System.Random is mixed with the use of
+    // infinite sequences.
 
     type Cardinality =
         | North
