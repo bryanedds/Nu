@@ -71,7 +71,7 @@ module Assets =
             let associations = converter.ConvertFromString associations.InnerText :?> string list
             Some associations
 
-    let private tryGetAssetExtension usingRawAssets refinements rawAssetExtension =
+    let private getAssetExtension usingRawAssets refinements rawAssetExtension =
         if usingRawAssets then
             let builtAssetExtension =
                 List.fold
@@ -81,17 +81,13 @@ module Assets =
                         | OldSchool -> builtAssetExtension)
                     rawAssetExtension
                     refinements
-            Some builtAssetExtension
-        else Some rawAssetExtension
+            builtAssetExtension
+        else rawAssetExtension
 
-    let private tryGetAssetExtensionFromAssetNode usingRawAssets refinements (node : XmlNode) =
+    let private tryGetAssetExtension usingRawAssets refinements (node : XmlNode) =
         match node.Attributes.GetNamedItem ExtensionAttributeName with
         | null -> None
-        | rawAssetExtension -> tryGetAssetExtension usingRawAssets refinements rawAssetExtension.InnerText
-
-    let private tryGetAssetExtensionFromFilePath usingRawAssets refinements rawAssetFilePath =
-        let rawAssetExtension = Path.GetExtension rawAssetFilePath
-        tryGetAssetExtension usingRawAssets refinements rawAssetExtension
+        | rawAssetExtension -> Some <| getAssetExtension usingRawAssets refinements rawAssetExtension.InnerText
 
     let private getAssetSearchOption (node : XmlNode) =
         match node.Attributes.GetNamedItem RecursiveAttributeName with
@@ -134,7 +130,7 @@ module Assets =
         | Some directory ->
             let searchOption = getAssetSearchOption node
             let refinements = getAssetRefinements node
-            match tryGetAssetExtensionFromAssetNode usingRawAssets refinements node with
+            match tryGetAssetExtension usingRawAssets refinements node with
             | Some extension ->
                 match tryGetAssetAssociations node with
                 | Some associations ->
@@ -267,48 +263,41 @@ module Assets =
         with exn -> Left <| string exn
 
     /// Apply a single refinement to an asset.
-    let refineAsset5 intermediateFileSubpath intermediateDirectory refinementDirectory fullBuild refinement =
+    let refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
 
         // build the intermediate file path
         let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
 
-        // build the refinement file subpath
+        // build the refinement file path
         let refinementFileSubpath =
             match refinement with
             | PsdToPng -> Path.ChangeExtension (intermediateFileSubpath, "png")
             | OldSchool -> intermediateFileSubpath
-
-        // build the refinement file path
         let refinementFilePath = Path.Combine (refinementDirectory, refinementFileSubpath)
 
-        // refine the asset if needed
-        if  fullBuild ||
-            not <| File.Exists refinementFilePath ||
-            File.GetLastWriteTimeUtc intermediateFilePath > File.GetLastWriteTimeUtc refinementFilePath then
+        // ensure the refinement file path is valid
+        ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName refinementFilePath
             
-            // ensure the refinement file path is valid
-            ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName refinementFilePath
-            
-            // refine the asset
-            match refinement with
-            | PsdToPng ->
-                use image = new MagickImage (intermediateFilePath)
-                image.Write refinementFilePath
-            | OldSchool ->
-                use image = new MagickImage (intermediateFilePath)
-                image.Scale (Percentage 400)
-                image.Write refinementFilePath
+        // refine the asset
+        match refinement with
+        | PsdToPng ->
+            use image = new MagickImage (intermediateFilePath)
+            image.Write refinementFilePath
+        | OldSchool ->
+            use image = new MagickImage (intermediateFilePath)
+            image.Scale (Percentage 400)
+            image.Write refinementFilePath
 
         // return the refinement localities
         (refinementFileSubpath, refinementDirectory)
 
     /// Apply all refinements to an asset.
-    let refineAsset inputDirectory refinementDirectory fullBuild asset =
+    let refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
         List.fold
             (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-                refineAsset5 intermediateFileSubpath intermediateDirectory refinementDirectory fullBuild refinement)
-            (asset.FilePath, inputDirectory)
-            asset.Refinements
+                refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+            (inputFileSubpath, inputDirectory)
+            refinements
 
     /// Build all the assets.
     let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets =
@@ -316,18 +305,32 @@ module Assets =
         // build assets
         for asset in assets do
 
-            // produce an intermediate asset if needed
-            let (intermediateFileSubpath, intermediateDirectory) =
-                if List.isEmpty asset.Refinements
-                then (asset.FilePath, inputDirectory)
-                else refineAsset inputDirectory refinementDirectory fullBuild asset
+            // build input file path
+            let inputFileSubpath = asset.FilePath
+            let inputFileExtension = Path.GetExtension inputFileSubpath
+            let inputFilePath = Path.Combine (inputDirectory, inputFileSubpath)
 
-            // attempt to copy the intermediate asset to output
-            let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
-            let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
-            ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName outputFilePath
-            try File.Copy (intermediateFilePath, outputFilePath, true)
-            with _ -> note <| "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + asset.Name + "' in package '" + asset.PackageName + "'."
+            // build the output file path
+            let outputFileExtension = getAssetExtension true asset.Refinements inputFileExtension
+            let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
+            let outputFilePath = Path.Combine (outputDirectory, outputFileSubpath)
+
+            // build the asset if out of date
+            if  fullBuild ||
+                not <| File.Exists outputFilePath ||
+                File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
+
+                // refine the asset
+                let (intermediateFileSubpath, intermediateDirectory) =
+                    if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
+                    else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
+
+                // attempt to copy the intermediate asset if output file is out of date
+                let intermediateFilePath = Path.Combine (intermediateDirectory, intermediateFileSubpath)
+                let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
+                ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName outputFilePath
+                try File.Copy (intermediateFilePath, outputFilePath, true)
+                with _ -> note <| "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + asset.Name + "' in package '" + asset.PackageName + "'."
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =
