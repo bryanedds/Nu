@@ -10,4 +10,7 @@
   <Package name="UI">
     <Assets directory="Assets/UI" extension="psd" refinements="[PsdToPng; OldSchool]" associations="[Rendering]"/>
   </Package>
+  <Package name="Gameplay">
+    <Assets directory="Assets/Gameplay" extension="psd" refinements="[PsdToPng; OldSchool]" associations="[Rendering]"/>
+  </Package>
 </Root>
