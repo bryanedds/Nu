@@ -10,5 +10,9 @@ module ComponentFactoryModule =
 
     type InfinityRpgComponentFactory () =
         inherit UserComponentFactory ()
-        override dispatcher.MakeGameDispatchers () =
+
+        override this.MakeFacets () =
+            Map.singleton typeof<CharacterAnimationFacet>.Name (CharacterAnimationFacet () :> Facet)
+
+        override this.MakeGameDispatchers () =
             Map.singleton typeof<InfinityRpgDispatcher>.Name (InfinityRpgDispatcher () :> GameDispatcher)

@@ -13,24 +13,24 @@ module BlazeProgression =
         inherit UserComponentFactory ()
 
         // make our game-specific entity dispatchers...
-        override dispatcher.MakeEntityDispatchers () =
+        override this.MakeEntityDispatchers () =
             Map.ofList
                 [typeof<BulletDispatcher>.Name, BulletDispatcher () :> EntityDispatcher
                  typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher
                  typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher]
 
         // make our game-specific group dispatchers...
-        override dispatcher.MakeGroupDispatchers () =
+        override this.MakeGroupDispatchers () =
             Map.ofList
                 [typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> GroupDispatcher]
 
         // make our game-specific screen dispatchers...
-        override dispatcher.MakeScreenDispatchers () =
+        override this.MakeScreenDispatchers () =
             Map.ofList
                 [typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> ScreenDispatcher]
 
         // make our game-specific game dispatchers...
-        override dispatcher.MakeGameDispatchers () =
+        override this.MakeGameDispatchers () =
             Map.ofList
                 [typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> GameDispatcher]
 

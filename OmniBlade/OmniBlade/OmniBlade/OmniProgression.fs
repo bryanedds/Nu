@@ -10,12 +10,12 @@ module OmniProgression =
     type OmniComponentFactory () =
         inherit UserComponentFactory ()
 
-        override dispatcher.MakeGroupDispatchers () =
+        override this.MakeGroupDispatchers () =
             Map.ofList
                 [typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> GroupDispatcher
                  typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> GroupDispatcher]
 
-        override dispatcher.MakeGameDispatchers () =
+        override this.MakeGameDispatchers () =
             Map.ofList
                 [typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> GameDispatcher]
 
