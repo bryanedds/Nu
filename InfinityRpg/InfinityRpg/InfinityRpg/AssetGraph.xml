@@ -13,5 +13,6 @@
   </Package>
   <Package name="Gameplay">
     <Assets directory="Assets/Gameplay" extension="psd" refinements="[PsdToPng; OldSchool]" associations="[Rendering]"/>
+    <Assets directory="Assets/Gameplay" extension="nugroup" associations="[]"/>
   </Package>
 </Root>

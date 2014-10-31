@@ -6,7 +6,7 @@ module Constants =
     let UIPackageName = "UI"
     let GameplayPackageName = "Gameplay"
 
-    // simulation constants
+    // title constants
     let TitleAddress = !* "Title"
     let TitleGroupFilePath = "Assets/UI/Title.nugroup"
     let ClickTitleNewGameEventAddress = !* "Click/Title/Group/NewGame"
