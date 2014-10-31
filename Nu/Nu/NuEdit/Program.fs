@@ -425,6 +425,7 @@ module Program =
                      MessageBoxIcon.Error)
 
     let tryLoadFile (form : NuEditForm) filePath world =
+        
         try // remove current group
             let editorState = World.getUserState world
             let world = unsubscribeFromEntityEvents world
@@ -440,9 +441,14 @@ module Program =
             let world = snd <| World.addGroup groupAddress group entities world
             let world = subscribeToEntityEvents form world
 
+            // refresh tree view
+            refreshTreeView form world
+
             // update save file name
             form.saveFileDialog.FileName <- Path.GetFileName filePath
             world
+
+        // handle load failure
         with exn ->
             ignore <|
                 MessageBox.Show

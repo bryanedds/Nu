@@ -6,7 +6,7 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-416, -208</Position>
+        <Position>-408, -200</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -16,7 +16,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>32, -208</Position>
+        <Position>32, -200</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -24,18 +24,9 @@
           <UpImage type="Nu.RenderingModule+Image">ExitUp, UI</UpImage>
         </Xtension>
       </Entity>
-      <Entity dispatcherName="LabelDispatcher">
-        <Name>Title</Name>
-        <Position>-512, 8</Position>
-        <Size>1024, 256</Size>
-        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
-        <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">TitleLabel, UI</LabelImage>
-        </Xtension>
-      </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
-        <Position>32, -80</Position>
+        <Position>32, -72</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -45,12 +36,22 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
-        <Position>-408, -80</Position>
+        <Position>-408, -72</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderingModule+Image">NewGameDown, UI</DownImage>
           <UpImage type="Nu.RenderingModule+Image">NewGameUp, UI</UpImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="LabelDispatcher">
+        <Name>Title</Name>
+        <Position>-512, 16</Position>
+        <Depth>-1</Depth>
+        <Size>1024, 256</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">TitleLabel, UI</LabelImage>
         </Xtension>
       </Entity>
     </Entities>
