@@ -11,24 +11,20 @@ module MetamapModule =
     // surprising behavior that will happen here with System.Random is mixed with the use of
     // infinite sequences.
 
-    type Cardinality =
-        | North
-        | East
-        | South
-        | West
+    type Direction with
 
-        static member intToCardinality n =
+        static member intToDirection n =
             match n with
             | 0 -> North
             | 1 -> East
             | 2 -> South
             | 3 -> West
-            | _ -> failwith <| "Invalid Cardinality converstion from number '" + string n + "'."
+            | _ -> failwith <| "Invalid Direction conversion from int '" + string n + "'."
 
         static member random (random : Random) =
             let randomValueMax = 3
             let randomValue = random.Next randomValueMax
-            let cardinality = Cardinality.intToCardinality randomValue
+            let cardinality = Direction.intToDirection randomValue
             (random, cardinality)
 
         static member walk (source : Vector2I) cardinality =
@@ -39,8 +35,8 @@ module MetamapModule =
             | West -> Vector2I (source.X - 1, source.Y)
 
         static member stumble (random : Random) (source : Vector2I) =
-            let (random, cardinality) = Cardinality.random random
-            let destination = Cardinality.walk source cardinality
+            let (random, cardinality) = Direction.random random
+            let destination = Direction.walk source cardinality
             (random, destination)
 
         static member tryStumbleUntil predicate tryLimit (random : Random) (source : Vector2I) =
@@ -48,7 +44,7 @@ module MetamapModule =
             let stumblings =
                 take <|
                     Seq.unfold
-                        (fun random -> Some (Cardinality.stumble random source, random))
+                        (fun random -> Some (Direction.stumble random source, random))
                         random
             Seq.tryFind predicate stumblings
 
@@ -56,7 +52,7 @@ module MetamapModule =
             let stumblePredicate = fun trail (_, destination) -> Set.ofList trail |> Set.contains destination |> not
             Seq.definitize <|
                 Seq.unfold
-                    (fun ((random, trail), source) -> Some (Cardinality.tryStumbleUntil (stumblePredicate trail) stumbleLimit random source, ((random, source :: trail), source)))
+                    (fun ((random, trail), source) -> Some (Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit random source, ((random, source :: trail), source)))
                     ((random, []), source)
 
         static member tryWanderUntil predicate tryLimit stumbleLimit (random : Random) (source : Vector2I) =
@@ -64,7 +60,7 @@ module MetamapModule =
             let wanderings =
                 take <|
                     Seq.unfold
-                        (fun (random, source) -> Some (Cardinality.wander stumbleLimit random source, (random, source)))
+                        (fun (random, source) -> Some (Direction.wander stumbleLimit random source, (random, source)))
                         (random, source)
             Seq.tryFind predicate wanderings
 
@@ -80,11 +76,11 @@ module MetamapModule =
                     let uniqueSites = Set.ofList sites
                     List.length sites = Set.count uniqueSites
                 else false
-            Cardinality.tryWanderUntil predicate tryLimit stumbleLimit random source
+            Direction.tryWanderUntil predicate tryLimit stumbleLimit random source
 
     type Metapiece<'k when 'k : comparison> =
-        { ClosedSides : Cardinality Set
-          LockedSides : Map<Cardinality, 'k>
+        { ClosedSides : Direction Set
+          LockedSides : Map<Direction, 'k>
           Keys : 'k Set }
 
     type Metamap<'k when 'k : comparison>  =

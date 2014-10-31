@@ -102,7 +102,7 @@ module SpriteFacetModule =
         inherit Facet ()
 
         static member FieldDefinitions =
-            [define? SpriteImage { ImageAssetName = "Image3"; PackageName = "Default"}]
+            [define? SpriteImage { ImageAssetName = "Image3"; PackageName = "Default" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
@@ -158,7 +158,7 @@ module AnimatedSpriteFacetModule =
              define? TileCount 16 
              define? TileRun 4
              define? TileSize <| Vector2 (16.0f, 16.0f)
-             define? AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default"}]
+             define? AnimatedSpriteImage { ImageAssetName = "Image7"; PackageName = "Default" }]
 
         override facet.GetRenderDescriptors (entity : Entity, world) =
             if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then

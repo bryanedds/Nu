@@ -62,6 +62,7 @@
     <PostBuildEvent>"$(ProjectDir)..\..\..\Nu\Nu\NuPipe\bin\$(ConfigurationName)\NuPipe.exe" "$(ProjectDir)\" "$(TargetDir)\" "$(ProjectDir)Refinement" False</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Core.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="MetamapState.fs" />
     <Compile Include="CharacterState.fs" />
