@@ -27,14 +27,16 @@ module Serialization =
     /// Read an Xtension's fields from Xml.
     let readXFields (valueNode : XmlNode) =
         let childNodes = enumerable valueNode.ChildNodes
-        Seq.map
-            (fun (xNode : XmlNode) ->
+        Seq.fold
+            (fun xFields (xNode : XmlNode) ->
                 let typeName = xNode.Attributes.[TypeAttributeName].InnerText
                 let aType = Reflection.findType typeName
                 let xValueStr = xNode.InnerText
                 let converter = TypeDescriptor.GetConverter aType
-                if converter.CanConvertFrom typeof<string> then (xNode.Name, converter.ConvertFrom xValueStr)
-                else failwith <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'.")
+                if converter.CanConvertFrom typeof<string>
+                then Map.add xNode.Name (converter.ConvertFrom xValueStr) xFields
+                else debug <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."; xFields)
+            Map.empty
             childNodes
 
     /// Read dispatcherName from an xml node.
@@ -57,7 +59,7 @@ module Serialization =
 
     /// Read an Xtension from Xml.
     let readXtension valueNode =
-        let xFields = Map.ofSeq <| readXFields valueNode
+        let xFields = readXFields valueNode
         { XFields = xFields; CanDefault = false; Sealed = true }
 
     /// Attempt to read a target's property from Xml.
@@ -65,7 +67,7 @@ module Serialization =
         if property.PropertyType = typeof<Xtension> then
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
-            let xtension = { xtension with XFields = Map.addMany xFields xtension.XFields }
+            let xtension = { xtension with XFields = xtension.XFields @@ xFields }
             property.SetValue (target, xtension)
         else
             let valueStr = valueNode.InnerText
@@ -132,7 +134,7 @@ module Serialization =
                 let xValue = xField.Value
                 let xValueType = xValue.GetType ()
                 let xConverter = TypeDescriptor.GetConverter xValueType
-                let xValueStr = xConverter.ConvertTo (xValue, typeof<string>) :?> string
+                let xValueStr = xConverter.ConvertToString xValue
                 writer.WriteStartElement xFieldName
                 writer.WriteAttributeString (TypeAttributeName, xValueType.FullName)
                 writer.WriteString xValueStr
@@ -155,5 +157,5 @@ module Serialization =
                 if  isPropertyPersistent target property &&
                     shouldWriteProperty property.Name then
                     let converter = TypeDescriptor.GetConverter property.PropertyType
-                    let valueStr = converter.ConvertTo (propertyValue, typeof<string>) :?> string
+                    let valueStr = converter.ConvertToString propertyValue
                     writer.WriteElementString (property.Name, valueStr)
