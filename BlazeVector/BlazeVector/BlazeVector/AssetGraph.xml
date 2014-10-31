@@ -49,6 +49,4 @@
     <Asset name="StageUI" file="Assets/BlazeVector/Groups/StageUI.nugroup" associations="[]"/>
     <Asset name="StagePlay" file="Assets/BlazeVector/Groups/StagePlay.nugroup" associations="[]"/>
   </Package>
-  <Package name="Group">
-  </Package>
 </Root>

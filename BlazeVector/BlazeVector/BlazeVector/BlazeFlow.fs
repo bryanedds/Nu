@@ -68,7 +68,7 @@ module BlazeFlow =
         // clicked, and handles the event by transitioning to the Credits screen
         let world = World.subscribe4 ClickTitleCreditsEventAddress Address.empty (World.handleAsScreenTransition CreditsAddress) world
 
-        // subscribe4s to the event that is raised when the Title screen's Exit button is clicked,
+        // subscribes to the event that is raised when the Title screen's Exit button is clicked,
         // and handles the event by exiting the game
         World.subscribe4 ClickTitleExitEventAddress Address.empty World.handleAsExit world
 
@@ -104,7 +104,7 @@ module BlazeFlow =
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
-            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
+            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime splashScreenImage world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound NuSplashSound 1.0f world
