@@ -6,7 +6,7 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-408, -200</Position>
+        <Position>-416, -216</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -16,7 +16,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>32, -200</Position>
+        <Position>40, -216</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -26,7 +26,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
-        <Position>32, -72</Position>
+        <Position>40, -72</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -36,7 +36,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
-        <Position>-408, -72</Position>
+        <Position>-416, -72</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>

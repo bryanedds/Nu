@@ -13,6 +13,11 @@ module Constants =
     let ClickTitleCreditsEventAddress = !* "Click/Title/Group/Credits"
     let ClickTitleExitEventAddress = !* "Click/Title/Group/Exit"
 
+    // credits constants
+    let CreditsAddress = !* "Credits"
+    let CreditsGroupFilePath = "Assets/UI/Credits.nugroup"
+    let ClickCreditsBackEventAddress = !* "Click/Credits/Group/Back"
+
     // transition constants
     let IncomingTime = 20L
     let OutgoingTime = 30L
