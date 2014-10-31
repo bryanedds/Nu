@@ -6,7 +6,7 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-416, -224</Position>
+        <Position>-416, -208</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -16,7 +16,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>32, -224</Position>
+        <Position>32, -208</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -26,7 +26,7 @@
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>InfinityRpg</Name>
-        <Position>-512, 0</Position>
+        <Position>-512, 8</Position>
         <Size>1024, 256</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
         <Xtension>
@@ -35,7 +35,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
-        <Position>32, -88</Position>
+        <Position>32, -80</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
@@ -45,7 +45,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
-        <Position>-416, -88</Position>
+        <Position>-408, -80</Position>
         <Size>384, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
