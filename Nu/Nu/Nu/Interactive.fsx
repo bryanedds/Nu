@@ -8,6 +8,9 @@
 #r "C:/Development/FPWorks/Nu/xUnit/xunit.dll"
 #r "C:/Development/FPWorks/Nu/FSharpx.Core/FSharpx.Core.dll"
 #r "C:/Development/FPWorks/Nu/Farseer/FarseerPhysics.dll"
+#r "C:/Development/FPWorks/Nu/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "C:/Development/FPWorks/Nu/FParsec/FParsec.dll"
+#r "C:/Development/FPWorks/Nu/Magick.NET/Magick.NET-AnyCPU.dll"
 #r "C:/Development/FPWorks/Nu/SDL2#/Debug/SDL2#.dll"
 #r "C:/Development/FPWorks/Nu/TiledSharp/Debug/TiledSharp.dll"
 #r "C:/Development/FPWorks/SDL2Addendum/SDL2Addendum/SDL2Addendum/bin/Debug/SDL2Addendum.dll"
@@ -18,6 +21,8 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Core.fs"
 #load "Constants.fs"
 #load "Math.fs"
+#load "Reader.fs"
+#load "Converter.fs"
 #load "Xtension.fs"
 #load "Overlayer.fs"
 #load "Serialization.fs"
@@ -39,8 +44,10 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "World.fs"
 
 open System
+open FParsec
 open SDL2
 open OpenTK
 open TiledSharp
+open Prime
 open Nu
 open Nu.Constants

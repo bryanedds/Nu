@@ -66,6 +66,8 @@
     <Compile Include="Core.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="Math.fs" />
+    <Compile Include="Reader.fs" />
+    <Compile Include="Converter.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="Serialization.fs" />
@@ -87,6 +89,7 @@
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />
     <Compile Include="XtensionTests.fs" />
+    <Compile Include="ReaderTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ReactTests.fs" />
     <Compile Include="Program.fs" />
@@ -152,6 +155,12 @@
     </ProjectReference>
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\Farseer\FarseerPhysics.dll</HintPath>
+    </Reference>
+    <Reference Include="FParsec">
+      <HintPath>..\..\FParsec\FParsec.dll</HintPath>
+    </Reference>
+    <Reference Include="FParsecCS">
+      <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>

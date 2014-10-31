@@ -76,7 +76,7 @@ module Reader =
         nextCharSatisfiesNot (fun chr -> isLetter chr || isDigit chr || isSpecialNameChar chr)
     
     /// Skip a whitespace character.
-    let skipSpace = skipAnyOf WhitespaceChars
+    let skipWhitespaceChar = skipAnyOf WhitespaceChars
 
     /// Skip a line comment.
     let skipLineComment = skipChar LineCommentChar >>. skipRestOfLine true
@@ -89,14 +89,14 @@ module Reader =
             (skipString CloseMultilineCommentStr)
             (skipCharsTillString CloseMultilineCommentStr false System.Int32.MaxValue)
 
-    /// Skip whitespace text.
-    let skipWhitespace = skipLineComment <|> skipMultilineComment <|> skipSpace
+    /// Skip a single unit of whitespace text.
+    let skipWhitespaceUnit = skipLineComment <|> skipMultilineComment <|> skipWhitespaceChar
 
-    /// Skip any white space characters.
-    let skipWhitespaces = skipMany skipWhitespace
+    /// Skip whitespace.
+    let skipWhitespace = skipMany skipWhitespaceUnit
 
-    /// Skip at least one white space character.
-    let skipWhitespaces1 = skipMany1 skipWhitespace
+    /// Skip at least instance of whitespace.
+    let skipWhitespace1 = skipMany1 skipWhitespaceUnit
 
     /// Skip a double quote character.
     let skipDoubleQuote = skipChar DoubleQuoteChar
@@ -113,7 +113,7 @@ module Reader =
     /// Skip a character form.
     let charForm character =
         skipChar character >>.
-        skipWhitespaces
+        skipWhitespace
 
     /// Skip a colon form.
     let colonForm = charForm ColonChar
@@ -148,7 +148,7 @@ module Reader =
     /// Skip a form with a series of chars.
     let charsForm str =
         skipString str >>.
-        skipWhitespaces
+        skipWhitespace
 
     /// Skip an open triangle form.
     let openTriangleForm = charsForm OpenTriangleStr
@@ -162,8 +162,8 @@ module Reader =
     /// Skip a string form.
     let strForm str closeChar =
         skipString str >>.
-        (skipWhitespaces1 <|> followedBy (pchar closeChar)) >>.
-        skipWhitespaces
+        (skipWhitespace1 <|> followedBy (pchar closeChar)) >>.
+        skipWhitespace
 
     /// Skip a violation form.
     let violationForm closeChar = strForm ViolationStr closeChar
@@ -258,13 +258,13 @@ module Reader =
         skipColon >>.
         firstNameChar .>>.
         nameChars .>>
-        skipWhitespaces |>>
+        skipWhitespace |>>
         fun (first, rest) -> String.implode (ColonChar :: first :: rest)
 
     /// Read an F# string.
     let readStr str =
         pstring str .>>
-        skipWhitespaces
+        skipWhitespace
 
     /// Read the content of a character.
     let readCharacterContent = literalChar
@@ -279,7 +279,7 @@ module Reader =
     let readName =
         firstNameChar .>>.
         nameChars .>>
-        skipWhitespaces |>>
+        skipWhitespace |>>
         fun (head, tail) -> String.implode (head :: tail)
     
     /// Read multiple names.
@@ -290,7 +290,7 @@ module Reader =
     /// arg was parsed, so we hack by using a Keyword here to follow along...
     let readArgAsAbstracting =
         betweenTriangleForms readName .>>
-        skipWhitespaces |>>
+        skipWhitespace |>>
         fun name -> Violation (makeViolationRecord true name (makeLiteralStringValue EmptyStr) UnitValue None)
 
     /// Read an concrete arg as a string.
@@ -328,14 +328,14 @@ module Reader =
     let readDeclarativeExprs2 = many2 readDeclarativeExpr
 
     /// Read expressions until the end of the input.
-    let readExprsTillEnd = skipWhitespaces >>. readExprs .>> eof
+    let readExprsTillEnd = skipWhitespace >>. readExprs .>> eof
 
     /// Read the contents of a package.
     let readPackageContents =
         readName .>>
         colonForm .>>.
         readProceduralExpr .>>
-        skipWhitespaces
+        skipWhitespace
 
     /// Read a package.
     let readPackage =
@@ -457,7 +457,7 @@ module Reader =
     /// Read a reserved name.
     let readReservedName =
         (attempt readCapitalizedNameStr <|> readReservedNameStr) .>>
-        skipWhitespaces |>>
+        skipWhitespace |>>
         fun reservedName -> makeViolationWithoutBreakpoint ":v/reader/reservedChars" ("Reserved character(s) in '" + reservedName + "'.")
 
     /// Read a boolean.
@@ -465,7 +465,7 @@ module Reader =
         parse {
             let! start = getPosition
             let! value = readStr TrueStr <|> readStr FalseStr
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return Boolean (makeBooleanRecord (value = TrueStr) optPositions) }
@@ -476,7 +476,7 @@ module Reader =
             let! start = getPosition
             do! skipBackslash
             let! chr = between skipDoubleQuote skipDoubleQuote readCharacterContent
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return Character (makeCharacterRecord chr optPositions) }
@@ -486,7 +486,7 @@ module Reader =
         parse {
             let! start = getPosition
             let! str = between skipDoubleQuote skipDoubleQuote readLiteralStringContent
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return String (makeStringRecord (makeStringValue str LiteralString) optPositions) }
@@ -497,7 +497,7 @@ module Reader =
             let! start = getPosition
             do! skipHash
             let! str = between skipDoubleQuote skipDoubleQuote readVerbatimStringContent
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return String (makeStringRecord (makeStringValue str VerbatimString) optPositions) }
@@ -513,7 +513,7 @@ module Reader =
             let! _ = opt (skipString IntSuffixStr)
             do! notFollowedByLetterOrDigitOrNameChar
             do! notFollowedByDot
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return Int (makeIntRecord value optPositions) }
@@ -535,7 +535,7 @@ module Reader =
             let! value = attempt readSmallLong <|> readLargeLong
             do! notFollowedByLetterOrDigitOrNameChar
             do! notFollowedByDot
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return Long (makeLongRecord value optPositions) }
@@ -551,7 +551,7 @@ module Reader =
                     ((skipString FloatSuffixStr |>> fun _ -> false) <|>
                      (skipString DoubleSuffixStr |>> fun _ -> true)))
             do! notFollowedByLetterOrDigitOrNameChar
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return
@@ -564,7 +564,7 @@ module Reader =
         parse {
             let! start = getPosition
             let! value = readKeywordValueWithWhitespace
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return Keyword (makeKeywordRecord value optPositions) }
@@ -584,7 +584,7 @@ module Reader =
         parse {
             let! start = getPosition
             let! name = readName
-            do! skipWhitespaces
+            do! skipWhitespace
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
             return Symbol (makeSymbolRecord name (ref CEUncached) optPositions) }
@@ -601,7 +601,7 @@ module Reader =
                     | AmpersandChar -> AmpersandPrefix
                     | AtChar -> AtPrefix
                     | _ -> failwith "Unexpected match failure in 'Aml.Reader.readPrefixed'."
-            do! notFollowedBy skipWhitespace
+            do! notFollowedBy skipWhitespaceUnit
             let! value = readPrefixedExpr
             let! stop = getPosition
             let optPositions = Some (makeParserPositions start stop)
@@ -635,7 +635,7 @@ module Reader =
                 skipString DocStr >>.
                 colonForm >>.
                 readString .>>
-                skipWhitespaces |>>
+                skipWhitespace |>>
                 fun string -> (exprToOptStringValue string).Value))
 
     /// Read a lambda.
@@ -1092,7 +1092,7 @@ module Reader =
         parse {
             let! start = getPosition
             do! skipChar OpenCurlyChar
-            do! skipWhitespaces
+            do! skipWhitespace
             let! exprs = readPackagesOrProceduralExprs
             let exprCount = exprs.Length
             do! closeCurlyForm
@@ -1135,7 +1135,7 @@ module Reader =
                 match stream.Peek () with
                 | '(' ->
                     let start = stream.State    
-                    ignore (skipWhitespaces stream)
+                    ignore (skipWhitespace stream)
                     ignore (stream.ReadCharOrNewline ())
                     if skip ViolationStr WhitespaceCharsAndParens stream start then readViolation stream
                     elif skip FunStr WhitespaceCharsAndParens stream start then readLambda stream
@@ -1164,7 +1164,7 @@ module Reader =
             let! start = getPosition
             do! skipChar DotChar
             let! stop = getPosition
-            do! skipWhitespaces
+            do! skipWhitespace
             let optPositions = Some (makeParserPositions start stop)
             return fun target key ->
                 match key with
@@ -1177,7 +1177,7 @@ module Reader =
             let! start = getPosition
             do! skipString DoubleColonStr
             let! stop = getPosition
-            do! skipWhitespaces
+            do! skipWhitespace
             let optPositions = Some (makeParserPositions start stop)
             return fun target key ->
                 match key with
@@ -1200,7 +1200,7 @@ module Reader =
                 | '[' ->
                     let start = stream.State
                     ignore (stream.ReadCharOrNewline ())  
-                    ignore (skipWhitespaces stream)
+                    ignore (skipWhitespace stream)
                     if skip DefinitionStr WhitespaceCharsAndBrackets stream start then readVariableOrFunction stream
                     elif skip StructureStr WhitespaceCharsAndBrackets stream start then readStructure stream
                     elif skip ProtocolStr WhitespaceCharsAndBrackets stream start then readProtocol stream
