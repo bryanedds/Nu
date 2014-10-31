@@ -62,7 +62,7 @@
   <ItemGroup>
     <Compile Include="BlazeConstants.fs" />
     <Compile Include="BlazeDispatchers.fs" />
-    <Compile Include="BlazeFlow.fs" />
+    <Compile Include="BlazeProgression.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">
