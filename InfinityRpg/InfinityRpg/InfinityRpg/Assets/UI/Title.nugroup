@@ -25,12 +25,12 @@
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Name>InfinityRpg</Name>
+        <Name>Title</Name>
         <Position>-512, 8</Position>
         <Size>1024, 256</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">InfinityRpg, UI</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">TitleLabel, UI</LabelImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
