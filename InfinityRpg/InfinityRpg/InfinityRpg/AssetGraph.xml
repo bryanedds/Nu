@@ -9,6 +9,7 @@
   </Package>
   <Package name="UI">
     <Assets directory="Assets/UI" extension="psd" refinements="[PsdToPng; OldSchool]" associations="[Rendering]"/>
+    <Assets directory="Assets/UI" extension="nugroup" associations="[]"/>
   </Package>
   <Package name="Gameplay">
     <Assets directory="Assets/Gameplay" extension="psd" refinements="[PsdToPng; OldSchool]" associations="[Rendering]"/>
