@@ -76,21 +76,6 @@
     <Content Include="Overlay.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Resource Include="Assets/Default/Image.png" />
-    <Resource Include="Assets/Default/Image2.png" />
-    <Resource Include="Assets/Default/Image3.png" />
-    <Resource Include="Assets/Default/Image4.png" />
-    <Resource Include="Assets/Default/Image5.png" />
-    <Resource Include="Assets/Default/Image6.png" />
-    <Resource Include="Assets/Default/Image7.png" />
-    <Resource Include="Assets/Default/Image8.png" />
-    <Resource Include="Assets/Default/Image9.png" />
-    <Resource Include="Assets/Default/Image10.png" />
-    <Resource Include="Assets/Default/FreeMonoBold.032.ttf" />
-    <Resource Include="Assets/Default/Song.ogg" />
-    <Resource Include="Assets/Default/Sound.wav" />
-    <Resource Include="Assets/Default/TileMap.tmx" />
-    <Resource Include="Assets/Default/TileSet.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\SDL2Addendum\SDL2Addendum\SDL2Addendum\SDL2Addendum.csproj">
