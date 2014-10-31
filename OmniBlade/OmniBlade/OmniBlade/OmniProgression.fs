@@ -5,7 +5,7 @@ open Nu
 open Nu.Constants
 open OmniBlade
 open OmniBlade.OmniConstants
-module OmniFlow =
+module OmniProgression =
 
     type OmniComponentFactory () =
         inherit UserComponentFactory ()
@@ -46,7 +46,7 @@ module OmniFlow =
             let world = World.hintRenderingPackageUse UIPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
-            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name IncomingTimeSplash IdlingTime OutgoingTimeSplash splashScreenImage world
+            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime splashScreenImage world
             let world = addTitleScreen world
             let world = addLoadGameScreen world
             let world = addCreditsScreen world

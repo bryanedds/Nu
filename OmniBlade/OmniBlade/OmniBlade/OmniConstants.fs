@@ -16,14 +16,15 @@ module OmniConstants =
     let GameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName }
 
     // transition constants
-    let IncomingTimeSplash = 60L
     let IncomingTime = 20L
-    let IdlingTime = 60L
-    let OutgoingTimeSplash = 40L
     let OutgoingTime = 30L
+    let StageOutgoingTime = 90L
 
     // splash constants
     let SplashAddress = !* "Splash"
+    let SplashIncomingTime = 60L
+    let SplashIdlingTime = 60L
+    let SplashOutgoingTime = 40L
 
     // title constants
     let TitleAddress = !* "Title"

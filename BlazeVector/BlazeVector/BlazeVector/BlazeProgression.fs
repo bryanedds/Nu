@@ -5,7 +5,7 @@ open Nu
 open Nu.Constants
 open BlazeVector
 open BlazeVector.BlazeConstants
-module BlazeFlow =
+module BlazeProgression =
     
     /// Creates BlazeVector-specific components (dispatchers and facets).
     /// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
