@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+  <Group dispatcherName="GroupDispatcher">
+    <Name>Group</Name>
+    <Xtension />
+    <Entities>
+      <Entity dispatcherName="LabelDispatcher">
+        <Position>-456, -56</Position>
+        <Size>512, 128</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">ProgrammingLabel, UI</LabelImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="ButtonDispatcher">
+        <Name>Back</Name>
+        <Position>-184, -232</Position>
+        <Size>384, 64</Size>
+        <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+        <Xtension>
+          <DownImage type="Nu.RenderingModule+Image">BackDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">BackUp, UI</UpImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="LabelDispatcher">
+        <Name>Credits</Name>
+        <Position>-512, 16</Position>
+        <Depth>-1</Depth>
+        <Size>1024, 256</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">CreditsLabel, UI</LabelImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="LabelDispatcher">
+        <Position>32, -160</Position>
+        <Size>512, 128</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">BryanEddsLabel, UI</LabelImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="LabelDispatcher">
+        <Position>-424, -160</Position>
+        <Size>512, 128</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">MusicAndArtLabel, UI</LabelImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="LabelDispatcher">
+        <Position>64, -56</Position>
+        <Size>512, 128</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">BryanEddsLabel, UI</LabelImage>
+        </Xtension>
+      </Entity>
+    </Entities>
+  </Group>
+</Root>
