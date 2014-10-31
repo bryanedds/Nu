@@ -9,8 +9,8 @@
     <Assets directory="Assets/Default" extension="tmx" associations="[]"/>
   </Package>
   <Package name="UI">
-    <Asset name="CreditsGroup" file="Assets/BlazeVector/Groups/Credits.nugroup" associations="[]"/>
-    <Asset name="TitleGroup" file="Assets/BlazeVector/Groups/Title.nugroup" associations="[]"/>
+    <Asset name="Credits" file="Assets/BlazeVector/Groups/Credits.nugroup" associations="[]"/>
+    <Asset name="Title" file="Assets/BlazeVector/Groups/Title.nugroup" associations="[]"/>
     <Asset name="BackButtonUp" file="Assets/BlazeVector/UI/BackButtonUp.png" associations="[Rendering]"/>
     <Asset name="BackButtonDown" file="Assets/BlazeVector/UI/BackButtonDown.png" associations="[Rendering]"/>
     <Asset name="CreditsButtonUp" file="Assets/BlazeVector/UI/CreditsButtonUp.png" associations="[Rendering]"/>
