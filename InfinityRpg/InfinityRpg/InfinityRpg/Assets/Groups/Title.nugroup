@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+  <Group dispatcherName="GroupDispatcher">
+    <Name>Group</Name>
+    <Xtension />
+    <Entities>
+      <Entity dispatcherName="ButtonDispatcher">
+        <Name>Credits</Name>
+        <Position>-416, -224</Position>
+        <Size>384, 64</Size>
+        <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+        <Xtension>
+          <DownImage type="Nu.RenderingModule+Image">CreditsDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">CreditsUp, UI</UpImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="ButtonDispatcher">
+        <Name>Exit</Name>
+        <Position>32, -224</Position>
+        <Size>384, 64</Size>
+        <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+        <Xtension>
+          <DownImage type="Nu.RenderingModule+Image">ExitDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">ExitUp, UI</UpImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="LabelDispatcher">
+        <Name>InfinityRpg</Name>
+        <Position>-512, 0</Position>
+        <Size>1024, 256</Size>
+        <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
+        <Xtension>
+          <LabelImage type="Nu.RenderingModule+Image">InfinityRpg, UI</LabelImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="ButtonDispatcher">
+        <Name>LoadGame</Name>
+        <Position>32, -88</Position>
+        <Size>384, 64</Size>
+        <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+        <Xtension>
+          <DownImage type="Nu.RenderingModule+Image">LoadGameDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">LoadGameUp, UI</UpImage>
+        </Xtension>
+      </Entity>
+      <Entity dispatcherName="ButtonDispatcher">
+        <Name>NewGame</Name>
+        <Position>-416, -88</Position>
+        <Size>384, 64</Size>
+        <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
+        <Xtension>
+          <DownImage type="Nu.RenderingModule+Image">NewGameDown, UI</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">NewGameUp, UI</UpImage>
+        </Xtension>
+      </Entity>
+    </Entities>
+  </Group>
+</Root>
