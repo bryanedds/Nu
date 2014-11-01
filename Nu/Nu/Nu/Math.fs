@@ -22,29 +22,9 @@ module MathModule =
     /// Depicts whether a view is purposed to render in relative or absolute space. For
     /// example, UI entities are rendered in absolute space since they remain still no matter
     /// where the camera moves, and vice versa for non-UI entities.
-    type [<StructuralEquality; NoComparison; TypeConverter (typeof<ViewTypeTypeConverter>)>] ViewType =
+    type [<StructuralEquality; NoComparison; TypeConverter (typeof<AlgebraicConverter<ViewType>>)>] ViewType =
         | Absolute
         | Relative
-
-    /// Converts ViewType types.
-    and ViewTypeTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, _, source, _) =
-            let bodyType = source :?> ViewType
-            match bodyType with
-            | Absolute -> "Absolute" :> obj
-            | Relative -> "Relative" :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<ViewType> then
-                match source :?> string with
-                | "Absolute" -> Absolute :> obj
-                | "Relative" -> Relative :> obj
-                | other -> failwith <| "Unknown ViewType '" + other + "'."
-            else source
 
     /// Converts Vector2 types.
     type Vector2TypeConverter () =
