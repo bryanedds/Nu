@@ -36,7 +36,7 @@ module Overlayer =
                 match optIncludeNames with
                 | null -> None
                 | includeNames ->
-                    let converter = StringListTypeConverter ()
+                    let converter = StringListConverter ()
                     let includeNames = converter.ConvertFromString includeNames.InnerXml :?> string list
                     let includeNames = Array.ofList includeNames // TODO: see if we can remove this array 'cast'
                     let mutable optNode = None

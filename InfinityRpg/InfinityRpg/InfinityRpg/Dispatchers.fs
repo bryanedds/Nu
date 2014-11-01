@@ -1,4 +1,6 @@
 ﻿namespace InfinityRpg
+open System
+open System.ComponentModel
 open Nu
 
 [<AutoOpen>]
@@ -25,7 +27,7 @@ module CharacterAnimationFacetModule =
                 [(CharacterAnimationFacing, CharacterAnimationFacingData)
                  (CharacterAnimationActing, CharacterAnimationActingData)] }
 
-    type CharacterAnimationState =
+    type [<TypeConverter (typeof<AlgebraicConverter<CharacterAnimationState>>)>] CharacterAnimationState =
         { CharacterAnimationType : CharacterAnimationType
           CharacterAnimationDirection : Direction
           CharacterAnimationStartTime : int64 }

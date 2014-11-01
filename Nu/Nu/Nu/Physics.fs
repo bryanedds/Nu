@@ -57,33 +57,10 @@ module PhysicsModule =
         | PolygonShape of PolygonShape
 
     /// The type of a physics body; Static, Kinematic, or Dynamic.
-    type [<StructuralEquality; NoComparison; TypeConverter (typeof<BodyTypeTypeConverter>)>] BodyType =
+    type [<StructuralEquality; NoComparison; TypeConverter (typeof<AlgebraicConverter<BodyType>>)>] BodyType =
         | Static
         | Kinematic
         | Dynamic
-
-    /// Converts BodyType types.
-    /// TODO: factor out a simple DU type converter.
-    and BodyTypeTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, _, source, _) =
-            let bodyType = source :?> BodyType
-            match bodyType with
-            | Static -> "Static" :> obj
-            | Kinematic -> "Kinematic" :> obj
-            | Dynamic -> "Dynamic" :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Vector2> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<BodyType> then
-                match source :?> string with
-                | "Static" -> Static :> obj
-                | "Kinematic" -> Kinematic :> obj
-                | "Dynamic" -> Dynamic :> obj
-                | other -> failwith <| "Unknown BodyType '" + other + "'."
-            else source
 
     /// The properties needed to describe a physical body.
     type [<StructuralEquality; NoComparison>] BodyProperties =
