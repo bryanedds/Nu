@@ -14,7 +14,12 @@ open Nu.Constants
 module RenderingModule =
 
     /// Describes an image asset.
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
+    type
+        [<StructuralEquality;
+          NoComparison;
+          TypeConverter (typeof<AlgebraicConverter<Image>>);
+          XDefaultValue (DefaultImageValue)>]
+        Image =
         { ImageAssetName : string
           PackageName : string }
 
@@ -29,7 +34,12 @@ module RenderingModule =
           Color : Vector4 }
 
     /// Describes a tile map asset.
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
+    type
+        [<StructuralEquality;
+          NoComparison;
+          TypeConverter (typeof<AlgebraicConverter<TileMapAsset>>);
+          XDefaultValue (DefaultTileMapAssetValue)>]
+        TileMapAsset =
         { TileMapAssetName : string
           PackageName : string }
 
@@ -47,7 +57,12 @@ module RenderingModule =
           TileSetImage : Image }
     
     /// Describes a font asset.
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
+    type
+        [<StructuralEquality;
+          NoComparison;
+          TypeConverter (typeof<AlgebraicConverter<Font>>);
+          XDefaultValue (DefaultFontValue)>]
+        Font =
         { FontAssetName : string
           PackageName : string }
 
@@ -96,57 +111,6 @@ module RenderingModule =
     type [<ReferenceEquality>] RenderAsset =
         | TextureAsset of nativeint
         | FontAsset of nativeint * int
-
-    /// Converts Image types.
-    type ImageTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let s = source :?> Image
-            String.Format (culture, "{0}, {1}", s.ImageAssetName, s.PackageName) :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Image> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Image> then
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                { ImageAssetName = args.[0]; PackageName = args.[1] } :> obj
-            else source
-
-    /// Converts TileMapAsset types.
-    type TileMapAssetTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let s = source :?> TileMapAsset
-            String.Format (culture, "{0}, {1}", s.TileMapAssetName, s.PackageName) :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Image> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<TileMapAsset> then
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                { TileMapAssetName = args.[0]; PackageName = args.[1] } :> obj
-            else source
-
-    /// Converts Font types.
-    type FontTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let s = source :?> Font
-            String.Format (culture, "{0}, {1}", s.FontAssetName, s.PackageName) :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Font> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Font> then
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                { FontAssetName = args.[0]; PackageName = args.[1] } :> obj
-            else source
 
     /// The renderer. Represents the rendering system in Nu generally.
     type IRenderer =
@@ -461,12 +425,3 @@ module RenderingModule =
         interface IRenderer with
             member renderer.HandleRenderExit () = renderer :> IRenderer
             member renderer.Render (_, _, _) = renderer :> IRenderer
-
-[<RequireQualifiedAccess>]
-module Rendering =
-
-    /// Initializes the type converters found in RenderingModule.
-    let initTypeConverters () =
-        assignTypeConverter<Image, ImageTypeConverter> ()
-        assignTypeConverter<Font, FontTypeConverter> ()
-        assignTypeConverter<TileMapAsset, TileMapAssetTypeConverter> ()
