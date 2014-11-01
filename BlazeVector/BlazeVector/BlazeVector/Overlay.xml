@@ -11,9 +11,9 @@
 
   <!-- Add user-defined dispatcher overlays here... -->
 
-  <SampleDispatcherOverlay include="{EntityDispatcher}">
+  <SampleDispatcherOverlay include="[EntityDispatcher]">
     <Size>100;100</Size>
-    <FacetNames>{SpriteFacet}</FacetNames>
+    <FacetNames>[SpriteFacet]</FacetNames>
   </SampleDispatcherOverlay>
 
 </Root>

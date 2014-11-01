@@ -141,7 +141,7 @@ module MathModule =
             if destType = typeof<string> then
                 let value = source :?> string list
                 let valueStr = String.Join ("; ", Array.ofList value)
-                let valueStr = "{" + valueStr + "}"
+                let valueStr = "[" + valueStr + "]"
                 valueStr :> obj
             elif destType = typeof<string list> then source
             else failwith "Invalid StringListConverter conversion to source."

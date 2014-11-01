@@ -15,7 +15,7 @@
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
         <Xtension>
           <Parallax type="System.Single">0.1</Parallax>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundA | Stage]</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">{BackgroundA | Stage}</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
@@ -24,7 +24,7 @@
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
         <Xtension>
           <Parallax type="System.Single">0.1</Parallax>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundB | Stage]</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">{BackgroundB | Stage}</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
@@ -49,7 +49,7 @@
         <Position>-480, -304</Position>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
         <Xtension>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[Section2 | Stage]</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">{Section2 | Stage}</TileMapAsset>
         </Xtension>
       </Entity>
     </Entities>
