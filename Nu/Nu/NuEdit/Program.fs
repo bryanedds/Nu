@@ -575,6 +575,7 @@ module Program =
             match optEntityTds with
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
+                let world = pushPastWorld world world
                 let entity = World.getEntity entityTds.Address world
                 let (entity, world) = World.removeEntity entityTds.Address entity world
                 let world = World.transformUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
