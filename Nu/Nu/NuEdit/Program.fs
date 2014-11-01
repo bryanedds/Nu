@@ -79,10 +79,14 @@ module Program =
           RefWorld : World ref }
 
     and EntityPropertyDescriptor (property) =
-        inherit PropertyDescriptor ((match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name), Array.empty)
+        inherit PropertyDescriptor
+            ((match property with
+              | EntityXFieldDescriptor x -> x.FieldName
+              | EntityPropertyInfo p -> p.Name),
+             [||])
 
         let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name
-        let propertyType = match property with EntityXFieldDescriptor x -> Reflection.findType x.TypeName | EntityPropertyInfo p -> p.PropertyType
+        let propertyType = match property with EntityXFieldDescriptor x -> Type.GetTypeUnqualified x.TypeName | EntityPropertyInfo p -> p.PropertyType
         let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
 
         /// Synchonize an entity after an overlay change.
@@ -192,11 +196,12 @@ module Program =
                         Seq.fold
                             (fun xFieldDescriptors (xField : KeyValuePair<string, obj>) ->
                                 let fieldName = xField.Key
+                                let fieldValue = xField.Value
+                                let fieldType = fieldValue.GetType ()
                                 if Serialization.isPropertyPersistentByName fieldName then
-                                    let typeName = (xField.Value.GetType ()).FullName
-                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = typeName }
-                                    let xFieldDescriptor = EntityPropertyDescriptor xFieldDescriptor :> PropertyDescriptor
-                                    xFieldDescriptor :: xFieldDescriptors
+                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = fieldType.FullName }
+                                    let xFieldDescriptor = EntityPropertyDescriptor xFieldDescriptor
+                                    xFieldDescriptor :> PropertyDescriptor :: xFieldDescriptors
                                 else xFieldDescriptors)
                             []
                             xtension.XFields
@@ -639,16 +644,14 @@ module Program =
             | ("", _) -> ignore <| MessageBox.Show "Enter an XField name."; world
             | (_, "") -> ignore <| MessageBox.Show "Enter a type name."; world
             | (xFieldName, typeName) ->
-                match Reflection.tryFindType typeName with
+                match Type.TryGetTypeUnqualified typeName with
                 | Some aType ->
                     let selectedObject = form.propertyGrid.SelectedObject
                     match selectedObject with
                     | :? EntityTypeDescriptorSource as entityTds ->
                         let world = pushPastWorld world world
                         let entity = World.getEntity entityTds.Address world
-                        let xFieldValue =
-                            if aType = typeof<string> then String.Empty :> obj
-                            else Activator.CreateInstance aType
+                        let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
                         let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
                         let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
                         let world = World.setEntity entityTds.Address entity world

@@ -21,7 +21,7 @@ module Option =
         | None -> aDefault
 
     /// Convert a nullable value into an option.
-    let fromNullable obj =
+    let denull obj =
         match obj with
         | null -> None
         | obj -> Some obj

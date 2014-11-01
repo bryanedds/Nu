@@ -33,6 +33,7 @@ module WorldModule =
     let private ScreenTransitionUpKeyboardKeyKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
     let private AnyEventAddressesCache = Dictionary<Address, Address list> HashIdentity.Structural
+    let private Assemblies = Dictionary<string, Assembly> ()
 
     type World with
 
@@ -867,12 +868,15 @@ module WorldModule =
             snd <| Game.register world.Game world
 
         static member init () =
-            
-            // ensure the current culture is invariate
-            System.Threading.Thread.CurrentThread.CurrentCulture <-
-                System.Globalization.CultureInfo.InvariantCulture
 
-            // init the math converters
+            // make types load reflectively from pathed (non-static) assemblies
+            AppDomain.CurrentDomain.AssemblyLoad.Add (fun args -> Assemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+            AppDomain.CurrentDomain.add_AssemblyResolve <| ResolveEventHandler (fun _ args -> snd <| Assemblies.TryGetValue args.Name)
+
+            // ensure the current culture is invariate
+            System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
+
+            // init math type converters
             Math.initTypeConverters ()
 
             // assign functions to the pub / sub refs.
