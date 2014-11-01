@@ -140,7 +140,7 @@ module MathModule =
         override this.ConvertTo (_, _, source, destType) =
             if destType = typeof<string> then
                 let value = source :?> string list
-                let valueStr = String.Join (";", Array.ofList value)
+                let valueStr = String.Join ("; ", Array.ofList value)
                 let valueStr = "[" + valueStr + "]"
                 valueStr :> obj
             elif destType = typeof<string list> then source
