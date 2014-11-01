@@ -493,6 +493,7 @@ module Physics =
 
     /// Evaluate a collision expression.
     /// TODO: explain syntax.
+    /// TODO: see if AlgebraicConverter can be used here instead of this shitty custom syntax.
     /// TODO: propagate errors rather than tracing in place
     let evalCollisionExpression (extent : Vector2) (expr : string) =
         let terms = List.ofArray <| expr.Split '?'
