@@ -6,7 +6,7 @@ open FParsec
 open Prime
 
 [<RequireQualifiedAccess>]
-module Reader =
+module AlgebraicReader =
 
     (* Reads strings with the following parses -
 
@@ -22,8 +22,7 @@ module Reader =
         [Fst; Snd]
 
         (* Complex Unions *)
-        {AnimationData; 4; 8}
-    *)
+        {AnimationData; 4; 8} *)
 
     let [<Literal>] WhitespaceChars = " \t\n\r"
     let [<Literal>] SeparatorChar = ';'
