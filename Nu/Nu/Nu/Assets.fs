@@ -63,13 +63,12 @@ module Assets =
         | null -> None
         | directory -> Some directory.InnerText
 
-    let private tryGetAssetAssociations (node : XmlNode) =
+    let private getAssetAssociations (node : XmlNode) =
         match node.Attributes.GetNamedItem AssociationsAttributeName with
-        | null -> None
+        | null -> []
         | associations ->
             let converter = StringListConverter ()
-            let associations = converter.ConvertFromString associations.InnerText :?> string list
-            Some associations
+            converter.ConvertFromString associations.InnerText :?> string list
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -110,16 +109,14 @@ module Assets =
         match tryGetAssetFilePath node with
         | Some filePath ->
             let name = getAssetName filePath node
+            let associations = getAssetAssociations node
             let refinements = getAssetRefinements node
-            match tryGetAssetAssociations node with
-            | Some associations ->
-                Some {
-                    Name = name
-                    FilePath = filePath
-                    Refinements = refinements
-                    Associations = associations
-                    PackageName = node.ParentNode.Name }
-            | None -> None
+            Some {
+                Name = name
+                FilePath = filePath
+                Refinements = refinements
+                Associations = associations
+                PackageName = node.ParentNode.Name }
         | None -> None
 
     /// Attempt to load assets from the given Xml node.
@@ -127,24 +124,22 @@ module Assets =
         match tryGetAssetDirectory node with
         | Some directory ->
             let searchOption = getAssetSearchOption node
+            let associations = getAssetAssociations node
             let refinements = getAssetRefinements node
             match tryGetAssetExtension usingRawAssets refinements node with
             | Some extension ->
-                match tryGetAssetAssociations node with
-                | Some associations ->
-                    try let filePaths = Directory.GetFiles (directory, "*." + extension, searchOption)
-                        let assets =
-                            Array.map
-                                (fun filePath ->
-                                    { Name = Path.GetFileNameWithoutExtension filePath
-                                      FilePath = filePath
-                                      Associations = associations
-                                      Refinements = refinements
-                                      PackageName = node.ParentNode.Name })
-                                filePaths
-                        Some <| List.ofArray assets
-                    with exn -> debug <| "Invalid directory '" + directory + "'."; None
-                | None -> None
+                try let filePaths = Directory.GetFiles (directory, "*." + extension, searchOption)
+                    let assets =
+                        Array.map
+                            (fun filePath ->
+                                { Name = Path.GetFileNameWithoutExtension filePath
+                                  FilePath = filePath
+                                  Associations = associations
+                                  Refinements = refinements
+                                  PackageName = node.ParentNode.Name })
+                            filePaths
+                    Some <| List.ofArray assets
+                with exn -> debug <| "Invalid directory '" + directory + "'."; None
             | None -> None
         | None -> None
 
