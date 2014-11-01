@@ -16,19 +16,19 @@ module AlgebraicConverterModule =
             if FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
                 let tupleFieldStrs = List.map toString <| List.ofArray tupleFields
-                let tupleStr = String.Join ("; ", tupleFieldStrs)
-                "[" + tupleStr + "]"
+                let tupleStr = String.Join (" | ", tupleFieldStrs)
+                "{" + tupleStr + "}"
             elif FSharpType.IsRecord sourceType then
                 let recordFields = FSharpValue.GetRecordFields source
                 let recordFieldStrs = List.map toString <| List.ofArray recordFields
-                let recordStr = String.Join ("; ", recordFieldStrs)
-                "[" + recordStr + "]"
+                let recordStr = String.Join (" | ", recordFieldStrs)
+                "{" + recordStr + "}"
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 if not <| Array.isEmpty unionFields then
                     let unionFieldStrs = List.map toString <| List.ofArray unionFields
                     let unionStrs = unionCase.Name :: unionFieldStrs
-                    let unionStr = String.Join ("; ", unionStrs)
+                    let unionStr = String.Join (" | ", unionStrs)
                     "{" + unionStr + "}"
                 else unionCase.Name
             else
@@ -54,7 +54,7 @@ module AlgebraicConverterModule =
                             fromReaderValue recordFieldType recordReaderValue)
                         recordReaderValues
                 FSharpValue.MakeRecord (destType, Array.ofList recordValues)
-            elif FSharpType.IsUnion destType then
+            elif FSharpType.IsUnion destType && destType <> typeof<string list> then
                 let unionCases = FSharpType.GetUnionCases destType
                 match readerValue with
                 | :? (obj list) ->

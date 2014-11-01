@@ -18,24 +18,17 @@ module AlgebraicReader =
         CharacterAnimationFacing
 
         (* Complex Values *)
-        [0, 1; 2, 4]
-        [Fst; Snd]
-
-        (* Complex Unions *)
-        {AnimationData; 4; 8} *)
+        {0, 1 | 2, 4}
+        {AnimationData | 4 | 8} *)
 
     let [<Literal>] WhitespaceChars = " \t\n\r"
-    let [<Literal>] SeparatorChar = ';'
-    let [<Literal>] SeparatorStr = ";"
-    let [<Literal>] OpenComplexValueChar = '['
-    let [<Literal>] OpenComplexValueStr = "["
-    let [<Literal>] CloseComplexValueChar = ']'
-    let [<Literal>] CloseComplexValueStr = "]"
-    let [<Literal>] OpenComplexUnionChar = '{'
-    let [<Literal>] OpenComplexUnionStr = "{"
-    let [<Literal>] CloseComplexUnionChar = '}'
-    let [<Literal>] CloseComplexUnionStr = "}"
-    let [<Literal>] StructureChars = ";{}[]"
+    let [<Literal>] SeparatorChar = '|'
+    let [<Literal>] SeparatorStr = "|"
+    let [<Literal>] OpenComplexValueChar = '{'
+    let [<Literal>] OpenComplexValueStr = "{"
+    let [<Literal>] CloseComplexValueChar = '}'
+    let [<Literal>] CloseComplexValueStr = "}"
+    let [<Literal>] StructureChars = "{}|"
     
     let skipWhitespaceChar = skipAnyOf WhitespaceChars
     let skipWhitespace = skipMany skipWhitespaceChar
@@ -43,8 +36,6 @@ module AlgebraicReader =
     let charForm character = skipChar character >>. skipWhitespace
     let openComplexValueForm = charForm OpenComplexValueChar
     let closeComplexValueForm = charForm CloseComplexValueChar
-    let openComplexUnionForm = charForm OpenComplexUnionChar
-    let closeComplexUnionForm = charForm CloseComplexUnionChar
     let separatorForm = charForm SeparatorChar
 
     let (readValue : Parser<obj, unit>, readValueRef : Parser<obj, unit> ref) =
@@ -80,29 +71,9 @@ module AlgebraicReader =
             do! skipWhitespace
             return values :> obj }
 
-    let readComplexUnionName =
-        parse {
-            let! unionName = readName
-            do! separatorForm
-            do! skipWhitespace
-            return unionName }
-
-    let readComplexUnion =
-        parse {
-            do! openComplexUnionForm
-            let! unionName = readComplexUnionName
-            let! values = readValues
-            do! closeComplexUnionForm
-            do! skipWhitespace
-            return unionName :: values :> obj }
-
     do readValueRef :=
-        parse {
-            let! value =
-                attempt readSimpleValue <|>
-                attempt readComplexValue <|>
-                readComplexUnion
-            return value }
+        attempt readSimpleValue <|>
+        readComplexValue
     
     let stringToValue str =
         match run (skipWhitespace >>. !readValueRef) str with
