@@ -17,19 +17,19 @@ module AlgebraicConverterModule =
                 let tupleFields = FSharpValue.GetTupleFields source
                 let tupleFieldStrs = List.map toString <| List.ofArray tupleFields
                 let tupleStr = String.Join (" | ", tupleFieldStrs)
-                "[" + tupleStr + "]"
+                "{" + tupleStr + "}"
             elif FSharpType.IsRecord sourceType then
                 let recordFields = FSharpValue.GetRecordFields source
                 let recordFieldStrs = List.map toString <| List.ofArray recordFields
                 let recordStr = String.Join (" | ", recordFieldStrs)
-                "[" + recordStr + "]"
+                "{" + recordStr + "}"
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 if not <| Array.isEmpty unionFields then
                     let unionFieldStrs = List.map toString <| List.ofArray unionFields
                     let unionStrs = unionCase.Name :: unionFieldStrs
                     let unionStr = String.Join (" | ", unionStrs)
-                    "[" + unionStr + "]"
+                    "{" + unionStr + "}"
                 else unionCase.Name
             else
                 let converter = TypeDescriptor.GetConverter sourceType

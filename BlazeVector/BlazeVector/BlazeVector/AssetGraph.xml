@@ -1,33 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <Package name="Default">
-    <Asset name="Font" file="Assets/Default/FreeMonoBold.032.ttf" associations="{Rendering}"/>
-    <Assets directory="Assets/Default" extension="png" associations="{Rendering}"/>
-    <Assets directory="Assets/Default" extension="wav" associations="{Audio}"/>
-    <Assets directory="Assets/Default" extension="ogg" associations="{Audio}"/>
+    <Asset name="Font" file="Assets/Default/FreeMonoBold.032.ttf" associations="[Rendering]"/>
+    <Assets directory="Assets/Default" extension="png" associations="[Rendering]"/>
+    <Assets directory="Assets/Default" extension="wav" associations="[Audio]"/>
+    <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
   <Package name="UI">
     <Asset name="Credits" file="Assets/BlazeVector/Groups/Credits.nugroup"/>
     <Asset name="Title" file="Assets/BlazeVector/Groups/Title.nugroup"/>
-    <Asset name="BackButtonUp" file="Assets/BlazeVector/UI/BackButtonUp.png" associations="{Rendering}"/>
-    <Asset name="BackButtonDown" file="Assets/BlazeVector/UI/BackButtonDown.png" associations="{Rendering}"/>
-    <Asset name="CreditsButtonUp" file="Assets/BlazeVector/UI/CreditsButtonUp.png" associations="{Rendering}"/>
-    <Asset name="CreditsButtonDown" file="Assets/BlazeVector/UI/CreditsButtonDown.png" associations="{Rendering}"/>
-    <Asset name="ExitButtonUp" file="Assets/BlazeVector/UI/ExitButtonUp.png" associations="{Rendering}"/>
-    <Asset name="ExitButtonDown" file="Assets/BlazeVector/UI/ExitButtonDown.png" associations="{Rendering}"/>
-    <Asset name="PlayButtonUp" file="Assets/BlazeVector/UI/PlayButtonUp.png" associations="{Rendering}"/>
-    <Asset name="PlayButtonDown" file="Assets/BlazeVector/UI/PlayButtonDown.png" associations="{Rendering}"/>
-    <Asset name="Machinery" file="Assets/BlazeVector/UI/Machinery.ogg" associations="{Audio}"/>
-    <Asset name="Nu" file="Assets/BlazeVector/UI/Nu.wav" associations="{Audio}"/>
+    <Asset name="BackButtonUp" file="Assets/BlazeVector/UI/BackButtonUp.png" associations="[Rendering]"/>
+    <Asset name="BackButtonDown" file="Assets/BlazeVector/UI/BackButtonDown.png" associations="[Rendering]"/>
+    <Asset name="CreditsButtonUp" file="Assets/BlazeVector/UI/CreditsButtonUp.png" associations="[Rendering]"/>
+    <Asset name="CreditsButtonDown" file="Assets/BlazeVector/UI/CreditsButtonDown.png" associations="[Rendering]"/>
+    <Asset name="ExitButtonUp" file="Assets/BlazeVector/UI/ExitButtonUp.png" associations="[Rendering]"/>
+    <Asset name="ExitButtonDown" file="Assets/BlazeVector/UI/ExitButtonDown.png" associations="[Rendering]"/>
+    <Asset name="PlayButtonUp" file="Assets/BlazeVector/UI/PlayButtonUp.png" associations="[Rendering]"/>
+    <Asset name="PlayButtonDown" file="Assets/BlazeVector/UI/PlayButtonDown.png" associations="[Rendering]"/>
+    <Asset name="Machinery" file="Assets/BlazeVector/UI/Machinery.ogg" associations="[Audio]"/>
+    <Asset name="Nu" file="Assets/BlazeVector/UI/Nu.wav" associations="[Audio]"/>
   </Package>
   <Package name="Stage">
-    <Asset name="Player" file="Assets/BlazeVector/Stage/Player.png" associations="{Rendering}"/>
-    <Asset name="PlayerBullet" file="Assets/BlazeVector/Stage/PlayerBullet.png" associations="{Rendering}"/>
-    <Asset name="Enemy" file="Assets/BlazeVector/Stage/Enemy.png" associations="{Rendering}"/>
-    <Asset name="EnemyBullet" file="Assets/BlazeVector/Stage/EnemyBullet.png" associations="{Rendering}"/>
-    <Asset name="RoadTileSet" file="Assets/BlazeVector/Stage/RoadTileSet.png" associations="{Rendering}"/>
-    <Asset name="SkylineTileSet" file="Assets/BlazeVector/Stage/SkylineTileSet.png" associations="{Rendering}"/>
+    <Asset name="Player" file="Assets/BlazeVector/Stage/Player.png" associations="[Rendering]"/>
+    <Asset name="PlayerBullet" file="Assets/BlazeVector/Stage/PlayerBullet.png" associations="[Rendering]"/>
+    <Asset name="Enemy" file="Assets/BlazeVector/Stage/Enemy.png" associations="[Rendering]"/>
+    <Asset name="EnemyBullet" file="Assets/BlazeVector/Stage/EnemyBullet.png" associations="[Rendering]"/>
+    <Asset name="RoadTileSet" file="Assets/BlazeVector/Stage/RoadTileSet.png" associations="[Rendering]"/>
+    <Asset name="SkylineTileSet" file="Assets/BlazeVector/Stage/SkylineTileSet.png" associations="[Rendering]"/>
     <Asset name="Section0Group" file="Assets/BlazeVector/Groups/Section0.nugroup"/>
     <Asset name="Section0" file="Assets/BlazeVector/Stage/Section0.tmx"/>
     <Asset name="Section1Group" file="Assets/BlazeVector/Groups/Section1.nugroup"/>
@@ -39,12 +39,12 @@
     <Asset name="BackgroundA" file="Assets/BlazeVector/Stage/BackgroundA.tmx"/>
     <Asset name="BackgroundB" file="Assets/BlazeVector/Stage/BackgroundB.tmx"/>
     <Asset name="RoadTileSet" file="Assets/BlazeVector/Stage/RoadTileSet.tsx"/>
-    <Asset name="DeadBlaze" file="Assets/BlazeVector/Stage/DeadBlaze.ogg" associations="{Audio}"/>
-    <Asset name="Shot" file="Assets/BlazeVector/Stage/Shot.wav" associations="{Audio}"/>
-    <Asset name="Jump" file="Assets/BlazeVector/Stage/Jump.wav" associations="{Audio}"/>
-    <Asset name="Hit" file="Assets/BlazeVector/Stage/Hit.wav" associations="{Audio}"/>
-    <Asset name="Explosion" file="Assets/BlazeVector/Stage/Explosion.wav" associations="{Audio}"/>
-    <Asset name="Death" file="Assets/BlazeVector/Stage/Death.wav" associations="{Audio}"/>
+    <Asset name="DeadBlaze" file="Assets/BlazeVector/Stage/DeadBlaze.ogg" associations="[Audio]"/>
+    <Asset name="Shot" file="Assets/BlazeVector/Stage/Shot.wav" associations="[Audio]"/>
+    <Asset name="Jump" file="Assets/BlazeVector/Stage/Jump.wav" associations="[Audio]"/>
+    <Asset name="Hit" file="Assets/BlazeVector/Stage/Hit.wav" associations="[Audio]"/>
+    <Asset name="Explosion" file="Assets/BlazeVector/Stage/Explosion.wav" associations="[Audio]"/>
+    <Asset name="Death" file="Assets/BlazeVector/Stage/Death.wav" associations="[Audio]"/>
     <Asset name="StageUI" file="Assets/BlazeVector/Groups/StageUI.nugroup"/>
     <Asset name="StagePlay" file="Assets/BlazeVector/Groups/StagePlay.nugroup"/>
   </Package>
