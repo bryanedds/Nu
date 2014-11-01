@@ -31,7 +31,7 @@ module AlgebraicConverterModule =
                     let unionStr = String.Join ("; ", unionStrs)
                     "{" + unionStr + "}"
                 else unionCase.Name
-            else failwith "Invalid FSharpTypeConverter conversion to string."
+            else failwith "Invalid AlgebraicConverter conversion to string."
 
         let rec fromReaderValue destType (readerValue : obj) =
             if FSharpType.IsTuple destType then
@@ -67,11 +67,11 @@ module AlgebraicConverterModule =
                                     fromReaderValue unionCaseType unionReaderValue)
                                 readerValueTail
                         FSharpValue.MakeUnion (unionCase, Array.ofList unionValues)
-                    | _ -> failwith "Invalid FSharpTypeConverter conversion from reader union value."
+                    | _ -> failwith "Invalid AlgebraicConverter conversion from union reader value."
                 | :? string as unionName ->
                     let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
                     FSharpValue.MakeUnion (unionCase, [||])
-                | _ -> failwith "Unexpected match failure in Nu.Converter.fromReadValue."
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
             else
                 let converter = TypeDescriptor.GetConverter destType
                 converter.ConvertFrom readerValue // TODO: should we check for convertability?
@@ -81,19 +81,23 @@ module AlgebraicConverterModule =
             fromReaderValue typeof<'t> readerValue
 
         override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
+            destType = typeof<string> ||
+            destType = typeof<'t>
         
-        override this.ConvertTo (_, _, source, _) =
-            toString source :> obj
+        override this.ConvertTo (_, _, source, destType) =
+            if destType = typeof<string> then toString source :> obj
+            elif destType = typeof<'t> then source
+            else failwith "Invalid AlgebraicConverter conversion to source."
 
         override this.CanConvertFrom (_, sourceType) =
-            FSharpType.IsTuple sourceType ||
-            FSharpType.IsRecord sourceType ||
-            FSharpType.IsUnion sourceType
-        
+            sourceType = typeof<string> ||
+            sourceType = typeof<'t>
+
         override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<'t> then
+            match source with
+            | :? string ->
                 match source with
                 | :? string as sourceStr -> fromString sourceStr
-                | _ -> failwith "Invalid FSharpTypeConverter conversion from source."
-            else source
+                | _ -> failwith "Invalid AlgebraicConverter conversion from string."
+            | :? 't -> source
+            | _ -> failwith "Invalid AlgebraicConverter conversion from source."

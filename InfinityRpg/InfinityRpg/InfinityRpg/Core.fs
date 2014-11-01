@@ -1,4 +1,7 @@
 ﻿namespace InfinityRpg
+open System
+open System.ComponentModel
+open Nu
 
 [<AutoOpen>]
 module DirectionModule =

@@ -67,7 +67,7 @@ module Assets =
         match node.Attributes.GetNamedItem AssociationsAttributeName with
         | null -> None
         | associations ->
-            let converter = StringListTypeConverter ()
+            let converter = StringListConverter ()
             let associations = converter.ConvertFromString associations.InnerText :?> string list
             Some associations
 
@@ -101,7 +101,7 @@ module Assets =
         match node.Attributes.GetNamedItem RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let converter = StringListTypeConverter ()
+            let converter = StringListConverter ()
             let refinements = converter.ConvertFromString refinements.InnerText :?> string list
             List.map Refinement.stringToRefinement refinements
 

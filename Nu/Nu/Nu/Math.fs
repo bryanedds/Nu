@@ -27,74 +27,100 @@ module MathModule =
         | Relative
 
     /// Converts Vector2 types.
-    type Vector2TypeConverter () =
+    type Vector2Converter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let v2 = source :?> Vector2
-            String.Format (culture, "{0}, {1}", v2.X, v2.Y) :> obj
+            destType = typeof<string> ||
+            destType = typeof<Vector2>
+        override this.ConvertTo (_, culture, source, destType) =
+            if destType = typeof<string> then
+                let v2 = source :?> Vector2
+                String.Format (culture, "{0}, {1}", v2.X, v2.Y) :> obj
+            elif destType = typeof<Vector2> then source
+            else failwith "Invalid Vector2Converter conversion to source."
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Vector2> || sourceType = typeof<string>
+            sourceType = typeof<string> ||
+            sourceType = typeof<Vector2>
         override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Vector2> then
+            match source with
+            | :? string ->
                 let args = (source :?> string).Split ','
                 let args = Array.map (fun (args : string) -> args.Trim ()) args
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector2 (argFs.[0], argFs.[1]) :> obj
-            else source
+            | :? Vector2 -> source
+            | _ -> failwith "Invalid Vector2Converter conversion from source."
 
     /// Converts Vector3 types.
-    type Vector3TypeConverter () =
+    type Vector3Converter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let v3 = source :?> Vector3
-            String.Format (culture, "{0}, {1}, {2}", v3.X, v3.Y, v3.Z) :> obj
+            destType = typeof<string> ||
+            destType = typeof<Vector3>
+        override this.ConvertTo (_, culture, source, destType) =
+            if destType = typeof<string> then
+                let v3 = source :?> Vector3
+                String.Format (culture, "{0}, {1}, {2}", v3.X, v3.Y, v3.Z) :> obj
+            elif destType = typeof<Vector3> then source
+            else failwith "Invalid Vector3Converter conversion to source."
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Vector3> || sourceType = typeof<string>
+            sourceType = typeof<string> ||
+            sourceType = typeof<Vector3>
         override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Vector3> then
+            match source with
+            | :? string ->
                 let args = (source :?> string).Split ','
                 let args = Array.map (fun (args : string) -> args.Trim ()) args
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector3 (argFs.[0], argFs.[1], argFs.[2]) :> obj
-            else source
+            | :? Vector3 -> source
+            | _ -> failwith "Invalid Vector3Converter conversion from source."
 
     /// Converts Vector4 types.
-    type Vector4TypeConverter () =
+    type Vector4Converter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let v4 = source :?> Vector4
-            String.Format (culture, "{0}, {1}, {2}, {3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
+            destType = typeof<string> ||
+            destType = typeof<Vector4>
+        override this.ConvertTo (_, culture, source, destType) =
+            if destType = typeof<string> then
+                let v4 = source :?> Vector4
+                String.Format (culture, "{0}, {1}, {2}, {3}", v4.X, v4.Y, v4.Z, v4.W) :> obj
+            elif destType = typeof<Vector4> then source
+            else failwith "Invalid Vector4Converter conversion to source."
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Vector4> || sourceType = typeof<string>
+            sourceType = typeof<string> ||
+            sourceType = typeof<Vector4>
         override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Vector4> then
+            match source with
+            | :? string ->
                 let args = (source :?> string).Split ','
                 let args = Array.map (fun (args : string) -> args.Trim ()) args
                 let argFs = Array.map (fun arg -> Single.Parse arg) args
                 Vector4 (argFs.[0], argFs.[1], argFs.[2], argFs.[3]) :> obj
-            else source
+            | :? Vector4 -> source
+            | _ -> failwith "Invalid Vector4Converter conversion from source."
 
     /// Converts string option types.
-    /// TODO: find a better place for this?
-    type StringOptionTypeConverter () =
+    type StringOptionConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, _, source, _) =
-            let optValue = source :?> string option
-            match optValue with
-            | Some value -> "Some(" + string value + ")" :> obj
-            | None -> "" :> obj
+            destType = typeof<string> ||
+            destType = typeof<string option>
+        override this.ConvertTo (_, _, source, destType) =
+            if destType = typeof<string> then
+                let optValue = source :?> string option
+                match optValue with
+                | Some value -> "Some(" + string value + ")" :> obj
+                | None -> "" :> obj
+            elif destType = typeof<string option> then source
+            else failwith "Invalid StringOptionConverter conversion to source."
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string option> || sourceType = typeof<string>
+            sourceType = typeof<string> ||
+            sourceType = typeof<string option>
         override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<string option> then
+            match source with
+            | :? string ->
                 let valueStr = source :?> string
                 match valueStr with
                 | "" -> None :> obj
@@ -102,23 +128,29 @@ module MathModule =
                     let innerStr = valueStr.Substring (5, valueStr.Length - 6)
                     let innerStr = innerStr.Trim ()
                     Some innerStr :> obj
-            else source
+            | :? (string option) -> source
+            | _ -> failwith "Invalid StringOptionConverter conversion from source."
 
     /// Converts string list types.
-    /// TODO: find a better place for this?
-    type StringListTypeConverter () =
+    type StringListConverter () =
         inherit TypeConverter ()
         override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, _, source, _) =
-            let value = source :?> string list
-            let valueStr = String.Join (";", Array.ofList value)
-            let valueStr = "[" + valueStr + "]"
-            valueStr :> obj
+            destType = typeof<string> ||
+            destType = typeof<string option>
+        override this.ConvertTo (_, _, source, destType) =
+            if destType = typeof<string> then
+                let value = source :?> string list
+                let valueStr = String.Join (";", Array.ofList value)
+                let valueStr = "[" + valueStr + "]"
+                valueStr :> obj
+            elif destType = typeof<string list> then source
+            else failwith "Invalid StringListConverter conversion to source."
         override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string option> || sourceType = typeof<string>
+            sourceType = typeof<string> ||
+            sourceType = typeof<string list>
         override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<string option> then
+            match source with
+            | :? string ->
                 let valueStr = source :?> string
                 let valueStr = valueStr.Trim ()
                 let valueStr = valueStr.Substring (1, valueStr.Length - 2)
@@ -127,7 +159,8 @@ module MathModule =
                 let valueStrs = Array.filter (fun (valueStr : string) -> valueStr.Length <> 0) valueStrs
                 let value = List.ofArray valueStrs
                 value :> obj
-            else source
+            | :? (string list) -> source
+            | _ -> failwith "Invalid StringListConverter conversion from source."
 
 module Matrix3 =
 
@@ -147,11 +180,11 @@ module Math =
 
     /// Initializes the type converters found in NuMathModule.
     let initTypeConverters () =
-        assignTypeConverter<Vector2, Vector2TypeConverter> ()
-        assignTypeConverter<Vector3, Vector3TypeConverter> ()
-        assignTypeConverter<Vector4, Vector4TypeConverter> ()
-        assignTypeConverter<string option, StringOptionTypeConverter> ()
-        assignTypeConverter<string list, StringListTypeConverter> ()
+        assignTypeConverter<Vector2, Vector2Converter> ()
+        assignTypeConverter<Vector3, Vector3Converter> ()
+        assignTypeConverter<Vector4, Vector4Converter> ()
+        assignTypeConverter<string option, StringOptionConverter> ()
+        assignTypeConverter<string list, StringListConverter> ()
 
     /// The identity transform.
     let transformIdentity =
