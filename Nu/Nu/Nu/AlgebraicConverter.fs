@@ -31,7 +31,9 @@ module AlgebraicConverterModule =
                     let unionStr = String.Join ("; ", unionStrs)
                     "{" + unionStr + "}"
                 else unionCase.Name
-            else failwith "Invalid AlgebraicConverter conversion to string."
+            else
+                let converter = TypeDescriptor.GetConverter sourceType
+                converter.ConvertToString source // TODO: should we check for convertability?
 
         let rec fromReaderValue destType (readerValue : obj) =
             if FSharpType.IsTuple destType then
@@ -74,7 +76,8 @@ module AlgebraicConverterModule =
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
             else
                 let converter = TypeDescriptor.GetConverter destType
-                converter.ConvertFrom readerValue // TODO: should we check for convertability?
+                let readerValueStr = readerValue :?> string
+                converter.ConvertFromString readerValueStr // TODO: should we check for convertability?
 
         let fromString (source : string) =
             let readerValue = AlgebraicReader.stringToValue source

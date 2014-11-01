@@ -11,12 +11,22 @@ open Nu.Constants
 module AudioModule =
 
     /// Describes a song asset.
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>] Song =
+    type
+        [<StructuralEquality;
+          NoComparison;
+          TypeConverter (typeof<AlgebraicConverter<Song>>);
+          XDefaultValue (DefaultSongValue)>]
+        Song =
         { SongAssetName : string
           PackageName : string }
 
     /// Describes a sound asset.
-    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
+    type
+        [<StructuralEquality;
+          NoComparison;
+          TypeConverter (typeof<AlgebraicConverter<Sound>>);
+          XDefaultValue (DefaultSoundValue)>]
+        Sound =
         { SoundAssetName : string
           PackageName : string }
 
@@ -55,40 +65,6 @@ module AudioModule =
     type [<ReferenceEquality>] AudioAsset =
         | WavAsset of nativeint
         | OggAsset of nativeint
-
-    /// Converts Sound types.
-    type SoundTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let s = source :?> Sound
-            String.Format (culture, "{0}, {1}", s.SoundAssetName, s.PackageName) :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Sound> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Sound> then
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                { SoundAssetName = args.[0]; PackageName = args.[1] } :> obj
-            else source
-
-    /// Converts Song types.
-    type SongTypeConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string>
-        override this.ConvertTo (_, culture, source, _) =
-            let s = source :?> Song
-            String.Format (culture, "{0}, {1}", s.SongAssetName, s.PackageName) :> obj
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<Song> || sourceType = typeof<string>
-        override this.ConvertFrom (_, _, source) =
-            if source.GetType () <> typeof<Song> then
-                let args = (source :?> string).Split ','
-                let args = Array.map (fun (args : string) -> args.Trim ()) args
-                { SongAssetName = args.[0]; PackageName = args.[1] } :> obj
-            else source
 
     /// The audio player. Represents the audio system of Nu generally.
     type IAudioPlayer =
@@ -285,11 +261,3 @@ module AudioModule =
         { MockAudioPlayer : unit }
         interface IAudioPlayer with
             member audioPlayer.Play _ = audioPlayer :> IAudioPlayer
-
-[<RequireQualifiedAccess>]
-module Audio = 
-
-    /// Initializes the type converters found in AudioModule.
-    let initTypeConverters () =
-        assignTypeConverter<Sound, SoundTypeConverter> ()
-        assignTypeConverter<Song, SongTypeConverter> ()

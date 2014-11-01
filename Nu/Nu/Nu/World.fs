@@ -872,10 +872,8 @@ module WorldModule =
             System.Threading.Thread.CurrentThread.CurrentCulture <-
                 System.Globalization.CultureInfo.InvariantCulture
 
-            // init the type converters
+            // init the math converters
             Math.initTypeConverters ()
-            Audio.initTypeConverters ()
-            Rendering.initTypeConverters ()
 
             // assign functions to the pub / sub refs.
             World.publish <- World.publishDefinition
