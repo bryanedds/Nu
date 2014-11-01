@@ -11,32 +11,55 @@ module AlgebraicConverterModule =
     type AlgebraicConverter<'t> () =
         inherit TypeConverter ()
 
+        let objToGenericList source =
+            let sourceType = source.GetType ()
+            let tailOrNullProperty = sourceType.GetProperty "TailOrNull"
+            let headProperty = sourceType.GetProperty "Head"
+            let mutable list = []
+            let mutable tailOrNull = tailOrNullProperty.GetValue source
+            while tailOrNull <> null do
+                let head = headProperty.GetValue source
+                list <- head :: list
+                tailOrNull <- tailOrNullProperty.GetValue tailOrNull
+            list
+
         let rec toString source =
             let sourceType = source.GetType ()
-            if FSharpType.IsTuple sourceType then
+            if sourceType.Name = typedefof<_ list>.Name then
+                let items = objToGenericList source
+                let itemsStrs = List.map toString items
+                let itemsStr = String.Join (AlgebraicReader.SeparatorStr + " ", itemsStrs)
+                AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
+            elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
                 let tupleFieldStrs = List.map toString <| List.ofArray tupleFields
-                let tupleStr = String.Join (" | ", tupleFieldStrs)
-                "{" + tupleStr + "}"
+                let tupleStr = String.Join (AlgebraicReader.SeparatorStr + " ", tupleFieldStrs)
+                AlgebraicReader.OpenComplexValueStr + tupleStr + AlgebraicReader.CloseComplexValueStr
             elif FSharpType.IsRecord sourceType then
                 let recordFields = FSharpValue.GetRecordFields source
                 let recordFieldStrs = List.map toString <| List.ofArray recordFields
-                let recordStr = String.Join (" | ", recordFieldStrs)
-                "{" + recordStr + "}"
+                let recordStr = String.Join (AlgebraicReader.SeparatorStr + " ", recordFieldStrs)
+                AlgebraicReader.OpenComplexValueStr + recordStr + AlgebraicReader.CloseComplexValueStr
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 if not <| Array.isEmpty unionFields then
                     let unionFieldStrs = List.map toString <| List.ofArray unionFields
                     let unionStrs = unionCase.Name :: unionFieldStrs
-                    let unionStr = String.Join (" | ", unionStrs)
-                    "{" + unionStr + "}"
+                    let unionStr = String.Join (AlgebraicReader.SeparatorStr + " ", unionStrs)
+                    AlgebraicReader.OpenComplexValueStr + unionStr + AlgebraicReader.CloseComplexValueStr
                 else unionCase.Name
             else
                 let converter = TypeDescriptor.GetConverter sourceType
                 converter.ConvertToString source // TODO: should we check for convertability?
 
-        let rec fromReaderValue destType (readerValue : obj) =
-            if FSharpType.IsTuple destType then
+        let rec fromReaderValue (destType : Type) (readerValue : obj) =
+            if destType.Name = typedefof<_ list>.Name then
+                match readerValue with
+                | :? (obj list) as readerValueList ->
+                    let list = List.map (fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
+                    list :> obj
+                | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+            elif FSharpType.IsTuple destType then
                 let tupleReaderValues = readerValue :?> obj list
                 let tupleValues =
                     List.mapi

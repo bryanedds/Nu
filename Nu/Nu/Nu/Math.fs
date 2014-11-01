@@ -131,37 +131,6 @@ module MathModule =
             | :? (string option) -> source
             | _ -> failwith "Invalid StringOptionConverter conversion from source."
 
-    /// Converts string list types.
-    type StringListConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = typeof<string option>
-        override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<string> then
-                let value = source :?> string list
-                let valueStr = String.Join ("; ", Array.ofList value)
-                let valueStr = "[" + valueStr + "]"
-                valueStr :> obj
-            elif destType = typeof<string list> then source
-            else failwith "Invalid StringListConverter conversion to source."
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = typeof<string list>
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
-                let valueStr = source :?> string
-                let valueStr = valueStr.Trim ()
-                let valueStr = valueStr.Substring (1, valueStr.Length - 2)
-                let valueStrs = valueStr.Split ';'
-                let valueStrs = Array.map (fun (args : string) -> args.Trim ()) valueStrs
-                let valueStrs = Array.filter (fun (valueStr : string) -> valueStr.Length <> 0) valueStrs
-                let value = List.ofArray valueStrs
-                value :> obj
-            | :? (string list) -> source
-            | _ -> failwith "Invalid StringListConverter conversion from source."
-
 module Matrix3 =
 
     /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
@@ -184,7 +153,7 @@ module Math =
         assignTypeConverter<Vector3, Vector3Converter> ()
         assignTypeConverter<Vector4, Vector4Converter> ()
         assignTypeConverter<string option, StringOptionConverter> ()
-        assignTypeConverter<string list, StringListConverter> ()
+        assignTypeConverter<string list, AlgebraicConverter<string list>> ()
 
     /// The identity transform.
     let transformIdentity =

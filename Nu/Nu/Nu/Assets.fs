@@ -67,8 +67,8 @@ module Assets =
         match node.Attributes.GetNamedItem AssociationsAttributeName with
         | null -> []
         | associations ->
-            let converter = StringListConverter ()
-            converter.ConvertFromString associations.InnerText :?> string list
+            let associations = (AlgebraicConverter<string list> ()).ConvertFromString associations.InnerText
+            associations :?> obj list |> List.map (fun obj -> obj :?> string)
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -100,8 +100,9 @@ module Assets =
         match node.Attributes.GetNamedItem RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let converter = StringListConverter ()
-            let refinements = converter.ConvertFromString refinements.InnerText :?> string list
+            let converter = AlgebraicConverter<string list> ()
+            let refinements = converter.ConvertFromString refinements.InnerText
+            let refinements = refinements :?> obj list |> List.map (fun obj -> obj :?> string)
             List.map Refinement.stringToRefinement refinements
 
     /// Attempt to load an asset from the given Xml node.

@@ -145,7 +145,7 @@ module Program =
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
                 | "FacetNames" ->
-                    let facetNames = value :?> string list
+                    let facetNames = value :?> obj list |> List.map (fun obj -> obj :?> string)
                     let entity = World.getEntity entityTds.Address world
                     let world =
                         match World.trySetFacetNames entity.FacetNames facetNames (Some entityTds.Address) entity world with

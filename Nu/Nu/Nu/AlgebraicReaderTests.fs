@@ -12,10 +12,6 @@ module AlgebraicParserTests =
         let simpleValue = AlgebraicReader.stringToValue "  test  "
         Assert.Equal ("test" :> obj, simpleValue)
 
-    let [<Fact>] canReadSimpleValue2 () =
-        let simpleValue = AlgebraicReader.stringToValue "  [test; ing]  "
-        Assert.Equal ("[test; ing]" :> obj, simpleValue)
-
     let [<Fact>] canReadComplexValue () =
         let value = AlgebraicReader.stringToValue "  {  test  }  "
         let valueStrList = value :?> obj list |> List.map string

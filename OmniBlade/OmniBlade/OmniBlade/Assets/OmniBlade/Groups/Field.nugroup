@@ -10,7 +10,7 @@
         <Size>64, 64</Size>
         <OptOverlayName>Some(AvatarDispatcher)</OptOverlayName>
         <Xtension>
-          <SpriteImage type="Nu.RenderingModule+Image">{Image7 | Default}</SpriteImage>
+          <SpriteImage type="Nu.RenderingModule+Image">[Image7; Default]</SpriteImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -20,8 +20,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">{BackButtonDown | UI}</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">{BackButtonUp | UI}</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[BackButtonDown; UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[BackButtonUp; UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="FeelerDispatcher">
@@ -37,7 +37,7 @@
         <Size>1200, 1200</Size>
         <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
         <Xtension>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">{TileMap | Default}</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[TileMap; Default]</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
@@ -46,7 +46,7 @@
         <Size>960, 544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">{Image8 | Default}</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">[Image8; Default]</LabelImage>
         </Xtension>
       </Entity>
     </Entities>
