@@ -9,8 +9,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">{CreditsButtonDown | UI}</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">{CreditsButtonUp | UI}</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[CreditsButtonDown; UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[CreditsButtonUp; UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -19,8 +19,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">{ExitButtonDown | UI}</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">{ExitButtonUp | UI}</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[ExitButtonDown; UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[ExitButtonUp; UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -29,8 +29,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">{LoadGameButtonDown | UI}</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">{LoadGameButtonUp | UI}</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[LoadGameButtonDown; UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[LoadGameButtonUp; UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -39,8 +39,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>Some(ButtonDispatcher)</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">{NewGameButtonDown | UI}</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">{NewGameButtonUp | UI}</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[NewGameButtonDown; UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[NewGameButtonUp; UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
@@ -48,7 +48,7 @@
         <Size>640, 128</Size>
         <OptOverlayName>Some(TextDispatcher)</OptOverlayName>
         <Xtension>
-          <BackgroundImage type="Nu.RenderingModule+Image">{Image4 | Default}</BackgroundImage>
+          <BackgroundImage type="Nu.RenderingModule+Image">[Image4; Default]</BackgroundImage>
           <Text type="System.String">OmniBlade</Text>
         </Xtension>
       </Entity>
@@ -58,7 +58,7 @@
         <Size>960, 544</Size>
         <OptOverlayName>Some(LabelDispatcher)</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">{Image8 | Default}</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">[Image8; Default]</LabelImage>
         </Xtension>
       </Entity>
     </Entities>

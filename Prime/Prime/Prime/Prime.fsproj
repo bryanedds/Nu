@@ -77,7 +77,7 @@
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
     <Compile Include="MapPlus.fs" />
-    <Compile Include="Reflection.fs" />
+    <Compile Include="Type.fs" />
     <Compile Include="Lensx.fs" />
     <Compile Include="RduTree.fs" />
     <Compile Include="TypeExtension.fs" />
