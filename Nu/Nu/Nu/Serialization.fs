@@ -30,7 +30,7 @@ module Serialization =
         Seq.fold
             (fun xFields (xNode : XmlNode) ->
                 let typeName = xNode.Attributes.[TypeAttributeName].InnerText
-                let aType = Reflection.findType typeName
+                let aType = Type.GetTypeUnqualified typeName
                 let xValueStr = xNode.InnerText
                 let converter = TypeDescriptor.GetConverter aType
                 if converter.CanConvertFrom typeof<string>
