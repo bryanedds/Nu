@@ -19,19 +19,20 @@ module AlgebraicReader =
         CharacterAnimationFacing
 
         (* Complex Values *)
-        [Some; 0]
+        [Some | 0]
         []
-        [0, 1; 2, 4]
-        [AnimationData; 4; 8] *)
+        [0, 1 | 2, 4]
+        [AnimationData | 4 | 8] *)
 
     let [<Literal>] WhitespaceChars = " \t\n\r"
-    let [<Literal>] SeparatorChar = ';'
-    let [<Literal>] SeparatorStr = ";"
+    let [<Literal>] SeparatorChar = '|'
+    let [<Literal>] SeparatorStr = "|"
+    let [<Literal>] SpacedSeparatorStr = " | "
     let [<Literal>] OpenComplexValueChar = '['
     let [<Literal>] OpenComplexValueStr = "["
     let [<Literal>] CloseComplexValueChar = ']'
     let [<Literal>] CloseComplexValueStr = "]"
-    let [<Literal>] StructureChars = "[];"
+    let [<Literal>] StructureChars = "[]|"
     
     let skipWhitespaceChar = skipAnyOf WhitespaceChars
     let skipWhitespace = skipMany skipWhitespaceChar

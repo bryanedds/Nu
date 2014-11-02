@@ -46,7 +46,7 @@ module XtensionModule =
                     let converter = TypeDescriptor.GetConverter defaultFieldType
                     if converter.CanConvertFrom <| defaultValue.GetType ()
                     then converter.ConvertFrom defaultValue :?> 'r
-                    else failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
+                    else failwith <| "Cannot convert '" + tcstring defaultValue + "' to type '" + defaultFieldType.Name + "'."
             | None -> Unchecked.defaultof<'r>
 
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.

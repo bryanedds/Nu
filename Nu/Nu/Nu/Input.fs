@@ -17,7 +17,7 @@ module MouseButtonModule =
         | MouseX1
         | MouseX2
         override this.ToString () = TypeDescriptor.ConvertToString this
-        static member toEventName this = (string this).Substring 5
+        static member toEventName this = (tcstring this).Substring 5
 
 [<RequireQualifiedAccess>]
 module MouseState =
