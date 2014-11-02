@@ -19,7 +19,7 @@ module GameModule =
             let id = Core.makeId ()
             let game =
                 { Id = id
-                  Name = match optName with None -> string id | Some name -> name
+                  Name = match optName with None -> tcstring id | Some name -> name
                   OptSelectedScreenAddress = None
                   DispatcherNp = dispatcher
                   Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}

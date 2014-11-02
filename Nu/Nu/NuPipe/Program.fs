@@ -7,9 +7,10 @@ open Nu.Constants
 module Program =
 
     let [<EntryPoint>] main argv =
+        World.init ()
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
-            let fullBuild = fullBuildStr = string true
+            let fullBuild = fullBuildStr = tcstring true
             match Assets.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild AssetGraphFilePath with
             | Left error -> Console.WriteLine error; FailureExitCode
             | Right () -> SuccessExitCode

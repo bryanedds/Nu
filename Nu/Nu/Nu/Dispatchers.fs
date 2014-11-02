@@ -769,7 +769,7 @@ module TileMapDispatcherModule =
             | Some tileSetTile ->
                 let collisionProperty = ref Unchecked.defaultof<string>
                 if tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then
-                    let collisionExpr = string collisionProperty.Value
+                    let collisionExpr = tcstring collisionProperty.Value
                     registerTilePhysicsShape address tm tmd tli td ti collisionExpr world
                 else world
             | None -> world

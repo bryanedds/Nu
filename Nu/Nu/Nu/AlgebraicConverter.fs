@@ -4,6 +4,7 @@ open System.ComponentModel
 open Microsoft.FSharp.Reflection
 open FParsec
 open Prime
+open Nu
 
 [<AutoOpen>]
 module AlgebraicConverterModule =
@@ -31,7 +32,7 @@ module AlgebraicConverterModule =
                     List.map
                         (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
                         items
-                let itemsStr = String.Join (AlgebraicReader.SeparatorStr + " ", itemsStrs)
+                let itemsStr = String.Join (AlgebraicReader.SpacedSeparatorStr, itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
         
             elif FSharpType.IsTuple sourceType then
@@ -42,7 +43,7 @@ module AlgebraicConverterModule =
                             let tupleFieldType = (FSharpType.GetTupleElements sourceType).[i]
                             toString tupleField tupleFieldType)
                         (List.ofArray tupleFields)
-                let tupleStr = String.Join (AlgebraicReader.SeparatorStr + " ", tupleFieldStrs)
+                let tupleStr = String.Join (AlgebraicReader.SpacedSeparatorStr, tupleFieldStrs)
                 AlgebraicReader.OpenComplexValueStr + tupleStr + AlgebraicReader.CloseComplexValueStr
         
             elif FSharpType.IsRecord sourceType then
@@ -53,7 +54,7 @@ module AlgebraicConverterModule =
                             let recordFieldType = (FSharpType.GetRecordFields sourceType).[i].PropertyType
                             toString recordField recordFieldType)
                         (List.ofArray recordFields)
-                let recordStr = String.Join (AlgebraicReader.SeparatorStr + " ", recordFieldStrs)
+                let recordStr = String.Join (AlgebraicReader.SpacedSeparatorStr, recordFieldStrs)
                 AlgebraicReader.OpenComplexValueStr + recordStr + AlgebraicReader.CloseComplexValueStr
 
             elif FSharpType.IsUnion sourceType then
@@ -66,7 +67,7 @@ module AlgebraicConverterModule =
                                 toString unionField unionFieldType)
                             (List.ofArray unionFields)
                     let unionStrs = unionCase.Name :: unionFieldStrs
-                    let unionStr = String.Join (AlgebraicReader.SeparatorStr + " ", unionStrs)
+                    let unionStr = String.Join (AlgebraicReader.SpacedSeparatorStr, unionStrs)
                     AlgebraicReader.OpenComplexValueStr + unionStr + AlgebraicReader.CloseComplexValueStr
                 else unionCase.Name
         

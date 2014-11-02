@@ -8,40 +8,40 @@
         <Name>Credits</Name>
         <Position>-416, -216</Position>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some; ButtonDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[CreditsDown; UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[CreditsUp; UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[CreditsDown | UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[CreditsUp | UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
         <Position>40, -216</Position>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some; ButtonDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[ExitDown; UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[ExitUp; UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[ExitDown | UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[ExitUp | UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
         <Position>40, -72</Position>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some; ButtonDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[LoadGameDown; UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[LoadGameUp; UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[LoadGameDown | UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[LoadGameUp | UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
         <Position>-416, -72</Position>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some; ButtonDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[NewGameDown; UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[NewGameUp; UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[NewGameDown | UI]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[NewGameUp | UI]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
@@ -49,9 +49,9 @@
         <Position>-512, 16</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
-        <OptOverlayName>[Some; LabelDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">[TitleLabel; UI]</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">[TitleLabel | UI]</LabelImage>
         </Xtension>
       </Entity>
     </Entities>

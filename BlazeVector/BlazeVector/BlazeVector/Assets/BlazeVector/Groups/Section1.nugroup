@@ -6,57 +6,57 @@
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1114.274, -207.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1472, -175.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-4</Depth>
-        <OptOverlayName>[Some; TileMapDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
         <Xtension>
           <Parallax type="System.Single">0.1</Parallax>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundB; Stage]</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundB | Stage]</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-8</Depth>
-        <OptOverlayName>[Some; TileMapDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
         <Xtension>
           <Parallax type="System.Single">0.1</Parallax>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundA; Stage]</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundA | Stage]</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>416, -79.68001</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1328, -175.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
-        <OptOverlayName>[Some; TileMapDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | TileMapDispatcher]</OptOverlayName>
         <Xtension>
-          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[Section1; Stage]</TileMapAsset>
+          <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[Section1 | Stage]</TileMapAsset>
         </Xtension>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>96, -79.68001</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>-159.8438, -175.68</Position>
         <Depth>1</Depth>
-        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | EnemyDispatcher]</OptOverlayName>
       </Entity>
     </Entities>
   </Group>
