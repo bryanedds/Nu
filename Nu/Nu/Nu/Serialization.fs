@@ -48,7 +48,7 @@ module Serialization =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        let converter = StringOptionConverter ()
+        let converter = AlgebraicConverter<string option> ()
         converter.ConvertFrom optOverlayNameStr :?> string option
 
     /// Read facet names from an xml node.

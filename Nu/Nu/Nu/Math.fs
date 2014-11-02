@@ -101,36 +101,6 @@ module MathModule =
             | :? Vector4 -> source
             | _ -> failwith "Invalid Vector4Converter conversion from source."
 
-    /// Converts string option types.
-    type StringOptionConverter () =
-        inherit TypeConverter ()
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = typeof<string option>
-        override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<string> then
-                let optValue = source :?> string option
-                match optValue with
-                | Some value -> "Some(" + string value + ")" :> obj
-                | None -> "" :> obj
-            elif destType = typeof<string option> then source
-            else failwith "Invalid StringOptionConverter conversion to source."
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = typeof<string option>
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
-                let valueStr = source :?> string
-                match valueStr with
-                | "" -> None :> obj
-                | _ ->
-                    let innerStr = valueStr.Substring (5, valueStr.Length - 6)
-                    let innerStr = innerStr.Trim ()
-                    Some innerStr :> obj
-            | :? (string option) -> source
-            | _ -> failwith "Invalid StringOptionConverter conversion from source."
-
 module Matrix3 =
 
     /// Gets the invertse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
@@ -152,7 +122,7 @@ module Math =
         assignTypeConverter<Vector2, Vector2Converter> ()
         assignTypeConverter<Vector3, Vector3Converter> ()
         assignTypeConverter<Vector4, Vector4Converter> ()
-        assignTypeConverter<string option, StringOptionConverter> ()
+        assignTypeConverter<string option, AlgebraicConverter<string option>> ()
         assignTypeConverter<string list, AlgebraicConverter<string list>> ()
 
     /// The identity transform.

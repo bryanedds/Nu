@@ -11,7 +11,7 @@ module AlgebraicConverterModule =
     type AlgebraicConverter<'t> () =
         inherit TypeConverter ()
 
-        let objToGenericList source =
+        let objToObjList source =
             let sourceType = source.GetType ()
             let tailOrNullProperty = sourceType.GetProperty "TailOrNull"
             let headProperty = sourceType.GetProperty "Head"
@@ -23,42 +23,66 @@ module AlgebraicConverterModule =
                 tailOrNull <- tailOrNullProperty.GetValue tailOrNull
             list
 
-        let rec toString source =
-            let sourceType = source.GetType ()
+        let rec toString source (sourceType : Type) =
+
             if sourceType.Name = typedefof<_ list>.Name then
-                let items = objToGenericList source
-                let itemsStrs = List.map toString items
+                let items = objToObjList source
+                let itemsStrs =
+                    List.map
+                        (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
+                        items
                 let itemsStr = String.Join (AlgebraicReader.SeparatorStr + " ", itemsStrs)
                 AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
+        
             elif FSharpType.IsTuple sourceType then
                 let tupleFields = FSharpValue.GetTupleFields source
-                let tupleFieldStrs = List.map toString <| List.ofArray tupleFields
+                let tupleFieldStrs =
+                    List.mapi
+                        (fun i tupleField ->
+                            let tupleFieldType = (FSharpType.GetTupleElements sourceType).[i]
+                            toString tupleField tupleFieldType)
+                        (List.ofArray tupleFields)
                 let tupleStr = String.Join (AlgebraicReader.SeparatorStr + " ", tupleFieldStrs)
                 AlgebraicReader.OpenComplexValueStr + tupleStr + AlgebraicReader.CloseComplexValueStr
+        
             elif FSharpType.IsRecord sourceType then
                 let recordFields = FSharpValue.GetRecordFields source
-                let recordFieldStrs = List.map toString <| List.ofArray recordFields
+                let recordFieldStrs =
+                    List.mapi
+                        (fun i recordField ->
+                            let recordFieldType = (FSharpType.GetRecordFields sourceType).[i].PropertyType
+                            toString recordField recordFieldType)
+                        (List.ofArray recordFields)
                 let recordStr = String.Join (AlgebraicReader.SeparatorStr + " ", recordFieldStrs)
                 AlgebraicReader.OpenComplexValueStr + recordStr + AlgebraicReader.CloseComplexValueStr
+
             elif FSharpType.IsUnion sourceType then
                 let (unionCase, unionFields) = FSharpValue.GetUnionFields (source, sourceType)
                 if not <| Array.isEmpty unionFields then
-                    let unionFieldStrs = List.map toString <| List.ofArray unionFields
+                    let unionFieldStrs =
+                        List.mapi
+                            (fun i unionField ->
+                                let unionFieldType = (unionCase.GetFields ()).[i].PropertyType
+                                toString unionField unionFieldType)
+                            (List.ofArray unionFields)
                     let unionStrs = unionCase.Name :: unionFieldStrs
                     let unionStr = String.Join (AlgebraicReader.SeparatorStr + " ", unionStrs)
                     AlgebraicReader.OpenComplexValueStr + unionStr + AlgebraicReader.CloseComplexValueStr
                 else unionCase.Name
+        
             else
                 let converter = TypeDescriptor.GetConverter sourceType
                 converter.ConvertToString source // TODO: should we check for convertability?
 
         let rec fromReaderValue (destType : Type) (readerValue : obj) =
+        
             if destType.Name = typedefof<_ list>.Name then
                 match readerValue with
                 | :? (obj list) as readerValueList ->
                     let list = List.map (fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
                     list :> obj
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+        
             elif FSharpType.IsTuple destType then
                 let tupleReaderValues = readerValue :?> obj list
                 let tupleValues =
@@ -68,6 +92,7 @@ module AlgebraicConverterModule =
                             fromReaderValue tupleElementType tupleReaderValue)
                         tupleReaderValues
                 FSharpValue.MakeTuple (Array.ofList tupleValues, destType)
+        
             elif FSharpType.IsRecord destType then
                 let recordReaderValues = readerValue :?> obj list
                 let recordValues =
@@ -77,6 +102,7 @@ module AlgebraicConverterModule =
                             fromReaderValue recordFieldType recordReaderValue)
                         recordReaderValues
                 FSharpValue.MakeRecord (destType, Array.ofList recordValues)
+        
             elif FSharpType.IsUnion destType && destType <> typeof<string list> then
                 let unionCases = FSharpType.GetUnionCases destType
                 match readerValue with
@@ -97,6 +123,7 @@ module AlgebraicConverterModule =
                     let unionCase = Array.find (fun (unionCase : UnionCaseInfo) -> unionCase.Name = unionName) unionCases
                     FSharpValue.MakeUnion (unionCase, [||])
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+        
             else
                 let converter = TypeDescriptor.GetConverter destType
                 let readerValueStr = readerValue :?> string
@@ -111,7 +138,7 @@ module AlgebraicConverterModule =
             destType = typeof<'t>
         
         override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<string> then toString source :> obj
+            if destType = typeof<string> then toString source typeof<'t> :> obj
             elif destType = typeof<'t> then source
             else failwith "Invalid AlgebraicConverter conversion to source."
 
