@@ -17,7 +17,7 @@ module PhysicsModule =
 
     /// Identifies a target whose body can be found in the Integrator.
     /// TODO: remove PhysicsId and have no more than one body per entity!
-    type [<StructuralEquality; StructuralComparison>] PhysicsId =
+    type [<StructuralEquality; StructuralComparison; TypeConverter (typeof<AlgebraicConverter<PhysicsId>>)>] PhysicsId =
         struct
             val Major : Guid
             val Minor : Guid
@@ -57,7 +57,7 @@ module PhysicsModule =
         | PolygonShape of PolygonShape
 
     /// The type of a physics body; Static, Kinematic, or Dynamic.
-    type [<StructuralEquality; NoComparison; TypeConverter (typeof<AlgebraicConverter<BodyType>>)>] BodyType =
+    type [<TypeConverter (typeof<AlgebraicConverter<BodyType>>)>] BodyType =
         | Static
         | Kinematic
         | Dynamic
