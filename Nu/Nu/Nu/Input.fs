@@ -1,25 +1,23 @@
 ﻿namespace Nu
+open System
+open System.ComponentModel
 open OpenTK
 open SDL2
+open Prime
 open Nu
 
 [<AutoOpen>]
 module MouseButtonModule =
 
     /// Describes a mouse button.
-    type [<StructuralEquality; StructuralComparison>] MouseButton =
+    type [<TypeConverter (typeof<AlgebraicConverter<MouseButton>>)>] MouseButton =
         | MouseLeft
         | MouseCenter
         | MouseRight
         | MouseX1
         | MouseX2
-        override this.ToString () =
-            match this with
-            | MouseLeft -> "Left"
-            | MouseCenter -> "Center"
-            | MouseRight -> "Right"
-            | MouseX1 -> "X1"
-            | MouseX2 -> "X2"
+        override this.ToString () = TypeDescriptor.ConvertToString this
+        static member toEventName this = (string this).Substring 5
 
 [<RequireQualifiedAccess>]
 module MouseState =

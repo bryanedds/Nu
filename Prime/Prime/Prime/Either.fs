@@ -2,19 +2,21 @@
 // Copyright (C) Bryan Edds, 2012-2014.
 
 namespace Prime
+open System
 
 [<AutoOpen>]
 module EitherModule =
 
     /// Haskell-style Either type.
+    /// TODO: implement converter as AlgebraicConverter
     /// TODO: more nice operators definitions.
     type Either<'l, 'r> =
         | Right of 'r
         | Left of 'l
         override this.ToString () =
             match this with
-            | Right r -> "Right(" + (r.ToString ()) + ")"
-            | Left l -> "Left(" + (l.ToString ()) + ")"
+            | Right r -> "{Right; " + TypeDescriptor.ConvertToString r + "}"
+            | Left l -> "{Left; " + TypeDescriptor.ConvertToString l + "}"
 
     /// Monadic bind.
     let inline (>>=) either fn =

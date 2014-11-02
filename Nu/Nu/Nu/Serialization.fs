@@ -133,8 +133,7 @@ module Serialization =
                 shouldWriteProperty xFieldName then
                 let xValue = xField.Value
                 let xValueType = xValue.GetType ()
-                let xConverter = TypeDescriptor.GetConverter xValueType
-                let xValueStr = xConverter.ConvertToString xValue
+                let xValueStr = (TypeDescriptor.GetConverter xValueType).ConvertToString xValue
                 writer.WriteStartElement xFieldName
                 writer.WriteAttributeString (TypeAttributeName, xValueType.FullName)
                 writer.WriteString xValueStr

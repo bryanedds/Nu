@@ -114,8 +114,10 @@ module RenderingModule =
 
     /// The renderer. Represents the rendering system in Nu generally.
     type IRenderer =
+
         /// Handle render exit by freeing all loaded render assets.
         abstract HandleRenderExit : unit -> IRenderer
+
         /// Render a frame of the game.
         abstract Render : Camera * RenderMessage rQueue * RenderDescriptor list -> IRenderer
 

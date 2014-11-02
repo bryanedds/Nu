@@ -609,13 +609,13 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseEventAddress = DownMouseEventAddress @+ [string mouseButton]
+                    let mouseEventAddress = DownMouseEventAddress @+ [MouseButton.toEventName mouseButton]
                     let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                     World.publish World.sortSubscriptionsByPickingPriority mouseEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseEventAddress = UpMouseEventAddress @+ [string mouseButton]
+                    let mouseEventAddress = UpMouseEventAddress @+ [MouseButton.toEventName mouseButton]
                     let eventData = MouseButtonData { Position = mousePosition; Button = mouseButton }
                     World.publish World.sortSubscriptionsByPickingPriority mouseEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
