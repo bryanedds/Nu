@@ -5,7 +5,7 @@
     <Entities>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
-        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <OptOverlayName>[Some; TileMapDispatcher]</OptOverlayName>
         <Xtension>
           <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[Section0; Stage]</TileMapAsset>
         </Xtension>
@@ -13,19 +13,17 @@
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1464, -15.6805</Position>
         <Depth>4</Depth>
-        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some()" />
+        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>176, -79.68001</Position>
         <Depth>4</Depth>
-        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some()" />
+        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-8</Depth>
-        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <OptOverlayName>[Some; TileMapDispatcher]</OptOverlayName>
         <Xtension>
           <Parallax type="System.Single">0.1</Parallax>
           <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundA; Stage]</TileMapAsset>
@@ -34,31 +32,27 @@
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1376, -175.68</Position>
         <Depth>4</Depth>
-        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some()" />
+        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>1256, 112.32</Position>
         <Depth>4</Depth>
-        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some()" />
+        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>928, 112.32</Position>
         <Depth>4</Depth>
-        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some()" />
+        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="EnemyDispatcher">
         <Position>112, 48.31998</Position>
         <Depth>4</Depth>
-        <OptOverlayName>Some(EnemyDispatcher)</OptOverlayName>
-        <Xtension optXDispatcherName="Some()" />
+        <OptOverlayName>[Some; EnemyDispatcher]</OptOverlayName>
       </Entity>
       <Entity dispatcherName="TileMapDispatcher">
         <Position>-480, -304</Position>
         <Depth>-4</Depth>
-        <OptOverlayName>Some(TileMapDispatcher)</OptOverlayName>
+        <OptOverlayName>[Some; TileMapDispatcher]</OptOverlayName>
         <Xtension>
           <Parallax type="System.Single">0.1</Parallax>
           <TileMapAsset type="Nu.RenderingModule+TileMapAsset">[BackgroundB; Stage]</TileMapAsset>

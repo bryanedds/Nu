@@ -30,6 +30,18 @@ module AlgebraicConverterTests =
         let value = converter.ConvertFromString "0, 1" :?> Vector2
         Assert.Equal (Vector2 (0.0f, 1.0f), value)
 
+    let [<Fact>] canConvertStringToNone () =
+        Math.initTypeConverters ()
+        let converter = AlgebraicConverter<string option> ()
+        let value = converter.ConvertFromString "None" :?> string option
+        Assert.Equal<string option> (None, value)
+
+    let [<Fact>] canConvertStringToSomeString () =
+        Math.initTypeConverters ()
+        let converter = AlgebraicConverter<string option> ()
+        let value = converter.ConvertFromString "[Some; string]" :?> string option
+        Assert.Equal<string option> (Some "string", value)
+
     let [<Fact>] canConvertStringToIntList () =
         Math.initTypeConverters ()
         let converter = AlgebraicConverter<int list> ()

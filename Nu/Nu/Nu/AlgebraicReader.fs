@@ -13,12 +13,14 @@ module AlgebraicReader =
         (* Simple Values *)
         
         0
+        None
         2, 2
-        Some(1)
         Hello World
         CharacterAnimationFacing
 
         (* Complex Values *)
+        [Some; 0]
+        []
         [0, 1; 2, 4]
         [AnimationData; 4; 8] *)
 
@@ -61,7 +63,7 @@ module AlgebraicReader =
 
     let readValues =
         parse {
-            let! values = chainl1 (!readValueRef |>> List.singleton) chainValues
+            let! values = chainl (!readValueRef |>> List.singleton) chainValues []
             return values }
 
     let readComplexValue =
