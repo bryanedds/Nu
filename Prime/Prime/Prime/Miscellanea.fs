@@ -103,3 +103,44 @@ module Miscellanea =
     /// Symbol alias for module names.
     /// Needed since we can't utter something like typeof<MyModule>.
     let Module = Symbol
+
+module Type =
+
+    /// Try to get an existing type with the given unqualified name. Time-intensive.
+    let TryGetTypeUnqualified name =
+        match Type.GetType name with
+        | null ->
+            let allAssemblies = AppDomain.CurrentDomain.GetAssemblies ()
+            let types =
+                Seq.choose
+                    (fun (assembly : Assembly) ->
+                        match assembly.GetType name with
+                        | null -> None
+                        | aType -> Some aType)
+                    allAssemblies
+            Seq.tryFind (fun _ -> true) types
+        | aType -> Some aType
+
+    /// Get an existing type with the given unqualified name. Time-intensive.
+    let GetTypeUnqualified name =
+        match TryGetTypeUnqualified name with
+        | Some aType -> aType
+        | None -> failwith <| "Could not find type with unqualified name '" + name + "'."
+
+module TypeDescriptor =
+
+    /// Convert a value to the given type using its assigned type converter.
+    let ConvertTo (source : obj, destType) =
+        (TypeDescriptor.GetConverter source).ConvertTo (source, destType)
+
+    /// Convert a value from given type using its assigned type converter.
+    let ConvertFrom<'t> source =
+        (TypeDescriptor.GetConverter typeof<'t>).ConvertFrom source
+
+    /// Convert a value to a string using its assigned type converter.
+    let ConvertToString source =
+        ConvertTo (source, typeof<string>) :?> string
+
+    /// Convert a value from a string using its assigned type converter.
+    let ConvertFromString<'t> (str : string) =
+        ConvertFrom<'t> str

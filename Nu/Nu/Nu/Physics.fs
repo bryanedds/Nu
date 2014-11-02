@@ -22,7 +22,8 @@ module PhysicsModule =
             val Major : Guid
             val Minor : Guid
             new (major, minor) = { Major = major; PhysicsId.Minor = minor }
-            override this.ToString () = "{Major = " + string this.Major + "; Minor = " + string this.Minor + "}"
+            // TODO: see if this can be implemented by AlgebraicConverter
+            override this.ToString () = "{" + string this.Major + "; " + string this.Minor + "}"
             end
 
     /// Physics-specific vertices type.
@@ -512,6 +513,4 @@ module Physics =
             with :? NotSupportedException ->
                 trace <| "Could not parse collision polygon vertices '" + verticesStr + "'. Format is 'Polygon? 0.0, 0.0; 0.0, 1.0; 1.0, 1.0; 1.0, 0.0'"
                 defaultShape
-        | _ ->
-            trace <| "Invalid tile collision expression '" + expr + "'."
-            defaultShape
+        | _ -> trace <| "Invalid tile collision expression '" + expr + "'."; defaultShape

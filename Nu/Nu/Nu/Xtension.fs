@@ -44,8 +44,8 @@ module XtensionModule =
                 | :? 'r as defaultValue -> defaultValue
                 | _ as defaultValue ->
                     let converter = TypeDescriptor.GetConverter defaultFieldType
-                    let defaultValueType = defaultValue.GetType ()
-                    if converter.CanConvertFrom defaultValueType then converter.ConvertFrom defaultValue :?> 'r
+                    if converter.CanConvertFrom <| defaultValue.GetType ()
+                    then converter.ConvertFrom defaultValue :?> 'r
                     else failwith <| "Cannot convert '" + string defaultValue + "' to type '" + defaultFieldType.Name + "'."
             | None -> Unchecked.defaultof<'r>
 
