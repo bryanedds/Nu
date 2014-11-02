@@ -8,7 +8,7 @@ open Prime
 [<AutoOpen>]
 module AlgebraicConverterModule =
 
-    type AlgebraicConverter<'t> () =
+    type 't AlgebraicConverter () =
         inherit TypeConverter ()
 
         let objToObjList source =
