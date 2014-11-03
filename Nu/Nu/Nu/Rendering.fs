@@ -17,7 +17,7 @@ module RenderingModule =
     type
         [<StructuralEquality;
           NoComparison;
-          TypeConverter (typeof<AlgebraicConverter<Image>>);
+          TypeConverter (typeof<AlgebraicConverter>);
           XDefaultValue (DefaultImageValue)>]
         Image =
         { ImageAssetName : string
@@ -37,7 +37,7 @@ module RenderingModule =
     type
         [<StructuralEquality;
           NoComparison;
-          TypeConverter (typeof<AlgebraicConverter<TileMapAsset>>);
+          TypeConverter (typeof<AlgebraicConverter>);
           XDefaultValue (DefaultTileMapAssetValue)>]
         TileMapAsset =
         { TileMapAssetName : string
@@ -60,7 +60,7 @@ module RenderingModule =
     type
         [<StructuralEquality;
           NoComparison;
-          TypeConverter (typeof<AlgebraicConverter<Font>>);
+          TypeConverter (typeof<AlgebraicConverter>);
           XDefaultValue (DefaultFontValue)>]
         Font =
         { FontAssetName : string

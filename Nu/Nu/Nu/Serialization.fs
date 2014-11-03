@@ -32,9 +32,8 @@ module Serialization =
                 let typeName = xNode.Attributes.[TypeAttributeName].InnerText
                 let aType = Type.GetTypeUnqualified typeName
                 let xValueStr = xNode.InnerText
-                let converter = TypeDescriptor.GetConverter aType
-                if converter.CanConvertFrom typeof<string>
-                then Map.add xNode.Name (converter.ConvertFrom xValueStr) xFields
+                if AlgebraicConverter.canConvertFromString aType
+                then Map.add xNode.Name (AlgebraicConverter.convertFromString xValueStr aType) xFields
                 else debug <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."; xFields)
             Map.empty
             childNodes
@@ -48,13 +47,12 @@ module Serialization =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        let converter = AlgebraicConverter<string option> ()
-        converter.ConvertFrom optOverlayNameStr :?> string option
+        AlgebraicConverter.convertFromString optOverlayNameStr typeof<string option> :?> string option
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNamesStr = node.InnerText
-        let facetNames = (AlgebraicConverter<string list> ()).ConvertFrom facetNamesStr
+        let facetNames = AlgebraicConverter.convertFromString facetNamesStr typeof<string list>
         facetNames :?> obj list |> List.map (fun obj -> obj :?> string)
 
     /// Read an Xtension from Xml.
@@ -71,9 +69,8 @@ module Serialization =
             property.SetValue (target, xtension)
         else
             let valueStr = valueNode.InnerText
-            let converter = TypeDescriptor.GetConverter property.PropertyType
-            if converter.CanConvertFrom typeof<string> then
-                let value = converter.ConvertFrom valueStr
+            if AlgebraicConverter.canConvertFromString property.PropertyType then
+                let value = AlgebraicConverter.convertFromString valueStr property.PropertyType
                 property.SetValue (target, value)
 
     /// Read a target's property from Xml if possible.

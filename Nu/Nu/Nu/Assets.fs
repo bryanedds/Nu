@@ -67,7 +67,7 @@ module Assets =
         match node.Attributes.GetNamedItem AssociationsAttributeName with
         | null -> []
         | associations ->
-            let associations = TypeDescriptor.ConvertFromString<string list> associations.InnerText
+            let associations = AlgebraicConverter.convertFromString associations.InnerText typeof<string list>
             associations :?> obj list |> List.map (fun obj -> obj :?> string)
 
     let private getAssetExtension2 rawAssetExtension refinement =
@@ -100,7 +100,7 @@ module Assets =
         match node.Attributes.GetNamedItem RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let refinements = TypeDescriptor.ConvertFromString<string list> refinements.InnerText
+            let refinements = AlgebraicConverter.convertFromString refinements.InnerText typeof<string list>
             let refinements = refinements :?> obj list |> List.map (fun obj -> obj :?> string)
             List.map Refinement.stringToRefinement refinements
 

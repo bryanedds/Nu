@@ -28,7 +28,7 @@ module CharacterAnimationFacetModule =
                 [(CharacterAnimationFacing, CharacterAnimationFacingData)
                  (CharacterAnimationActing, CharacterAnimationActingData)] }
 
-    type [<TypeConverter (typeof<AlgebraicConverter<CharacterAnimationState>>)>] CharacterAnimationState =
+    type [<TypeConverter (typeof<AlgebraicConverter>)>] CharacterAnimationState =
         { CharacterAnimationType : CharacterAnimationType
           CharacterAnimationDirection : Direction
           CharacterAnimationStartTime : int64 }

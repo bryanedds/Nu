@@ -8,19 +8,23 @@ open Prime
 [<AutoOpen>]
 module AlgebraicConverterModule =
 
-    type 't AlgebraicConverter () =
+    type [<StructuralEquality; NoComparison>] AlgebraicConversionCircumventor =
+        { AccValue : string }
+
+    type AlgebraicConverter () =
         inherit TypeConverter ()
 
         let objToObjList source =
             let sourceType = source.GetType ()
-            let tailOrNullProperty = sourceType.GetProperty "TailOrNull"
             let headProperty = sourceType.GetProperty "Head"
+            let tailProperty = sourceType.GetProperty "Tail"
+            let isEmptyProperty = sourceType.GetProperty "IsEmpty"
             let mutable list = []
-            let mutable tailOrNull = tailOrNullProperty.GetValue source
-            while tailOrNull <> null do
-                let head = headProperty.GetValue source
+            let mutable tail = source
+            while not (isEmptyProperty.GetValue tail :?> bool) do
+                let head = headProperty.GetValue tail
                 list <- head :: list
-                tailOrNull <- tailOrNullProperty.GetValue tailOrNull
+                tail <- tailProperty.GetValue tail
             list
 
         let rec toString source (sourceType : Type) =
@@ -74,12 +78,12 @@ module AlgebraicConverterModule =
                 let converter = TypeDescriptor.GetConverter sourceType
                 converter.ConvertToString source // TODO: should we check for convertability?
 
-        let rec fromReaderValue (destType : Type) (readerValue : obj) =
+        static member fromReaderValue (destType : Type) (readerValue : obj) =
         
             if destType.Name = typedefof<_ list>.Name then
                 match readerValue with
                 | :? (obj list) as readerValueList ->
-                    let list = List.map (fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
+                    let list = List.map (AlgebraicConverter.fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
                     list :> obj
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
         
@@ -89,7 +93,7 @@ module AlgebraicConverterModule =
                     List.mapi
                         (fun i tupleReaderValue ->
                             let tupleElementType = (FSharpType.GetTupleElements destType).[i]
-                            fromReaderValue tupleElementType tupleReaderValue)
+                            AlgebraicConverter.fromReaderValue tupleElementType tupleReaderValue)
                         tupleReaderValues
                 FSharpValue.MakeTuple (Array.ofList tupleValues, destType)
         
@@ -99,7 +103,7 @@ module AlgebraicConverterModule =
                     List.mapi
                         (fun i recordReaderValue ->
                             let recordFieldType = (FSharpType.GetRecordFields destType).[i].PropertyType
-                            fromReaderValue recordFieldType recordReaderValue)
+                            AlgebraicConverter.fromReaderValue recordFieldType recordReaderValue)
                         recordReaderValues
                 FSharpValue.MakeRecord (destType, Array.ofList recordValues)
         
@@ -115,7 +119,7 @@ module AlgebraicConverterModule =
                             List.mapi
                                 (fun i unionReaderValue ->
                                     let unionCaseType = (unionCase.GetFields ()).[i].PropertyType
-                                    fromReaderValue unionCaseType unionReaderValue)
+                                    AlgebraicConverter.fromReaderValue unionCaseType unionReaderValue)
                                 readerValueTail
                         FSharpValue.MakeUnion (unionCase, Array.ofList unionValues)
                     | _ -> failwith "Invalid AlgebraicConverter conversion from union reader value."
@@ -125,35 +129,61 @@ module AlgebraicConverterModule =
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
         
             else
-                let converter = TypeDescriptor.GetConverter destType
                 let readerValueStr = readerValue :?> string
+                let converter = TypeDescriptor.GetConverter destType
                 converter.ConvertFromString readerValueStr // TODO: should we check for convertability?
 
-        let fromString (source : string) =
+        static member fromString (destType : Type) (source : string) =
             let readerValue = AlgebraicReader.stringToValue source
-            fromReaderValue typeof<'t> readerValue
+            AlgebraicConverter.fromReaderValue destType readerValue
 
-        override this.CanConvertTo (_, destType) =
-            destType = typeof<string> ||
-            destType = typeof<'t>
+        static member canConvertFromString (_ : Type) =
+            true
+
+        static member canConvertFrom (sourceType : Type) (destType : Type) =
+            sourceType = typeof<string> ||
+            sourceType = destType
+
+        static member convertFrom (source : obj) (sourceType : Type) (destType : Type) =
+            if sourceType <> destType then
+                match source with
+                | :? string as sourceStr -> AlgebraicConverter.fromString destType sourceStr
+                | _ -> failwith "Invalid AlgebraicConverter conversion from string."
+            else source
+
+        static member convertFromString source destType =
+            AlgebraicConverter.convertFrom source typeof<string> destType
+
+        override this.CanConvertTo (_, _) =
+            true
         
         override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<string> then toString source typeof<'t> :> obj
-            elif destType = typeof<'t> then source
-            else failwith "Invalid AlgebraicConverter conversion to source."
-
-        override this.CanConvertFrom (_, sourceType) =
-            sourceType = typeof<string> ||
-            sourceType = typeof<'t>
-
-        override this.ConvertFrom (_, _, source) =
-            match source with
-            | :? string ->
+            if destType = typeof<string> then
                 match source with
-                | :? string as sourceStr -> fromString sourceStr
-                | _ -> failwith "Invalid AlgebraicConverter conversion from string."
-            | :? 't -> source
-            | _ -> failwith "Invalid AlgebraicConverter conversion from source."
+                | null ->
+                    // this case represents a particularly penercious turn of events; here we have
+                    // no actual type data in this context, yet the source object may also be null.
+                    // In F#, this is actually an untenable situation since we can have an
+                    // unbounded number of valid values represented by a null thanks to the
+                    // 'CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)'
+                    // attribute.
+                    //
+                    // Unfortunately, there is no real way to solve this other than to assume here
+                    // that null is to be represented as None.
+                    "None" :> obj
+                | _ ->
+                    let sourceType = source.GetType ()
+                    toString source sourceType :> obj
+            else
+                let sourceType = source.GetType ()
+                if destType = sourceType then source
+                else failwith "Invalid AlgebraicConverter conversion to source."
+
+        override this.CanConvertFrom (_, _) =
+            true
+        
+        override this.ConvertFrom (_, _, source) =
+            { AccValue = source :?> string } :> obj
 
 module AlgebraicConverter =
 
@@ -161,5 +191,5 @@ module AlgebraicConverter =
     /// Unfortunately, this is very hard to make comprehensive -
     /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type/26701678?noredirect=1#comment42014989_26701678
     let initTypeConverters () =
-        assignTypeConverter<string option, AlgebraicConverter<string option>> ()
-        assignTypeConverter<string list, AlgebraicConverter<string list>> ()
+        assignTypeConverter<string option, AlgebraicConverter> ()
+        assignTypeConverter<string list, AlgebraicConverter> ()

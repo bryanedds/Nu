@@ -125,6 +125,28 @@ module Program =
                 getEntityPropertyValue property entity
 
         override this.SetValue (source, value) =
+            
+            // NOTE: Unfortunately, PropertyGrid forces the use of TypeConverter.ConvertFrom which
+            // is actually rather poorly supported in .NET, likely due to a more general
+            // architecture flaw whereby ConvertFrom is not provided enough context to do
+            // conversions in the general case for a lack of a source type parameter.
+            //
+            // Therefore, I completely circumvent the PropertyGrid's use of type conversion in the
+            // case of my general case converter AlgebraicConverter by having its ConvertFrom
+            // method wrap the source value in an AlgebraicConversionCircumventor, and only then
+            // doing the conversion here in the more supported .NET way (that is, with actual
+            // adequate type information needed to convert the value from a string.
+            let value =
+                match value with
+                | :? AlgebraicConversionCircumventor as circumventor ->
+                    let propertyType =
+                        match property with
+                        | EntityXFieldDescriptor xFieldDescriptor -> Type.GetTypeUnqualified xFieldDescriptor.TypeName
+                        | EntityPropertyInfo propertyInfo -> propertyInfo.PropertyType
+                    AlgebraicConverter.convertFromString circumventor.AccValue propertyType
+                | _ -> value
+            
+            // grab the type descriptor and assign the value
             let entityTds = source :?> EntityTypeDescriptorSource
             let changer = (fun world ->
                 let world = pushPastWorld world world
@@ -172,6 +194,7 @@ module Program =
                     entityTds.RefWorld := world // must be set for property grid
                     entityTds.Form.propertyGrid.Refresh ()
                     world)
+
             // NOTE: in order to update the view immediately, we have to apply the changer twice,
             // once immediately and once in the update function
             entityTds.RefWorld := changer !entityTds.RefWorld

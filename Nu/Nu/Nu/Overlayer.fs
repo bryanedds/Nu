@@ -36,7 +36,7 @@ module Overlayer =
                 match optIncludeNames with
                 | null -> None
                 | includeNames ->
-                    let includeNames = (AlgebraicConverter<string list> ()).ConvertFromString includeNames.InnerXml
+                    let includeNames = AlgebraicConverter.convertFromString includeNames.InnerXml typeof<string list>
                     let includeNames = includeNames :?> obj list |> List.map (fun obj -> obj :?> string) |> Array.ofList
                     let mutable optNode = None
                     let mutable enr = includeNames.GetEnumerator ()
@@ -66,9 +66,9 @@ module Overlayer =
                 | (targetProperty, _) -> Some <| targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
-                let converter = TypeDescriptor.GetConverter <| propertyValue.GetType ()
-                if converter.CanConvertFrom typeof<string> then
-                    let overlayValue = converter.ConvertFrom overlayNode.InnerText
+                let propertyValueType = propertyValue.GetType ()
+                if AlgebraicConverter.canConvertFromString propertyValueType then
+                    let overlayValue = AlgebraicConverter.convertFromString overlayNode.InnerText propertyValueType
                     if overlayValue = propertyValue then Overlaid else Altered
                 else Bare
             | None -> Bare
@@ -97,9 +97,8 @@ module Overlayer =
              | None -> false)
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
-            let converter = TypeDescriptor.GetConverter property.PropertyType
-            if converter.CanConvertFrom typeof<string> then
-                let value = converter.ConvertFrom valueStr
+            if AlgebraicConverter.canConvertFromString property.PropertyType then
+                let value = AlgebraicConverter.convertFromString valueStr property.PropertyType
                 property.SetValue (target, value)
 
     let private applyOverlayToDotNetProperties optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
@@ -136,8 +135,7 @@ module Overlayer =
                                 | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target oldOverlayer
                                 | None -> false
                             if shouldApplyOverlay then
-                                let converter = TypeDescriptor.GetConverter aType
-                                let value = converter.ConvertFrom node.InnerText
+                                let value = AlgebraicConverter.convertFromString node.InnerText aType
                                 (node.Name, value) :: xFields
                             else xFields)
                         []
