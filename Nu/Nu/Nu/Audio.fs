@@ -14,7 +14,7 @@ module AudioModule =
     type
         [<StructuralEquality;
           NoComparison;
-          TypeConverter (typeof<AlgebraicConverter<Song>>);
+          TypeConverter (typeof<AlgebraicConverter>);
           XDefaultValue (DefaultSongValue)>]
         Song =
         { SongAssetName : string
@@ -24,7 +24,7 @@ module AudioModule =
     type
         [<StructuralEquality;
           NoComparison;
-          TypeConverter (typeof<AlgebraicConverter<Sound>>);
+          TypeConverter (typeof<AlgebraicConverter>);
           XDefaultValue (DefaultSoundValue)>]
         Sound =
         { SoundAssetName : string

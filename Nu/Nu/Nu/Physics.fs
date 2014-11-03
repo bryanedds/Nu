@@ -17,7 +17,7 @@ module PhysicsModule =
 
     /// Identifies a target whose body can be found in the Integrator.
     /// TODO: remove PhysicsId and have no more than one body per entity!
-    type [<StructuralEquality; StructuralComparison; TypeConverter (typeof<AlgebraicConverter<PhysicsId>>)>] PhysicsId =
+    type [<StructuralEquality; StructuralComparison; TypeConverter (typeof<AlgebraicConverter>)>] PhysicsId =
         struct
             val Major : Guid
             val Minor : Guid
@@ -58,7 +58,7 @@ module PhysicsModule =
         | PolygonShape of PolygonShape
 
     /// The type of a physics body; Static, Kinematic, or Dynamic.
-    type [<TypeConverter (typeof<AlgebraicConverter<BodyType>>)>] BodyType =
+    type [<TypeConverter (typeof<AlgebraicConverter>)>] BodyType =
         | Static
         | Kinematic
         | Dynamic
@@ -506,7 +506,7 @@ module Physics =
         | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
         | ["Polygon"; verticesStr] ->
             let vertexStrs = List.ofArray <| verticesStr.Split '|'
-            try let vertices = List.map (fun str -> (TypeDescriptor.GetConverter (typeof<Vector2>)).ConvertFromString str :?> Vector2) vertexStrs
+            try let vertices = List.map (fun str -> AlgebraicConverter.convertFromString str typeof<Vector2> :?> Vector2) vertexStrs
                 let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                 let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
                 PolygonShape { Vertices = vertices; Center = Vector2.Zero }

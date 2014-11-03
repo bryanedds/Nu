@@ -44,7 +44,7 @@ module TransitionTypeModule =
 
     /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
     /// means an existing screen being hidden.
-    type [<TypeConverter (typeof<AlgebraicConverter<BodyType>>)>] TransitionType =
+    type [<TypeConverter (typeof<AlgebraicConverter>)>] TransitionType =
         | Incoming
         | Outgoing
 
@@ -52,7 +52,7 @@ module TransitionTypeModule =
 module ScreenStateModule =
 
     /// The state of a screen in regards to its transition.
-    type [<TypeConverter (typeof<AlgebraicConverter<BodyType>>)>] ScreenState =
+    type [<TypeConverter (typeof<AlgebraicConverter>)>] ScreenState =
         | IncomingState
         | OutgoingState
         | IdlingState

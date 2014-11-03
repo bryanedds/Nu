@@ -10,7 +10,6 @@ open System.Text
 module StringModule =
 
     /// Uses a type converter to convert source to a string.
-    /// TODO: see if this actually 
     let tcstring (source : obj) =
         let converter = TypeDescriptor.GetConverter source
         converter.ConvertToString source
