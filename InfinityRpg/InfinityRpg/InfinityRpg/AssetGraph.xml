@@ -7,9 +7,9 @@
     <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
-  <Package name="UI">
-    <Assets directory="Assets/UI" extension="psd" associations="[Rendering]" refinements="[PsdToPng | OldSchool]"/>
-    <Assets directory="Assets/UI" extension="nugroup"/>
+  <Package name="Gui">
+    <Assets directory="Assets/Gui" extension="psd" associations="[Rendering]" refinements="[PsdToPng | OldSchool]"/>
+    <Assets directory="Assets/Gui" extension="nugroup"/>
   </Package>
   <Package name="Gameplay">
     <Assets directory="Assets/Gameplay" extension="psd" associations="[Rendering]" refinements="[PsdToPng | OldSchool]"/>

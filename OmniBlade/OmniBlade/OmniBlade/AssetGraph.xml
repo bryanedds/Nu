@@ -7,17 +7,17 @@
     <Assets directory="Assets/Default" extension="ogg" associations="[Audio]"/>
     <Assets directory="Assets/Default" extension="tmx"/>
   </Package>
-  <Package name="UI">
-    <Asset name="BackButtonUp" file="Assets/OmniBlade/UI/BackButtonUp.png" associations="[Rendering]"/>
-    <Asset name="BackButtonDown" file="Assets/OmniBlade/UI/BackButtonDown.png" associations="[Rendering]"/>
-    <Asset name="ExitButtonUp" file="Assets/OmniBlade/UI/ExitButtonUp.png" associations="[Rendering]"/>
-    <Asset name="ExitButtonDown" file="Assets/OmniBlade/UI/ExitButtonDown.png" associations="[Rendering]"/>
-    <Asset name="NewGameButtonUp" file="Assets/OmniBlade/UI/NewGameButtonUp.png" associations="[Rendering]"/>
-    <Asset name="NewGameButtonDown" file="Assets/OmniBlade/UI/NewGameButtonDown.png" associations="[Rendering]"/>
-    <Asset name="LoadGameButtonUp" file="Assets/OmniBlade/UI/LoadGameButtonUp.png" associations="[Rendering]"/>
-    <Asset name="LoadGameButtonDown" file="Assets/OmniBlade/UI/LoadGameButtonDown.png" associations="[Rendering]"/>
-    <Asset name="CreditsButtonUp" file="Assets/OmniBlade/UI/CreditsButtonUp.png" associations="[Rendering]"/>
-    <Asset name="CreditsButtonDown" file="Assets/OmniBlade/UI/CreditsButtonDown.png" associations="[Rendering]"/>
+  <Package name="Gui">
+    <Asset name="BackButtonUp" file="Assets/OmniBlade/Gui/BackButtonUp.png" associations="[Rendering]"/>
+    <Asset name="BackButtonDown" file="Assets/OmniBlade/Gui/BackButtonDown.png" associations="[Rendering]"/>
+    <Asset name="ExitButtonUp" file="Assets/OmniBlade/Gui/ExitButtonUp.png" associations="[Rendering]"/>
+    <Asset name="ExitButtonDown" file="Assets/OmniBlade/Gui/ExitButtonDown.png" associations="[Rendering]"/>
+    <Asset name="NewGameButtonUp" file="Assets/OmniBlade/Gui/NewGameButtonUp.png" associations="[Rendering]"/>
+    <Asset name="NewGameButtonDown" file="Assets/OmniBlade/Gui/NewGameButtonDown.png" associations="[Rendering]"/>
+    <Asset name="LoadGameButtonUp" file="Assets/OmniBlade/Gui/LoadGameButtonUp.png" associations="[Rendering]"/>
+    <Asset name="LoadGameButtonDown" file="Assets/OmniBlade/Gui/LoadGameButtonDown.png" associations="[Rendering]"/>
+    <Asset name="CreditsButtonUp" file="Assets/OmniBlade/Gui/CreditsButtonUp.png" associations="[Rendering]"/>
+    <Asset name="CreditsButtonDown" file="Assets/OmniBlade/Gui/CreditsButtonDown.png" associations="[Rendering]"/>
     <Asset name="Field" file="Assets/OmniBlade/Groups/Field.nugroup"/>
     <Asset name="LoadGame" file="Assets/OmniBlade/Groups/LoadGame.nugroup"/>
     <Asset name="Time" file="Assets/OmniBlade/Groups/Time.nugroup"/>

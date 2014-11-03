@@ -179,14 +179,14 @@ module AnimatedSpriteFacetModule =
             entity.TileSize
 
 [<AutoOpen>]
-module UIFacetModule =
+module GuiFacetModule =
 
     type Entity with
         
         member ui.Enabled = ui?Enabled : bool
         static member setEnabled (value : bool) (ui : Entity) = ui?Enabled <- value
 
-    type UIFacet () =
+    type GuiFacet () =
         inherit Facet ()
         
         static member FieldDefinitions =
@@ -298,7 +298,7 @@ module ButtonDispatcherModule =
              define? ClickSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
-            [typeof<UIFacet>.Name]
+            [typeof<GuiFacet>.Name]
 
         override dispatcher.Register (address, button, world) =
             let world =
@@ -344,7 +344,7 @@ module LabelDispatcherModule =
              define? LabelImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
-            [typeof<UIFacet>.Name]
+            [typeof<GuiFacet>.Name]
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -395,7 +395,7 @@ module TextDispatcherModule =
              define? BackgroundImage { ImageAssetName = "Image4"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
-            [typeof<UIFacet>.Name]
+            [typeof<GuiFacet>.Name]
 
         override dispatcher.GetRenderDescriptors (text, _) =
             if text.Visible then
@@ -484,7 +484,7 @@ module ToggleDispatcherModule =
              define? ToggleSound { SoundAssetName = "Sound"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
-            [typeof<UIFacet>.Name]
+            [typeof<GuiFacet>.Name]
 
         override dispatcher.Register (address, toggle, world) =
             let world =
@@ -551,7 +551,7 @@ module FeelerDispatcherModule =
              define? IsTouched false]
 
         static member IntrinsicFacetNames =
-            [typeof<UIFacet>.Name]
+            [typeof<GuiFacet>.Name]
 
         override dispatcher.Register (address, feeler, world) =
             let world =
@@ -595,7 +595,7 @@ module FillBarDispatcherModule =
              define? BorderImage { ImageAssetName = "Image10"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
-            [typeof<UIFacet>.Name]
+            [typeof<GuiFacet>.Name]
 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then

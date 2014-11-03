@@ -570,7 +570,7 @@ module Program =
                 let world = World.continueHack editorState.GroupAddress pastWorld
                 let editorState = { editorState with PastWorlds = pastWorlds; FutureWorlds = futureWorld :: editorState.FutureWorlds }
                 let world = World.setUserState editorState world
-                let world = World.setInteractivity UIAndPhysics world
+                let world = World.setInteractivity GuiAndPhysics world
                 refreshFormOnUndoRedo form world
                 world)
 
@@ -584,14 +584,14 @@ module Program =
                 let world = World.continueHack editorState.GroupAddress futureWorld
                 let editorState = { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = futureWorlds }
                 let world = World.setUserState editorState world
-                let world = World.setInteractivity UIAndPhysics world
+                let world = World.setInteractivity GuiAndPhysics world
                 refreshFormOnUndoRedo form world
                 world)
 
     let handleFormInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             // TODO: enable disabling of physics as well
-            let interactivity = if form.interactivityButton.Checked then UIAndPhysicsAndGamePlay else UIAndPhysics
+            let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
             let pastWorld = world
             let world = World.setInteractivity interactivity world
             if Interactivity.isGamePlaying interactivity then pushPastWorld pastWorld world
@@ -892,7 +892,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMake sdlDeps userComponentFactory UIAndPhysics true editorState
+        let optWorld = World.tryMake sdlDeps userComponentFactory GuiAndPhysics true editorState
         match optWorld with
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
