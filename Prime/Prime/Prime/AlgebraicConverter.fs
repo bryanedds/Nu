@@ -1,10 +1,9 @@
-﻿namespace Nu
+﻿namespace Prime
 open System
 open System.ComponentModel
 open Microsoft.FSharp.Reflection
 open FParsec
 open Prime
-open Nu
 
 [<AutoOpen>]
 module AlgebraicConverterModule =
@@ -155,3 +154,12 @@ module AlgebraicConverterModule =
                 | _ -> failwith "Invalid AlgebraicConverter conversion from string."
             | :? 't -> source
             | _ -> failwith "Invalid AlgebraicConverter conversion from source."
+
+module AlgebraicConverter =
+
+    /// Initialize the type converters that we need out-of-the-box.
+    /// Unfortunately, this is very hard to make comprehensive -
+    /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type/26701678?noredirect=1#comment42014989_26701678
+    let initTypeConverters () =
+        assignTypeConverter<string option, AlgebraicConverter<string option>> ()
+        assignTypeConverter<string list, AlgebraicConverter<string list>> ()

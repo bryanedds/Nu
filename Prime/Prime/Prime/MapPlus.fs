@@ -7,7 +7,8 @@ open System
 [<AutoOpen>]
 module MapPlusModule =
 
-    // A Map with additional key input (such as a version number).
+    /// A Map with additional key input (such as a version number).
+    /// TODO: decorate with and implement for AlgebraicConverter.
     type MapPlus<'p, 'm, 'v when 'm : comparison and 'p : comparison> =
         Map<'p, Map<'m, 'v>>
 

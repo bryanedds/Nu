@@ -64,7 +64,6 @@
     <Compile Include="Miscellanea.fs" />
     <Compile Include="Sectioning.fs" />
     <Compile Include="Option.fs" />
-    <Compile Include="Either.fs" />
     <Compile Include="Pair.fs" />
     <Compile Include="Triple.fs" />
     <Compile Include="Seq.fs" />
@@ -76,24 +75,33 @@
     <Compile Include="PersistentHashMap.fs" />
     <Compile Include="HashSet.fs" />
     <Compile Include="Dictionary.fs" />
-    <Compile Include="MapPlus.fs" />
     <Compile Include="Lensx.fs" />
+    <Compile Include="AlgebraicReader.fs" />
+    <Compile Include="AlgebraicConverter.fs" />
+    <Compile Include="Either.fs" />
+    <Compile Include="MapPlus.fs" />
     <Compile Include="RduTree.fs" />
-    <Compile Include="TypeExtension.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
     <Compile Include="ImmutableSubclass.fs" />
-    <Compile Include="Tests.fs" />
+    <Compile Include="AlgebraicReaderTests.fs" />
+    <Compile Include="AlgebraicConverterTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FParsec">
+      <HintPath>..\..\FParsec\FParsec.dll</HintPath>
+    </Reference>
+    <Reference Include="FParsecCS">
+      <HintPath>..\..\FParsec\FParsecCS.dll</HintPath>
+    </Reference>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharpx.Collections">
-      <HintPath>..\..\..\Nu\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
+      <HintPath>..\..\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\FSharpx.Core\FSharpx.Core.dll</HintPath>

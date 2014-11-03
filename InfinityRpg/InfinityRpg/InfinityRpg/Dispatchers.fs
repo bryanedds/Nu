@@ -1,6 +1,7 @@
 ﻿namespace InfinityRpg
 open System
 open System.ComponentModel
+open Prime
 open Nu
 
 [<AutoOpen>]

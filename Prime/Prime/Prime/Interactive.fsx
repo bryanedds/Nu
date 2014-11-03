@@ -3,14 +3,16 @@
 
 (* IMPORTANT NOTE: change these paths to make this script run with your Prime installation. *)
 #r "C:/Development/FPWorks/Prime/xUnit/xunit.dll"
+#r "C:/Development/FPWorks/Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "C:/Development/FPWorks/Prime/FParsec/FParsec.dll"
 #r "C:/Development/FPWorks/Prime/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Development/FPWorks/Prime/FSharpx.Collections/FSharpx.Collections.dll"
 
 #load "Log.fs"
 #load "ReferenceEquality.fs"
 #load "Miscellanea.fs"
 #load "Sectioning.fs"
 #load "Option.fs"
-#load "Either.fs"
 #load "Pair.fs"
 #load "Triple.fs"
 #load "Seq.fs"
@@ -19,13 +21,15 @@
 #load "List.fs"
 #load "Set.fs"
 #load "Map.fs"
+#load "PersistentHashMap.fs"
 #load "HashSet.fs"
 #load "Dictionary.fs"
 #load "MapPlus.fs"
-#load "Type.fs"
 #load "Lensx.fs"
+#load "AlgebraicReader.fs"
+#load "AlgebraicConverter.fs"
+#load "Either.fs"
 #load "RduTree.fs"
-#load "TypeExtension.fs"
 
 open System
 open Prime
