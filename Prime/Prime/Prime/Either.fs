@@ -3,14 +3,14 @@
 
 namespace Prime
 open System
+open System.ComponentModel
 
 [<AutoOpen>]
 module EitherModule =
 
     /// Haskell-style Either type.
-    /// TODO: implement converter as AlgebraicConverter
     /// TODO: more nice operators definitions.
-    type Either<'l, 'r> =
+    type [<TypeConverter (typeof<AlgebraicConverter>)>] Either<'l, 'r> =
         | Right of 'r
         | Left of 'l
         override this.ToString () =

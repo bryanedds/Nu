@@ -29,6 +29,10 @@ module AlgebraicConverterTests =
         let value = AlgebraicConverter.convertFromString "[Some | string]" typeof<string option> :?> string option
         Assert.Equal<string option> (Some "string", value)
 
+    let [<Fact>] canConvertStringToRightString () =
+        let value = AlgebraicConverter.convertFromString "[Right | string]" typeof<Either<unit, string>> :?> Either<unit, string>
+        Assert.Equal<Either<unit, string>> (Right "string", value)
+
     let [<Fact>] canConvertStringToIntList () =
         let value = AlgebraicConverter.convertFromString"[0 | 1]" typeof<int list> :?> obj list
         Assert.Equal<obj list> ([0 :> obj; 1 :> obj], value)
