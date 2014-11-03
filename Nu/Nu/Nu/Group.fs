@@ -23,7 +23,8 @@ module GroupModule =
             { Group.Id = id
               Name = match optName with None -> tcstring id | Some name -> name
               DispatcherNp = dispatcher
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
+              CreationTimeNp = DateTime.UtcNow }
 
 [<AutoOpen>]
 module WorldGroupModule =

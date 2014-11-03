@@ -91,7 +91,8 @@ module EntityModule =
               FacetNames = []
               FacetsNp = []
               OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
+              CreationTimeNp = DateTime.UtcNow }
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
@@ -398,8 +399,12 @@ module WorldEntityModule =
 
         static member writeEntities overlayer (writer : XmlWriter) (entities : Map<_, _>) =
             writer.WriteStartElement EntitiesNodeName
-            for entityKvp in entities do
-                World.writeEntity overlayer writer entityKvp.Value
+            let entitiesSorted =
+                List.sortBy
+                    (fun (entity : Entity) -> entity.CreationTimeNp)
+                    (Map.toValueList entities)
+            for entity in entitiesSorted do
+                World.writeEntity overlayer writer entity
             writer.WriteEndElement ()
 
         static member readEntity (entityNode : XmlNode) defaultDispatcherName world =

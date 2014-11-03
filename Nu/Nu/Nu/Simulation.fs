@@ -235,6 +235,8 @@ module SimModule =
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, avatars, blocks, and things of that sort.
+    /// TODO: now that there are field descriptors, consider making their persistence configurable
+    /// with data instead of name-suffixing
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
@@ -248,7 +250,8 @@ module SimModule =
           FacetNames : string list
           FacetsNp : Facet list
           OptOverlayName : string option
-          Xtension : Xtension } // TODO: now that there are field descriptors, consider making their persistence configurable with data instead of name-suffixing.
+          Xtension : Xtension
+          CreationTimeNp : DateTime } // just needed for ordering writes to reduce diff volumes }
 
         static member (?) (this : Entity, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -262,7 +265,8 @@ module SimModule =
         { Id : Guid
           Name : string
           DispatcherNp : GroupDispatcher
-          Xtension : Xtension }
+          Xtension : Xtension
+          CreationTimeNp : DateTime }
 
         static member (?) (this : Group, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -280,7 +284,8 @@ module SimModule =
           Incoming : Transition
           Outgoing : Transition
           DispatcherNp : ScreenDispatcher
-          Xtension : Xtension }
+          Xtension : Xtension
+          CreationTimeNp : DateTime }
 
         static member (?) (this : Screen, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -295,7 +300,8 @@ module SimModule =
           Name : string
           OptSelectedScreenAddress : Address option
           DispatcherNp : GameDispatcher
-          Xtension : Xtension }
+          Xtension : Xtension
+          CreationTimeNp : DateTime }
 
         static member (?) (this : Game, memberName) =
             Xtension.(?) (this.Xtension, memberName)
