@@ -743,7 +743,7 @@ module WorldModule =
                         [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
                          typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet
-                         typeof<UIFacet>.Name, UIFacet () :> Facet]
+                         typeof<GuiFacet>.Name, GuiFacet () :> Facet]
                 let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
 
                 // make intrinsic overlays
@@ -850,7 +850,7 @@ module WorldModule =
             let state =
                 { TickTime = 0L
                   Liveness = Running
-                  Interactivity = UIOnly
+                  Interactivity = GuiOnly
                   OptScreenTransitionDestinationAddress = None
                   AssetMetadataMap = Metadata.generateEmptyAssetMetadataMap ()
                   AssetGraphFilePath = String.Empty

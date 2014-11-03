@@ -8,7 +8,7 @@ open Nu.Constants
 module OmniConstants =
 
     // misc constants
-    let UIPackageName = "UI"
+    let GuiPackageName = "Gui"
     let FieldFeelerName = "Feeler"
     let FieldAvatarName = "Avatar"
 

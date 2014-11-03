@@ -10,8 +10,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[CreditsButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[CreditsButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[CreditsButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[CreditsButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -20,8 +20,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[ExitButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[ExitButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[ExitButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[ExitButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -30,8 +30,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[PlayButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[PlayButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[PlayButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[PlayButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">

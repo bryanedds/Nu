@@ -19,10 +19,10 @@ module Progression =
 
     let tryMakeInfinityRpgWorld sdlDeps userState =
         let componentFactory = InfinityRpgComponentFactory ()
-        let optWorld = World.tryMake sdlDeps componentFactory UIAndPhysicsAndGamePlay false userState
+        let optWorld = World.tryMake sdlDeps componentFactory GuiAndPhysicsAndGamePlay false userState
         match optWorld with
         | Right world ->
-            let world = World.hintRenderingPackageUse UIPackageName world
+            let world = World.hintRenderingPackageUse GuiPackageName world
             let world = addTitleScreen world
             let world = addCreditsScreen world
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }

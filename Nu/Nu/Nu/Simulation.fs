@@ -18,9 +18,9 @@ module InterativityModule =
 
     /// Describes the game engine's current level of 'interactivity'.
     type Interactivity =
-        | UIOnly
-        | UIAndPhysics
-        | UIAndPhysicsAndGamePlay
+        | GuiOnly
+        | GuiAndPhysics
+        | GuiAndPhysicsAndGamePlay
 
 [<RequireQualifiedAccess>]
 module Interactivity =
@@ -28,16 +28,16 @@ module Interactivity =
     /// Query that the engine is in game-playing mode.
     let isGamePlaying interactivity =
         match interactivity with
-        | UIOnly -> false
-        | UIAndPhysics -> false
-        | UIAndPhysicsAndGamePlay -> true
+        | GuiOnly -> false
+        | GuiAndPhysics -> false
+        | GuiAndPhysicsAndGamePlay -> true
 
     /// Query that the physics system is running.
     let isPhysicsRunning interactivity =
         match interactivity with
-        | UIOnly -> false
-        | UIAndPhysics -> true
-        | UIAndPhysicsAndGamePlay -> true
+        | GuiOnly -> false
+        | GuiAndPhysics -> true
+        | GuiAndPhysicsAndGamePlay -> true
 
 [<AutoOpen>]
 module TransitionTypeModule =

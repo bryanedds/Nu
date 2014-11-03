@@ -3,19 +3,19 @@ open Nu
 module Constants =
 
     // package constants
-    let UIPackageName = "UI"
+    let GuiPackageName = "Gui"
     let GameplayPackageName = "Gameplay"
 
     // title constants
     let TitleAddress = !* "Title"
-    let TitleGroupFilePath = "Assets/UI/Title.nugroup"
+    let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let ClickTitleNewGameEventAddress = !* "Click/Title/Group/NewGame"
     let ClickTitleCreditsEventAddress = !* "Click/Title/Group/Credits"
     let ClickTitleExitEventAddress = !* "Click/Title/Group/Exit"
 
     // credits constants
     let CreditsAddress = !* "Credits"
-    let CreditsGroupFilePath = "Assets/UI/Credits.nugroup"
+    let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
     let ClickCreditsBackEventAddress = !* "Click/Credits/Group/Back"
 
     // transition constants

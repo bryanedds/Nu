@@ -9,8 +9,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[CreditsButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[CreditsButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[CreditsButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[CreditsButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -19,8 +19,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[ExitButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[ExitButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[ExitButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[ExitButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -29,8 +29,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[LoadGameButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[LoadGameButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[LoadGameButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[LoadGameButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -39,8 +39,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[NewGameButtonDown | UI]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[NewGameButtonUp | UI]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[NewGameButtonDown | Gui]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[NewGameButtonUp | Gui]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
