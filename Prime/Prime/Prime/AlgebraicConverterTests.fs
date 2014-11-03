@@ -1,12 +1,8 @@
-﻿namespace Nu
+﻿namespace Prime
 open System
-open System.Collections.Generic
 open FParsec
-open OpenTK
 open Xunit
 open Prime
-open Nu
-open Nu.Constants
 module AlgebraicConverterTests =
 
     type IntIntRecord = { Int : int; Int2 : int }
@@ -24,26 +20,19 @@ module AlgebraicConverterTests =
         let value = converter.ConvertFromString "0" :?> int
         Assert.Equal (0, value)
 
-    let [<Fact>] canConvertStringToVector2 () =
-        Math.initTypeConverters ()
-        let converter = AlgebraicConverter<Vector2> ()
-        let value = converter.ConvertFromString "0, 1" :?> Vector2
-        Assert.Equal (Vector2 (0.0f, 1.0f), value)
-
     let [<Fact>] canConvertStringToNone () =
-        Math.initTypeConverters ()
+        AlgebraicConverter.initTypeConverters ()
         let converter = AlgebraicConverter<string option> ()
         let value = converter.ConvertFromString "None" :?> string option
         Assert.Equal<string option> (None, value)
 
     let [<Fact>] canConvertStringToSomeString () =
-        Math.initTypeConverters ()
+        AlgebraicConverter.initTypeConverters ()
         let converter = AlgebraicConverter<string option> ()
         let value = converter.ConvertFromString "[Some | string]" :?> string option
         Assert.Equal<string option> (Some "string", value)
 
     let [<Fact>] canConvertStringToIntList () =
-        Math.initTypeConverters ()
         let converter = AlgebraicConverter<int list> ()
         let value = converter.ConvertFromString "[0 | 1]" :?> obj list
         Assert.Equal<obj list> ([0 :> obj; 1 :> obj], value)

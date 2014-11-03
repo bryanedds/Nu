@@ -122,8 +122,6 @@ module Math =
         assignTypeConverter<Vector2, Vector2Converter> ()
         assignTypeConverter<Vector3, Vector3Converter> ()
         assignTypeConverter<Vector4, Vector4Converter> ()
-        assignTypeConverter<string option, AlgebraicConverter<string option>> ()
-        assignTypeConverter<string list, AlgebraicConverter<string list>> ()
 
     /// The identity transform.
     let transformIdentity =

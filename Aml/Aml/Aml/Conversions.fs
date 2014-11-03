@@ -4,6 +4,7 @@
 namespace Aml
 open System
 open System.IO
+open Prime
 open Aml.Ast
 open Aml.AstModule
 open Aml.AmlConstants

@@ -1,11 +1,9 @@
-﻿namespace Nu
+﻿namespace Prime
 open System
 open System.Collections.Generic
 open FParsec
 open Xunit
 open Prime
-open Nu
-open Nu.Constants
 module AlgebraicParserTests =
 
     let [<Fact>] canReadSimpleValue () =

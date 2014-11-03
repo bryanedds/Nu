@@ -1,4 +1,4 @@
-﻿namespace Nu
+﻿namespace Prime
 open System
 open System.ComponentModel
 open Microsoft.FSharp.Reflection
@@ -19,8 +19,9 @@ module AlgebraicReader =
         CharacterAnimationFacing
 
         (* Complex Values *)
-        [Some | 0]
         []
+        [Some | 0]
+        [Left | 0]
         [0, 1 | 2, 4]
         [AnimationData | 4 | 8] *)
 

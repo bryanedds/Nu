@@ -3,10 +3,13 @@
 
 (* IMPORTANT NOTE: change these paths to make this script run with your Nu installation! *)
 #r "C:/Development/FPWorks/Prime/xUnit/xunit.dll"
+#r "C:/Development/FPWorks/Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "C:/Development/FPWorks/Prime/FParsec/FParsec.dll"
 #r "C:/Development/FPWorks/Prime/FSharpx.Core/FSharpx.Core.dll"
 #r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.exe"
+#r "C:/Development/FPWorks/Prime/FSharpx.Core/FSharpx.Core.dll"
+#r "C:/Development/FPWorks/Prime/FSharpx.Collections/FSharpx.Collections.dll"
 #r "C:/Development/FPWorks/Nu/xUnit/xunit.dll"
-#r "C:/Development/FPWorks/Nu/FSharpx.Core/FSharpx.Core.dll"
 #r "C:/Development/FPWorks/Nu/Farseer/FarseerPhysics.dll"
 #r "C:/Development/FPWorks/Nu/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "C:/Development/FPWorks/Nu/FParsec/FParsec.dll"

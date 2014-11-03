@@ -2,9 +2,9 @@
 // Copyright (C) Bryan Edds, 2012-2014.
 
 (* NOTE: change these paths to make this script run with your Aml installation. *)
+#r "C:/Development/FPWorks/Prime/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
+#r "C:/Development/FPWorks/Prime/FParsec/FParsec.dll"
 #r "C:/Development/FPWorks/Aml/Fspp4.0/FSharp.PowerPack.Compatibility.dll"
-#r "C:/Development/FPWorks/Aml/FParsec/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
-#r "C:/Development/FPWorks/Aml/FParsec/FParsec.dll"
 #r "C:/Development/FPWorks/Aml/xUnit/xunit.dll"
 #r "C:/Development/FPWorks/Prime/Prime/Prime/bin/Debug/Prime.exe"
 

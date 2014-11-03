@@ -87,12 +87,6 @@
     <Reference Include="FarseerPhysics">
       <HintPath>..\..\..\Nu\Farseer\FarseerPhysics.dll</HintPath>
     </Reference>
-    <Reference Include="FSharpx.Collections">
-      <HintPath>..\..\..\Nu\FSharpx.Collections\FSharpx.Collections.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharpx.Core">
-      <HintPath>..\..\..\Nu\FSharpx.Core\FSharpx.Core.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>

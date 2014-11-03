@@ -885,7 +885,8 @@ module WorldModule =
             // ensure the current culture is invariate
             System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture
 
-            // init math type converters
+            // init type converters
+            AlgebraicConverter.initTypeConverters ()
             Math.initTypeConverters ()
 
             // assign functions to the pub / sub refs.
