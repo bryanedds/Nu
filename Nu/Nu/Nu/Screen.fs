@@ -30,7 +30,8 @@ module ScreenModule =
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               DispatcherNp = dispatcher
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
+              CreationTimeNp = DateTime.UtcNow }
 
 [<AutoOpen>]
 module WorldScreenModule =

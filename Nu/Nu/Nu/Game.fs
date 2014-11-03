@@ -22,7 +22,8 @@ module GameModule =
                   Name = match optName with None -> tcstring id | Some name -> name
                   OptSelectedScreenAddress = None
                   DispatcherNp = dispatcher
-                  Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+                  Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
+                  CreationTimeNp = DateTime.UtcNow }
             Reflection.attachFields dispatcher game
             game
 
