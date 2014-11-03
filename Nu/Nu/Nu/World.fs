@@ -33,7 +33,7 @@ module WorldModule =
     let private ScreenTransitionUpKeyboardKeyKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
     let private AnyEventAddressesCache = Dictionary<Address, Address list> HashIdentity.Structural
-    let private Assemblies = Dictionary<string, Assembly> ()
+    let private LoadedAssemblies = Dictionary<string, Assembly> ()
 
     type World with
 
@@ -84,9 +84,14 @@ module WorldModule =
                 | Some selectedScreen ->
                     let subscriptionKey = World.makeSubscriptionKey ()
                     let subscription = fun _ world ->
-                        let world = World.unsubscribe subscriptionKey world
-                        let world = snd <| World.selectScreen destinationAddress destinationScreen world
-                        (Cascade, world)
+                        match world.State.OptScreenTransitionDestinationAddress with
+                        | Some address ->
+                            let world = World.unsubscribe subscriptionKey world
+                            let world = World.setOptScreenTransitionDestinationAddress None world
+                            let world = snd <| World.selectScreen address destinationScreen world
+                            (Cascade, world)
+                        | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
+                    let world = World.setOptScreenTransitionDestinationAddress (Some destinationAddress) world
                     let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
                     let world = World.subscribe subscriptionKey (FinishOutgoingEventAddress + selectedScreenAddress) selectedScreenAddress subscription world
                     Some world
@@ -781,6 +786,7 @@ module WorldModule =
                     { TickTime = 0L
                       Liveness = Running
                       Interactivity = interactivity
+                      OptScreenTransitionDestinationAddress = None
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
                       Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays
@@ -845,6 +851,7 @@ module WorldModule =
                 { TickTime = 0L
                   Liveness = Running
                   Interactivity = UIOnly
+                  OptScreenTransitionDestinationAddress = None
                   AssetMetadataMap = Metadata.generateEmptyAssetMetadataMap ()
                   AssetGraphFilePath = String.Empty
                   Overlayer = Overlayer.makeEmpty ()
@@ -870,8 +877,10 @@ module WorldModule =
         static member init () =
 
             // make types load reflectively from pathed (non-static) assemblies
-            AppDomain.CurrentDomain.AssemblyLoad.Add (fun args -> Assemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
-            AppDomain.CurrentDomain.add_AssemblyResolve <| ResolveEventHandler (fun _ args -> snd <| Assemblies.TryGetValue args.Name)
+            AppDomain.CurrentDomain.AssemblyLoad.Add
+                (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+            AppDomain.CurrentDomain.add_AssemblyResolve <| ResolveEventHandler
+                (fun _ args -> snd <| LoadedAssemblies.TryGetValue args.Name)
 
             // ensure the current culture is invariate
             System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.InvariantCulture

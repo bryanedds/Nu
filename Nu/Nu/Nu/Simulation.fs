@@ -343,6 +343,7 @@ module SimModule =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
+          OptScreenTransitionDestinationAddress : Address option
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           Overlayer : Overlayer
@@ -582,6 +583,11 @@ module World =
     /// Increment the TickTime field of the world.
     let internal incrementTickTime world =
         let state = { world.State with TickTime = world.State.TickTime + 1L }
+        { world with State = state }
+
+    /// Set the OptScreenTransitionDestinationAddress field of the world.
+    let internal setOptScreenTransitionDestinationAddress address world =
+        let state = { world.State with OptScreenTransitionDestinationAddress = address  }
         { world with State = state }
 
     /// Place the world into a state such that the app will exit at the end of the current frame.
