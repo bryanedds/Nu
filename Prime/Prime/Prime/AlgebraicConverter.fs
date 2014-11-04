@@ -163,26 +163,6 @@ module AlgebraicConverterModule =
                     | :? string as sourceStr -> fromString targetType sourceStr
                     | _ -> failwith "Invalid AlgebraicConverter conversion from string."
 
-[<RequireQualifiedAccess>]
-module AlgebraicConverter =
-
-    /// Initialize the type converters that we need out-of-the-box.
-    /// NOTE: This is nearly impossible to make comprehensive due to -
-    /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type
-    let initTypeConverters () =
-
-        // list converters
-        assignTypeConverter<bool list, AlgebraicConverter> ()
-        assignTypeConverter<int list, AlgebraicConverter> ()
-        assignTypeConverter<single list, AlgebraicConverter> ()
-        assignTypeConverter<string list, AlgebraicConverter> ()
-        
-        // option converters
-        assignTypeConverter<bool option, AlgebraicConverter> ()
-        assignTypeConverter<int option, AlgebraicConverter> ()
-        assignTypeConverter<single option, AlgebraicConverter> ()
-        assignTypeConverter<string option, AlgebraicConverter> ()
-
 [<AutoOpen>]
 module AlgebraicDescriptor =
     
