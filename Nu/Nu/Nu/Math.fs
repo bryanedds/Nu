@@ -118,24 +118,10 @@ module Matrix3 =
 module Math =
 
     /// Initializes the type converters found in NuMathModule.
-    /// NOTE: This is nearly impossible to make comprehensive due to -
-    /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type
     let initTypeConverters () =
-        
-        // vector2 converters
         assignTypeConverter<Vector2, Vector2Converter> ()
-        assignTypeConverter<Vector2 option, Vector2Converter> ()
-        assignTypeConverter<Vector2 list, Vector2Converter> ()
-        
-        // vector3 converters
         assignTypeConverter<Vector3, Vector3Converter> ()
-        assignTypeConverter<Vector3 option, Vector3Converter> ()
-        assignTypeConverter<Vector3 list, Vector3Converter> ()
-        
-        // vector4 converters
         assignTypeConverter<Vector4, Vector4Converter> ()
-        assignTypeConverter<Vector4 option, Vector4Converter> ()
-        assignTypeConverter<Vector4 list, Vector4Converter> ()
 
     /// The identity transform.
     let transformIdentity =
