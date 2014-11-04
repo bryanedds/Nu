@@ -8,10 +8,7 @@ open Prime
 [<AutoOpen>]
 module AlgebraicConverterModule =
 
-    type [<StructuralEquality; NoComparison>] AlgebraicConversionCircumventor =
-        { AccValue : string }
-
-    type AlgebraicConverter () =
+    type AlgebraicConverter (targetType : Type) =
         inherit TypeConverter ()
 
         let objToObjList source =
@@ -76,12 +73,12 @@ module AlgebraicConverterModule =
         
             else TypeDescriptor.ConvertToString source
 
-        static member fromReaderValue (destType : Type) (readerValue : obj) =
+        let rec fromReaderValue (destType : Type) (readerValue : obj) =
         
             if destType.Name = typedefof<_ list>.Name then
                 match readerValue with
                 | :? (obj list) as readerValueList ->
-                    let list = List.map (AlgebraicConverter.fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
+                    let list = List.map (fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
                     list :> obj
                 | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
         
@@ -91,7 +88,7 @@ module AlgebraicConverterModule =
                     List.mapi
                         (fun i tupleReaderValue ->
                             let tupleElementType = (FSharpType.GetTupleElements destType).[i]
-                            AlgebraicConverter.fromReaderValue tupleElementType tupleReaderValue)
+                            fromReaderValue tupleElementType tupleReaderValue)
                         tupleReaderValues
                 FSharpValue.MakeTuple (Array.ofList tupleValues, destType)
         
@@ -101,7 +98,7 @@ module AlgebraicConverterModule =
                     List.mapi
                         (fun i recordReaderValue ->
                             let recordFieldType = (FSharpType.GetRecordFields destType).[i].PropertyType
-                            AlgebraicConverter.fromReaderValue recordFieldType recordReaderValue)
+                            fromReaderValue recordFieldType recordReaderValue)
                         recordReaderValues
                 FSharpValue.MakeRecord (destType, Array.ofList recordValues)
         
@@ -117,7 +114,7 @@ module AlgebraicConverterModule =
                             List.mapi
                                 (fun i unionReaderValue ->
                                     let unionCaseType = (unionCase.GetFields ()).[i].PropertyType
-                                    AlgebraicConverter.fromReaderValue unionCaseType unionReaderValue)
+                                    fromReaderValue unionCaseType unionReaderValue)
                                 readerValueTail
                         FSharpValue.MakeUnion (unionCase, Array.ofList unionValues)
                     | _ -> failwith "Invalid AlgebraicConverter conversion from union reader value."
@@ -130,26 +127,9 @@ module AlgebraicConverterModule =
                 let readerValueStr = readerValue :?> string
                 TypeDescriptor.ConvertFromString readerValueStr destType
 
-        static member fromString (destType : Type) (source : string) =
+        let fromString (destType : Type) (source : string) =
             let readerValue = AlgebraicReader.stringToValue source
-            AlgebraicConverter.fromReaderValue destType readerValue
-
-        static member canConvertFromString (_ : Type) =
-            true
-
-        static member canConvertFrom (sourceType : Type) (destType : Type) =
-            sourceType = typeof<string> ||
-            sourceType = destType
-
-        static member convertFrom (source : obj) (sourceType : Type) (destType : Type) =
-            if sourceType <> destType then
-                match source with
-                | :? string as sourceStr -> AlgebraicConverter.fromString destType sourceStr
-                | _ -> failwith "Invalid AlgebraicConverter conversion from string."
-            else source
-
-        static member convertFromString source destType =
-            AlgebraicConverter.convertFrom source typeof<string> destType
+            fromReaderValue destType readerValue
 
         override this.CanConvertTo (_, _) =
             true
@@ -158,16 +138,8 @@ module AlgebraicConverterModule =
             if destType = typeof<string> then
                 match source with
                 | null ->
-                    // this case represents a particularly penercious turn of events; here we have
-                    // no actual type data in this context, yet the source object may also be null.
-                    // In F#, this is actually an untenable situation since we can have an
-                    // unbounded number of valid values represented by a null thanks to the
-                    // 'CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)'
-                    // attribute.
-                    //
-                    // Unfortunately, there is no real way to solve this other than to assume here
-                    // that null is to be represented as None.
-                    "None" :> obj
+                    // here we infer that we're dealing with the zero case of a union
+                    (FSharpType.GetUnionCases targetType).[0].Name :> obj
                 | _ ->
                     let sourceType = source.GetType ()
                     toString source sourceType :> obj
@@ -176,17 +148,26 @@ module AlgebraicConverterModule =
                 if destType = sourceType then source
                 else failwith "Invalid AlgebraicConverter conversion to source."
 
-        override this.CanConvertFrom (_, _) =
-            true
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<string> ||
+            sourceType = targetType
         
         override this.ConvertFrom (_, _, source) =
-            { AccValue = source :?> string } :> obj
+            match source with
+            | null -> source
+            | _ ->
+                let sourceType = source.GetType ()
+                if sourceType = targetType then source
+                else
+                    match source with
+                    | :? string as sourceStr -> fromString targetType sourceStr
+                    | _ -> failwith "Invalid AlgebraicConverter conversion from string."
 
 module AlgebraicConverter =
 
     /// Initialize the type converters that we need out-of-the-box.
-    /// Unfortunately, this is very hard to make comprehensive -
-    /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type/26701678?noredirect=1#comment42014989_26701678
     let initTypeConverters () =
-        assignTypeConverter<string option, AlgebraicConverter> ()
+        assignTypeConverter<int list, AlgebraicConverter> ()
         assignTypeConverter<string list, AlgebraicConverter> ()
+        assignTypeConverter<int option, AlgebraicConverter> ()
+        assignTypeConverter<string option, AlgebraicConverter> ()

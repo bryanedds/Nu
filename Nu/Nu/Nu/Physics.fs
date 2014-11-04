@@ -506,7 +506,7 @@ module Physics =
         | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
         | ["Polygon"; verticesStr] ->
             let vertexStrs = List.ofArray <| verticesStr.Split '|'
-            try let vertices = List.map (fun str -> AlgebraicConverter.convertFromString str typeof<Vector2> :?> Vector2) vertexStrs
+            try let vertices = List.map (fun str -> TypeDescriptor.ConvertFromString str typeof<Vector2> :?> Vector2) vertexStrs
                 let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                 let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
                 PolygonShape { Vertices = vertices; Center = Vector2.Zero }
