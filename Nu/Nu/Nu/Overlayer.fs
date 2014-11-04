@@ -36,7 +36,7 @@ module Overlayer =
                 match optIncludeNames with
                 | null -> None
                 | includeNames ->
-                    let includeNames = AlgebraicDescriptor.ConvertFromString includeNames.InnerXml typeof<string list>
+                    let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list>
                     let includeNames = includeNames :?> obj list |> List.map (fun obj -> obj :?> string) |> Array.ofList
                     let mutable optNode = None
                     let mutable enr = includeNames.GetEnumerator ()
@@ -137,7 +137,7 @@ module Overlayer =
                                 | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target oldOverlayer
                                 | None -> false
                             if shouldApplyOverlay then
-                                let value = AlgebraicDescriptor.ConvertFromString node.InnerText aType
+                                let value = AlgebraicDescriptor.convertFromString node.InnerText aType
                                 (node.Name, value) :: xFields
                             else xFields)
                         []

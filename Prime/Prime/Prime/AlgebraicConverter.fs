@@ -2,7 +2,6 @@
 open System
 open System.ComponentModel
 open Microsoft.FSharp.Reflection
-open FParsec
 open Prime
 
 [<AutoOpen>]
@@ -162,46 +161,3 @@ module AlgebraicConverterModule =
                     match source with
                     | :? string as sourceStr -> fromString targetType sourceStr
                     | _ -> failwith "Invalid AlgebraicConverter conversion from string."
-
-[<AutoOpen>]
-module AlgebraicDescriptor =
-    
-    /// Query that a value of the source type can be converted to the destination type.
-    let CanConvertTo sourceType destType =
-        (AlgebraicConverter sourceType).CanConvertTo destType
-    
-    /// Query that a value of the source type can be converted to a string.
-    let CanConvertToString sourceType =
-        (AlgebraicConverter sourceType).CanConvertTo typeof<string>
-
-    /// Query that a value of the destination type can be converted from the source type.
-    let CanConvertFrom sourceType destType =
-        (AlgebraicConverter destType).CanConvertFrom sourceType
-
-    /// Query that a value of the destination type can be converted from a string.
-    let CanConvertFromString sourceType =
-        (AlgebraicConverter sourceType).CanConvertFrom typeof<string>
-
-    /// Convert a value to the given type using its assigned type converter.
-    let ConvertTo (source : obj, destType) =
-        (AlgebraicConverter (source.GetType ())).ConvertTo (source, destType)
-
-    /// Convert a value from given type using its assigned type converter.
-    let ConvertFrom source destType =
-        (AlgebraicConverter destType).ConvertFrom source
-
-    /// Convert a value to a string using its assigned type converter.
-    let ConvertToString source =
-        ConvertTo (source, typeof<string>) :?> string
-
-    /// Convert a value from a string using its assigned type converter.
-    let ConvertFromString (str : string) destType =
-        ConvertFrom str destType
-
-[<AutoOpen>]
-module AlgebraicStringModule =
-
-    /// Uses an algebraic converter to convert source to a string.
-    let astring (source : obj) =
-        let converter = (AlgebraicConverter (source.GetType ()))
-        converter.ConvertToString source

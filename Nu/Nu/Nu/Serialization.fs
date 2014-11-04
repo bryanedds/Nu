@@ -48,12 +48,12 @@ module Serialization =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        AlgebraicDescriptor.ConvertFromString optOverlayNameStr typeof<string option> :?> string option
+        AlgebraicDescriptor.convertFromString optOverlayNameStr typeof<string option> :?> string option
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNamesStr = node.InnerText
-        let facetNames = AlgebraicDescriptor.ConvertFromString facetNamesStr typeof<string list>
+        let facetNames = AlgebraicDescriptor.convertFromString facetNamesStr typeof<string list>
         facetNames :?> obj list |> List.map (fun obj -> obj :?> string)
 
     /// Read an Xtension from Xml.

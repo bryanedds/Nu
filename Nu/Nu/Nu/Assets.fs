@@ -67,7 +67,7 @@ module Assets =
         match node.Attributes.GetNamedItem AssociationsAttributeName with
         | null -> []
         | associations ->
-            let associations = AlgebraicDescriptor.ConvertFromString associations.InnerText typeof<string list>
+            let associations = AlgebraicDescriptor.convertFromString associations.InnerText typeof<string list>
             associations :?> obj list |> List.map (fun obj -> obj :?> string)
 
     let private getAssetExtension2 rawAssetExtension refinement =
@@ -89,7 +89,7 @@ module Assets =
     let private getAssetSearchOption (node : XmlNode) =
         match node.Attributes.GetNamedItem RecursiveAttributeName with
         | null -> SearchOption.TopDirectoryOnly
-        | isRecursive -> if isRecursive.InnerText = astring true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
+        | isRecursive -> if isRecursive.InnerText = acstring true then SearchOption.AllDirectories else SearchOption.TopDirectoryOnly
 
     let private getAssetName filePath (node : XmlNode) =
         match node.Attributes.GetNamedItem NameAttributeName with
@@ -100,7 +100,7 @@ module Assets =
         match node.Attributes.GetNamedItem RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let refinements = AlgebraicDescriptor.ConvertFromString refinements.InnerText typeof<string list>
+            let refinements = AlgebraicDescriptor.convertFromString refinements.InnerText typeof<string list>
             let refinements = refinements :?> obj list |> List.map (fun obj -> obj :?> string)
             List.map Refinement.stringToRefinement refinements
 
@@ -225,7 +225,7 @@ module Assets =
                 | [] -> Left <| "Package node '" + packageName + "' is missing from asset graph."
                 | [packageNode] -> Right <| tryLoadAssetsFromPackageNode usingRawAssets optAssociation packageNode
                 | _ :: _ -> Left <| "Multiple packages with the same name '" + packageName + "' is an error."
-        with exn -> Left <| astring exn
+        with exn -> Left <| acstring exn
 
     /// Attempt to load all the assets from multiple packages.
     /// TODO: test this function!
@@ -244,7 +244,7 @@ module Assets =
                             Set.contains (node.Attributes.GetNamedItem NameAttributeName).InnerText packageNameSet)
                         possiblePackageNodes
                 tryLoadAssetsFromPackageNodes usingRawAssets optAssociation packageNodes
-        with exn -> Left <| astring exn
+        with exn -> Left <| acstring exn
 
     /// Try to load all the assets from an asset graph document.
     let tryLoadAssetsFromDocument usingRawAssets optAssociation (assetGraphFilePath : string) =
@@ -253,7 +253,7 @@ module Assets =
             match document.[RootNodeName] with
             | null -> Left "Root node is missing from asset graph."
             | rootNode -> tryLoadAssetsFromRootNode usingRawAssets optAssociation rootNode
-        with exn -> Left <| astring exn
+        with exn -> Left <| acstring exn
 
     /// Apply a single refinement to an asset.
     let refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
@@ -336,5 +336,5 @@ module Assets =
         match eitherAssets with
         | Right assets ->
             try Right <| buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assets
-            with exn -> Left <| astring exn
+            with exn -> Left <| acstring exn
         | Left error -> Left error

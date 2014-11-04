@@ -78,6 +78,8 @@
     <Compile Include="Lensx.fs" />
     <Compile Include="AlgebraicReader.fs" />
     <Compile Include="AlgebraicConverter.fs" />
+    <Compile Include="AlgebraicDescriptor.fs" />
+    <Compile Include="AlgebraicString.fs" />
     <Compile Include="Either.fs" />
     <Compile Include="MapPlus.fs" />
     <Compile Include="RduTree.fs" />
