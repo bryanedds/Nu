@@ -11,7 +11,7 @@ module EitherModule =
 
     /// Haskell-style Either type.
     /// TODO: more nice operators definitions.
-    type [<TypeConverter (typeof<AlgebraicConverter>)>] Either<'l, 'r> =
+    type Either<'l, 'r> =
         | Right of 'r
         | Left of 'l
 

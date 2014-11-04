@@ -10,7 +10,7 @@ open Nu
 module MouseButtonModule =
 
     /// Describes a mouse button.
-    type [<TypeConverter (typeof<AlgebraicConverter>)>] MouseButton =
+    type MouseButton =
         | MouseLeft
         | MouseCenter
         | MouseRight

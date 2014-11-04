@@ -14,12 +14,7 @@ open Nu.Constants
 module RenderingModule =
 
     /// Describes an image asset.
-    type
-        [<StructuralEquality;
-          NoComparison;
-          TypeConverter (typeof<AlgebraicConverter>);
-          XDefaultValue (DefaultImageValue)>]
-        Image =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
         { ImageAssetName : string
           PackageName : string }
 
@@ -34,12 +29,7 @@ module RenderingModule =
           Color : Vector4 }
 
     /// Describes a tile map asset.
-    type
-        [<StructuralEquality;
-          NoComparison;
-          TypeConverter (typeof<AlgebraicConverter>);
-          XDefaultValue (DefaultTileMapAssetValue)>]
-        TileMapAsset =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
         { TileMapAssetName : string
           PackageName : string }
 
@@ -57,12 +47,7 @@ module RenderingModule =
           TileSetImage : Image }
     
     /// Describes a font asset.
-    type
-        [<StructuralEquality;
-          NoComparison;
-          TypeConverter (typeof<AlgebraicConverter>);
-          XDefaultValue (DefaultFontValue)>]
-        Font =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
         { FontAssetName : string
           PackageName : string }
 

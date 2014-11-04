@@ -22,7 +22,7 @@ module MathModule =
     /// Depicts whether a view is purposed to render in relative or absolute space. For
     /// example, Gui entities are rendered in absolute space since they remain still no matter
     /// where the camera moves, and vice versa for non-Gui entities.
-    type [<TypeConverter (typeof<AlgebraicConverter>)>] ViewType =
+    type ViewType =
         | Absolute
         | Relative
 

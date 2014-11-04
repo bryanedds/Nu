@@ -8,11 +8,11 @@ module AlgebraicConverterTests =
 
     type IntIntRecord = { Int : int; Int2 : int }
 
-    type [<TypeConverter (typeof<AlgebraicConverter>)>] SimpleUnion =
+    type SimpleUnion =
         | SimpleUnion
         | SimpleUnion2
 
-    type [<StructuralEquality; NoComparison; TypeConverter (typeof<AlgebraicConverter>)>] ComplexUnion =
+    type [<StructuralEquality; NoComparison>] ComplexUnion =
         | ComplexUnion of int
         | ComplexUnion2 of int * int
     
