@@ -222,6 +222,6 @@ module AlgebraicDescriptor =
 module AlgebraicStringModule =
 
     /// Uses an algebraic converter to convert source to a string.
-    let xstring (source : obj) =
+    let astring (source : obj) =
         let converter = (AlgebraicConverter (source.GetType ()))
         converter.ConvertToString source

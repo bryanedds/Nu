@@ -390,25 +390,25 @@ module SimModule =
 module EventData =
 
     /// A convenience function to forcibly extract mouse movement data from an event data abstraction.
-    let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + xstring data + "'."
+    let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + astring data + "'."
     
     /// A convenience function to forcibly extract mouse button data from an event data abstraction.
-    let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + xstring data + "'."
+    let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + astring data + "'."
     
     /// A convenience function to forcibly extract keyboard key data from an event data abstraction.
-    let toKeyboardKeyData data = match data with KeyboardKeyData d -> d | _ -> failwith <| "Expected KeyboardKeyData from event data '" + xstring data + "'."
+    let toKeyboardKeyData data = match data with KeyboardKeyData d -> d | _ -> failwith <| "Expected KeyboardKeyData from event data '" + astring data + "'."
 
     /// A convenience function to forcibly extract collision data from an event data abstraction.
-    let toCollisionData data = match data with CollisionData d -> d | _ -> failwith <| "Expected CollisionData from event data '" + xstring data + "'."
+    let toCollisionData data = match data with CollisionData d -> d | _ -> failwith <| "Expected CollisionData from event data '" + astring data + "'."
 
     /// A convenience function to forcibly extract entity change data from an event data abstraction.
-    let toEntityChangeData data = match data with EntityChangeData d -> d | _ -> failwith <| "Expected EntityChangeData from event data '" + xstring data + "'."
+    let toEntityChangeData data = match data with EntityChangeData d -> d | _ -> failwith <| "Expected EntityChangeData from event data '" + astring data + "'."
 
     /// A convenience function to forcibly extract user-defined data from an event data abstraction.
-    let toUserData data = match data with UserData d -> d | _ -> failwith <| "Expected UserData from event data '" + xstring data + "'."
+    let toUserData data = match data with UserData d -> d | _ -> failwith <| "Expected UserData from event data '" + astring data + "'."
 
     /// A convenience function to forcibly extract no data from an event data abstraction.
-    let toNoData data = match data with NoData d -> d | _ -> failwith <| "Expected NoData from event data '" + xstring data + "'."
+    let toNoData data = match data with NoData d -> d | _ -> failwith <| "Expected NoData from event data '" + astring data + "'."
 
     /// A convenience function to forcibly extract data from an event data abstraction.
     let toGeneric<'d> eventData =
