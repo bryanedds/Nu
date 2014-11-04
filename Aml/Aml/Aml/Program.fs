@@ -30,7 +30,7 @@ module Program =
         Console.WriteLine "the Stdlib directory, and to read AmlSpec.rtf in the Documentation"
         Console.WriteLine "directory."
         Console.WriteLine ()
-        Console.WriteLine ("Current version is " + stringf AmlVersion "F3" + ".")
+        Console.WriteLine ("Current version is " + (let v = AmlVersion in v.ToString "F3") + ".")
         Console.WriteLine ()
         Console.WriteLine "Loading Stdlib..."
 
