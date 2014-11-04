@@ -78,12 +78,12 @@ module Program =
           WorldChangers : WorldChangers
           RefWorld : World ref }
 
-    and EntityPropertyDescriptor (property) =
+    and EntityPropertyDescriptor (property, attributes) =
         inherit PropertyDescriptor
             ((match property with
               | EntityXFieldDescriptor x -> x.FieldName
               | EntityPropertyInfo p -> p.Name),
-             [||])
+             attributes)
 
         let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name
         let propertyType = match property with EntityXFieldDescriptor x -> Type.GetTypeUnqualified x.TypeName | EntityPropertyInfo p -> p.PropertyType
@@ -184,11 +184,12 @@ module Program =
         static member GetPropertyDescriptors (aType : Type) optSource =
             // OPTIMIZATION: seqs used for speed.
             let properties = aType.GetProperties ()
+            let typeConverterAttribute = TypeConverterAttribute (typeof<AlgebraicConverter>) // TODO: make this static?
             let optXtensionProperty = Seq.tryFind (fun (property : PropertyInfo) -> property.PropertyType = typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.PropertyType <> typeof<Xtension>) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty <| property.GetCustomAttributes<ExtensionAttribute> ()) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> Serialization.isPropertyPersistentByName property.Name) properties
-            let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property) :> PropertyDescriptor) properties
+            let propertyDescriptors = Seq.map (fun property -> EntityPropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|]) :> PropertyDescriptor) properties
             let propertyDescriptors =
                 match (optXtensionProperty, optSource) with
                 | (None, _) 
@@ -203,7 +204,7 @@ module Program =
                                 let fieldType = fieldValue.GetType ()
                                 if Serialization.isPropertyPersistentByName fieldName then
                                     let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = fieldType.FullName }
-                                    let xFieldDescriptor = EntityPropertyDescriptor xFieldDescriptor
+                                    let xFieldDescriptor = EntityPropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
                                     xFieldDescriptor :> PropertyDescriptor :: xFieldDescriptors
                                 else xFieldDescriptors)
                             []
