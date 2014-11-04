@@ -19,7 +19,7 @@ module MetamapModule =
             | 1 -> East
             | 2 -> South
             | 3 -> West
-            | _ -> failwith <| "Invalid Direction conversion from int '" + astring n + "'."
+            | _ -> failwith <| "Invalid Direction conversion from int '" + acstring n + "'."
 
         static member random (random : Random) =
             let randomValueMax = 3

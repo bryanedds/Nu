@@ -10,7 +10,7 @@ module Program =
         World.init ()
         match argv with
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
-            let fullBuild = fullBuildStr = astring true
+            let fullBuild = fullBuildStr = acstring true
             match Assets.tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild AssetGraphFilePath with
             | Left error -> Console.WriteLine error; FailureExitCode
             | Right () -> SuccessExitCode
