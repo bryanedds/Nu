@@ -29,9 +29,9 @@ module ScreenModule =
               ScreenState = IdlingState
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
+              CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
-              CreationTimeNp = DateTime.UtcNow }
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
 
 [<AutoOpen>]
 module WorldScreenModule =
@@ -118,10 +118,10 @@ module WorldScreenModule =
             let screen = Screen.make dispatcher optName
             Reflection.attachFields dispatcher screen
             screen
-
-        static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime world =
+        
+        static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime dissolveImage world =
+            let optDissolveImage = Some dissolveImage
             let screen = World.makeScreen dispatcherName optName world
-            let optDissolveImage = Some <| { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
             let incomingDissolve = { Transition.make Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
             let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
             { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

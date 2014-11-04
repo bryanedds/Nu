@@ -246,12 +246,12 @@ module SimModule =
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
           ViewType : ViewType
+          CreationTimeNp : DateTime // just needed for ordering writes to reduce diff volumes
           DispatcherNp : EntityDispatcher
           FacetNames : string list
           FacetsNp : Facet list
           OptOverlayName : string option
-          Xtension : Xtension
-          CreationTimeNp : DateTime } // just needed for ordering writes to reduce diff volumes }
+          Xtension : Xtension }
 
         static member (?) (this : Entity, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -264,9 +264,9 @@ module SimModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
           Name : string
+          CreationTimeNp : DateTime
           DispatcherNp : GroupDispatcher
-          Xtension : Xtension
-          CreationTimeNp : DateTime }
+          Xtension : Xtension }
 
         static member (?) (this : Group, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -283,9 +283,9 @@ module SimModule =
           ScreenState : ScreenState
           Incoming : Transition
           Outgoing : Transition
+          CreationTimeNp : DateTime
           DispatcherNp : ScreenDispatcher
-          Xtension : Xtension
-          CreationTimeNp : DateTime }
+          Xtension : Xtension }
 
         static member (?) (this : Screen, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -299,9 +299,9 @@ module SimModule =
         { Id : Guid
           Name : string
           OptSelectedScreenAddress : Address option
+          CreationTimeNp : DateTime
           DispatcherNp : GameDispatcher
-          Xtension : Xtension
-          CreationTimeNp : DateTime }
+          Xtension : Xtension }
 
         static member (?) (this : Game, memberName) =
             Xtension.(?) (this.Xtension, memberName)

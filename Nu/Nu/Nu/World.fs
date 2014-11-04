@@ -16,6 +16,10 @@ open Prime
 open Nu
 open Nu.Constants
 
+module WorldConstants =
+
+    let DefaultDissolveImage = { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
+
 [<AutoOpen>]
 module WorldModule =
 
@@ -383,21 +387,21 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey TickEventAddress event.SubscriberAddress subscription world
             (Resolve, world)
 
-        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime image world =
-            let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime world
+        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime dissolveImage splashImage world =
+            let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime dissolveImage world
             let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world
             let splashLabel = World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
-            let splashLabel = Entity.setLabelImage image splashLabel
+            let splashLabel = Entity.setLabelImage splashImage splashLabel
             let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
             let world = World.monitor (FinishIncomingEventAddress + address) address (World.handleSplashScreenIdle idlingTime) world
             let world = World.monitor (FinishOutgoingEventAddress + address) address (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
-        static member addDissolveScreenFromFile screenDispatcherName groupFilePath incomingTime outgoingTime screenAddress world =
-            let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime world
+        static member addDissolveScreenFromFile screenDispatcherName groupFilePath incomingTime outgoingTime dissolveImage screenAddress world =
+            let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime dissolveImage world
             let (group, entities) = World.loadGroupFromFile groupFilePath world
             let dissolveGroupDescriptors = Map.singleton group.Name (group, entities)
             World.addScreen screenAddress dissolveScreen dissolveGroupDescriptors world

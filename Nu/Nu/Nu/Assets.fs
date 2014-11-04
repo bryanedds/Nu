@@ -104,6 +104,13 @@ module Assets =
             let refinements = refinements :?> obj list |> List.map (fun obj -> obj :?> string)
             List.map Refinement.stringToRefinement refinements
 
+    let private writeMagickImageAsPng filePath (image : MagickImage) =
+        match Path.GetExtension filePath with
+        | ".png" ->
+            use stream = File.OpenWrite filePath
+            image.Write (stream, MagickFormat.Png32)
+        | _ -> failwith <| "Invalid image file format for refinement '" + acstring OldSchool + "'; must be of *.png format."
+
     /// Attempt to load an asset from the given Xml node.
     let tryLoadAssetFromAssetNode (node : XmlNode) =
         match tryGetAssetFilePath node with
@@ -272,11 +279,11 @@ module Assets =
         match refinement with
         | PsdToPng ->
             use image = new MagickImage (intermediateFilePath)
-            image.Write refinementFilePath
+            writeMagickImageAsPng refinementFilePath image
         | OldSchool ->
             use image = new MagickImage (intermediateFilePath)
             image.Scale (Percentage 400)
-            image.Write refinementFilePath
+            writeMagickImageAsPng refinementFilePath image
 
         // return the latest refinement localities
         (refinementFileSubpath, refinementDirectory)

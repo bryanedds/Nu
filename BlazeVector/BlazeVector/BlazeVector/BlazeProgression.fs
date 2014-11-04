@@ -3,6 +3,7 @@ open System
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 open BlazeVector
 open BlazeVector.BlazeConstants
 module BlazeProgression =
@@ -54,7 +55,7 @@ module BlazeProgression =
     let addTitleScreen world =
 
         // this adds a dissolve screen from the specified file with the given parameters
-        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime TitleAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage TitleAddress world
 
         // this subscribes to the event that is raised when the Title screen is selected for
         // display and interaction, and handles the event by playing the song "Machinery"
@@ -74,12 +75,12 @@ module BlazeProgression =
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
-        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime CreditsAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage CreditsAddress world
         World.subscribe4 ClickCreditsBackEventAddress Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     // and so on.
     let addStageScreen world =
-        let world = snd <| World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFilePath IncomingTime StageOutgoingTime StageAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFilePath IncomingTime StageOutgoingTime DefaultDissolveImage StageAddress world
         World.subscribe4 ClickStageBackEventAddress Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
@@ -104,7 +105,7 @@ module BlazeProgression =
 
             // add to the world a splash screen that automatically transitions to the Title screen
             let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
-            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime splashScreenImage world
+            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime DefaultDissolveImage splashScreenImage world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound NuSplashSound 1.0f world
