@@ -74,9 +74,7 @@ module AlgebraicConverterModule =
                     AlgebraicReader.OpenComplexValueStr + unionStr + AlgebraicReader.CloseComplexValueStr
                 else unionCase.Name
         
-            else
-                let converter = TypeDescriptor.GetConverter sourceType
-                converter.ConvertToString source // TODO: should we check for convertability?
+            else TypeDescriptor.ConvertToString source
 
         static member fromReaderValue (destType : Type) (readerValue : obj) =
         
@@ -130,8 +128,7 @@ module AlgebraicConverterModule =
         
             else
                 let readerValueStr = readerValue :?> string
-                let converter = TypeDescriptor.GetConverter destType
-                converter.ConvertFromString readerValueStr // TODO: should we check for convertability?
+                TypeDescriptor.ConvertFromString readerValueStr destType
 
         static member fromString (destType : Type) (source : string) =
             let readerValue = AlgebraicReader.stringToValue source
