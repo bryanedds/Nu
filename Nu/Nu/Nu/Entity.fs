@@ -80,7 +80,7 @@ module EntityModule =
         static member make dispatcherName dispatcher optName =
             let id = Core.makeId ()
             { Id = id
-              Name = match optName with None -> tcstring id | Some name -> name
+              Name = match optName with None -> xstring id | Some name -> name
               Position = Vector2.Zero
               Depth = 0.0f
               Size = DefaultEntitySize
@@ -130,7 +130,7 @@ module WorldEntityModule =
                     | Some entityMap -> Map.tryFind entityName entityMap
                     | None -> None
                 | None -> None
-            | _ -> failwith <| "Invalid entity address '" + tcstring address + "'."
+            | _ -> failwith <| "Invalid entity address '" + xstring address + "'."
 
         static member private entityAdder address world (entity : Entity) =
             match address.AddrList with
@@ -152,7 +152,7 @@ module WorldEntityModule =
                     let entityMap = Map.singleton entityName entity
                     let groupMap = Map.singleton groupName entityMap
                     { world with Entities = Map.add screenName groupMap world.Entities }
-            | _ -> failwith <| "Invalid entity address '" + tcstring address + "'."
+            | _ -> failwith <| "Invalid entity address '" + xstring address + "'."
 
         static member private entityRemover address world =
             match address.AddrList with
@@ -168,7 +168,7 @@ module WorldEntityModule =
                         { world with Entities = Map.add screenName groupMap world.Entities }
                     | None -> world
                 | None -> world
-            | _ -> failwith <| "Invalid entity address '" + tcstring address + "'."
+            | _ -> failwith <| "Invalid entity address '" + xstring address + "'."
 
         static member getEntity address world = Option.get <| World.optEntityFinder address world
         static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity
@@ -201,7 +201,7 @@ module WorldEntityModule =
                     | Some entityMap -> entityMap
                     | None -> Map.empty
                 | None -> Map.empty
-            | _ -> failwith <| "Invalid group address '" + tcstring groupAddress + "'."
+            | _ -> failwith <| "Invalid group address '" + xstring groupAddress + "'."
 
         static member getEntities3 groupAddress entityNames world =
             let entityNames = Set.ofSeq entityNames

@@ -44,10 +44,10 @@ module XtensionModule =
                 | :? 'r as defaultValue -> defaultValue
                 | _ as defaultValue ->
                     let defaultValueType = defaultValue.GetType ()
-                    let converter = TypeDescriptor.GetConverter defaultValueType
+                    let converter = AlgebraicConverter defaultValueType
                     if converter.CanConvertFrom defaultFieldType
                     then converter.ConvertFrom defaultValue :?> 'r
-                    else failwith <| "Cannot convert '" + tcstring defaultValue + "' to type '" + defaultFieldType.Name + "'."
+                    else failwith <| "Cannot convert '" + xstring defaultValue + "' to type '" + defaultFieldType.Name + "'."
             | None -> Unchecked.defaultof<'r>
 
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.

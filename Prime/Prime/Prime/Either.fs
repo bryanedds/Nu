@@ -14,10 +14,6 @@ module EitherModule =
     type [<TypeConverter (typeof<AlgebraicConverter>)>] Either<'l, 'r> =
         | Right of 'r
         | Left of 'l
-        override this.ToString () =
-            match this with
-            | Right r -> "{Right; " + TypeDescriptor.ConvertToString r + "}"
-            | Left l -> "{Left; " + TypeDescriptor.ConvertToString l + "}"
 
     /// Monadic bind.
     let inline (>>=) either fn =

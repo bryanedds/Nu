@@ -71,7 +71,7 @@ module AlgebraicConverterModule =
                     AlgebraicReader.OpenComplexValueStr + unionStr + AlgebraicReader.CloseComplexValueStr
                 else unionCase.Name
         
-            else TypeDescriptor.ConvertToString source
+            else (TypeDescriptor.GetConverter sourceType).ConvertToString source
 
         let rec fromReaderValue (destType : Type) (readerValue : obj) =
         
@@ -125,7 +125,7 @@ module AlgebraicConverterModule =
         
             else
                 let readerValueStr = readerValue :?> string
-                TypeDescriptor.ConvertFromString readerValueStr destType
+                (TypeDescriptor.GetConverter destType).ConvertFromString readerValueStr
 
         let fromString (destType : Type) (source : string) =
             let readerValue = AlgebraicReader.stringToValue source
@@ -163,13 +163,65 @@ module AlgebraicConverterModule =
                     | :? string as sourceStr -> fromString targetType sourceStr
                     | _ -> failwith "Invalid AlgebraicConverter conversion from string."
 
+[<RequireQualifiedAccess>]
 module AlgebraicConverter =
 
     /// Initialize the type converters that we need out-of-the-box.
-    /// NOTE: This is nearly impossible to make general due to -
+    /// NOTE: This is nearly impossible to make comprehensive due to -
     /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type
     let initTypeConverters () =
+
+        // list converters
+        assignTypeConverter<bool list, AlgebraicConverter> ()
         assignTypeConverter<int list, AlgebraicConverter> ()
+        assignTypeConverter<single list, AlgebraicConverter> ()
         assignTypeConverter<string list, AlgebraicConverter> ()
+        
+        // option converters
+        assignTypeConverter<bool option, AlgebraicConverter> ()
         assignTypeConverter<int option, AlgebraicConverter> ()
+        assignTypeConverter<single option, AlgebraicConverter> ()
         assignTypeConverter<string option, AlgebraicConverter> ()
+
+[<AutoOpen>]
+module AlgebraicDescriptor =
+    
+    /// Query that a value of the source type can be converted to the destination type.
+    let CanConvertTo sourceType destType =
+        (AlgebraicConverter sourceType).CanConvertTo destType
+    
+    /// Query that a value of the source type can be converted to a string.
+    let CanConvertToString sourceType =
+        (AlgebraicConverter sourceType).CanConvertTo typeof<string>
+
+    /// Query that a value of the destination type can be converted from the source type.
+    let CanConvertFrom sourceType destType =
+        (AlgebraicConverter destType).CanConvertFrom sourceType
+
+    /// Query that a value of the destination type can be converted from a string.
+    let CanConvertFromString sourceType =
+        (AlgebraicConverter sourceType).CanConvertFrom typeof<string>
+
+    /// Convert a value to the given type using its assigned type converter.
+    let ConvertTo (source : obj, destType) =
+        (AlgebraicConverter (source.GetType ())).ConvertTo (source, destType)
+
+    /// Convert a value from given type using its assigned type converter.
+    let ConvertFrom source destType =
+        (AlgebraicConverter destType).ConvertFrom source
+
+    /// Convert a value to a string using its assigned type converter.
+    let ConvertToString source =
+        ConvertTo (source, typeof<string>) :?> string
+
+    /// Convert a value from a string using its assigned type converter.
+    let ConvertFromString (str : string) destType =
+        ConvertFrom str destType
+
+[<AutoOpen>]
+module AlgebraicStringModule =
+
+    /// Uses an algebraic converter to convert source to a string.
+    let xstring (source : obj) =
+        let converter = (AlgebraicConverter (source.GetType ()))
+        converter.ConvertToString source

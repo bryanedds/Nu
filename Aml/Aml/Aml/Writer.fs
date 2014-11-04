@@ -278,7 +278,7 @@ module Writer =
         | Symbol symbol -> symbol.SymName
         | Dispatch dispatch -> OpenMultilineCommentStr + DispatchStr <+> dispatch.DispName + CloseMultilineCommentStr
         | SpecialValue specialValue -> parenthesize (SpecialValueStr <+> specialValue.SVLanguageName <+> writeExpr specialValue.SVExpr)
-        | SpecialObject specialObject -> writeExpr (SpecialValue (makeSpecialValueRecord true (tcstring specialObject.SOLanguageGuid) (specialObject.SOContent.ToValue ()) specialObject.SOOptPositions))
+        | SpecialObject specialObject -> writeExpr (SpecialValue (makeSpecialValueRecord true (xstring specialObject.SOLanguageGuid) (specialObject.SOContent.ToValue ()) specialObject.SOOptPositions))
         | Series series -> parenthesizeExprs series.SerExprs
         | Lambda lambda -> parenthesize (FunStr <+> writeArgs lambda.LamArgs parenthesize + writeContractWithSpace PreconditionStr lambda.LamPre + writeContractWithSpace PostconditionStr lambda.LamPost <+> writeExpr lambda.LamBody)
         | Attempt attemptRecord -> parenthesize (AttemptStr <+> writeExpr attemptRecord.AttemptBody <+> writeAttemptBranches attemptRecord.AttemptBranches)
@@ -319,7 +319,7 @@ module Writer =
                 let firstFileLineTrimmed = if trimStartOfFirstLine then firstFileLine.Trim () else firstFileLine
                 let start = positions.ParStart
                 let startFile = if start.StreamName.Length <> 0 then start.StreamName else "[N/A]"
-                let startStr = "[Ln: " + tcstring start.Line + ", Col: " + string start.Column + ", In: " + startFile + "]"
+                let startStr = "[Ln: " + xstring start.Line + ", Col: " + string start.Column + ", In: " + startFile + "]"
                 let result = firstFileLineTrimmed + "\n  " + startStr
                 Some result
             else None
@@ -367,13 +367,13 @@ module Writer =
                     "\n" +
                     underline +
                     "\n  Start Pos: [Ln: " +
-                    tcstring start.Line +
+                    xstring start.Line +
                     ", Col: " +
-                    tcstring start.Column +
+                    xstring start.Column +
                     "]\n  Stop Pos:  [Ln: " +
-                    tcstring stop.Line +
+                    xstring stop.Line +
                     ", Col: " +
-                    tcstring stop.Column +
+                    xstring stop.Column +
                     "]\n  In:        " +
                     fileStr +
                     "\n\nStack trace:\n\n" +

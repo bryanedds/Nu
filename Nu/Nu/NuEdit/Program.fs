@@ -132,7 +132,7 @@ module Program =
                 let world = pushPastWorld world world
                 match propertyName with
                 | "Name" ->
-                    let valueStr = tcstring value
+                    let valueStr = xstring value
                     if Int64.TryParse (valueStr, ref 0L) then
                         trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                         world
@@ -264,9 +264,9 @@ module Program =
         let entity = World.getEntity entityAddress world
         let entityGroupName = Reflection.getTypeName entity.DispatcherNp
         let treeGroup = form.treeView.Nodes.[entityGroupName]
-        if not <| treeGroup.Nodes.ContainsKey (tcstring entityAddress) then
+        if not <| treeGroup.Nodes.ContainsKey (xstring entityAddress) then
             let treeNode = TreeNode entity.Name
-            treeNode.Name <- tcstring entityAddress
+            treeNode.Name <- xstring entityAddress
             ignore <| treeGroup.Nodes.Add treeNode
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
 
@@ -295,7 +295,7 @@ module Program =
     let tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
         match form.propertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
-            match form.treeView.Nodes.Find (tcstring entityTds.Address, true) with
+            match form.treeView.Nodes.Find (xstring entityTds.Address, true) with
             | [||] -> ()
             | nodes ->
                 let node = nodes.[0]
@@ -347,7 +347,7 @@ module Program =
         (Cascade, world)
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
-        match form.treeView.Nodes.Find (tcstring event.PublisherAddress, true) with
+        match form.treeView.Nodes.Find (xstring event.PublisherAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
@@ -427,7 +427,7 @@ module Program =
         with exn ->
             ignore <|
                 MessageBox.Show
-                    ("Could not save file due to: " + tcstring exn,
+                    ("Could not save file due to: " + xstring exn,
                      "File save error.",
                      MessageBoxButtons.OK,
                      MessageBoxIcon.Error)
@@ -460,7 +460,7 @@ module Program =
         with exn ->
             ignore <|
                 MessageBox.Show
-                    ("Could not load file due to: " + tcstring exn,
+                    ("Could not load file due to: " + xstring exn,
                      "File load error.",
                      MessageBoxButtons.OK,
                      MessageBoxIcon.Error)
@@ -472,12 +472,12 @@ module Program =
     let handleFormCreateDepthPlusClick (form : NuEditForm) (_ : EventArgs) =
         let depth = ref 0.0f
         ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
-        form.createDepthTextBox.Text <- tcstring (!depth + 1.0f)
+        form.createDepthTextBox.Text <- xstring (!depth + 1.0f)
 
     let handleFormCreateDepthMinusClick (form : NuEditForm) (_ : EventArgs) =
         let depth = ref 0.0f
         ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
-        form.createDepthTextBox.Text <- tcstring (!depth - 1.0f)
+        form.createDepthTextBox.Text <- xstring (!depth - 1.0f)
     
     let handleFormTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
@@ -507,7 +507,7 @@ module Program =
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
                 world
-            with exn -> ignore <| MessageBox.Show (tcstring exn); world)
+            with exn -> ignore <| MessageBox.Show (xstring exn); world)
 
     let handleFormDelete (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
@@ -609,7 +609,7 @@ module Program =
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let id = Core.makeId ()
-                let entity = { entity with Id = id; Name = tcstring id }
+                let entity = { entity with Id = id; Name = xstring id }
                 let entityPosition =
                     if atMouse
                     then Entity.mouseToEntity editorState.RightClickPosition world entity
@@ -822,9 +822,9 @@ module Program =
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
         form.displayPanel.MaximumSize <- Drawing.Size (ResolutionX, ResolutionY)
-        form.positionSnapTextBox.Text <- tcstring DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- tcstring DefaultRotationSnap
-        form.createDepthTextBox.Text <- tcstring DefaultCreationDepth
+        form.positionSnapTextBox.Text <- xstring DefaultPositionSnap
+        form.rotationSnapTextBox.Text <- xstring DefaultRotationSnap
+        form.createDepthTextBox.Text <- xstring DefaultCreationDepth
         // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
         // necessary if we can figure out how to keep SDL from stealing input events...
         form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
