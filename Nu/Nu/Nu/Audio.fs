@@ -11,22 +11,13 @@ open Nu.Constants
 module AudioModule =
 
     /// Describes a song asset.
-    type
-        [<StructuralEquality;
-          NoComparison;
-          TypeConverter (typeof<AlgebraicConverter>);
-          XDefaultValue (DefaultSongValue)>]
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>]
         Song =
         { SongAssetName : string
           PackageName : string }
 
     /// Describes a sound asset.
-    type
-        [<StructuralEquality;
-          NoComparison;
-          TypeConverter (typeof<AlgebraicConverter>);
-          XDefaultValue (DefaultSoundValue)>]
-        Sound =
+    type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
         { SoundAssetName : string
           PackageName : string }
 
