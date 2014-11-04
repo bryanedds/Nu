@@ -166,6 +166,8 @@ module AlgebraicConverterModule =
 module AlgebraicConverter =
 
     /// Initialize the type converters that we need out-of-the-box.
+    /// NOTE: This is nearly impossible to make general due to -
+    /// http://stackoverflow.com/questions/26694912/generically-apply-a-generic-typeconverter-to-an-existing-generic-type
     let initTypeConverters () =
         assignTypeConverter<int list, AlgebraicConverter> ()
         assignTypeConverter<string list, AlgebraicConverter> ()
