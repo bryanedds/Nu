@@ -36,7 +36,7 @@ module Overlayer =
                 match optIncludeNames with
                 | null -> None
                 | includeNames ->
-                    let includeNames = TypeDescriptor.ConvertFromString includeNames.InnerXml typeof<string list>
+                    let includeNames = AlgebraicDescriptor.ConvertFromString includeNames.InnerXml typeof<string list>
                     let includeNames = includeNames :?> obj list |> List.map (fun obj -> obj :?> string) |> Array.ofList
                     let mutable optNode = None
                     let mutable enr = includeNames.GetEnumerator ()
@@ -67,7 +67,7 @@ module Overlayer =
             match optPropertyValue with
             | Some propertyValue ->
                 let propertyValueType = propertyValue.GetType ()
-                let converter = TypeDescriptor.GetConverter propertyValueType
+                let converter = AlgebraicConverter propertyValueType
                 if converter.CanConvertFrom typeof<string> then
                     let overlayValue = converter.ConvertFromString overlayNode.InnerText
                     if overlayValue = propertyValue then Overlaid else Altered
@@ -98,7 +98,7 @@ module Overlayer =
              | None -> false)
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
-            let converter = TypeDescriptor.GetConverter property.PropertyType
+            let converter = AlgebraicConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
@@ -137,7 +137,7 @@ module Overlayer =
                                 | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target oldOverlayer
                                 | None -> false
                             if shouldApplyOverlay then
-                                let value = TypeDescriptor.ConvertFromString node.InnerText aType
+                                let value = AlgebraicDescriptor.ConvertFromString node.InnerText aType
                                 (node.Name, value) :: xFields
                             else xFields)
                         []

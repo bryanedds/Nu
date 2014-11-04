@@ -32,7 +32,7 @@ module Serialization =
                 let typeName = xNode.Attributes.[TypeAttributeName].InnerText
                 let aType = Type.GetTypeUnqualified typeName
                 let xValueStr = xNode.InnerText
-                let converter = TypeDescriptor.GetConverter aType
+                let converter = AlgebraicConverter aType
                 if converter.CanConvertFrom typeof<string>
                 then Map.add xNode.Name (converter.ConvertFromString xValueStr) xFields
                 else debug <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."; xFields)
@@ -48,12 +48,12 @@ module Serialization =
     /// Read opt overlay name from an xml node.
     let readOptOverlayName (node : XmlNode) =
         let optOverlayNameStr = node.InnerText
-        TypeDescriptor.ConvertFromString optOverlayNameStr typeof<string option> :?> string option
+        AlgebraicDescriptor.ConvertFromString optOverlayNameStr typeof<string option> :?> string option
 
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNamesStr = node.InnerText
-        let facetNames = TypeDescriptor.ConvertFromString facetNamesStr typeof<string list>
+        let facetNames = AlgebraicDescriptor.ConvertFromString facetNamesStr typeof<string list>
         facetNames :?> obj list |> List.map (fun obj -> obj :?> string)
 
     /// Read an Xtension from Xml.
@@ -70,7 +70,7 @@ module Serialization =
             property.SetValue (target, xtension)
         else
             let valueStr = valueNode.InnerText
-            let converter = TypeDescriptor.GetConverter property.PropertyType
+            let converter = AlgebraicConverter property.PropertyType
             if converter.CanConvertFrom typeof<string> then
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
@@ -132,7 +132,7 @@ module Serialization =
                 shouldWriteProperty xFieldName then
                 let xValue = xField.Value
                 let xValueType = xValue.GetType ()
-                let xValueStr = (TypeDescriptor.GetConverter xValueType).ConvertToString xValue
+                let xValueStr = (AlgebraicConverter xValueType).ConvertToString xValue
                 writer.WriteStartElement xFieldName
                 writer.WriteAttributeString (TypeAttributeName, xValueType.FullName)
                 writer.WriteString xValueStr
@@ -154,6 +154,6 @@ module Serialization =
             | _ ->
                 if  isPropertyPersistent target property &&
                     shouldWriteProperty property.Name then
-                    let converter = TypeDescriptor.GetConverter property.PropertyType
+                    let converter = AlgebraicConverter property.PropertyType
                     let valueStr = converter.ConvertToString propertyValue
                     writer.WriteElementString (property.Name, valueStr)

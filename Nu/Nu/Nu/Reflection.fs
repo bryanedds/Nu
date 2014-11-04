@@ -256,7 +256,7 @@ module Reflection =
             match includeNames with
             | _ :: _ ->
                 let includeAttribute = document.CreateAttribute IncludeAttributeName
-                includeAttribute.InnerText <- TypeDescriptor.ConvertToString includeNames
+                includeAttribute.InnerText <- AlgebraicDescriptor.ConvertToString includeNames
                 ignore <| overlayNode.Attributes.Append includeAttribute
             | _ -> ()
 
@@ -265,7 +265,7 @@ module Reflection =
                 let fieldNode = document.CreateElement definition.FieldName
                 match definition.FieldExpression with
                 | Constant constant ->
-                    let converter = TypeDescriptor.GetConverter definition.FieldType
+                    let converter = AlgebraicConverter definition.FieldType
                     fieldNode.InnerText <- converter.ConvertToString constant
                     ignore <| overlayNode.AppendChild fieldNode
                 | Variable _ -> ()
@@ -273,7 +273,7 @@ module Reflection =
             // construct the "FacetNames" node if needed
             if hasFacetNamesField then
                 let facetNamesNode = document.CreateElement "FacetNames"
-                facetNamesNode.InnerText <- TypeDescriptor.ConvertToString []
+                facetNamesNode.InnerText <- AlgebraicDescriptor.ConvertToString []
                 ignore <| overlayNode.AppendChild facetNamesNode
 
             // append the overlay node

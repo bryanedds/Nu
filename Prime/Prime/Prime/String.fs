@@ -6,14 +6,6 @@ open System
 open System.ComponentModel
 open System.Text
 
-[<AutoOpen>]
-module StringModule =
-
-    /// Uses a type converter to convert source to a string.
-    let tcstring (source : obj) =
-        let converter = TypeDescriptor.GetConverter source
-        converter.ConvertToString source
-
 [<RequireQualifiedAccess>]
 module String =
     

@@ -161,7 +161,7 @@ module PlayerModule =
             (bullet, world)
 
         let shootBullet playerAddress (player : Entity) world =
-            let bulletAddress = Address.allButLast playerAddress @+ [tcstring <| Core.makeId ()]
+            let bulletAddress = Address.allButLast playerAddress @+ [xstring <| Core.makeId ()]
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world
@@ -315,7 +315,7 @@ module StageScreenModule =
                 [for i in 0 .. SectionCount do
                     let xShift = 2048.0f
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
-                    yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + tcstring i) (xShift * single i) world]
+                    yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + xstring i) (xShift * single i) world]
             let stagePlayDescriptor = (StagePlayName, World.loadGroupFromFile StagePlayFilePath world)
             let groupDescriptors = Map.ofList <| stagePlayDescriptor :: sectionDescriptors
             let world = snd <| World.addGroups address groupDescriptors world
@@ -328,7 +328,7 @@ module StageScreenModule =
 
         let handleStopPlay event world =
             let address = Event.unwrapA event
-            let sectionNames = [for i in 0 .. SectionCount do yield SectionName + tcstring i]
+            let sectionNames = [for i in 0 .. SectionCount do yield SectionName + xstring i]
             let groupNames = StagePlayName :: sectionNames
             let groups = World.getGroups3 address groupNames world
             let world = snd <| World.removeGroups address groups world

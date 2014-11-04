@@ -21,7 +21,7 @@ module GroupModule =
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Group.Id = id
-              Name = match optName with None -> tcstring id | Some name -> name
+              Name = match optName with None -> xstring id | Some name -> name
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
               CreationTimeNp = DateTime.UtcNow }
@@ -38,7 +38,7 @@ module WorldGroupModule =
                 match optGroupMap with
                 | Some groupMap -> Map.tryFind groupName groupMap
                 | None -> None
-            | _ -> failwith <| "Invalid group address '" + tcstring address + "'."
+            | _ -> failwith <| "Invalid group address '" + xstring address + "'."
 
         static member private groupAdder address world child =
             match address.AddrList with
@@ -49,7 +49,7 @@ module WorldGroupModule =
                     let groupMap = Map.add groupName child groupMap
                     { world with Groups = Map.add screenName groupMap world.Groups }
                 | None -> { world with Groups = Map.singleton screenName <| Map.singleton groupName child }
-            | _ -> failwith <| "Invalid group address '" + tcstring address + "'."
+            | _ -> failwith <| "Invalid group address '" + xstring address + "'."
 
         static member private groupRemover address world =
             match address.AddrList with
@@ -60,7 +60,7 @@ module WorldGroupModule =
                     let groupMap = Map.remove groupName groupMap
                     { world with Groups = Map.add screenName groupMap world.Groups }
                 | None -> world
-            | _ -> failwith <| "Invalid group address '" + tcstring address + "'."
+            | _ -> failwith <| "Invalid group address '" + xstring address + "'."
 
         static member getGroup address world = Option.get <| World.optGroupFinder address world
         static member setGroup address group world = World.groupAdder address world group
@@ -84,7 +84,7 @@ module WorldGroupModule =
                 match Map.tryFind screenName world.Groups with
                 | Some groupMap -> groupMap
                 | None -> Map.empty
-            | _ -> failwith <| "Invalid screen address '" + tcstring screenAddress + "'."
+            | _ -> failwith <| "Invalid screen address '" + xstring screenAddress + "'."
 
         static member getGroups3 screenAddress groupNames world =
             let groupNames = Set.ofSeq groupNames

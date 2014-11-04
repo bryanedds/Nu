@@ -23,7 +23,7 @@ module PhysicsModule =
             val Minor : Guid
             new (major, minor) = { Major = major; PhysicsId.Minor = minor }
             // TODO: see if this can be implemented by AlgebraicConverter
-            override this.ToString () = "{" + tcstring this.Major + "; " + tcstring this.Minor + "}"
+            override this.ToString () = "{" + xstring this.Major + "; " + xstring this.Minor + "}"
             end
 
     /// Physics-specific vertices type.
@@ -324,7 +324,7 @@ module PhysicsModule =
         
             // attempt to add the body
             if not <| integrator.Bodies.TryAdd (createBodyMessage.PhysicsId, body) then
-                debug <| "Could not add body via '" + tcstring createBodyMessage + "'."
+                debug <| "Could not add body via '" + xstring createBodyMessage + "'."
 
         static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
@@ -332,37 +332,37 @@ module PhysicsModule =
                 ignore <| integrator.Bodies.Remove destroyBodyMessage.PhysicsId
                 integrator.PhysicsContext.RemoveBody !body
             elif not integrator.RebuildingHack then
-                 debug <| "Could not destroy non-existent body with PhysicsId = " + tcstring destroyBodyMessage.PhysicsId + "'."
+                 debug <| "Could not destroy non-existent body with PhysicsId = " + xstring destroyBodyMessage.PhysicsId + "'."
 
         static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
             if  integrator.Bodies.TryGetValue (setBodyPositionMessage.PhysicsId, body) then
                 (!body).Position <- Integrator.toPhysicsV2 setBodyPositionMessage.Position
-            else debug <| "Could not set position of non-existent body with PhysicsId = " + tcstring setBodyPositionMessage.PhysicsId + "'."
+            else debug <| "Could not set position of non-existent body with PhysicsId = " + xstring setBodyPositionMessage.PhysicsId + "'."
 
         static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
             if  integrator.Bodies.TryGetValue (setBodyRotationMessage.PhysicsId, body) then
                 (!body).Rotation <- setBodyRotationMessage.Rotation
-            else debug <| "Could not set rotation of non-existent body with PhysicsId = " + tcstring setBodyRotationMessage.PhysicsId + "'."
+            else debug <| "Could not set rotation of non-existent body with PhysicsId = " + xstring setBodyRotationMessage.PhysicsId + "'."
 
         static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
             if  integrator.Bodies.TryGetValue (setBodyLinearVelocityMessage.PhysicsId, body) then
                 (!body).LinearVelocity <- Integrator.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
-            else debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + tcstring setBodyLinearVelocityMessage.PhysicsId + "'."
+            else debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + xstring setBodyLinearVelocityMessage.PhysicsId + "'."
 
         static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
             if  integrator.Bodies.TryGetValue (applyBodyLinearImpulseMessage.PhysicsId, body) then
                 (!body).ApplyLinearImpulse (Integrator.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
-            else debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + tcstring applyBodyLinearImpulseMessage.PhysicsId + "'."
+            else debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + xstring applyBodyLinearImpulseMessage.PhysicsId + "'."
 
         static member private applyBodyForce applyBodyForceMessage integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
             if  integrator.Bodies.TryGetValue (applyBodyForceMessage.PhysicsId, body) then
                 (!body).ApplyForce (Integrator.toPhysicsV2 applyBodyForceMessage.Force)
-            else debug <| "Could not apply force to non-existent body with PhysicsId = " + tcstring applyBodyForceMessage.PhysicsId + "'."
+            else debug <| "Could not apply force to non-existent body with PhysicsId = " + xstring applyBodyForceMessage.PhysicsId + "'."
 
         static member private handlePhysicsMessage integrator physicsMessage =
             match physicsMessage with
@@ -506,7 +506,7 @@ module Physics =
         | ["Capsule"] -> CapsuleShape { Height = extent.Y * 0.5f; Radius = extent.Y * 0.25f; Center = Vector2.Zero }
         | ["Polygon"; verticesStr] ->
             let vertexStrs = List.ofArray <| verticesStr.Split '|'
-            try let vertices = List.map (fun str -> TypeDescriptor.ConvertFromString str typeof<Vector2> :?> Vector2) vertexStrs
+            try let vertices = List.map (fun str -> AlgebraicDescriptor.ConvertFromString str typeof<Vector2> :?> Vector2) vertexStrs
                 let vertices = List.map (fun vertex -> vertex - Vector2 0.5f) vertices
                 let vertices = List.map (fun vertex -> Vector2.Multiply (vertex, extent)) vertices
                 PolygonShape { Vertices = vertices; Center = Vector2.Zero }

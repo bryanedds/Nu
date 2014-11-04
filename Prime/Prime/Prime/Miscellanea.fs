@@ -30,14 +30,6 @@ module Miscellanea =
     /// The invalid Id.
     let [<Literal>] InvalidId = 0L
 
-    /// Perform a formatted ToString operation on a formattable object.
-    let inline stringf (formattable : IFormattable) format =
-        formattable.ToString (format, null)
-
-    /// Perform a formatted ToString operation on a formattable object.
-    let inline stringfp (formattable : IFormattable) format formatProvider =
-        formattable.ToString (format, formatProvider)
-
     /// Apply a function recursively a number of times.
     let rec doTimes fn arg times =
         if times < 0 then failwith "Cannot call doTimes with times < 0."
@@ -185,37 +177,3 @@ module TypeModule =
 
         member this.GetPropertiesPreferWritable () =
             this.GetPropertiesByPreference (fun (property : PropertyInfo) -> property.CanWrite)
-
-module TypeDescriptor =
-    
-    /// Query that a value of the source type can be converted to the destination type.
-    let CanConvertTo sourceType destType =
-        (TypeDescriptor.GetConverter sourceType).CanConvertTo destType
-    
-    /// Query that a value of the source type can be converted to a string.
-    let CanConvertToString sourceType =
-        (TypeDescriptor.GetConverter sourceType).CanConvertTo typeof<string>
-
-    /// Query that a value of the destination type can be converted from the source type.
-    let CanConvertFrom sourceType destType =
-        (TypeDescriptor.GetConverter destType).CanConvertFrom sourceType
-
-    /// Query that a value of the destination type can be converted from a string.
-    let CanConvertFromString sourceType =
-        (TypeDescriptor.GetConverter sourceType).CanConvertFrom typeof<string>
-
-    /// Convert a value to the given type using its assigned type converter.
-    let ConvertTo (source : obj, destType) =
-        (TypeDescriptor.GetConverter source).ConvertTo (source, destType)
-
-    /// Convert a value from given type using its assigned type converter.
-    let ConvertFrom source destType =
-        (TypeDescriptor.GetConverter destType).ConvertFrom source
-
-    /// Convert a value to a string using its assigned type converter.
-    let ConvertToString source =
-        ConvertTo (source, typeof<string>) :?> string
-
-    /// Convert a value from a string using its assigned type converter.
-    let ConvertFromString (str : string) destType =
-        ConvertFrom str destType
