@@ -2,6 +2,7 @@
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 open InfinityRpg
 open InfinityRpg.Constants
 
@@ -9,12 +10,12 @@ open InfinityRpg.Constants
 module Progression =
 
     let private addTitleScreen world =
-        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime TitleAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime DissolveImage TitleAddress world
         let world = World.subscribe4 ClickTitleCreditsEventAddress Address.empty (World.handleAsScreenTransition CreditsAddress) world
         World.subscribe4 ClickTitleExitEventAddress Address.empty World.handleAsExit world
 
     let private addCreditsScreen world =
-        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime CreditsAddress world
+        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime DissolveImage CreditsAddress world
         World.subscribe4 ClickCreditsBackEventAddress Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     let tryMakeInfinityRpgWorld sdlDeps userState =
@@ -25,8 +26,8 @@ module Progression =
             let world = World.hintRenderingPackageUse GuiPackageName world
             let world = addTitleScreen world
             let world = addCreditsScreen world
-            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
-            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime splashScreenImage world
+            let splashScreenImage = { ImageAssetName = SplashNu; PackageName = GuiPackageName }
+            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime DissolveImage splashScreenImage world
             let world = snd <| World.selectScreen SplashAddress splashScreen world
             Right world
         | Left _ as left -> left

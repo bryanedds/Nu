@@ -21,9 +21,9 @@ module GameModule =
                 { Id = id
                   Name = match optName with None -> acstring id | Some name -> name
                   OptSelectedScreenAddress = None
+                  CreationTimeNp = DateTime.UtcNow
                   DispatcherNp = dispatcher
-                  Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
-                  CreationTimeNp = DateTime.UtcNow }
+                  Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
             Reflection.attachFields dispatcher game
             game
 

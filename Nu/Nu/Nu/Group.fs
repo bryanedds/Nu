@@ -22,9 +22,9 @@ module GroupModule =
             let id = Core.makeId ()
             { Group.Id = id
               Name = match optName with None -> acstring id | Some name -> name
+              CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
-              CreationTimeNp = DateTime.UtcNow }
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
 
 [<AutoOpen>]
 module WorldGroupModule =

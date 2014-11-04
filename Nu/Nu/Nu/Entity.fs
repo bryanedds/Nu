@@ -87,12 +87,12 @@ module EntityModule =
               Rotation = 0.0f
               Visible = true
               ViewType = Relative
+              CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               FacetNames = []
               FacetsNp = []
               OptOverlayName = Some dispatcherName
-              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }
-              CreationTimeNp = DateTime.UtcNow }
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap

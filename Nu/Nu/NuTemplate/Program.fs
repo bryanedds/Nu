@@ -3,6 +3,7 @@ open SDL2
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 module Program =
 
     // this is a factory that creates user-defined components such as dispatchers of various sorts

@@ -1,10 +1,18 @@
 ﻿namespace InfinityRpg
 open Nu
+open Nu.Constants
+open Nu.WorldConstants
 module Constants =
 
     // package constants
     let GuiPackageName = "Gui"
     let GameplayPackageName = "Gameplay"
+
+    // dissolve constants
+    let DissolveImage = { ImageAssetName = "Dissolve"; PackageName = GuiPackageName }
+
+    // splash constants
+    let SplashNu = "Nu"
 
     // title constants
     let TitleAddress = !* "Title"

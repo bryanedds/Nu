@@ -48,7 +48,13 @@ module Metadata =
             trace errorMessage
             InvalidMetadata errorMessage
         else
-            try use bitmap = new Bitmap (asset.FilePath) in TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
+            try use bitmap = new Bitmap (asset.FilePath)
+                if bitmap.PixelFormat = Imaging.PixelFormat.Format32bppArgb
+                then TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
+                else
+                    let errorMessage = "Bitmap with invalid format (expecting 32-bit ARGB)."
+                    trace errorMessage
+                    InvalidMetadata errorMessage
             with _ as exn ->
                 let errorMessage = "Failed to load Bitmap '" + asset.FilePath + "' due to '" + acstring exn + "'."
                 trace errorMessage
