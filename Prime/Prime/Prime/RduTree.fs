@@ -8,6 +8,7 @@ module RduTreeModule =
 
     /// A tree onto which arbitrary recursive discriminated unions can be projected.
     /// TODO: decorate with and implement for AlgebraicConverter.
+    [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>]
     type 'a RduTree =
         | Leaf
         | Branch of 'a * 'a RduTree list
