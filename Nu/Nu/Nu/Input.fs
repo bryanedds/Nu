@@ -16,8 +16,8 @@ module MouseButtonModule =
         | MouseRight
         | MouseX1
         | MouseX2
-        override this.ToString () = AlgebraicDescriptor.ConvertToString this
-        static member toEventName this = (astring this).Substring "Mouse".Length
+        override this.ToString () = AlgebraicDescriptor.convertToString this
+        static member toEventName this = (acstring this).Substring "Mouse".Length
 
 [<RequireQualifiedAccess>]
 module MouseState =
