@@ -142,7 +142,7 @@ module RenderingModule =
                         else trace <| "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
                     else trace <| "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
                 else trace <| "Could not load font '" + asset.FilePath + "'."; None
-            | _ -> trace <| "Could not load render asset '" + astring asset + "' due to unknown extension '" + extension + "'."; None
+            | _ -> trace <| "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
         static member private tryLoadRenderPackage packageName renderer =
             let optAssets = Assets.tryLoadAssetsFromPackage true (Some RenderingAssociation) packageName renderer.AssetGraphFilePath
@@ -250,10 +250,10 @@ module RenderingModule =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + astring descriptor + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + "."
                     renderer
                 | _ -> trace "Cannot render sprite with a non-texture asset."; renderer
-            | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + astring image + "'."; renderer
+            | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + acstring image + "'."; renderer
 
         static member private renderTileLayerDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TileLayerDescriptor) renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -310,11 +310,11 @@ module RenderingModule =
                                 refTileDestRect := destRect
                                 refTileRotationCenter := rotationCenter
                                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                                if renderResult <> 0 then note <| "Rendering error - could not render texture for tile '" + astring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                                if renderResult <> 0 then note <| "Rendering error - could not render texture for tile '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
                     renderer
                 | _ -> trace "Cannot render tile with a non-texture asset."; renderer
-            | None -> note <| "TileLayerDescriptor failed due to unloadable assets for '" + astring tileSetImage + "'."; renderer
+            | None -> note <| "TileLayerDescriptor failed due to unloadable assets for '" + acstring tileSetImage + "'."; renderer
     
         static member private renderTextDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TextDescriptor) renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -361,7 +361,7 @@ module RenderingModule =
                         SDL.SDL_FreeSurface textSurface
                     renderer
                 | _ -> trace "Cannot render text with a non-font asset."; renderer
-            | None -> note <| "TextDescriptor failed due to unloadable assets for '" + astring font + "'."; renderer
+            | None -> note <| "TextDescriptor failed due to unloadable assets for '" + acstring font + "'."; renderer
 
         static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
             match layerableDescriptor with

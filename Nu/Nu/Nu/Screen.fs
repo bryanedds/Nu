@@ -25,7 +25,7 @@ module ScreenModule =
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
-              Name = match optName with None -> astring id | Some name -> name
+              Name = match optName with None -> acstring id | Some name -> name
               ScreenState = IdlingState
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
@@ -41,17 +41,17 @@ module WorldScreenModule =
         static member private optScreenFinder address world =
             match address.AddrList with
             | [screenName] -> Map.tryFind screenName world.Screens
-            | _ -> failwith <| "Invalid screen address '" + astring address + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member private screenAdder address world child =
             match address.AddrList with
             | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
-            | _ -> failwith <| "Invalid screen address '" + astring address + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member private screenRemover address world =
             match address.AddrList with
             | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
-            | _ -> failwith <| "Invalid screen address '" + astring address + "'."
+            | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member getScreen address world = Option.get <| World.optScreenFinder address world
         static member setScreen address screen world = World.screenAdder address world screen
@@ -71,7 +71,7 @@ module WorldScreenModule =
         static member getScreens address world =
             match address.AddrList with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid game address '" + astring address + "'. Game address is always empty."
+            | _ -> failwith <| "Invalid game address '" + acstring address + "'. Game address is always empty."
 
         static member getScreens3 gameAddress screenNames world =
             let screenNames = Set.ofSeq screenNames
