@@ -108,7 +108,7 @@ module WorldModule =
             match World.tryTransitionScreen destinationAddress destinationScreen world with
             | Some world -> (Cascade, world)
             | None ->
-                trace <| "Program Error: Invalid screen transition for destination address '" + xstring destinationAddress + "'."
+                trace <| "Program Error: Invalid screen transition for destination address '" + astring destinationAddress + "'."
                 (Cascade, world)
 
         // OPTIMIZATION: priority annotated as single to decrease GC pressure.
@@ -123,7 +123,7 @@ module WorldModule =
             | [_] -> Screen <| World.getScreen address world
             | [_; _] -> Group <| World.getGroup address world
             | [_; _; _] -> Entity <| World.getEntity address world
-            | _ -> failwith <| "Invalid simulant address '" + xstring address + "'."
+            | _ -> failwith <| "Invalid simulant address '" + astring address + "'."
 
         static member getOptSimulant address world =
             match address.AddrList with
@@ -131,7 +131,7 @@ module WorldModule =
             | [_] -> Option.map Screen <| World.getOptScreen address world
             | [_; _] -> Option.map Group <| World.getOptGroup address world
             | [_; _; _] -> Option.map Entity <| World.getOptEntity address world
-            | _ -> failwith <| "Invalid simulant address '" + xstring address + "'."
+            | _ -> failwith <| "Invalid simulant address '" + astring address + "'."
 
         static member private getPublishingPriority getEntityPublishingPriority simulant world =
             match simulant with
@@ -453,7 +453,7 @@ module WorldModule =
                 Right world
 
             // propagate error
-            with exn -> Left <| xstring exn
+            with exn -> Left <| astring exn
 
         static member tryReloadAssets inputDirectory outputDirectory refinementDirectory world =
             
@@ -479,7 +479,7 @@ module WorldModule =
                     // propagate errors
                     | Left errorMsg -> Left errorMsg
                 | Left error -> Left error
-            with exn -> Left <| xstring exn
+            with exn -> Left <| astring exn
 
         static member continueHack groupAddress world =
             // NOTE: since messages may be invalid upon continuing a world (especially physics
@@ -587,7 +587,7 @@ module WorldModule =
 
         static member private processTask (tasksNotRun, world) task =
             if task.ScheduledTime < world.State.TickTime then
-                debug <| "Task leak found for time '" + xstring world.State.TickTime + "'."
+                debug <| "Task leak found for time '" + astring world.State.TickTime + "'."
                 (tasksNotRun, world)
             elif task.ScheduledTime = world.State.TickTime then
                 let world = task.Operation world

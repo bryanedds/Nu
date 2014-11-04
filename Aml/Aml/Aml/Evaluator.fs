@@ -78,7 +78,7 @@ module Evaluator =
 
     /// Make a an exception violation during evaluation.
     and makeEvalExceptionViolation (exn : Exception) env =
-        makeEvalViolation ":v/exception" (xstring exn) env
+        makeEvalViolation ":v/exception" (astring exn) env
     
     /// Forward a violation from a str during evaluation.
     and forwardEvalViolation violation env =
