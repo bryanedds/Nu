@@ -4,6 +4,7 @@
 namespace Prime
 open System
 open System.ComponentModel
+open Prime
 
 [<AutoOpen>]
 module EitherModule =
