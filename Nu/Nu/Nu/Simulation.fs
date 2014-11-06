@@ -97,33 +97,14 @@ module SimModule =
     type [<StructuralEquality; NoComparison>] EntityChangeData =
         { OldEntity : Entity }
 
-    /// The data for a user-defined event.
-    and [<StructuralEquality; NoComparison>] UserData =
-        { UserValue : obj }
-        static member get userData : 'u = userData.UserValue :?> 'u
-        static member transform (transformer : 'u -> 'v) userData = { UserValue = transformer <| UserData.get userData }
-
-    /// The data for a user-defined event.
-    and NoData = unit
-
-    /// The data for an event.
-    and [<ReferenceEquality>] EventData =
-        | MouseMoveData of MouseMoveData
-        | MouseButtonData of MouseButtonData
-        | KeyboardKeyData of KeyboardKeyData
-        | CollisionData of CollisionData
-        | EntityChangeData of EntityChangeData
-        | UserData of UserData
-        | NoData of NoData
-
     /// An event used by Nu's purely functional event system.
-    and [<ReferenceEquality>] Event =
+    and [<ReferenceEquality>] 'a Event =
         { Address : Address
           SubscriberAddress : Address
-          Subscriber : Simulant
+          OptSubscriber : Simulant option
           PublisherAddress : Address
           OptPublisher : Simulant option
-          Data : EventData }
+          Data : 'a }
 
     /// Describes whether an event has been resolved or should cascade.
     and EventHandling =
@@ -131,11 +112,13 @@ module SimModule =
         | Cascade
 
     /// Describes a game event subscription.
-    and Subscription =
-        Event -> World -> EventHandling * World
+    and 'd Subscription = 'd Event -> World -> EventHandling * World
+
+    /// Describes a game event subscription that can be boxed / unboxed.
+    and BoxableSubscription = obj -> World -> EventHandling * World
 
     /// An entry into the world's subscription map.
-    and SubscriptionEntry = Guid * Address * Subscription
+    and SubscriptionEntry = Guid * Address * obj
 
     /// A map of event subscriptions.
     and SubscriptionEntries = Map<Address, SubscriptionEntry list>
@@ -387,66 +370,28 @@ module SimModule =
         default this.MakeFacets () = Map.empty
 
 [<RequireQualifiedAccess>]
-module EventData =
-
-    /// A convenience function to forcibly extract mouse movement data from an event data abstraction.
-    let toMouseMoveData data = match data with MouseMoveData d -> d | _ -> failwith <| "Expected MouseMoveData from event data '" + acstring data + "'."
-    
-    /// A convenience function to forcibly extract mouse button data from an event data abstraction.
-    let toMouseButtonData data = match data with MouseButtonData d -> d | _ -> failwith <| "Expected MouseButtonData from event data '" + acstring data + "'."
-    
-    /// A convenience function to forcibly extract keyboard key data from an event data abstraction.
-    let toKeyboardKeyData data = match data with KeyboardKeyData d -> d | _ -> failwith <| "Expected KeyboardKeyData from event data '" + acstring data + "'."
-
-    /// A convenience function to forcibly extract collision data from an event data abstraction.
-    let toCollisionData data = match data with CollisionData d -> d | _ -> failwith <| "Expected CollisionData from event data '" + acstring data + "'."
-
-    /// A convenience function to forcibly extract entity change data from an event data abstraction.
-    let toEntityChangeData data = match data with EntityChangeData d -> d | _ -> failwith <| "Expected EntityChangeData from event data '" + acstring data + "'."
-
-    /// A convenience function to forcibly extract user-defined data from an event data abstraction.
-    let toUserData data = match data with UserData d -> d | _ -> failwith <| "Expected UserData from event data '" + acstring data + "'."
-
-    /// A convenience function to forcibly extract no data from an event data abstraction.
-    let toNoData data = match data with NoData d -> d | _ -> failwith <| "Expected NoData from event data '" + acstring data + "'."
-
-    /// A convenience function to forcibly extract data from an event data abstraction.
-    let toGeneric<'d> eventData =
-        let typeName = typeof<'d>.Name
-        match typeName with
-        | "MouseMoveData" -> toMouseMoveData eventData :> obj :?> 'd
-        | "MouseButtonData" -> toMouseButtonData eventData :> obj :?> 'd
-        | "KeyboardKeyData" -> toKeyboardKeyData eventData :> obj :?> 'd
-        | "CollisionData" -> toCollisionData eventData :> obj :?> 'd
-        | "EntityChangeData" -> toEntityChangeData eventData :> obj :?> 'd
-        | "UserData" -> toUserData eventData :> obj :?> 'd
-        | "Unit" -> toNoData eventData :> obj :?> 'd
-        | "Object" -> eventData :> obj :?> 'd
-        | _ -> failwith <| "Invalid event data type '" + typeName + "'."
-
-[<RequireQualifiedAccess>]
 module World =
 
-    /// Publish an event.
-    let mutable publish = Unchecked.defaultof<SubscriptionSorter -> Address -> Address -> EventData -> World -> World>
+    let private AnyEventAddressesCache = Dictionary<Address, Address list> HashIdentity.Structural
     
-    /// Publish an event.
-    let mutable publish4 = Unchecked.defaultof<Address -> Address -> EventData -> World -> World>
-    
-    /// Subscribe to an event.
-    let mutable subscribe = Unchecked.defaultof<Guid -> Address -> Address -> Subscription -> World -> World>
-    
-    /// Subscribe to an event.
-    let mutable subscribe4 = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
-    
-    /// Unsubscribe from an event.
-    let mutable unsubscribe = Unchecked.defaultof<Guid -> World -> World>
-    
-    /// Keep active a subscription for the duration of a procedure.
-    let mutable withSubscription = Unchecked.defaultof<Address -> Address -> Subscription -> (World -> World) -> World -> World>
-    
-    /// Keep active a subscription for the lifetime of a simulant.
-    let mutable monitor = Unchecked.defaultof<Address -> Address -> Subscription -> World -> World>
+    let private boxSubscription<'d> (subscription : 'd Subscription) =
+        let boxableSubscription = fun (event : obj) world ->
+            try subscription (event :?> 'd Event) world
+            with
+            | :? InvalidCastException ->
+                // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
+                // up an event data type parameter for some form of World.publish or subscribe.
+                //
+                // This can happen especially when passing a curried subscription function to one
+                // of the World.subscribe calls. This is because currying a function with a generic
+                // parameter silently coerces an obj type into that generic parameter's type! Argh!
+                //
+                // This being the unfortunate case, I suggest that, as a rule of thumb, to
+                // explicitly specify the type parameter of all your World.subscribe / monitor
+                // calls, as well as all uses of React.from!
+                reraise ()
+            | _ -> reraise ()
+        box boxableSubscription
 
     /// Make a key used to track an unsubscription with a subscription.
     let makeSubscriptionKey () =
@@ -455,6 +400,165 @@ module World =
     /// Make a callback key used to track callback states.
     let makeCallbackKey () =
         Guid.NewGuid ()
+
+    // OPTIMIZATION: priority annotated as single to decrease GC pressure.
+    let private sortFstDesc (priority : single, _) (priority2 : single, _) =
+        if priority = priority2 then 0
+        elif priority > priority2 then -1
+        else 1
+
+    /// Get a simulant at the given address from the world.
+    let mutable getSimulant = Unchecked.defaultof<Address -> World -> Simulant>
+
+    /// Try to get a simulant at the given address from the world.
+    let mutable getOptSimulant = Unchecked.defaultof<Address -> World -> Simulant option>
+
+    let private getSimulantPublishingPriority getEntityPublishingPriority simulant world =
+        match simulant with
+        | Game _ -> GamePublishingPriority
+        | Screen _ -> ScreenPublishingPriority
+        | Group _ -> GroupPublishingPriority
+        | Entity entity -> getEntityPublishingPriority entity world
+
+    let private getSortableSubscriptions
+        getEntityPublishingPriority
+        (subscriptions : SubscriptionEntry list)
+        world :
+        (single * SubscriptionEntry) list =
+        List.fold
+            (fun subscriptions (key, address, subscription) ->
+                match getOptSimulant address world with
+                | Some simulant ->
+                    let priority = getSimulantPublishingPriority getEntityPublishingPriority simulant world
+                    let subscription = (priority, (key, address, subscription))
+                    subscription :: subscriptions
+                | None -> (0.0f, (key, address, subscription)) :: subscriptions)
+            []
+            subscriptions
+
+    let sortSubscriptionsBy by (subscriptions : SubscriptionEntry list) world =
+        let subscriptions = getSortableSubscriptions by subscriptions world
+        let subscriptions = List.sortWith sortFstDesc subscriptions
+        List.map snd subscriptions
+
+    let sortSubscriptionsByPickingPriority subscriptions world =
+        sortSubscriptionsBy
+            (fun (entity : Entity) world -> entity.DispatcherNp.GetPickingPriority (entity, world))
+            subscriptions
+            world
+
+    let sortSubscriptionsByHierarchy subscriptions world =
+        sortSubscriptionsBy
+            (fun _ _ -> EntityPublishingPriority)
+            subscriptions
+            world
+
+    let sortSubscriptionsNone (subscriptions : SubscriptionEntry list) _ =
+        subscriptions
+
+    // OPTIMIZATION: uses memoization.
+    let private getAnyEventAddresses eventAddress =
+        if not <| Address.isEmpty eventAddress then
+            let anyEventAddressesKey = Address.allButLast eventAddress
+            let refAnyEventAddresses = ref Unchecked.defaultof<Address list>
+            if not <| AnyEventAddressesCache.TryGetValue (anyEventAddressesKey, refAnyEventAddresses) then
+                let eventAddressList = eventAddress.AddrList
+                let anyEventAddressList = AnyEventAddress.AddrList
+                let anyEventAddresses =
+                    [for i in 0 .. List.length eventAddressList - 1 do
+                        let subNameList = List.take i eventAddressList @ anyEventAddressList
+                        yield Address.make subNameList]
+                AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
+                anyEventAddresses
+            else !refAnyEventAddresses
+        else failwith "Event name cannot be empty."
+
+    let private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =
+        let anyEventAddresses = getAnyEventAddresses eventAddress
+        let optSubLists = List.map (fun anyEventAddress -> Map.tryFind anyEventAddress world.Callbacks.Subscriptions) anyEventAddresses
+        let optSubLists = Map.tryFind eventAddress world.Callbacks.Subscriptions :: optSubLists
+        let subLists = List.definitize optSubLists
+        let subList = List.concat subLists
+        publishSorter subList world
+    
+    /// Publish an event.
+    let publish<'d> publishSorter eventAddress publisherAddress (eventData : 'd) world =
+        let subscriptions = getSubscriptionsSorted publishSorter eventAddress world
+        let (_, world) =
+            List.foldWhile
+                (fun (eventHandling, world) (_, subscriberAddress, subscription) ->
+                    if  (match eventHandling with Cascade -> true | Resolve -> false) &&
+                        (match world.State.Liveness with Running -> true | Exiting -> false) then
+                        let event =
+                            { Address = eventAddress
+                              SubscriberAddress = subscriberAddress
+                              OptSubscriber = getOptSimulant subscriberAddress world
+                              PublisherAddress = publisherAddress
+                              OptPublisher = getOptSimulant publisherAddress world
+                              Data = eventData }
+                        let callableSubscription = unbox<BoxableSubscription> subscription
+                        let result = callableSubscription event world
+                        Some result
+                    else None)
+                (Cascade, world)
+                subscriptions
+        world
+
+    /// Publish an event.
+    let publish4<'d> eventAddress publisherAddress (eventData : 'd) world =
+        publish sortSubscriptionsByHierarchy eventAddress publisherAddress eventData world
+
+    /// Subscribe to an event.
+    let subscribe<'d> subscriptionKey eventAddress subscriberAddress (subscription : 'd Subscription) world =
+        if not <| Address.isEmpty eventAddress then
+            let subscriptions =
+                let subscriptionEntry = (subscriptionKey, subscriberAddress, boxSubscription subscription)
+                match Map.tryFind eventAddress world.Callbacks.Subscriptions with
+                | Some subscriptionEntries -> Map.add eventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
+                | None -> Map.add eventAddress [subscriptionEntry] world.Callbacks.Subscriptions
+            let unsubscriptions = Map.add subscriptionKey (eventAddress, subscriberAddress) world.Callbacks.Unsubscriptions
+            let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+            { world with Callbacks = callbacks }
+        else failwith "Event name cannot be empty."
+
+    /// Subscribe to an event.
+    let subscribe4<'d> eventAddress subscriberAddress (subscription : 'd Subscription) world =
+        subscribe (makeSubscriptionKey ()) eventAddress subscriberAddress subscription world
+
+    /// Unsubscribe from an event.
+    let unsubscribe subscriptionKey world =
+        match Map.tryFind subscriptionKey world.Callbacks.Unsubscriptions with
+        | Some (eventAddress, subscriberAddress) ->
+            match Map.tryFind eventAddress world.Callbacks.Subscriptions with
+            | Some subscriptionList ->
+                let subscriptionList =
+                    List.remove
+                        (fun (subscriptionKey', subscriberAddress', _) ->
+                            subscriptionKey' = subscriptionKey &&
+                            subscriberAddress' = subscriberAddress)
+                        subscriptionList
+                let subscriptions = 
+                    match subscriptionList with
+                    | [] -> Map.remove eventAddress world.Callbacks.Subscriptions
+                    | _ -> Map.add eventAddress subscriptionList world.Callbacks.Subscriptions
+                let unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions
+                let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
+                { world with Callbacks = callbacks }
+            | None -> world // TODO: consider failure signal
+        | None -> world // TODO: consider failure signal
+
+    /// Keep active a subscription for the lifetime of a simulant.
+    let monitor<'d> eventAddress subscriberAddress (subscription : 'd Subscription) world =
+        if not <| Address.isEmpty subscriberAddress then
+            let observationKey = makeSubscriptionKey ()
+            let removalKey = makeSubscriptionKey ()
+            let world = subscribe<'d> observationKey eventAddress subscriberAddress subscription world
+            let subscription' = fun _ world ->
+                let world = unsubscribe removalKey world
+                let world = unsubscribe observationKey world
+                (Cascade, world)
+            subscribe<unit> removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress subscription' world
+        else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Set the Camera field of the world.
     let setCamera camera world =
@@ -858,64 +962,59 @@ module Simulant =
 module Event =
 
     /// Unwrap commonly-useful values of an event.
-    let unwrap<'s, 'd> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
-        let eventData = EventData.toGeneric<'d> event.Data
-        (event.SubscriberAddress, subscriber, eventData)
+    let unwrap<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
+        (event.SubscriberAddress, subscriber, event.Data)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapASDE<'s, 'd> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
-        let eventData = EventData.toGeneric<'d> event.Data
-        (event.SubscriberAddress, subscriber, eventData, event)
+    let unwrapASDE<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
+        (event.SubscriberAddress, subscriber, event.Data, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapASE<'s> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+    let unwrapASE<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
         (event.SubscriberAddress, subscriber, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapADE<'d> event =
-        let eventData = EventData.toGeneric<'d> event.Data
-        (event.SubscriberAddress, eventData, event)
+    let unwrapADE<'d> (event : 'd Event) =
+        (event.SubscriberAddress, event.Data, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapAS<'s> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+    let unwrapAS<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
         (event.SubscriberAddress, subscriber)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapAD<'d> event =
-        let eventData = EventData.toGeneric<'d> event.Data
-        (event.SubscriberAddress, eventData)
+    let unwrapAD<'d> (event : 'd Event) =
+        (event.SubscriberAddress, event.Data)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapAE event =
+    let unwrapAE<'d> (event : 'd Event) =
         (event.SubscriberAddress, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapSD<'s, 'd> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
-        let eventData = EventData.toGeneric<'d> event.Data
-        (subscriber, eventData)
+    let unwrapSD<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
+        (subscriber, event.Data)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapSE<'s> event =
-        let subscriber = Simulant.toGeneric<'s> event.Subscriber
+    let unwrapSE<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
         (subscriber, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapDE<'d> event =
-        (EventData.toGeneric<'d> event.Data, event)
+    let unwrapDE<'d> (event : 'd Event) =
+        (event.Data, event)
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapA event =
+    let unwrapA (event : 'd Event) =
         event.SubscriberAddress
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapS<'s> event =
-        Simulant.toGeneric<'s> event.Subscriber
+    let unwrapS<'s, 'd> (event : 'd Event) =
+        Simulant.toGeneric<'s> <| Option.get event.OptSubscriber
 
     /// Unwrap commonly-useful values of an event.
-    let unwrapD<'d> event =
-        EventData.toGeneric<'d> event.Data
+    let unwrapD<'d> (event : 'd Event) =
+        event.Data

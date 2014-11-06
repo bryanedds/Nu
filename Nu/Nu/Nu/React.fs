@@ -8,252 +8,282 @@ open Nu.Constants
 [<AutoOpen>]
 module ReactModule =
 
-    type [<ReferenceEquality>] 'a Reactor =
-        { ReactAddress : Address
-          HandleEvent : 'a -> World -> EventHandling * World
-          Subscribe : World -> World
-          Unsubscribe : World -> World }
+    type [<ReferenceEquality>] 'a Observable =
+        { Subscribe : World -> Address * (World -> World) * World
+          TypeCarrier : 'a -> unit }
 
-        static member make<'a>
-            subscriberAddress
-            (handleEvent : 'a -> World -> EventHandling * World)
-            subscribe
-            unsubscribe =
-            { ReactAddress = subscriberAddress
-              HandleEvent = handleEvent
-              Subscribe = subscribe
-              Unsubscribe = unsubscribe }
+        static member make<'a> subscribe typeCarrier =
+            { Subscribe = subscribe; TypeCarrier = typeCarrier }
 
 module React =
 
-    (* Subscribing Combinators *)
+    (*let choice eventAddress (observable : Either<'d Event, 'a> Observable) : 'a Observable =
+        let subscriptionKey = World.makeSubscriptionKey ()
+        let handleRight = fun value world -> observable.HandleEvent (Right value) world
+        let handleLeft = fun value world -> observable.HandleEvent (Left value) world
+        let subscribe = fun world ->
+            let world = World.subscribe<'d> subscriptionKey eventAddress observable.ReactAddress handleLeft world
+            observable.Subscribe world
+        let unsubscribe world = let world = World.unsubscribe subscriptionKey world in observable.Unsubscribe world
+        Observable.make observable.ReactAddress handleRight subscribe unsubscribe
+
+    let zip eventAddress (observable : ('a * 'd Event) Observable) : 'a Observable =
+        let subscriptionKey = World.makeSubscriptionKey ()
+        let unsubscribe = fun world -> World.unsubscribe subscriptionKey world
+        let handleEvent = fun a world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let handleEvent2 = fun event world -> let world = unsubscribe world in observable.HandleEvent (a, event) world
+            let world = World.subscribe<'d> subscriptionKey eventAddress observable.ReactAddress handleEvent2 world
+            (Cascade, world)
+        let unsubscribe world = let world = unsubscribe world in observable.Unsubscribe world
+        Observable.make observable.ReactAddress handleEvent observable.Subscribe unsubscribe
+
+    let lifetime (observable : 'a Observable) : 'a Observable =
+        let subscriptionKey = World.makeSubscriptionKey ()
+        let handleEvent = fun _ world ->
+            let world = World.unsubscribe subscriptionKey world
+            let world = observable.Unsubscribe world
+            (Cascade, world)
+        let subscribe = fun world ->
+            let world = World.subscribe subscriptionKey (RemovingEventAddress + observable.ReactAddress) observable.ReactAddress handleEvent world
+            observable.Subscribe world
+        let unsubscribe = fun world -> let world = World.unsubscribe subscriptionKey world in observable.Unsubscribe world
+        Observable.make observable.ReactAddress observable.HandleEvent subscribe unsubscribe
+
+    let upon eventAddress (observable : 'd Event Observable) : 'd Event Observable =
+        let subscriptionKey = World.makeSubscriptionKey ()
+        let subscribe = fun world ->
+            let world = World.subscribe<'d> subscriptionKey eventAddress observable.ReactAddress observable.HandleEvent world
+            observable.Subscribe world
+        let unsubscribe = fun world -> let world = World.unsubscribe subscriptionKey world in observable.Unsubscribe world
+        Observable.make observable.ReactAddress observable.HandleEvent subscribe unsubscribe
+
+    let lifetimeUpon eventAddress (observable : 'd Event Observable) : 'd Event Observable =
+        lifetime ^^ upon eventAddress observable*)
+
+    let subscribe world observable =
+        let result = observable.Subscribe world
+        _bc result
+
+    let from<'a> address =
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let unsubscribe = fun world -> World.unsubscribe subscriptionKey world
+            let subscription = fun event world ->
+                let world = World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
+                (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
+
+    let using handleEvent (observable : 'a Observable) =
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let (address, unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
+            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress handleEvent world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
+
+    let filter (pred : 'a Event -> World -> bool) (observable : 'a Observable) =
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let (address, unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
+            let subscription = fun event world ->
+                let world =
+                    if pred event world
+                    then World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
+                    else world
+                (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
+
+    let map (mapper : 'a Event -> World -> 'b) (observable : 'a Observable) : 'b Observable =
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let (address, unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
+            let subscription = fun event world ->
+                let world = World.publish<'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress (mapper event world) world
+                (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'b) -> () }
 
     let track4
-        (tracker : 'c -> 'a -> World -> 'c * bool)
-        (tranformer : 'c -> 'b)
+        (tracker : 'c -> 'a Event -> World -> 'c * bool)
+        (transformer : 'c -> 'b)
         (state : 'c)
-        (reactor : 'b Reactor) :
-        'a Reactor =
-        let key = World.makeCallbackKey ()
+        (observable : 'a Observable) :
+        'b Observable =
         let subscribe = fun world ->
-            let world = World.addCallbackState key state world
-            reactor.Subscribe world
-        let unsubscribe = fun world ->
-            let world = World.removeCallbackState key world
-            reactor.Unsubscribe world
-        let handleEvent = fun value world ->
-            let state = World.getCallbackState key world
-            let (state, tracked) = tracker state value world
-            let world = World.addCallbackState key state world
-            if tracked then reactor.HandleEvent (tranformer state) world
-            else (Cascade, world)
-        Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
+            let callbackKey = World.makeCallbackKey ()
+            let world = World.addCallbackState callbackKey state world
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let (address, unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world ->
+                let world = World.removeCallbackState callbackKey world
+                let world = unsubscribe world
+                World.unsubscribe subscriptionKey world
+            let subscription =
+                fun event world ->
+                    let state = World.getCallbackState callbackKey world
+                    let (state, tracked) = tracker state event world
+                    let world = World.addCallbackState callbackKey state world
+                    let world =
+                        if tracked
+                        then World.publish<'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress (transformer state) world
+                        else world
+                    (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'b) -> () }
 
     let track2
-        (tracker : 'a -> 'a -> World -> 'a * bool)
-        (reactor : 'a Reactor) :
-        'a Reactor =
-        let key = World.makeCallbackKey ()
+        (tracker : 'a -> 'a Event -> World -> 'a * bool)
+        (observable : 'a Observable) :
+        'a Observable =
         let subscribe = fun world ->
-            let world = World.addCallbackState key None world
-            reactor.Subscribe world
-        let unsubscribe = fun world ->
-            let world = World.removeCallbackState key world
-            reactor.Unsubscribe world
-        let handleEvent = fun value world ->
-            let optState = World.getCallbackState key world
-            let state = match optState with Some state -> state | None -> value
-            let (state, tracked) = tracker state value world
-            let world = World.addCallbackState key (Some state) world
-            if tracked then reactor.HandleEvent state world
-            else (Cascade, world)
-        Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
+            let callbackKey = World.makeCallbackKey ()
+            let world = World.addCallbackState callbackKey None world
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let (address, unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world ->
+                let world = World.removeCallbackState callbackKey world
+                let world = unsubscribe world
+                World.unsubscribe subscriptionKey world
+            let subscription =
+                fun event world ->
+                    let optState = World.getCallbackState callbackKey world
+                    let state = match optState with Some state -> state | None -> event.Data
+                    let (state, tracked) = tracker state event world
+                    let world = World.addCallbackState callbackKey state world
+                    let world =
+                        if tracked
+                        then World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress state world
+                        else world
+                    (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
 
     let track
         (tracker : 'b -> World -> 'b * bool)
         (state : 'b)
-        (reactor : 'a Reactor) :
-        'a Reactor =
-        let key = World.makeCallbackKey ()
+        (observable : 'a Observable) :
+        'a Observable =
         let subscribe = fun world ->
-            let world = World.addCallbackState key state world
-            reactor.Subscribe world
-        let unsubscribe = fun world ->
-            let world = World.removeCallbackState key world
-            reactor.Unsubscribe world
-        let handleEvent = fun value world ->
-            let state = World.getCallbackState key world
-            let (state, tracked) = tracker state world
-            let world = World.addCallbackState key state world
-            if tracked then reactor.HandleEvent value world
-            else (Cascade, world)
-        Reactor.make reactor.ReactAddress handleEvent subscribe unsubscribe
+            let callbackKey = World.makeCallbackKey ()
+            let world = World.addCallbackState callbackKey state world
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let (address, unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world ->
+                let world = World.removeCallbackState callbackKey world
+                let world = unsubscribe world
+                World.unsubscribe subscriptionKey world
+            let subscription =
+                fun event world ->
+                    let state = World.getCallbackState callbackKey world
+                    let (state, tracked) = tracker state world
+                    let world = World.addCallbackState callbackKey state world
+                    let world =
+                        if tracked
+                        then World.publish<'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
+                        else world
+                    (Cascade, world)
+            let world = World.subscribe<'b> subscriptionKey address subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
 
-    let choice eventAddress (reactor : Either<Event, 'a> Reactor) : 'a Reactor =
-        let key = World.makeSubscriptionKey ()
-        let handleRight = fun value world -> reactor.HandleEvent (Right value) world
-        let handleLeft = fun value world -> reactor.HandleEvent (Left value) world
-        let subscribe = fun world ->
-            let world = World.subscribe key eventAddress reactor.ReactAddress handleLeft world
-            reactor.Subscribe world
-        let unsubscribe world = let world = World.unsubscribe key world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress handleRight subscribe unsubscribe
+    let scan4 (f : 'b -> 'a Event -> World -> 'b) g s (o : 'a Observable) : 'c Observable =
+        track4 (fun b a w -> (f b a w, true)) g s o
 
-    let zip eventAddress (reactor : ('a * Event) Reactor) : 'a Reactor =
-        let key = World.makeSubscriptionKey ()
-        let unsubscribe = fun world -> World.unsubscribe key world
-        let handleEvent = fun a world ->
-            let key = World.makeSubscriptionKey ()
-            let handleEvent2 = fun event world -> let world = unsubscribe world in reactor.HandleEvent (a, event) world
-            let world = World.subscribe key eventAddress reactor.ReactAddress handleEvent2 world
-            (Cascade, world)
-        let unsubscribe world = let world = unsubscribe world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe unsubscribe
+    let scan2 (f : 'a -> 'a Event -> World -> 'a) (o : 'a Observable) : 'a Observable =
+        track2 (fun a a2 w -> (f a a2 w, true)) o
 
-    let lifetime (reactor : 'a Reactor) : 'a Reactor =
-        let key = World.makeSubscriptionKey ()
-        let handleEvent = fun _ world ->
-            let world = World.unsubscribe key world
-            let world = reactor.Unsubscribe world
-            (Cascade, world)
-        let subscribe = fun world ->
-            let world = World.subscribe key (RemovingEventAddress + reactor.ReactAddress) reactor.ReactAddress handleEvent world
-            reactor.Subscribe world
-        let unsubscribe = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress reactor.HandleEvent subscribe unsubscribe
+    let scan (f : 'b -> 'a Event -> World -> 'b) s (o : 'a Observable) : 'b Observable =
+        scan4 f id s o
 
-    let upon eventAddress (reactor : Event Reactor) : Event Reactor =
-        let key = World.makeSubscriptionKey ()
-        let subscribe = fun world ->
-            let world = World.subscribe key eventAddress reactor.ReactAddress reactor.HandleEvent world
-            reactor.Subscribe world
-        let unsubscribe = fun world -> let world = World.unsubscribe key world in reactor.Unsubscribe world
-        Reactor.make reactor.ReactAddress reactor.HandleEvent subscribe unsubscribe
-
-    let lifetimeUpon eventAddress (reactor : Event Reactor) : Event Reactor =
-        lifetime ^^ upon eventAddress reactor
-
-    let subscribe world reactor =
-        reactor.Subscribe world
-
-    let monitor world reactor =
-        let reactor = lifetime reactor
-        subscribe world reactor
-
-    let unsubscribe world reactor =
-        reactor.Unsubscribe world
-
-    let subscribeUpon eventAddress world reactor =
-        let reactor = upon eventAddress reactor
-        subscribe world reactor
-
-    let monitorUpon eventAddress world reactor =
-        let reactor = lifetimeUpon eventAddress reactor
-        subscribe world reactor
-
-    (* Primitive Combinators *)
-
-    let filter pred (reactor : 'a Reactor) : 'a Reactor =
-        let handleEvent = fun (value : 'a) world ->
-            if pred value world then reactor.HandleEvent value world
-            else (Cascade, world)
-        Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe reactor.Unsubscribe
-    
-    let map (mapper : 'a -> World -> 'b) (reactor : 'b Reactor) : 'a Reactor =
-        let handleEvent = fun value world -> reactor.HandleEvent (mapper value world) world
-        Reactor.make reactor.ReactAddress handleEvent reactor.Subscribe reactor.Unsubscribe
-
-    let mapOverFst (mapper : 'a -> World -> 'b) (reactor : ('b * 'c) Reactor) : ('a * 'c) Reactor =
-        map (fun (a, c) world -> (mapper a world, c)) reactor
-
-    let mapOverSnd (mapper : 'a -> World -> 'b) (reactor : ('c * 'b) Reactor) : ('c * 'a) Reactor =
-        map (fun (c, a) world -> (c, mapper a world)) reactor
-
-    let mapOverLeft (mapper : 'a -> World -> 'b) (reactor : Either<'b, 'c> Reactor) : Either<'a, 'c> Reactor =
-        map (fun either world -> Either.mapLeft (fun a -> mapper a world) either) reactor
-
-    let mapOverRight (mapper : 'a -> World -> 'b) (reactor : Either<'c, 'b> Reactor) : Either<'c, 'a> Reactor =
-        map (fun either world -> Either.mapRight (fun a -> mapper a world) either) reactor
-
-    let augment f s r = track (fun b w -> (f b w, true)) s r
-    let scan4 (f : 'b -> 'a -> World -> 'b) g s (r : 'c Reactor) = track4 (fun c a w -> (f c a w, true)) g s r
-    let scan2 f r = track2 (fun a a2 w -> (f a a2 w, true)) r
-    let scan (f : 'b -> 'a -> World -> 'b) s r = scan4 f id s r
+    let augment f s o =
+        track (fun b w -> (f b w, true)) s o
 
     (* Advanced Combinators *)
 
-    let inline average (reactor : 'a Reactor) : 'a Reactor =
+    let inline average (observable : 'a Observable) : 'a Observable =
         scan4
             (fun (_ : 'a, n : 'a, d : 'a) a _ ->
-                let n = n + a
+                let n = n + a.Data
                 let d = d + one ()
                 (n / d, n, d))
             Triple.fst
             (zero (), zero (), zero ())
-            reactor
+            observable
 
-    let organize (reactor : ('a option * 'a Set) Reactor) : 'a Reactor =
+    let organize (observable : 'a Observable) : ('a option * 'a Set) Observable =
         scan
             (fun (_, s) a _ ->
-                if Set.contains a s
+                if Set.contains a.Data s
                 then (None, s)
-                else (Some a, Set.add a s))
+                else (Some a.Data, Set.add a.Data s))
             (None, Set.empty)
-            reactor
+            observable
 
-    let group (reactor : ('a * bool * 'a Set) Reactor) : 'a Reactor =
+    let group (observable : 'a Observable) : ('a * bool * 'a Set) Observable =
         scan
             (fun (_, _, s) a _ ->
-                if Set.contains a s
-                then (a, false, s)
-                else (a, true, Set.add a s))
+                if Set.contains a.Data s
+                then (a.Data, false, s)
+                else (a.Data, true, Set.add a.Data s))
             (Unchecked.defaultof<'a>, false, Set.empty)
-            reactor
+            observable
     
-    let pairwise (r : ('a * 'a) Reactor) : 'a Reactor =
+    let pairwise (observable : 'a Observable) : ('a * 'a) Observable =
         track4
-            (fun (o, _) a _ -> ((o, a), Option.isSome o))
+            (fun (o, _) a _ -> ((o, a.Data), Option.isSome o))
             (fun (o, c) -> (Option.get o, c))
             (None, Unchecked.defaultof<'a>)
-            r
+            observable
 
-    let inline sum r = scan2 (fun m n _ -> m + n) r
-    let take n r = track (fun m _ -> (m + 1, m < n)) 0 r
-    let skip n r = track (fun m _ -> (m + 1, m >= n)) 0 r
-    let head r = take 1 r
-    let tail r = skip 1 r
-    let nth n r = skip n ^^ head r
-    let search p r = filter p ^^ head r
-    let choose r = filter (fun o _ -> Option.isSome o) r
-    let mapi r = augment (fun i _ -> i + 1) 0 r
-    let max r = scan2 (fun m n _ -> if m < n then n else m) r
-    let min r = scan2 (fun m n _ -> if n < m then n else m) r
-    let distinct r = organize ^^ map (fun a _ -> fst a) ^^ choose r
+    let inline sum o = scan2 (fun m n _ -> m + n) o
+    let take n o = track (fun m _ -> (m + 1, m < n)) 0 o
+    let skip n o = track (fun m _ -> (m + 1, m >= n)) 0 o
+    let head o = take 1 o
+    let tail o = skip 1 o
+    let nth n o = o |> skip n |> head
+    let search p o = o |> filter p |> head
+    let choose (o : 'a option Observable) = o |> filter (fun o _ -> Option.isSome o.Data) |> map (fun a _ -> Option.get a.Data)
+    let mapi o = augment (fun i _ -> i + 1) 0 o
+    let max o = scan2 (fun m n _ -> if m < n.Data then n.Data else m) o
+    let min o = scan2 (fun m n _ -> if n.Data < m then n.Data else m) o
+    let distinct o = organize <| map (fun a _ -> fst a.Data) ^^ choose o
 
     (* Map Combinators *)
 
     let unwrap<'s, 'd> event (_ : World) = Event.unwrapASDE<'s, 'd> event
     let unwrapASD<'s, 'd> event (_ : World) = Event.unwrap<'s, 'd> event
-    let unwrapASE<'s> event (_ : World) = Event.unwrapASE<'s> event
+    let unwrapASE<'s, 'd> event (_ : World) = Event.unwrapASE<'s, 'd> event
     let unwrapADE<'d> event (_ : World) = Event.unwrapADE<'d> event
-    let unwrapAS<'s> event (_ : World) = Event.unwrapAS<'s> event
+    let unwrapAS<'s, 'd> event (_ : World) = Event.unwrapAS<'s, 'd> event
     let unwrapAD<'d> event (_ : World) = Event.unwrapAD<'d> event
     let unwrapAE event (_ : World) = Event.unwrapAE event
     let unwrapSD<'s, 'd> event (_ : World) = Event.unwrapSD<'s, 'd> event
-    let unwrapSE<'s> event (_ : World) = Event.unwrapSE<'s> event
+    let unwrapSE<'s, 'd> event (_ : World) = Event.unwrapSE<'s, 'd> event
     let unwrapDE<'d> event (_ : World) = Event.unwrapDE<'d> event
     let unwrapA event (_ : World) = Event.unwrapA event
-    let unwrapS<'s> event (_ : World) = Event.unwrapS<'s> event
+    let unwrapS<'s, 'd> event (_ : World) = Event.unwrapS<'s, 'd> event
     let unwrapD<'d> event (_ : World) = Event.unwrapD<'d> event
-    let unwrapV event (_ : World) : 'd = UserData.get ^^ Event.unwrapD event
 
     (* Filter Combinators *)
 
     let isGamePlaying _ world = World.isGamePlaying world
     let isPhysicsRunning _ world = World.isPhysicsRunning world
-    let isSelected event world = World.isAddressSelected event.ReactAddress world
-
-    (* Initializing Combinator *)
-
-    let using subscriberAddress handleEvent =
-        Reactor.make subscriberAddress handleEvent id id
+    //let isSelected event world = World.isAddressSelected event.ObservableAddress world

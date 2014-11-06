@@ -17,62 +17,71 @@ module ReactTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = subscribeUpon TestEventAddress world ^^ using Address.empty incUserStateAndCascade
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = from<unit> TestEventAddress |> using incUserStateAndCascade |> subscribe world |> snd
+        let world = World.publish4 TestEventAddress Address.empty () world
+        Assert.Equal (1, World.getUserState world)
+
+    let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
+        World.init ()
+        let world = World.makeEmpty 0
+        let observable = from<unit> TestEventAddress |> using incUserStateAndCascade
+        let world = snd <| subscribe world observable
+        let (unsubscribe, world) = subscribe world observable
+        let world = unsubscribe world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor = upon TestEventAddress ^^ using Address.empty incUserStateAndCascade
-        let world = subscribe world reactor
-        let world = unsubscribe world reactor
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let (unsubscribe, world) = from<unit> TestEventAddress |> using incUserStateAndCascade |> subscribe world
+        let world = unsubscribe world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] filterWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor =
-            upon TestEventAddress ^^
-            filter (fun _ world -> World.getUserState world = 0) ^^
-            using Address.empty incUserStateAndCascade
-        let world = subscribe world reactor
-        let world = subscribe world reactor
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world =
+            from<unit> TestEventAddress |>
+            filter (fun _ world -> World.getUserState world = 0) |>
+            using incUserStateAndCascade |>
+            subscribe world |>
+            snd
+        let world = World.publish4 TestEventAddress Address.empty () world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            subscribeUpon TestEventAddress world ^^
-            map unwrapV ^^
-            using Address.empty (fun a world -> (Cascade, World.setUserState a world))
-        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 0 }) world
-        Assert.Equal (0, World.getUserState world)
+            from<int> TestEventAddress |>
+            map (fun event _ -> event.Data * 2) |>
+            using (fun event world -> (Cascade, World.setUserState event.Data world)) |>
+            subscribe world |>
+            snd
+        let world = World.publish4 TestEventAddress Address.empty 1 world
+        Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] scanWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            subscribeUpon TestEventAddress world ^^
-            map unwrapV ^^
-            scan (fun b a _ -> b + a) 0 ^^
-            using Address.empty (fun a world -> (Cascade, World.setUserState a world))
-        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 1 }) world
-        let world = World.publish4 TestEventAddress Address.empty (UserData { UserValue = 2 }) world
+            from<int> TestEventAddress |>
+            scan (fun acc event _ -> acc + event.Data) 0 |>
+            using (fun event world -> (Cascade, World.setUserState event.Data world)) |>
+            subscribe world |>
+            snd
+        let world = World.publish4 TestEventAddress Address.empty 1 world
+        let world = World.publish4 TestEventAddress Address.empty 2 world
         Assert.Equal (3, World.getUserState world)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
         World.init ()
         let world = World.makeEmpty 0
-        let reactor =
-            upon TestEventAddress ^^
-            scan2 (fun a _ _ -> a) ^^
-            using Address.empty (fun _ world -> (Cascade, world))
-        let world = subscribe world reactor
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
-        let world = unsubscribe world reactor
+        let (unsubscribe, world) = from<int> TestEventAddress |> scan2 (fun a _ _ -> a) |> subscribe world
+        let world = World.publish4 TestEventAddress Address.empty 0 world
+        let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
