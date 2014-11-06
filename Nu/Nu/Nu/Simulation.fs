@@ -387,8 +387,10 @@ module World =
                 // parameter silently coerces an obj type into that generic parameter's type! Argh!
                 //
                 // This being the unfortunate case, I suggest that, as a rule of thumb, to
-                // explicitly specify the type parameter of all your World.subscribe / monitor
-                // calls, as well as all uses of React.from!
+                // explicitly specify the type parameter of all your usages of World.publish,
+                // World.subscribe, World.monitor, and React.from!
+                //
+                // Someday down the line, I hope F# will give us forced-explicity type parameters!
                 reraise ()
             | _ -> reraise ()
         box boxableSubscription
