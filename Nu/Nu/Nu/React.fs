@@ -8,6 +8,8 @@ open Nu.Constants
 [<AutoOpen>]
 module ReactModule =
 
+    /// An observable event in the reactive style.
+    /// TODO: I bet there's a monad in here somewhere...
     type [<ReferenceEquality>] 'a Observable =
         { Subscribe : World -> Address * (World -> World) * World
           TypeCarrier : 'a -> unit }
@@ -17,26 +19,9 @@ module ReactModule =
 
 module React =
 
-    (*let choice eventAddress (observable : Either<'d Event, 'a> Observable) : 'a Observable =
-        let subscriptionKey = World.makeSubscriptionKey ()
-        let handleRight = fun value world -> observable.HandleEvent (Right value) world
-        let handleLeft = fun value world -> observable.HandleEvent (Left value) world
-        let subscribe = fun world ->
-            let world = World.subscribe<'d> subscriptionKey eventAddress observable.ReactAddress handleLeft world
-            observable.Subscribe world
-        let unsubscribe world = let world = World.unsubscribe subscriptionKey world in observable.Unsubscribe world
-        Observable.make observable.ReactAddress handleRight subscribe unsubscribe
+    (* Primitive Combinators *)
 
-    let zip eventAddress (observable : ('a * 'd Event) Observable) : 'a Observable =
-        let subscriptionKey = World.makeSubscriptionKey ()
-        let unsubscribe = fun world -> World.unsubscribe subscriptionKey world
-        let handleEvent = fun a world ->
-            let subscriptionKey = World.makeSubscriptionKey ()
-            let handleEvent2 = fun event world -> let world = unsubscribe world in observable.HandleEvent (a, event) world
-            let world = World.subscribe<'d> subscriptionKey eventAddress observable.ReactAddress handleEvent2 world
-            (Cascade, world)
-        let unsubscribe world = let world = unsubscribe world in observable.Unsubscribe world
-        Observable.make observable.ReactAddress handleEvent observable.Subscribe unsubscribe
+    (*
 
     let lifetime (observable : 'a Observable) : 'a Observable =
         let subscriptionKey = World.makeSubscriptionKey ()
@@ -50,22 +35,9 @@ module React =
         let unsubscribe = fun world -> let world = World.unsubscribe subscriptionKey world in observable.Unsubscribe world
         Observable.make observable.ReactAddress observable.HandleEvent subscribe unsubscribe
 
-    let upon eventAddress (observable : 'd Event Observable) : 'd Event Observable =
-        let subscriptionKey = World.makeSubscriptionKey ()
-        let subscribe = fun world ->
-            let world = World.subscribe<'d> subscriptionKey eventAddress observable.ReactAddress observable.HandleEvent world
-            observable.Subscribe world
-        let unsubscribe = fun world -> let world = World.unsubscribe subscriptionKey world in observable.Unsubscribe world
-        Observable.make observable.ReactAddress observable.HandleEvent subscribe unsubscribe
+    *)
 
-    let lifetimeUpon eventAddress (observable : 'd Event Observable) : 'd Event Observable =
-        lifetime ^^ upon eventAddress observable*)
-
-    let subscribe world observable =
-        let result = observable.Subscribe world
-        _bc result
-
-    let from<'a> address =
+    let from<'a> eventAddress =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = !+ [acstring subscriptionKey]
@@ -73,10 +45,11 @@ module React =
             let subscription = fun event world ->
                 let world = World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
                 (Cascade, world)
-            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
 
+    // TODO: is there a better name for this?
     let using handleEvent (observable : 'a Observable) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -87,11 +60,56 @@ module React =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
 
+    let product eventAddress (observable : 'a Observable) : ('a * 'b) Observable =
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionKey' = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let subscriptionAddress' = !+ [acstring subscriptionKey']
+            let (eventAddress', unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world ->
+                let world = unsubscribe world
+                let world = World.unsubscribe subscriptionKey world
+                World.unsubscribe subscriptionKey' world
+            let subscription = fun event world ->
+                let subscription' = fun event' world ->
+                    let eventData = (event.Data, event'.Data)
+                    let world = World.publish<'a * 'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress eventData world
+                    (Cascade, world)
+                let world = World.subscribe<'b> subscriptionKey' eventAddress' subscriptionAddress' subscription' world
+                (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : 'a * 'b) -> () }
+
+    // TODO: implement this properly
+    let sum eventAddress (observable : 'a Observable) : Either<'a, 'b> Observable =
+        let subscribe = fun world ->
+            let subscriptionKey = World.makeSubscriptionKey ()
+            let subscriptionKey' = World.makeSubscriptionKey ()
+            let subscriptionAddress = !+ [acstring subscriptionKey]
+            let subscriptionAddress' = !+ [acstring subscriptionKey']
+            let (eventAddress', unsubscribe, world) = observable.Subscribe world
+            let unsubscribe = fun world ->
+                let world = unsubscribe world
+                let world = World.unsubscribe subscriptionKey world
+                World.unsubscribe subscriptionKey' world
+            let subscription = fun event world ->
+                let subscription' = fun event' world ->
+                    let eventData = (event.Data, event'.Data)
+                    let world = World.publish<'a * 'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress eventData world
+                    (Cascade, world)
+                let world = World.subscribe<'b> subscriptionKey' eventAddress' subscriptionAddress' subscription' world
+                (Cascade, world)
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
+            (subscriptionAddress, unsubscribe, world)
+        { Subscribe = subscribe; TypeCarrier = fun (_ : Either<'a, 'b>) -> () }
+
     let filter (pred : 'a Event -> World -> bool) (observable : 'a Observable) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = !+ [acstring subscriptionKey]
-            let (address, unsubscribe, world) = observable.Subscribe world
+            let (eventAddress, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
             let subscription = fun event world ->
                 let world =
@@ -99,7 +117,7 @@ module React =
                     then World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
                     else world
                 (Cascade, world)
-            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
 
@@ -107,12 +125,12 @@ module React =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = !+ [acstring subscriptionKey]
-            let (address, unsubscribe, world) = observable.Subscribe world
+            let (eventAddress, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world -> let world = unsubscribe world in World.unsubscribe subscriptionKey world
             let subscription = fun event world ->
                 let world = World.publish<'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress (mapper event world) world
                 (Cascade, world)
-            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'b) -> () }
 
@@ -127,7 +145,7 @@ module React =
             let world = World.addCallbackState callbackKey state world
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = !+ [acstring subscriptionKey]
-            let (address, unsubscribe, world) = observable.Subscribe world
+            let (eventAddress, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world ->
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
@@ -142,7 +160,7 @@ module React =
                         then World.publish<'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress (transformer state) world
                         else world
                     (Cascade, world)
-            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'b) -> () }
 
@@ -155,7 +173,7 @@ module React =
             let world = World.addCallbackState callbackKey None world
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = !+ [acstring subscriptionKey]
-            let (address, unsubscribe, world) = observable.Subscribe world
+            let (eventAddress, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world ->
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
@@ -171,7 +189,7 @@ module React =
                         then World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress state world
                         else world
                     (Cascade, world)
-            let world = World.subscribe<'a> subscriptionKey address subscriptionAddress subscription world
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
 
@@ -185,7 +203,7 @@ module React =
             let world = World.addCallbackState callbackKey state world
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = !+ [acstring subscriptionKey]
-            let (address, unsubscribe, world) = observable.Subscribe world
+            let (eventAddress, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world ->
                 let world = World.removeCallbackState callbackKey world
                 let world = unsubscribe world
@@ -197,12 +215,20 @@ module React =
                     let world = World.addCallbackState callbackKey state world
                     let world =
                         if tracked
-                        then World.publish<'b> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
+                        then World.publish<'a> World.sortSubscriptionsNone subscriptionAddress subscriptionAddress event.Data world
                         else world
                     (Cascade, world)
-            let world = World.subscribe<'b> subscriptionKey address subscriptionAddress subscription world
+            let world = World.subscribe<'a> subscriptionKey eventAddress subscriptionAddress subscription world
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe; TypeCarrier = fun (_ : 'a) -> () }
+
+    let subscribe2 world observable =
+        observable.Subscribe world |> _bc
+
+    let subscribe eventAddress world observable =
+        observable |> using eventAddress |> subscribe2 world
+
+    (* Advanced Combinators *)
 
     let scan4 (f : 'b -> 'a Event -> World -> 'b) g s (o : 'a Observable) : 'c Observable =
         track4 (fun b a w -> (f b a w, true)) g s o
@@ -215,8 +241,6 @@ module React =
 
     let augment f s o =
         track (fun b w -> (f b w, true)) s o
-
-    (* Advanced Combinators *)
 
     let inline average (observable : 'a Observable) : 'a Observable =
         scan4
@@ -253,7 +277,8 @@ module React =
             (None, Unchecked.defaultof<'a>)
             observable
 
-    let inline sum o = scan2 (fun m n _ -> m + n) o
+    let inline sumOf o = scan2 (fun m n _ -> m + n) o
+    let inline productOf o = scan2 (fun m n _ -> m * n) o
     let take n o = track (fun m _ -> (m + 1, m < n)) 0 o
     let skip n o = track (fun m _ -> (m + 1, m >= n)) 0 o
     let head o = take 1 o
