@@ -22,22 +22,22 @@ module OmniProgression =
 
     let addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage TitleAddress world
-        let world = World.subscribe4 ClickTitleNewGameEvent Address.empty (World.handleAsScreenTransition FieldAddress) world
-        let world = World.subscribe4 ClickTitleLoadGameEvent Address.empty (World.handleAsScreenTransition LoadGameAddress) world
-        let world = World.subscribe4 ClickTitleCreditsEvent Address.empty (World.handleAsScreenTransition CreditsAddress) world
-        World.subscribe4 ClickTitleExitEvent Address.empty World.handleAsExit world
+        let world = World.subscribe4<unit> ClickTitleNewGameEvent Address.empty (World.handleAsScreenTransition FieldAddress) world
+        let world = World.subscribe4<unit> ClickTitleLoadGameEvent Address.empty (World.handleAsScreenTransition LoadGameAddress) world
+        let world = World.subscribe4<unit> ClickTitleCreditsEvent Address.empty (World.handleAsScreenTransition CreditsAddress) world
+        World.subscribe4<unit> ClickTitleExitEvent Address.empty World.handleAsExit world
 
     let addLoadGameScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name LoadGameGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage LoadGameAddress world
-        World.subscribe4 ClickLoadGameBackEvent Address.empty (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4<unit> ClickLoadGameBackEvent Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     let addCreditsScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage CreditsAddress world
-        World.subscribe4 ClickCreditsBackEvent Address.empty (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4<unit> ClickCreditsBackEvent Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     let addFieldScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name FieldGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage FieldAddress world
-        World.subscribe4 ClickFieldBackEvent Address.empty (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4<unit> ClickFieldBackEvent Address.empty (World.handleAsScreenTransition TitleAddress) world
 
     let tryMakeOmniBladeWorld sdlDeps userState =
         let omniComponentFactory = OmniComponentFactory ()

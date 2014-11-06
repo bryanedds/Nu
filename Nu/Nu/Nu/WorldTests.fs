@@ -16,8 +16,8 @@ module WorldTests =
     let TestEntityAddress = !+ [TestScreenName; TestGroupName; TestEntityName]
     let TestGroupAddress = !+ [TestScreenName; TestGroupName]
     let TestScreenAddress = !+ [TestScreenName]
-    let incUserStateAndCascade _ world = (Cascade, World.transformUserState inc world)
-    let incUserStateAndResolve _ world = (Resolve, World.transformUserState inc world)
+    let incUserStateAndCascade (_ : unit Event) world = (Cascade, World.transformUserState inc world)
+    let incUserStateAndResolve (_ : unit Event) world = (Resolve, World.transformUserState inc world)
 
     let [<Fact>] emptyWorldDoesntExplode () =
         World.init ()
@@ -35,15 +35,15 @@ module WorldTests =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty () world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
@@ -51,7 +51,7 @@ module WorldTests =
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
@@ -59,7 +59,7 @@ module WorldTests =
         let world = World.makeEmpty 0
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndResolve world
         let world = World.subscribe4 TestEventAddress Address.empty incUserStateAndCascade world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
@@ -68,7 +68,7 @@ module WorldTests =
         let world = World.makeEmpty 0
         let world = World.subscribe key TestEventAddress Address.empty incUserStateAndResolve world
         let world = World.unsubscribe key world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty () world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
@@ -80,9 +80,9 @@ module WorldTests =
         let descriptors = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let world = snd <| World.addScreen TestScreenAddress screen descriptors world
         let handleEvent = fun event world ->
-            let entity = Event.unwrapS<Entity> event
+            let entity = Event.unwrapS<Entity, string> event
             let world = World.setUserState entity.Name world
             (Cascade, world)
         let world = World.subscribe4 TestEventAddress TestEntityAddress handleEvent world
-        let world = World.publish4 TestEventAddress Address.empty (NoData ()) world
+        let world = World.publish4 TestEventAddress Address.empty String.Empty world
         Assert.Equal<string> (TestEntityName, World.getUserState world)

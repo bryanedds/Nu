@@ -361,14 +361,14 @@ module Program =
             else (Cascade, world)
         | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
 
-    let handleNuDownMouseRight (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+    let handleNuDownMouseRight (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
         let handled = if World.isGamePlaying world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
         let world = World.transformUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
-    let handleNuBeginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : Event) world =
+    let handleNuBeginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
         if not <| canEditWithMouse form world then
             let handled = if World.isGamePlaying world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
@@ -382,7 +382,7 @@ module Program =
             | None -> (handled, world)
         else (Cascade, world)
 
-    let handleNuEndEntityDrag (form : NuEditForm) (_ : Event) world =
+    let handleNuEndEntityDrag (form : NuEditForm) (_ : MouseButtonData Event) world =
         if canEditWithMouse form world then (Cascade, world)
         else
             let handled = if World.isGamePlaying world then Cascade else Resolve
@@ -396,14 +396,14 @@ module Program =
                 (handled, world)
             | DragEntityNone -> (Resolve, world)
 
-    let handleNuBeginCameraDrag (_ : NuEditForm) (_ : Event) world =
+    let handleNuBeginCameraDrag (_ : NuEditForm) (_ : MouseButtonData Event) world =
         let mousePosition = World.getMousePositionF world
         let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
         let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
         let world = World.transformUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
-    let handleNuBeginEndCameraDrag (_ : NuEditForm) (_ : Event) world =
+    let handleNuBeginEndCameraDrag (_ : NuEditForm) (_ : MouseButtonData Event) world =
         let editorState = World.getUserState world
         match editorState.DragCameraState with
         | DragCameraPosition _ ->
@@ -413,8 +413,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let world = World.subscribe AddEntityKey (AddEventAddress + groupAddress + AnyEventAddress) Address.empty (handleNuEntityAdd form) world
-        World.subscribe RemovingEntityKey (RemovingEventAddress + groupAddress + AnyEventAddress) Address.empty (handleNuEntityRemoving form) world
+        let world = World.subscribe<unit> AddEntityKey (AddEventAddress + groupAddress + AnyEventAddress) Address.empty (handleNuEntityAdd form) world
+        World.subscribe<unit> RemovingEntityKey (RemovingEventAddress + groupAddress + AnyEventAddress) Address.empty (handleNuEntityRemoving form) world
 
     let unsubscribeFromEntityEvents world =
         let world = World.unsubscribe AddEntityKey world
