@@ -91,18 +91,18 @@ module SimModule =
     type [<StructuralEquality; NoComparison>] CollisionData =
         { Normal : Vector2
           Speed : single
-          Collidee : Address }
+          Collidee : obj Address }
 
     /// The data for an entity change event.
-    type [<StructuralEquality; NoComparison>] EntityChangeData =
+    and [<StructuralEquality; NoComparison>] EntityChangeData =
         { OldEntity : Entity }
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] 'a Event =
-        { Address : Address
-          SubscriberAddress : Address
+        { Address : 'a Address
+          SubscriberAddress : obj Address
           OptSubscriber : Simulant option
-          PublisherAddress : Address
+          PublisherAddress : obj Address
           OptPublisher : Simulant option
           Data : 'a }
 
@@ -118,16 +118,16 @@ module SimModule =
     and BoxableSubscription = obj -> World -> EventHandling * World
 
     /// An entry into the world's subscription map.
-    and SubscriptionEntry = Guid * Address * obj
+    and SubscriptionEntry = Guid * obj Address * obj
 
     /// A map of event subscriptions.
-    and SubscriptionEntries = Map<Address, SubscriptionEntry list>
+    and SubscriptionEntries = Map<obj Address, SubscriptionEntry list>
 
     /// Abstracts over a subscription sorting procedure.
     and SubscriptionSorter = SubscriptionEntry list -> World -> SubscriptionEntry list
 
     /// A map of subscription keys to unsubscription data.
-    and UnsubscriptionEntries = Map<Guid, Address * Address>
+    and UnsubscriptionEntries = Map<Guid, obj Address * obj Address>
 
     /// A task to be completed at the given time, with time being represented by the world's tick
     /// field.
@@ -146,13 +146,13 @@ module SimModule =
              define? Visible true
              define? ViewType Relative]
 
-        abstract member Register : Address * Entity * World -> Entity * World
+        abstract member Register : obj Address * Entity * World -> Entity * World
         default dispatcher.Register (_, entity, world) = (entity, world)
 
-        abstract member Unregister : Address * Entity * World -> Entity * World
+        abstract member Unregister : obj Address * Entity * World -> Entity * World
         default dispatcher.Unregister (_, entity, world) = (entity, world)
 
-        abstract member PropagatePhysics : Address * Entity * World -> World
+        abstract member PropagatePhysics : obj Address * Entity * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
@@ -167,19 +167,19 @@ module SimModule =
     /// The default dispatcher for groups.
     and GroupDispatcher () =
 
-        abstract member Register : Address * Group * World -> Group * World
+        abstract member Register : obj Address * Group * World -> Group * World
         default dispatcher.Register (_, group, world) = (group, world)
 
-        abstract member Unregister : Address * Group * World -> Group * World
+        abstract member Unregister : obj Address * Group * World -> Group * World
         default dispatcher.Unregister (_, group, world) = (group, world)
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
 
-        abstract member Register : Address * Screen * World -> Screen * World
+        abstract member Register : obj Address * Screen * World -> Screen * World
         default dispatcher.Register (_, screen, world) = (screen, world)
 
-        abstract member Unregister : Address * Screen * World -> Screen * World
+        abstract member Unregister : obj Address * Screen * World -> Screen * World
         default dispatcher.Unregister (_, screen, world) = (screen, world)
 
     /// The default dispatcher for games.
@@ -191,23 +191,23 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
-        abstract member Register : Address * Entity * World -> Entity * World
+        abstract member Register : obj Address * Entity * World -> Entity * World
         default facet.Register (address, entity, world) =
             let world = facet.RegisterPhysics (address, entity, world)
             (entity, world)
 
-        abstract member Unregister : Address * Entity * World -> Entity * World
+        abstract member Unregister : obj Address * Entity * World -> Entity * World
         default facet.Unregister (address, entity, world) =
             let world = facet.UnregisterPhysics (address, entity, world)
             (entity, world)
 
-        abstract member RegisterPhysics : Address * Entity * World -> World
+        abstract member RegisterPhysics : obj Address * Entity * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
-        abstract member UnregisterPhysics : Address * Entity * World -> World
+        abstract member UnregisterPhysics : obj Address * Entity * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
 
-        abstract member PropagatePhysics : Address * Entity * World -> World
+        abstract member PropagatePhysics : obj Address * Entity * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
@@ -281,7 +281,7 @@ module SimModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           Name : string
-          OptSelectedScreenAddress : Address option
+          OptSelectedScreenAddress : obj Address option
           CreationTimeNp : DateTime
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
@@ -332,7 +332,7 @@ module SimModule =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
-          OptScreenTransitionDestinationAddress : Address option
+          OptScreenTransitionDestinationAddress : obj Address option
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           Overlayer : Overlayer
@@ -369,10 +369,55 @@ module SimModule =
         abstract MakeFacets : unit -> Map<string, Facet>
         default this.MakeFacets () = Map.empty
 
+module WorldConstants =
+
+    let AnyEventAddress = stoa<obj> "*"
+    let TickEventAddress = stoa<unit> "Tick"
+    let AddEventAddress = stoa<unit> "Add"
+    let RemovingEventAddress = stoa<unit> "Removing"
+    let ChangeEventAddress = stoa<unit> "Change"
+    let StartIncomingEventAddress = stoa<unit> "Start/Incoming"
+    let StartOutgoingEventAddress = stoa<unit> "Start/Outgoing"
+    let FinishIncomingEventAddress = stoa<unit> "Finish/Incoming"
+    let FinishOutgoingEventAddress = stoa<unit> "Finish/Outgoing"
+    let SelectEventAddress = stoa<unit> "Select"
+    let DeselectEventAddress = stoa<unit> "Deselect"
+    let DownEventAddress = stoa<unit> "Down"
+    let UpEventAddress = stoa<unit> "Up"
+    let ClickEventAddress = stoa<unit> "Click"
+    let OnEventAddress = stoa<unit> "On"
+    let OffEventAddress = stoa<unit> "Off"
+    let TouchEventAddress = stoa<MouseButtonData> "Touch"
+    let ReleaseEventAddress = stoa<unit> "Release"
+    let MouseDragEventAddress = stoa<MouseMoveData> "Mouse/Drag"
+    let MouseMoveEventAddress = stoa<MouseMoveData> "Mouse/Move"
+    let MouseLeftEventAddress = stoa<MouseButtonData> "Mouse/Left"
+    let MouseCenterEventAddress = stoa<MouseButtonData> "Mouse/Center"
+    let MouseRightEventAddress = stoa<MouseButtonData> "Mouse/Right"
+    let MouseX1EventAddress = stoa<MouseButtonData> "Mouse/X1"
+    let MouseX2EventAddress = stoa<MouseButtonData> "Mouse/X2"
+    let DownMouseLeftEventAddress = acat (stoa<MouseButtonData> "Down") MouseLeftEventAddress
+    let UpMouseLeftEventAddress = acat (stoa<MouseButtonData> "Up") MouseLeftEventAddress
+    let DownMouseCenterEventAddress = acat (stoa<MouseButtonData> "Down") MouseCenterEventAddress
+    let UpMouseCenterEventAddress = acat (stoa<MouseButtonData> "Up") MouseCenterEventAddress
+    let DownMouseRightEventAddress = acat (stoa<MouseButtonData> "Down") MouseRightEventAddress
+    let UpMouseRightEventAddress = acat (stoa<MouseButtonData> "Up") MouseRightEventAddress
+    let DownMouseX1EventAddress = acat (stoa<MouseButtonData> "Down") MouseX1EventAddress
+    let UpMouseX1EventAddress = acat (stoa<MouseButtonData> "Up") MouseX1EventAddress
+    let DownMouseX2EventAddress = acat (stoa<MouseButtonData> "Down") MouseX2EventAddress
+    let UpMouseX2EventAddress = acat (stoa<MouseButtonData> "Up") MouseX2EventAddress
+    let DownMouseEventAddress = stoa<MouseButtonData> "Down/Mouse"
+    let UpMouseEventAddress = stoa<MouseButtonData> "Up/Mouse"
+    let DownKeyboardKeyEventAddress = stoa<KeyboardKeyData> "Down/KeyboardKey"
+    let UpKeyboardKeyEventAddress = stoa<KeyboardKeyData> "Up/KeyboardKey"
+    let CollisionEventAddress = stoa<CollisionData> "Collision"
+    let EntityChangeEventAddress = stoa<EntityChangeData> "Change"
+    let DefaultDissolveImage = { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
+
 [<RequireQualifiedAccess>]
 module World =
 
-    let private AnyEventAddressesCache = Dictionary<Address, Address list> HashIdentity.Structural
+    let private AnyEventAddressesCache = Dictionary<obj Address, obj Address list> HashIdentity.Structural
     
     let private boxSubscription<'d> (subscription : 'd Subscription) =
         let boxableSubscription = fun (event : obj) world ->
@@ -381,16 +426,6 @@ module World =
             | :? InvalidCastException ->
                 // NOTE: If you've reached this exception, then you've probably inadvertantly mixed
                 // up an event data type parameter for some form of World.publish or subscribe.
-                //
-                // This can happen especially when passing a curried subscription function to one
-                // of the World.subscribe calls. This is because currying a function with a generic
-                // parameter silently coerces an obj type into that generic parameter's type! Argh!
-                //
-                // This being the unfortunate case, I suggest that, as a rule of thumb, to
-                // explicitly specify the type parameter of all your usages of World.publish,
-                // World.subscribe, World.monitor, and React.from!
-                //
-                // Someday down the line, I hope F# will give us forced-explicity type parameters!
                 reraise ()
             | _ -> reraise ()
         box boxableSubscription
@@ -410,10 +445,10 @@ module World =
         else 1
 
     /// Get a simulant at the given address from the world.
-    let mutable getSimulant = Unchecked.defaultof<Address -> World -> Simulant>
+    let mutable getSimulant = Unchecked.defaultof<obj Address -> World -> Simulant>
 
     /// Try to get a simulant at the given address from the world.
-    let mutable getOptSimulant = Unchecked.defaultof<Address -> World -> Simulant option>
+    let mutable getOptSimulant = Unchecked.defaultof<obj Address -> World -> Simulant option>
 
     let private getSimulantPublishingPriority getEntityPublishingPriority simulant world =
         match simulant with
@@ -462,10 +497,10 @@ module World =
     let private getAnyEventAddresses eventAddress =
         if not <| Address.isEmpty eventAddress then
             let anyEventAddressesKey = Address.allButLast eventAddress
-            let refAnyEventAddresses = ref Unchecked.defaultof<Address list>
+            let refAnyEventAddresses = ref Unchecked.defaultof<obj Address list>
             if not <| AnyEventAddressesCache.TryGetValue (anyEventAddressesKey, refAnyEventAddresses) then
                 let eventAddressList = eventAddress.AddrList
-                let anyEventAddressList = AnyEventAddress.AddrList
+                let anyEventAddressList = WorldConstants.AnyEventAddress.AddrList
                 let anyEventAddresses =
                     [for i in 0 .. List.length eventAddressList - 1 do
                         let subNameList = List.take i eventAddressList @ anyEventAddressList
@@ -484,8 +519,9 @@ module World =
         publishSorter subList world
     
     /// Publish an event.
-    let publish<'d> publishSorter eventAddress publisherAddress (eventData : 'd) world =
-        let subscriptions = getSubscriptionsSorted publishSorter eventAddress world
+    let publish<'d> publishSorter (eventAddress : 'd Address) publisherAddress (eventData : 'd) world =
+        let objEventAddress = atoo eventAddress
+        let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
             List.foldWhile
                 (fun (eventHandling, world) (_, subscriberAddress, subscription) ->
@@ -507,24 +543,25 @@ module World =
         world
 
     /// Publish an event.
-    let publish4<'d> eventAddress publisherAddress (eventData : 'd) world =
+    let publish4<'d> (eventAddress : 'd Address) publisherAddress (eventData : 'd) world =
         publish sortSubscriptionsByHierarchy eventAddress publisherAddress eventData world
 
     /// Subscribe to an event.
-    let subscribe<'d> subscriptionKey eventAddress subscriberAddress (subscription : 'd Subscription) world =
+    let subscribe<'d> subscriptionKey (eventAddress : 'd Address) subscriberAddress (subscription : 'd Subscription) world =
         if not <| Address.isEmpty eventAddress then
+            let objEventAddress = atoo eventAddress
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriberAddress, boxSubscription subscription)
-                match Map.tryFind eventAddress world.Callbacks.Subscriptions with
-                | Some subscriptionEntries -> Map.add eventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
-                | None -> Map.add eventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (eventAddress, subscriberAddress) world.Callbacks.Unsubscriptions
+                match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
+                | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
+                | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
+            let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriberAddress) world.Callbacks.Unsubscriptions
             let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
             { world with Callbacks = callbacks }
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event.
-    let subscribe4<'d> eventAddress subscriberAddress (subscription : 'd Subscription) world =
+    let subscribe4<'d> (eventAddress : 'd Address) subscriberAddress (subscription : 'd Subscription) world =
         subscribe (makeSubscriptionKey ()) eventAddress subscriberAddress subscription world
 
     /// Unsubscribe from an event.
@@ -546,11 +583,11 @@ module World =
                 let unsubscriptions = Map.remove subscriptionKey world.Callbacks.Unsubscriptions
                 let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
                 { world with Callbacks = callbacks }
-            | None -> world // TODO: consider failure signal
-        | None -> world // TODO: consider failure signal
+            | None -> world
+        | None -> world
 
     /// Keep active a subscription for the lifetime of a simulant.
-    let monitor<'d> eventAddress subscriberAddress (subscription : 'd Subscription) world =
+    let monitor<'d> (eventAddress : 'd Address) (subscriberAddress : obj Address) (subscription : 'd Subscription) world =
         if not <| Address.isEmpty subscriberAddress then
             let observationKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
@@ -559,7 +596,8 @@ module World =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe observationKey world
                 (Cascade, world)
-            subscribe<unit> removalKey (RemovingEventAddress + subscriberAddress) subscriberAddress subscription' world
+            let removingEventAddress = lacat WorldConstants.RemovingEventAddress subscriberAddress
+            subscribe<unit> removalKey removingEventAddress subscriberAddress subscription' world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Set the Camera field of the world.
@@ -570,7 +608,7 @@ module World =
     let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
         Map.fold
             (fun (simulants, world) simulantName (simulant : 's) ->
-                let (simulant, world) = transform (parentAddress @+ [simulantName]) simulant world
+                let (simulant, world) = transform (lacat parentAddress <| ltoa [simulantName]) simulant world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants

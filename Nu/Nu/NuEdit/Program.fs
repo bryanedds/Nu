@@ -20,6 +20,7 @@ open Microsoft.FSharp.Reflection
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 open NuEdit.Constants
 open NuEdit.Reflection
 
@@ -33,8 +34,8 @@ module ProgramModule =
     type WorldChangers = WorldChanger List
 
     type DragEntityState =
-        | DragEntityPosition of Vector2 * Vector2 * Address
-        | DragEntityRotation of Vector2 * Vector2 * Address
+        | DragEntityPosition of Vector2 * Vector2 * obj Address
+        | DragEntityRotation of Vector2 * Vector2 * obj Address
         | DragEntityNone
 
     type DragCameraState =
@@ -44,7 +45,7 @@ module ProgramModule =
     type EditorState =
         { TargetDirectory : string
           RefinementDirectory : string
-          GroupAddress : Address
+          GroupAddress : obj Address
           RightClickPosition : Vector2
           DragEntityState : DragEntityState
           DragCameraState : DragCameraState
@@ -73,7 +74,7 @@ module Program =
         World.transformUserState (fun editorState -> { editorState with PastWorlds = []; FutureWorlds = [] }) world
 
     type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
-        { Address : Address
+        { Address : obj Address
           Form : NuEditForm
           WorldChangers : WorldChangers
           RefWorld : World ref }
@@ -141,7 +142,7 @@ module Program =
                         let (entity, world) = World.removeEntityImmediate entityTds.Address entity world
                         let entity = { entity with Name = valueStr }
                         let groupAddress = (World.getUserState world).GroupAddress
-                        let entityAddress = groupAddress @+ [valueStr]
+                        let entityAddress = lacat groupAddress <| ltoa [valueStr]
                         let world = snd <| World.addEntity entityAddress entity world
                         entityTds.RefWorld := world // must be set for property grid
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
@@ -290,7 +291,7 @@ module Program =
     let populateTreeViewNodes (form : NuEditForm) world =
         let groupAddress = (World.getUserState world).GroupAddress
         for entityKvp in World.getEntities groupAddress world do
-        let entityAddress = groupAddress @+ [entityKvp.Key]
+        let entityAddress = lacat groupAddress <| ltoa [entityKvp.Key]
         addTreeViewNode form entityAddress world
 
     let tryScrollTreeViewToPropertyGridSelection (form : NuEditForm) =
@@ -336,7 +337,7 @@ module Program =
         match optPicked with
         | Some entity ->
             let groupAddress = (World.getUserState world).GroupAddress
-            let entityAddress = groupAddress @+ [entity.Name]
+            let entityAddress = lacat groupAddress <| ltoa [entity.Name]
             refWorld := world // must be set for property grid
             form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
             tryScrollTreeViewToPropertyGridSelection form
@@ -413,8 +414,8 @@ module Program =
 
     let subscribeToEntityEvents form world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let world = World.subscribe<unit> AddEntityKey (AddEventAddress + groupAddress + AnyEventAddress) Address.empty (handleNuEntityAdd form) world
-        World.subscribe<unit> RemovingEntityKey (RemovingEventAddress + groupAddress + AnyEventAddress) Address.empty (handleNuEntityRemoving form) world
+        let world = World.subscribe<unit> AddEntityKey (lacat AddEventAddress (lacat groupAddress AnyEventAddress)) Address.empty (handleNuEntityAdd form) world
+        World.subscribe<unit> RemovingEntityKey (lacat RemovingEventAddress (lacat groupAddress AnyEventAddress)) Address.empty (handleNuEntityRemoving form) world
 
     let unsubscribeFromEntityEvents world =
         let world = World.unsubscribe AddEntityKey world
@@ -444,7 +445,7 @@ module Program =
             
             // load and add group
             let (group, entities) = World.loadGroupFromFile filePath world
-            let groupAddress = EditorScreenAddress @+ [group.Name]
+            let groupAddress = lacat EditorScreenAddress <| ltoa [group.Name]
             let editorState = { editorState with GroupAddress = groupAddress }
             let world = World.setUserState editorState world
             let world = snd <| World.addGroup groupAddress group entities world
@@ -482,7 +483,7 @@ module Program =
     
     let handleFormTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            let entityAddress = !* form.treeView.SelectedNode.Name
+            let entityAddress = stoa<obj> form.treeView.SelectedNode.Name
             match entityAddress.AddrList with
             | [_; _; _] ->
                 refWorld := world // must be set for property grid
@@ -503,7 +504,7 @@ module Program =
                 let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let entityAddress = groupAddress @+ [entity.Name]
+                let entityAddress = lacat groupAddress <| ltoa [entity.Name]
                 let world = snd <| World.addEntity entityAddress entity world
                 refWorld := world // must be set for property grid
                 form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
@@ -617,7 +618,7 @@ module Program =
                     else world.Camera.EyeCenter
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
-                let address = editorState.GroupAddress @+ [entity.Name]
+                let address = lacat editorState.GroupAddress <| ltoa [entity.Name]
                 snd <| World.addEntity address entity world
             | None -> world)
 
@@ -862,7 +863,7 @@ module Program =
         form
 
     let tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory =
-        let groupAddress = EditorScreenAddress @+ [DefaultGroupName]
+        let groupAddress = lacat EditorScreenAddress <| ltoa [DefaultGroupName]
         let editorState =
             { TargetDirectory = targetDirectory
               RefinementDirectory = refinementDirectory

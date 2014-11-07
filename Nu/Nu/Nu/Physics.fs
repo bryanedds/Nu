@@ -81,7 +81,7 @@ module PhysicsModule =
 
     /// A message to the physics system to create a body.
     type [<StructuralEquality; NoComparison>] CreateBodyMessage =
-        { EntityAddress : Address
+        { EntityAddress : obj Address
           PhysicsId : PhysicsId
           Position : Vector2
           Rotation : single
@@ -118,14 +118,14 @@ module PhysicsModule =
 
     /// A message from the physics system describing a body collision that took place.
     type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-        { EntityAddress : Address
-          EntityAddress2 : Address
+        { EntityAddress : obj Address
+          EntityAddress2 : obj Address
           Normal : Vector2
           Speed : single }
 
     /// A message from the physics system describing the updated transform of a body.
     type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-        { EntityAddress : Address
+        { EntityAddress : obj Address
           Position : Vector2
           Rotation : single }
 
@@ -215,8 +215,8 @@ module PhysicsModule =
             (contact : Dynamics.Contacts.Contact) =
             let (normal, _) = Integrator.getNormalAndManifold contact
             let bodyCollisionMessage =
-                { EntityAddress = fixture.Body.UserData :?> Address
-                  EntityAddress2 = fixture2.Body.UserData :?> Address
+                { EntityAddress = fixture.Body.UserData :?> obj Address
+                  EntityAddress2 = fixture2.Body.UserData :?> obj Address
                   Normal = Vector2 (normal.X, normal.Y)
                   Speed = contact.TangentSpeed * PhysicsToPixelRatio }
             let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -391,7 +391,7 @@ module PhysicsModule =
                 if body.Awake && not body.IsStatic then
                     let bodyTransformMessage =
                         BodyTransformMessage
-                            { EntityAddress = body.UserData :?> Address
+                            { EntityAddress = body.UserData :?> obj Address
                               Position = Integrator.toPixelV2 body.Position
                               Rotation = body.Rotation }
                     integrator.IntegrationMessages.Add bodyTransformMessage

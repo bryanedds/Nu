@@ -3,6 +3,7 @@ open System
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 
 [<AutoOpen>]
 module ScreenModule =
@@ -13,10 +14,10 @@ module ScreenModule =
         static member setIncoming incoming screen = { screen with Incoming = incoming }
         static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
 
-        static member register (address : Address) (screen : Screen) (world : World) : Screen * World =
+        static member register address (screen : Screen) (world : World) : Screen * World =
             screen.DispatcherNp.Register (address, screen, world)
 
-        static member unregister (address : Address) (screen : Screen) (world : World) : Screen * World =
+        static member unregister address (screen : Screen) (world : World) : Screen * World =
             screen.DispatcherNp.Unregister (address, screen, world)
 
         static member isIdling screen =
@@ -85,7 +86,7 @@ module WorldScreenModule =
             Screen.unregister address screen world
 
         static member removeScreenImmediate address screen world =
-            let world = World.publish4 (RemovingEventAddress + address) address () world
+            let world = World.publish4 (lacat RemovingEventAddress address) address () world
             let groups = World.getGroups address world
             let world = snd <| World.removeGroupsImmediate address groups world
             let (screen, world) = World.unregisterScreen address screen world
@@ -103,15 +104,17 @@ module WorldScreenModule =
             (screen, world)
 
         static member addScreen address screen groupDescriptors world =
-            let (screen, world) =
-                match World.getOptScreen address world with
-                | Some _ -> World.removeScreenImmediate address screen world
-                | None -> (screen, world)
-            let world = World.setScreen address screen world
-            let world = snd <| World.addGroups address groupDescriptors world
-            let (screen, world) = World.registerScreen address screen world
-            let world = World.publish4 (AddEventAddress + address) address () world
-            (screen, world)
+            if not <| World.containsScreen address world then
+                let (screen, world) =
+                    match World.getOptScreen address world with
+                    | Some _ -> World.removeScreenImmediate address screen world
+                    | None -> (screen, world)
+                let world = World.setScreen address screen world
+                let world = snd <| World.addGroups address groupDescriptors world
+                let (screen, world) = World.registerScreen address screen world
+                let world = World.publish4 (lacat AddEventAddress address) address () world
+                (screen, world)
+            else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
         static member makeScreen dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers

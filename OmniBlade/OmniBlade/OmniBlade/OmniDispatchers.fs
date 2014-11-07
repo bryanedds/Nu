@@ -4,6 +4,7 @@ open SDL2
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 open OmniBlade
 open OmniBlade.OmniConstants
 
@@ -16,7 +17,7 @@ module OmniDispatchersModule =
         inherit GroupDispatcher ()
 
         let adjustFieldCamera groupAddress world =
-            let avatarAddress = groupAddress @+ [FieldAvatarName]
+            let avatarAddress = lacat groupAddress <| ltoa [FieldAvatarName]
             let avatar = World.getEntity avatarAddress world
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             World.setCamera camera world
@@ -27,8 +28,8 @@ module OmniDispatchersModule =
 
         let handleMoveFieldAvatar event world =
             let address = Event.unwrapA event
-            let avatarAddress = address @+ [FieldAvatarName]
-            let feelerAddress = address @+ [FieldFeelerName]
+            let avatarAddress = lacat address <| ltoa [FieldAvatarName]
+            let feelerAddress = lacat address <| ltoa [FieldFeelerName]
             let avatar = World.getEntity avatarAddress world
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then

@@ -38,25 +38,25 @@ module BlazeConstants =
     let StageOutgoingTime = 90L
 
     // splash constants
-    let SplashAddress = !* "Splash"
+    let SplashAddress = stoa<obj> "Splash"
     let SplashIncomingTime = 60L
     let SplashIdlingTime = 60L
     let SplashOutgoingTime = 40L
 
     // title constants
-    let TitleAddress = !* "Title"
+    let TitleAddress = stoa<obj> "Title"
     let TitleGroupFilePath = "Assets/BlazeVector/Groups/Title.nugroup"
-    let SelectTitleEventAddress = !* "Select/Title"
-    let ClickTitlePlayEventAddress = !* "Click/Title/Group/Play"
-    let ClickTitleCreditsEventAddress = !* "Click/Title/Group/Credits"
-    let ClickTitleExitEventAddress = !* "Click/Title/Group/Exit"
+    let SelectTitleEventAddress = stoa<unit> "Select/Title"
+    let ClickTitlePlayEventAddress = stoa<unit> "Click/Title/Group/Play"
+    let ClickTitleCreditsEventAddress = stoa<unit> "Click/Title/Group/Credits"
+    let ClickTitleExitEventAddress = stoa<unit> "Click/Title/Group/Exit"
 
     // stage constants
-    let StageAddress = !* "Stage"
+    let StageAddress = stoa<obj> "Stage"
     let StageGroupFilePath = "Assets/BlazeVector/Groups/StageGui.nugroup"
-    let ClickStageBackEventAddress = !* "Click/Stage/Group/Back"
+    let ClickStageBackEventAddress = stoa<unit> "Click/Stage/Group/Back"
 
     // credits constants
-    let CreditsAddress = !* "Credits"
+    let CreditsAddress = stoa<obj> "Credits"
     let CreditsGroupFilePath = "Assets/BlazeVector/Groups/Credits.nugroup"
-    let ClickCreditsBackEventAddress = !* "Click/Credits/Group/Back"
+    let ClickCreditsBackEventAddress = stoa<unit> "Click/Credits/Group/Back"

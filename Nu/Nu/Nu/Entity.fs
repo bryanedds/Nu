@@ -10,6 +10,7 @@ open TiledSharp
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 
 [<AutoOpen>]
 module EntityModule =
@@ -175,7 +176,7 @@ module WorldEntityModule =
         static member setEntity address entity world = 
                 let oldEntity = Option.get <| World.optEntityFinder address world
                 let world = World.entityAdder address world entity
-                World.publish4 (ChangeEventAddress + address) address { OldEntity = oldEntity } world
+                World.publish4 (lacat EntityChangeEventAddress address) address { OldEntity = oldEntity } world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
@@ -215,7 +216,7 @@ module WorldEntityModule =
             Entity.unregister address entity world
 
         static member removeEntityImmediate address entity world =
-            let world = World.publish4 (RemovingEventAddress + address) address () world
+            let world = World.publish4 (lacat RemovingEventAddress address) address () world
             let (entity, world) = World.unregisterEntity address entity world
             let world = World.setOptEntityWithoutEvent address None world
             (entity, world)
@@ -237,14 +238,16 @@ module WorldEntityModule =
             World.transformSimulants World.removeEntity groupAddress entities world
 
         static member addEntity address entity world =
-            let (entity, world) =
-                match World.getOptEntity address world with
-                | Some _ -> World.removeEntityImmediate address entity world
-                | None -> (entity, world)
-            let world = World.setEntityWithoutEvent address entity world
-            let (entity, world) = World.registerEntity address entity world
-            let world = World.publish4 (AddEventAddress + address) address () world
-            (entity, world)
+            if not <| World.containsEntity address world then
+                let (entity, world) =
+                    match World.getOptEntity address world with
+                    | Some _ -> World.removeEntityImmediate address entity world
+                    | None -> (entity, world)
+                let world = World.setEntityWithoutEvent address entity world
+                let (entity, world) = World.registerEntity address entity world
+                let world = World.publish4 (lacat AddEventAddress address) address () world
+                (entity, world)
+            else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 
         static member addEntities groupAddress entities world =
             World.transformSimulants World.addEntity groupAddress entities world
