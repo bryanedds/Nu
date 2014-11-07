@@ -97,12 +97,12 @@ module AddressModule =
         Address<'a>.make list
 
     /// Concatenate two addresses, taking the type of first address.
-    let facat (address : 'a Address) (address2 : obj Address) =
+    let acatf (address : 'a Address) (address2 : obj Address) =
         let list = address.AddrList @ address2.AddrList
         Address<'a>.make list
 
     /// Concatenate two addresses, taking the type of the second address.
-    let sacat (address : obj Address) (address2 : 'b Address) =
+    let acats (address : obj Address) (address2 : 'b Address) =
         let list = address.AddrList @ address2.AddrList
         Address<'b>.make list
     
@@ -110,10 +110,10 @@ module AddressModule =
     let (-|-) = acat
 
     /// Concatenate two addresses, taking the type of first address.
-    let (-<-) = facat
+    let (-<-) = acatf
 
     /// Concatenate two addresses, taking the type of the second address.
-    let (->-) = sacat
+    let (->-) = acats
 
     /// Convert a string into a list.
     let stoa<'t> (str : string) =
