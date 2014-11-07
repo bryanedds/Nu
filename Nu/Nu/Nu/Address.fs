@@ -125,7 +125,7 @@ module AddressModule =
         Address<'t>.make list
 
     /// Convert any address to an obj Address.
-    let atoo address =
+    let atooa address =
         Address<obj>.make address.AddrList
 
 [<RequireQualifiedAccess>]
