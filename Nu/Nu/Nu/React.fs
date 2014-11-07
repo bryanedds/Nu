@@ -220,7 +220,7 @@ module React =
             let subscription = fun _ world ->
                 let subscriptionKey' = World.makeSubscriptionKey ()
                 let unsubscribe' = fun _ world -> (Cascade, World.unsubscribe subscriptionKey' world)
-                let world = World.subscribe subscriptionKey' (lacat RemovingEventAddress subscriberAddress) (atoo subscriberAddress) unsubscribe' world
+                let world = World.subscribe subscriptionKey' (RemovingEventAddress -<- subscriberAddress) (atoo subscriberAddress) unsubscribe' world
                 (Cascade, world)
             let world = World.subscribe<'a> subscriptionKey eventAddress (atoo eventAddress) subscription world
             (subscriptionAddress, unsubscribe, world)
