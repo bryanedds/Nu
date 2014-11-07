@@ -520,7 +520,7 @@ module World =
     
     /// Publish an event.
     let publish<'d> publishSorter (eventAddress : 'd Address) publisherAddress (eventData : 'd) world =
-        let objEventAddress = atoo eventAddress
+        let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
             List.foldWhile
@@ -549,7 +549,7 @@ module World =
     /// Subscribe to an event.
     let subscribe<'d> subscriptionKey (eventAddress : 'd Address) subscriberAddress (subscription : 'd Subscription) world =
         if not <| Address.isEmpty eventAddress then
-            let objEventAddress = atoo eventAddress
+            let objEventAddress = atooa eventAddress
             let subscriptions =
                 let subscriptionEntry = (subscriptionKey, subscriberAddress, boxSubscription subscription)
                 match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
