@@ -99,7 +99,7 @@ module WorldGroupModule =
             Group.unregister address group world
 
         static member removeGroupImmediate address group world =
-            let world = World.publish4 (lacat RemovingEventAddress address) address () world
+            let world = World.publish4 (RemovingEventAddress -<- address) address () world
             let (group, world) = World.unregisterGroup address group world
             let entities = World.getEntities address world
             let world = snd <| World.removeEntitiesImmediate address entities world
@@ -131,14 +131,14 @@ module WorldGroupModule =
                 let world = World.setGroup address group world
                 let world = snd <| World.addEntities address entities world
                 let (group, world) = World.registerGroup address group world
-                let world = World.publish4 (lacat AddEventAddress address) address () world
+                let world = World.publish4 (AddEventAddress -<- address) address () world
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 
         static member addGroups screenAddress groupDescriptors world =
             Map.fold
                 (fun (groups, world) groupName (group, entities) ->
-                    let (group, world) = World.addGroup (lacat screenAddress <| ltoa [groupName]) group entities world
+                    let (group, world) = World.addGroup (screenAddress -<- ltoa [groupName]) group entities world
                     (group :: groups, world))
                 ([], world)
                 groupDescriptors

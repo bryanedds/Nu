@@ -91,28 +91,40 @@ module AddressModule =
         override this.ToString () =
             Address<'t>.join this.AddrList
 
-    /// Concatenate two addresses.
+    /// Concatenate two addresses of the same type.
     let acat (address : 'a Address) (address2 : 'a Address) =
         let list = address.AddrList @ address2.AddrList
         Address<'a>.make list
 
-    /// Concatenate two addresses.
-    let lacat (address : 'a Address) (address2 : 'b Address) =
+    /// Concatenate two addresses, taking the type of first address.
+    let facat (address : 'a Address) (address2 : obj Address) =
         let list = address.AddrList @ address2.AddrList
         Address<'a>.make list
 
-    /// Concatenate two addresses.
-    let racat (address : 'a Address) (address2 : 'b Address) =
+    /// Concatenate two addresses, taking the type of the second address.
+    let sacat (address : obj Address) (address2 : 'b Address) =
         let list = address.AddrList @ address2.AddrList
         Address<'b>.make list
+    
+    /// Concatenate two addresses of the same type.
+    let (-|-) = acat
 
+    /// Concatenate two addresses, taking the type of first address.
+    let (-<-) = facat
+
+    /// Concatenate two addresses, taking the type of the second address.
+    let (->-) = sacat
+
+    /// Convert a string into a list.
     let stoa<'t> (str : string) =
         let list = Address<'t>.split str
         Address<'t>.make list
 
+    /// Convert a list into a list.
     let ltoa<'t> list =
         Address<'t>.make list
 
+    /// Convert any address to an obj Address.
     let atoo address =
         Address<obj>.make address.AddrList
 

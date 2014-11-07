@@ -58,7 +58,7 @@ module BulletModule =
 
         override dispatcher.Register (address, bullet, world) =
             let world = World.monitor TickEventAddress address handleTick world
-            let world = World.monitor (lacat CollisionEventAddress address) address handleCollision world
+            let world = World.monitor (CollisionEventAddress -<- address) address handleCollision world
             (bullet, world)
 
 [<AutoOpen>]
@@ -125,7 +125,7 @@ module EnemyModule =
             let world =
                 world |>
                 World.monitor TickEventAddress address handleTick |>
-                World.monitor (lacat CollisionEventAddress address) address handleCollision
+                World.monitor (CollisionEventAddress -<- address) address handleCollision
             (enemy, world)
 
 [<AutoOpen>]
@@ -162,7 +162,7 @@ module PlayerModule =
             (bullet, world)
 
         let shootBullet playerAddress (player : Entity) world =
-            let bulletAddress = lacat (Address.allButLast playerAddress) (ltoa [acstring <| Core.makeId ()])
+            let bulletAddress = (Address.allButLast playerAddress) -<- ltoa [acstring <| Core.makeId ()]
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world
@@ -254,7 +254,7 @@ module StagePlayModule =
         inherit GroupDispatcher ()
 
         let getPlayer groupAddress world =
-            let playerAddress = lacat groupAddress <| ltoa [StagePlayerName]
+            let playerAddress = groupAddress -<- ltoa [StagePlayerName]
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
@@ -338,9 +338,9 @@ module StageScreenModule =
         override dispatcher.Register (address, screen, world) =
             let world =
                 world |>
-                World.monitor (lacat SelectEventAddress address) address handleStartPlay |>
-                World.monitor (lacat StartOutgoingEventAddress address) address handleStoppingPlay |>
-                World.monitor (lacat DeselectEventAddress address) address handleStopPlay
+                World.monitor (SelectEventAddress -<- address) address handleStartPlay |>
+                World.monitor (StartOutgoingEventAddress -<- address) address handleStoppingPlay |>
+                World.monitor (DeselectEventAddress -<- address) address handleStopPlay
             (screen, world)
 
 [<AutoOpen>]
