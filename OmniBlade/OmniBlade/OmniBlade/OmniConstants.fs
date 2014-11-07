@@ -21,33 +21,33 @@ module OmniConstants =
     let StageOutgoingTime = 90L
 
     // splash constants
-    let SplashAddress = !* "Splash"
+    let SplashAddress = stoa<obj> "Splash"
     let SplashIncomingTime = 60L
     let SplashIdlingTime = 60L
     let SplashOutgoingTime = 40L
 
     // title constants
-    let TitleAddress = !* "Title"
+    let TitleAddress = stoa<obj> "Title"
     let TitleGroupFilePath = "Assets/OmniBlade/Groups/Title.nugroup"
-    let ClickTitleNewGameEvent = !* "Click/Title/Group/NewGame"
-    let ClickTitleLoadGameEvent = !* "Click/Title/Group/LoadGame"
-    let ClickTitleCreditsEvent = !* "Click/Title/Group/Credits"
-    let ClickTitleExitEvent = !* "Click/Title/Group/Exit"
+    let ClickTitleNewGameEvent = stoa<unit> "Click/Title/Group/NewGame"
+    let ClickTitleLoadGameEvent = stoa<unit> "Click/Title/Group/LoadGame"
+    let ClickTitleCreditsEvent = stoa<unit> "Click/Title/Group/Credits"
+    let ClickTitleExitEvent = stoa<unit> "Click/Title/Group/Exit"
 
     // load game constants
-    let LoadGameAddress = !* "LoadGame"
+    let LoadGameAddress = stoa<obj> "LoadGame"
     let LoadGameGroupFilePath = "Assets/OmniBlade/Groups/LoadGame.nugroup"
-    let ClickLoadGameBackEvent = !* "Click/LoadGame/Group/Back"
+    let ClickLoadGameBackEvent = stoa<unit> "Click/LoadGame/Group/Back"
 
     // credits constants
-    let CreditsAddress = !* "Credits"
+    let CreditsAddress = stoa<obj> "Credits"
     let CreditsGroupFilePath = "Assets/OmniBlade/Groups/Credits.nugroup"
-    let ClickCreditsBackEvent = !* "Click/Credits/Group/Back"
+    let ClickCreditsBackEvent = stoa<unit> "Click/Credits/Group/Back"
 
     // field constants
-    let FieldAddress = !* "Field"
+    let FieldAddress = stoa<obj> "Field"
     let FieldGroupFilePath = "Assets/OmniBlade/Groups/Field.nugroup"
-    let ClickFieldBackEvent = !* "Click/Field/Group/Back"
+    let ClickFieldBackEvent = stoa<unit> "Click/Field/Group/Back"
 
     // time constants
-    let TimeAddress = !* "Time"
+    let TimeAddress = stoa<obj> "Time"

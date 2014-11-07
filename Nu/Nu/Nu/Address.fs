@@ -47,11 +47,12 @@ module AddressModule =
     /// AddrNameKeys field available for faster look-ups.
     /// OPTIMIZATION: At little cost, I've also added the AddrHash field for fast keying directly
     /// on addresses.
-    type [<CustomEquality; CustomComparison>] Address =
+    type [<CustomEquality; CustomComparison>] 't Address =
         { AddrList : string list
           AddrListRev : string list
           AddrNameKeys : NameKey list
-          AddrHash : int }
+          AddrHash : int
+          AddrTypeCarrier : 't -> unit }
 
         static member internal join (list : string list) =
             String.Join ("/", list)
@@ -63,77 +64,64 @@ module AddressModule =
         static member make list =
             let keys = List.map NameKey.make list
             let hash = List.fold (fun hash key -> hash ^^^ key.NKHash) 0 keys
-            { AddrList = list; AddrListRev = List.rev list; AddrNameKeys = keys; AddrHash = hash }
+            { AddrList = list; AddrListRev = List.rev list; AddrNameKeys = keys; AddrHash = hash; AddrTypeCarrier = fun (_ : 't) -> () }
 
-        /// Concatenate two addresses.
-        static member (+) (address, address2) =
-            let list = address.AddrList @ address2.AddrList
-            Address.make list
-
-        interface Address IComparable with
+        interface 't Address IComparable with
             member this.CompareTo that =
                 List.compareStrings this.AddrListRev that.AddrListRev
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? Address as that -> List.compareStrings this.AddrListRev that.AddrListRev
+                | :? ('t Address) as that -> List.compareStrings this.AddrListRev that.AddrListRev
                 | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
 
-        interface Address IEquatable with
+        interface 't Address IEquatable with
             member this.Equals that =
                 this.AddrList = that.AddrList
 
         override this.Equals that =
             match that with
-            | :? Address as that -> this.AddrList = that.AddrList
+            | :? ('t Address) as that -> this.AddrList = that.AddrList
             | _ -> false
 
         override this.GetHashCode () =
             this.AddrHash
         
         override this.ToString () =
-            Address.join this.AddrList
+            Address<'t>.join this.AddrList
 
-    /// Make an address by splitting a string on the '/' character.
-    let ( !* ) (str : string) : Address =
-        let list = Address.split str
-        Address.make list
+    /// Concatenate two addresses.
+    let acat (address : 'a Address) (address2 : 'a Address) =
+        let list = address.AddrList @ address2.AddrList
+        Address<'a>.make list
 
-    /// Split a string on the '/' character and then concatenate it to the front of an address.
-    let ( *@ ) (str : string) address =
-        Address.make <| Address.split str @ address.AddrList
+    /// Concatenate two addresses.
+    let lacat (address : 'a Address) (address2 : 'b Address) =
+        let list = address.AddrList @ address2.AddrList
+        Address<'a>.make list
 
-    /// Split a string on the '/' character and then concatenate it to the back of an address.
-    let ( @* ) address (str : string) =
-        Address.make <| address.AddrList @ Address.split str
+    /// Concatenate two addresses.
+    let racat (address : 'a Address) (address2 : 'b Address) =
+        let list = address.AddrList @ address2.AddrList
+        Address<'b>.make list
 
-    /// Split two strings on the '/' character and then surround an address with them.
-    let ( *@* ) (str : string) address (str2 : string) =
-        Address.make <| Address.split str @ address.AddrList @ Address.split str2
+    let stoa<'t> (str : string) =
+        let list = Address<'t>.split str
+        Address<'t>.make list
 
-    /// Make an address from a list of strings.
-    let (!+) list =
-        Address.make list
+    let ltoa<'t> list =
+        Address<'t>.make list
 
-    /// Concatenate a list of strings to the front of an address.
-    let (+@) list address =
-        Address.make <| list @ address.AddrList
-
-    /// Concatenate a list of strings to the back of an address.
-    let (@+) address list =
-        Address.make <| address.AddrList @ list
-
-    /// Surround an address with two lists of strings.
-    let (+@+) list address list2 =
-        Address.make <| list @ address.AddrList @ list2
+    let atoo address =
+        Address<obj>.make address.AddrList
 
 [<RequireQualifiedAccess>]
 module Address =
 
     /// The empty address.
-    let empty =
-        Address.make []
+    let empty<'t> =
+        Address<'t>.make []
 
     /// Take the head of an address.
     let head address =
