@@ -88,6 +88,7 @@ module FieldDispatcherModule =
                     Some bodyProperties
                 | None -> note <| "Could not find tile sheet asset '" + acstring fieldTileSheet + "'."; None
             | Passable -> None
+        
         static let registerTilePhysics address (field : Entity) world =
             let bodyPropertyList =
                 Map.fold
@@ -170,7 +171,7 @@ module FieldDispatcherModule =
                 let tileSize = tileSheetSize / FieldTileSheetRun
                 let size = Vector2I.Multiply (tileSize, fieldMap.FieldSize)
                 Vector2 (single size.X, single size.Y)
-            | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
+            | None -> DefaultEntitySize
 
 [<AutoOpen>]
 module PlayerCharacterDispatcherModule =
