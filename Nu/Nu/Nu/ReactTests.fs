@@ -15,14 +15,14 @@ module ReactTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = from UnitEventAddress |> subscribe incUserStateAndCascade world |> snd
+        let world = from UnitEventAddress (atooa UnitEventAddress) |> subscribe incUserStateAndCascade world |> snd
         let world = World.publish4 UnitEventAddress Address.empty () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let observable = from UnitEventAddress |> using incUserStateAndCascade
+        let observable = from UnitEventAddress (atooa UnitEventAddress) |> using incUserStateAndCascade
         let world = snd <| subscribe2 world observable
         let (unsubscribe, world) = subscribe2 world observable
         let world = unsubscribe world
@@ -32,7 +32,7 @@ module ReactTests =
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = from UnitEventAddress |> subscribe incUserStateAndCascade world
+        let (unsubscribe, world) = from UnitEventAddress (atooa UnitEventAddress) |> subscribe incUserStateAndCascade world
         let world = unsubscribe world
         let world = World.publish4 UnitEventAddress Address.empty () world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
@@ -42,7 +42,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            from UnitEventAddress |>
+            from UnitEventAddress (atooa UnitEventAddress) |>
             filter (fun _ world -> World.getUserState world = 0) |>
             subscribe incUserStateAndCascade world |>
             snd
@@ -54,7 +54,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            from IntEventAddress |>
+            from IntEventAddress (atooa UnitEventAddress) |>
             map (fun event _ -> event.Data * 2) |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) world |>
             snd
@@ -65,7 +65,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            from IntEventAddress |>
+            from IntEventAddress (atooa UnitEventAddress) |>
             scan (fun acc event _ -> acc + event.Data) 0 |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) world |>
             snd
@@ -76,7 +76,7 @@ module ReactTests =
     let [<Fact>] scanDoesntLeaveGarbage () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = from IntEventAddress |> scan2 (fun a _ _ -> a) |> subscribe2 world
+        let (unsubscribe, world) = from IntEventAddress (atooa UnitEventAddress) |> scan2 (fun a _ _ -> a) |> subscribe2 world
         let world = World.publish4 IntEventAddress Address.empty 0 world
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates

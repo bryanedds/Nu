@@ -829,7 +829,7 @@ module Program =
         form.createDepthTextBox.Text <- acstring DefaultCreationDepth
         // shitty hack to make Ctrl+Whatever work while manipulating the scene - probably not
         // necessary if we can figure out how to keep SDL from stealing input events...
-        form.displayPanel.MouseClick.Add (fun _ -> ignore <| form.createEntityComboBox.Focus ())
+        form.displayPanel.MouseClick.Add (fun _ -> if not <| World.isGamePlaying !refWorld then form.createEntityComboBox.Focus ())
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
         form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
         form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)

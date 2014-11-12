@@ -30,8 +30,10 @@ module WorldModule =
 
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpMouseKey = World.makeSubscriptionKey ()
+    let private ScreenTransitionChangeMouseKey = World.makeSubscriptionKey ()
     let private ScreenTransitionDownKeyboardKeyKey = World.makeSubscriptionKey ()
     let private ScreenTransitionUpKeyboardKeyKey = World.makeSubscriptionKey ()
+    let private ScreenTransitionChangeKeyboardKeyKey = World.makeSubscriptionKey ()
     let private SplashScreenTickKey = World.makeSubscriptionKey ()
     let private LoadedAssemblies = Dictionary<string, Assembly> ()
 
@@ -77,14 +79,18 @@ module WorldModule =
                     world |>
                         World.unsubscribe ScreenTransitionDownMouseKey |>
                         World.unsubscribe ScreenTransitionUpMouseKey |>
+                        World.unsubscribe ScreenTransitionChangeMouseKey |>
                         World.unsubscribe ScreenTransitionDownKeyboardKeyKey |>
-                        World.unsubscribe ScreenTransitionUpKeyboardKeyKey
+                        World.unsubscribe ScreenTransitionUpKeyboardKeyKey |>
+                        World.unsubscribe ScreenTransitionChangeKeyboardKeyKey
                 | IncomingState | OutgoingState ->
                     world |>
                         World.subscribe<MouseButtonData> ScreenTransitionDownMouseKey (DownMouseEventAddress -<- AnyEventAddress) address World.handleAsSwallow |>
                         World.subscribe<MouseButtonData> ScreenTransitionUpMouseKey (UpMouseEventAddress -<- AnyEventAddress) address World.handleAsSwallow |>
+                        World.subscribe<MouseButtonData> ScreenTransitionChangeMouseKey (ChangeMouseEventAddress -<- AnyEventAddress) address World.handleAsSwallow |>
                         World.subscribe<KeyboardKeyData> ScreenTransitionDownKeyboardKeyKey (DownKeyboardKeyEventAddress -<- AnyEventAddress) address World.handleAsSwallow |>
-                        World.subscribe<KeyboardKeyData> ScreenTransitionUpKeyboardKeyKey (UpKeyboardKeyEventAddress -<- AnyEventAddress) address World.handleAsSwallow
+                        World.subscribe<KeyboardKeyData> ScreenTransitionUpKeyboardKeyKey (UpKeyboardKeyEventAddress -<- AnyEventAddress) address World.handleAsSwallow |>
+                        World.subscribe<KeyboardKeyData> ScreenTransitionChangeKeyboardKeyKey (ChangeKeyboardKeyEventAddress -<- AnyEventAddress) address World.handleAsSwallow
             let world = World.setScreen address screen world
             (screen, world)
 
@@ -457,25 +463,33 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseEventAddress = DownMouseEventAddress -<- ltoa [MouseButton.toEventName mouseButton]
-                    let eventData = { Position = mousePosition; Button = mouseButton }
-                    World.publish World.sortSubscriptionsByPickingPriority mouseEventAddress Address.empty eventData world
+                    let mouseButtonEventAddress = ltoa [MouseButton.toEventName mouseButton]
+                    let downMouseEventAddress = DownMouseEventAddress -<- mouseButtonEventAddress
+                    let changeMouseEventAddress = ChangeMouseEventAddress -<- mouseButtonEventAddress
+                    let eventData = { Position = mousePosition; Button = mouseButton; IsDown = true }
+                    let world = World.publish World.sortSubscriptionsByPickingPriority downMouseEventAddress Address.empty eventData world
+                    World.publish World.sortSubscriptionsByPickingPriority changeMouseEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
-                    let mouseEventAddress = UpMouseEventAddress -<- ltoa [MouseButton.toEventName mouseButton]
-                    let eventData = { Position = mousePosition; Button = mouseButton }
-                    World.publish World.sortSubscriptionsByPickingPriority mouseEventAddress Address.empty eventData world
+                    let mouseButtonEventAddress = ltoa [MouseButton.toEventName mouseButton]
+                    let upMouseEventAddress = UpMouseEventAddress -<- mouseButtonEventAddress
+                    let changeMouseEventAddress = ChangeMouseEventAddress -<- mouseButtonEventAddress
+                    let eventData = { Position = mousePosition; Button = mouseButton; IsDown = false }
+                    let world = World.publish World.sortSubscriptionsByPickingPriority upMouseEventAddress Address.empty eventData world
+                    World.publish World.sortSubscriptionsByPickingPriority changeMouseEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = event.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0 }
-                    World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventAddress Address.empty eventData world
+                    let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0; IsDown = true }
+                    let world = World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventAddress Address.empty eventData world
+                    World.publish World.sortSubscriptionsByHierarchy ChangeKeyboardKeyEventAddress Address.empty eventData world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = event.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0 }
-                    World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventAddress Address.empty eventData world
+                    let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0; IsDown = false }
+                    let world = World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventAddress Address.empty eventData world
+                    World.publish World.sortSubscriptionsByHierarchy ChangeKeyboardKeyEventAddress Address.empty eventData world
                 | _ -> world
             (world.State.Liveness, world)
 

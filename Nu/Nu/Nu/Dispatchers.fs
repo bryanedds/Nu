@@ -139,13 +139,13 @@ module AnimatedSpriteFacetModule =
         static member setTileRun (value : int) (entity : Entity) = entity?TileRun <- value
         member entity.TileSize = entity?TileSize : Vector2
         static member setTileSize (value : Vector2) (entity : Entity) = entity?TileSize <- value
-        member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage : Image
+        member entity.AnimatedSpriteImage = entity?AnimatedSpriteImage : Image // TODO: be nice to rename this to AnimationSheet?
         static member setAnimatedSpriteImage (value : Image) (entity : Entity) = entity?AnimatedSpriteImage <- value
 
     type AnimatedSpriteFacet () =
         inherit Facet ()
 
-        static let getSpriteOptInset (entity : Entity) world =
+        static let getOptSpriteInset (entity : Entity) world =
             let tile = (int world.State.TickTime / entity.Stutter) % entity.TileCount
             let tileI = tile % entity.TileRun
             let tileJ = tile / entity.TileRun
@@ -171,7 +171,7 @@ module AnimatedSpriteFacetModule =
                               Size = entity.Size
                               Rotation = entity.Rotation
                               ViewType = entity.ViewType
-                              OptInset = getSpriteOptInset entity world
+                              OptInset = getOptSpriteInset entity world
                               Image = entity.AnimatedSpriteImage
                               Color = Vector4.One }}]
             else []

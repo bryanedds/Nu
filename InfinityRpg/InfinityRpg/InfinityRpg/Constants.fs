@@ -11,6 +11,9 @@ module Constants =
     // dissolve constants
     let DissolveImage = { ImageAssetName = "Dissolve"; PackageName = GuiPackageName }
 
+    // asset constants
+    let PlayerImage = { ImageAssetName = "Player"; PackageName = GameplayPackageName }
+
     // splash constants
     let SplashNu = "Nu"
 
