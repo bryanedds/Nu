@@ -14,8 +14,8 @@ open InfinityRpg.Constants
 module FieldDispatcherModule =
 
     type FieldTileType =
-        | Passable
         | Impassable
+        | Passable
 
     type FieldTile =
         { FieldTileSheetCoords : Vector2I
@@ -36,7 +36,7 @@ module FieldDispatcherModule =
 
         static let [<Literal>] FieldTileSheetRun = 4
 
-        static let DefaultTile = { FieldTileSheetCoords = Vector2I (0, 0); FieldTileType = Passable }
+        static let DefaultTile = { FieldTileSheetCoords = Vector2I (0, 0); FieldTileType = Impassable }
         static let DefaultTile2 = { FieldTileSheetCoords = Vector2I (3, 3); FieldTileType = Passable }
         static let DefaultMap =
             { FieldSize = Vector2I (2, 2)
@@ -58,8 +58,79 @@ module FieldDispatcherModule =
                     single <| tileOffset.Y + tileSize.Y)
             Some tileInset
 
+        static let getOptTileBodyProperties (field : Entity) (tileCoords : Vector2I) tile world =
+            match tile.FieldTileType with
+            | Impassable ->
+                let fieldMap = field.FieldMapNp
+                let fieldTileSheet = fieldMap.FieldTileSheet
+                match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
+                | Some tileSheetSize ->
+                    let tileSize = tileSheetSize / FieldTileSheetRun
+                    let tileOffset = Vector2I.Multiply (tileSize, tileCoords)
+                    let tilePosition = Vector2I field.Position + tileOffset + tileSize / 2
+                    let bodyProperties =
+                        { BodyId = intsToGuid tileCoords.X tileCoords.Y
+                          Position = tilePosition.Vector2
+                          Rotation = field.Rotation
+                          Shape = BoxShape { Extent = tileSize.Vector2 * 0.5f; Center = Vector2.Zero }
+                          BodyType = BodyType.Static
+                          Density = NormalDensity
+                          Friction = field.Friction
+                          Restitution = field.Restitution
+                          FixedRotation = true
+                          LinearDamping = 0.0f
+                          AngularDamping = 0.0f
+                          GravityScale = 0.0f
+                          CollisionCategories = Physics.toCollisionCategories field.CollisionCategories
+                          CollisionMask = Physics.toCollisionCategories field.CollisionMask
+                          IsBullet = false
+                          IsSensor = false }
+                    Some bodyProperties
+                | None -> note <| "Could not find tile sheet asset '" + acstring fieldTileSheet + "'."; None
+            | Passable -> None
+        static let registerTilePhysics address (field : Entity) world =
+            let bodyPropertyList =
+                Map.fold
+                    (fun bodyPropertyList tileCoords tile ->
+                        match getOptTileBodyProperties field tileCoords tile world with
+                        | Some bodyProperties -> bodyProperties :: bodyPropertyList
+                        | None -> bodyPropertyList)
+                    []
+                    field.FieldMapNp.FieldTiles
+            World.createBodies address field.Id bodyPropertyList world
+
+        static let unregisterTilePhysics (field : Entity) world =
+            let physicsIds =
+                Map.fold
+                    (fun physicsIds (tileCoords : Vector2I) tile ->
+                        match tile.FieldTileType with
+                        | Impassable ->
+                            let physicsId = { EntityId = field.Id; BodyId = intsToGuid tileCoords.X tileCoords.Y }
+                            physicsId :: physicsIds
+                        | Passable -> physicsIds)
+                    []
+                    field.FieldMapNp.FieldTiles
+            World.destroyBodies physicsIds world
+
         static member FieldDefinitions =
-            [define? FieldMapNp DefaultMap]
+            [define? Friction 0.0f
+             define? Restitution 0.0f
+             define? CollisionCategories "1"
+             define? CollisionMask "*"
+             define? FieldMapNp DefaultMap]
+
+        override dispatcher.Register (address, field, world) =
+            let world = registerTilePhysics address field world
+            (field, world)
+
+        override dispatcher.Unregister (_, field, world) =
+            let world = unregisterTilePhysics field world
+            (field, world)
+            
+        override dispatcher.PropagatePhysics (address, tileMap, world) =
+            world |>
+                unregisterTilePhysics tileMap |>
+                registerTilePhysics address tileMap
 
         override dispatcher.GetRenderDescriptors (field, world) =
             if field.Visible then
