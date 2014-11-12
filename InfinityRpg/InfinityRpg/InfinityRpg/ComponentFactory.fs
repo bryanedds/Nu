@@ -12,7 +12,14 @@ module ComponentFactoryModule =
         inherit UserComponentFactory ()
 
         override this.MakeFacets () =
-            Map.singleton typeof<CharacterAnimationFacet>.Name (CharacterAnimationFacet () :> Facet)
+            Map.ofList
+                [(typeof<CharacterAnimationFacet>.Name, CharacterAnimationFacet () :> Facet)
+                 (typeof<CharacterControlFacet>.Name, CharacterControlFacet () :> Facet)]
+
+        override this.MakeEntityDispatchers () =
+            Map.ofList
+                [(typeof<PlayerCharacterDispatcher>.Name, PlayerCharacterDispatcher () :> EntityDispatcher)]
 
         override this.MakeGameDispatchers () =
-            Map.singleton typeof<InfinityRpgDispatcher>.Name (InfinityRpgDispatcher () :> GameDispatcher)
+            Map.ofList
+                [(typeof<InfinityRpgDispatcher>.Name, InfinityRpgDispatcher () :> GameDispatcher)]

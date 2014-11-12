@@ -47,7 +47,7 @@
             this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
             this.createToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.displayPanel = new System.Windows.Forms.Panel();
+            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.createContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -714,7 +714,7 @@
         public System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-        public System.Windows.Forms.Panel displayPanel;
+        public NuEditDesign.SelectablePanel displayPanel;
         public System.Windows.Forms.OpenFileDialog openFileDialog;
         public System.Windows.Forms.SaveFileDialog saveFileDialog;
         public System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;

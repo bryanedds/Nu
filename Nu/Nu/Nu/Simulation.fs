@@ -80,12 +80,14 @@ module SimModule =
     /// The data for a mouse button event.
     type [<StructuralEquality; NoComparison>] MouseButtonData =
         { Position : Vector2
-          Button : MouseButton }
+          Button : MouseButton
+          IsDown : bool }
 
     /// The data for a keyboard key event.
     type [<StructuralEquality; NoComparison>] KeyboardKeyData =
         { ScanCode : int
-          IsRepeat : bool }
+          IsRepeat : bool
+          IsDown : bool }
 
     /// The data for a collision event.
     type [<StructuralEquality; NoComparison>] CollisionData =
@@ -375,7 +377,6 @@ module WorldConstants =
     let TickEventAddress = stoa<unit> "Tick"
     let AddEventAddress = stoa<unit> "Add"
     let RemovingEventAddress = stoa<unit> "Removing"
-    let ChangeEventAddress = stoa<unit> "Change"
     let StartIncomingEventAddress = stoa<unit> "Start/Incoming"
     let StartOutgoingEventAddress = stoa<unit> "Start/Outgoing"
     let FinishIncomingEventAddress = stoa<unit> "Finish/Incoming"
@@ -408,10 +409,12 @@ module WorldConstants =
     let UpMouseX2EventAddress = acat (stoa<MouseButtonData> "Up") MouseX2EventAddress
     let DownMouseEventAddress = stoa<MouseButtonData> "Down/Mouse"
     let UpMouseEventAddress = stoa<MouseButtonData> "Up/Mouse"
+    let ChangeMouseEventAddress = stoa<MouseButtonData> "Change/Mouse"
     let DownKeyboardKeyEventAddress = stoa<KeyboardKeyData> "Down/KeyboardKey"
     let UpKeyboardKeyEventAddress = stoa<KeyboardKeyData> "Up/KeyboardKey"
+    let ChangeKeyboardKeyEventAddress = stoa<KeyboardKeyData> "Change/KeyboardKey"
     let CollisionEventAddress = stoa<CollisionData> "Collision"
-    let EntityChangeEventAddress = stoa<EntityChangeData> "Change"
+    let EntityChangeEventAddress = stoa<EntityChangeData> "EntityChange"
     let DefaultDissolveImage = { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
 
 [<RequireQualifiedAccess>]
@@ -457,11 +460,7 @@ module World =
         | Group _ -> GroupPublishingPriority
         | Entity entity -> getEntityPublishingPriority entity world
 
-    let private getSortableSubscriptions
-        getEntityPublishingPriority
-        (subscriptions : SubscriptionEntry list)
-        world :
-        (single * SubscriptionEntry) list =
+    let private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
         List.fold
             (fun subscriptions (key, address, subscription) ->
                 match getOptSimulant address world with
@@ -605,9 +604,9 @@ module World =
         { world with Camera = camera }
 
     /// Transform a bunch of simulants in the context of a world.
-    let transformSimulants transform parentAddress simulants world : Map<string, 's> * World =
+    let transformSimulants transform parentAddress simulants world =
         Map.fold
-            (fun (simulants, world) simulantName (simulant : 's) ->
+            (fun (simulants, world) simulantName simulant ->
                 let (simulant, world) = transform (parentAddress -<- ltoa [simulantName]) simulant world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
@@ -1010,6 +1009,11 @@ module Event =
     let unwrapASDE<'s, 'd> (event : 'd Event) =
         let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
         (event.SubscriberAddress, subscriber, event.Data, event)
+
+    /// Unwrap commonly-useful values of an event.
+    let unwrapASD<'s, 'd> (event : 'd Event) =
+        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
+        (event.SubscriberAddress, subscriber, event.Data)
 
     /// Unwrap commonly-useful values of an event.
     let unwrapASE<'s, 'd> (event : 'd Event) =
