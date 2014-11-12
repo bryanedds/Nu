@@ -734,13 +734,9 @@ module TileMapDispatcherModule =
     type TileMapDispatcher () =
         inherit EntityDispatcher ()
 
-        let getTilePhysicsId tmid (tli : int) (ti : int) =
-            { EntityId = tmid; BodyId = intsToGuid tli ti }
-
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr =
             let tileShape = Physics.evalCollisionExpression (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
-            let physicsId = getTilePhysicsId tm.Id tli ti
-            { BodyId = physicsId.BodyId
+            { BodyId = intsToGuid tli ti
               Position =
                 Vector2 (
                     single <| td.TilePosition.X + tmd.TileSize.X / 2,
@@ -748,7 +744,7 @@ module TileMapDispatcherModule =
               Rotation = tm.Rotation
               Shape = tileShape
               BodyType = BodyType.Static
-              Density = tm.Density
+              Density = NormalDensity
               Friction = tm.Friction
               Restitution = tm.Restitution
               FixedRotation = true
@@ -801,7 +797,7 @@ module TileMapDispatcherModule =
                     match tileData.OptTileSetTile with
                     | Some tileSetTile ->
                         if tileSetTile.Properties.ContainsKey CollisionProperty then
-                            let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
+                            let physicsId = { EntityId = tileMap.Id; BodyId = intsToGuid tileLayerIndex tileIndex }
                             physicsId :: physicsIds
                         else physicsIds
                     | None -> physicsIds)
@@ -820,8 +816,7 @@ module TileMapDispatcherModule =
                 tileMapData.Map.Layers
 
         static member FieldDefinitions =
-            [define? Density NormalDensity
-             define? Friction 0.0f
+            [define? Friction 0.0f
              define? Restitution 0.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
