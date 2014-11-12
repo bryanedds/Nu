@@ -880,4 +880,4 @@ module TileMapDispatcherModule =
             let tileMapAsset = tileMap.TileMapAsset
             match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap with
             | Some (_, _, map) -> Vector2 (single <| map.Width * map.TileWidth, single <| map.Height * map.TileHeight)
-            | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
+            | None -> DefaultEntitySize
