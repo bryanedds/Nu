@@ -329,7 +329,7 @@ module PhysicsModule =
                 | PolygonShape polygonShape -> Integrator.createPolygonBody entityAddress bodyProperties polygonShape integrator
             Integrator.configureBodyProperties bodyProperties body
             body.add_OnCollision (fun fn fn2 collision -> Integrator.handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
-        
+
             // make a very hack-assed attempt to keep mobile bodies from being created in the same position
             let isBodyMobile = match bodyProperties.BodyType with Static -> false | Dynamic | Kinematic -> true
             if  isBodyMobile &&

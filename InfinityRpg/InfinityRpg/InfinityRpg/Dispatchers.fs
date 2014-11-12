@@ -11,6 +11,97 @@ open InfinityRpg
 open InfinityRpg.Constants
 
 [<AutoOpen>]
+module FieldDispatcherModule =
+
+    type FieldTileType =
+        | Passable
+        | Impassable
+
+    type FieldTile =
+        { FieldTileSheetCoords : Vector2I
+          FieldTileType : FieldTileType }
+
+    type [<NoEquality; NoComparison>] FieldMap =
+        { FieldSize : Vector2I
+          FieldTiles : Map<Vector2I, FieldTile>
+          FieldTileSheet : Image }
+
+    type Entity with
+    
+        member entity.FieldMapNp = entity?FieldMapNp : FieldMap
+        static member setFieldMapNp (value : FieldMap) (entity : Entity) = entity?FieldMapNp <- value
+
+    type FieldDispatcher () =
+        inherit EntityDispatcher ()
+
+        static let [<Literal>] FieldTileSheetRun = 4
+
+        static let DefaultTile = { FieldTileSheetCoords = Vector2I (0, 0); FieldTileType = Passable }
+        static let DefaultTile2 = { FieldTileSheetCoords = Vector2I (3, 3); FieldTileType = Passable }
+        static let DefaultMap =
+            { FieldSize = Vector2I (2, 2)
+              FieldTiles =
+                Map.ofList
+                    [(Vector2I (0, 0), DefaultTile)
+                     (Vector2I (1, 0), DefaultTile2)
+                     (Vector2I (0, 1), DefaultTile)
+                     (Vector2I (1, 1), DefaultTile)]
+              FieldTileSheet = FieldTileSheetImage }
+
+        static let getOptTileInset (tileSheetSize : Vector2I) (tileSize : Vector2I) (tileSheetCoords : Vector2I) =
+            let tileOffset = Vector2I.Multiply (tileSheetCoords, tileSize)
+            let tileInset =
+                Vector4 (
+                    single tileOffset.X,
+                    single tileOffset.Y,
+                    single <| tileOffset.X + tileSize.X,
+                    single <| tileOffset.Y + tileSize.Y)
+            Some tileInset
+
+        static member FieldDefinitions =
+            [define? FieldMapNp DefaultMap]
+
+        override dispatcher.GetRenderDescriptors (field, world) =
+            if field.Visible then
+                let fieldMap = field.FieldMapNp
+                let fieldTileSheet = fieldMap.FieldTileSheet
+                match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
+                | Some tileSheetSize ->
+                    let tileSize = tileSheetSize / FieldTileSheetRun
+                    let size = Vector2I.Multiply (tileSize, fieldMap.FieldSize)
+                    if Camera.inView3 field.ViewType field.Position size.Vector2 world.Camera then
+                        let sprites =
+                            Map.fold
+                                (fun sprites tileCoords tile ->
+                                    let tileOffset = Vector2I.Multiply (tileCoords, tileSize)
+                                    let tilePosition = Vector2I field.Position + tileOffset
+                                    let sprite =
+                                        { Position = tilePosition.Vector2
+                                          Size = tileSize.Vector2
+                                          Rotation = field.Rotation
+                                          ViewType = field.ViewType
+                                          OptInset = getOptTileInset tileSheetSize tileSize tile.FieldTileSheetCoords
+                                          Image = fieldMap.FieldTileSheet
+                                          Color = Vector4.One }
+                                    sprite :: sprites)
+                                []
+                                fieldMap.FieldTiles
+                        [LayerableDescriptor { Depth = field.Depth; LayeredDescriptor = SpritesDescriptor sprites }]
+                    else []
+                | None -> []
+            else []
+
+        override dispatcher.GetQuickSize (field, world) =
+            let fieldMap = field.FieldMapNp
+            let fieldTileSheet = fieldMap.FieldTileSheet
+            match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
+            | Some tileSheetSize ->
+                let tileSize = tileSheetSize / FieldTileSheetRun
+                let size = Vector2I.Multiply (tileSize, fieldMap.FieldSize)
+                Vector2 (single size.X, single size.Y)
+            | None -> failwith "Unexpected match failure in Nu.World.TileMapDispatcher.GetQuickSize."
+
+[<AutoOpen>]
 module PlayerCharacterDispatcherModule =
 
     type PlayerCharacterDispatcher () =
@@ -93,7 +184,7 @@ module CharacterAnimationFacetModule =
                   ChangeTime = 0L }
              define? CharacterAnimationSheet PlayerImage]
 
-        override this.GetRenderDescriptors (entity, world) =
+        override facet.GetRenderDescriptors (entity, world) =
             if entity.Visible && Camera.inView3 entity.ViewType entity.Position entity.Size world.Camera then
                 [LayerableDescriptor
                     { Depth = entity.Depth
@@ -114,9 +205,9 @@ module CharacterControlFacetModule =
     type CharacterControlFacet () =
         inherit Facet ()
 
-        let [<Literal>] WalkForce = 200.0f
+        static let [<Literal>] WalkForce = 200.0f
 
-        let handleKeyboardKeyChange event world =
+        static let handleKeyboardKeyChange event world =
             let (address, character, keyData) = Event.unwrapASD<Entity, KeyboardKeyData> event
             if not keyData.IsRepeat then
                 let xForce =
@@ -141,7 +232,7 @@ module CharacterControlFacetModule =
                 (Cascade, world)
             else (Cascade, world)
 
-        override this.Register (address, entity, world) =
+        override facet.Register (address, entity, world) =
             // TODO: make this a specifiable check in-engine.
             if Reflection.dispatchesAs typeof<PlayerCharacterDispatcher> entity.DispatcherNp then
                 let world = React.from ChangeKeyboardKeyEventAddress address |> React.subscribe handleKeyboardKeyChange world |> snd

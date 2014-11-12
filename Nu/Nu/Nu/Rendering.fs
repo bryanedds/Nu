@@ -19,7 +19,7 @@ module RenderingModule =
           PackageName : string }
 
     /// Describes how to render a sprite to the rendering system.
-    type [<StructuralEquality; NoComparison>] SpriteDescriptor =
+    type [<StructuralEquality; NoComparison>] Sprite =
         { Position : Vector2
           Size : Vector2
           Rotation : single
@@ -62,7 +62,8 @@ module RenderingModule =
 
     /// Describes how to render a layered 'thing' to the rendering system.
     type [<StructuralEquality; NoComparison>] LayeredDescriptor =
-        | SpriteDescriptor of SpriteDescriptor
+        | SpriteDescriptor of Sprite
+        | SpritesDescriptor of Sprite list
         | TileLayerDescriptor of TileLayerDescriptor
         | TextDescriptor of TextDescriptor
 
@@ -202,12 +203,12 @@ module RenderingModule =
         static member private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
             List.fold Renderer.handleRenderMessage renderer (List.rev renderMessages)
 
-        static member private renderSpriteDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : SpriteDescriptor) renderer =
-            let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-            let positionView = descriptor.Position * view
-            let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
-            let image = descriptor.Image
-            let color = descriptor.Color
+        static member private renderSprite (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (sprite : Sprite) renderer =
+            let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
+            let positionView = sprite.Position * view
+            let sizeView = sprite.Size * view.ExtractScaleMatrix ()
+            let image = sprite.Image
+            let color = sprite.Color
             let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset image.PackageName image.ImageAssetName renderer
             match optRenderAsset with
             | Some renderAsset ->
@@ -219,7 +220,7 @@ module RenderingModule =
                     let textureSizeY = ref 0
                     ignore <| SDL.SDL_QueryTexture (texture, textureFormat, textureAccess, textureSizeX, textureSizeY)
                     let mutable sourceRect = SDL.SDL_Rect ()
-                    match descriptor.OptInset with
+                    match sprite.OptInset with
                     | Some inset ->
                         sourceRect.x <- int inset.X
                         sourceRect.y <- int inset.Y
@@ -235,7 +236,7 @@ module RenderingModule =
                     destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
                     destRect.w <- int sizeView.X
                     destRect.h <- int sizeView.Y
-                    let rotation = double -descriptor.Rotation * RadiansToDegrees // negation for right-handedness
+                    let rotation = double -sprite.Rotation * RadiansToDegrees // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int <| sizeView.X * 0.5f
                     rotationCenter.y <- int <| sizeView.Y * 0.5f
@@ -250,10 +251,16 @@ module RenderingModule =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + acstring sprite + "' due to '" + SDL.SDL_GetError () + "."
                     renderer
                 | _ -> trace "Cannot render sprite with a non-texture asset."; renderer
             | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + acstring image + "'."; renderer
+
+        static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
+            List.fold
+                (fun renderer sprite -> Renderer.renderSprite viewAbsolute viewRelative camera sprite renderer)
+                renderer
+                sprites
 
         static member private renderTileLayerDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera (descriptor : TileLayerDescriptor) renderer =
             let view = match descriptor.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
@@ -365,7 +372,8 @@ module RenderingModule =
 
         static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
             match layerableDescriptor with
-            | SpriteDescriptor descriptor -> Renderer.renderSpriteDescriptor viewAbsolute viewRelative camera descriptor renderer
+            | SpriteDescriptor sprite -> Renderer.renderSprite viewAbsolute viewRelative camera sprite renderer
+            | SpritesDescriptor sprites -> Renderer.renderSprites viewAbsolute viewRelative camera sprites renderer
             | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative camera descriptor renderer
             | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative camera descriptor renderer
 

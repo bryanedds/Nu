@@ -13,6 +13,7 @@ module Constants =
 
     // asset constants
     let PlayerImage = { ImageAssetName = "Player"; PackageName = GameplayPackageName }
+    let FieldTileSheetImage = { ImageAssetName = "FieldTileSheet"; PackageName = GameplayPackageName }
 
     // splash constants
     let SplashNu = "Nu"

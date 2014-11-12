@@ -134,18 +134,21 @@ module Metadata =
         | None -> None
 
     /// Try to get the texture metadata of the given asset.
-    let tryGetTextureMetadata assetName packageName assetMetadataMap =
+    let tryGetTextureSize assetName packageName assetMetadataMap =
         let optAsset = tryGetMetadata assetName packageName assetMetadataMap
         match optAsset with
         | Some (TextureMetadata size) -> Some size
         | None -> None
         | _ -> None
 
+    /// Forcibly get the texture size metadata of the given asset (throwing on failure).
+    let getTextureSize assetName packageName assetMetadataMap =
+        Option.get <| tryGetTextureSize assetName packageName assetMetadataMap
+
     /// Try to get the texture size metadata of the given asset.
     let tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap =
-        let optMetadata = tryGetTextureMetadata assetName packageName assetMetadataMap
-        match optMetadata with
-        | Some metadata -> Some <| Vector2 (single metadata.X, single metadata.Y)
+        match tryGetTextureSize assetName packageName assetMetadataMap with
+        | Some size -> Some <| Vector2 (single size.X, single size.Y)
         | None -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
