@@ -1,6 +1,7 @@
 ﻿namespace InfinityRpg
 open System
 open OpenTK
+open TiledSharp
 open Prime
 open Nu
 
