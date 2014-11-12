@@ -41,7 +41,7 @@ module RigidBodyFacetModule =
         static member setIsBullet (value : bool) (entity : Entity) = entity?IsBullet <- value
         member entity.IsSensor = entity?IsSensor : bool
         static member setIsSensor (value : bool) (entity : Entity) = entity?IsSensor <- value
-        member entity.PhysicsId = PhysicsId (entity.Id, entity.MinorId)
+        member entity.PhysicsId = { EntityId = entity.Id; BodyId = entity.MinorId }
 
     type RigidBodyFacet () =
         inherit Facet ()
@@ -67,7 +67,10 @@ module RigidBodyFacetModule =
 
         override facet.RegisterPhysics (address, entity, world) =
             let bodyProperties = 
-                { Shape = getBodyShape entity
+                { BodyId = entity.PhysicsId.BodyId
+                  Position = entity.Position + entity.Size * 0.5f
+                  Rotation = entity.Rotation
+                  Shape = getBodyShape entity
                   BodyType = entity.BodyType
                   Density = entity.Density
                   Friction = entity.Friction
@@ -80,9 +83,7 @@ module RigidBodyFacetModule =
                   CollisionMask = Physics.toCollisionCategories entity.CollisionMask
                   IsBullet = entity.IsBullet
                   IsSensor = entity.IsSensor }
-            let position = entity.Position + entity.Size * 0.5f
-            let rotation = entity.Rotation
-            World.createBody address entity.PhysicsId position rotation bodyProperties world
+            World.createBody address entity.PhysicsId.EntityId bodyProperties world
 
         override facet.UnregisterPhysics (_, entity, world) =
             World.destroyBody entity.PhysicsId world
@@ -734,54 +735,57 @@ module TileMapDispatcherModule =
         inherit EntityDispatcher ()
 
         let getTilePhysicsId tmid (tli : int) (ti : int) =
-            PhysicsId (tmid, intsToGuid tli ti)
+            { EntityId = tmid; BodyId = intsToGuid tli ti }
 
-        let registerTilePhysicsShape address (tm : Entity) tmd tli td ti cexpr world =
+        let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr =
             let tileShape = Physics.evalCollisionExpression (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             let physicsId = getTilePhysicsId tm.Id tli ti
-            let createBodyMessage =
-                CreateBodyMessage
-                    { EntityAddress = address
-                      PhysicsId = physicsId
-                      Position =
-                        Vector2 (
-                            single <| td.TilePosition.X + tmd.TileSize.X / 2,
-                            single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
-                      Rotation = tm.Rotation
-                      BodyProperties =
-                        { Shape = tileShape
-                          BodyType = BodyType.Static
-                          Density = tm.Density
-                          Friction = tm.Friction
-                          Restitution = tm.Restitution
-                          FixedRotation = true
-                          LinearDamping = 0.0f
-                          AngularDamping = 0.0f
-                          GravityScale = 0.0f
-                          CollisionCategories = Physics.toCollisionCategories tm.CollisionCategories
-                          CollisionMask = Physics.toCollisionCategories tm.CollisionMask
-                          IsBullet = false
-                          IsSensor = false }}
-            World.addPhysicsMessage createBodyMessage world
+            { BodyId = physicsId.BodyId
+              Position =
+                Vector2 (
+                    single <| td.TilePosition.X + tmd.TileSize.X / 2,
+                    single <| td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y)
+              Rotation = tm.Rotation
+              Shape = tileShape
+              BodyType = BodyType.Static
+              Density = tm.Density
+              Friction = tm.Friction
+              Restitution = tm.Restitution
+              FixedRotation = true
+              LinearDamping = 0.0f
+              AngularDamping = 0.0f
+              GravityScale = 0.0f
+              CollisionCategories = Physics.toCollisionCategories tm.CollisionCategories
+              CollisionMask = Physics.toCollisionCategories tm.CollisionMask
+              IsBullet = false
+              IsSensor = false }
 
-        let registerTilePhysics tm tmd (tl : TmxLayer) tli address ti world _ =
+        let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti =
             let td = Entity.makeTileData tm tmd tl ti
             match td.OptTileSetTile with
             | Some tileSetTile ->
                 let collisionProperty = ref Unchecked.defaultof<string>
                 if tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then
                     let collisionExpr = acstring collisionProperty.Value
-                    registerTilePhysicsShape address tm tmd tli td ti collisionExpr world
-                else world
-            | None -> world
+                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti collisionExpr
+                    Some tileBodyProperties
+                else None
+            | None -> None
 
-        let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world (tileLayer : TmxLayer) =
+        let getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex (tileLayer : TmxLayer) =
             if tileLayer.Properties.ContainsKey CollisionProperty then
                 Seq.foldi
-                    (registerTilePhysics tileMap tileMapData tileLayer tileLayerIndex address)
-                    world
+                    (fun i bodyPropertyList _ ->
+                        match getTileBodyProperties tileMap tileMapData tileLayer tileLayerIndex i with
+                        | Some bodyProperties -> bodyProperties :: bodyPropertyList
+                        | None -> bodyPropertyList)
+                    []
                     tileLayer.Tiles
-            else world
+            else []
+        
+        let registerTileLayerPhysics address tileMap tileMapData tileLayerIndex world tileLayer =
+            let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer
+            World.createBodies address tileMap.Id bodyPropertyList world
 
         let registerTileMapPhysics address (tileMap : Entity) world =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
@@ -790,24 +794,27 @@ module TileMapDispatcherModule =
                 world
                 tileMapData.Map.Layers
 
+        let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex =
+            Seq.foldi
+                (fun tileIndex physicsIds _ ->
+                    let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex
+                    match tileData.OptTileSetTile with
+                    | Some tileSetTile ->
+                        if tileSetTile.Properties.ContainsKey CollisionProperty then
+                            let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
+                            physicsId :: physicsIds
+                        else physicsIds
+                    | None -> physicsIds)
+                []
+                tileLayer.Tiles
+
         let unregisterTileMapPhysics (tileMap : Entity) world =
             let tileMapData = Entity.makeTileMapData tileMap.TileMapAsset world
             Seq.foldi
                 (fun tileLayerIndex world (tileLayer : TmxLayer) ->
                     if tileLayer.Properties.ContainsKey CollisionProperty then
-                        Seq.foldi
-                            (fun tileIndex world _ ->
-                                let tileData = Entity.makeTileData tileMap tileMapData tileLayer tileIndex
-                                match tileData.OptTileSetTile with
-                                | Some tileSetTile ->
-                                    if tileSetTile.Properties.ContainsKey CollisionProperty then
-                                        let physicsId = getTilePhysicsId tileMap.Id tileLayerIndex tileIndex
-                                        let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
-                                        World.addPhysicsMessage destroyBodyMessage world
-                                    else world
-                                | None -> world)
-                            world
-                            tileLayer.Tiles
+                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex
+                        World.destroyBodies physicsIds world
                     else world)
                 world
                 tileMapData.Map.Layers

@@ -839,15 +839,25 @@ module WorldPhysicsModule =
         static member isBodyOnGround physicsId world =
             world.Subsystems.Integrator.IsBodyOnGround physicsId
 
-        /// Send a message to the physics system to create a body with the given physics id.
-        static member createBody entityAddress physicsId position rotation bodyProperties world =
-            let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; PhysicsId = physicsId; Position = position; Rotation = rotation; BodyProperties = bodyProperties }
+        /// Send a message to the physics system to create a physics body.
+        static member createBody entityAddress entityId bodyProperties world =
+            let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; EntityId = entityId; BodyProperties = bodyProperties }
             World.addPhysicsMessage createBodyMessage world
 
-        /// Send a message to the physics system to destroy a body with the given physics id.
+        /// Send a message to the physics system to create several physics bodies.
+        static member createBodies entityAddress entityId bodyPropertyList world =
+            let createBodiesMessage = CreateBodiesMessage { EntityAddress = entityAddress; EntityId = entityId; BodyPropertyList = bodyPropertyList }
+            World.addPhysicsMessage createBodiesMessage world
+
+        /// Send a message to the physics system to destroy a physics body.
         static member destroyBody physicsId world =
             let destroyBodyMessage = DestroyBodyMessage { PhysicsId = physicsId }
             World.addPhysicsMessage destroyBodyMessage world
+
+        /// Send a message to the physics system to destroy several physics bodies.
+        static member destroyBodies physicsIds world =
+            let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
+            World.addPhysicsMessage destroyBodiesMessage world
 
         /// Send a message to the physics system to set the position of a body with the given physics id.
         static member setBodyPosition position physicsId world =
