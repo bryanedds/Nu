@@ -33,7 +33,7 @@ module React =
             (subscriptionAddress, unsubscribe, world)
         { SubscriberAddress = subscriberAddress; Subscribe = subscribe }
 
-    // TODO: is there a better name for this?
+    // TODO: find a better name for this?
     let using handleEvent (observable : 'a Observable) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()

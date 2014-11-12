@@ -268,7 +268,7 @@ module Program =
         let treeGroup = form.treeView.Nodes.[entityGroupName]
         if not <| treeGroup.Nodes.ContainsKey (acstring entityAddress) then
             let treeNode = TreeNode entity.Name
-            treeNode.Name <- acstring entityAddress
+            treeNode.Name <- entityAddress.ToString ()
             ignore <| treeGroup.Nodes.Add treeNode
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
 

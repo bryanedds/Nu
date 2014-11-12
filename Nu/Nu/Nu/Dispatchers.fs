@@ -459,7 +459,7 @@ module ToggleDispatcherModule =
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
-    
+
         let handleToggleEventUpMouseLeft event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = Event.unwrap event
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.IsPressed then
@@ -852,7 +852,10 @@ module TileMapDispatcherModule =
                     List.foldi
                         (fun i descriptors (layer : TmxLayer) ->
                             let depth = tileMap.Depth + single i * 2.0f // MAGIC_VALUE: assumption
-                            let parallaxTranslation = tileMap.Parallax * depth * -world.Camera.EyeCenter
+                            let parallaxTranslation =
+                                match tileMap.ViewType with
+                                | Absolute -> Vector2.Zero
+                                | Relative -> tileMap.Parallax * depth * -world.Camera.EyeCenter
                             let parallaxPosition = tileMap.Position + parallaxTranslation
                             let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
                             if Camera.inView3 tileMap.ViewType parallaxPosition size world.Camera then
@@ -864,7 +867,7 @@ module TileMapDispatcherModule =
                                                 { Position = parallaxPosition
                                                   Size = size
                                                   Rotation = tileMap.Rotation
-                                                  ViewType = Relative
+                                                  ViewType = tileMap.ViewType
                                                   MapSize = Vector2I (map.Width, map.Height)
                                                   Tiles = layer.Tiles
                                                   TileSourceSize = tileSourceSize

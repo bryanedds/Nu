@@ -75,11 +75,11 @@ module MetamapModule =
                 else false
             Direction.tryWanderUntil predicate tryLimit stumbleLimit rand source
 
-    type Metapiece<'k when 'k : comparison> =
+    type Metatile<'k when 'k : comparison> =
         { ClosedSides : Direction Set
           LockedSides : Map<Direction, 'k>
           Keys : 'k Set }
 
     type Metamap<'k when 'k : comparison>  =
         { NavigableSize : Vector2I
-          PotentiallyNavigablePieces : Map<Vector2I, 'k Metapiece> }
+          PotentiallyNavigableTiles : Map<Vector2I, 'k Metatile> }
