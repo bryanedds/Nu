@@ -7,10 +7,6 @@ open Nu
 [<AutoOpen>]
 module MetamapModule =
 
-    // TODO: see if we can get a proper immutable random type to avoid some of the likely
-    // surprising behavior that will happen here with System.Random is mixed with the use of
-    // infinite sequences.
-
     type Direction with
 
         static member intToDirection n =
@@ -21,11 +17,11 @@ module MetamapModule =
             | 3 -> West
             | _ -> failwith <| "Invalid Direction conversion from int '" + acstring n + "'."
 
-        static member random (random : Random) =
-            let randomValueMax = 3
-            let randomValue = random.Next randomValueMax
-            let cardinality = Direction.intToDirection randomValue
-            (random, cardinality)
+        static member rand rand =
+            let randMax = 3
+            let (randValue, rand) = Rand.next2 randMax rand
+            let cardinality = Direction.intToDirection randValue
+            (cardinality, rand)
 
         static member walk (source : Vector2I) cardinality =
             match cardinality with
@@ -34,49 +30,49 @@ module MetamapModule =
             | South -> Vector2I (source.X, source.Y - 1)
             | West -> Vector2I (source.X - 1, source.Y)
 
-        static member stumble (random : Random) (source : Vector2I) =
-            let (random, cardinality) = Direction.random random
+        static member stumble rand (source : Vector2I) =
+            let (cardinality, rand) = Direction.rand rand
             let destination = Direction.walk source cardinality
-            (random, destination)
+            (rand, destination)
 
-        static member tryStumbleUntil predicate tryLimit (random : Random) (source : Vector2I) =
+        static member tryStumbleUntil predicate tryLimit rand (source : Vector2I) =
             let take = if tryLimit < 0 then id else Seq.take tryLimit
             let stumblings =
                 take <|
                     Seq.unfold
-                        (fun random -> Some (Direction.stumble random source, random))
-                        random
+                        (fun rand -> Some (Direction.stumble rand source, rand))
+                        rand
             Seq.tryFind predicate stumblings
 
-        static member wander stumbleLimit (random : Random) (source : Vector2I) =
+        static member wander stumbleLimit rand (source : Vector2I) =
             let stumblePredicate = fun trail (_, destination) -> Set.ofList trail |> Set.contains destination |> not
             Seq.definitize <|
                 Seq.unfold
-                    (fun ((random, trail), source) -> Some (Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit random source, ((random, source :: trail), source)))
-                    ((random, []), source)
+                    (fun ((trail, rand), source) -> Some (Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit rand source, ((source :: trail, rand), source)))
+                    (([], rand), source)
 
-        static member tryWanderUntil predicate tryLimit stumbleLimit (random : Random) (source : Vector2I) =
+        static member tryWanderUntil predicate tryLimit stumbleLimit rand (source : Vector2I) =
             let take = if tryLimit < 0 then id else Seq.take tryLimit
             let wanderings =
                 take <|
                     Seq.unfold
-                        (fun (random, source) -> Some (Direction.wander stumbleLimit random source, (random, source)))
-                        (random, source)
+                        (fun (source, rand) -> Some (Direction.wander stumbleLimit rand source, (source, rand)))
+                        (source, rand)
             Seq.tryFind predicate wanderings
 
-        static member tryJourney (random : Random) (source : Vector2I) =
+        static member tryJourney rand (source : Vector2I) =
             let minLength = 10;
             let maxLength = 15;
             let tryLimit = 100;
             let stumbleLimit = 100;
-            let predicate = fun (trail : (Random * Vector2I) seq) ->
+            let predicate = fun (trail : (Rand * Vector2I) seq) ->
                 let trail = List.ofSeq <| Seq.take maxLength trail
                 if List.length trail >= minLength then
                     let sites = List.map snd trail
                     let uniqueSites = Set.ofList sites
                     List.length sites = Set.count uniqueSites
                 else false
-            Direction.tryWanderUntil predicate tryLimit stumbleLimit random source
+            Direction.tryWanderUntil predicate tryLimit stumbleLimit rand source
 
     type Metapiece<'k when 'k : comparison> =
         { ClosedSides : Direction Set
