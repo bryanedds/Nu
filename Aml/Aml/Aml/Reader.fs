@@ -307,13 +307,13 @@ module Reader =
             String (makeStringRecord (makeStringValue (name + suffix) LiteralString) None)
 
     /// Forward-reference the expr reader.
-    let (readExpr : Parser<Expr, unit>, readExprRef : Parser<Expr, unit> ref) = createParserForwardedToRef ()
+    let (readExpr : Parser<Expr, unit>, refReadExpr : Parser<Expr, unit> ref) = createParserForwardedToRef ()
 
     /// Forward-reference the procedural expr reader.
-    let (readProceduralExpr : Parser<Expr, unit>, readProceduralExprRef : Parser<Expr, unit> ref) = createParserForwardedToRef ()
+    let (readProceduralExpr : Parser<Expr, unit>, refReadProceduralExpr : Parser<Expr, unit> ref) = createParserForwardedToRef ()
 
     /// Forward-reference the declarative expr reader.
-    let (readDeclarativeExpr : Parser<Expr, unit>, readDeclarativeExprRef : Parser<Expr, unit> ref) = createParserForwardedToRef ()
+    let (readDeclarativeExpr : Parser<Expr, unit>, refReadDeclarativeExpr : Parser<Expr, unit> ref) = createParserForwardedToRef ()
 
     /// Read an optional procedural expressions.
     let readOptProceduralExpr = opt readProceduralExpr
@@ -1185,13 +1185,13 @@ module Reader =
                 | _ -> makeViolationWithoutBreakpoint ":v/reader/invalidSelectorKeyType" "Selector key must be a number or symbol." }
 
     /// Read a double colon selector bi-recursively.
-    do readProceduralExprRef :=
+    do refReadProceduralExpr :=
         chainl1
             (chainr1 readBirecursiveProceduralExpr readDoubleColonSelector)
             readDotSelector
 
     /// Read a declarative expression.
-    do readDeclarativeExprRef :=
+    do refReadDeclarativeExpr :=
         choice
             [attempt readReservedName
              attempt readPrefixedExpr
@@ -1213,7 +1213,7 @@ module Reader =
                 | _ -> pzero stream]
 
     /// Read an expression.
-    do readExprRef :=
+    do refReadExpr :=
         choice
             [attempt readProceduralExpr
              attempt readDeclarativeExpr]

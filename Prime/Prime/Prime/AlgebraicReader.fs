@@ -46,8 +46,7 @@ module AlgebraicReader =
     let readNameChars = many1 <| noneOf (StructureChars + WhitespaceChars)
     let readSimpleValueChars = many1 <| noneOf StructureChars
 
-    let (readValue : Parser<obj, unit>, readValueRef : Parser<obj, unit> ref) =
-        createParserForwardedToRef ()
+    let (readValue : Parser<obj, unit>, refReadValue : Parser<obj, unit> ref) = createParserForwardedToRef ()
 
     let chainValues =
         parse {
@@ -68,7 +67,7 @@ module AlgebraicReader =
 
     let readValues =
         parse {
-            let! values = chainl (!readValueRef |>> List.singleton) chainValues []
+            let! values = chainl (!refReadValue |>> List.singleton) chainValues []
             return values }
 
     let readComplexValue =
@@ -79,11 +78,11 @@ module AlgebraicReader =
             do! skipWhitespace
             return values :> obj }
 
-    do readValueRef :=
+    do refReadValue :=
         attempt readSimpleValue <|>
         readComplexValue
     
     let stringToValue str =
-        match run (skipWhitespace >>. !readValueRef) str with
+        match run (skipWhitespace >>. !refReadValue) str with
         | Success (value, _, _) -> value
         | Failure (error, _, _) -> failwith error

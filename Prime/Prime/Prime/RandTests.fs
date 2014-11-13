@@ -7,10 +7,10 @@ module RandTests =
     let Samples = 32768
 
     let makeSamples (next : Rand -> ('n * Rand)) =
-        let rand = ref <| Rand.makeDefault ()
+        let refRand = ref <| Rand.makeDefault ()
         [for _ in 0 .. Samples - 1 do
-            let (n, r) = next !rand
-            rand := r
+            let (n, r) = next !refRand
+            refRand := r
             yield n]
 
     let [<Fact>] nextDoubleIsInRange () =
