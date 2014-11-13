@@ -100,6 +100,11 @@ namespace OpenTK
             return "(" + this.X + ", " + this.Y + ")";
         }
 
+        public override int GetHashCode()
+        {
+            return this.X ^ this.Y;
+        }
+
         public int X;
         public int Y;
     }
