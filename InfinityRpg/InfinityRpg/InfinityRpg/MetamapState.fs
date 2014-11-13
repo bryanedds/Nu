@@ -31,37 +31,37 @@ module MetamapModule =
             | South -> Vector2I (source.X, source.Y - 1)
             | West -> Vector2I (source.X - 1, source.Y)
 
-        static member stumble rand (source : Vector2I) =
+        static member stumble (source : Vector2I) rand =
             let (cardinality, rand) = Direction.rand rand
             let destination = Direction.walk source cardinality
             (rand, destination)
 
-        static member tryStumbleUntil predicate tryLimit rand (source : Vector2I) =
+        static member tryStumbleUntil predicate tryLimit (source : Vector2I) rand =
             let take = if tryLimit < 0 then id else Seq.take tryLimit
             let stumblings =
                 take <|
                     Seq.unfold
-                        (fun rand -> Some (Direction.stumble rand source, rand))
+                        (fun rand -> Some (Direction.stumble source rand, rand))
                         rand
             Seq.tryFind predicate stumblings
 
-        static member wander stumbleLimit rand (source : Vector2I) =
+        static member wander stumbleLimit (source : Vector2I) rand =
             let stumblePredicate = fun trail (_, destination) -> Set.ofList trail |> Set.contains destination |> not
             Seq.definitize <|
                 Seq.unfold
-                    (fun ((trail, rand), source) -> Some (Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit rand source, ((source :: trail, rand), source)))
+                    (fun ((trail, rand), source) -> Some (Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit source rand, ((source :: trail, rand), source)))
                     (([], rand), source)
 
-        static member tryWanderUntil predicate tryLimit stumbleLimit rand (source : Vector2I) =
+        static member tryWanderUntil predicate tryLimit stumbleLimit (source : Vector2I) rand =
             let take = if tryLimit < 0 then id else Seq.take tryLimit
             let wanderings =
                 take <|
                     Seq.unfold
-                        (fun (source, rand) -> Some (Direction.wander stumbleLimit rand source, (source, rand)))
+                        (fun (source, rand) -> Some (Direction.wander stumbleLimit source rand, (source, rand)))
                         (source, rand)
             Seq.tryFind predicate wanderings
 
-        static member tryJourney rand (source : Vector2I) =
+        static member tryWanderTenUnits (source : Vector2I) rand =
             let minLength = 10;
             let maxLength = 15;
             let tryLimit = 100;
@@ -73,7 +73,16 @@ module MetamapModule =
                     let uniqueSites = Set.ofList sites
                     List.length sites = Set.count uniqueSites
                 else false
-            Direction.tryWanderUntil predicate tryLimit stumbleLimit rand source
+            Direction.tryWanderUntil predicate tryLimit stumbleLimit source rand
+
+        static member tryWanderToDestination (source : Vector2I) (dest : Vector2I) rand =
+            let maxLength = 30;
+            let tryLimit = 100;
+            let stumbleLimit = 100;
+            let predicate = fun (trail : (Rand * Vector2I) seq) ->
+                let trail = List.ofSeq <| Seq.take maxLength trail
+                List.exists (fun point -> snd point = dest) trail
+            Direction.tryWanderUntil predicate tryLimit stumbleLimit source rand
 
     type Metatile<'k when 'k : comparison> =
         { ClosedSides : Direction Set

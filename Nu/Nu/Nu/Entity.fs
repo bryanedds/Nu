@@ -176,7 +176,7 @@ module WorldEntityModule =
         static member setEntity address entity world = 
                 let oldEntity = Option.get <| World.optEntityFinder address world
                 let world = World.entityAdder address world entity
-                World.publish4 (EntityChangeEventAddress -<- address) address { OldEntity = oldEntity } world
+                World.publish4 (EntityChangeEventAddress ->- address) address { OldEntity = oldEntity } world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
@@ -216,7 +216,7 @@ module WorldEntityModule =
             Entity.unregister address entity world
 
         static member removeEntityImmediate address entity world =
-            let world = World.publish4 (RemovingEventAddress -<- address) address () world
+            let world = World.publish4 (RemovingEventAddress ->- address) address () world
             let (entity, world) = World.unregisterEntity address entity world
             let world = World.setOptEntityWithoutEvent address None world
             (entity, world)
@@ -245,7 +245,7 @@ module WorldEntityModule =
                     | None -> (entity, world)
                 let world = World.setEntityWithoutEvent address entity world
                 let (entity, world) = World.registerEntity address entity world
-                let world = World.publish4 (AddEventAddress -<- address) address () world
+                let world = World.publish4 (AddEventAddress ->- address) address () world
                 (entity, world)
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 

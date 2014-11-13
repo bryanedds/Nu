@@ -110,10 +110,10 @@ module AddressModule =
     let (-|-) = acat
 
     /// Concatenate two addresses, taking the type of first address.
-    let (-<-) = acatf
+    let (->-) = acatf
 
     /// Concatenate two addresses, taking the type of the second address.
-    let (->-) = acats
+    let (-<-) = acats
 
     /// Convert a string into a list.
     let stoa<'t> (str : string) =
