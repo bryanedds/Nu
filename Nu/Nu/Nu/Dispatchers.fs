@@ -272,7 +272,7 @@ module ButtonDispatcherModule =
                 if Math.isPointInBounds3 mousePositionButton button.Position button.Size then
                     let button = Entity.setIsDown true button
                     let world = World.setEntity address button world
-                    let world = World.publish4 (DownEventAddress -<- address) address () world
+                    let world = World.publish4 (DownEventAddress ->- address) address () world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -284,9 +284,9 @@ module ButtonDispatcherModule =
                 let world =
                     let button = Entity.setIsDown false button
                     let world = World.setEntity address button world
-                    World.publish4 (UpEventAddress -<- address) address () world
+                    World.publish4 (UpEventAddress ->- address) address () world
                 if Math.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
-                    let world = World.publish4 (ClickEventAddress -<- address) address () world
+                    let world = World.publish4 (ClickEventAddress ->- address) address () world
                     let world = World.playSound button.ClickSound 1.0f world
                     (Resolve, world)
                 else (Cascade, world)
@@ -469,7 +469,7 @@ module ToggleDispatcherModule =
                     let toggle = Entity.setIsOn (not toggle.IsOn) toggle
                     let world = World.setEntity address toggle world
                     let eventAddress = if toggle.IsOn then OnEventAddress else OffEventAddress
-                    let world = World.publish4 (eventAddress -<- address) address () world
+                    let world = World.publish4 (eventAddress ->- address) address () world
                     let world = World.playSound toggle.ToggleSound 1.0f world
                     (Resolve, world)
                 else
@@ -534,7 +534,7 @@ module FeelerDispatcherModule =
                 if Math.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
                     let feeler = Entity.setIsTouched true feeler
                     let world = World.setEntity address feeler world
-                    let world = World.publish4 (TouchEventAddress -<- address) address mouseButtonData world
+                    let world = World.publish4 (TouchEventAddress ->- address) address mouseButtonData world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -544,7 +544,7 @@ module FeelerDispatcherModule =
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let feeler = Entity.setIsTouched false feeler
                 let world = World.setEntity address feeler world
-                let world = World.publish4 (ReleaseEventAddress -<- address) address () world
+                let world = World.publish4 (ReleaseEventAddress ->- address) address () world
                 (Resolve, world)
             else (Cascade, world)
 

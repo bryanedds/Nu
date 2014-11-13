@@ -595,7 +595,7 @@ module World =
                 let world = unsubscribe removalKey world
                 let world = unsubscribe observationKey world
                 (Cascade, world)
-            let removingEventAddress = WorldConstants.RemovingEventAddress -<- subscriberAddress
+            let removingEventAddress = WorldConstants.RemovingEventAddress ->- subscriberAddress
             subscribe<unit> removalKey removingEventAddress subscriberAddress subscription' world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
@@ -607,7 +607,7 @@ module World =
     let transformSimulants transform parentAddress simulants world =
         Map.fold
             (fun (simulants, world) simulantName simulant ->
-                let (simulant, world) = transform (parentAddress -<- ltoa [simulantName]) simulant world
+                let (simulant, world) = transform (parentAddress ->- ltoa [simulantName]) simulant world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants
