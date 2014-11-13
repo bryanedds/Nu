@@ -65,14 +65,14 @@ module MetamapModule =
                         rand
             Seq.tryFind predicate destinations
 
-        static member wander stumbleLimit (stumbleBounds : Vector2I) backtracking optBias source rand =
+        static member wander stumbleLimit (stumbleBounds : Vector2I * Vector2I) backtracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =
                 fun (trail : Vector2I Set) (destination : Vector2I, rand) ->
-                    destination.X >= 0 &&
-                    destination.X <= stumbleBounds.X &&
-                    destination.Y >= 0 &&
-                    destination.Y <= stumbleBounds.Y &&
+                    destination.X >= (fst stumbleBounds).X &&
+                    destination.X <= (snd stumbleBounds).X &&
+                    destination.Y >= (fst stumbleBounds).Y &&
+                    destination.Y <= (snd stumbleBounds).Y &&
                     (backtracking || not <| Set.contains destination trail) // NOTE: this line is almost certainly the bottleneck!
             Seq.unfold
                 (fun (source, trail, rand) ->
@@ -99,12 +99,12 @@ module MetamapModule =
         static member wanderUntil predicate stumbleLimit stumbleBounds backtracking optBias source rand =
             Option.get <| Direction.tryWanderUntil predicate stumbleLimit stumbleBounds backtracking optBias 0 source rand
 
-        static member concretizePath maxLength unevaluatedPath rand =
-            let path = List.ofSeq <| Seq.tryTake maxLength unevaluatedPath
+        static member concretizePath maxLength abstractPath rand =
+            let path = List.ofSeq <| Seq.tryTake maxLength abstractPath
             (List.map fst path, snd ^^ List.last path)
 
-        static member concretizeOptPath maxLength unevaluatedPath rand =
-            match unevaluatedPath with
+        static member concretizeOptPath maxLength abstractPath rand =
+            match abstractPath with
             | Some path ->
                 let (path, rand) = Direction.concretizePath maxLength path rand
                 (Some path, rand)
@@ -125,15 +125,17 @@ module MetamapModule =
             let path = Direction.tryWanderUntil predicate stumbleLimit stumbleBounds false None tryLimit source rand
             Direction.concretizeOptPath maxLength path rand
 
-        static member wanderToDestination (stumbleBounds : Vector2I) source destination rand =
-            let optBias = Some (destination, 8)
-            let maxPathLength = stumbleBounds.X * stumbleBounds.Y / 2
+        static member wanderToDestination (stumbleBounds : Vector2I * Vector2I) source destination rand =
+            let optBias = Some (destination, 4)
+            let maxPathLength = (snd stumbleBounds).X * (snd stumbleBounds).Y / 2
             let stumbleLimit = 16
             let predicate = fun (path : (Vector2I * Rand) seq) ->
                 let path = Seq.tryTake maxPathLength path
                 Seq.exists (fun point -> fst point = destination) path
             let path = Direction.wanderUntil predicate stumbleLimit stumbleBounds true optBias source rand
-            Direction.concretizePath maxPathLength path rand
+            let pathDesiredEnd = Seq.findIndex (fun (point, _) -> point = destination) path + 1
+            let pathTrimmed = Seq.take pathDesiredEnd path
+            Direction.concretizePath maxPathLength pathTrimmed rand
 
     type MetaTile<'k when 'k : comparison> =
         { ClosedSides : Direction Set

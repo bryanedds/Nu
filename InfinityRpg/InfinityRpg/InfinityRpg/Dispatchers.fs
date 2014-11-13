@@ -32,10 +32,12 @@ module FieldDispatcherModule =
 
         static member make tileSheet size pathEdges rand =
 
+            let buildBounds = (Vector2I.One, size - Vector2I.One)
+
             let (paths, rand) =
                 List.fold
                     (fun (paths, rand) (source, destination) ->
-                        let (path, rand) = Direction.wanderToDestination size source destination rand
+                        let (path, rand) = Direction.wanderToDestination buildBounds source destination rand
                         (path :: paths, rand))
                     ([], rand)
                     pathEdges
@@ -74,15 +76,15 @@ module FieldDispatcherModule =
         inherit EntityDispatcher ()
 
         static let [<Literal>] FieldTileSheetRun = 4
-        
+        static let DefaultRand = Rand.makeDefault ()
         static let DefaultSize = Vector2I (32, 32)
         
         static let DefaultPathEdges =
-            [(Vector2I (0, 16), Vector2I (32, 16))
-             (Vector2I (16, 0), Vector2I (16, 32))]
+            [(Vector2I (1, 16), Vector2I (31, 16))
+             (Vector2I (16, 1), Vector2I (16, 31))]
         
         static let DefaultMap =
-            FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges <| Rand.makeDefault ()
+            FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
 
         static let getOptTileInset (tileSheetSize : Vector2I) (tileSize : Vector2I) (tileSheetCoords : Vector2I) =
             let tileOffset = Vector2I.Multiply (tileSheetCoords, tileSize)
