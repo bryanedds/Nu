@@ -33,7 +33,7 @@ module WorldGroupModule =
     type World with
 
         static member private optGroupFinder address world =
-            match address.AddrList with
+            match address.Names with
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
                 match optGroupMap with
@@ -42,7 +42,7 @@ module WorldGroupModule =
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
         static member private groupAdder address world child =
-            match address.AddrList with
+            match address.Names with
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
                 match optGroupMap with
@@ -53,7 +53,7 @@ module WorldGroupModule =
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
         static member private groupRemover address world =
-            match address.AddrList with
+            match address.Names with
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
                 match optGroupMap with
@@ -80,7 +80,7 @@ module WorldGroupModule =
                         yield (address, groupKvp.Value) }
 
         static member getGroups screenAddress world =
-            match screenAddress.AddrList with
+            match screenAddress.Names with
             | [screenName] ->
                 match Map.tryFind screenName world.Groups with
                 | Some groupMap -> groupMap

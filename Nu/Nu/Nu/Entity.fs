@@ -121,7 +121,7 @@ module WorldEntityModule =
     type World with
 
         static member private optEntityFinder address world =
-            match address.AddrList with
+            match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
                 match optGroupMap with
@@ -134,7 +134,7 @@ module WorldEntityModule =
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
         static member private entityAdder address world (entity : Entity) =
-            match address.AddrList with
+            match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
                 match optGroupMap with
@@ -156,7 +156,7 @@ module WorldEntityModule =
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
         static member private entityRemover address world =
-            match address.AddrList with
+            match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
                 match optGroupMap with
@@ -194,7 +194,7 @@ module WorldEntityModule =
                             yield (address, entityKvp.Value) }
     
         static member getEntities groupAddress world =
-            match groupAddress.AddrList with
+            match groupAddress.Names with
             | [screenName; groupName] ->
                 match Map.tryFind screenName world.Entities with
                 | Some groupMap ->
