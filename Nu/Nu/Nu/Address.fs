@@ -143,7 +143,7 @@ module Address =
     let tail address =
         Address.make <| List.tail address.Names
 
-    /// Take an element of an address.
+    /// Take a name of an address.
     let at index address =
         List.at index address.Names
 
@@ -152,7 +152,7 @@ module Address =
         let list = List.map mapper address.Names
         Address.make list
 
-    /// Filter the elements of an address.
+    /// Filter the names of an address.
     let filter predicate address =
         let list = List.filter predicate address.Names
         Address.make list
@@ -161,26 +161,26 @@ module Address =
     let fold folder state address =
         List.fold folder state address.Names
 
-    /// Take an address composed of the elements of an address minus a skipped amount of elements.
+    /// Take an address composed of the names of an address minus a skipped amount of names.
     let skip n address =
         Address.make <| List.skip n address.Names
 
-    /// Take an address composed of the given number of elements of an address.
+    /// Take an address composed of the given number of names of an address.
     let take n address =
         Address.make <| List.take n address.Names
 
-    /// Take the last element of an address.
+    /// Take the last name of an address.
     let last address =
         List.last address.Names
 
-    /// Take an address composed of all but the last element of an address.
+    /// Take an address composed of all but the last name of an address.
     let allButLast address =
         Address.make <| List.allButLast address.Names
 
-    /// Get the length of an address by its elements.
+    /// Get the length of an address by its names.
     let length address =
         List.length address.Names
 
-    /// Query that an address is devoid of elements.
+    /// Query that an address is devoid of names.
     let isEmpty address =
         List.isEmpty address.Names
