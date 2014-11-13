@@ -13,6 +13,11 @@ namespace OpenTK
             X = x;
             Y = y;
         }
+        public Vector2I(int n)
+        {
+            X = n;
+            Y = n;
+        }
 
         public Vector2I(Vector2 v)
         {
@@ -93,6 +98,16 @@ namespace OpenTK
             return new Vector2I(
                 v.X / v2.X,
                 v.Y / v2.Y);
+        }
+
+        public static Vector2I Zero
+        {
+            get { return new Vector2I(0); }
+        }
+
+        public static Vector2I One
+        {
+            get { return new Vector2I(1); }
         }
 
         public override string ToString()
