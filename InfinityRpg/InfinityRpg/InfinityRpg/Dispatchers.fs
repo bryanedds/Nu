@@ -82,7 +82,7 @@ module FieldDispatcherModule =
              (Vector2I (16, 0), Vector2I (16, 32))]
         
         static let DefaultMap =
-            FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges <| Rand.make ()
+            FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges <| Rand.makeDefault ()
 
         static let getOptTileInset (tileSheetSize : Vector2I) (tileSize : Vector2I) (tileSheetCoords : Vector2I) =
             let tileOffset = Vector2I.Multiply (tileSheetCoords, tileSize)
