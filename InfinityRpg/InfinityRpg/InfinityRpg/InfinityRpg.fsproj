@@ -64,7 +64,7 @@
   <ItemGroup>
     <Compile Include="Core.fs" />
     <Compile Include="Constants.fs" />
-    <Compile Include="MetamapState.fs" />
+    <Compile Include="MetaMap.fs" />
     <Compile Include="CharacterState.fs" />
     <Compile Include="Dispatchers.fs" />
     <Compile Include="ComponentFactory.fs" />
