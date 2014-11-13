@@ -49,7 +49,7 @@ module Metadata =
             InvalidMetadata errorMessage
         else
             // TODO: find an efficient way to pull metadata from a bitmap file without loading its
-            // actual image buffer, or if even that's not sufficiently efficiently, pull out its
+            // actual image buffer, or if even that's not sufficiently efficient, pull out its
             // metadata to a separate file during build.
             try use bitmap = new Bitmap (asset.FilePath)
                 if bitmap.PixelFormat = Imaging.PixelFormat.Format32bppArgb
