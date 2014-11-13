@@ -54,7 +54,7 @@ module WorldGameModule =
 
         static member isAddressSelected address world =
             let optScreenAddress = World.getOptSelectedScreenAddress world
-            match (address.AddrList, Option.map (fun address -> address.AddrList) optScreenAddress) with
+            match (address.Names, Option.map (fun address -> address.Names) optScreenAddress) with
             | ([], _) -> true
             | (_, None) -> false
             | (_, Some []) -> false

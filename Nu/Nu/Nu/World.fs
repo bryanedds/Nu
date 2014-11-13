@@ -40,7 +40,7 @@ module WorldModule =
     type World with
 
         static member getSimulantDefinition address world =
-            match address.AddrList with
+            match address.Names with
             | [] -> Game <| world.Game
             | [_] -> Screen <| World.getScreen address world
             | [_; _] -> Group <| World.getGroup address world
@@ -48,7 +48,7 @@ module WorldModule =
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member getOptSimulantDefinition address world =
-            match address.AddrList with
+            match address.Names with
             | [] -> Some <| Game world.Game
             | [_] -> Option.map Screen <| World.getOptScreen address world
             | [_; _] -> Option.map Group <| World.getOptGroup address world

@@ -40,17 +40,17 @@ module WorldScreenModule =
     type World with
 
         static member private optScreenFinder address world =
-            match address.AddrList with
+            match address.Names with
             | [screenName] -> Map.tryFind screenName world.Screens
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member private screenAdder address world child =
-            match address.AddrList with
+            match address.Names with
             | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
         static member private screenRemover address world =
-            match address.AddrList with
+            match address.Names with
             | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
@@ -70,7 +70,7 @@ module WorldScreenModule =
                     yield (address, screenKvp.Value) }
 
         static member getScreens address world =
-            match address.AddrList with
+            match address.Names with
             | [] -> world.Screens
             | _ -> failwith <| "Invalid game address '" + acstring address + "'. Game address is always empty."
 

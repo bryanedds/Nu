@@ -484,7 +484,7 @@ module Program =
     let handleFormTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             let entityAddress = stoa<obj> form.treeView.SelectedNode.Name
-            match entityAddress.AddrList with
+            match entityAddress.Names with
             | [_; _; _] ->
                 refWorld := world // must be set for property grid
                 let entityTds = { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }

@@ -498,8 +498,8 @@ module World =
             let anyEventAddressesKey = Address.allButLast eventAddress
             let refAnyEventAddresses = ref Unchecked.defaultof<obj Address list>
             if not <| AnyEventAddressesCache.TryGetValue (anyEventAddressesKey, refAnyEventAddresses) then
-                let eventAddressList = eventAddress.AddrList
-                let anyEventAddressList = WorldConstants.AnyEventAddress.AddrList
+                let eventAddressList = eventAddress.Names
+                let anyEventAddressList = WorldConstants.AnyEventAddress.Names
                 let anyEventAddresses =
                     [for i in 0 .. List.length eventAddressList - 1 do
                         let subNameList = List.take i eventAddressList @ anyEventAddressList
