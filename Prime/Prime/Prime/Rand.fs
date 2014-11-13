@@ -41,7 +41,7 @@ module Rand =
         let number = sampleDouble / sampleDoubleMax
         (number, rand)
 
-    let nextDouble2 max rand =
+    let nextDoubleUnder max rand =
         let (numberDouble, rand) = nextDouble rand
         (numberDouble % max, rand)
 
@@ -49,18 +49,17 @@ module Rand =
         let (numberDouble, rand) = nextDouble rand
         (single numberDouble, rand)
 
-    let nextSingle2 max rand =
+    let nextSingleUnder max rand =
         let (numberSingle, rand) = nextSingle rand
         (numberSingle % max, rand)
-
+        
+    // NOTE: System.Random.Next will never return Int32.MaxValue, but this will.
     let nextInt rand =
         let rand = advance rand
         let sampleInt = int (sample rand >>> 32)
-        // NOTE: System.Random.Next will never return Int32.MaxValue, but this will. Any idea if
-        // we're taking the wrong approach?
         let number = if sampleInt < 0 then sampleInt + Int32.MaxValue else sampleInt
         (number, rand)
 
-    let nextInt2 max rand =
+    let nextIntUnder max rand =
         let (numberInt, rand) = nextInt rand
         (numberInt % max, rand)

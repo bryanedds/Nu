@@ -24,7 +24,7 @@ module MetamapModule =
 
         static member rand rand =
             let randMax = 4
-            let (randValue, rand) = Rand.nextInt2 randMax rand
+            let (randValue, rand) = Rand.nextIntUnder randMax rand
             let cardinality = Direction.intToDirection randValue
             (cardinality, rand)
 
@@ -44,7 +44,7 @@ module MetamapModule =
         static member stumble optBias (source : Vector2I) rand =
             match optBias with
             | Some ((goal : Vector2I), bias) ->
-                let (biasing, rand) = Rand.nextInt2 bias rand
+                let (biasing, rand) = Rand.nextIntUnder bias rand
                 if biasing = 0 then
                     let goalDelta = goal - source
                     if Math.Abs goalDelta.X > Math.Abs goalDelta.Y
