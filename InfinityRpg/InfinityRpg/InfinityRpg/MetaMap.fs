@@ -22,23 +22,23 @@ module MetamapModule =
             | 3 -> West
             | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
 
-        static member rand rand =
+        static member next rand =
             let randMax = 4
             let (randValue, rand) = Rand.nextIntUnder randMax rand
-            let cardinality = Direction.intToDirection randValue
-            (cardinality, rand)
+            let direction = Direction.intToDirection randValue
+            (direction, rand)
 
-        static member walk (source : Vector2I) cardinality =
+        static member walk (source : Vector2I) direction =
             DebugWalkCounter <- DebugWalkCounter + 1
-            match cardinality with
+            match direction with
             | North -> Vector2I (source.X, source.Y + 1)
             | East -> Vector2I (source.X + 1, source.Y)
             | South -> Vector2I (source.X, source.Y - 1)
             | West -> Vector2I (source.X - 1, source.Y)
 
         static member private stumbleUnbiased source rand =
-            let (cardinality, rand) = Direction.rand rand
-            let destination = Direction.walk source cardinality
+            let (direction, rand) = Direction.next rand
+            let destination = Direction.walk source direction
             (destination, rand)
 
         static member stumble optBias (source : Vector2I) rand =
