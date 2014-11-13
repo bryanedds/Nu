@@ -83,11 +83,13 @@
     <Compile Include="Either.fs" />
     <Compile Include="MapPlus.fs" />
     <Compile Include="RduTree.fs" />
+    <Compile Include="Rand.fs" />
     <Compile Include="Implicit.fs" />
     <Compile Include="DuckTyping.fs" />
     <Compile Include="ImmutableSubclass.fs" />
     <Compile Include="AlgebraicReaderTests.fs" />
     <Compile Include="AlgebraicConverterTests.fs" />
+    <Compile Include="RandTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
