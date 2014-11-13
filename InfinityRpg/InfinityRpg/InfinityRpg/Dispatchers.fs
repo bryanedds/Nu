@@ -26,6 +26,45 @@ module FieldDispatcherModule =
           FieldTiles : Map<Vector2I, FieldTile>
           FieldTileSheet : Image }
 
+        static member PathTileSheetCoords = Vector2I (3, 0)
+        static member GrassTileSheetCoords = Vector2I (3, 3)
+        static member TreeTileSheetCoords = Vector2I (1, 1)
+
+        static member make tileSheet size pathEdges rand =
+
+            let (paths, rand) =
+                List.fold
+                    (fun (paths, rand) (source, destination) ->
+                        let (path, rand) = Direction.wanderToDestination size source destination rand
+                        (path :: paths, rand))
+                    ([], rand)
+                    pathEdges
+
+            let freeMap =
+                Map.ofList
+                    [for i in 0 .. size.X do
+                        for j in 0 .. size.Y do
+                            let tileCoords = Vector2I (i, j)
+                            let tile = { FieldTileSheetCoords = FieldMap.GrassTileSheetCoords; FieldTileType = Passable }
+                            yield (tileCoords, tile)]
+
+            let generatedMap =
+                Seq.fold
+                    (fun generatedMap path ->
+                        let tile = { FieldTileSheetCoords = FieldMap.PathTileSheetCoords; FieldTileType = Passable }
+                        let generatedMap' =
+                            Seq.fold
+                                (fun generatedMap tileCoords -> Map.add tileCoords tile generatedMap)
+                                generatedMap
+                                path
+                        generatedMap @@ generatedMap')
+                    freeMap
+                    paths
+
+            { FieldSize = size
+              FieldTiles = generatedMap
+              FieldTileSheet = tileSheet }
+
     type Entity with
     
         member entity.FieldMapNp = entity?FieldMapNp : FieldMap
@@ -35,18 +74,15 @@ module FieldDispatcherModule =
         inherit EntityDispatcher ()
 
         static let [<Literal>] FieldTileSheetRun = 4
-
-        static let DefaultTile = { FieldTileSheetCoords = Vector2I (0, 0); FieldTileType = Impassable }
-        static let DefaultTile2 = { FieldTileSheetCoords = Vector2I (3, 3); FieldTileType = Passable }
+        
+        static let DefaultSize = Vector2I (32, 32)
+        
+        static let DefaultPathEdges =
+            [(Vector2I (0, 16), Vector2I (32, 16))
+             (Vector2I (16, 0), Vector2I (16, 32))]
+        
         static let DefaultMap =
-            { FieldSize = Vector2I (2, 2)
-              FieldTiles =
-                Map.ofList
-                    [(Vector2I (0, 0), DefaultTile)
-                     (Vector2I (1, 0), DefaultTile2)
-                     (Vector2I (0, 1), DefaultTile)
-                     (Vector2I (1, 1), DefaultTile)]
-              FieldTileSheet = FieldTileSheetImage }
+            FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges <| Rand.make ()
 
         static let getOptTileInset (tileSheetSize : Vector2I) (tileSize : Vector2I) (tileSheetCoords : Vector2I) =
             let tileOffset = Vector2I.Multiply (tileSheetCoords, tileSize)
