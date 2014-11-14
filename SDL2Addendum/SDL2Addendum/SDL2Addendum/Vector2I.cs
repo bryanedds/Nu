@@ -100,15 +100,12 @@ namespace OpenTK
                 v.Y / v2.Y);
         }
 
-        public static Vector2I Zero
-        {
-            get { return new Vector2I(0); }
-        }
-
-        public static Vector2I One
-        {
-            get { return new Vector2I(1); }
-        }
+        public static Vector2I Zero { get { return new Vector2I(0); } }
+        public static Vector2I One { get { return new Vector2I(1); } }
+        public static Vector2I Up { get { return new Vector2I(0, 1); } }
+        public static Vector2I Right { get { return new Vector2I(1, 0); } }
+        public static Vector2I Down { get { return new Vector2I(0, -1); } }
+        public static Vector2I Left { get { return new Vector2I(-1, 0); } }
 
         public override string ToString()
         {

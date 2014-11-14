@@ -12,6 +12,11 @@ module MetamapModule =
     let mutable DebugTryStumbleCounter = 0
     let mutable DebugWanderCounter = 0
 
+    type Tracking =
+        | BackTracking
+        | NoBackTracking
+        | NoAdjacentTracking
+
     type Direction with
 
         static member intToDirection n =
@@ -66,7 +71,7 @@ module MetamapModule =
             Seq.tryFind predicate destinations
 
         // TODO: would be nicer to have a Vector4I than to use Vector2I * Vector2I...
-        static member wander stumbleLimit (stumbleBounds : Vector2I * Vector2I) backtracking optBias source rand =
+        static member wander stumbleLimit (stumbleBounds : Vector2I * Vector2I) tracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =
                 fun (trail : Vector2I Set) (destination : Vector2I, rand) ->
@@ -74,31 +79,41 @@ module MetamapModule =
                     destination.X <= (snd stumbleBounds).X &&
                     destination.Y >= (fst stumbleBounds).Y &&
                     destination.Y <= (snd stumbleBounds).Y &&
-                    (backtracking || not <| Set.contains destination trail) // NOTE: this line is almost certainly the bottleneck!
+                    (match tracking with
+                     | BackTracking -> true
+                     | NoBackTracking -> not <| Set.contains destination trail
+                     | NoAdjacentTracking ->
+                        let contains =
+                            [Set.contains (destination + Vector2I.Up) trail
+                             Set.contains (destination + Vector2I.Right) trail
+                             Set.contains (destination + Vector2I.Down) trail
+                             Set.contains (destination + Vector2I.Left) trail]
+                        let containCount = List.filter ((=) true) contains |> List.length
+                        containCount <= 1)
             Seq.unfold
                 (fun (source, trail, rand) ->
+                    let trail = Set.add source trail
                     match Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit optBias source rand with
                     | Some (destination, rand) ->
-                        let trail = Set.add source trail
                         let state = (destination, trail, rand)
                         Some ((source, rand), state)
                     | None -> None)
                 (source, Set.empty, rand)
 
-        static member tryWanderUntil predicate stumbleLimit stumbleBounds backtracking optBias tryLimit source rand =
+        static member tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias tryLimit source rand =
             let take = if tryLimit <= 0 then id else Seq.take tryLimit
             let paths =
                 take <|
                     Seq.unfold
                         (fun (source, rand) ->
-                            let path = Direction.wander stumbleLimit stumbleBounds backtracking optBias source rand
+                            let path = Direction.wander stumbleLimit stumbleBounds tracking optBias source rand
                             let state = (source, Rand.advance rand)
                             Some (path, state))
                         (source, rand)
             Seq.tryFind predicate paths
 
-        static member wanderUntil predicate stumbleLimit stumbleBounds backtracking optBias source rand =
-            Option.get <| Direction.tryWanderUntil predicate stumbleLimit stumbleBounds backtracking optBias 0 source rand
+        static member wanderUntil predicate stumbleLimit stumbleBounds tracking optBias source rand =
+            Option.get <| Direction.tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias 0 source rand
 
         static member concretizePath maxLength abstractPath rand =
             let path = List.ofSeq <| Seq.tryTake maxLength abstractPath
@@ -123,17 +138,17 @@ module MetamapModule =
                     let uniqueSites = Set.ofList sites
                     List.length sites = Set.count uniqueSites
                 else false
-            let path = Direction.tryWanderUntil predicate stumbleLimit stumbleBounds false None tryLimit source rand
+            let path = Direction.tryWanderUntil predicate stumbleLimit stumbleBounds BackTracking None tryLimit source rand
             Direction.concretizeOptPath maxLength path rand
 
         static member wanderToDestination (stumbleBounds : Vector2I * Vector2I) source destination rand =
-            let optBias = Some (destination, 4)
+            let optBias = Some (destination, 8)
             let maxPathLength = (snd stumbleBounds).X * (snd stumbleBounds).Y / 2
             let stumbleLimit = 16
             let predicate = fun path ->
                 let path = Seq.tryTake maxPathLength path
                 Seq.exists (fun point -> fst point = destination) path
-            let path = Direction.wanderUntil predicate stumbleLimit stumbleBounds true optBias source rand
+            let path = Direction.wanderUntil predicate stumbleLimit stumbleBounds NoAdjacentTracking optBias source rand
             let pathDesiredEnd = Seq.findIndex (fun (point, _) -> point = destination) path + 1
             let pathTrimmed = Seq.take pathDesiredEnd path
             Direction.concretizePath maxPathLength pathTrimmed rand
