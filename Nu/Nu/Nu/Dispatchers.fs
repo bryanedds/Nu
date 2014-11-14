@@ -209,8 +209,8 @@ module EntityDispatcherModule =
             let positionScreen = Camera.mouseToScreen position world.Camera
             let getView =
                 match entity.ViewType with
-                | Relative -> Camera.getViewRelative
-                | Absolute -> Camera.getViewAbsolute
+                | Relative -> Camera.getViewRelativeF
+                | Absolute -> Camera.getViewAbsoluteF
             let view = getView world.Camera
             let positionEntity = positionScreen * view
             positionEntity
