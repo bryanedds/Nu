@@ -349,7 +349,7 @@ module Program =
         (Cascade, world)
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
-        match form.treeView.Nodes.Find (acstring event.PublisherAddress, true) with
+        match form.treeView.Nodes.Find (event.PublisherAddress.ToString (), true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with
