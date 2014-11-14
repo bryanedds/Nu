@@ -78,6 +78,14 @@ module Reflection =
             then baseType :: getBaseTypesExceptObject baseType
             else []
 
+    /// Queries that the target type offers dispatcher behavior congruent to the given dispatcher.
+    let dispatchesAs (dispatcherTargetType : Type) dispatcher =
+        let dispatcherType = dispatcher.GetType ()
+        let result =
+            dispatcherTargetType = dispatcherType ||
+            dispatcherType.IsSubclassOf dispatcherTargetType
+        result
+
     /// Attach fields from the given definitions to a target.
     let attachFieldsViaDefinitions fieldDefinitions target =
         let targetType = target.GetType ()
@@ -144,15 +152,15 @@ module Reflection =
 
     /// Get the field definitions of a target type.
     let getFieldDefinitions (targetType : Type) =
-        let baseTypes = targetType :: getBaseTypesExceptObject targetType
-        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInherit aType) baseTypes
+        let targetTypes = targetType :: getBaseTypesExceptObject targetType
+        let fieldDefinitionLists = List.map (fun aType -> getFieldDefinitionsNoInherit aType) targetTypes
         let fieldDefinitionLists = List.rev fieldDefinitionLists
         List.concat fieldDefinitionLists
 
     /// Get the intrinsic facet names of a target type.
     let getIntrinsicFacetNames (targetType : Type) =
-        let baseTypes = targetType :: getBaseTypesExceptObject targetType
-        let intrinsicFacetNamesLists = List.map (fun aType -> getIntrinsicFacetNamesNoInherit aType) baseTypes
+        let targetTypes = targetType :: getBaseTypesExceptObject targetType
+        let intrinsicFacetNamesLists = List.map (fun aType -> getIntrinsicFacetNamesNoInherit aType) targetTypes
         let intrinsicFacetNamesLists = List.rev intrinsicFacetNamesLists
         List.concat intrinsicFacetNamesLists
 
@@ -188,8 +196,35 @@ module Reflection =
         let fieldNames = getFieldDefinitionNames sourceType
         detachFieldsViaNames fieldNames target
 
+    /// Check for facet compatibility with the target's dispatcher.
+    let isFacetTypeCompatibleWithDispatcher dispatcherMap (facetType : Type) (target : obj) =
+        let targetType = target.GetType ()
+        match facetType.GetProperty ("RequiredDispatcherName", BindingFlags.Static ||| BindingFlags.Public) with
+        | null -> true
+        | reqdDispatcherNameProperty ->
+            match reqdDispatcherNameProperty.GetValue null with
+            | :? string as reqdDispatcherName ->
+                match Map.tryFind reqdDispatcherName dispatcherMap with
+                | Some reqdDispatcher ->
+                    let reqdDispatcherType = reqdDispatcher.GetType ()
+                    match targetType.GetProperty "DispatcherNp" with
+                    | null -> false
+                    | dispatcherNpProperty ->
+                        let dispatcher = dispatcherNpProperty.GetValue target
+                        dispatchesAs reqdDispatcherType dispatcher
+                | None -> false
+            | _ -> false
+
+    /// Check for facet compatibility with the target's dispatcher.
+    let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
+        let facetType = facet.GetType ()
+        let facetTypes = facetType :: getBaseTypesExceptObject facetType
+        List.forall
+            (fun facetType -> isFacetTypeCompatibleWithDispatcher dispatcherMap facetType target)
+            facetTypes
+
     /// Attach intrinsic facets to a target by their names.
-    let attachIntrinsicFacetsViaNames facetNames target facetMap =
+    let attachIntrinsicFacetsViaNames dispatcherMap facetMap facetNames (target : obj) =
         let facets =
             List.map
                 (fun facetName ->
@@ -200,15 +235,20 @@ module Reflection =
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "FacetsNp" with
         | null -> failwith <| "Could not attach facet to type '" + targetType.Name + "'."
-        | property ->
-            property.SetValue (target, facets)
+        | facetsNpProperty ->
+            List.iter
+                (fun facet ->
+                    if not <| isFacetCompatibleWithDispatcher dispatcherMap facet target then
+                        failwith <| "Facet of type '" + getTypeName facet + "' is not compatible with target '" + acstring target + "'.")
+                facets
+            facetsNpProperty.SetValue (target, facets)
             List.iter (fun facet -> attachFields facet target) facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets source target facets =
+    let attachIntrinsicFacets dispatcherMap facetMap source target =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
-        attachIntrinsicFacetsViaNames instrinsicFacetNames target facets
+        attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
 
     /// Create intrinsic overlays.
     let createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes =
@@ -282,11 +322,3 @@ module Reflection =
         // append the root node
         ignore <| document.AppendChild root
         document
-
-    /// Queries that the target type offers dispatcher behavior congruent to the given dispatcher.
-    let dispatchesAs (dispatcherTargetType : Type) dispatcher =
-        let dispatcherType = dispatcher.GetType ()
-        let result =
-            dispatcherTargetType = dispatcherType ||
-            dispatcherType.IsSubclassOf dispatcherTargetType
-        result

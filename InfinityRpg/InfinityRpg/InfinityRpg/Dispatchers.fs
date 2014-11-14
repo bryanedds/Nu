@@ -389,12 +389,12 @@ module CharacterControlFacetModule =
                 (Cascade, world)
             else (Cascade, world)
 
+        static member RequiredDispatcherName =
+            typeof<PlayerCharacterDispatcher>.Name
+
         override facet.Register (address, entity, world) =
-            // TODO: make this a specifiable check in-engine.
-            if Reflection.dispatchesAs typeof<PlayerCharacterDispatcher> entity.DispatcherNp then
-                let world = React.from ChangeKeyboardKeyEventAddress address |> React.monitor handleKeyboardKeyChange world |> snd
-                (entity, world)
-            else failwith "PlayerCharacterDispatcher required."
+            let world = React.from ChangeKeyboardKeyEventAddress address |> React.monitor handleKeyboardKeyChange world |> snd
+            (entity, world)
 
 [<AutoOpen>]
 module CharacterCameraFacetModule =
