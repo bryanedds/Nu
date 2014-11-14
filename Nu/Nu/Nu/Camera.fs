@@ -19,14 +19,27 @@ module CameraModule =
 [<RequireQualifiedAccess>]
 module Camera =
 
-    /// Get the view of the camera in absolute terms (world space).
-    let getViewAbsolute (_ : Camera) =
+    /// Get the view of the camera in absolute terms (world space) with the original single values.
+    let getViewAbsoluteF (_ : Camera) =
         Matrix3.Identity
         
+    /// Get the view of the camera in absolute terms (world space) with translation sliced on
+    /// integers.
+    let getViewAbsoluteI (_ : Camera) =
+        Matrix3.Identity
+
     /// The relative view of the camera with original single values. Due to the problems with
-    let getViewRelative camera =
+    /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
+    /// coordinates is very, very bad for rendering.
+    let getViewRelativeF camera =
         let translation = camera.EyeCenter
         Matrix3.CreateFromTranslation translation
+
+    /// The relative view of the camera with translation sliced on integers. Good for rendering.
+    let getViewRelativeI camera =
+        let translation = camera.EyeCenter
+        let translationI = Vector2 (single <| int translation.X, single <| int translation.Y)
+        Matrix3.CreateFromTranslation translationI
 
     /// Get the bounds of the camera's sight relative to its position.
     let getViewBoundsRelative camera =
