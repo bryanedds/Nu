@@ -68,15 +68,17 @@ module EntityModule =
         static member getPickingPriority (entity : Entity) world =
             entity.DispatcherNp.GetPickingPriority (entity, world)
 
-        static member isFacetCompatible facet (entity : Entity) =
+        static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
             let facetType = facet.GetType ()
             let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
-            List.notExists
-                (fun definition ->
-                    match Map.tryFind definition.FieldName entity.Xtension.XFields with
-                    | Some field -> field.GetType () <> definition.FieldType
-                    | None -> false)
-                facetFieldDefinitions
+            if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entity then
+                List.notExists
+                    (fun definition ->
+                        match Map.tryFind definition.FieldName entity.Xtension.XFields with
+                        | Some field -> field.GetType () <> definition.FieldType
+                        | None -> false)
+                    facetFieldDefinitions
+            else false
 
         static member make dispatcherName dispatcher optName =
             let id = Core.makeId ()
@@ -327,7 +329,7 @@ module WorldEntityModule =
         static member tryAddFacet syncing facetName optAddress (entity : Entity) world =
             match World.tryGetFacet facetName world with
             | Right facet ->
-                if Entity.isFacetCompatible facet entity then
+                if Entity.isFacetCompatible world.Components.EntityDispatchers facet entity then
                     let entity = { entity with FacetsNp = facet :: entity.FacetsNp }
                     Reflection.attachFields facet entity
                     let entity =
@@ -339,7 +341,7 @@ module WorldEntityModule =
                         let world = World.setEntity address entity world
                         Right (entity, world)
                     | None -> Right (entity, world)
-                else Left <| "Cannot add incompatible facet '" + Reflection.getTypeName facet + "'."
+                else Left <| "Facet '" + Reflection.getTypeName facet + "' is incompatible with entity '" + entity.Name + "'."
             | Left error -> Left error
 
         static member tryRemoveFacets syncing facetNamesToRemove optAddress entity world =
@@ -375,8 +377,9 @@ module WorldEntityModule =
             | Left _ as left -> left
 
         static member private attachIntrinsicFacetsViaNames (entity : Entity) world =
+            let components = world.Components
             let entity = { entity with Id = entity.Id } // hacky copy
-            Reflection.attachIntrinsicFacets entity.DispatcherNp entity world.Components.Facets
+            Reflection.attachIntrinsicFacets components.EntityDispatchers components.Facets entity.DispatcherNp entity
             entity
         
         static member internal handleBodyTransformMessage (message : BodyTransformMessage) address (entity : Entity) world =
