@@ -14,7 +14,8 @@ module ComponentFactoryModule =
         override this.MakeFacets () =
             Map.ofList
                 [(typeof<CharacterAnimationFacet>.Name, CharacterAnimationFacet () :> Facet)
-                 (typeof<CharacterControlFacet>.Name, CharacterControlFacet () :> Facet)]
+                 (typeof<CharacterControlFacet>.Name, CharacterControlFacet () :> Facet)
+                 (typeof<CharacterCameraFacet>.Name, CharacterCameraFacet () :> Facet)]
 
         override this.MakeEntityDispatchers () =
             Map.ofList

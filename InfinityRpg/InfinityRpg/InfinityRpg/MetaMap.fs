@@ -41,9 +41,9 @@ module MetamapModule =
             let destination = Direction.walk source direction
             (destination, rand)
 
-        static member stumble optBias (source : Vector2I) rand =
+        static member stumble optBias source rand =
             match optBias with
-            | Some ((goal : Vector2I), bias) ->
+            | Some (goal : Vector2I, bias) ->
                 let (biasing, rand) = Rand.nextIntUnder bias rand
                 if biasing = 0 then
                     let goalDelta = goal - source
@@ -65,6 +65,7 @@ module MetamapModule =
                         rand
             Seq.tryFind predicate destinations
 
+        // TODO: would be nicer to have a Vector4I than to use Vector2I * Vector2I...
         static member wander stumbleLimit (stumbleBounds : Vector2I * Vector2I) backtracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =
@@ -129,7 +130,7 @@ module MetamapModule =
             let optBias = Some (destination, 4)
             let maxPathLength = (snd stumbleBounds).X * (snd stumbleBounds).Y / 2
             let stumbleLimit = 16
-            let predicate = fun (path : (Vector2I * Rand) seq) ->
+            let predicate = fun path ->
                 let path = Seq.tryTake maxPathLength path
                 Seq.exists (fun point -> fst point = destination) path
             let path = Direction.wanderUntil predicate stumbleLimit stumbleBounds true optBias source rand

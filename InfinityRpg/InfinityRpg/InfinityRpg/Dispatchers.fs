@@ -26,9 +26,9 @@ module FieldDispatcherModule =
           FieldTiles : Map<Vector2I, FieldTile>
           FieldTileSheet : Image }
 
-        static member PathTileSheetCoords = Vector2I (3, 0)
-        static member GrassTileSheetCoords = Vector2I (3, 3)
-        static member TreeTileSheetCoords = Vector2I (1, 1)
+        static member PathTile = { FieldTileSheetCoords = Vector2I (3, 0); FieldTileType = Passable }
+        static member GrassTile = { FieldTileSheetCoords = Vector2I (3, 3); FieldTileType = Passable }
+        static member TreeTile = { FieldTileSheetCoords = Vector2I (1, 1); FieldTileType = Impassable }
 
         static member make tileSheet size pathEdges rand =
 
@@ -47,21 +47,34 @@ module FieldDispatcherModule =
                     [for i in 0 .. size.X do
                         for j in 0 .. size.Y do
                             let tileCoords = Vector2I (i, j)
-                            let tile = { FieldTileSheetCoords = FieldMap.GrassTileSheetCoords; FieldTileType = Passable }
-                            yield (tileCoords, tile)]
+                            yield (tileCoords, FieldMap.GrassTile)]
 
-            let generatedMap =
+            let pathedMap =
                 Seq.fold
-                    (fun generatedMap path ->
-                        let tile = { FieldTileSheetCoords = FieldMap.PathTileSheetCoords; FieldTileType = Passable }
-                        let generatedMap' =
+                    (fun pathedMap path ->
+                        let pathedMap' =
                             Seq.fold
-                                (fun generatedMap tileCoords -> Map.add tileCoords tile generatedMap)
-                                generatedMap
+                                (fun pathedMap tileCoords -> Map.add tileCoords FieldMap.PathTile pathedMap)
+                                pathedMap
                                 path
-                        generatedMap @@ generatedMap')
+                        pathedMap @@ pathedMap')
                     freeMap
                     paths
+
+            let spaces =
+                seq {
+                    for i in (fst buildBounds).X .. (snd buildBounds).X do
+                        for j in (fst buildBounds).Y .. (snd buildBounds).Y do
+                            yield Vector2I (i, j) }
+
+            let (generatedMap, rand) =
+                Seq.fold
+                    (fun (generatedMap, rand) space ->
+                        let (n, rand) = Rand.nextIntUnder 4 rand
+                        if n = 0 && Map.find space generatedMap <> FieldMap.PathTile then (Map.add space FieldMap.TreeTile generatedMap, rand)
+                        else (generatedMap, Rand.advance rand))
+                    (pathedMap, rand)
+                    spaces
 
             { FieldSize = size
               FieldTiles = generatedMap
@@ -220,12 +233,14 @@ module PlayerCharacterDispatcherModule =
         static member FieldDefinitions =
             [define? GravityScale 0.0f
              define? LinearDamping 0.0f
-             define? FixedRotation true]
+             define? FixedRotation true
+             define? CollisionExpression "Circle"]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
              "CharacterAnimationFacet"
-             "CharacterControlFacet"]
+             "CharacterControlFacet"
+             "CharacterCameraFacet"]
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =
@@ -345,9 +360,24 @@ module CharacterControlFacetModule =
         override facet.Register (address, entity, world) =
             // TODO: make this a specifiable check in-engine.
             if Reflection.dispatchesAs typeof<PlayerCharacterDispatcher> entity.DispatcherNp then
-                let world = React.from ChangeKeyboardKeyEventAddress address |> React.subscribe handleKeyboardKeyChange world |> snd
+                let world = React.from ChangeKeyboardKeyEventAddress address |> React.monitor handleKeyboardKeyChange world |> snd
                 (entity, world)
-            else failwith "PlayerCharacterDispatcher required"
+            else failwith "PlayerCharacterDispatcher required."
+
+[<AutoOpen>]
+module CharacterCameraFacetModule =
+
+    type CharacterCameraFacet () =
+        inherit Facet ()
+
+        static let handleTick event world =
+            let character = World.getEntity event.SubscriberAddress world
+            let camera = { world.Camera with EyeCenter = character.Position + character.Size * 0.5f }
+            (Cascade, World.setCamera camera world)
+
+        override facet.Register (address, entity, world) =
+            let world = React.from TickEventAddress address |> React.monitor handleTick world |> snd
+            (entity, world)
 
 [<AutoOpen>]
 module InfinityRpgModule =
