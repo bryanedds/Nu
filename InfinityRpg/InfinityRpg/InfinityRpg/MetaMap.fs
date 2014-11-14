@@ -12,6 +12,17 @@ module MetamapModule =
     let mutable DebugTryStumbleCounter = 0
     let mutable DebugWanderCounter = 0
 
+    type Bounds =
+        { BottomLeft : Vector2i
+          TopRight : Vector2i }
+
+        static member isPointInBounds (point : Vector2i) bounds =
+            not
+                (point.X < bounds.BottomLeft.X ||
+                 point.X > bounds.TopRight.X ||
+                 point.Y < bounds.BottomLeft.Y ||
+                 point.Y > bounds.TopRight.Y)
+
     type Tracking =
         | BackTracking
         | NoBackTracking
@@ -33,13 +44,13 @@ module MetamapModule =
             let direction = Direction.intToDirection randValue
             (direction, rand)
 
-        static member walk (source : Vector2I) direction =
+        static member walk (source : Vector2i) direction =
             DebugWalkCounter <- DebugWalkCounter + 1
             match direction with
-            | North -> Vector2I (source.X, source.Y + 1)
-            | East -> Vector2I (source.X + 1, source.Y)
-            | South -> Vector2I (source.X, source.Y - 1)
-            | West -> Vector2I (source.X - 1, source.Y)
+            | North -> Vector2i (source.X, source.Y + 1)
+            | East -> Vector2i (source.X + 1, source.Y)
+            | South -> Vector2i (source.X, source.Y - 1)
+            | West -> Vector2i (source.X - 1, source.Y)
 
         static member private stumbleUnbiased source rand =
             let (direction, rand) = Direction.next rand
@@ -48,13 +59,13 @@ module MetamapModule =
 
         static member stumble optBias source rand =
             match optBias with
-            | Some (goal : Vector2I, bias) ->
+            | Some (goal : Vector2i, bias) ->
                 let (biasing, rand) = Rand.nextIntUnder bias rand
                 if biasing = 0 then
                     let goalDelta = goal - source
                     if Math.Abs goalDelta.X > Math.Abs goalDelta.Y
-                    then (Vector2I (source.X + (if goalDelta.X > 0 then 1 else -1), source.Y), rand)
-                    else (Vector2I (source.X, source.Y + (if goalDelta.Y > 0 then 1 else -1)), rand)
+                    then (Vector2i (source.X + (if goalDelta.X > 0 then 1 else -1), source.Y), rand)
+                    else (Vector2i (source.X, source.Y + (if goalDelta.Y > 0 then 1 else -1)), rand)
                 else Direction.stumbleUnbiased source rand
             | None -> Direction.stumbleUnbiased source rand
 
@@ -70,24 +81,21 @@ module MetamapModule =
                         rand
             Seq.tryFind predicate destinations
 
-        // TODO: would be nicer to have a Vector4I than to use Vector2I * Vector2I...
-        static member wander stumbleLimit (stumbleBounds : Vector2I * Vector2I) tracking optBias source rand =
+        // TODO: would be nicer to have a Vector4I than to use Vector2i * Vector2i...
+        static member wander stumbleLimit stumbleBounds tracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =
-                fun (trail : Vector2I Set) (destination : Vector2I, rand) ->
-                    destination.X >= (fst stumbleBounds).X &&
-                    destination.X <= (snd stumbleBounds).X &&
-                    destination.Y >= (fst stumbleBounds).Y &&
-                    destination.Y <= (snd stumbleBounds).Y &&
+                fun (trail : Vector2i Set) (destination : Vector2i, rand) ->
+                    Bounds.isPointInBounds destination stumbleBounds &&
                     (match tracking with
                      | BackTracking -> true
                      | NoBackTracking -> not <| Set.contains destination trail
                      | NoAdjacentTracking ->
                         let contains =
-                            [Set.contains (destination + Vector2I.Up) trail
-                             Set.contains (destination + Vector2I.Right) trail
-                             Set.contains (destination + Vector2I.Down) trail
-                             Set.contains (destination + Vector2I.Left) trail]
+                            [Set.contains (destination + Vector2i.Up) trail
+                             Set.contains (destination + Vector2i.Right) trail
+                             Set.contains (destination + Vector2i.Down) trail
+                             Set.contains (destination + Vector2i.Left) trail]
                         let containCount = List.filter ((=) true) contains |> List.length
                         containCount <= 1)
             Seq.unfold
@@ -126,12 +134,12 @@ module MetamapModule =
                 (Some path, rand)
             | None -> (None, rand)
 
-        static member wanderTenToFifteenUnits stumbleBounds source rand =
+        static member wanderAimlessly stumbleBounds source rand =
             let minLength = 10
             let maxLength = 15
             let tryLimit = 100
             let stumbleLimit = 16
-            let predicate = fun (path : (Vector2I * Rand) seq) ->
+            let predicate = fun (path : (Vector2i * Rand) seq) ->
                 let path = List.ofSeq <| Seq.tryTake maxLength path
                 if List.length path >= minLength then
                     let sites = List.map fst path
@@ -141,9 +149,9 @@ module MetamapModule =
             let path = Direction.tryWanderUntil predicate stumbleLimit stumbleBounds BackTracking None tryLimit source rand
             Direction.concretizeOptPath maxLength path rand
 
-        static member wanderToDestination (stumbleBounds : Vector2I * Vector2I) source destination rand =
-            let optBias = Some (destination, 8)
-            let maxPathLength = (snd stumbleBounds).X * (snd stumbleBounds).Y / 2
+        static member wanderToDestination stumbleBounds source destination rand =
+            let optBias = Some (destination, 6)
+            let maxPathLength = stumbleBounds.TopRight.X * stumbleBounds.TopRight.Y / 2
             let stumbleLimit = 16
             let predicate = fun path ->
                 let path = Seq.tryTake maxPathLength path
@@ -159,5 +167,5 @@ module MetamapModule =
           Keys : 'k Set }
 
     type MetaMap<'k when 'k : comparison>  =
-        { NavigableSize : Vector2I
-          PotentiallyNavigableTiles : Map<Vector2I, 'k MetaTile> }
+        { NavigableSize : Vector2i
+          PotentiallyNavigableTiles : Map<Vector2i, 'k MetaTile> }

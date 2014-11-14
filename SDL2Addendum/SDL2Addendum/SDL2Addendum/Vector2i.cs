@@ -6,26 +6,26 @@ namespace OpenTK
     /// A 2d int vector.
     /// NOTE: implements a very arbitrary comparison method.
     /// </summary>
-    public struct Vector2I : IComparable<Vector2I>, IComparable
+    public struct Vector2i : IComparable<Vector2i>, IComparable
     {
-        public Vector2I(int x, int y)
+        public Vector2i(int x, int y)
         {
             X = x;
             Y = y;
         }
-        public Vector2I(int n)
+        public Vector2i(int n)
         {
             X = n;
             Y = n;
         }
 
-        public Vector2I(Vector2 v)
+        public Vector2i(Vector2 v)
         {
             X = (int) v.X;
             Y = (int) v.Y;
         }
 
-        public int CompareTo(Vector2I that)
+        public int CompareTo(Vector2i that)
         {
             if (X < that.X) return -1;
             if (X > that.X) return 1;
@@ -36,7 +36,7 @@ namespace OpenTK
 
         public int CompareTo(object that)
         {
-            return CompareTo((Vector2I)that);
+            return CompareTo((Vector2i)that);
         }
 
         public Vector2 Vector2
@@ -44,68 +44,68 @@ namespace OpenTK
             get { return new Vector2(this.X, this.Y); }
         }
 
-        public static Vector2I operator +(Vector2I v, Vector2I v2)
+        public static Vector2i operator +(Vector2i v, Vector2i v2)
         {
-            return new Vector2I(
+            return new Vector2i(
                 v.X + v2.X,
                 v.Y + v2.Y);
         }
 
-        public static Vector2I operator -(Vector2I v, Vector2I v2)
+        public static Vector2i operator -(Vector2i v, Vector2i v2)
         {
-            return new Vector2I(
+            return new Vector2i(
                 v.X - v2.X,
                 v.Y - v2.Y);
         }
 
-        public static Vector2I operator *(Vector2I v, int n)
+        public static Vector2i operator *(Vector2i v, int n)
         {
-            return new Vector2I(
+            return new Vector2i(
                 v.X * n,
                 v.Y * n);
         }
 
-        public static Vector2I operator *(int n, Vector2I v)
+        public static Vector2i operator *(int n, Vector2i v)
         {
-            return new Vector2I(
+            return new Vector2i(
                 n * v.X,
                 n * v.Y);
         }
 
-        public static Vector2I operator /(Vector2I v, int n)
+        public static Vector2i operator /(Vector2i v, int n)
         {
-            return new Vector2I(
+            return new Vector2i(
                 v.X / n,
                 v.Y / n);
         }
 
-        public static Vector2I operator /(int n, Vector2I v)
+        public static Vector2i operator /(int n, Vector2i v)
         {
-            return new Vector2I(
+            return new Vector2i(
                 n / v.X,
                 n / v.Y);
         }
 
-        public static Vector2I Multiply(Vector2I v, Vector2I v2)
+        public static Vector2i Multiply(Vector2i v, Vector2i v2)
         {
-            return new Vector2I(
+            return new Vector2i(
                 v.X * v2.X,
                 v.Y * v2.Y);
         }
 
-        public static Vector2I Divide(Vector2I v, Vector2I v2)
+        public static Vector2i Divide(Vector2i v, Vector2i v2)
         {
-            return new Vector2I(
+            return new Vector2i(
                 v.X / v2.X,
                 v.Y / v2.Y);
         }
 
-        public static Vector2I Zero { get { return new Vector2I(0); } }
-        public static Vector2I One { get { return new Vector2I(1); } }
-        public static Vector2I Up { get { return new Vector2I(0, 1); } }
-        public static Vector2I Right { get { return new Vector2I(1, 0); } }
-        public static Vector2I Down { get { return new Vector2I(0, -1); } }
-        public static Vector2I Left { get { return new Vector2I(-1, 0); } }
+        public static Vector2i Zero { get { return new Vector2i(0); } }
+        public static Vector2i One { get { return new Vector2i(1); } }
+        public static Vector2i Up { get { return new Vector2i(0, 1); } }
+        public static Vector2i Right { get { return new Vector2i(1, 0); } }
+        public static Vector2i Down { get { return new Vector2i(0, -1); } }
+        public static Vector2i Left { get { return new Vector2i(-1, 0); } }
 
         public override string ToString()
         {

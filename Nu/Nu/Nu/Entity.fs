@@ -97,13 +97,13 @@ module EntityModule =
 
     type [<StructuralEquality; NoComparison>] TileMapData =
         { Map : TmxMap
-          MapSize : Vector2I
-          TileSize : Vector2I
+          MapSize : Vector2i
+          TileSize : Vector2i
           TileSizeF : Vector2
-          TileMapSize : Vector2I
+          TileMapSize : Vector2i
           TileMapSizeF : Vector2
           TileSet : TmxTileset
-          TileSetSize : Vector2I }
+          TileSetSize : Vector2i }
 
     type [<StructuralEquality; NoComparison>] TileData =
         { Tile : TmxLayerTile
@@ -111,9 +111,9 @@ module EntityModule =
           J : int
           Gid : int
           GidPosition : int
-          Gid2 : Vector2I
+          Gid2 : Vector2i
           OptTileSetTile : TmxTilesetTile option
-          TilePosition : Vector2I }
+          TilePosition : Vector2i }
 
 [<AutoOpen>]
 module WorldEntityModule =

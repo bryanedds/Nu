@@ -18,22 +18,33 @@ module FieldDispatcherModule =
         | Passable
 
     type FieldTile =
-        { FieldTileSheetCoords : Vector2I
+        { FieldTileSheetCoords : Vector2i
           FieldTileType : FieldTileType }
 
     type [<NoEquality; NoComparison>] FieldMap =
-        { FieldSize : Vector2I
-          FieldTiles : Map<Vector2I, FieldTile>
+        { FieldSize : Vector2i
+          FieldTiles : Map<Vector2i, FieldTile>
           FieldTileSheet : Image }
 
-        static member PathTile = { FieldTileSheetCoords = Vector2I (3, 0); FieldTileType = Passable }
-        static member GrassTile = { FieldTileSheetCoords = Vector2I (3, 3); FieldTileType = Passable }
-        static member TreeTile = { FieldTileSheetCoords = Vector2I (1, 1); FieldTileType = Impassable }
+        static member PathTile = { FieldTileSheetCoords = Vector2i (3, 0); FieldTileType = Passable }
+        static member GrassTile = { FieldTileSheetCoords = Vector2i (3, 3); FieldTileType = Passable }
+        static member TreeTile = { FieldTileSheetCoords = Vector2i (1, 1); FieldTileType = Impassable }
 
-        static member make tileSheet size pathEdges rand =
+        static member makeGrid bounds =
+            seq {
+                for i in bounds.BottomLeft.X .. bounds.TopRight.X do
+                    for j in bounds.BottomLeft.Y .. bounds.TopRight.Y do
+                        yield Vector2i (i, j) }
 
-            let buildBounds = (Vector2I.One, size - Vector2I.One)
+        static member generateEmptyMap (size : Vector2i) =
+            Map.ofList
+                [for i in 0 .. size.X do
+                    for j in 0 .. size.Y do
+                        let tileCoords = Vector2i (i, j)
+                        yield (tileCoords, FieldMap.GrassTile)]
 
+        static member addPaths buildBounds pathEdges generatedMap rand =
+            
             let (paths, rand) =
                 List.fold
                     (fun (paths, rand) (source, destination) ->
@@ -42,40 +53,61 @@ module FieldDispatcherModule =
                     ([], rand)
                     pathEdges
 
-            let freeMap =
-                Map.ofList
-                    [for i in 0 .. size.X do
-                        for j in 0 .. size.Y do
-                            let tileCoords = Vector2I (i, j)
-                            yield (tileCoords, FieldMap.GrassTile)]
-
-            let pathedMap =
+            let generatedMap =
                 Seq.fold
-                    (fun pathedMap path ->
-                        let pathedMap' =
+                    (fun generatedMap path ->
+                        let generatedMap' =
                             Seq.fold
-                                (fun pathedMap tileCoords -> Map.add tileCoords FieldMap.PathTile pathedMap)
-                                pathedMap
+                                (fun generatedMap tileCoords -> Map.add tileCoords FieldMap.PathTile generatedMap)
+                                generatedMap
                                 path
-                        pathedMap @@ pathedMap')
-                    freeMap
+                        generatedMap @@ generatedMap')
+                    generatedMap
                     paths
 
-            let spaces =
-                seq {
-                    for i in (fst buildBounds).X .. (snd buildBounds).X do
-                        for j in (fst buildBounds).Y .. (snd buildBounds).Y do
-                            yield Vector2I (i, j) }
+            (generatedMap, rand)
 
-            let (generatedMap, rand) =
-                Seq.fold
-                    (fun (generatedMap, rand) space ->
-                        let (n, rand) = Rand.nextIntUnder 4 rand
-                        if n = 0 && Map.find space generatedMap <> FieldMap.PathTile then (Map.add space FieldMap.TreeTile generatedMap, rand)
-                        else (generatedMap, Rand.advance rand))
-                    (pathedMap, rand)
-                    spaces
+        static member addTrees buildBounds generatedMap rand =
+            let grid = FieldMap.makeGrid buildBounds
+            Seq.fold
+                (fun (generatedMap, rand) point ->
+                    let (n, rand) = Rand.nextIntUnder 16 rand
+                    if n = 0 && Map.find point generatedMap <> FieldMap.PathTile then (Map.add point FieldMap.TreeTile generatedMap, rand)
+                    else (generatedMap, Rand.advance rand))
+                (generatedMap, rand)
+                grid
 
+        static member spreadTrees buildBounds generatedMap rand =
+            let originalMap = generatedMap
+            let grid = FieldMap.makeGrid buildBounds
+            Seq.fold
+                (fun (generatedMap, rand) point ->
+                    let tile = Map.find point originalMap
+                    if  tile <> FieldMap.PathTile &&
+                        Bounds.isPointInBounds point buildBounds then
+                        let upPoint = point + Vector2i.Up
+                        let rightPoint = point + Vector2i.Right
+                        let downPoint = point + Vector2i.Down
+                        let leftPoint = point + Vector2i.Left
+                        if  Bounds.isPointInBounds upPoint buildBounds && Map.find upPoint originalMap = FieldMap.TreeTile ||
+                            Bounds.isPointInBounds rightPoint buildBounds && Map.find rightPoint originalMap = FieldMap.TreeTile ||
+                            Bounds.isPointInBounds downPoint buildBounds && Map.find downPoint originalMap = FieldMap.TreeTile ||
+                            Bounds.isPointInBounds leftPoint buildBounds && Map.find leftPoint originalMap = FieldMap.TreeTile then
+                            let (n, rand) = Rand.nextIntUnder 3 rand
+                            if n = 0 then (Map.add point FieldMap.TreeTile generatedMap, rand)
+                            else (generatedMap, Rand.advance rand)
+                        else (generatedMap, Rand.advance rand)
+                    else (generatedMap, Rand.advance rand))
+                (generatedMap, rand)
+                grid
+
+        static member make tileSheet size pathEdges rand =
+            let buildBounds = { BottomLeft = Vector2i.One; TopRight = size - Vector2i.One }
+            let generatedMap = FieldMap.generateEmptyMap size
+            let (generatedMap, rand) = FieldMap.addPaths buildBounds pathEdges generatedMap rand
+            let (generatedMap, rand) = FieldMap.addTrees buildBounds generatedMap rand
+            let (generatedMap, rand) = FieldMap.spreadTrees buildBounds generatedMap rand
+            let (generatedMap, rand) = FieldMap.spreadTrees buildBounds generatedMap rand
             { FieldSize = size
               FieldTiles = generatedMap
               FieldTileSheet = tileSheet }
@@ -90,17 +122,17 @@ module FieldDispatcherModule =
 
         static let [<Literal>] FieldTileSheetRun = 4
         static let DefaultRand = Rand.makeDefault ()
-        static let DefaultSize = Vector2I (32, 32)
+        static let DefaultSize = Vector2i (20, 20)
         
         static let DefaultPathEdges =
-            [(Vector2I (1, 16), Vector2I (31, 16))
-             (Vector2I (16, 1), Vector2I (16, 31))]
+            [(Vector2i (1, 16), Vector2i (19, 16))
+             (Vector2i (16, 1), Vector2i (16, 19))]
         
         static let DefaultMap =
             FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
 
-        static let getOptTileInset (tileSheetSize : Vector2I) (tileSize : Vector2I) (tileSheetCoords : Vector2I) =
-            let tileOffset = Vector2I.Multiply (tileSheetCoords, tileSize)
+        static let getOptTileInset (tileSheetSize : Vector2i) (tileSize : Vector2i) (tileSheetCoords : Vector2i) =
+            let tileOffset = Vector2i.Multiply (tileSheetCoords, tileSize)
             let tileInset =
                 Vector4 (
                     single tileOffset.X,
@@ -109,7 +141,7 @@ module FieldDispatcherModule =
                     single <| tileOffset.Y + tileSize.Y)
             Some tileInset
 
-        static let getOptTileBodyProperties (field : Entity) (tileCoords : Vector2I) tile world =
+        static let getOptTileBodyProperties (field : Entity) (tileCoords : Vector2i) tile world =
             match tile.FieldTileType with
             | Impassable ->
                 let fieldMap = field.FieldMapNp
@@ -117,8 +149,8 @@ module FieldDispatcherModule =
                 match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
                 | Some tileSheetSize ->
                     let tileSize = tileSheetSize / FieldTileSheetRun
-                    let tileOffset = Vector2I.Multiply (tileSize, tileCoords)
-                    let tilePosition = Vector2I field.Position + tileOffset + tileSize / 2
+                    let tileOffset = Vector2i.Multiply (tileSize, tileCoords)
+                    let tilePosition = Vector2i field.Position + tileOffset + tileSize / 2
                     let bodyProperties =
                         { BodyId = intsToGuid tileCoords.X tileCoords.Y
                           Position = tilePosition.Vector2
@@ -154,7 +186,7 @@ module FieldDispatcherModule =
         static let unregisterTilePhysics (field : Entity) world =
             let physicsIds =
                 Map.fold
-                    (fun physicsIds (tileCoords : Vector2I) tile ->
+                    (fun physicsIds (tileCoords : Vector2i) tile ->
                         match tile.FieldTileType with
                         | Impassable ->
                             let physicsId = { EntityId = field.Id; BodyId = intsToGuid tileCoords.X tileCoords.Y }
@@ -191,13 +223,13 @@ module FieldDispatcherModule =
                 match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
                 | Some tileSheetSize ->
                     let tileSize = tileSheetSize / FieldTileSheetRun
-                    let size = Vector2I.Multiply (tileSize, fieldMap.FieldSize)
+                    let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
                     if Camera.inView3 field.ViewType field.Position size.Vector2 world.Camera then
                         let sprites =
                             Map.fold
                                 (fun sprites tileCoords tile ->
-                                    let tileOffset = Vector2I.Multiply (tileCoords, tileSize)
-                                    let tilePosition = Vector2I field.Position + tileOffset
+                                    let tileOffset = Vector2i.Multiply (tileCoords, tileSize)
+                                    let tilePosition = Vector2i field.Position + tileOffset
                                     let sprite =
                                         { Position = tilePosition.Vector2
                                           Size = tileSize.Vector2
@@ -220,7 +252,7 @@ module FieldDispatcherModule =
             match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
             | Some tileSheetSize ->
                 let tileSize = tileSheetSize / FieldTileSheetRun
-                let size = Vector2I.Multiply (tileSize, fieldMap.FieldSize)
+                let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
                 Vector2 (single size.X, single size.Y)
             | None -> DefaultEntitySize
 
@@ -275,18 +307,18 @@ module CharacterAnimationFacetModule =
             let animationState = entity.CharacterAnimationState
             let animationTypeCoordsOffset =
                 match animationState.CharacterAnimationType with
-                | CharacterAnimationFacing -> Vector2I (0, 0)
-                | CharacterAnimationActing -> Vector2I (0, 2)
+                | CharacterAnimationFacing -> Vector2i (0, 0)
+                | CharacterAnimationActing -> Vector2i (0, 2)
             let directionCoordsOffset =
                 match animationState.CharacterAnimationDirection with
-                | North -> Vector2I (0, 0)
-                | East -> Vector2I (2, 0)
-                | South -> Vector2I (0, 1)
-                | West -> Vector2I (2, 1)
+                | North -> Vector2i (0, 0)
+                | East -> Vector2i (2, 0)
+                | South -> Vector2i (0, 1)
+                | West -> Vector2i (2, 1)
             let frameXOffset =
                 (int world.State.TickTime - int animationState.ChangeTime) /
                 animationState.CharacterAnimationStutter % 2
-            let frameCoordsOffset = Vector2I (frameXOffset, 0)
+            let frameCoordsOffset = Vector2i (frameXOffset, 0)
             let spriteCoordsinates = animationTypeCoordsOffset + directionCoordsOffset + frameCoordsOffset
             let spriteOffset =
                 Vector2 (
