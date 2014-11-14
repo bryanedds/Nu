@@ -164,8 +164,10 @@ module Math =
     /// Queries that a point is within the given bounds.
     let isPointInBounds (point : Vector2) (bounds : Vector4) =
         not
-            (point.X > bounds.Z || point.X < bounds.X ||
-             point.Y > bounds.W || point.Y < bounds.Y)
+            (point.X < bounds.X ||
+             point.X > bounds.Z ||
+             point.Y < bounds.Y ||
+             point.Y > bounds.W)
 
     /// Queries that a point is within the given bounds.
     let isPointInBounds3 (point : Vector2) (boxPos : Vector2) (boxSize : Vector2) =

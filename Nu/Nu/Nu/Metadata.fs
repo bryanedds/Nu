@@ -18,7 +18,7 @@ module MetadataModule =
     /// Metadata for an asset. Useful to describe various attributes of an asset without having the
     /// full asset loaded into memory.
     type [<StructuralEquality; NoComparison>] AssetMetadata =
-        | TextureMetadata of Vector2I
+        | TextureMetadata of Vector2i
         | TileMapMetadata of string * Image list * TmxMap
         | SoundMetadata
         | SongMetadata
@@ -53,7 +53,7 @@ module Metadata =
             // metadata to a separate file during build.
             try use bitmap = new Bitmap (asset.FilePath)
                 if bitmap.PixelFormat = Imaging.PixelFormat.Format32bppArgb
-                then TextureMetadata <| Vector2I (bitmap.Width, bitmap.Height)
+                then TextureMetadata <| Vector2i (bitmap.Width, bitmap.Height)
                 else
                     let errorMessage = "Bitmap with invalid format (expecting 32-bit ARGB)."
                     trace errorMessage

@@ -704,15 +704,15 @@ module TileMapDispatcherModule =
 
         static member makeTileMapData tileMapAsset world =
             let (_, _, map) = Metadata.getTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap
-            let mapSize = Vector2I (map.Width, map.Height)
-            let tileSize = Vector2I (map.TileWidth, map.TileHeight)
+            let mapSize = Vector2i (map.Width, map.Height)
+            let tileSize = Vector2i (map.TileWidth, map.TileHeight)
             let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
-            let tileMapSize = Vector2I (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
+            let tileMapSize = Vector2i (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
             let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
             let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
             let optTileSetWidth = tileSet.Image.Width
             let optTileSetHeight = tileSet.Image.Height
-            let tileSetSize = Vector2I (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
+            let tileSetSize = Vector2i (optTileSetWidth.Value / tileSize.X, optTileSetHeight.Value / tileSize.Y)
             { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
 
         static member makeTileData (tileMap : Entity) tmd (tl : TmxLayer) tileIndex =
@@ -722,10 +722,10 @@ module TileMapDispatcherModule =
             let tile = tl.Tiles.[tileIndex]
             let gid = tile.Gid - tmd.TileSet.FirstGid
             let gidPosition = gid * tmd.TileSize.X
-            let gid2 = Vector2I (gid % tileSetRun, gid / tileSetRun)
+            let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
             let tileMapPosition = tileMap.Position
             let tilePosition =
-                Vector2I (
+                Vector2i (
                     int tileMapPosition.X + tmd.TileSize.X * i,
                     int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
             let optTileSetTile = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
@@ -842,7 +842,7 @@ module TileMapDispatcherModule =
                 match Metadata.tryGetTileMapMetadata tileMapAsset.TileMapAssetName tileMapAsset.PackageName world.State.AssetMetadataMap with
                 | Some (_, images, map) ->
                     let layers = List.ofSeq map.Layers
-                    let tileSourceSize = Vector2I (map.TileWidth, map.TileHeight)
+                    let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
                     List.foldi
                         (fun i descriptors (layer : TmxLayer) ->
@@ -863,7 +863,7 @@ module TileMapDispatcherModule =
                                                   Size = size
                                                   Rotation = tileMap.Rotation
                                                   ViewType = tileMap.ViewType
-                                                  MapSize = Vector2I (map.Width, map.Height)
+                                                  MapSize = Vector2i (map.Width, map.Height)
                                                   Tiles = layer.Tiles
                                                   TileSourceSize = tileSourceSize
                                                   TileSize = tileSize

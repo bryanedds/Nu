@@ -39,9 +39,9 @@ module RenderingModule =
           Size : Vector2
           Rotation : single
           ViewType : ViewType
-          MapSize : Vector2I
+          MapSize : Vector2i
           Tiles : TmxLayerTile List
-          TileSourceSize : Vector2I
+          TileSourceSize : Vector2i
           TileSize : Vector2
           TileSet : TmxTileset
           TileSetImage : Image }
