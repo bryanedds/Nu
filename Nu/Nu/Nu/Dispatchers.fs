@@ -265,7 +265,7 @@ module ButtonDispatcherModule =
     type ButtonDispatcher () =
         inherit EntityDispatcher ()
 
-        let handleButtonEventDownMouseLeft event world =
+        let handleMouseLeftDown event world =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
@@ -277,7 +277,7 @@ module ButtonDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleButtonEventUpMouseLeft event world =
+        let handleMouseLeftUp event world =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
@@ -305,8 +305,8 @@ module ButtonDispatcherModule =
         override dispatcher.Register (address, button, world) =
             let world =
                 world |>
-                World.monitor address DownMouseLeftEventAddress handleButtonEventDownMouseLeft |>
-                World.monitor address UpMouseLeftEventAddress handleButtonEventUpMouseLeft
+                World.monitor address MouseLeftDownEventAddress handleMouseLeftDown |>
+                World.monitor address MouseLeftUpEventAddress handleMouseLeftUp
             (button, world)
 
         override dispatcher.GetRenderDescriptors (button, _) =
@@ -449,7 +449,7 @@ module ToggleDispatcherModule =
     type ToggleDispatcher () =
         inherit EntityDispatcher ()
         
-        let handleToggleEventDownMouseLeft event world =
+        let handleMouseLeftDown event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
@@ -460,7 +460,7 @@ module ToggleDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
 
-        let handleToggleEventUpMouseLeft event world =
+        let handleMouseLeftUp event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.IsPressed then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
@@ -491,8 +491,8 @@ module ToggleDispatcherModule =
         override dispatcher.Register (address, toggle, world) =
             let world =
                 world |>
-                World.monitor address DownMouseLeftEventAddress handleToggleEventDownMouseLeft |>
-                World.monitor address UpMouseLeftEventAddress handleToggleEventUpMouseLeft
+                World.monitor address MouseLeftDownEventAddress handleMouseLeftDown |>
+                World.monitor address MouseLeftUpEventAddress handleMouseLeftUp
             (toggle, world)
 
         override dispatcher.GetRenderDescriptors (toggle, _) =
@@ -527,7 +527,7 @@ module FeelerDispatcherModule =
     type FeelerDispatcher () =
         inherit EntityDispatcher ()
 
-        let handleFeelerEventDownMouseLeft event world =
+        let handleMouseLeftDown event world =
             let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let mousePositionFeeler = Entity.mouseToEntity mouseButtonData.Position world feeler
@@ -539,7 +539,7 @@ module FeelerDispatcherModule =
                 else (Cascade, world)
             else (Cascade, world)
     
-        let handleFeelerEventUpMouseLeft event world =
+        let handleMouseLeftUp event world =
             let (address, feeler : Entity) = World.unwrapAS event world
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let feeler = Entity.setIsTouched false feeler
@@ -558,8 +558,8 @@ module FeelerDispatcherModule =
         override dispatcher.Register (address, feeler, world) =
             let world =
                 world |>
-                World.monitor address DownMouseLeftEventAddress handleFeelerEventDownMouseLeft |>
-                World.monitor address UpMouseLeftEventAddress handleFeelerEventUpMouseLeft
+                World.monitor address MouseLeftDownEventAddress handleMouseLeftDown |>
+                World.monitor address MouseLeftUpEventAddress handleMouseLeftUp
             (feeler, world)
 
         override dispatcher.GetQuickSize (_, _) =
