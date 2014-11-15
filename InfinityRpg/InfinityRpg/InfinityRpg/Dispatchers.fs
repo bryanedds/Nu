@@ -266,7 +266,7 @@ module PlayerCharacterDispatcherModule =
             [define? GravityScale 0.0f
              define? LinearDamping 0.0f
              define? FixedRotation true
-             define? CollisionExpression "Circle"]
+             define? CollisionExpr "Circle"]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name

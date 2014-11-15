@@ -520,7 +520,7 @@ module Physics =
     /// Evaluate a collision expression.
     /// TODO: see if AlgebraicConverter can be used here instead of this shitty custom syntax.
     /// TODO: propagate errors rather than tracing in place
-    let evalCollisionExpression (extent : Vector2) (expr : string) =
+    let evalCollisionExpr (extent : Vector2) (expr : string) =
         let terms = List.ofArray <| expr.Split '?'
         let terms = List.map (fun (term : string) -> term.Trim ()) terms
         let defaultShape = BoxShape { Extent = extent * 0.5f; Center = Vector2.Zero }

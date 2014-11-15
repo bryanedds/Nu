@@ -48,7 +48,7 @@ module BulletModule =
              define? LinearDamping 0.0f
              define? GravityScale 0.0f
              define? IsBullet true
-             define? CollisionExpression "Circle"
+             define? CollisionExpr "Circle"
              define? SpriteImage PlayerBulletImage
              define? Age 0L]
 
@@ -109,7 +109,7 @@ module EnemyModule =
              define? FixedRotation true
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
-             define? CollisionExpression "Capsule"
+             define? CollisionExpr "Capsule"
              define? Stutter 8
              define? TileCount 6
              define? TileRun 4
@@ -225,7 +225,7 @@ module PlayerModule =
              define? FixedRotation true
              define? LinearDamping 3.0f
              define? GravityScale 0.0f
-             define? CollisionExpression "Capsule"
+             define? CollisionExpr "Capsule"
              define? Stutter 3
              define? TileCount 16
              define? TileRun 4
