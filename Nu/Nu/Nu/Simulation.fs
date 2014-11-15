@@ -372,20 +372,38 @@ module SimModule =
 [<AutoOpen>]
 module WorldAddressModule =
 
-    let atoea<'t> address =
+    let atoea address =
         Address.changeType<'t, Entity> address
 
-    let atoga<'t> address =
+    let atoga address =
         Address.changeType<'t, Group> address
 
-    let atosa<'t> address =
+    let atosa address =
         Address.changeType<'t, Screen> address
 
-    let atogma<'t> address =
+    let atoma address =
         Address.changeType<'t, Game> address
 
-    let atosma<'t> address =
+    let atola address =
         Address.changeType<'t, Simulant> address
+
+    let gatoea groupAddress entityName =
+        Address.changeType<Group, Entity> groupAddress ->- ltoa [entityName]
+
+    let satoga screenAddress groupName =
+        Address.changeType<Screen, Group> screenAddress ->- ltoa [groupName]
+
+    let satoea screenAddress groupName entityName =
+        gatoea (satoga screenAddress groupName) entityName
+
+    let eatoga entityAddress =
+        Address.take 2 entityAddress |> Address.changeType<Entity, Group>
+
+    let gatosa groupAddress =
+        Address.take 1 groupAddress |> Address.changeType<Group, Screen>
+
+    let eatosa entityAddress =
+        eatoga entityAddress |> gatosa
 
 module WorldConstants =
 
@@ -480,7 +498,7 @@ module World =
     let private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
         List.fold
             (fun subscriptions (key, address, subscription) ->
-                match getOptSimulant (atosma address) world with
+                match getOptSimulant (atola address) world with
                 | Some simulant ->
                     let priority = getSimulantPublishingPriority getEntityPublishingPriority simulant world
                     let subscription = (priority, (key, address, subscription))
@@ -619,10 +637,10 @@ module World =
         { world with Camera = camera }
 
     /// Transform a bunch of simulants in the context of a world.
-    let transformSimulants transform transformParentAddress parentAddress simulants world =
+    let transformSimulants transform patoca parentAddress simulants world =
         Map.fold
             (fun (simulants, world) simulantName simulant ->
-                let (simulant, world) = transform (transformParentAddress parentAddress ->- ltoa [simulantName]) simulant world
+                let (simulant, world) = transform (patoca parentAddress simulantName) simulant world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants
@@ -1031,17 +1049,17 @@ module WorldEventModule =
         /// TODO: these implementations builds in the notion that only simulants are addressable.
         /// While this is true for now, it may not be true later. Make this more general!
         static member unwrapASDE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapASD<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapASE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event)
 
         /// Unwrap commonly-useful values of an event.
@@ -1050,12 +1068,12 @@ module WorldEventModule =
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapSDE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapAS<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber)
 
         /// Unwrap commonly-useful values of an event.
@@ -1068,12 +1086,12 @@ module WorldEventModule =
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapSD<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event.Data)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapSE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event)
 
         /// Unwrap commonly-useful values of an event.
@@ -1086,7 +1104,7 @@ module WorldEventModule =
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapS<'s, 'd> (event : 'd Event) world =
-            World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapD<'s, 'd> (event : 'd Event) (_ : World) =

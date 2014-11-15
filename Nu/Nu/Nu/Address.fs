@@ -122,9 +122,9 @@ module AddressModule =
         acatf address <| atooa address2
 
     /// Concatenate two addresses, taking the type of the second address.
-    let acats (address : obj Address) (address2 : 'b Address) =
+    let acats (address : obj Address) (address2 : 'a Address) =
         let list = address.Names @ address2.Names
-        Address<'b>.make list
+        Address<'a>.make list
     
     /// Concatenate two addresses, forcing the type of second address.
     let acatsf (address : 'a Address) (address2 : 'b Address) =

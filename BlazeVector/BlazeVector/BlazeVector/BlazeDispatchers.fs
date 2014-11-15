@@ -162,7 +162,7 @@ module PlayerModule =
             (bullet, world)
 
         let shootBullet playerAddress (player : Entity) world =
-            let bulletAddress = (Address.allButLast playerAddress) ->- ltoa [acstring <| Core.makeId ()]
+            let bulletAddress = gatoea (eatoga playerAddress) (acstring <| Core.makeId ())
             let playerTransform = Entity.getTransform player
             let (bullet, world) = createBullet bulletAddress playerTransform world
             propelBullet bullet world
@@ -254,7 +254,7 @@ module StagePlayModule =
         inherit GroupDispatcher ()
 
         let getPlayer groupAddress world =
-            let playerAddress = atoea groupAddress ->- ltoa [StagePlayerName]
+            let playerAddress = gatoea groupAddress StagePlayerName
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
