@@ -343,7 +343,7 @@ module WorldModule =
             let entities = World.getEntities groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->
-                    let entityAddress = atoea groupAddress ->- ltoa [entity.Name]
+                    let entityAddress = gatoea groupAddress entity.Name
                     Entity.propagatePhysics entityAddress entity world)
                 world
                 entities

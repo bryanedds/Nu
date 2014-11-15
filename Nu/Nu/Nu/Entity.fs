@@ -234,10 +234,10 @@ module WorldEntityModule =
             (entity, world)
 
         static member removeEntitiesImmediate (groupAddress : Group Address) entities world =
-            World.transformSimulants World.removeEntityImmediate atoea groupAddress entities world
+            World.transformSimulants World.removeEntityImmediate gatoea groupAddress entities world
 
         static member removeEntities (groupAddress : Group Address) entities world =
-            World.transformSimulants World.removeEntity atoea groupAddress entities world
+            World.transformSimulants World.removeEntity gatoea groupAddress entities world
 
         static member addEntity address entity world =
             if not <| World.containsEntity address world then
@@ -252,7 +252,7 @@ module WorldEntityModule =
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 
         static member addEntities (groupAddress : Group Address) entities world =
-            World.transformSimulants World.addEntity atoea groupAddress entities world
+            World.transformSimulants World.addEntity gatoea groupAddress entities world
 
         static member private tryGetFacet facetName world =
             match Map.tryFind facetName world.Components.Facets with

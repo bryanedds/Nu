@@ -117,10 +117,10 @@ module WorldGroupModule =
             (group, world)
 
         static member removeGroupsImmediate (screenAddress : Screen Address) groups world =
-            World.transformSimulants World.removeGroupImmediate atoga screenAddress groups world
+            World.transformSimulants World.removeGroupImmediate satoga screenAddress groups world
 
         static member removeGroups (screenAddress : Screen Address) groups world =
-            World.transformSimulants World.removeGroup atoga screenAddress groups world
+            World.transformSimulants World.removeGroup satoga screenAddress groups world
 
         static member addGroup address group entities world =
             if not <| World.containsGroup address world then
@@ -138,7 +138,7 @@ module WorldGroupModule =
         static member addGroups (screenAddress : Screen Address) groupDescriptors world =
             Map.fold
                 (fun (groups, world) groupName (group, entities) ->
-                    let (group, world) = World.addGroup (atoga screenAddress ->- ltoa [groupName]) group entities world
+                    let (group, world) = World.addGroup (satoga screenAddress groupName) group entities world
                     (group :: groups, world))
                 ([], world)
                 groupDescriptors
