@@ -12,7 +12,7 @@ open Nu.Constants
 module ReflectionModule =
 
     /// An evaluatable expression for defining a field.
-    type [<NoEquality; NoComparison>] FieldExpression =
+    type [<NoEquality; NoComparison>] FieldExpr =
         | Constant of obj
         | Variable of (unit -> obj)
         static member eval expr =
@@ -24,9 +24,9 @@ module ReflectionModule =
     type [<NoEquality; NoComparison>] FieldDefinition =
         { FieldName : string
           FieldType : Type
-          FieldExpression : FieldExpression }
+          FieldExpr : FieldExpr }
 
-        static member private validate fieldName (fieldType : Type) (_ : FieldExpression) =
+        static member private validate fieldName (fieldType : Type) (_ : FieldExpr) =
             if fieldName = "FacetNames" then failwith "FacetNames cannot be an intrinsic field."
             if fieldName = "OptOverlayName" then failwith "OptOverlayName cannot be an intrinsic field."
             if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
@@ -34,9 +34,9 @@ module ReflectionModule =
                     "Generic field definition lacking type information for field '" + fieldName + "'. " +
                     "Use explicit type annotations on all values that carry incomplete type information such as empty lists."
 
-        static member make fieldName fieldType fieldExpression =
-            FieldDefinition.validate fieldName fieldType fieldExpression
-            { FieldName = fieldName; FieldType = fieldType; FieldExpression = fieldExpression }
+        static member make fieldName fieldType fieldExpr =
+            FieldDefinition.validate fieldName fieldType fieldExpr
+            { FieldName = fieldName; FieldType = fieldType; FieldExpr = fieldExpr }
 
     /// In tandem with the define literal, grants a nice syntax to define constant fields.
     type DefineConstant =
@@ -90,7 +90,7 @@ module Reflection =
     let attachFieldsViaDefinitions fieldDefinitions target =
         let targetType = target.GetType ()
         for fieldDefinition in fieldDefinitions do
-            let fieldValue = FieldExpression.eval fieldDefinition.FieldExpression
+            let fieldValue = FieldExpr.eval fieldDefinition.FieldExpr
             match targetType.GetPropertyWritable fieldDefinition.FieldName with
             | null ->
                 match targetType.GetPropertyWritable "Xtension" with
@@ -303,7 +303,7 @@ module Reflection =
             // construct the field nodes
             for definition in definitions do
                 let fieldNode = document.CreateElement definition.FieldName
-                match definition.FieldExpression with
+                match definition.FieldExpr with
                 | Constant constant ->
                     let converter = AlgebraicConverter definition.FieldType
                     fieldNode.InnerText <- converter.ConvertToString constant

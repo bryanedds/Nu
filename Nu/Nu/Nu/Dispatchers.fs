@@ -35,7 +35,7 @@ module RigidBodyFacetModule =
         static member setCollisionCategories (value : string) (entity : Entity) = entity?CollisionCategories <- value
         member entity.CollisionMask = entity?CollisionMask : string
         static member setCollisionMask (value : string) (entity : Entity) = entity?CollisionMask <- value
-        member entity.CollisionExpression = entity?CollisionExpression : string
+        member entity.CollisionExpr = entity?CollisionExpr : string
         static member setCollisionExpr (value : string) (entity : Entity) = entity?CollisionExpr <- value
         member entity.IsBullet = entity?IsBullet : bool
         static member setIsBullet (value : bool) (entity : Entity) = entity?IsBullet <- value
@@ -47,7 +47,7 @@ module RigidBodyFacetModule =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) =
-            Physics.evalCollisionExpression (entity.Size : Vector2) entity.CollisionExpression
+            Physics.evalCollisionExpr (entity.Size : Vector2) entity.CollisionExpr
 
         static member FieldDefinitions =
             [variable? MinorId <| fun () -> Core.makeId ()
@@ -61,7 +61,7 @@ module RigidBodyFacetModule =
              define? GravityScale 1.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
-             define? CollisionExpression "Box"
+             define? CollisionExpr "Box"
              define? IsBullet false
              define? IsSensor false]
 
@@ -669,7 +669,7 @@ module AvatarDispatcherModule =
             [define? FixedRotation true
              define? LinearDamping 10.0f
              define? GravityScale 0.0f
-             define? CollisionExpression "Circle"
+             define? CollisionExpr "Circle"
              define? SpriteImage { ImageAssetName = "Image7"; PackageName = DefaultPackageName }]
         
         static member IntrinsicFacetNames =
@@ -685,7 +685,7 @@ module CharacterDispatcherModule =
         static member FieldDefinitions =
             [define? FixedRotation true
              define? LinearDamping 3.0f
-             define? CollisionExpression "Capsule"
+             define? CollisionExpr "Capsule"
              define? SpriteImage { ImageAssetName = "Image6"; PackageName = DefaultPackageName }]
 
         static member IntrinsicFacetNames =
@@ -735,7 +735,7 @@ module TileMapDispatcherModule =
         inherit EntityDispatcher ()
 
         let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr =
-            let tileShape = Physics.evalCollisionExpression (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
+            let tileShape = Physics.evalCollisionExpr (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
             { BodyId = intsToGuid tli ti
               Position =
                 Vector2 (
