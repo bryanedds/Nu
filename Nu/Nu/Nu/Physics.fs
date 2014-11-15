@@ -17,16 +17,16 @@ module PhysicsModule =
 
     /// Identifies a target whose body can be found in the Integrator.
     type [<StructuralEquality; StructuralComparison>] PhysicsId =
-        { EntityId : Guid
+        { SourceId : Guid
           BodyId : Guid }
 
         /// The invalid physics id.
         static member invalid =
-            { EntityId = Core.InvalidId; BodyId = Core.InvalidId }
+            { SourceId = Core.InvalidId; BodyId = Core.InvalidId }
 
-        /// Make a PhysicsId for an external entity.
-        static member make (entityId : Guid) =
-            { EntityId = entityId; BodyId = Core.makeId () }
+        /// Make a PhysicsId for an external source.
+        static member make (sourceId : Guid) =
+            { SourceId = sourceId; BodyId = Core.makeId () }
 
     /// Physics-specific vertices type.
     type Vertices = Vector2 list
@@ -86,14 +86,14 @@ module PhysicsModule =
 
     /// A message to the physics system to create a body.
     type [<StructuralEquality; NoComparison>] CreateBodyMessage =
-        { EntityAddress : obj Address
-          EntityId : Guid
+        { SourceAddress : obj Address
+          SourceId : Guid
           BodyProperties : BodyProperties }
 
     /// A message to the physics system to create multiple bodies.
     type [<StructuralEquality; NoComparison>] CreateBodiesMessage =
-        { EntityAddress : obj Address
-          EntityId : Guid
+        { SourceAddress : obj Address
+          SourceId : Guid
           BodyPropertyList : BodyProperties list }
 
     /// A message to the physics system to destroy a body.
@@ -131,14 +131,14 @@ module PhysicsModule =
 
     /// A message from the physics system describing a body collision that took place.
     type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
-        { EntityAddress : obj Address
-          EntityAddress2 : obj Address
+        { SourceAddress : obj Address
+          Source2Address : obj Address
           Normal : Vector2
           Speed : single }
 
     /// A message from the physics system describing the updated transform of a body.
     type [<StructuralEquality; NoComparison>] BodyTransformMessage =
-        { EntityAddress : obj Address
+        { SourceAddress : obj Address
           Position : Vector2
           Rotation : single }
 
@@ -230,8 +230,8 @@ module PhysicsModule =
             (contact : Dynamics.Contacts.Contact) =
             let (normal, _) = Integrator.getNormalAndManifold contact
             let bodyCollisionMessage =
-                { EntityAddress = fixture.Body.UserData :?> obj Address
-                  EntityAddress2 = fixture2.Body.UserData :?> obj Address
+                { SourceAddress = fixture.Body.UserData :?> obj Address
+                  Source2Address = fixture2.Body.UserData :?> obj Address
                   Normal = Vector2 (normal.X, normal.Y)
                   Speed = contact.TangentSpeed * PhysicsToPixelRatio }
             let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -262,7 +262,7 @@ module PhysicsModule =
             body.IsSensor <- bodyProperties.IsSensor
             body.SleepingAllowed <- true
 
-        static member private createBoxBody entityAddress bodyProperties boxShape integrator =
+        static member private createBoxBody sourceAddress bodyProperties boxShape integrator =
             let body =
                 Factories.BodyFactory.CreateRectangle (
                     integrator.PhysicsContext,
@@ -272,11 +272,11 @@ module PhysicsModule =
                     Integrator.toPhysicsV2 boxShape.Center,
                     0.0f,
                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    entityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-            body.UserData <- entityAddress // BUG: ...so I set it again here :/
+                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+            body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             body
 
-        static member private createCircleBody entityAddress bodyProperties (circleShape : CircleShape) integrator =
+        static member private createCircleBody sourceAddress bodyProperties (circleShape : CircleShape) integrator =
             let body =
                 Factories.BodyFactory.CreateCircle (
                     integrator.PhysicsContext,
@@ -284,11 +284,11 @@ module PhysicsModule =
                     bodyProperties.Density,
                     Integrator.toPhysicsV2 circleShape.Center,
                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    entityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-            body.UserData <- entityAddress // BUG: ...so I set it again here :/
+                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+            body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             body
 
-        static member private createCapsuleBody entityAddress bodyProperties capsuleShape integrator =
+        static member private createCapsuleBody sourceAddress bodyProperties capsuleShape integrator =
             let body =
                 Factories.BodyFactory.CreateCapsule (
                     integrator.PhysicsContext,
@@ -298,14 +298,14 @@ module PhysicsModule =
                     Integrator.toPhysicsV2 capsuleShape.Center,
                     0.0f,
                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    entityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-            body.UserData <- entityAddress // BUG: ...so I set it again here :/
+                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+            body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             // scale in the capsule's box to stop sticking
             let capsuleBox = body.FixtureList.[0].Shape :?> FarseerPhysics.Collision.Shapes.PolygonShape
             ignore <| capsuleBox.Vertices.Scale (Framework.Vector2 (0.75f, 1.0f))
             body
 
-        static member private createPolygonBody entityAddress bodyProperties polygonShape integrator =
+        static member private createPolygonBody sourceAddress bodyProperties polygonShape integrator =
             let body =
                 Factories.BodyFactory.CreatePolygon (
                     integrator.PhysicsContext,
@@ -314,19 +314,19 @@ module PhysicsModule =
                     Integrator.toPhysicsV2 polygonShape.Center,
                     0.0f,
                     Integrator.toPhysicsBodyType bodyProperties.BodyType,
-                    entityAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
-            body.UserData <- entityAddress // BUG: ...so I set it again here :/
+                    sourceAddress) // BUG: Farseer doesn't seem to set the UserData with the parameter I give it here...
+            body.UserData <- sourceAddress // BUG: ...so I set it again here :/
             body
 
-        static member private createBody4 entityId entityAddress bodyProperties integrator =
+        static member private createBody4 sourceId sourceAddress bodyProperties integrator =
         
             // make and configure the body
             let body =
                 match bodyProperties.Shape with
-                | BoxShape boxShape -> Integrator.createBoxBody entityAddress bodyProperties boxShape integrator
-                | CircleShape circleShape -> Integrator.createCircleBody entityAddress bodyProperties circleShape integrator
-                | CapsuleShape capsuleShape -> Integrator.createCapsuleBody entityAddress bodyProperties capsuleShape integrator
-                | PolygonShape polygonShape -> Integrator.createPolygonBody entityAddress bodyProperties polygonShape integrator
+                | BoxShape boxShape -> Integrator.createBoxBody sourceAddress bodyProperties boxShape integrator
+                | CircleShape circleShape -> Integrator.createCircleBody sourceAddress bodyProperties circleShape integrator
+                | CapsuleShape capsuleShape -> Integrator.createCapsuleBody sourceAddress bodyProperties capsuleShape integrator
+                | PolygonShape polygonShape -> Integrator.createPolygonBody sourceAddress bodyProperties polygonShape integrator
             Integrator.configureBodyProperties bodyProperties body
             body.add_OnCollision (fun fn fn2 collision -> Integrator.handleCollision integrator fn fn2 collision) // NOTE: F# requires us to use an lambda inline here (not sure why)
 
@@ -338,18 +338,18 @@ module PhysicsModule =
                 let random = System.Random ()
                 let randomOffset = Framework.Vector2 (single <| random.NextDouble (), single <| random.NextDouble ())
                 body.Position <- body.Position + randomOffset
-        
+
             // attempt to add the body
-            if not <| integrator.Bodies.TryAdd ({ EntityId = entityId; BodyId = bodyProperties.BodyId }, body) then
+            if not <| integrator.Bodies.TryAdd ({ SourceId = sourceId; BodyId = bodyProperties.BodyId }, body) then
                 debug <| "Could not add body via '" + acstring bodyProperties + "'."
 
         static member private createBodies (createBodiesMessage : CreateBodiesMessage) integrator =
             List.iter
-                (fun bodyProperties -> Integrator.createBody4 createBodiesMessage.EntityId createBodiesMessage.EntityAddress bodyProperties integrator)
+                (fun bodyProperties -> Integrator.createBody4 createBodiesMessage.SourceId createBodiesMessage.SourceAddress bodyProperties integrator)
                 createBodiesMessage.BodyPropertyList
 
         static member private createBody (createBodyMessage : CreateBodyMessage) integrator =
-            Integrator.createBody4 createBodyMessage.EntityId createBodyMessage.EntityAddress createBodyMessage.BodyProperties integrator
+            Integrator.createBody4 createBodyMessage.SourceId createBodyMessage.SourceAddress createBodyMessage.BodyProperties integrator
 
         static member private destroyBody2 physicsId integrator =
             let body = ref Unchecked.defaultof<Dynamics.Body>
@@ -424,7 +424,7 @@ module PhysicsModule =
                 if body.Awake && not body.IsStatic then
                     let bodyTransformMessage =
                         BodyTransformMessage
-                            { EntityAddress = body.UserData :?> obj Address
+                            { SourceAddress = body.UserData :?> obj Address
                               Position = Integrator.toPixelV2 body.Position
                               Rotation = body.Rotation }
                     integrator.IntegrationMessages.Add bodyTransformMessage

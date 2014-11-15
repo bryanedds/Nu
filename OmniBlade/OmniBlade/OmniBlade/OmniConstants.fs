@@ -21,13 +21,13 @@ module OmniConstants =
     let StageOutgoingTime = 90L
 
     // splash constants
-    let SplashAddress = stoa<obj> "Splash"
+    let SplashAddress = stoa<Screen> "Splash"
     let SplashIncomingTime = 60L
     let SplashIdlingTime = 60L
     let SplashOutgoingTime = 40L
 
     // title constants
-    let TitleAddress = stoa<obj> "Title"
+    let TitleAddress = stoa<Screen> "Title"
     let TitleGroupFilePath = "Assets/OmniBlade/Groups/Title.nugroup"
     let ClickTitleNewGameEvent = stoa<unit> "Click/Title/Group/NewGame"
     let ClickTitleLoadGameEvent = stoa<unit> "Click/Title/Group/LoadGame"
@@ -35,19 +35,19 @@ module OmniConstants =
     let ClickTitleExitEvent = stoa<unit> "Click/Title/Group/Exit"
 
     // load game constants
-    let LoadGameAddress = stoa<obj> "LoadGame"
+    let LoadGameAddress = stoa<Screen> "LoadGame"
     let LoadGameGroupFilePath = "Assets/OmniBlade/Groups/LoadGame.nugroup"
     let ClickLoadGameBackEvent = stoa<unit> "Click/LoadGame/Group/Back"
 
     // credits constants
-    let CreditsAddress = stoa<obj> "Credits"
+    let CreditsAddress = stoa<Screen> "Credits"
     let CreditsGroupFilePath = "Assets/OmniBlade/Groups/Credits.nugroup"
     let ClickCreditsBackEvent = stoa<unit> "Click/Credits/Group/Back"
 
     // field constants
-    let FieldAddress = stoa<obj> "Field"
+    let FieldAddress = stoa<Screen> "Field"
     let FieldGroupFilePath = "Assets/OmniBlade/Groups/Field.nugroup"
     let ClickFieldBackEvent = stoa<unit> "Click/Field/Group/Back"
 
     // time constants
-    let TimeAddress = stoa<obj> "Time"
+    let TimeAddress = stoa<Screen> "Time"

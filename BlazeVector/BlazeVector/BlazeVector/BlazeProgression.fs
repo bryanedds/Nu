@@ -59,29 +59,29 @@ module BlazeProgression =
 
         // this subscribes to the event that is raised when the Title screen is selected for
         // display and interaction, and handles the event by playing the song "Machinery"
-        let world = World.subscribe4<unit> SelectTitleEventAddress Address.empty handlePlaySongMachinery world
+        let world = World.subscribe4 Address.empty SelectTitleEventAddress handlePlaySongMachinery world
 
         // subscribes to the event that is raised when the Title screen's Play button is
         // clicked, and handles the event by transitioning to the Stage screen
-        let world = World.subscribe4<unit> ClickTitlePlayEventAddress Address.empty handlePlayStage world
+        let world = World.subscribe4 Address.empty ClickTitlePlayEventAddress handlePlayStage world
 
         // subscribes to the event that is raised when the Title screen's Credits button is
         // clicked, and handles the event by transitioning to the Credits screen
-        let world = World.subscribe4<unit> ClickTitleCreditsEventAddress Address.empty (World.handleAsScreenTransition CreditsAddress) world
+        let world = World.subscribe4 Address.empty ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
 
         // subscribes to the event that is raised when the Title screen's Exit button is clicked,
         // and handles the event by exiting the game
-        World.subscribe4<unit> ClickTitleExitEventAddress Address.empty World.handleAsExit world
+        World.subscribe4 Address.empty ClickTitleExitEventAddress World.handleAsExit world
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime DefaultDissolveImage CreditsAddress world
-        World.subscribe4<unit> ClickCreditsBackEventAddress Address.empty (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4 Address.empty ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     // and so on.
     let addStageScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<StageScreenDispatcher>.Name StageGroupFilePath IncomingTime StageOutgoingTime DefaultDissolveImage StageAddress world
-        World.subscribe4<unit> ClickStageBackEventAddress Address.empty (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4 Address.empty ClickStageBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
     let tryMakeBlazeVectorWorld sdlDeps userState =

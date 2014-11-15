@@ -22,10 +22,10 @@ module WorldModule =
 
     type World with
 
-        static member handleAsSwallow (_ : 'd Event) (world : World) =
+        static member handleAsSwallow<'d> (_ : 'd Event) (world : World) =
             (Resolve, world)
 
-        static member handleAsExit (_ : 'd Event) (world : World) =
+        static member handleAsExit<'d> (_ : 'd Event) (world : World) =
             (Resolve, World.exit world)
 
     let private ScreenTransitionDownMouseKey = World.makeSubscriptionKey ()
@@ -39,20 +39,20 @@ module WorldModule =
 
     type World with
 
-        static member getSimulantDefinition address world =
+        static member getSimulantDefinition (address : Simulant Address) world =
             match address.Names with
             | [] -> Game <| world.Game
-            | [_] -> Screen <| World.getScreen address world
-            | [_; _] -> Group <| World.getGroup address world
-            | [_; _; _] -> Entity <| World.getEntity address world
+            | [_] -> Screen <| World.getScreen (atosa address) world
+            | [_; _] -> Group <| World.getGroup (atoga address) world
+            | [_; _; _] -> Entity <| World.getEntity (atoea address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member getOptSimulantDefinition address world =
             match address.Names with
             | [] -> Some <| Game world.Game
-            | [_] -> Option.map Screen <| World.getOptScreen address world
-            | [_; _] -> Option.map Group <| World.getOptGroup address world
-            | [_; _; _] -> Option.map Entity <| World.getOptEntity address world
+            | [_] -> Option.map Screen <| World.getOptScreen (atosa address) world
+            | [_; _] -> Option.map Group <| World.getOptGroup (atoga address) world
+            | [_; _; _] -> Option.map Entity <| World.getOptEntity (atoea address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member tryGetIsSelectedScreenIdling world =
@@ -85,12 +85,12 @@ module WorldModule =
                         World.unsubscribe ScreenTransitionChangeKeyboardKeyKey
                 | IncomingState | OutgoingState ->
                     world |>
-                        World.subscribe<MouseButtonData> ScreenTransitionDownMouseKey (DownMouseEventAddress ->- AnyEventAddress) address World.handleAsSwallow |>
-                        World.subscribe<MouseButtonData> ScreenTransitionUpMouseKey (UpMouseEventAddress ->- AnyEventAddress) address World.handleAsSwallow |>
-                        World.subscribe<MouseButtonData> ScreenTransitionChangeMouseKey (ChangeMouseEventAddress ->- AnyEventAddress) address World.handleAsSwallow |>
-                        World.subscribe<KeyboardKeyData> ScreenTransitionDownKeyboardKeyKey (DownKeyboardKeyEventAddress ->- AnyEventAddress) address World.handleAsSwallow |>
-                        World.subscribe<KeyboardKeyData> ScreenTransitionUpKeyboardKeyKey (UpKeyboardKeyEventAddress ->- AnyEventAddress) address World.handleAsSwallow |>
-                        World.subscribe<KeyboardKeyData> ScreenTransitionChangeKeyboardKeyKey (ChangeKeyboardKeyEventAddress ->- AnyEventAddress) address World.handleAsSwallow
+                        World.subscribe ScreenTransitionDownMouseKey Address.empty (DownMouseEventAddress ->- AnyEventAddress) World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionUpMouseKey Address.empty (UpMouseEventAddress ->- AnyEventAddress) World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionChangeMouseKey Address.empty (ChangeMouseEventAddress ->- AnyEventAddress) World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionDownKeyboardKeyKey Address.empty (DownKeyboardKeyEventAddress ->- AnyEventAddress) World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionUpKeyboardKeyKey Address.empty (UpKeyboardKeyEventAddress ->- AnyEventAddress) World.handleAsSwallow |>
+                        World.subscribe ScreenTransitionChangeKeyboardKeyKey Address.empty (ChangeKeyboardKeyEventAddress ->- AnyEventAddress) World.handleAsSwallow
             let world = World.setScreen address screen world
             (screen, world)
 
@@ -115,17 +115,17 @@ module WorldModule =
                         | None -> failwith "No valid OptScreenTransitionDestinationAddress during screen transition!"
                     let world = World.setOptScreenTransitionDestinationAddress (Some destinationAddress) world
                     let world = snd <| World.setScreenState OutgoingState selectedScreenAddress selectedScreen world
-                    let world = World.subscribe<unit> subscriptionKey (FinishOutgoingEventAddress ->- selectedScreenAddress) selectedScreenAddress subscription world
+                    let world = World.subscribe<Screen, unit> subscriptionKey selectedScreenAddress (FinishOutgoingEventAddress ->>- selectedScreenAddress) subscription world
                     Some world
                 | None -> None
             | None -> None
 
-        static member handleAsScreenTransitionFromSplash destinationAddress (_ : 'd Event) world =
+        static member handleAsScreenTransitionFromSplash<'d> destinationAddress (_ : 'd Event) world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationAddress destinationScreen world
             (Cascade, world)
 
-        static member handleAsScreenTransition destinationAddress (_ : 'd Event) world =
+        static member handleAsScreenTransition<'d> destinationAddress (_ : 'd Event) world =
             let destinationScreen = World.getScreen destinationAddress world
             match World.tryTransitionScreen destinationAddress destinationScreen world with
             | Some world -> (Cascade, world)
@@ -167,13 +167,13 @@ module WorldModule =
                     | IncomingState ->
                         let world =
                             if selectedScreen.Incoming.TransitionTicks = 0L
-                            then World.publish4 (SelectEventAddress ->- selectedScreenAddress) selectedScreenAddress () world
+                            then World.publish4 selectedScreenAddress (SelectEventAddress ->>- selectedScreenAddress) () world
                             else world
                         match world.State.Liveness with
                         | Running ->
                             let world =
                                 if selectedScreen.Incoming.TransitionTicks = 0L
-                                then World.publish4 (StartIncomingEventAddress ->- selectedScreenAddress) selectedScreenAddress () world
+                                then World.publish4 selectedScreenAddress (StartIncomingEventAddress ->>- selectedScreenAddress) () world
                                 else world
                             match world.State.Liveness with
                             | Running ->
@@ -182,14 +182,14 @@ module WorldModule =
                                 let world = World.setScreen selectedScreenAddress selectedScreen world
                                 if finished then
                                     let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                                    World.publish4 (FinishIncomingEventAddress ->- selectedScreenAddress) selectedScreenAddress () world
+                                    World.publish4 selectedScreenAddress (FinishIncomingEventAddress ->>- selectedScreenAddress) () world
                                 else world
                             | Exiting -> world
                         | Exiting -> world
                     | OutgoingState ->
                         let world =
                             if selectedScreen.Outgoing.TransitionTicks <> 0L then world
-                            else World.publish4 (StartOutgoingEventAddress ->- selectedScreenAddress) selectedScreenAddress () world
+                            else World.publish4 selectedScreenAddress (StartOutgoingEventAddress ->>- selectedScreenAddress) () world
                         match world.State.Liveness with
                         | Running ->
                             let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
@@ -197,9 +197,9 @@ module WorldModule =
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
                                 let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                                let world = World.publish4 (DeselectEventAddress ->- selectedScreenAddress) selectedScreenAddress () world
+                                let world = World.publish4 selectedScreenAddress (DeselectEventAddress ->>- selectedScreenAddress) () world
                                 match world.State.Liveness with
-                                | Running -> World.publish4 (FinishOutgoingEventAddress ->- selectedScreenAddress) selectedScreenAddress () world
+                                | Running -> World.publish4 selectedScreenAddress (FinishOutgoingEventAddress ->>- selectedScreenAddress) () world
                                 | Exiting -> world
                             else world
                         | Exiting -> world
@@ -213,7 +213,7 @@ module WorldModule =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
-                let world = World.subscribe<unit> SplashScreenTickKey event.Address event.SubscriberAddress subscription world
+                let world = World.subscribe SplashScreenTickKey event.SubscriberAddress event.Address subscription world
                 (Cascade, world)
             else
                 match World.getOptSelectedScreenAddress world with
@@ -230,7 +230,7 @@ module WorldModule =
                     (Resolve, World.exit world)
 
         static member internal handleSplashScreenIdle idlingTime event world =
-            let world = World.subscribe<unit> SplashScreenTickKey TickEventAddress event.SubscriberAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
+            let world = World.subscribe SplashScreenTickKey event.SubscriberAddress TickEventAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
             (Resolve, world)
 
         static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime dissolveImage splashImage world =
@@ -242,8 +242,8 @@ module WorldModule =
             let splashLabel = Entity.setLabelImage splashImage splashLabel
             let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
-            let world = World.monitor<unit> (FinishIncomingEventAddress ->- address) address (World.handleSplashScreenIdle idlingTime) world
-            let world = World.monitor<unit> (FinishOutgoingEventAddress ->- address) address (World.handleAsScreenTransitionFromSplash destination) world
+            let world = World.monitor address (FinishIncomingEventAddress ->>- address) (World.handleSplashScreenIdle idlingTime) world
+            let world = World.monitor address (FinishOutgoingEventAddress ->>- address) (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
         static member addDissolveScreenFromFile screenDispatcherName groupFilePath incomingTime outgoingTime dissolveImage screenAddress world =
@@ -343,7 +343,7 @@ module WorldModule =
             let entities = World.getEntities groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->
-                    let entityAddress = groupAddress ->- ltoa [entity.Name]
+                    let entityAddress = atoea groupAddress ->- ltoa [entity.Name]
                     Entity.propagatePhysics entityAddress entity world)
                 world
                 entities
@@ -408,18 +408,18 @@ module WorldModule =
             | Running ->
                 match integrationMessage with
                 | BodyTransformMessage bodyTransformMessage ->
-                    match World.getOptEntity bodyTransformMessage.EntityAddress world with
-                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage bodyTransformMessage.EntityAddress entity world
+                    match World.getOptEntity (atoea bodyTransformMessage.SourceAddress) world with
+                    | Some entity -> snd <| World.handleBodyTransformMessage bodyTransformMessage (atoea bodyTransformMessage.SourceAddress) entity world
                     | None -> world
                 | BodyCollisionMessage bodyCollisionMessage ->
-                    match World.getOptEntity bodyCollisionMessage.EntityAddress world with
+                    match World.getOptEntity (atoea bodyCollisionMessage.SourceAddress) world with
                     | Some _ ->
-                        let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.EntityAddress
+                        let collisionAddress = CollisionEventAddress ->- bodyCollisionMessage.SourceAddress
                         let collisionData =
                             { Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed
-                              Collidee = bodyCollisionMessage.EntityAddress2 }
-                        World.publish4 collisionAddress Address.empty collisionData world
+                              Collidee = (atoea bodyCollisionMessage.Source2Address) }
+                        World.publish4 Address.empty collisionAddress collisionData world
                     | None -> world
             | Exiting -> world
 
@@ -458,8 +458,8 @@ module WorldModule =
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let mousePosition = Vector2 (single event.button.x, single event.button.y)
                     if World.isMouseButtonDown MouseLeft world
-                    then World.publish World.sortSubscriptionsByPickingPriority MouseDragEventAddress Address.empty { MouseMoveData.Position = mousePosition } world
-                    else World.publish World.sortSubscriptionsByPickingPriority MouseMoveEventAddress Address.empty { MouseMoveData.Position = mousePosition } world
+                    then World.publish World.sortSubscriptionsByPickingPriority Address.empty MouseDragEventAddress { MouseMoveData.Position = mousePosition } world
+                    else World.publish World.sortSubscriptionsByPickingPriority Address.empty MouseDragEventAddress { MouseMoveData.Position = mousePosition } world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
@@ -467,8 +467,8 @@ module WorldModule =
                     let downMouseEventAddress = DownMouseEventAddress ->- mouseButtonEventAddress
                     let changeMouseEventAddress = ChangeMouseEventAddress ->- mouseButtonEventAddress
                     let eventData = { Position = mousePosition; Button = mouseButton; IsDown = true }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority downMouseEventAddress Address.empty eventData world
-                    World.publish World.sortSubscriptionsByPickingPriority changeMouseEventAddress Address.empty eventData world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority Address.empty downMouseEventAddress eventData world
+                    World.publish World.sortSubscriptionsByPickingPriority Address.empty changeMouseEventAddress eventData world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton <| uint32 event.button.button
@@ -476,20 +476,20 @@ module WorldModule =
                     let upMouseEventAddress = UpMouseEventAddress ->- mouseButtonEventAddress
                     let changeMouseEventAddress = ChangeMouseEventAddress ->- mouseButtonEventAddress
                     let eventData = { Position = mousePosition; Button = mouseButton; IsDown = false }
-                    let world = World.publish World.sortSubscriptionsByPickingPriority upMouseEventAddress Address.empty eventData world
-                    World.publish World.sortSubscriptionsByPickingPriority changeMouseEventAddress Address.empty eventData world
+                    let world = World.publish World.sortSubscriptionsByPickingPriority Address.empty upMouseEventAddress eventData world
+                    World.publish World.sortSubscriptionsByPickingPriority Address.empty changeMouseEventAddress eventData world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0; IsDown = true }
-                    let world = World.publish World.sortSubscriptionsByHierarchy DownKeyboardKeyEventAddress Address.empty eventData world
-                    World.publish World.sortSubscriptionsByHierarchy ChangeKeyboardKeyEventAddress Address.empty eventData world
+                    let world = World.publish World.sortSubscriptionsByHierarchy Address.empty DownKeyboardKeyEventAddress eventData world
+                    World.publish World.sortSubscriptionsByHierarchy Address.empty ChangeKeyboardKeyEventAddress eventData world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = event.key
                     let key = keyboard.keysym
                     let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0; IsDown = false }
-                    let world = World.publish World.sortSubscriptionsByHierarchy UpKeyboardKeyEventAddress Address.empty eventData world
-                    World.publish World.sortSubscriptionsByHierarchy ChangeKeyboardKeyEventAddress Address.empty eventData world
+                    let world = World.publish World.sortSubscriptionsByHierarchy Address.empty UpKeyboardKeyEventAddress eventData world
+                    World.publish World.sortSubscriptionsByHierarchy Address.empty ChangeKeyboardKeyEventAddress eventData world
                 | _ -> world
             (world.State.Liveness, world)
 
@@ -497,7 +497,7 @@ module WorldModule =
             let world = World.integrate world
             match world.State.Liveness with
             | Running ->
-                let world = World.publish4 TickEventAddress Address.empty () world
+                let world = World.publish4 Address.empty TickEventAddress () world
                 match world.State.Liveness with
                 | Running ->
                     let world = World.updateTransition handleUpdate world

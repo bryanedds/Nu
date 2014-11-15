@@ -17,17 +17,17 @@ module OmniDispatchersModule =
         inherit GroupDispatcher ()
 
         let adjustFieldCamera groupAddress world =
-            let avatarAddress = groupAddress ->- ltoa [FieldAvatarName]
+            let avatarAddress = atoea groupAddress ->- ltoa [FieldAvatarName]
             let avatar = World.getEntity avatarAddress world
             let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
             World.setCamera camera world
 
         let handleAdjustFieldCamera event world =
-            let address = Event.unwrapA event
+            let address = World.unwrapA event world
             (Cascade, adjustFieldCamera address world)
 
         let handleMoveFieldAvatar event world =
-            let address = Event.unwrapA event
+            let address = World.unwrapA event world
             let avatarAddress = address ->- ltoa [FieldAvatarName]
             let feelerAddress = address ->- ltoa [FieldFeelerName]
             let avatar = World.getEntity avatarAddress world
@@ -50,8 +50,8 @@ module OmniDispatchersModule =
                 (Cascade, world)
 
         override dispatcher.Register (address, avatar, world) =
-            let world = World.monitor TickEventAddress address handleMoveFieldAvatar world
-            let world = World.monitor TickEventAddress address handleAdjustFieldCamera world
+            let world = World.monitor address TickEventAddress handleMoveFieldAvatar world
+            let world = World.monitor address TickEventAddress handleAdjustFieldCamera world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             let world = adjustFieldCamera address world
             (avatar, world)

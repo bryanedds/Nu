@@ -93,7 +93,7 @@ module SimModule =
     type [<StructuralEquality; NoComparison>] CollisionData =
         { Normal : Vector2
           Speed : single
-          Collidee : obj Address }
+          Collidee : Entity Address }
 
     /// The data for an entity change event.
     and [<StructuralEquality; NoComparison>] EntityChangeData =
@@ -103,9 +103,7 @@ module SimModule =
     and [<ReferenceEquality>] 'a Event =
         { Address : 'a Address
           SubscriberAddress : obj Address
-          OptSubscriber : Simulant option
           PublisherAddress : obj Address
-          OptPublisher : Simulant option
           Data : 'a }
 
     /// Describes whether an event has been resolved or should cascade.
@@ -148,13 +146,13 @@ module SimModule =
              define? Visible true
              define? ViewType Relative]
 
-        abstract member Register : obj Address * Entity * World -> Entity * World
+        abstract member Register : Entity Address * Entity * World -> Entity * World
         default dispatcher.Register (_, entity, world) = (entity, world)
 
-        abstract member Unregister : obj Address * Entity * World -> Entity * World
+        abstract member Unregister : Entity Address * Entity * World -> Entity * World
         default dispatcher.Unregister (_, entity, world) = (entity, world)
 
-        abstract member PropagatePhysics : obj Address * Entity * World -> World
+        abstract member PropagatePhysics : Entity Address * Entity * World -> World
         default dispatcher.PropagatePhysics (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
@@ -169,19 +167,19 @@ module SimModule =
     /// The default dispatcher for groups.
     and GroupDispatcher () =
 
-        abstract member Register : obj Address * Group * World -> Group * World
+        abstract member Register : Group Address * Group * World -> Group * World
         default dispatcher.Register (_, group, world) = (group, world)
 
-        abstract member Unregister : obj Address * Group * World -> Group * World
+        abstract member Unregister : Group Address * Group * World -> Group * World
         default dispatcher.Unregister (_, group, world) = (group, world)
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
 
-        abstract member Register : obj Address * Screen * World -> Screen * World
+        abstract member Register : Screen Address * Screen * World -> Screen * World
         default dispatcher.Register (_, screen, world) = (screen, world)
 
-        abstract member Unregister : obj Address * Screen * World -> Screen * World
+        abstract member Unregister : Screen Address * Screen * World -> Screen * World
         default dispatcher.Unregister (_, screen, world) = (screen, world)
 
     /// The default dispatcher for games.
@@ -193,23 +191,23 @@ module SimModule =
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
 
-        abstract member Register : obj Address * Entity * World -> Entity * World
+        abstract member Register : Entity Address * Entity * World -> Entity * World
         default facet.Register (address, entity, world) =
             let world = facet.RegisterPhysics (address, entity, world)
             (entity, world)
 
-        abstract member Unregister : obj Address * Entity * World -> Entity * World
+        abstract member Unregister : Entity Address * Entity * World -> Entity * World
         default facet.Unregister (address, entity, world) =
             let world = facet.UnregisterPhysics (address, entity, world)
             (entity, world)
 
-        abstract member RegisterPhysics : obj Address * Entity * World -> World
+        abstract member RegisterPhysics : Entity Address * Entity * World -> World
         default facet.RegisterPhysics (_, _, world) = world
 
-        abstract member UnregisterPhysics : obj Address * Entity * World -> World
+        abstract member UnregisterPhysics : Entity Address * Entity * World -> World
         default facet.UnregisterPhysics (_, _, world) = world
 
-        abstract member PropagatePhysics : obj Address * Entity * World -> World
+        abstract member PropagatePhysics : Entity Address * Entity * World -> World
         default facet.PropagatePhysics (_, _, world) = world
 
         abstract member GetRenderDescriptors : Entity * World -> RenderDescriptor list
@@ -283,7 +281,7 @@ module SimModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
           Name : string
-          OptSelectedScreenAddress : obj Address option
+          OptSelectedScreenAddress : Screen Address option
           CreationTimeNp : DateTime
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
@@ -334,7 +332,7 @@ module SimModule =
         { TickTime : int64
           Liveness : Liveness
           Interactivity : Interactivity
-          OptScreenTransitionDestinationAddress : obj Address option
+          OptScreenTransitionDestinationAddress : Screen Address option
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
           Overlayer : Overlayer
@@ -371,8 +369,27 @@ module SimModule =
         abstract MakeFacets : unit -> Map<string, Facet>
         default this.MakeFacets () = Map.empty
 
+[<AutoOpen>]
+module WorldAddressModule =
+
+    let atoea<'t> address =
+        Address.changeType<'t, Entity> address
+
+    let atoga<'t> address =
+        Address.changeType<'t, Group> address
+
+    let atosa<'t> address =
+        Address.changeType<'t, Screen> address
+
+    let atogma<'t> address =
+        Address.changeType<'t, Game> address
+
+    let atosma<'t> address =
+        Address.changeType<'t, Simulant> address
+
 module WorldConstants =
 
+    let GameAddress = Address<Game>.empty
     let AnyEventAddress = stoa<obj> "*"
     let TickEventAddress = stoa<unit> "Tick"
     let AddEventAddress = stoa<unit> "Add"
@@ -448,10 +465,10 @@ module World =
         else 1
 
     /// Get a simulant at the given address from the world.
-    let mutable getSimulant = Unchecked.defaultof<obj Address -> World -> Simulant>
+    let mutable getSimulant = Unchecked.defaultof<Simulant Address -> World -> Simulant>
 
     /// Try to get a simulant at the given address from the world.
-    let mutable getOptSimulant = Unchecked.defaultof<obj Address -> World -> Simulant option>
+    let mutable getOptSimulant = Unchecked.defaultof<Simulant Address -> World -> Simulant option>
 
     let private getSimulantPublishingPriority getEntityPublishingPriority simulant world =
         match simulant with
@@ -463,7 +480,7 @@ module World =
     let private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
         List.fold
             (fun subscriptions (key, address, subscription) ->
-                match getOptSimulant address world with
+                match getOptSimulant (atosma address) world with
                 | Some simulant ->
                     let priority = getSimulantPublishingPriority getEntityPublishingPriority simulant world
                     let subscription = (priority, (key, address, subscription))
@@ -516,9 +533,9 @@ module World =
         let subLists = List.definitize optSubLists
         let subList = List.concat subLists
         publishSorter subList world
-    
+
     /// Publish an event.
-    let publish<'d> publishSorter (eventAddress : 'd Address) publisherAddress (eventData : 'd) world =
+    let publish<'p, 'd> publishSorter (publisherAddress : 'p Address) (eventAddress : 'd Address) (eventData : 'd) world =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
@@ -529,9 +546,7 @@ module World =
                         let event =
                             { Address = eventAddress
                               SubscriberAddress = subscriberAddress
-                              OptSubscriber = getOptSimulant subscriberAddress world
-                              PublisherAddress = publisherAddress
-                              OptPublisher = getOptSimulant publisherAddress world
+                              PublisherAddress = atooa publisherAddress
                               Data = eventData }
                         let callableSubscription = unbox<BoxableSubscription> subscription
                         let result = callableSubscription event world
@@ -542,26 +557,26 @@ module World =
         world
 
     /// Publish an event.
-    let publish4<'d> (eventAddress : 'd Address) publisherAddress (eventData : 'd) world =
-        publish sortSubscriptionsByHierarchy eventAddress publisherAddress eventData world
+    let publish4<'p, 'd> (publisherAddress : 'p Address) (eventAddress : 'd Address) (eventData : 'd) world =
+        publish sortSubscriptionsByHierarchy publisherAddress eventAddress eventData world
 
     /// Subscribe to an event.
-    let subscribe<'d> subscriptionKey (eventAddress : 'd Address) subscriberAddress (subscription : 'd Subscription) world =
+    let subscribe<'s, 'd> subscriptionKey (subscriberAddress : 's Address) (eventAddress : 'd Address) (subscription : 'd Subscription) world =
         if not <| Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let subscriptions =
-                let subscriptionEntry = (subscriptionKey, subscriberAddress, boxSubscription subscription)
+                let subscriptionEntry = (subscriptionKey, atooa subscriberAddress, boxSubscription subscription)
                 match Map.tryFind objEventAddress world.Callbacks.Subscriptions with
                 | Some subscriptionEntries -> Map.add objEventAddress (subscriptionEntry :: subscriptionEntries) world.Callbacks.Subscriptions
                 | None -> Map.add objEventAddress [subscriptionEntry] world.Callbacks.Subscriptions
-            let unsubscriptions = Map.add subscriptionKey (objEventAddress, subscriberAddress) world.Callbacks.Unsubscriptions
+            let unsubscriptions = Map.add subscriptionKey (objEventAddress, atooa subscriberAddress) world.Callbacks.Unsubscriptions
             let callbacks = { world.Callbacks with Subscriptions = subscriptions; Unsubscriptions = unsubscriptions }
             { world with Callbacks = callbacks }
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event.
-    let subscribe4<'d> (eventAddress : 'd Address) subscriberAddress (subscription : 'd Subscription) world =
-        subscribe (makeSubscriptionKey ()) eventAddress subscriberAddress subscription world
+    let subscribe4<'s, 'd> (subscriberAddress : 's Address) (eventAddress : 'd Address) (subscription : 'd Subscription) world =
+        subscribe (makeSubscriptionKey ()) subscriberAddress eventAddress subscription world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
@@ -586,17 +601,17 @@ module World =
         | None -> world
 
     /// Keep active a subscription for the lifetime of a simulant.
-    let monitor<'d> (eventAddress : 'd Address) (subscriberAddress : obj Address) (subscription : 'd Subscription) world =
+    let monitor<'s, 'd> (subscriberAddress : 's Address) (eventAddress : 'd Address) (subscription : 'd Subscription) world =
         if not <| Address.isEmpty subscriberAddress then
-            let observationKey = makeSubscriptionKey ()
+            let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
-            let world = subscribe<'d> observationKey eventAddress subscriberAddress subscription world
+            let world = subscribe<'s, 'd> monitorKey subscriberAddress eventAddress subscription world
             let subscription' = fun _ world ->
                 let world = unsubscribe removalKey world
-                let world = unsubscribe observationKey world
+                let world = unsubscribe monitorKey world
                 (Cascade, world)
-            let removingEventAddress = WorldConstants.RemovingEventAddress ->- subscriberAddress
-            subscribe<unit> removalKey removingEventAddress subscriberAddress subscription' world
+            let removingEventAddress = WorldConstants.RemovingEventAddress ->- atooa subscriberAddress
+            subscribe<'s, unit> removalKey subscriberAddress removingEventAddress subscription' world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Set the Camera field of the world.
@@ -604,10 +619,10 @@ module World =
         { world with Camera = camera }
 
     /// Transform a bunch of simulants in the context of a world.
-    let transformSimulants transform parentAddress simulants world =
+    let transformSimulants transform transformParentAddress parentAddress simulants world =
         Map.fold
             (fun (simulants, world) simulantName simulant ->
-                let (simulant, world) = transform (parentAddress ->- ltoa [simulantName]) simulant world
+                let (simulant, world) = transform (transformParentAddress parentAddress ->- ltoa [simulantName]) simulant world
                 (Map.add simulantName simulant simulants, world))
             (Map.empty, world)
             simulants
@@ -840,13 +855,13 @@ module WorldPhysicsModule =
             world.Subsystems.Integrator.IsBodyOnGround physicsId
 
         /// Send a message to the physics system to create a physics body.
-        static member createBody entityAddress entityId bodyProperties world =
-            let createBodyMessage = CreateBodyMessage { EntityAddress = entityAddress; EntityId = entityId; BodyProperties = bodyProperties }
+        static member createBody (entityAddress : Entity Address) entityId bodyProperties world =
+            let createBodyMessage = CreateBodyMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyProperties = bodyProperties }
             World.addPhysicsMessage createBodyMessage world
 
         /// Send a message to the physics system to create several physics bodies.
-        static member createBodies entityAddress entityId bodyPropertyList world =
-            let createBodiesMessage = CreateBodiesMessage { EntityAddress = entityAddress; EntityId = entityId; BodyPropertyList = bodyPropertyList }
+        static member createBodies (entityAddress : Entity Address) entityId bodyPropertyList world =
+            let createBodiesMessage = CreateBodiesMessage { SourceAddress = atooa entityAddress; SourceId = entityId; BodyPropertyList = bodyPropertyList }
             World.addPhysicsMessage createBodiesMessage world
 
         /// Send a message to the physics system to destroy a physics body.
@@ -1007,68 +1022,70 @@ module Simulant =
         elif s = typeof<obj> then simulant :> obj :?> 's
         else failwith <| "Invalid simulation type '" + s.Name + "'."
 
-[<RequireQualifiedAccess>]
-module Event =
+[<AutoOpen>]
+module WorldEventModule =
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrap<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (event.SubscriberAddress, subscriber, event.Data)
+    type World with
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapASDE<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (event.SubscriberAddress, subscriber, event.Data, event)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapASDE<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapASD<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (event.SubscriberAddress, subscriber, event.Data)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapASD<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapASE<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (event.SubscriberAddress, subscriber, event)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapASE<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapADE<'d> (event : 'd Event) =
-        (event.SubscriberAddress, event.Data, event)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapADE<'s, 'd> (event : 'd Event) (_ : World) =
+            (Address.changeType<obj, 's> event.SubscriberAddress, event.Data, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapAS<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (event.SubscriberAddress, subscriber)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapSDE<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (subscriber, event.Data, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapAD<'d> (event : 'd Event) =
-        (event.SubscriberAddress, event.Data)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapAS<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (Address.changeType<obj, 's> event.SubscriberAddress, subscriber)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapAE<'d> (event : 'd Event) =
-        (event.SubscriberAddress, event)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapAD<'s, 'd> (event : 'd Event) (_ : World) =
+            (Address.changeType<obj, 's> event.SubscriberAddress, event.Data)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapSD<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (subscriber, event.Data)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapAE<'s, 'd> (event : 'd Event) (_ : World) =
+            (Address.changeType<obj, 's> event.SubscriberAddress, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapSE<'s, 'd> (event : 'd Event) =
-        let subscriber = Option.get event.OptSubscriber |> Simulant.toGeneric<'s>
-        (subscriber, event)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapSD<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (subscriber, event.Data)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapDE<'d> (event : 'd Event) =
-        (event.Data, event)
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapSE<'s, 'd> (event : 'd Event) world =
+            let subscriber = World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            (subscriber, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapA (event : 'd Event) =
-        event.SubscriberAddress
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapDE<'s, 'd> (event : 'd Event) (_ : World) =
+            (event.Data, event)
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapS<'s, 'd> (event : 'd Event) =
-        Simulant.toGeneric<'s> <| Option.get event.OptSubscriber
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapA<'s, 'd> (event : 'd Event) (_ : World) =
+            Address.changeType<obj, 's> event.SubscriberAddress
 
-    /// Unwrap commonly-useful values of an event.
-    let unwrapD<'d> (event : 'd Event) =
-        event.Data
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapS<'s, 'd> (event : 'd Event) world =
+            World.getOptSimulant (atosma event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+
+        /// Unwrap commonly-useful values of an event.
+        static member unwrapD<'s, 'd> (event : 'd Event) (_ : World) =
+            event.Data
