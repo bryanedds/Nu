@@ -6,9 +6,8 @@ namespace Prime
 [<RequireQualifiedAccess>]
 module Option =
 
-    /// Concatenate an option option.
-    /// TODO: consider renaming this to 'join' as in monadic join.
-    let inline concat opt =
+    /// Join an option option.
+    let inline join opt =
         match opt with
         | Some (Some s) -> Some s
         | Some None -> None

@@ -6,7 +6,7 @@ module List
 open System
 open System.Collections.Generic
 
-// TODO: for speed, implement List functions _without_ using Seq functions.
+// TODO: for speed, use new F# 4.0 List functions that are implemented _without_ Seq functions!
 
 /// The missing cons function.
 let cons = Prime.Sectioning.cons

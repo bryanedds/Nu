@@ -81,7 +81,6 @@ module MetamapModule =
                         rand
             Seq.tryFind predicate destinations
 
-        // TODO: would be nicer to have a Vector4I than to use Vector2i * Vector2i...
         static member wander stumbleLimit stumbleBounds tracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =

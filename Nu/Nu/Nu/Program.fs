@@ -3,8 +3,6 @@ open System
 open Nu
 module Program =
 
-    (* TODO: get rid of these duplicative .sln files and just use Nu.sln, Aml.sln, and Prime.sln. *)
-
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscalws to a off-screen
     buffer of a static size and then blit that with scaling to the back-buffer. *)

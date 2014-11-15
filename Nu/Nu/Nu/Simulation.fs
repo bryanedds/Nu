@@ -804,7 +804,7 @@ module WorldInputModule =
         static member isKeyboardKeyDown scanCode (_ : World) =
             KeyboardState.isKeyDown scanCode
 
-        // TODO: implement getKeyboardModifierState.
+        // TODO: implement isKeyboardModifierActive.
 
 [<AutoOpen>]
 module WorldPhysicsModule =

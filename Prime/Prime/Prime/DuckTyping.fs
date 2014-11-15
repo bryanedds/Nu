@@ -42,16 +42,16 @@ module TypeAbsorption =
         static member make number =
             { Number = number; TypeCarrier = fun (_ : 't) -> () }
 
-    let ( <* ) (a : 'a Absorb) (b : 'b Absorb) =
+    let ( ->- ) (a : 'a Absorb) (b : 'b Absorb) =
         Absorb<'a>.make <| a.Number + b.Number
 
-    let ( * ) (a : 't Absorb) (b : 't Absorb) =
+    let ( -|- ) (a : 't Absorb) (b : 't Absorb) =
         Absorb<'t>.make <| a.Number + b.Number
 
-    let ( *> ) (a : 'a Absorb) (b : 'b Absorb) =
+    let ( -<- ) (a : 'a Absorb) (b : 'b Absorb) =
         Absorb<'b>.make <| a.Number + b.Number
 
-    let x = Absorb<obj>.make 0 * Absorb<obj>.make 0
-    let y = Absorb<int>.make 0 * Absorb<int>.make 0
-    let z = Absorb<int>.make 0 <* Absorb<obj>.make 0
-    let w = Absorb<obj>.make 0 *> Absorb<int>.make 0
+    let x = Absorb<obj>.make 0 -|- Absorb<obj>.make 0
+    let y = Absorb<int>.make 0 -|- Absorb<int>.make 0
+    let z = Absorb<int>.make 0 ->- Absorb<obj>.make 0
+    let w = Absorb<obj>.make 0 -<- Absorb<int>.make 0
