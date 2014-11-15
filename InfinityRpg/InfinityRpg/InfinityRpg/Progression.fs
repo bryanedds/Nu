@@ -11,12 +11,12 @@ module Progression =
 
     let private addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime DissolveImage TitleAddress world
-        let world = World.subscribe4 Address.empty ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
-        World.subscribe4 Address.empty ClickTitleExitEventAddress World.handleAsExit world
+        let world = World.subscribe4 GameAddress ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
+        World.subscribe4 GameAddress ClickTitleExitEventAddress World.handleAsExit world
 
     let private addCreditsScreen world =
         let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime DissolveImage CreditsAddress world
-        World.subscribe4 Address.empty ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4 GameAddress ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     let tryMakeInfinityRpgWorld sdlDeps userState =
         let componentFactory = InfinityRpgComponentFactory ()

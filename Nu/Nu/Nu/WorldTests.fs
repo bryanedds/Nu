@@ -7,6 +7,7 @@ open Xunit
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 module WorldTests =
 
     let UnitEventAddress = stoa<unit> "Test"
@@ -35,41 +36,41 @@ module WorldTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 Address.empty UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 Address.empty UnitEventAddress () world
+        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
+        let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 Address.empty UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 Address.empty UnitEventAddress () world
-        let world = World.publish4 Address.empty UnitEventAddress () world
+        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
+        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 Address.empty UnitEventAddress incUserStateAndCascade world
-        let world = World.subscribe4 Address.empty UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 Address.empty UnitEventAddress () world
+        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
+        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
+        let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 Address.empty UnitEventAddress incUserStateAndResolve world
-        let world = World.subscribe4 Address.empty UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 Address.empty UnitEventAddress () world
+        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndResolve world
+        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
+        let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let key = World.makeSubscriptionKey ()
         let world = World.makeEmpty 0
-        let world = World.subscribe key Address.empty UnitEventAddress incUserStateAndResolve world
+        let world = World.subscribe key GameAddress UnitEventAddress incUserStateAndResolve world
         let world = World.unsubscribe key world
-        let world = World.publish4 Address.empty UnitEventAddress () world
+        let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
@@ -85,5 +86,5 @@ module WorldTests =
             let world = World.setUserState entity.Name world
             (Cascade, world)
         let world = World.subscribe4 TestEntityAddress StringEventAddress handleEvent world
-        let world = World.publish4 Address.empty StringEventAddress String.Empty world
+        let world = World.publish4 GameAddress StringEventAddress String.Empty world
         Assert.Equal<string> (TestEntityName, World.getUserState world)
