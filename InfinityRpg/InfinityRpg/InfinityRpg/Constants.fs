@@ -19,14 +19,14 @@ module Constants =
     let SplashNu = "Nu"
 
     // title constants
-    let TitleAddress = stoa<obj> "Title"
+    let TitleAddress = stoa<Screen> "Title"
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
     let ClickTitleNewGameEventAddress = stoa<unit> "Click/Title/Group/NewGame"
     let ClickTitleCreditsEventAddress = stoa<unit> "Click/Title/Group/Credits"
     let ClickTitleExitEventAddress = stoa<unit> "Click/Title/Group/Exit"
 
     // credits constants
-    let CreditsAddress = stoa<obj> "Credits"
+    let CreditsAddress = stoa<Screen> "Credits"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
     let ClickCreditsBackEventAddress = stoa<unit> "Click/Credits/Group/Back"
 
@@ -36,7 +36,7 @@ module Constants =
     let StageOutgoingTime = 90L
 
     // splash constants
-    let SplashAddress = stoa<obj> "Splash"
+    let SplashAddress = stoa<Screen> "Splash"
     let SplashIncomingTime = 60L
     let SplashIdlingTime = 60L
     let SplashOutgoingTime = 40L

@@ -8,6 +8,6 @@ open Nu
 module Constants =
 
     let EditorScreenName = "EditorScreen"
-    let EditorScreenAddress = stoa<obj> EditorScreenName
+    let EditorScreenAddress = stoa<Screen> EditorScreenName
     let AddEntityKey = Guid.NewGuid ()
     let RemovingEntityKey = Guid.NewGuid ()

@@ -25,7 +25,7 @@ module BulletModule =
         inherit EntityDispatcher ()
 
         let handleTick event world =
-            let (address, bullet : Entity) = Event.unwrapAS event
+            let (address, bullet : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 let bullet = Entity.setAge (bullet.Age + 1L) bullet
                 let world =
@@ -35,7 +35,7 @@ module BulletModule =
             else (Cascade, world)
 
         let handleCollision event world =
-            let (address, bullet : Entity) = Event.unwrapAS event
+            let (address, bullet : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 let world = snd <| World.removeEntity address bullet world
                 (Cascade, world)
@@ -57,8 +57,8 @@ module BulletModule =
              typeof<SpriteFacet>.Name]
 
         override dispatcher.Register (address, bullet, world) =
-            let world = World.monitor TickEventAddress address handleTick world
-            let world = World.monitor (CollisionEventAddress ->- address) address handleCollision world
+            let world = World.monitor address TickEventAddress handleTick world
+            let world = World.monitor address (CollisionEventAddress ->>- address) handleCollision world
             (bullet, world)
 
 [<AutoOpen>]
@@ -84,7 +84,7 @@ module EnemyModule =
             World.playSound ExplosionSound 1.0f world
 
         let handleTick event world =
-            let (address, enemy : Entity) = Event.unwrapAS event
+            let (address, enemy : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 let world = if hasAppeared world.Camera enemy then move enemy world else world
                 let world = if enemy.Health <= 0 then die address enemy world else world
@@ -92,7 +92,7 @@ module EnemyModule =
             else (Cascade, world)
 
         let handleCollision event world =
-            let (address, enemy : Entity, collisionData) = Event.unwrap event
+            let (address, enemy : Entity, collisionData) = World.unwrapASD event world
             if World.isGamePlaying world then
                 let collidee = World.getEntity collisionData.Collidee world
                 let isBullet = Reflection.dispatchesAs typeof<BulletDispatcher> collidee.DispatcherNp
@@ -124,8 +124,8 @@ module EnemyModule =
         override dispatcher.Register (address, enemy, world) =
             let world =
                 world |>
-                World.monitor TickEventAddress address handleTick |>
-                World.monitor (CollisionEventAddress ->- address) address handleCollision
+                World.monitor address TickEventAddress handleTick |>
+                World.monitor address (CollisionEventAddress ->>- address) handleCollision
             (enemy, world)
 
 [<AutoOpen>]
@@ -168,7 +168,7 @@ module PlayerModule =
             propelBullet bullet world
 
         let handleSpawnBullet event world =
-            let (address, player : Entity) = Event.unwrapAS event
+            let (address, player : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 if not <| Entity.hasFallen player then
                     if world.State.TickTime % 6L = 0L then
@@ -184,7 +184,7 @@ module PlayerModule =
             else world.State.TickTime
 
         let handleMovement event world =
-            let (address, player : Entity) = Event.unwrapAS event
+            let (address, player : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 let lastTimeOnGround = getLastTimeOnGround player world
                 let player = Entity.setLastTimeOnGroundNp lastTimeOnGround player
@@ -202,7 +202,7 @@ module PlayerModule =
             else (Cascade, world)
 
         let handleJump event world =
-            let (address, player : Entity) = Event.unwrapAS event
+            let (address, player : Entity) = World.unwrapAS event world
             if World.isGamePlaying world then
                 if  world.State.TickTime >= player.LastTimeJumpNp + 12L &&
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
@@ -215,7 +215,7 @@ module PlayerModule =
             else (Cascade, world)
 
         let handleJumpByKeyboardKey event world =
-            let keyboardKeyData = Event.unwrapD event
+            let keyboardKeyData = World.unwrapD event world
             match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.IsRepeat) with
             | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
             | _ -> (Cascade, world)
@@ -241,10 +241,10 @@ module PlayerModule =
         override dispatcher.Register (address, player, world) =
             let world =
                 world |>
-                World.monitor TickEventAddress address handleSpawnBullet |>
-                World.monitor TickEventAddress address handleMovement |>
-                World.monitor DownMouseLeftEventAddress address handleJump |>
-                World.monitor DownKeyboardKeyEventAddress address handleJumpByKeyboardKey
+                World.monitor address TickEventAddress handleSpawnBullet |>
+                World.monitor address TickEventAddress handleMovement |>
+                World.monitor address DownMouseLeftEventAddress handleJump |>
+                World.monitor address DownKeyboardKeyEventAddress handleJumpByKeyboardKey
             (player, world)
 
 [<AutoOpen>]
@@ -254,7 +254,7 @@ module StagePlayModule =
         inherit GroupDispatcher ()
 
         let getPlayer groupAddress world =
-            let playerAddress = groupAddress ->- ltoa [StagePlayerName]
+            let playerAddress = atoea groupAddress ->- ltoa [StagePlayerName]
             World.getEntity playerAddress world
 
         let adjustCamera groupAddress world =
@@ -265,11 +265,11 @@ module StagePlayModule =
             else world
 
         let handleAdjustCamera event world =
-            let address = Event.unwrapA event
+            let address = World.unwrapA event world
             (Cascade, adjustCamera address world)
 
         let handlePlayerFall event world =
-            let address = Event.unwrapA event
+            let address = World.unwrapA event world
             if World.isGamePlaying world then
                 let player = getPlayer address world
                 match World.getOptScreen TitleAddress world with
@@ -287,8 +287,8 @@ module StagePlayModule =
         override dispatcher.Register (address, group, world) =
             let world =
                 world |>
-                World.monitor TickEventAddress address handleAdjustCamera |>
-                World.monitor TickEventAddress address handlePlayerFall
+                World.monitor address TickEventAddress handleAdjustCamera |>
+                World.monitor address TickEventAddress handlePlayerFall
             let world = adjustCamera address world
             (group, world)
 
@@ -309,7 +309,7 @@ module StageScreenModule =
             (sectionName, (sectionGroup, sectionEntities))
 
         let handleStartPlay event world =
-            let address = Event.unwrapA event
+            let address = World.unwrapA event world
             let random = Random ()
             let sectionFilePaths = List.toArray SectionFilePaths
             let sectionDescriptors =
@@ -328,7 +328,7 @@ module StageScreenModule =
             (Cascade, world)
 
         let handleStopPlay event world =
-            let address = Event.unwrapA event
+            let address = World.unwrapA event world
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
             let groups = World.getGroups3 address groupNames world
@@ -338,9 +338,9 @@ module StageScreenModule =
         override dispatcher.Register (address, screen, world) =
             let world =
                 world |>
-                World.monitor (SelectEventAddress ->- address) address handleStartPlay |>
-                World.monitor (StartOutgoingEventAddress ->- address) address handleStoppingPlay |>
-                World.monitor (DeselectEventAddress ->- address) address handleStopPlay
+                World.monitor address (SelectEventAddress ->>- address) handleStartPlay |>
+                World.monitor address (StartOutgoingEventAddress ->>- address) handleStoppingPlay |>
+                World.monitor address (DeselectEventAddress ->>- address) handleStopPlay
             (screen, world)
 
 [<AutoOpen>]

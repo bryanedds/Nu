@@ -32,7 +32,7 @@ module WorldGroupModule =
 
     type World with
 
-        static member private optGroupFinder address world =
+        static member private optGroupFinder (address : Group Address) world =
             match address.Names with
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
@@ -41,7 +41,7 @@ module WorldGroupModule =
                 | None -> None
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member private groupAdder address world child =
+        static member private groupAdder (address : Group Address) world child =
             match address.Names with
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
@@ -52,7 +52,7 @@ module WorldGroupModule =
                 | None -> { world with Groups = Map.singleton screenName <| Map.singleton groupName child }
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
-        static member private groupRemover address world =
+        static member private groupRemover (address : Group Address) world =
             match address.Names with
             | [screenName; groupName] ->
                 let optGroupMap = Map.tryFind screenName world.Groups
@@ -79,7 +79,7 @@ module WorldGroupModule =
                         let address = Address.make [screenKvp.Key; groupKvp.Key]
                         yield (address, groupKvp.Value) }
 
-        static member getGroups screenAddress world =
+        static member getGroups (screenAddress : Screen Address) world =
             match screenAddress.Names with
             | [screenName] ->
                 match Map.tryFind screenName world.Groups with
@@ -87,7 +87,7 @@ module WorldGroupModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid screen address '" + acstring screenAddress + "'."
 
-        static member getGroups3 screenAddress groupNames world =
+        static member getGroups3 (screenAddress : Screen Address) groupNames world =
             let groupNames = Set.ofSeq groupNames
             let groups = World.getGroups screenAddress world
             Map.filter (fun groupName _ -> Set.contains groupName groupNames) groups
@@ -98,8 +98,8 @@ module WorldGroupModule =
         static member private unregisterGroup address group world =
             Group.unregister address group world
 
-        static member removeGroupImmediate address group world =
-            let world = World.publish4 (RemovingEventAddress ->- address) address () world
+        static member removeGroupImmediate (address : Group Address) group world =
+            let world = World.publish4 address (RemovingEventAddress ->>- address) () world
             let (group, world) = World.unregisterGroup address group world
             let entities = World.getEntities address world
             let world = snd <| World.removeEntitiesImmediate address entities world
@@ -116,11 +116,11 @@ module WorldGroupModule =
             let world = World.addTask task world
             (group, world)
 
-        static member removeGroupsImmediate screenAddress groups world =
-            World.transformSimulants World.removeGroupImmediate screenAddress groups world
+        static member removeGroupsImmediate (screenAddress : Screen Address) groups world =
+            World.transformSimulants World.removeGroupImmediate atoga screenAddress groups world
 
-        static member removeGroups screenAddress groups world =
-            World.transformSimulants World.removeGroup screenAddress groups world
+        static member removeGroups (screenAddress : Screen Address) groups world =
+            World.transformSimulants World.removeGroup atoga screenAddress groups world
 
         static member addGroup address group entities world =
             if not <| World.containsGroup address world then
@@ -131,14 +131,14 @@ module WorldGroupModule =
                 let world = World.setGroup address group world
                 let world = snd <| World.addEntities address entities world
                 let (group, world) = World.registerGroup address group world
-                let world = World.publish4 (AddEventAddress ->- address) address () world
+                let world = World.publish4 address (AddEventAddress ->>- address) () world
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 
-        static member addGroups screenAddress groupDescriptors world =
+        static member addGroups (screenAddress : Screen Address) groupDescriptors world =
             Map.fold
                 (fun (groups, world) groupName (group, entities) ->
-                    let (group, world) = World.addGroup (screenAddress ->- ltoa [groupName]) group entities world
+                    let (group, world) = World.addGroup (atoga screenAddress ->- ltoa [groupName]) group entities world
                     (group :: groups, world))
                 ([], world)
                 groupDescriptors

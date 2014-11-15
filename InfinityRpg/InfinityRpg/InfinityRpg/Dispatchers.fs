@@ -189,7 +189,7 @@ module FieldDispatcherModule =
                     (fun physicsIds (tileCoords : Vector2i) tile ->
                         match tile.FieldTileType with
                         | Impassable ->
-                            let physicsId = { EntityId = field.Id; BodyId = intsToGuid tileCoords.X tileCoords.Y }
+                            let physicsId = { SourceId = field.Id; BodyId = intsToGuid tileCoords.X tileCoords.Y }
                             physicsId :: physicsIds
                         | Passable -> physicsIds)
                     []
@@ -365,7 +365,7 @@ module CharacterControlFacetModule =
         static let [<Literal>] WalkForce = 200.0f
 
         static let handleKeyboardKeyChange event world =
-            let (address, character, keyData) = Event.unwrapASD<Entity, KeyboardKeyData> event
+            let (address, character : Entity, keyData) = World.unwrapASD event world
             if not keyData.IsRepeat then
                 let xForce =
                     if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then WalkForce
@@ -403,7 +403,7 @@ module CharacterCameraFacetModule =
         inherit Facet ()
 
         static let handleTick event world =
-            let character = World.getEntity event.SubscriberAddress world
+            let character : Entity = World.unwrapS event world
             let camera = { world.Camera with EyeCenter = character.Position + character.Size * 0.5f }
             (Cascade, World.setCamera camera world)
 

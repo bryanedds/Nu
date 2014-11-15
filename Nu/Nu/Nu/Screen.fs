@@ -39,17 +39,17 @@ module WorldScreenModule =
 
     type World with
 
-        static member private optScreenFinder address world =
+        static member private optScreenFinder (address : Screen Address) world =
             match address.Names with
             | [screenName] -> Map.tryFind screenName world.Screens
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member private screenAdder address world child =
+        static member private screenAdder (address : Screen Address) world child =
             match address.Names with
             | [screenName] -> { world with Screens = Map.add screenName child world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
 
-        static member private screenRemover address world =
+        static member private screenRemover (address : Screen Address) world =
             match address.Names with
             | [screenName] -> { world with Screens = Map.remove screenName world.Screens }
             | _ -> failwith <| "Invalid screen address '" + acstring address + "'."
@@ -69,14 +69,14 @@ module WorldScreenModule =
                     let address = Address.make [screenKvp.Key]
                     yield (address, screenKvp.Value) }
 
-        static member getScreens address world =
-            match address.Names with
+        static member getScreens (gameAddress : Game Address) world =
+            match gameAddress.Names with
             | [] -> world.Screens
-            | _ -> failwith <| "Invalid game address '" + acstring address + "'. Game address is always empty."
+            | _ -> failwith <| "Invalid game address '" + acstring gameAddress + "'. Game address is always empty."
 
-        static member getScreens3 gameAddress screenNames world =
+        static member getScreens3 (gameAddress : Game Address) screenNames world =
             let screenNames = Set.ofSeq screenNames
-            let screens = World.getGroups gameAddress world
+            let screens = World.getScreens gameAddress world
             Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
 
         static member private registerScreen address screen world =
@@ -86,7 +86,7 @@ module WorldScreenModule =
             Screen.unregister address screen world
 
         static member removeScreenImmediate address screen world =
-            let world = World.publish4 (RemovingEventAddress ->- address) address () world
+            let world = World.publish4 address (RemovingEventAddress ->>- address) () world
             let groups = World.getGroups address world
             let world = snd <| World.removeGroupsImmediate address groups world
             let (screen, world) = World.unregisterScreen address screen world
@@ -112,7 +112,7 @@ module WorldScreenModule =
                 let world = World.setScreen address screen world
                 let world = snd <| World.addGroups address groupDescriptors world
                 let (screen, world) = World.registerScreen address screen world
-                let world = World.publish4 (AddEventAddress ->- address) address () world
+                let world = World.publish4 address (AddEventAddress ->>- address) () world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 

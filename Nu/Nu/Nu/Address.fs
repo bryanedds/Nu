@@ -66,6 +66,9 @@ module AddressModule =
             let hash = List.fold (fun hash (key : NameKey) -> hash ^^^ key.Hash) 0 keys
             { Names = list; NamesRev = List.rev list; NameKeys = keys; Hash = hash; TypeCarrier = fun (_ : 't) -> () }
 
+        /// The empty address.
+        static member empty = Address<'t>.make []
+
         interface 't Address IComparable with
             member this.CompareTo that =
                 List.compareStrings this.NamesRev that.NamesRev
@@ -91,6 +94,19 @@ module AddressModule =
         override this.ToString () =
             Address<'t>.join this.Names
 
+    /// Convert a string into a list.
+    let stoa<'t> (str : string) =
+        let list = Address<'t>.split str
+        Address<'t>.make list
+
+    /// Convert a list into an address.
+    let ltoa<'t> list =
+        Address<'t>.make list
+
+    /// Convert any address to an obj Address.
+    let atooa<'t> (address : 't Address) =
+        { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : obj) -> () }
+
     /// Concatenate two addresses of the same type.
     let acat (address : 'a Address) (address2 : 'a Address) =
         let list = address.Names @ address2.Names
@@ -100,11 +116,19 @@ module AddressModule =
     let acatf (address : 'a Address) (address2 : obj Address) =
         let list = address.Names @ address2.Names
         Address<'a>.make list
+    
+    /// Concatenate two addresses, forcing the type of first address.
+    let acatff (address : 'a Address) (address2 : 'b Address) =
+        acatf address <| atooa address2
 
     /// Concatenate two addresses, taking the type of the second address.
     let acats (address : obj Address) (address2 : 'b Address) =
         let list = address.Names @ address2.Names
         Address<'b>.make list
+    
+    /// Concatenate two addresses, forcing the type of second address.
+    let acatsf (address : 'a Address) (address2 : 'b Address) =
+        acats (atooa address) address2
     
     /// Concatenate two addresses of the same type.
     let (-|-) = acat
@@ -112,28 +136,21 @@ module AddressModule =
     /// Concatenate two addresses, taking the type of first address.
     let (->-) = acatf
 
+    /// Concatenate two addresses, forcing the type of first address.
+    let (->>-) = acatff
+
     /// Concatenate two addresses, taking the type of the second address.
     let (-<-) = acats
-
-    /// Convert a string into a list.
-    let stoa<'t> (str : string) =
-        let list = Address<'t>.split str
-        Address<'t>.make list
-
-    /// Convert a list into a list.
-    let ltoa<'t> list =
-        Address<'t>.make list
-
-    /// Convert any address to an obj Address.
-    let atooa address =
-        Address<obj>.make address.Names
+    
+    /// Concatenate two addresses, forcing the type of second address.
+    let (-<<-) = acatsf
 
 [<RequireQualifiedAccess>]
 module Address =
 
-    /// The empty address.
-    let empty<'t> =
-        Address<'t>.make []
+    /// Change the type of an address.
+    let changeType<'t, 'u> (address : 't Address) =
+        { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : 'u) -> () }
 
     /// Take the head of an address.
     let head address =

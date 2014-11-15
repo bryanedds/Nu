@@ -122,7 +122,7 @@ module WorldEntityModule =
 
     type World with
 
-        static member private optEntityFinder address world =
+        static member private optEntityFinder (address : Entity Address) world =
             match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
@@ -135,7 +135,7 @@ module WorldEntityModule =
                 | None -> None
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member private entityAdder address world (entity : Entity) =
+        static member private entityAdder (address : Entity Address) world (entity : Entity) =
             match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
@@ -157,7 +157,7 @@ module WorldEntityModule =
                     { world with Entities = Map.add screenName groupMap world.Entities }
             | _ -> failwith <| "Invalid entity address '" + acstring address + "'."
 
-        static member private entityRemover address world =
+        static member private entityRemover (address : Entity Address)  world =
             match address.Names with
             | [screenName; groupName; entityName] ->
                 let optGroupMap = Map.tryFind screenName world.Entities
@@ -178,7 +178,7 @@ module WorldEntityModule =
         static member setEntity address entity world = 
                 let oldEntity = Option.get <| World.optEntityFinder address world
                 let world = World.entityAdder address world entity
-                World.publish4 (EntityChangeEventAddress ->- address) address { OldEntity = oldEntity } world
+                World.publish4 address (EntityChangeEventAddress ->>- address) { OldEntity = oldEntity } world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
@@ -195,7 +195,7 @@ module WorldEntityModule =
                             let address = Address.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
                             yield (address, entityKvp.Value) }
     
-        static member getEntities groupAddress world =
+        static member getEntities (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
                 match Map.tryFind screenName world.Entities with
@@ -206,7 +206,7 @@ module WorldEntityModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + acstring groupAddress + "'."
 
-        static member getEntities3 groupAddress entityNames world =
+        static member getEntities3 (groupAddress : Group Address) entityNames world =
             let entityNames = Set.ofSeq entityNames
             let entitys = World.getEntities groupAddress world
             Map.filter (fun entityName _ -> Set.contains entityName entityNames) entitys
@@ -217,8 +217,8 @@ module WorldEntityModule =
         static member private unregisterEntity address entity world =
             Entity.unregister address entity world
 
-        static member removeEntityImmediate address entity world =
-            let world = World.publish4 (RemovingEventAddress ->- address) address () world
+        static member removeEntityImmediate (address : Entity Address) entity world =
+            let world = World.publish4 address (RemovingEventAddress ->>- address) () world
             let (entity, world) = World.unregisterEntity address entity world
             let world = World.setOptEntityWithoutEvent address None world
             (entity, world)
@@ -233,11 +233,11 @@ module WorldEntityModule =
             let world = World.addTask task world
             (entity, world)
 
-        static member removeEntitiesImmediate groupAddress entities world =
-            World.transformSimulants World.removeEntityImmediate groupAddress entities world
+        static member removeEntitiesImmediate (groupAddress : Group Address) entities world =
+            World.transformSimulants World.removeEntityImmediate atoea groupAddress entities world
 
-        static member removeEntities groupAddress entities world =
-            World.transformSimulants World.removeEntity groupAddress entities world
+        static member removeEntities (groupAddress : Group Address) entities world =
+            World.transformSimulants World.removeEntity atoea groupAddress entities world
 
         static member addEntity address entity world =
             if not <| World.containsEntity address world then
@@ -247,12 +247,12 @@ module WorldEntityModule =
                     | None -> (entity, world)
                 let world = World.setEntityWithoutEvent address entity world
                 let (entity, world) = World.registerEntity address entity world
-                let world = World.publish4 (AddEventAddress ->- address) address () world
+                let world = World.publish4 address (AddEventAddress ->>- address) () world
                 (entity, world)
             else failwith <| "Adding an entity that the world already contains at address '" + acstring address + "'."
 
-        static member addEntities groupAddress entities world =
-            World.transformSimulants World.addEntity groupAddress entities world
+        static member addEntities (groupAddress : Group Address) entities world =
+            World.transformSimulants World.addEntity atoea groupAddress entities world
 
         static member private tryGetFacet facetName world =
             match Map.tryFind facetName world.Components.Facets with
