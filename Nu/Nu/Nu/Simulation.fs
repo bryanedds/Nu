@@ -384,7 +384,7 @@ module WorldAddressModule =
     let atoma address =
         Address.changeType<'t, Game> address
 
-    let atola address =
+    let atoua address =
         Address.changeType<'t, Simulant> address
 
     let gatoea groupAddress entityName =
@@ -498,7 +498,7 @@ module World =
     let private getSortableSubscriptions getEntityPublishingPriority (subscriptions : SubscriptionEntry list) world : (single * SubscriptionEntry) list =
         List.fold
             (fun subscriptions (key, address, subscription) ->
-                match getOptSimulant (atola address) world with
+                match getOptSimulant (atoua address) world with
                 | Some simulant ->
                     let priority = getSimulantPublishingPriority getEntityPublishingPriority simulant world
                     let subscription = (priority, (key, address, subscription))
@@ -1049,17 +1049,17 @@ module WorldEventModule =
         /// TODO: these implementations builds in the notion that only simulants are addressable.
         /// While this is true for now, it may not be true later. Make this more general!
         static member unwrapASDE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapASD<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapASE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event)
 
         /// Unwrap commonly-useful values of an event.
@@ -1068,12 +1068,12 @@ module WorldEventModule =
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapSDE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapAS<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber)
 
         /// Unwrap commonly-useful values of an event.
@@ -1086,12 +1086,12 @@ module WorldEventModule =
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapSD<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event.Data)
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapSE<'s, 'd> (event : 'd Event) world =
-            let subscriber = World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event)
 
         /// Unwrap commonly-useful values of an event.
@@ -1104,7 +1104,7 @@ module WorldEventModule =
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapS<'s, 'd> (event : 'd Event) world =
-            World.getOptSimulant (atola event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
+            World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
 
         /// Unwrap commonly-useful values of an event.
         static member unwrapD<'s, 'd> (event : 'd Event) (_ : World) =
