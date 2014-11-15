@@ -393,7 +393,7 @@ module CharacterControlFacetModule =
             typeof<PlayerCharacterDispatcher>.Name
 
         override facet.Register (address, entity, world) =
-            let world = React.from ChangeKeyboardKeyEventAddress address |> React.monitor handleKeyboardKeyChange world |> snd
+            let world = React.from KeyboardKeyChangeEventAddress address |> React.monitor handleKeyboardKeyChange world |> snd
             (entity, world)
 
 [<AutoOpen>]

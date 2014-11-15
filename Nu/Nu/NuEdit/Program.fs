@@ -362,14 +362,14 @@ module Program =
             else (Cascade, world)
         | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
 
-    let handleNuDownMouseRight (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
+    let handleNuMouseRightDown (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
         let handled = if World.isGamePlaying world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
         let world = World.transformUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
-    let handleNuBeginEntityDrag (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
+    let handleNuEntityDragBegin (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
         if not <| canEditWithMouse form world then
             let handled = if World.isGamePlaying world then Cascade else Resolve
             let mousePosition = World.getMousePositionF world
@@ -383,7 +383,7 @@ module Program =
             | None -> (handled, world)
         else (Cascade, world)
 
-    let handleNuEndEntityDrag (form : NuEditForm) (_ : MouseButtonData Event) world =
+    let handleNuEntityDragEnd (form : NuEditForm) (_ : MouseButtonData Event) world =
         if canEditWithMouse form world then (Cascade, world)
         else
             let handled = if World.isGamePlaying world then Cascade else Resolve
@@ -397,14 +397,14 @@ module Program =
                 (handled, world)
             | DragEntityNone -> (Resolve, world)
 
-    let handleNuBeginCameraDrag (_ : NuEditForm) (_ : MouseButtonData Event) world =
+    let handleNuCameraDragBegin (_ : NuEditForm) (_ : MouseButtonData Event) world =
         let mousePosition = World.getMousePositionF world
         let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
         let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
         let world = World.transformUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
-    let handleNuBeginEndCameraDrag (_ : NuEditForm) (_ : MouseButtonData Event) world =
+    let handleNuCameraDragEnd (_ : NuEditForm) (_ : MouseButtonData Event) world =
         let editorState = World.getUserState world
         match editorState.DragCameraState with
         | DragCameraPosition _ ->
@@ -882,11 +882,11 @@ module Program =
             let groupDescriptors = Map.singleton group.Name (group, Map.empty)
             let world = snd <| World.addScreen EditorScreenAddress screen groupDescriptors world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
-            let world = World.subscribe4 GameAddress DownMouseRightEventAddress (handleNuDownMouseRight form worldChangers refWorld) world
-            let world = World.subscribe4 GameAddress DownMouseLeftEventAddress (handleNuBeginEntityDrag form worldChangers refWorld) world
-            let world = World.subscribe4 GameAddress UpMouseLeftEventAddress (handleNuEndEntityDrag form) world
-            let world = World.subscribe4 GameAddress DownMouseCenterEventAddress (handleNuBeginCameraDrag form) world
-            let world = World.subscribe4 GameAddress UpMouseCenterEventAddress (handleNuBeginEndCameraDrag form) world
+            let world = World.subscribe4 GameAddress MouseRightDownEventAddress (handleNuMouseRightDown form worldChangers refWorld) world
+            let world = World.subscribe4 GameAddress MouseLeftDownEventAddress (handleNuEntityDragBegin form worldChangers refWorld) world
+            let world = World.subscribe4 GameAddress MouseLeftUpEventAddress (handleNuEntityDragEnd form) world
+            let world = World.subscribe4 GameAddress MouseCenterDownEventAddress (handleNuCameraDragBegin form) world
+            let world = World.subscribe4 GameAddress MouseCenterUpEventAddress (handleNuCameraDragEnd form) world
             let world = subscribeToEntityEvents form world
             Right world
         | Left errorMsg -> Left errorMsg

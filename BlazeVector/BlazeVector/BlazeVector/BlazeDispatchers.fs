@@ -243,8 +243,8 @@ module PlayerModule =
                 world |>
                 World.monitor address TickEventAddress handleSpawnBullet |>
                 World.monitor address TickEventAddress handleMovement |>
-                World.monitor address DownMouseLeftEventAddress handleJump |>
-                World.monitor address DownKeyboardKeyEventAddress handleJumpByKeyboardKey
+                World.monitor address MouseLeftDownEventAddress handleJump |>
+                World.monitor address KeyboardKeyDownEventAddress handleJumpByKeyboardKey
             (player, world)
 
 [<AutoOpen>]
@@ -339,7 +339,7 @@ module StageScreenModule =
             let world =
                 world |>
                 World.monitor address (SelectEventAddress ->>- address) handleStartPlay |>
-                World.monitor address (StartOutgoingEventAddress ->>- address) handleStoppingPlay |>
+                World.monitor address (OutgoingStartEventAddress ->>- address) handleStoppingPlay |>
                 World.monitor address (DeselectEventAddress ->>- address) handleStopPlay
             (screen, world)
 
