@@ -13,9 +13,6 @@ open Aml.Initial
 open Aml.Writer
 open Aml.Conversions
 
-// TODO: when module exportation is implemented in F# - http://fslang.uservoice.com/forums/245727-f-language/suggestions/5688199-allow-re-exporting-from-modules
-// make this module exported from Evaluator and rename to EvaluatorPrimsModule.
-
 module EvaluatorPrims =
 
     /// Make an evaluation result.

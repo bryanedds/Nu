@@ -7,8 +7,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-// TODO: increase warning level to 5.
-
 namespace NuEditDesign
 {
     static class Program

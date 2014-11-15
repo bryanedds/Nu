@@ -7,7 +7,7 @@ namespace Prime
 module RduTreeModule =
 
     /// A tree onto which arbitrary recursive discriminated unions can be projected.
-    /// TODO: decorate with and implement for AlgebraicConverter.
+    /// TODO: implement for AlgebraicConverter.
     [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>]
     type 'a RduTree =
         | Leaf
