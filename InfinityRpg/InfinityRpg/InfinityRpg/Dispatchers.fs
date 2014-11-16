@@ -38,8 +38,8 @@ module FieldDispatcherModule =
 
         static member generateEmptyMap (size : Vector2i) =
             Map.ofList
-                [for i in 0 .. size.X do
-                    for j in 0 .. size.Y do
+                [for i in 0 .. size.X - 1 do
+                    for j in 0 .. size.Y - 1 do
                         let tileCoords = Vector2i (i, j)
                         yield (tileCoords, FieldMap.GrassTile)]
 
