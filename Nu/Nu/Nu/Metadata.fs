@@ -36,10 +36,10 @@ module Metadata =
 
     let private getTileSetProperties (tileSet : TmxTileset) =
         let properties = tileSet.Properties
-        try { ImageAssetName = properties.["ImageAssetName"]
-              PackageName = properties.["PackageName"] }
+        try { ImagePackageName = properties.["PackageName"]
+              ImageAssetName = properties.["ImageAssetName"] }
         with :? KeyNotFoundException ->
-            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (ImageAssetName or PackageName)."
+            let errorMessage = "TileSet '" + tileSet.Name + "' missing one or more properties (PackageName or ImageAssetName)."
             raise <| TileSetPropertyNotFoundException errorMessage
 
     let private generateTextureMetadata asset =
@@ -82,7 +82,7 @@ module Metadata =
             | ".wav" -> SoundMetadata
             | ".ogg" -> SongMetadata
             | _ -> InvalidMetadata <| "Could not load asset metadata '" + acstring asset + "' due to unknown extension '" + extension + "'."
-        (asset.Name, metadata)
+        (asset.AssetTag.AssetName, metadata)
 
     let private generateAssetMetadataSubmap (packageNode : XmlNode) =
         let packageName = (packageNode.Attributes.GetNamedItem NameAttributeName).InnerText
@@ -125,46 +125,46 @@ module Metadata =
         Map.empty
 
     /// Try to get the metadata of the given asset.
-    let tryGetMetadata assetName packageName assetMetadataMap =
-        let optPackage = Map.tryFind packageName assetMetadataMap
+    let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =
+        let optPackage = Map.tryFind assetTag.PackageName assetMetadataMap
         match optPackage with
         | Some package ->
-            let optAsset = Map.tryFind assetName package
+            let optAsset = Map.tryFind assetTag.AssetName package
             match optAsset with
             | Some _ as asset -> asset
             | None -> None
         | None -> None
 
     /// Try to get the texture metadata of the given asset.
-    let tryGetTextureSize assetName packageName assetMetadataMap =
-        let optAsset = tryGetMetadata assetName packageName assetMetadataMap
+    let tryGetTextureSize assetTag assetMetadataMap =
+        let optAsset = tryGetMetadata assetTag assetMetadataMap
         match optAsset with
         | Some (TextureMetadata size) -> Some size
         | None -> None
         | _ -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-    let getTextureSize assetName packageName assetMetadataMap =
-        Option.get <| tryGetTextureSize assetName packageName assetMetadataMap
+    let getTextureSize assetTag assetMetadataMap =
+        Option.get <| tryGetTextureSize assetTag assetMetadataMap
 
     /// Try to get the texture size metadata of the given asset.
-    let tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap =
-        match tryGetTextureSize assetName packageName assetMetadataMap with
+    let tryGetTextureSizeAsVector2 assetTag assetMetadataMap =
+        match tryGetTextureSize assetTag assetMetadataMap with
         | Some size -> Some <| Vector2 (single size.X, single size.Y)
         | None -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).
-    let getTextureSizeAsVector2 assetName packageName assetMetadataMap =
-        Option.get <| tryGetTextureSizeAsVector2 assetName packageName assetMetadataMap
+    let getTextureSizeAsVector2 assetTag assetMetadataMap =
+        Option.get <| tryGetTextureSizeAsVector2 assetTag assetMetadataMap
 
     /// Try to get the tile map metadata of the given asset.
-    let tryGetTileMapMetadata assetName packageName assetMetadataMap =
-        let optAsset = tryGetMetadata assetName packageName assetMetadataMap
+    let tryGetTileMapMetadata assetTag assetMetadataMap =
+        let optAsset = tryGetMetadata assetTag assetMetadataMap
         match optAsset with
         | Some (TileMapMetadata (filePath, images, tmxMap)) -> Some (filePath, images, tmxMap)
         | None -> None
         | _ -> None
 
     /// Forcibly get the tile map metadata of the given asset (throwing on failure).
-    let getTileMapMetadata assetName packageName assetMetadataMap =
-        Option.get <| tryGetTileMapMetadata assetName packageName assetMetadataMap
+    let getTileMapMetadata assetTag assetMetadataMap =
+        Option.get <| tryGetTileMapMetadata assetTag assetMetadataMap

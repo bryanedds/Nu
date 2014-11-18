@@ -46,7 +46,7 @@ module OmniProgression =
         | Right world ->
             let world = World.hintRenderingPackageUse GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
-            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
+            let splashScreenImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image5" }
             let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime DefaultDissolveImage splashScreenImage world
             let world = addTitleScreen world
             let world = addLoadGameScreen world

@@ -266,9 +266,9 @@ module Program =
         let entity = World.getEntity entityAddress world
         let entityGroupName = Reflection.getTypeName entity.DispatcherNp
         let treeGroup = form.treeView.Nodes.[entityGroupName]
-        if not <| treeGroup.Nodes.ContainsKey (entityAddress.ToString ()) then
+        if not <| treeGroup.Nodes.ContainsKey (acstring entityAddress) then
             let treeNode = TreeNode entity.Name
-            treeNode.Name <- entityAddress.ToString ()
+            treeNode.Name <- acstring entityAddress
             ignore <| treeGroup.Nodes.Add treeNode
         else () // when changing an entity name, entity will be added twice - once from win forms, once from world
 
@@ -349,7 +349,7 @@ module Program =
         (Cascade, world)
 
     let handleNuEntityRemoving (form : NuEditForm) event world =
-        match form.treeView.Nodes.Find (event.PublisherAddress.ToString (), true) with
+        match form.treeView.Nodes.Find (acstring event.PublisherAddress, true) with
         | [||] -> () // when changing an entity name, entity will be removed twice - once from winforms, once from world
         | treeNodes -> form.treeView.Nodes.Remove treeNodes.[0]
         match form.propertyGrid.SelectedObject with

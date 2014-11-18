@@ -454,7 +454,7 @@ module WorldConstants =
     let KeyboardKeyChangeEventAddress = MouseEventAddress -<- stoa<KeyboardKeyData> "Change"
     let CollisionEventAddress = stoa<CollisionData> "Collision"
     let EntityChangeEventAddress = stoa<EntityChangeData> "EntityChange"
-    let DefaultDissolveImage = { ImageAssetName = "Image8"; PackageName = DefaultPackageName }
+    let DefaultDissolveImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image8" }
 
 [<RequireQualifiedAccess>]
 module World =
@@ -954,8 +954,8 @@ module WorldAudioModule =
             World.addAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
-        static member playSong6 songAssetName packageName volume timeToFadeOutSongMs world =
-            let song = { SongAssetName = songAssetName; PackageName = packageName }
+        static member playSong6 songPackageName songAssetName volume timeToFadeOutSongMs world =
+            let song = { SongPackageName = songPackageName; SongAssetName = songAssetName }
             World.playSong song volume timeToFadeOutSongMs world
 
         /// Send a message to the audio system to play a sound.
@@ -964,8 +964,8 @@ module WorldAudioModule =
             World.addAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a sound.
-        static member playSound5 soundAssetName packageName volume world =
-            let sound = { SoundAssetName = soundAssetName; PackageName = packageName }
+        static member playSound5 soundPackageName soundAssetName volume world =
+            let sound = { SoundPackageName = soundPackageName; SoundAssetName = soundAssetName }
             World.playSound sound volume world
 
         /// Send a message to the audio system to fade out a song.

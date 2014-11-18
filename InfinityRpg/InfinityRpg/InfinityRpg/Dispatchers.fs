@@ -145,8 +145,8 @@ module FieldDispatcherModule =
             match tile.FieldTileType with
             | Impassable ->
                 let fieldMap = field.FieldMapNp
-                let fieldTileSheet = fieldMap.FieldTileSheet
-                match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
+                let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
+                match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
                 | Some tileSheetSize ->
                     let tileSize = tileSheetSize / FieldTileSheetRun
                     let tileOffset = Vector2i.Multiply (tileSize, tileCoords)
@@ -169,7 +169,7 @@ module FieldDispatcherModule =
                           IsBullet = false
                           IsSensor = false }
                     Some bodyProperties
-                | None -> note <| "Could not find tile sheet asset '" + acstring fieldTileSheet + "'."; None
+                | None -> note <| "Could not find tile sheet asset '" + acstring fieldTileSheetAssetTag + "'."; None
             | Passable -> None
         
         static let registerTilePhysics address (field : Entity) world =
@@ -219,8 +219,8 @@ module FieldDispatcherModule =
         override dispatcher.GetRenderDescriptors (field, world) =
             if field.Visible then
                 let fieldMap = field.FieldMapNp
-                let fieldTileSheet = fieldMap.FieldTileSheet
-                match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
+                let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
+                match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
                 | Some tileSheetSize ->
                     let tileSize = tileSheetSize / FieldTileSheetRun
                     let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
@@ -248,8 +248,8 @@ module FieldDispatcherModule =
 
         override dispatcher.GetQuickSize (field, world) =
             let fieldMap = field.FieldMapNp
-            let fieldTileSheet = fieldMap.FieldTileSheet
-            match Metadata.tryGetTextureSize fieldTileSheet.ImageAssetName fieldTileSheet.PackageName world.State.AssetMetadataMap with
+            let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
+            match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
             | Some tileSheetSize ->
                 let tileSize = tileSheetSize / FieldTileSheetRun
                 let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
@@ -298,11 +298,8 @@ module CharacterAnimationFacetModule =
         inherit Facet ()
         
         static let getOptSpriteInset (entity : Entity) world =
-            let imageSize =
-                Metadata.getTextureSizeAsVector2
-                    entity.CharacterAnimationSheet.ImageAssetName
-                    entity.CharacterAnimationSheet.PackageName
-                    world.State.AssetMetadataMap
+            let imageAssetTag = Image.toAssetTag entity.CharacterAnimationSheet
+            let imageSize = Metadata.getTextureSizeAsVector2 imageAssetTag world.State.AssetMetadataMap
             let spriteSize = imageSize * 0.25f
             let animationState = entity.CharacterAnimationState
             let animationTypeCoordsOffset =

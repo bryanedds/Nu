@@ -10,8 +10,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[CreditsButtonDown | Gui]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[CreditsButtonUp | Gui]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[Gui | CreditsButtonDown]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[Gui | CreditsButtonUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -20,8 +20,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[ExitButtonDown | Gui]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[ExitButtonUp | Gui]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[Gui | ExitButtonDown]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[Gui | ExitButtonUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -30,8 +30,8 @@
         <Size>256, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[PlayButtonDown | Gui]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[PlayButtonUp | Gui]</UpImage>
+          <DownImage type="Nu.RenderingModule+Image">[Gui | PlayButtonDown]</DownImage>
+          <UpImage type="Nu.RenderingModule+Image">[Gui | PlayButtonUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="TextDispatcher">
@@ -48,7 +48,7 @@
         <Size>960, 544</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
-          <LabelImage type="Nu.RenderingModule+Image">[Image8 | Default]</LabelImage>
+          <LabelImage type="Nu.RenderingModule+Image">[Default | Image8]</LabelImage>
         </Xtension>
       </Entity>
     </Entities>

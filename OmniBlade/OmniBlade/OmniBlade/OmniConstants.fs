@@ -13,7 +13,7 @@ module OmniConstants =
     let FieldAvatarName = "Avatar"
 
     // asset constants
-    let GameSong = { SongAssetName = "Song"; PackageName = DefaultPackageName }
+    let GameSong = { SongPackageName = DefaultPackageName; SongAssetName = "Song" }
 
     // transition constants
     let IncomingTime = 20L

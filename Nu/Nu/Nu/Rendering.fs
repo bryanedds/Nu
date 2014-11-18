@@ -14,9 +14,21 @@ open Nu.Constants
 module RenderingModule =
 
     /// Describes an image asset.
+    /// NOTE: it would be preferable to make Image (and other asset types) using a Haskell-style
+    /// newtype facility, but unfortunately, such is not available in F#.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultImageValue)>] Image =
-        { ImageAssetName : string
-          PackageName : string }
+        { ImagePackageName : string
+          ImageAssetName : string }
+        
+        /// Convert an image asset to an asset location.
+        static member toAssetTag image =
+            { PackageName = image.ImagePackageName
+              AssetName = image.ImageAssetName }
+        
+        /// Convert an asset location to an image asset.
+        static member fromAssetTag (assetTag : AssetTag) =
+            { ImagePackageName = assetTag.PackageName
+              ImageAssetName = assetTag.AssetName }
 
     /// Describes how to render a sprite to the rendering system.
     type [<StructuralEquality; NoComparison>] Sprite =
@@ -30,8 +42,18 @@ module RenderingModule =
 
     /// Describes a tile map asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultTileMapAssetValue)>] TileMapAsset =
-        { TileMapAssetName : string
-          PackageName : string }
+        { TileMapPackageName : string
+          TileMapAssetName : string }
+        
+        /// Convert a tile map asset to an asset location.
+        static member toAssetTag tileMapAsset =
+            { PackageName = tileMapAsset.TileMapPackageName
+              AssetName = tileMapAsset.TileMapAssetName }
+        
+        /// Convert an asset location to a tile map asset.
+        static member fromAssetTag (assetTag : AssetTag) =
+            { TileMapPackageName = assetTag.PackageName
+              TileMapAssetName = assetTag.AssetName }
 
     /// Describes how to render a tile map to the rendering system.
     type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
@@ -48,8 +70,18 @@ module RenderingModule =
     
     /// Describes a font asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultFontValue)>] Font =
-        { FontAssetName : string
-          PackageName : string }
+        { FontPackageName : string
+          FontAssetName : string }
+        
+        /// Convert a font asset to an asset location.
+        static member toAssetTag font =
+            { PackageName = font.FontPackageName
+              AssetName = font.FontAssetName }
+        
+        /// Convert an asset location to a font asset.
+        static member fromAssetTag (assetTag : AssetTag) =
+            { FontPackageName = assetTag.PackageName
+              FontAssetName = assetTag.AssetName }
 
     /// Describes how to render text to the rendering system.
     type [<StructuralEquality; NoComparison>] TextDescriptor =
@@ -125,7 +157,7 @@ module RenderingModule =
             | ".bmp"
             | ".png" ->
                 let optTexture = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
-                if optTexture <> IntPtr.Zero then Some (asset.Name, TextureAsset optTexture)
+                if optTexture <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset optTexture)
                 else
                     let errorMsg = SDL.SDL_GetError ()
                     trace <| "Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'."
@@ -139,7 +171,7 @@ module RenderingModule =
                     if Int32.TryParse (fontSizeText, fontSize) then
                         let optFont = SDL_ttf.TTF_OpenFont (asset.FilePath, !fontSize)
                         if optFont <> IntPtr.Zero
-                        then Some (asset.Name, FontAsset (optFont, !fontSize))
+                        then Some (asset.AssetTag.AssetName, FontAsset (optFont, !fontSize))
                         else trace <| "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
                     else trace <| "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
                 else trace <| "Could not load font '" + asset.FilePath + "'."; None
@@ -163,16 +195,16 @@ module RenderingModule =
                 note <| "Render package load failed due unloadable assets '" + error + "' for package '" + packageName + "'."
                 renderer
 
-        static member private tryLoadRenderAsset packageName assetName renderer =
-            let optAssetMap = Map.tryFind packageName renderer.RenderAssetMap
+        static member private tryLoadRenderAsset (assetTag : AssetTag) renderer =
+            let optAssetMap = Map.tryFind assetTag.PackageName renderer.RenderAssetMap
             let (renderer, optAssetMap) =
                 match optAssetMap with
-                | Some _ -> (renderer, Map.tryFind packageName renderer.RenderAssetMap)
+                | Some _ -> (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
                 | None ->
-                    note <| "Loading render package '" + packageName + "' for asset '" + assetName + "' on the fly."
-                    let renderer = Renderer.tryLoadRenderPackage packageName renderer
-                    (renderer, Map.tryFind packageName renderer.RenderAssetMap)
-            (renderer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
+                    note <| "Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    let renderer = Renderer.tryLoadRenderPackage assetTag.PackageName renderer
+                    (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
+            (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
 
         static member private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUseMessage) renderer =
             Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
@@ -207,9 +239,9 @@ module RenderingModule =
             let view = match sprite.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
             let positionView = sprite.Position * view
             let sizeView = sprite.Size * view.ExtractScaleMatrix ()
-            let image = sprite.Image
             let color = sprite.Color
-            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset image.PackageName image.ImageAssetName renderer
+            let imageAssetTag = Image.toAssetTag sprite.Image
+            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset imageAssetTag renderer
             match optRenderAsset with
             | Some renderAsset ->
                 match renderAsset with
@@ -251,10 +283,10 @@ module RenderingModule =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + acstring sprite + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + acstring imageAssetTag + "' due to '" + SDL.SDL_GetError () + "."
                     renderer
                 | _ -> trace "Cannot render sprite with a non-texture asset."; renderer
-            | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + acstring image + "'."; renderer
+            | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + acstring imageAssetTag + "'."; renderer
 
         static member private renderSprites viewAbsolute viewRelative camera sprites renderer =
             List.fold
@@ -275,7 +307,8 @@ module RenderingModule =
             let tileSetImage = descriptor.TileSetImage
             let optTileSetWidth = tileSet.Image.Width
             let tileSetWidth = optTileSetWidth.Value
-            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset tileSetImage.PackageName tileSetImage.ImageAssetName renderer
+            let tileSetImageAssetTag = Image.toAssetTag tileSetImage
+            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset tileSetImageAssetTag renderer
             match optRenderAsset with
             | Some renderAsset ->
                 match renderAsset with
@@ -328,9 +361,9 @@ module RenderingModule =
             let positionView = descriptor.Position * view
             let sizeView = descriptor.Size * view.ExtractScaleMatrix ()
             let text = descriptor.Text
-            let font = descriptor.Font
             let color = descriptor.Color
-            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset font.PackageName font.FontAssetName renderer
+            let fontAssetTag = Font.toAssetTag descriptor.Font
+            let (renderer, optRenderAsset) = Renderer.tryLoadRenderAsset fontAssetTag renderer
             match optRenderAsset with
             | Some renderAsset ->
                 match renderAsset with
@@ -344,8 +377,8 @@ module RenderingModule =
                     // TODO: the resource implications (perf and vram fragmentation?) of creating and destroying a
                     // texture one or more times a frame must be understood! Although, maybe it all happens in software
                     // and vram frag would not be a concern in the first place... perf could still be, however.
-                    let textSizeX = int sizeView.X
-                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 textSizeX)
+                    let textSizeX = uint32 sizeView.X
+                    let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
                         let textureFormat = ref 0u
@@ -368,7 +401,7 @@ module RenderingModule =
                         SDL.SDL_FreeSurface textSurface
                     renderer
                 | _ -> trace "Cannot render text with a non-font asset."; renderer
-            | None -> note <| "TextDescriptor failed due to unloadable assets for '" + acstring font + "'."; renderer
+            | None -> note <| "TextDescriptor failed due to unloadable assets for '" + acstring fontAssetTag + "'."; renderer
 
         static member private renderLayerableDescriptor (viewAbsolute : Matrix3) (viewRelative : Matrix3) camera renderer layerableDescriptor =
             match layerableDescriptor with
