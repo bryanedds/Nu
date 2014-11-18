@@ -312,14 +312,14 @@ module StageScreenModule =
             let address = World.unwrapA event world
             let random = Random ()
             let sectionFilePaths = List.toArray SectionFilePaths
-            let sectionDescriptors =
+            let sectionHierarchies =
                 [for i in 0 .. SectionCount do
                     let xShift = 2048.0f
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
-            let stagePlayDescriptor = (StagePlayName, World.readGroupFromFile StagePlayFilePath world)
-            let groupDescriptors = Map.ofList <| stagePlayDescriptor :: sectionDescriptors
-            let world = snd <| World.addGroups address groupDescriptors world
+            let stagePlayHierarchy = (StagePlayName, World.readGroupFromFile StagePlayFilePath world)
+            let groupsHierarchy = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
+            let world = snd <| World.addGroups address groupsHierarchy world
             let world = World.playSong DeadBlazeSong 1.0f 0 world
             (Cascade, world)
 

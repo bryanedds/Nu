@@ -106,7 +106,7 @@ module WorldGroupModule =
         static member private unregisterGroup address group world =
             Group.unregister address group world
 
-        static member removeGroupImmediate (address : Group Address) group world =
+        static member removeGroupImmediate address group world =
             let world = World.publish4 address (RemovingEventAddress ->>- address) () world
             let (group, world) = World.unregisterGroup address group world
             let entities = World.getEntities address world
@@ -130,7 +130,8 @@ module WorldGroupModule =
         static member removeGroups (screenAddress : Screen Address) groups world =
             World.transformSimulants World.removeGroup satoga screenAddress groups world
 
-        static member addGroup address group entities world =
+        static member addGroup address groupHierarchy world =
+            let (group, entities) = groupHierarchy
             if not <| World.containsGroup address world then
                 let (group, world) =
                     match World.getOptGroup address world with
@@ -143,22 +144,23 @@ module WorldGroupModule =
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 
-        static member addGroups (screenAddress : Screen Address) groupDescriptors world =
+        static member addGroups screenAddress groupsHierarchy world =
             Map.fold
-                (fun (groups, world) groupName (group, entities) ->
-                    let (group, world) = World.addGroup (satoga screenAddress groupName) group entities world
+                (fun (groups, world) groupName groupHierarchy ->
+                    let (group, world) = World.addGroup (satoga screenAddress groupName) groupHierarchy world
                     (group :: groups, world))
                 ([], world)
-                groupDescriptors
+                groupsHierarchy
     
-        static member writeGroup (writer : XmlWriter) (group : Group) entities world =
+        static member writeGroup (writer : XmlWriter) groupHierarchy world =
+            let (group : Group, entities) = groupHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology writer group
             writer.WriteStartElement EntitiesNodeName
             World.writeEntities writer entities world
             writer.WriteEndElement ()
 
-        static member writeGroupToFile (filePath : string) group entities world =
+        static member writeGroupToFile (filePath : string) groupHierarchy world =
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
@@ -167,20 +169,20 @@ module WorldGroupModule =
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GroupNodeName
-            World.writeGroup writer group entities world
+            World.writeGroup writer groupHierarchy world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
 
-        static member writeGroups (writer : XmlWriter) groupDescriptors world =
-            let groupsSorted =
+        static member writeGroups (writer : XmlWriter) groupsHierarchy world =
+            let groupsHierarchy =
                 List.sortBy
                     (fun (group : Group, _) -> group.CreationTimeNp)
-                    (Map.toValueList groupDescriptors)
-            let groupsFiltered = List.filter (fun (group : Group, _) -> group.Persistent) groupsSorted
-            for (group, entities) in groupsFiltered do
+                    (Map.toValueList groupsHierarchy)
+            let groupsHierarchy = List.filter (fun (group : Group, _) -> group.Persistent) groupsHierarchy
+            for groupHierarchy in groupsHierarchy do
                 writer.WriteStartElement GroupNodeName
-                World.writeGroup writer group entities world
+                World.writeGroup writer groupHierarchy world
                 writer.WriteEndElement ()
 
         static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
@@ -223,10 +225,10 @@ module WorldGroupModule =
             | groupsNode ->
                 let groupNodes = groupsNode.SelectNodes GroupNodeName
                 Seq.fold
-                    (fun groups groupNode ->
-                        let group = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName world
-                        let groupName = (fst group).Name
-                        Map.add groupName group groups)
+                    (fun groupsHierarchy groupNode ->
+                        let groupHierarchy = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName world
+                        let groupName = (fst groupHierarchy).Name
+                        Map.add groupName groupHierarchy groupsHierarchy)
                     Map.empty
                     (enumerable groupNodes)
 
