@@ -34,6 +34,11 @@ module WorldGameModule =
 
     type World with
 
+        static member getGameHierarchy address world =
+            let game = world.Game
+            let screensHierarchy = World.getScreensHierarchy address world
+            (game, screensHierarchy)
+
         static member getOptSelectedScreenAddress world = world.Game.OptSelectedScreenAddress
         static member setOptSelectedScreenAddress optAddress world = { world with Game = Game.setOptSelectedScreenAddress optAddress world.Game }
         static member getSelectedScreenAddress world = Option.get <| World.getOptSelectedScreenAddress world
@@ -61,11 +66,6 @@ module WorldGameModule =
             | (_, None) -> false
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
-
-        static member getGameHierarchy address world =
-            let game = world.Game
-            let screensHierarchy = World.getScreensHierarchy address world
-            (game, screensHierarchy)
 
         static member writeGame (writer : XmlWriter) gameHierarchy world =
             let (game : Game, screensHierarchy) = gameHierarchy

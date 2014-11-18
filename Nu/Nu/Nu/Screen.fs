@@ -77,6 +77,16 @@ module WorldScreenModule =
             | Some screen -> World.setScreen address screen world
             | None -> World.screenRemover address world
 
+        static member getOptScreenHierarchy address world =
+            match World.getOptScreen address world with
+            | Some screen ->
+                let groupsHierarchy = World.getGroupsHierarchy address world
+                Some (screen, groupsHierarchy)
+            | None -> None
+        
+        static member getScreenHierarchy address world =
+            Option.get <| World.getOptScreenHierarchy address world
+
         static member getScreens (gameAddress : Game Address) world =
             match gameAddress.Names with
             | [] -> world.Screens
@@ -86,11 +96,6 @@ module WorldScreenModule =
             let screenNames = Set.ofSeq screenNames
             let screens = World.getScreens gameAddress world
             Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
-
-        static member getScreenHierarchy address world =
-            let screen = World.getScreen address world
-            let groups = World.getGroupsHierarchy address world
-            (screen, groups)
 
         static member getScreensHierarchy gameAddress world =
             let screens = World.getScreens gameAddress world
