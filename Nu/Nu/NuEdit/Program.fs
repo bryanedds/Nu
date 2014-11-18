@@ -800,7 +800,6 @@ module Program =
         updateRedoButton form world
         if form.IsDisposed then World.exit world
         else world
-
     let selectTargetDirectoryAndMakeUserComponentFactory () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"

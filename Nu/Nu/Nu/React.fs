@@ -224,8 +224,8 @@ module React =
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
                 World.unsubscribe removingEventKey world
-            let handledRemoving = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = World.subscribe removingEventKey removingEventAddress observable.ObserverAddress handledRemoving world
+            let handleRemoving = fun _ world -> let world = unsubscribe world in (Cascade, world)
+            let world = World.subscribe removingEventKey observable.ObserverAddress removingEventAddress handleRemoving world
             let subscription = fun event world ->
                 let world = World.publish<obj, 'a> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress event.Data world
                 (Cascade, world)
