@@ -55,7 +55,7 @@ module BlazeProgression =
     let addTitleScreen world =
 
         // this adds a dissolve screen from the specified file with the given parameters
-        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
 
         // this subscribes to the event that is raised when the Title screen is selected for
         // display and interaction, and handles the event by playing the song "Machinery"
@@ -75,12 +75,12 @@ module BlazeProgression =
 
     // pretty much the same as above, but for the Credits screen
     let addCreditsScreen world =
-        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath world
         World.subscribe4 GameAddress ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     // and so on.
     let addStageScreen world =
-        let world = snd <| World.addDissolveScreenFromFile false typeof<StageScreenDispatcher>.Name StageAddress StageGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<StageScreenDispatcher>.Name StageAddress StageGroupFilePath world
         World.subscribe4 GameAddress ClickStageBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
@@ -104,7 +104,7 @@ module BlazeProgression =
             let world = addStageScreen world
 
             // add to the world a splash screen that automatically transitions to the Title screen
-            let (splashScreen, world) = World.addSplashScreenFromData false typeof<ScreenDispatcher>.Name SplashAddress TitleAddress SplashData world
+            let (splashScreen, world) = World.addSplashScreenFromData false SplashData typeof<ScreenDispatcher>.Name SplashAddress TitleAddress world
 
             // play a neat sound effect, select the splash screen, and we're off!
             let world = World.playSound NuSplashSound 1.0f world

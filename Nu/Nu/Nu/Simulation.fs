@@ -402,8 +402,8 @@ module WorldAddressModule =
     let satoga screenAddress groupName =
         Address.changeType<Screen, Group> screenAddress ->- ltoa [groupName]
 
-    let satoea screenAddress groupName entityName =
-        gatoea (satoga screenAddress groupName) entityName
+    let matosa gameAddress screenName =
+        Address.changeType<Game, Screen> gameAddress ->- ltoa [screenName]
 
     let eatoga entityAddress =
         Address.take 2 entityAddress |> Address.changeType<Entity, Group>
@@ -411,8 +411,8 @@ module WorldAddressModule =
     let gatosa groupAddress =
         Address.take 1 groupAddress |> Address.changeType<Group, Screen>
 
-    let eatosa entityAddress =
-        eatoga entityAddress |> gatosa
+    let satoma screenAddress =
+        Address.take 0 screenAddress |> Address.changeType<Screen, Game>
 
 module WorldConstants =
 

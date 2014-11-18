@@ -133,6 +133,18 @@ module TypeModule =
     /// Type extension for Type.
     type Type with
 
+        /// Try to get a custom type converter for the given type.
+        member this.TryGetCustomTypeConverter () =
+            let typeConverterAttributes = this.GetCustomAttributes<TypeConverterAttribute> ()
+            if not <| Seq.isEmpty typeConverterAttributes then
+                let typeConverterAttribute = Seq.head typeConverterAttributes
+                let typeConverterTypeName = typeConverterAttribute.ConverterTypeName
+                let typeConverterType = Type.GetType typeConverterTypeName
+                match typeConverterType.GetConstructor [|typeof<Type>|] with
+                | null -> Some <| (typeConverterType.GetConstructor [||]).Invoke [||]
+                | constructor1 -> Some <| constructor1.Invoke [|this|]
+            else None
+
         member this.GetPropertyWritable propertyName =
             let optProperty =
                 Seq.tryFind

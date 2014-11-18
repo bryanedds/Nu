@@ -19,11 +19,11 @@ module GroupModule =
         static member unregister address (group : Group) (world : World) : Group * World =
             group.DispatcherNp.Unregister (address, group, world)
 
-        static member make persistent dispatcher optName =
+        static member make dispatcher optName =
             let id = Core.makeId ()
             { Group.Id = id
               Name = match optName with None -> acstring id | Some name -> name
-              Persistent = persistent
+              Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
@@ -73,13 +73,6 @@ module WorldGroupModule =
             | Some group -> World.setGroup address group world
             | None -> World.groupRemover address world
 
-        static member getGroups1 world =
-            seq {
-                for screenKvp in world.Entities do
-                    for groupKvp in screenKvp.Value do
-                        let address = Address.make [screenKvp.Key; groupKvp.Key]
-                        yield (address, groupKvp.Value) }
-
         static member getGroups (screenAddress : Screen Address) world =
             match screenAddress.Names with
             | [screenName] ->
@@ -92,6 +85,20 @@ module WorldGroupModule =
             let groupNames = Set.ofSeq groupNames
             let groups = World.getGroups screenAddress world
             Map.filter (fun groupName _ -> Set.contains groupName groupNames) groups
+
+        static member getGroupHierarchy address world =
+            let group = World.getGroup address world
+            let entities = World.getEntities address world
+            (group, entities)
+
+        static member getGroupsHierarchy screenAddress world =
+            let groups = World.getGroups screenAddress world
+            Map.map
+                (fun groupName group ->
+                    let groupAddress = satoga screenAddress groupName
+                    let entities = World.getEntities groupAddress world
+                    (group, entities))
+                groups
 
         static member private registerGroup address group world =
             Group.register address group world
@@ -151,7 +158,7 @@ module WorldGroupModule =
             World.writeEntities writer entities world
             writer.WriteEndElement ()
 
-        static member writeGroupToFile group entities (filePath : string) world =
+        static member writeGroupToFile (filePath : string) group entities world =
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
@@ -189,7 +196,7 @@ module WorldGroupModule =
                     Map.find dispatcherName world.Components.GroupDispatchers
             
             // make the bare group with name as id
-            let group = Group.make true dispatcher None
+            let group = Group.make dispatcher None
             
             // attach the group's instrinsic fields from its dispatcher if any
             Reflection.attachFields group.DispatcherNp group
@@ -223,8 +230,8 @@ module WorldGroupModule =
                     Map.empty
                     (enumerable groupNodes)
 
-        static member makeGroup persistent dispatcherName optName world =
+        static member makeGroup dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
-            let group = Group.make persistent dispatcher optName
+            let group = Group.make dispatcher optName
             Reflection.attachFields dispatcher group
             group

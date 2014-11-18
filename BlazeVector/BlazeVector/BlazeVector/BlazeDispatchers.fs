@@ -149,7 +149,7 @@ module PlayerModule =
         let [<Literal>] ClimbForce = 12000.0f
 
         let createBullet bulletAddress (playerTransform : Transform) world =
-            let bullet = World.makeEntity false typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
+            let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
                 bullet |>
                     Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>

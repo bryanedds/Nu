@@ -77,9 +77,9 @@ module WorldTests =
     let [<Fact>] entitySubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let entity = World.makeEntity true typeof<EntityDispatcher>.Name (Some TestEntityName) world
-        let group = World.makeGroup true typeof<GroupDispatcher>.Name (Some TestGroupName) world
-        let screen = World.makeScreen true typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
         let descriptors = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let world = snd <| World.addScreen TestScreenAddress screen descriptors world
         let handleEvent = fun event world ->
@@ -94,15 +94,15 @@ module WorldTests =
         // TODO: make stronger assertions in here!!!
         World.init ()
         let world = World.makeEmpty 0
-        let entity = World.makeEntity true typeof<EntityDispatcher>.Name (Some TestEntityName) world
-        let group = World.makeGroup true typeof<GroupDispatcher>.Name (Some TestGroupName) world
-        let screen = World.makeScreen true typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
+        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
+        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
         let game = world.Game
         let screens =
             Map.singleton screen.Name <|
                 (screen, Map.singleton group.Name <|
                     (group, Map.singleton entity.Name entity))
-        World.writeGameToFile game screens TestFilePath world
+        World.writeGameToFile TestFilePath game screens world
         let (game', screens') = World.readGameFromFile TestFilePath world
         Assert.Equal<string> (game.Name, game'.Name)
         let (screen', groups') = Map.find TestScreenName screens'

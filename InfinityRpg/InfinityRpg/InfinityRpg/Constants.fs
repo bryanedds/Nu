@@ -4,6 +4,9 @@ open Nu.Constants
 open Nu.WorldConstants
 module Constants =
 
+    // misc
+    let SaveFilePath = "InfinityRpg.sav"
+
     // package constants
     let GuiPackageName = "Gui"
     let GameplayPackageName = "Gameplay"
@@ -36,3 +39,9 @@ module Constants =
     let CreditsAddress = stoa<Screen> "Credits"
     let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
     let ClickCreditsBackEventAddress = stoa<unit> "Click/Credits/Group/Back"
+
+    // gameplay constants
+    let GameplayAddress = stoa<Screen> "Gameplay"
+    let GameplayGroupFilePath = "Assets/Gui/Gameplay.nugroup"
+    let ClickGameplayBackEventAddress = stoa<unit> "Click/Gameplay/Group/Back"
+    let ClickGameplaySaveGameEventAddress = stoa<unit> "Click/Gameplay/Group/SaveGame"

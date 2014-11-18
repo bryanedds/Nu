@@ -62,6 +62,11 @@ module WorldGameModule =
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
+        static member getGameHierarchy address world =
+            let game = world.Game
+            let screens = World.getScreensHierarchy address world
+            (game, screens)
+
         static member writeGame (writer : XmlWriter) (game : Game) screens world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology writer game
@@ -69,7 +74,7 @@ module WorldGameModule =
             World.writeScreens writer screens world
             writer.WriteEndElement ()
 
-        static member writeGameToFile game screens (fileName : string) world =
+        static member writeGameToFile (fileName : string) game screens world =
             use writer = XmlWriter.Create fileName
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GameNodeName
