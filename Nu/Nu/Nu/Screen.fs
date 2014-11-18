@@ -21,7 +21,8 @@ module ScreenModule =
 
     type Screen with
 
-        static member setScreenState state screen = { screen with ScreenState = state }
+        static member setScreenState state screen = { screen with ScreenStateNp = state }
+        static member setTransitionTicks state screen = { screen with TransitionTicksNp = state }
         static member setIncoming incoming screen = { screen with Incoming = incoming }
         static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
 
@@ -32,13 +33,14 @@ module ScreenModule =
             screen.DispatcherNp.Unregister (address, screen, world)
 
         static member isIdling screen =
-            screen.ScreenState = IdlingState
+            screen.ScreenStateNp = IdlingState
 
         static member make persistent dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> acstring id | Some name -> name
-              ScreenState = IdlingState
+              ScreenStateNp = IdlingState
+              TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               Persistent = persistent

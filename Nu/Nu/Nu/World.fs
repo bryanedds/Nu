@@ -133,32 +133,31 @@ module WorldModule =
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
                 (Cascade, world)
 
-        static member private updateTransition1 (transition : Transition) =
-            if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
-            else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
+        static member private updateScreenTransition1 screen transition =
+            if screen.TransitionTicksNp = transition.TransitionLifetime then (true, { screen with TransitionTicksNp = 0L })
+            else (false, { screen with TransitionTicksNp = screen.TransitionTicksNp + 1L })
 
         // TODO: split this function up...
-        static member private updateTransition handleUpdate world =
+        static member private updateScreenTransition handleUpdate world =
             let world =
                 match World.getOptSelectedScreenAddress world with
                 | Some selectedScreenAddress ->
                     let selectedScreen = World.getScreen selectedScreenAddress world
-                    match selectedScreen.ScreenState with
+                    match selectedScreen.ScreenStateNp with
                     | IncomingState ->
                         let world =
-                            if selectedScreen.Incoming.TransitionTicks = 0L
+                            if selectedScreen.TransitionTicksNp = 0L
                             then World.publish4 selectedScreenAddress (SelectEventAddress ->>- selectedScreenAddress) () world
                             else world
                         match world.State.Liveness with
                         | Running ->
                             let world =
-                                if selectedScreen.Incoming.TransitionTicks = 0L
+                                if selectedScreen.TransitionTicksNp = 0L
                                 then World.publish4 selectedScreenAddress (IncomingStartEventAddress ->>- selectedScreenAddress) () world
                                 else world
                             match world.State.Liveness with
                             | Running ->
-                                let (finished, incoming) = World.updateTransition1 selectedScreen.Incoming
-                                let selectedScreen = Screen.setIncoming incoming selectedScreen
+                                let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Incoming
                                 let world = World.setScreen selectedScreenAddress selectedScreen world
                                 if finished then
                                     let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
@@ -168,12 +167,11 @@ module WorldModule =
                         | Exiting -> world
                     | OutgoingState ->
                         let world =
-                            if selectedScreen.Outgoing.TransitionTicks <> 0L then world
+                            if selectedScreen.TransitionTicksNp <> 0L then world
                             else World.publish4 selectedScreenAddress (OutgoingStartEventAddress ->>- selectedScreenAddress) () world
                         match world.State.Liveness with
                         | Running ->
-                            let (finished, outgoing) = World.updateTransition1 selectedScreen.Outgoing
-                            let selectedScreen = Screen.setOutgoing outgoing selectedScreen
+                            let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Outgoing
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
                                 let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
@@ -339,10 +337,10 @@ module WorldModule =
                 (fun entity -> Entity.getRenderDescriptors entity world)
                 entities
 
-        static member private getTransitionRenderDescriptors camera transition =
+        static member private getScreenTransitionRenderDescriptors camera screen transition =
             match transition.OptDissolveImage with
             | Some dissolveImage ->
-                let progress = single transition.TransitionTicks / single transition.TransitionLifetime
+                let progress = single screen.TransitionTicksNp / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Vector4 (Vector3.One, alpha)
                 [LayerableDescriptor
@@ -369,9 +367,9 @@ module WorldModule =
                     let descriptors = List.map (World.getGroupRenderDescriptors world) entityMaps
                     let descriptors = List.concat <| List.concat descriptors
                     let selectedScreen = World.getScreen selectedScreenAddress world
-                    match selectedScreen.ScreenState with
-                    | IncomingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Incoming
-                    | OutgoingState -> descriptors @ World.getTransitionRenderDescriptors world.Camera selectedScreen.Outgoing
+                    match selectedScreen.ScreenStateNp with
+                    | IncomingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.Camera selectedScreen selectedScreen.Incoming
+                    | OutgoingState -> descriptors @ World.getScreenTransitionRenderDescriptors world.Camera selectedScreen selectedScreen.Outgoing
                     | IdlingState -> descriptors
                 | None -> []
             | None -> []
@@ -482,7 +480,7 @@ module WorldModule =
                 let world = World.publish4 GameAddress TickEventAddress () world
                 match world.State.Liveness with
                 | Running ->
-                    let world = World.updateTransition handleUpdate world
+                    let world = World.updateScreenTransition handleUpdate world
                     match world.State.Liveness with
                     | Running ->
                         let world = World.processTasks world
