@@ -10,7 +10,7 @@ open InfinityRpg.Constants
 module Progression =
 
     let private handleClickSaveGame _ world =
-        let gameHierarchy = World.getGameHierarchy GameAddress world
+        let gameHierarchy = World.getGame' world
         World.writeGameToFile SaveFilePath gameHierarchy world
         (Cascade, world)
 

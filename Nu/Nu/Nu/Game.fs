@@ -34,9 +34,12 @@ module WorldGameModule =
 
     type World with
 
-        static member getGameHierarchy address world =
+        static member getGame world =
+            world.Game
+
+        static member getGame' world =
             let game = world.Game
-            let screensHierarchy = World.getScreensHierarchy address world
+            let screensHierarchy = World.getScreens' world
             (game, screensHierarchy)
 
         static member getOptSelectedScreenAddress world = world.Game.OptSelectedScreenAddress

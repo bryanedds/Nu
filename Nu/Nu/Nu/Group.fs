@@ -73,15 +73,15 @@ module WorldGroupModule =
             | Some group -> World.setGroup address group world
             | None -> World.groupRemover address world
 
-        static member getOptGroupHierarchy address world =
+        static member getOptGroup' address world =
             match World.getOptGroup address world with
             | Some group ->
                 let entities = World.getEntities address world
                 Some (group, entities)
             | None -> None
         
-        static member getGroupHierarchy address world =
-            Option.get <| World.getOptGroupHierarchy address world
+        static member getGroup' address world =
+            Option.get <| World.getOptGroup' address world
 
         static member getGroups (screenAddress : Screen Address) world =
             match screenAddress.Names with
@@ -96,7 +96,7 @@ module WorldGroupModule =
             let groups = World.getGroups screenAddress world
             Map.filter (fun groupName _ -> Set.contains groupName groupNames) groups
 
-        static member getGroupsHierarchy screenAddress world =
+        static member getGroups' screenAddress world =
             let groups = World.getGroups screenAddress world
             Map.map
                 (fun groupName group ->

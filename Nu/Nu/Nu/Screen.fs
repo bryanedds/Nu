@@ -77,33 +77,31 @@ module WorldScreenModule =
             | Some screen -> World.setScreen address screen world
             | None -> World.screenRemover address world
 
-        static member getOptScreenHierarchy address world =
+        static member getOptScreen' address world =
             match World.getOptScreen address world with
             | Some screen ->
-                let groupsHierarchy = World.getGroupsHierarchy address world
+                let groupsHierarchy = World.getGroups' address world
                 Some (screen, groupsHierarchy)
             | None -> None
         
-        static member getScreenHierarchy address world =
-            Option.get <| World.getOptScreenHierarchy address world
+        static member getScreen' address world =
+            Option.get <| World.getOptScreen' address world
 
-        static member getScreens (gameAddress : Game Address) world =
-            match gameAddress.Names with
-            | [] -> world.Screens
-            | _ -> failwith <| "Invalid game address '" + acstring gameAddress + "'. Game address is always empty."
+        static member getScreens world =
+            world.Screens
 
-        static member getScreens3 (gameAddress : Game Address) screenNames world =
+        static member getScreens2 screenNames world =
             let screenNames = Set.ofSeq screenNames
-            let screens = World.getScreens gameAddress world
+            let screens = World.getScreens world
             Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
 
-        static member getScreensHierarchy gameAddress world =
-            let screens = World.getScreens gameAddress world
+        static member getScreens' world =
+            let screens = World.getScreens world
             Map.map
                 (fun screenName screen ->
-                    let screenAddress = matosa gameAddress screenName
-                    let groups = World.getGroupsHierarchy screenAddress world
-                    (screen, groups))
+                    let screenAddress = ltoa<Screen> [screenName]
+                    let groupsHierarchy = World.getGroups' screenAddress world
+                    (screen, groupsHierarchy))
                 screens
 
         static member private registerScreen address screen world =
