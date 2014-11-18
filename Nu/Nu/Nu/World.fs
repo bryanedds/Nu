@@ -207,10 +207,10 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey event.SubscriberAddress TickEventAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
             (Resolve, world)
 
-        static member addSplashScreenFromData persistent dispatcherName address destination splashData world =
-            let splashScreen = World.makeDissolveScreen persistent dispatcherName (Some <| Address.head address) splashData.DissolveData world
-            let splashGroup = World.makeGroup persistent typeof<GroupDispatcher>.Name (Some "SplashGroup") world
-            let splashLabel = World.makeEntity persistent typeof<LabelDispatcher>.Name (Some "SplashLabel") world
+        static member addSplashScreenFromData persistent splashData dispatcherName address destination world =
+            let splashScreen = { World.makeDissolveScreen splashData.DissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
+            let splashGroup = { World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world with Persistent = persistent }
+            let splashLabel = { World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world with Persistent = persistent }
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
@@ -220,8 +220,8 @@ module WorldModule =
             let world = World.monitor address (OutgoingFinishEventAddress ->>- address) (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
-        static member addDissolveScreenFromFile persistent dispatcherName address groupFilePath dissolveData world =
-            let dissolveScreen = World.makeDissolveScreen persistent dispatcherName (Some <| Address.head address) dissolveData world
+        static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName address groupFilePath world =
+            let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let (group, entities) = World.readGroupFromFile groupFilePath world
             let dissolveGroupDescriptors = Map.singleton group.Name (group, entities)
             World.addScreen address dissolveScreen dissolveGroupDescriptors world
@@ -255,6 +255,14 @@ module WorldModule =
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
+                // get all the entities in the world
+                let entities =
+                    [for screenKvp in world.Entities do
+                        for groupKvp in screenKvp.Value do
+                            for entityKvp in groupKvp.Value do
+                                let address = Address<Entity>.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
+                                yield (address, entityKvp.Value)]
+
                 // apply overlays to all entities
                 let world =
                     Seq.fold
@@ -271,7 +279,7 @@ module WorldModule =
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
                         world
-                        (World.getEntities1 world)
+                        entities
 
                 // right!
                 Right world

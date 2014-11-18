@@ -35,7 +35,7 @@ module ScreenModule =
         static member isIdling screen =
             screen.ScreenStateNp = IdlingState
 
-        static member make persistent dispatcher optName =
+        static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> acstring id | Some name -> name
@@ -43,7 +43,7 @@ module ScreenModule =
               TransitionTicksNp = 0L // TODO: roll this field into Incoming/OutcomingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
-              Persistent = persistent
+              Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
@@ -77,12 +77,6 @@ module WorldScreenModule =
             | Some screen -> World.setScreen address screen world
             | None -> World.screenRemover address world
 
-        static member getScreens1 world =
-            seq {
-                for screenKvp in world.Entities do
-                    let address = Address.make [screenKvp.Key]
-                    yield (address, screenKvp.Value) }
-
         static member getScreens (gameAddress : Game Address) world =
             match gameAddress.Names with
             | [] -> world.Screens
@@ -92,6 +86,20 @@ module WorldScreenModule =
             let screenNames = Set.ofSeq screenNames
             let screens = World.getScreens gameAddress world
             Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
+
+        static member getScreenHierarchy address world =
+            let screen = World.getScreen address world
+            let groups = World.getGroupsHierarchy address world
+            (screen, groups)
+
+        static member getScreensHierarchy gameAddress world =
+            let screens = World.getScreens gameAddress world
+            Map.map
+                (fun screenName screen ->
+                    let screenAddress = matosa gameAddress screenName
+                    let groups = World.getGroupsHierarchy screenAddress world
+                    (screen, groups))
+                screens
 
         static member private registerScreen address screen world =
             Screen.register address screen world
@@ -162,7 +170,7 @@ module WorldScreenModule =
                     note <| "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName world.Components.ScreenDispatchers
-            let screen = Screen.make true dispatcher None
+            let screen = Screen.make dispatcher None
             Reflection.attachFields screen.DispatcherNp screen
             Serialization.readPropertiesToTarget screenNode screen
             let groups = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
@@ -192,15 +200,15 @@ module WorldScreenModule =
                     Map.empty
                     (enumerable screenNodes)
 
-        static member makeScreen persistent dispatcherName optName world =
+        static member makeScreen dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
-            let screen = Screen.make persistent dispatcher optName
+            let screen = Screen.make dispatcher optName
             Reflection.attachFields dispatcher screen
             screen
         
-        static member makeDissolveScreen persistent dispatcherName optName dissolveData world =
+        static member makeDissolveScreen dissolveData dispatcherName optName world =
             let optDissolveImage = Some dissolveData.DissolveImage
-            let screen = World.makeScreen persistent dispatcherName optName world
+            let screen = World.makeScreen dispatcherName optName world
             let incomingDissolve = { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
             let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
             { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

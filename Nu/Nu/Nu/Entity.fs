@@ -80,7 +80,7 @@ module EntityModule =
                     facetFieldDefinitions
             else false
 
-        static member make persistent dispatcherName dispatcher optName =
+        static member make dispatcherName dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> acstring id | Some name -> name
@@ -90,7 +90,7 @@ module EntityModule =
               Rotation = 0.0f
               Visible = true
               ViewType = Relative
-              Persistent = persistent
+              Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               FacetNames = []
@@ -188,14 +188,6 @@ module WorldEntityModule =
             | Some entity -> World.entityAdder address world entity
             | None -> World.entityRemover address world
 
-        static member getEntities1 world =
-            seq {
-                for screenKvp in world.Entities do
-                    for groupKvp in screenKvp.Value do
-                        for entityKvp in groupKvp.Value do
-                            let address = Address.make [screenKvp.Key; groupKvp.Key; entityKvp.Key]
-                            yield (address, entityKvp.Value) }
-    
         static member getEntities (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
@@ -427,7 +419,7 @@ module WorldEntityModule =
                     (dispatcherName, dispatcher)
 
             // make the bare entity with name as id
-            let entity = Entity.make true dispatcherName dispatcher None
+            let entity = Entity.make dispatcherName dispatcher None
 
             // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
@@ -474,9 +466,9 @@ module WorldEntityModule =
                     Map.empty
                     (enumerable entityNodes)
 
-        static member makeEntity persistent dispatcherName optName world =
+        static member makeEntity dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
-            let entity = Entity.make persistent dispatcherName dispatcher optName
+            let entity = Entity.make dispatcherName dispatcher optName
             let entity = World.attachIntrinsicFacetsViaNames entity world
             Reflection.attachFields dispatcher entity
             match World.trySynchronizeFacets [] None entity world with

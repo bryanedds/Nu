@@ -21,22 +21,22 @@ module OmniProgression =
                 [typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> GameDispatcher]
 
     let addTitleScreen world =
-        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
         let world = World.subscribe4 GameAddress ClickTitleNewGameEvent (World.handleAsScreenTransition FieldAddress) world
         let world = World.subscribe4 GameAddress ClickTitleLoadGameEvent (World.handleAsScreenTransition LoadGameAddress) world
         let world = World.subscribe4 GameAddress ClickTitleCreditsEvent (World.handleAsScreenTransition CreditsAddress) world
         World.subscribe4 GameAddress ClickTitleExitEvent World.handleAsExit world
 
     let addLoadGameScreen world =
-        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name LoadGameAddress LoadGameGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name LoadGameAddress LoadGameGroupFilePath world
         World.subscribe4 GameAddress ClickLoadGameBackEvent (World.handleAsScreenTransition TitleAddress) world
 
     let addCreditsScreen world =
-        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath world
         World.subscribe4 GameAddress ClickCreditsBackEvent (World.handleAsScreenTransition TitleAddress) world
 
     let addFieldScreen world =
-        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name FieldAddress FieldGroupFilePath DissolveData world
+        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name FieldAddress FieldGroupFilePath world
         World.subscribe4 GameAddress ClickFieldBackEvent (World.handleAsScreenTransition TitleAddress) world
 
     let tryMakeOmniBladeWorld sdlDeps userState =
@@ -46,7 +46,7 @@ module OmniProgression =
         | Right world ->
             let world = World.hintRenderingPackageUse GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
-            let (splashScreen, world) = World.addSplashScreenFromData false typeof<ScreenDispatcher>.Name SplashAddress TitleAddress SplashData world
+            let (splashScreen, world) = World.addSplashScreenFromData false SplashData typeof<ScreenDispatcher>.Name SplashAddress TitleAddress world
             let world = addTitleScreen world
             let world = addLoadGameScreen world
             let world = addCreditsScreen world

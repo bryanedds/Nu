@@ -6,6 +6,7 @@
     <Xtension />
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
+        <Name>SaveGame</Name>
         <Position>88, -184</Position>
         <Size>384, 64</Size>
         <FacetNames>[]</FacetNames>
