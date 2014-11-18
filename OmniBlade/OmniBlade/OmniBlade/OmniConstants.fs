@@ -5,6 +5,7 @@ namespace OmniBlade
 open Prime
 open Nu
 open Nu.Constants
+open Nu.WorldConstants
 module OmniConstants =
 
     // misc constants
@@ -12,19 +13,21 @@ module OmniConstants =
     let FieldFeelerName = "Feeler"
     let FieldAvatarName = "Avatar"
 
-    // asset constants
-    let GameSong = { SongPackageName = DefaultPackageName; SongAssetName = "Song" }
-
-    // transition constants
-    let IncomingTime = 20L
-    let OutgoingTime = 30L
-    let StageOutgoingTime = 90L
+    // dissolve constants
+    let DissolveData =
+        { IncomingTime = 20L
+          OutgoingTime = 30L
+          DissolveImage = DefaultDissolveImage }
 
     // splash constants
     let SplashAddress = stoa<Screen> "Splash"
-    let SplashIncomingTime = 60L
-    let SplashIdlingTime = 60L
-    let SplashOutgoingTime = 40L
+    let SplashData =
+        { DissolveData = DissolveData
+          IdlingTime = 60L
+          SplashImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image5" }}
+
+    // asset constants
+    let GameSong = { SongPackageName = DefaultPackageName; SongAssetName = "Song" }
 
     // title constants
     let TitleAddress = stoa<Screen> "Title"

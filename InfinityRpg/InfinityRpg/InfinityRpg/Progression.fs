@@ -10,12 +10,12 @@ open InfinityRpg.Constants
 module Progression =
 
     let private addTitleScreen world =
-        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name TitleGroupFilePath IncomingTime OutgoingTime DissolveImage TitleAddress world
+        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath DissolveData world
         let world = World.subscribe4 GameAddress ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
         World.subscribe4 GameAddress ClickTitleExitEventAddress World.handleAsExit world
 
     let private addCreditsScreen world =
-        let world = snd <| World.addDissolveScreenFromFile typeof<ScreenDispatcher>.Name CreditsGroupFilePath IncomingTime OutgoingTime DissolveImage CreditsAddress world
+        let world = snd <| World.addDissolveScreenFromFile false typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath DissolveData world
         World.subscribe4 GameAddress ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     let tryMakeInfinityRpgWorld sdlDeps userState =
@@ -26,8 +26,7 @@ module Progression =
             let world = World.hintRenderingPackageUse GuiPackageName world
             let world = addTitleScreen world
             let world = addCreditsScreen world
-            let splashScreenImage = { ImagePackageName = GuiPackageName; ImageAssetName = SplashNu }
-            let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime DissolveImage splashScreenImage world
-            let world = snd <| World.selectScreen SplashAddress splashScreen world
+            let (splashScreen, world) = World.addSplashScreenFromData false typeof<ScreenDispatcher>.Name NuSplashAddress TitleAddress NuSplashData world
+            let world = snd <| World.selectScreen NuSplashAddress splashScreen world
             Right world
         | Left _ as left -> left

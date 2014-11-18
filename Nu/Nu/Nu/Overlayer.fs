@@ -25,27 +25,30 @@ module OverlayerModule =
 module Overlayer =
 
     let rec private trySelectNode overlayName propertyName overlayer =
-        let optBranch = overlayer.Overlays.DocumentElement.SelectSingleNode overlayName
-        match optBranch with
+        match overlayer.Overlays.DocumentElement with
         | null -> None
-        | branch ->
-            let optLeaf = branch.SelectSingleNode propertyName
-            match optLeaf with
-            | null ->
-                let optIncludeNames = branch.Attributes.[IncludeAttributeName]
-                match optIncludeNames with
-                | null -> None
-                | includeNames ->
-                    let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list>
-                    let includeNames = includeNames :?> obj list |> List.map (fun obj -> obj :?> string) |> Array.ofList
-                    let mutable optNode = None
-                    let mutable enr = includeNames.GetEnumerator ()
-                    while enr.MoveNext () && Option.isNone optNode do
-                        let includeName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
-                        let includeName = includeName.Trim ()
-                        optNode <- trySelectNode includeName propertyName overlayer
-                    optNode
-            | leaf -> Some leaf
+        | documentElement ->
+            let optBranch = documentElement.SelectSingleNode overlayName
+            match optBranch with
+            | null -> None
+            | branch ->
+                let optLeaf = branch.SelectSingleNode propertyName
+                match optLeaf with
+                | null ->
+                    let optIncludeNames = branch.Attributes.[IncludeAttributeName]
+                    match optIncludeNames with
+                    | null -> None
+                    | includeNames ->
+                        let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list>
+                        let includeNames = includeNames :?> obj list |> List.map (fun obj -> obj :?> string) |> Array.ofList
+                        let mutable optNode = None
+                        let mutable enr = includeNames.GetEnumerator ()
+                        while enr.MoveNext () && Option.isNone optNode do
+                            let includeName = enr.Current :?> string // must be cast since Array.GetEnumerator is not generic...
+                            let includeName = includeName.Trim ()
+                            optNode <- trySelectNode includeName propertyName overlayer
+                        optNode
+                | leaf -> Some leaf
 
     let private getPropertyState overlayName propertyName target overlayer =
         match trySelectNode overlayName propertyName overlayer with

@@ -19,10 +19,11 @@ module GroupModule =
         static member unregister address (group : Group) (world : World) : Group * World =
             group.DispatcherNp.Unregister (address, group, world)
 
-        static member make dispatcher optName =
+        static member make persistent dispatcher optName =
             let id = Core.makeId ()
             { Group.Id = id
               Name = match optName with None -> acstring id | Some name -> name
+              Persistent = persistent
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
@@ -143,12 +144,38 @@ module WorldGroupModule =
                 ([], world)
                 groupDescriptors
     
-        static member writeGroup overlayer (writer : XmlWriter) (group : Group) entities =
-            writer.WriteStartElement typeof<Group>.Name
+        static member writeGroup (writer : XmlWriter) (group : Group) entities world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology writer group
-            World.writeEntities overlayer writer entities
-    
+            writer.WriteStartElement EntitiesNodeName
+            World.writeEntities writer entities world
+            writer.WriteEndElement ()
+
+        static member writeGroupToFile group entities (filePath : string) world =
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
+            // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
+            use writer = XmlWriter.Create (filePath, writerSettings)
+            writer.WriteStartDocument ()
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement GroupNodeName
+            World.writeGroup writer group entities world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+            writer.WriteEndDocument ()
+
+        static member writeGroups (writer : XmlWriter) groupDescriptors world =
+            let groupsSorted =
+                List.sortBy
+                    (fun (group : Group, _) -> group.CreationTimeNp)
+                    (Map.toValueList groupDescriptors)
+            let groupsFiltered = List.filter (fun (group : Group, _) -> group.Persistent) groupsSorted
+            for (group, entities) in groupsFiltered do
+                writer.WriteStartElement GroupNodeName
+                World.writeGroup writer group entities world
+                writer.WriteEndElement ()
+
         static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
 
             // read in the dispatcher name and create the dispatcher
@@ -162,7 +189,7 @@ module WorldGroupModule =
                     Map.find dispatcherName world.Components.GroupDispatchers
             
             // make the bare group with name as id
-            let group = Group.make dispatcher None
+            let group = Group.make true dispatcher None
             
             // attach the group's instrinsic fields from its dispatcher if any
             Reflection.attachFields group.DispatcherNp group
@@ -176,8 +203,28 @@ module WorldGroupModule =
             // return the initialized group and entities
             (group, entities)
 
-        static member makeGroup dispatcherName optName world =
+        static member readGroupFromFile filePath world =
+            let document = XmlDocument ()
+            document.Load (filePath : string)
+            let rootNode = document.[RootNodeName]
+            let groupNode = rootNode.[GroupNodeName]
+            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+
+        static member readGroups (parentNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+            match parentNode.SelectSingleNode GroupsNodeName with
+            | null -> Map.empty
+            | groupsNode ->
+                let groupNodes = groupsNode.SelectNodes GroupNodeName
+                Seq.fold
+                    (fun groups groupNode ->
+                        let group = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName world
+                        let groupName = (fst group).Name
+                        Map.add groupName group groups)
+                    Map.empty
+                    (enumerable groupNodes)
+
+        static member makeGroup persistent dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
-            let group = Group.make dispatcher optName
+            let group = Group.make persistent dispatcher optName
             Reflection.attachFields dispatcher group
             group

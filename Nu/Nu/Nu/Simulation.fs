@@ -58,7 +58,7 @@ module ScreenStateModule =
         | IdlingState
 
 [<AutoOpen>]
-module SimModule =
+module SimulationModule =
 
     /// The state of one of a screen's transitions.
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
@@ -144,7 +144,8 @@ module SimModule =
              define? Size DefaultEntitySize
              define? Rotation 0.0f
              define? Visible true
-             define? ViewType Relative]
+             define? ViewType Relative
+             define? Persistent true]
 
         abstract member Register : Entity Address * Entity * World -> Entity * World
         default dispatcher.Register (_, entity, world) = (entity, world)
@@ -167,6 +168,9 @@ module SimModule =
     /// The default dispatcher for groups.
     and GroupDispatcher () =
 
+        static member FieldDefinitions =
+            [define? Persistent true]
+
         abstract member Register : Group Address * Group * World -> Group * World
         default dispatcher.Register (_, group, world) = (group, world)
 
@@ -175,6 +179,9 @@ module SimModule =
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
+
+        static member FieldDefinitions =
+            [define? Persistent true]
 
         abstract member Register : Screen Address * Screen * World -> Screen * World
         default dispatcher.Register (_, screen, world) = (screen, world)
@@ -229,6 +236,7 @@ module SimModule =
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
           ViewType : ViewType
+          Persistent : bool
           CreationTimeNp : DateTime // just needed for ordering writes to reduce diff volumes
           DispatcherNp : EntityDispatcher
           FacetNames : string list
@@ -247,6 +255,7 @@ module SimModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Group =
         { Id : Guid
           Name : string
+          Persistent : bool
           CreationTimeNp : DateTime
           DispatcherNp : GroupDispatcher
           Xtension : Xtension }
@@ -266,6 +275,7 @@ module SimModule =
           ScreenState : ScreenState
           Incoming : Transition
           Outgoing : Transition
+          Persistent : bool
           CreationTimeNp : DateTime
           DispatcherNp : ScreenDispatcher
           Xtension : Xtension }
@@ -335,7 +345,7 @@ module SimModule =
           OptScreenTransitionDestinationAddress : Screen Address option
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
-          Overlayer : Overlayer
+          Overlayer : Overlayer // TODO: maybe move this to subsystems?
           OverlayFilePath : string
           UserState : obj }
 

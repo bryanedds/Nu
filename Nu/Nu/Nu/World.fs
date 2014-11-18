@@ -133,26 +133,6 @@ module WorldModule =
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
                 (Cascade, world)
 
-        static member saveGroupToFile group entities filePath world =
-            use file = File.Open (filePath, FileMode.Create)
-            let writerSettings = XmlWriterSettings ()
-            writerSettings.Indent <- true
-            // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
-            // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-            use writer = XmlWriter.Create (file, writerSettings)
-            writer.WriteStartDocument ()
-            writer.WriteStartElement RootNodeName
-            World.writeGroup world.State.Overlayer writer group entities
-            writer.WriteEndElement ()
-            writer.WriteEndDocument ()
-
-        static member loadGroupFromFile filePath world =
-            let document = XmlDocument ()
-            document.Load (filePath : string)
-            let rootNode = document.[RootNodeName]
-            let groupNode = rootNode.[GroupNodeName]
-            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
-
         static member private updateTransition1 (transition : Transition) =
             if transition.TransitionTicks = transition.TransitionLifetime then (true, { transition with TransitionTicks = 0L })
             else (false, { transition with TransitionTicks = transition.TransitionTicks + 1L })
@@ -233,24 +213,24 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey event.SubscriberAddress TickEventAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
             (Resolve, world)
 
-        static member addSplashScreenFromData destination address screenDispatcherName incomingTime idlingTime outgoingTime dissolveImage splashImage world =
-            let splashScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head address) incomingTime outgoingTime dissolveImage world
-            let splashGroup = World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world
-            let splashLabel = World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world
+        static member addSplashScreenFromData persistent dispatcherName address destination splashData world =
+            let splashScreen = World.makeDissolveScreen persistent dispatcherName (Some <| Address.head address) splashData.DissolveData world
+            let splashGroup = World.makeGroup persistent typeof<GroupDispatcher>.Name (Some "SplashGroup") world
+            let splashLabel = World.makeEntity persistent typeof<LabelDispatcher>.Name (Some "SplashLabel") world
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
-            let splashLabel = Entity.setLabelImage splashImage splashLabel
+            let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
             let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
             let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
-            let world = World.monitor address (IncomingFinishEventAddress ->>- address) (World.handleSplashScreenIdle idlingTime) world
+            let world = World.monitor address (IncomingFinishEventAddress ->>- address) (World.handleSplashScreenIdle splashData.IdlingTime) world
             let world = World.monitor address (OutgoingFinishEventAddress ->>- address) (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
 
-        static member addDissolveScreenFromFile screenDispatcherName groupFilePath incomingTime outgoingTime dissolveImage screenAddress world =
-            let dissolveScreen = World.makeDissolveScreen screenDispatcherName (Some <| Address.head screenAddress) incomingTime outgoingTime dissolveImage world
-            let (group, entities) = World.loadGroupFromFile groupFilePath world
+        static member addDissolveScreenFromFile persistent dispatcherName address groupFilePath dissolveData world =
+            let dissolveScreen = World.makeDissolveScreen persistent dispatcherName (Some <| Address.head address) dissolveData world
+            let (group, entities) = World.readGroupFromFile groupFilePath world
             let dissolveGroupDescriptors = Map.singleton group.Name (group, entities)
-            World.addScreen screenAddress dissolveScreen dissolveGroupDescriptors world
+            World.addScreen address dissolveScreen dissolveGroupDescriptors world
 
         static member private createIntrinsicOverlays dispatchers facets =
 

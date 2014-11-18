@@ -425,7 +425,7 @@ module Program =
         try let groupAddress = (World.getUserState world).GroupAddress
             let group = World.getGroup groupAddress world
             let entities = World.getEntities groupAddress world
-            World.saveGroupToFile group entities filePath world
+            World.writeGroupToFile group entities filePath world
         with exn ->
             ignore <|
                 MessageBox.Show
@@ -444,7 +444,7 @@ module Program =
             let world = snd <| World.removeGroupImmediate groupAddress group world
             
             // load and add group
-            let (group, entities) = World.loadGroupFromFile filePath world
+            let (group, entities) = World.readGroupFromFile filePath world
             let groupAddress = satoga EditorScreenAddress group.Name
             let editorState = { editorState with GroupAddress = groupAddress }
             let world = World.setUserState editorState world
@@ -496,7 +496,7 @@ module Program =
         ignore <| worldChangers.Add (fun world ->
             try let groupAddress = (World.getUserState world).GroupAddress
                 let entityDispatcherName = form.createEntityComboBox.Text
-                let entity = World.makeEntity entityDispatcherName None world
+                let entity = World.makeEntity true entityDispatcherName None world
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
@@ -877,8 +877,8 @@ module Program =
         let optWorld = World.tryMake sdlDeps userComponentFactory GuiAndPhysics true editorState
         match optWorld with
         | Right world ->
-            let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
-            let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
+            let screen = World.makeScreen false typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
+            let group = World.makeGroup true typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
             let groupDescriptors = Map.singleton group.Name (group, Map.empty)
             let world = snd <| World.addScreen EditorScreenAddress screen groupDescriptors world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 

@@ -33,16 +33,18 @@ module BlazeConstants =
     let EnemyImage = { ImagePackageName = StagePackageName; ImageAssetName = "Enemy" }
     let PlayerImage = { ImagePackageName = StagePackageName; ImageAssetName = "Player" }
 
-    // transition constants
-    let IncomingTime = 20L
-    let OutgoingTime = 30L
-    let StageOutgoingTime = 90L
+    // dissolve constants
+    let DissolveData =
+        { IncomingTime = 20L
+          OutgoingTime = 30L
+          DissolveImage = DefaultDissolveImage }
 
     // splash constants
     let SplashAddress = stoa<Screen> "Splash"
-    let SplashIncomingTime = 60L
-    let SplashIdlingTime = 60L
-    let SplashOutgoingTime = 40L
+    let SplashData =
+        { DissolveData = DissolveData
+          IdlingTime = 60L
+          SplashImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image5" }}
 
     // title constants
     let TitleAddress = stoa<Screen> "Title"
