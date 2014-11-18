@@ -327,6 +327,11 @@ module Program =
         refreshPropertyGrid form world
         refreshTreeView form world
 
+    let selectEntity (form : NuEditForm) entityAddress worldChangers refWorld world =
+        refWorld := world // must be set for property grid
+        form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
+        tryScrollTreeViewToPropertyGridSelection form
+
     let canEditWithMouse (form : NuEditForm) world =
         World.isGamePlaying world &&
         not form.editWhileInteractiveCheckBox.Checked
@@ -338,9 +343,7 @@ module Program =
         | Some entity ->
             let groupAddress = (World.getUserState world).GroupAddress
             let entityAddress = gatoea groupAddress entity.Name
-            refWorld := world // must be set for property grid
-            form.propertyGrid.SelectedObject <- { Address = entityAddress; Form = form; WorldChangers = worldChangers; RefWorld = refWorld }
-            tryScrollTreeViewToPropertyGridSelection form
+            selectEntity form entityAddress worldChangers refWorld world
             Some (entity, entityAddress)
         | None -> None
 
@@ -603,7 +606,7 @@ module Program =
                 World.transformUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
             | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."; world)
 
-    let handleFormPaste atMouse (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
+    let handleFormPaste atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
             let editorState = World.getUserState world
             match !editorState.Clipboard with
@@ -619,7 +622,9 @@ module Program =
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
-                snd <| World.addEntity entityAddress entity world
+                let world = snd <| World.addEntity entityAddress entity world
+                selectEntity form entityAddress worldChangers refWorld world
+                world
             | None -> world)
 
     let handleFormQuickSize (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
@@ -850,8 +855,8 @@ module Program =
         form.cutContextMenuItem.Click.Add (handleFormCut form worldChangers)
         form.copyToolStripMenuItem.Click.Add (handleFormCopy form worldChangers)
         form.copyContextMenuItem.Click.Add (handleFormCopy form worldChangers)
-        form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form worldChangers)
-        form.pasteContextMenuItem.Click.Add (handleFormPaste true form worldChangers)
+        form.pasteToolStripMenuItem.Click.Add (handleFormPaste false form worldChangers refWorld)
+        form.pasteContextMenuItem.Click.Add (handleFormPaste true form worldChangers refWorld)
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form worldChangers)
         form.resetCameraButton.Click.Add (handleFormResetCamera form worldChangers)
         form.addXFieldButton.Click.Add (handleFormAddXField form worldChangers)
