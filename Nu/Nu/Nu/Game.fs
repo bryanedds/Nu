@@ -1,5 +1,7 @@
 ﻿namespace Nu
 open System
+open System.IO
+open System.Xml
 open Prime
 open Nu
 open Nu.Constants
@@ -59,3 +61,56 @@ module WorldGameModule =
             | (_, None) -> false
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
+
+        static member writeGame (writer : XmlWriter) (game : Game) screens world =
+            writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
+            Serialization.writePropertiesFromTarget tautology writer game
+            writer.WriteStartElement ScreensNodeName
+            World.writeScreens writer screens world
+            writer.WriteEndElement ()
+
+        static member writeGameToFile game screens (fileName : string) world =
+            use writer = XmlWriter.Create fileName
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement GameNodeName
+            World.writeGame writer game screens world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+
+        static member readGameFromFile (filePath : string) world =
+            use reader = XmlReader.Create (new FileStream (filePath, FileMode.Open) :> Stream)
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            World.readGame
+                ((document.SelectSingleNode RootNodeName).SelectSingleNode GameNodeName)
+                typeof<GameDispatcher>.Name
+                typeof<ScreenDispatcher>.Name
+                typeof<GroupDispatcher>.Name
+                typeof<EntityDispatcher>.Name
+                world
+
+        static member readGame
+            (gameNode : XmlNode)
+            defaultDispatcherName
+            defaultScreenDispatcherName
+            defaultGroupDispatcherName
+            defaultEntityDispatcherName
+            world =
+            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName gameNode
+            let dispatcher =
+                match Map.tryFind dispatcherName world.Components.GameDispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<GameDispatcher>.Name
+                    Map.find dispatcherName world.Components.GameDispatchers
+            let game = Game.make dispatcher None
+            Reflection.attachFields game.DispatcherNp game
+            Serialization.readPropertiesToTarget gameNode game
+            let screens =
+                World.readScreens
+                    (gameNode : XmlNode)
+                    defaultScreenDispatcherName
+                    defaultGroupDispatcherName
+                    defaultEntityDispatcherName
+                    world
+            (game, screens)

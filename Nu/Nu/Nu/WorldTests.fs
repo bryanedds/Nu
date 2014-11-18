@@ -18,6 +18,7 @@ module WorldTests =
     let TestEntityAddress = ltoa<Entity> [TestScreenName; TestGroupName; TestEntityName]
     let TestGroupAddress = ltoa<Group> [TestScreenName; TestGroupName]
     let TestScreenAddress = ltoa<Screen> [TestScreenName]
+    let TestFilePath = "Test.xml"
     let incUserStateAndCascade (_ : unit Event) world = (Cascade, World.transformUserState inc world)
     let incUserStateAndResolve (_ : unit Event) world = (Resolve, World.transformUserState inc world)
 
@@ -76,9 +77,9 @@ module WorldTests =
     let [<Fact>] entitySubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
-        let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
-        let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let entity = World.makeEntity true typeof<EntityDispatcher>.Name (Some TestEntityName) world
+        let group = World.makeGroup true typeof<GroupDispatcher>.Name (Some TestGroupName) world
+        let screen = World.makeScreen true typeof<ScreenDispatcher>.Name (Some TestScreenName) world
         let descriptors = Map.singleton group.Name (group, Map.singleton entity.Name entity)
         let world = snd <| World.addScreen TestScreenAddress screen descriptors world
         let handleEvent = fun event world ->
@@ -88,3 +89,25 @@ module WorldTests =
         let world = World.subscribe4 TestEntityAddress StringEventAddress handleEvent world
         let world = World.publish4 GameAddress StringEventAddress String.Empty world
         Assert.Equal<string> (TestEntityName, World.getUserState world)
+
+    let [<Fact>] gameSerializationWorks () =
+        // TODO: make stronger assertions in here!!!
+        World.init ()
+        let world = World.makeEmpty 0
+        let entity = World.makeEntity true typeof<EntityDispatcher>.Name (Some TestEntityName) world
+        let group = World.makeGroup true typeof<GroupDispatcher>.Name (Some TestGroupName) world
+        let screen = World.makeScreen true typeof<ScreenDispatcher>.Name (Some TestScreenName) world
+        let game = world.Game
+        let screens =
+            Map.singleton screen.Name <|
+                (screen, Map.singleton group.Name <|
+                    (group, Map.singleton entity.Name entity))
+        World.writeGameToFile game screens TestFilePath world
+        let (game', screens') = World.readGameFromFile TestFilePath world
+        Assert.Equal<string> (game.Name, game'.Name)
+        let (screen', groups') = Map.find TestScreenName screens'
+        Assert.Equal<string> (screen.Name, screen'.Name)
+        let (group', entities') = Map.find TestGroupName groups'
+        Assert.Equal<string> (group.Name, group'.Name)
+        let entity' = Map.find TestEntityName entities'
+        Assert.Equal<string> (entity.Name, entity'.Name)

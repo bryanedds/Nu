@@ -80,7 +80,7 @@ module EntityModule =
                     facetFieldDefinitions
             else false
 
-        static member make dispatcherName dispatcher optName =
+        static member make persistent dispatcherName dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> acstring id | Some name -> name
@@ -90,6 +90,7 @@ module EntityModule =
               Rotation = 0.0f
               Visible = true
               ViewType = Relative
+              Persistent = persistent
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               FacetNames = []
@@ -394,24 +395,23 @@ module WorldEntityModule =
                 (entity, world)
             else (entity, world)
 
-        static member writeEntity overlayer (writer : XmlWriter) (entity : Entity) =
-            writer.WriteStartElement typeof<Entity>.Name
+        static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget 
-                (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity overlayer)
+                (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity world.State.Overlayer)
                 writer
                 entity
-            writer.WriteEndElement ()
 
-        static member writeEntities overlayer (writer : XmlWriter) (entities : Map<_, _>) =
-            writer.WriteStartElement EntitiesNodeName
+        static member writeEntities (writer : XmlWriter) entities world =
             let entitiesSorted =
                 List.sortBy
                     (fun (entity : Entity) -> entity.CreationTimeNp)
                     (Map.toValueList entities)
-            for entity in entitiesSorted do
-                World.writeEntity overlayer writer entity
-            writer.WriteEndElement ()
+            let entitiesFiltered = List.filter (fun (entity : Entity) -> entity.Persistent) entitiesSorted
+            for entity in entitiesFiltered do
+                writer.WriteStartElement typeof<Entity>.Name
+                World.writeEntity writer entity world
+                writer.WriteEndElement ()
 
         static member readEntity (entityNode : XmlNode) defaultDispatcherName world =
 
@@ -427,7 +427,7 @@ module WorldEntityModule =
                     (dispatcherName, dispatcher)
 
             // make the bare entity with name as id
-            let entity = Entity.make dispatcherName dispatcher None
+            let entity = Entity.make true dispatcherName dispatcher None
 
             // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
@@ -474,9 +474,9 @@ module WorldEntityModule =
                     Map.empty
                     (enumerable entityNodes)
 
-        static member makeEntity dispatcherName optName world =
+        static member makeEntity persistent dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
-            let entity = Entity.make dispatcherName dispatcher optName
+            let entity = Entity.make persistent dispatcherName dispatcher optName
             let entity = World.attachIntrinsicFacetsViaNames entity world
             Reflection.attachFields dispatcher entity
             match World.trySynchronizeFacets [] None entity world with

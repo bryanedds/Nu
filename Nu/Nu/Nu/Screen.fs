@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open System.Xml
 open Prime
 open Nu
 open Nu.Constants
@@ -7,6 +8,16 @@ open Nu.WorldConstants
 
 [<AutoOpen>]
 module ScreenModule =
+
+    type [<StructuralEquality; NoComparison>] DissolveData =
+        { IncomingTime : int64
+          OutgoingTime : int64
+          DissolveImage : Image }
+
+    type [<StructuralEquality; NoComparison>] SplashData =
+        { DissolveData : DissolveData
+          IdlingTime : int64
+          SplashImage : Image }
 
     type Screen with
 
@@ -23,13 +34,14 @@ module ScreenModule =
         static member isIdling screen =
             screen.ScreenState = IdlingState
 
-        static member make dispatcher optName =
+        static member make persistent dispatcher optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> acstring id | Some name -> name
               ScreenState = IdlingState
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
+              Persistent = persistent
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
@@ -116,15 +128,77 @@ module WorldScreenModule =
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
-        static member makeScreen dispatcherName optName world =
+        static member writeScreen (writer : XmlWriter) (screen : Screen) groups world =
+            writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
+            Serialization.writePropertiesFromTarget tautology writer screen
+            writer.WriteStartElement GroupsNodeName
+            World.writeGroups writer groups world
+            writer.WriteEndElement ()
+
+        static member writeScreens (writer : XmlWriter) screenDescriptors world =
+            let screensSorted =
+                List.sortBy
+                    (fun (screen : Screen, _) -> screen.CreationTimeNp)
+                    (Map.toValueList screenDescriptors)
+            let screensFiltered = List.filter (fun (screen : Screen, _) -> screen.Persistent) screensSorted
+            for (screen, groups) in screensFiltered do
+                writer.WriteStartElement ScreenNodeName
+                World.writeScreen writer screen groups world
+                writer.WriteEndElement ()
+
+        static member readScreen
+            (screenNode : XmlNode)
+            defaultDispatcherName
+            defaultGroupDispatcherName
+            defaultEntityDispatcherName
+            world =
+            let dispatcherName = Serialization.readDispatcherName defaultDispatcherName screenNode
+            let dispatcher =
+                match Map.tryFind dispatcherName world.Components.ScreenDispatchers with
+                | Some dispatcher -> dispatcher
+                | None ->
+                    note <| "Could not locate dispatcher '" + dispatcherName + "'."
+                    let dispatcherName = typeof<ScreenDispatcher>.Name
+                    Map.find dispatcherName world.Components.ScreenDispatchers
+            let screen = Screen.make true dispatcher None
+            Reflection.attachFields screen.DispatcherNp screen
+            Serialization.readPropertiesToTarget screenNode screen
+            let groups = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
+            (screen, groups)
+
+        static member readScreens
+            (parentNode : XmlNode)
+            defaultDispatcherName
+            defaultGroupDispatcherName
+            defaultEntityDispatcherName
+            world =
+            match parentNode.SelectSingleNode ScreensNodeName with
+            | null -> Map.empty
+            | screensNode ->
+                let screenNodes = screensNode.SelectNodes ScreenNodeName
+                Seq.fold
+                    (fun screens screenNode ->
+                        let screen =
+                            World.readScreen
+                                screenNode
+                                defaultDispatcherName
+                                defaultGroupDispatcherName
+                                defaultEntityDispatcherName
+                                world
+                        let screenName = (fst screen).Name
+                        Map.add screenName screen screens)
+                    Map.empty
+                    (enumerable screenNodes)
+
+        static member makeScreen persistent dispatcherName optName world =
             let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
-            let screen = Screen.make dispatcher optName
+            let screen = Screen.make persistent dispatcher optName
             Reflection.attachFields dispatcher screen
             screen
         
-        static member makeDissolveScreen dispatcherName optName incomingTime outgoingTime dissolveImage world =
-            let optDissolveImage = Some dissolveImage
-            let screen = World.makeScreen dispatcherName optName world
-            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = incomingTime; OptDissolveImage = optDissolveImage }
-            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = outgoingTime; OptDissolveImage = optDissolveImage }
+        static member makeDissolveScreen persistent dispatcherName optName dissolveData world =
+            let optDissolveImage = Some dissolveData.DissolveImage
+            let screen = World.makeScreen persistent dispatcherName optName world
+            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
             { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }

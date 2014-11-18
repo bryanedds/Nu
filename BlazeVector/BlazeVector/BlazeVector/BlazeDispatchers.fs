@@ -149,7 +149,7 @@ module PlayerModule =
         let [<Literal>] ClimbForce = 12000.0f
 
         let createBullet bulletAddress (playerTransform : Transform) world =
-            let bullet = World.makeEntity typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
+            let bullet = World.makeEntity false typeof<BulletDispatcher>.Name (Some <| Address.last bulletAddress) world
             let bullet =
                 bullet |>
                     Entity.setPosition (playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)) |>
@@ -304,7 +304,7 @@ module StageScreenModule =
                 entities
 
         let makeSectionFromFile filePath sectionName xShift world =
-            let (sectionGroup, sectionEntities) = World.loadGroupFromFile filePath world
+            let (sectionGroup, sectionEntities) = World.readGroupFromFile filePath world
             let sectionEntities = shiftEntities xShift sectionEntities
             (sectionName, (sectionGroup, sectionEntities))
 
@@ -317,7 +317,7 @@ module StageScreenModule =
                     let xShift = 2048.0f
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
-            let stagePlayDescriptor = (StagePlayName, World.loadGroupFromFile StagePlayFilePath world)
+            let stagePlayDescriptor = (StagePlayName, World.readGroupFromFile StagePlayFilePath world)
             let groupDescriptors = Map.ofList <| stagePlayDescriptor :: sectionDescriptors
             let world = snd <| World.addGroups address groupDescriptors world
             let world = World.playSong DeadBlazeSong 1.0f 0 world

@@ -11,13 +11,15 @@ module RandModule =
 [<RequireQualifiedAccess>]
 module Rand =
 
+    // NOTE: number generated via http://www.random.org/bytes/
+    let [<Literal>] DefaultSeed = 0xa529cb6f5f0385edUL
+
     let make seed =
         if seed = 0UL then failwith "Seed for Rand may not be zero."
         { Current = seed }
 
     let makeDefault () =
-        // NOTE: number generated via http://www.random.org/bytes/
-        make 0xa529cb6f5f0385edUL
+        make DefaultSeed
 
     let makeFromInt (seed : int) =
         let seedMultiplier = UInt64.MaxValue / uint64 UInt32.MaxValue

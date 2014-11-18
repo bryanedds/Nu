@@ -411,5 +411,13 @@ module CharacterCameraFacetModule =
 [<AutoOpen>]
 module InfinityRpgModule =
 
+    type Game with
+    
+        member game.Seed = game?Seed : uint64
+        static member setSeed (value : uint64) (game : Entity) = game?Seed <- value
+
     type InfinityRpgDispatcher () =
         inherit GameDispatcher ()
+
+        static member FieldDefinitions =
+            [define? Seed Rand.DefaultSeed]
