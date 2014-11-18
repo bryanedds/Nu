@@ -138,54 +138,50 @@ module WorldModule =
             else (false, { screen with TransitionTicksNp = screen.TransitionTicksNp + 1L })
 
         // TODO: split this function up...
-        static member private updateScreenTransition handleUpdate world =
-            let world =
-                match World.getOptSelectedScreenAddress world with
-                | Some selectedScreenAddress ->
-                    let selectedScreen = World.getScreen selectedScreenAddress world
-                    match selectedScreen.ScreenStateNp with
-                    | IncomingState ->
+        static member private updateScreenTransition world =
+            match World.getOptSelectedScreenAddress world with
+            | Some selectedScreenAddress ->
+                let selectedScreen = World.getScreen selectedScreenAddress world
+                match selectedScreen.ScreenStateNp with
+                | IncomingState ->
+                    let world =
+                        if selectedScreen.TransitionTicksNp = 0L
+                        then World.publish4 selectedScreenAddress (SelectEventAddress ->>- selectedScreenAddress) () world
+                        else world
+                    match world.State.Liveness with
+                    | Running ->
                         let world =
                             if selectedScreen.TransitionTicksNp = 0L
-                            then World.publish4 selectedScreenAddress (SelectEventAddress ->>- selectedScreenAddress) () world
+                            then World.publish4 selectedScreenAddress (IncomingStartEventAddress ->>- selectedScreenAddress) () world
                             else world
                         match world.State.Liveness with
                         | Running ->
-                            let world =
-                                if selectedScreen.TransitionTicksNp = 0L
-                                then World.publish4 selectedScreenAddress (IncomingStartEventAddress ->>- selectedScreenAddress) () world
-                                else world
-                            match world.State.Liveness with
-                            | Running ->
-                                let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Incoming
-                                let world = World.setScreen selectedScreenAddress selectedScreen world
-                                if finished then
-                                    let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                                    World.publish4 selectedScreenAddress (IncomingFinishEventAddress ->>- selectedScreenAddress) () world
-                                else world
-                            | Exiting -> world
-                        | Exiting -> world
-                    | OutgoingState ->
-                        let world =
-                            if selectedScreen.TransitionTicksNp <> 0L then world
-                            else World.publish4 selectedScreenAddress (OutgoingStartEventAddress ->>- selectedScreenAddress) () world
-                        match world.State.Liveness with
-                        | Running ->
-                            let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Outgoing
+                            let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Incoming
                             let world = World.setScreen selectedScreenAddress selectedScreen world
                             if finished then
                                 let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                                let world = World.publish4 selectedScreenAddress (DeselectEventAddress ->>- selectedScreenAddress) () world
-                                match world.State.Liveness with
-                                | Running -> World.publish4 selectedScreenAddress (OutgoingFinishEventAddress ->>- selectedScreenAddress) () world
-                                | Exiting -> world
+                                World.publish4 selectedScreenAddress (IncomingFinishEventAddress ->>- selectedScreenAddress) () world
                             else world
                         | Exiting -> world
-                    | IdlingState -> world
-                | None -> world
-            match world.State.Liveness with
-            | Running -> handleUpdate world
-            | Exiting -> world
+                    | Exiting -> world
+                | OutgoingState ->
+                    let world =
+                        if selectedScreen.TransitionTicksNp <> 0L then world
+                        else World.publish4 selectedScreenAddress (OutgoingStartEventAddress ->>- selectedScreenAddress) () world
+                    match world.State.Liveness with
+                    | Running ->
+                        let (finished, selectedScreen) = World.updateScreenTransition1 selectedScreen selectedScreen.Outgoing
+                        let world = World.setScreen selectedScreenAddress selectedScreen world
+                        if finished then
+                            let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
+                            let world = World.publish4 selectedScreenAddress (DeselectEventAddress ->>- selectedScreenAddress) () world
+                            match world.State.Liveness with
+                            | Running -> World.publish4 selectedScreenAddress (OutgoingFinishEventAddress ->>- selectedScreenAddress) () world
+                            | Exiting -> world
+                        else world
+                    | Exiting -> world
+                | IdlingState -> world
+            | None -> world
 
         static member private handleSplashScreenIdleTick idlingTime ticks event world =
             let world = World.unsubscribe SplashScreenTickKey world
@@ -474,17 +470,21 @@ module WorldModule =
             (world.State.Liveness, world)
 
         static member processUpdate handleUpdate world =
-            let world = World.integrate world
+            let world = handleUpdate world
             match world.State.Liveness with
             | Running ->
-                let world = World.publish4 GameAddress TickEventAddress () world
+                let world = World.updateScreenTransition world
                 match world.State.Liveness with
                 | Running ->
-                    let world = World.updateScreenTransition handleUpdate world
+                    let world = World.integrate world
                     match world.State.Liveness with
                     | Running ->
-                        let world = World.processTasks world
-                        (world.State.Liveness, world)
+                        let world = World.publish4 GameAddress TickEventAddress () world
+                        match world.State.Liveness with
+                        | Running ->
+                            let world = World.processTasks world
+                            (world.State.Liveness, world)
+                        | Exiting -> (Exiting, world)
                     | Exiting -> (Exiting, world)
                 | Exiting -> (Exiting, world)
             | Exiting -> (Exiting, world)
