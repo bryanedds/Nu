@@ -214,8 +214,9 @@ module WorldModule =
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
-            let splashGroupDescriptors = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
-            let world = snd <| World.addScreen address splashScreen splashGroupDescriptors world
+            let splashGroupsHierarchy = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
+            let splashScreenHierarchy = (splashScreen, splashGroupsHierarchy)
+            let world = snd <| World.addScreen address splashScreenHierarchy world
             let world = World.monitor address (IncomingFinishEventAddress ->>- address) (World.handleSplashScreenIdle splashData.IdlingTime) world
             let world = World.monitor address (OutgoingFinishEventAddress ->>- address) (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
@@ -223,8 +224,9 @@ module WorldModule =
         static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName address groupFilePath world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let (group, entities) = World.readGroupFromFile groupFilePath world
-            let dissolveGroupDescriptors = Map.singleton group.Name (group, entities)
-            World.addScreen address dissolveScreen dissolveGroupDescriptors world
+            let dissolveGroupsHierarchy = Map.singleton group.Name (group, entities)
+            let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupsHierarchy)
+            World.addScreen address dissolveScreenHierarchy world
 
         static member private createIntrinsicOverlays dispatchers facets =
 

@@ -428,7 +428,8 @@ module Program =
         try let groupAddress = (World.getUserState world).GroupAddress
             let group = World.getGroup groupAddress world
             let entities = World.getEntities groupAddress world
-            World.writeGroupToFile filePath group entities world
+            let groupHierarchy = (group, entities)
+            World.writeGroupToFile filePath groupHierarchy world
         with exn ->
             ignore <|
                 MessageBox.Show
@@ -447,11 +448,11 @@ module Program =
             let world = snd <| World.removeGroupImmediate groupAddress group world
             
             // load and add group
-            let (group, entities) = World.readGroupFromFile filePath world
-            let groupAddress = satoga EditorScreenAddress group.Name
+            let groupHierarchy = World.readGroupFromFile filePath world
+            let groupAddress = satoga EditorScreenAddress <| (fst groupHierarchy).Name
             let editorState = { editorState with GroupAddress = groupAddress }
             let world = World.setUserState editorState world
-            let world = snd <| World.addGroup groupAddress group entities world
+            let world = snd <| World.addGroup groupAddress groupHierarchy world
             let world = subscribeToEntityEvents form world
 
             // refresh tree view
@@ -883,8 +884,9 @@ module Program =
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
             let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
-            let groupDescriptors = Map.singleton group.Name (group, Map.empty)
-            let world = snd <| World.addScreen EditorScreenAddress screen groupDescriptors world
+            let groupsHierarchy = Map.singleton group.Name (group, Map.empty)
+            let screenHierarchy = (screen, groupsHierarchy)
+            let world = snd <| World.addScreen EditorScreenAddress screenHierarchy world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
             let world = World.subscribe4 GameAddress MouseRightDownEventAddress (handleNuMouseRightDown form worldChangers refWorld) world
             let world = World.subscribe4 GameAddress MouseLeftDownEventAddress (handleNuEntityDragBegin form worldChangers refWorld) world

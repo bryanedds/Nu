@@ -125,35 +125,37 @@ module WorldScreenModule =
             let world = World.addTask task world
             (screen, world)
 
-        static member addScreen address screen groupDescriptors world =
+        static member addScreen address screenHierarchy world =
+            let (screen, groupsHierarchy) = screenHierarchy
             if not <| World.containsScreen address world then
                 let (screen, world) =
                     match World.getOptScreen address world with
                     | Some _ -> World.removeScreenImmediate address screen world
                     | None -> (screen, world)
                 let world = World.setScreen address screen world
-                let world = snd <| World.addGroups address groupDescriptors world
+                let world = snd <| World.addGroups address groupsHierarchy world
                 let (screen, world) = World.registerScreen address screen world
                 let world = World.publish4 address (AddEventAddress ->>- address) () world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
-        static member writeScreen (writer : XmlWriter) (screen : Screen) groups world =
+        static member writeScreen (writer : XmlWriter) screenHierarchy world =
+            let (screen : Screen, groupsHierarchy) = screenHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology writer screen
             writer.WriteStartElement GroupsNodeName
-            World.writeGroups writer groups world
+            World.writeGroups writer groupsHierarchy world
             writer.WriteEndElement ()
 
-        static member writeScreens (writer : XmlWriter) screenDescriptors world =
-            let screensSorted =
+        static member writeScreens (writer : XmlWriter) screensHierarchy world =
+            let screensHierarchy =
                 List.sortBy
                     (fun (screen : Screen, _) -> screen.CreationTimeNp)
-                    (Map.toValueList screenDescriptors)
-            let screensFiltered = List.filter (fun (screen : Screen, _) -> screen.Persistent) screensSorted
-            for (screen, groups) in screensFiltered do
+                    (Map.toValueList screensHierarchy)
+            let screensHierarchy = List.filter (fun (screen : Screen, _) -> screen.Persistent) screensHierarchy
+            for screenHierarchy in screensHierarchy do
                 writer.WriteStartElement ScreenNodeName
-                World.writeScreen writer screen groups world
+                World.writeScreen writer screenHierarchy world
                 writer.WriteEndElement ()
 
         static member readScreen
@@ -173,8 +175,8 @@ module WorldScreenModule =
             let screen = Screen.make dispatcher None
             Reflection.attachFields screen.DispatcherNp screen
             Serialization.readPropertiesToTarget screenNode screen
-            let groups = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
-            (screen, groups)
+            let groupsHierarchy = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
+            (screen, groupsHierarchy)
 
         static member readScreens
             (parentNode : XmlNode)
@@ -187,16 +189,16 @@ module WorldScreenModule =
             | screensNode ->
                 let screenNodes = screensNode.SelectNodes ScreenNodeName
                 Seq.fold
-                    (fun screens screenNode ->
-                        let screen =
+                    (fun screensHierarchy screenNode ->
+                        let screenHierarchy =
                             World.readScreen
                                 screenNode
                                 defaultDispatcherName
                                 defaultGroupDispatcherName
                                 defaultEntityDispatcherName
                                 world
-                        let screenName = (fst screen).Name
-                        Map.add screenName screen screens)
+                        let screenName = (fst screenHierarchy).Name
+                        Map.add screenName screenHierarchy screensHierarchy)
                     Map.empty
                     (enumerable screenNodes)
 

@@ -64,36 +64,26 @@ module WorldGameModule =
 
         static member getGameHierarchy address world =
             let game = world.Game
-            let screens = World.getScreensHierarchy address world
-            (game, screens)
+            let screensHierarchy = World.getScreensHierarchy address world
+            (game, screensHierarchy)
 
-        static member writeGame (writer : XmlWriter) (game : Game) screens world =
+        static member writeGame (writer : XmlWriter) gameHierarchy world =
+            let (game : Game, screensHierarchy) = gameHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology writer game
             writer.WriteStartElement ScreensNodeName
-            World.writeScreens writer screens world
+            World.writeScreens writer screensHierarchy world
             writer.WriteEndElement ()
 
-        static member writeGameToFile (fileName : string) game screens world =
+        static member writeGameToFile (filePath : string) gameHierarchy world =
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
-            use writer = XmlWriter.Create (fileName, writerSettings)
+            use writer = XmlWriter.Create (filePath, writerSettings)
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GameNodeName
-            World.writeGame writer game screens world
+            World.writeGame writer gameHierarchy world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
-
-        static member readGameFromFile (filePath : string) world =
-            use reader = XmlReader.Create (new FileStream (filePath, FileMode.Open) :> Stream)
-            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            World.readGame
-                ((document.SelectSingleNode RootNodeName).SelectSingleNode GameNodeName)
-                typeof<GameDispatcher>.Name
-                typeof<ScreenDispatcher>.Name
-                typeof<GroupDispatcher>.Name
-                typeof<EntityDispatcher>.Name
-                world
 
         static member readGame
             (gameNode : XmlNode)
@@ -113,11 +103,22 @@ module WorldGameModule =
             let game = Game.make dispatcher None
             Reflection.attachFields game.DispatcherNp game
             Serialization.readPropertiesToTarget gameNode game
-            let screens =
+            let screensHierarchy =
                 World.readScreens
                     (gameNode : XmlNode)
                     defaultScreenDispatcherName
                     defaultGroupDispatcherName
                     defaultEntityDispatcherName
                     world
-            (game, screens)
+            (game, screensHierarchy)
+
+        static member readGameFromFile (filePath : string) world =
+            use reader = XmlReader.Create (new FileStream (filePath, FileMode.Open) :> Stream)
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            World.readGame
+                ((document.SelectSingleNode RootNodeName).SelectSingleNode GameNodeName)
+                typeof<GameDispatcher>.Name
+                typeof<ScreenDispatcher>.Name
+                typeof<GroupDispatcher>.Name
+                typeof<EntityDispatcher>.Name
+                world
