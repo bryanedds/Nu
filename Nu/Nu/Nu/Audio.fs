@@ -13,13 +13,33 @@ module AudioModule =
     /// Describes a song asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSongValue)>]
         Song =
-        { SongAssetName : string
-          PackageName : string }
+        { SongPackageName : string
+          SongAssetName : string }
+        
+        /// Convert a song asset to an asset location.
+        static member toAssetTag song =
+            { PackageName = song.SongPackageName
+              AssetName = song.SongAssetName }
+        
+        /// Convert an asset location to a song asset.
+        static member fromAssetTag (assetTag : AssetTag) =
+            { SongPackageName = assetTag.PackageName
+              SongAssetName = assetTag.AssetName }
 
     /// Describes a sound asset.
     type [<StructuralEquality; NoComparison; XDefaultValue (DefaultSoundValue)>] Sound =
-        { SoundAssetName : string
-          PackageName : string }
+        { SoundPackageName : string
+          SoundAssetName : string }
+        
+        /// Convert a sound asset to an asset location.
+        static member toAssetTag sound =
+            { PackageName = sound.SoundPackageName
+              AssetName = sound.SoundAssetName }
+        
+        /// Convert an asset location to an image asset.
+        static member fromAssetTag (assetTag : AssetTag) =
+            { SoundPackageName = assetTag.PackageName
+              SoundAssetName = assetTag.AssetName }
 
     /// A message to the audio system to play a song.
     type [<StructuralEquality; NoComparison>] PlaySongMessage =
@@ -83,14 +103,14 @@ module AudioModule =
             match extension with
             | ".wav" ->
                 let optWav = SDL_mixer.Mix_LoadWAV asset.FilePath
-                if optWav <> IntPtr.Zero then Some (asset.Name, WavAsset optWav)
+                if optWav <> IntPtr.Zero then Some (asset.AssetTag.AssetName, WavAsset optWav)
                 else
                     let errorMsg = SDL.SDL_GetError ()
                     trace <| "Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'."
                     None
             | ".ogg" ->
                 let optOgg = SDL_mixer.Mix_LoadMUS asset.FilePath
-                if optOgg <> IntPtr.Zero then Some (asset.Name, OggAsset optOgg)
+                if optOgg <> IntPtr.Zero then Some (asset.AssetTag.AssetName, OggAsset optOgg)
                 else
                     let errorMsg = SDL.SDL_GetError ()
                     trace <| "Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'."
@@ -115,26 +135,26 @@ module AudioModule =
                 trace <| "HintAudioPackageUseMessage failed due unloadable assets '" + error + "' for '" + acstring (packageName, audioPlayer.AssetGraphFilePath) + "'."
                 audioPlayer
             
-        static member private tryLoadAudioAsset packageName assetName audioPlayer =
-            let optAssetMap = Map.tryFind packageName audioPlayer.AudioAssetMap
+        static member private tryLoadAudioAsset (assetTag : AssetTag) audioPlayer =
+            let optAssetMap = Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap
             let (audioPlayer, optAssetMap) =
                 match optAssetMap with
-                | Some _ -> (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
+                | Some _ -> (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
                 | None ->
-                    note <| "Loading audio package '" + packageName + "' for asset '" + assetName + "' on the fly."
-                    let audioPlayer = AudioPlayer.tryLoadAudioPackage packageName audioPlayer
-                    (audioPlayer, Map.tryFind packageName audioPlayer.AudioAssetMap)
-            (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetName assetMap) optAssetMap)
+                    note <| "Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly."
+                    let audioPlayer = AudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
+                    (audioPlayer, Map.tryFind assetTag.PackageName audioPlayer.AudioAssetMap)
+            (audioPlayer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
     
         static member private playSong playSongMessage audioPlayer =
-            let song = playSongMessage.Song
-            let (audioPlayer', optAudioAsset) = AudioPlayer.tryLoadAudioAsset song.PackageName song.SongAssetName audioPlayer
+            let songAssetTag = Song.toAssetTag playSongMessage.Song
+            let (audioPlayer', optAudioAsset) = AudioPlayer.tryLoadAudioAsset songAssetTag audioPlayer
             match optAudioAsset with
-            | Some (WavAsset _) -> note <| "Cannot play wav file as song '" + acstring song + "'."
+            | Some (WavAsset _) -> note <| "Cannot play wav file as song '" + acstring songAssetTag + "'."
             | Some (OggAsset oggAsset) ->
                 ignore <| SDL_mixer.Mix_VolumeMusic (int <| playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
                 ignore <| SDL_mixer.Mix_PlayMusic (oggAsset, -1)
-            | None -> note <| "PlaySongMessage failed due to unloadable assets for '" + acstring song + "'."
+            | None -> note <| "PlaySongMessage failed due to unloadable assets for '" + acstring songAssetTag + "'."
             { audioPlayer' with OptCurrentSong = Some playSongMessage }
     
         static member private handleHintAudioPackageUse (hintPackageUse : HintAudioPackageUseMessage) audioPlayer =
@@ -156,14 +176,14 @@ module AudioModule =
             | None -> audioPlayer
     
         static member private handlePlaySound playSoundMessage audioPlayer =
-            let sound = playSoundMessage.Sound
-            let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset sound.PackageName sound.SoundAssetName audioPlayer
+            let soundAssetTag = Sound.toAssetTag playSoundMessage.Sound
+            let (audioPlayer, optAudioAsset) = AudioPlayer.tryLoadAudioAsset soundAssetTag audioPlayer
             match optAudioAsset with
             | Some (WavAsset wavAsset) ->
                 ignore <| SDL_mixer.Mix_VolumeChunk (wavAsset, int <| playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)
                 ignore <| SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0)
-            | Some (OggAsset _) -> note <| "Cannot play ogg file as sound '" + acstring sound + "'."
-            | None -> note <| "PlaySoundMessage failed due to unloadable assets for '" + acstring sound + "'."
+            | Some (OggAsset _) -> note <| "Cannot play ogg file as sound '" + acstring soundAssetTag + "'."
+            | None -> note <| "PlaySoundMessage failed due to unloadable assets for '" + acstring soundAssetTag + "'."
             audioPlayer
     
         static member private handlePlaySong playSongMessage audioPlayer =

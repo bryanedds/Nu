@@ -4,6 +4,8 @@
 namespace Nu
 open System
 open System.Configuration
+open System.ComponentModel
+open System.Reflection
 open System.Text
 open Prime
 open Nu
@@ -47,7 +49,7 @@ module AddressModule =
     /// NameKeys field available for faster look-ups.
     /// OPTIMIZATION: At little cost, I've also added the Hash field for fast keying directly
     /// on addresses.
-    type [<CustomEquality; CustomComparison>] 't Address =
+    type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 't Address =
         { Names : string list
           NamesRev : string list
           NameKeys : NameKey list
@@ -65,6 +67,11 @@ module AddressModule =
             let keys = List.map NameKey.make list
             let hash = List.fold (fun hash (key : NameKey) -> hash ^^^ key.Hash) 0 keys
             { Names = list; NamesRev = List.rev list; NameKeys = keys; Hash = hash; TypeCarrier = fun (_ : 't) -> () }
+
+        /// Convert a string into a list.
+        static member stoa (str : string) =
+            let list = Address<'t>.split str
+            Address<'t>.make list
 
         /// The empty address.
         static member empty = Address<'t>.make []
@@ -94,10 +101,33 @@ module AddressModule =
         override this.ToString () =
             Address<'t>.join this.Names
 
+    /// Converts Address types.
+    and AddressConverter (targetType : Type) =
+        inherit TypeConverter ()
+        override this.CanConvertTo (_, destType) =
+            destType = typeof<string> ||
+            destType = targetType
+        override this.ConvertTo (_, _, source, destType) =
+            if destType = typeof<string> then
+                let toStringMethod = targetType.GetMethod "ToString"
+                toStringMethod.Invoke (source, null)
+            elif destType = targetType then source
+            else failwith "Invalid AddressConverter conversion to source."
+        override this.CanConvertFrom (_, sourceType) =
+            sourceType = typeof<string> ||
+            sourceType = targetType
+        override this.ConvertFrom (_, _, source) =
+            match source with
+            | :? string ->
+                let stoaFunction = targetType.GetMethod ("stoa", BindingFlags.Static ||| BindingFlags.Public)
+                stoaFunction.Invoke (null, [|source|])
+            | _ ->
+                if targetType.IsInstanceOfType source then source
+                else failwith "Invalid AddressConverter conversion from source."
+
     /// Convert a string into a list.
-    let stoa<'t> (str : string) =
-        let list = Address<'t>.split str
-        Address<'t>.make list
+    let stoa<'t> str =
+        Address<'t>.stoa str
 
     /// Convert a list into an address.
     let ltoa<'t> list =

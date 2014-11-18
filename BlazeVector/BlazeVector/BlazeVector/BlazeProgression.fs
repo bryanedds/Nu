@@ -104,7 +104,7 @@ module BlazeProgression =
             let world = addStageScreen world
 
             // add to the world a splash screen that automatically transitions to the Title screen
-            let splashScreenImage = { ImageAssetName = "Image5"; PackageName = DefaultPackageName }
+            let splashScreenImage = { ImagePackageName = DefaultPackageName; ImageAssetName = "Image5" }
             let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime DefaultDissolveImage splashScreenImage world
 
             // play a neat sound effect, select the splash screen, and we're off!

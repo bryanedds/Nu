@@ -26,7 +26,7 @@ module Progression =
             let world = World.hintRenderingPackageUse GuiPackageName world
             let world = addTitleScreen world
             let world = addCreditsScreen world
-            let splashScreenImage = { ImageAssetName = SplashNu; PackageName = GuiPackageName }
+            let splashScreenImage = { ImagePackageName = GuiPackageName; ImageAssetName = SplashNu }
             let (splashScreen, world) = World.addSplashScreenFromData TitleAddress SplashAddress typeof<ScreenDispatcher>.Name SplashIncomingTime SplashIdlingTime SplashOutgoingTime DissolveImage splashScreenImage world
             let world = snd <| World.selectScreen SplashAddress splashScreen world
             Right world

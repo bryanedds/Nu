@@ -86,6 +86,7 @@
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />
     <Compile Include="React.fs" />
+    <Compile Include="AddressTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ReactTests.fs" />

@@ -22,13 +22,17 @@ module AssetsModule =
             | "OldSchool" -> OldSchool
             | _ -> failwith <| "Invalid refinement '" + str + "'."
 
+    /// Describes a means for looking up an asset.
+    type AssetTag =
+        { PackageName : string
+          AssetName : string }
+
     /// Describes a game asset, such as a texture, sound, or model in detail.
     type [<StructuralEquality; NoComparison>] Asset =
-        { Name : string
+        { AssetTag : AssetTag
           FilePath : string
           Refinements : Refinement list
-          Associations : string list
-          PackageName : string }
+          Associations : string list }
 
     /// All assets must belong to an asset Package, which is a unit of asset loading.
     ///
@@ -119,11 +123,10 @@ module Assets =
             let associations = getAssetAssociations node
             let refinements = getAssetRefinements node
             Some {
-                Name = name
+                AssetTag = { PackageName = node.ParentNode.Name; AssetName = name }
                 FilePath = filePath
                 Refinements = refinements
-                Associations = associations
-                PackageName = node.ParentNode.Name }
+                Associations = associations }
         | None -> None
 
     /// Attempt to load assets from the given Xml node.
@@ -139,11 +142,10 @@ module Assets =
                     let assets =
                         Array.map
                             (fun filePath ->
-                                { Name = Path.GetFileNameWithoutExtension filePath
+                                { AssetTag = { PackageName = node.ParentNode.Name; AssetName = Path.GetFileNameWithoutExtension filePath }
                                   FilePath = filePath
                                   Associations = associations
-                                  Refinements = refinements
-                                  PackageName = node.ParentNode.Name })
+                                  Refinements = refinements })
                             filePaths
                     Some <| List.ofArray assets
                 with exn -> debug <| "Invalid directory '" + directory + "'."; None
@@ -327,7 +329,7 @@ module Assets =
                 let outputFilePath = Path.Combine (outputDirectory, intermediateFileSubpath)
                 ignore <| Directory.CreateDirectory ^^ Path.GetDirectoryName outputFilePath
                 try File.Copy (intermediateFilePath, outputFilePath, true)
-                with _ -> note <| "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + asset.Name + "' in package '" + asset.PackageName + "'."
+                with _ -> note <| "Resource lock on '" + outputFilePath + "' has prevented build for asset '" + acstring asset.AssetTag + "'."
 
     /// Attempt to build all the assets found in the given asset graph.
     let tryBuildAssetGraph inputDirectory outputDirectory refinementDirectory fullBuild assetGraphFilePath =
