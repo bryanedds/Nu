@@ -63,13 +63,11 @@ module SimulationModule =
     /// The state of one of a screen's transitions.
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { TransitionLifetime : int64
-          TransitionTicks : int64
           TransitionType : TransitionType
           OptDissolveImage : Image option }
-    
+
         static member make transitionType =
             { TransitionLifetime = 0L
-              TransitionTicks = 0L
               TransitionType = transitionType
               OptDissolveImage = None }
 
@@ -272,7 +270,8 @@ module SimulationModule =
     and [<CLIMutable; StructuralEquality; NoComparison>] Screen =
         { Id : Guid
           Name : string
-          ScreenState : ScreenState
+          ScreenStateNp : ScreenState
+          TransitionTicksNp : int64
           Incoming : Transition
           Outgoing : Transition
           Persistent : bool
@@ -1060,7 +1059,7 @@ module WorldEventModule =
     type World with
 
         /// Unwrap commonly-useful values of an event.
-        /// TODO: these implementations builds in the notion that only simulants are addressable.
+        /// TODO: these implementations build in the notion that only simulants are addressable.
         /// While this is true for now, it may not be true later. Make this more general!
         static member unwrapASDE<'s, 'd> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
