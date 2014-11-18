@@ -75,7 +75,9 @@ module WorldGameModule =
             writer.WriteEndElement ()
 
         static member writeGameToFile (fileName : string) game screens world =
-            use writer = XmlWriter.Create fileName
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            use writer = XmlWriter.Create (fileName, writerSettings)
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GameNodeName
             World.writeGame writer game screens world

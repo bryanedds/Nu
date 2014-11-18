@@ -135,6 +135,7 @@ module TypeModule =
 
         /// Try to get a custom type converter for the given type.
         member this.TryGetCustomTypeConverter () =
+            // TODO: check for custom type converters in the TypeDescriptor attributes as well
             let typeConverterAttributes = this.GetCustomAttributes<TypeConverterAttribute> ()
             if not <| Seq.isEmpty typeConverterAttributes then
                 let typeConverterAttribute = Seq.head typeConverterAttributes
