@@ -11,42 +11,76 @@ open InfinityRpg.Constants
 [<RequireQualifiedAccess>]
 module Progression =
 
-    let private handleClickSaveGame _ world =
-        let gameHierarchy = World.getGame' world
-        World.writeGameToFile SaveFilePath gameHierarchy world
-        (Cascade, world)
-
-    let private handleStartGameplay _ world =
-
-        // change game seed
-        let systemRandomSeed = uint64 <| (Random ()).Next ()
-        let game = Game.setSeed systemRandomSeed world.Game
-        let world = World.setGame game world
-
-        // make field            
+    let private makeField world =
         let rand = Rand.make world.Game.Seed
         let pathEdges = [(Vector2i (1, 10), Vector2i (20, 10))]
         let fieldMap = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdges rand
         let field = World.makeEntity typeof<FieldDispatcher>.Name (Some FieldName) world
         let field = Entity.setFieldMapNp fieldMap field
         let field = Entity.setSize (Entity.getQuickSize field world) field
-        let field = Entity.setPersistent false field
+        Entity.setPersistent false field
 
-        // make character
-        let playerCharacter = World.makeEntity typeof<PlayerCharacterDispatcher>.Name (Some PlayerCharacterName) world
-        
-        // make entities value
-        let entities = Map.ofList [(field.Name, field); (playerCharacter.Name, playerCharacter)]
-
-        // make scene, and add scene hierarchy to the world!
-        let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
-        let sceneHierarchy = (scene, entities)
-        let world = snd <| World.addGroup SceneAddress sceneHierarchy world
+    let private handleClickNewGame _ world =
+        let game = Game.setShallLoad false world.Game
+        let world = World.setGame game world
         (Cascade, world)
 
-    let private handleStoppingGameplay _ world =
-        //let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
+    let private handleClickLoadGame _ world =
+        let game = Game.setShallLoad true world.Game
+        let world = World.setGame game world
         (Cascade, world)
+
+    let private handleClickSaveGame _ world =
+        let gameHierarchy = World.getGame' world
+        World.writeGameToFile SaveFilePath gameHierarchy world
+        (Cascade, world)
+
+    let private handleStartGameplay event world =
+
+        // start the game accordingly
+        if world.Game.ShallLoad then
+
+            // replace game value
+            let gameHierarchy = World.readGameFromFile SaveFilePath world
+            let (game, screenHierarchy) = gameHierarchy
+            let world = World.setGame game world
+
+            // make field
+            let field = makeField world
+
+            // find scene hierarchy and add field to it
+            let sceneHierarchy =
+                Map.find GameplayName screenHierarchy |> snd |>
+                Map.find SceneName
+            let (scene, entities) = sceneHierarchy
+            let entities = Map.add field.Name field entities
+            let sceneHierarchy = (scene, entities)
+
+            // add scene hierarchy to world
+            let world = snd <| World.addGroup SceneAddress sceneHierarchy world
+            (Cascade, world)
+
+        else
+
+            // change game seed
+            let systemRandomSeed = uint64 <| (Random ()).Next ()
+            let game = Game.setSeed systemRandomSeed world.Game
+            let world = World.setGame game world
+
+            // make field
+            let field = makeField world
+
+            // make character
+            let playerCharacter = World.makeEntity typeof<PlayerCharacterDispatcher>.Name (Some PlayerCharacterName) world
+
+            // make scene hierarchy
+            let entities = Map.ofList [(field.Name, field); (playerCharacter.Name, playerCharacter)]
+            let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
+            let sceneHierarchy = (scene, entities)
+
+            // add scene hierarchy to world
+            let world = snd <| World.addGroup SceneAddress sceneHierarchy world
+            (Cascade, world)
 
     let private handleStopGameplay _ world =
         let scene = World.getGroup SceneAddress world
@@ -56,7 +90,8 @@ module Progression =
     let private addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
         let world = World.subscribe4 GameAddress ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
-        let world = World.subscribe4 GameAddress ClickTitleNewGameEventAddress (World.handleAsScreenTransition GameplayAddress) world
+        let world = World.subscribe4 GameAddress ClickTitleNewGameEventAddress (World.handleAsScreenTransitionBy handleClickNewGame GameplayAddress) world
+        let world = World.subscribe4 GameAddress ClickTitleLoadGameEventAddress (World.handleAsScreenTransitionBy handleClickLoadGame GameplayAddress) world
         World.subscribe4 GameAddress ClickTitleExitEventAddress World.handleAsExit world
 
     let private addCreditsScreen world =
@@ -69,7 +104,6 @@ module Progression =
         let world = World.subscribe4 GameAddress ClickHudBackEventAddress (World.handleAsScreenTransition TitleAddress) world
         let world = World.subscribe4 GameAddress ClickHudSaveGameEventAddress handleClickSaveGame world
         let world = World.subscribe4 GameAddress (SelectEventAddress ->>- GameplayAddress) handleStartGameplay world
-        let world = World.subscribe4 GameAddress (OutgoingStartEventAddress ->>- GameplayAddress) handleStoppingGameplay world
         World.subscribe4 GameAddress (DeselectEventAddress ->>- GameplayAddress) handleStopGameplay world
 
     let tryMakeInfinityRpgWorld sdlDeps userState =

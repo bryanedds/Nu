@@ -120,18 +120,33 @@ module WorldModule =
                 | None -> None
             | None -> None
 
-        static member handleAsScreenTransitionFromSplash<'d> destinationAddress (_ : 'd Event) world =
+        // TODO: replace this with more sophsticated use of handleAsScreenTransition4, and so on for its brethren.
+        static member private handleAsScreenTransitionFromSplash4<'d> eventHandling destinationAddress (_ : 'd Event) world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationAddress destinationScreen world
-            (Cascade, world)
+            (eventHandling, world)
 
-        static member handleAsScreenTransition<'d> destinationAddress (_ : 'd Event) world =
+        static member handleAsScreenTransitionFromSplash<'d> destinationAddress event world =
+            World.handleAsScreenTransitionFromSplash4<'d> Cascade destinationAddress event world
+
+        static member handleAsScreenTransitionFromSplashBy<'d> by destinationAddress event  (world : World) =
+            let (eventHandling, world) = by event world
+            World.handleAsScreenTransitionFromSplash4<'d> eventHandling destinationAddress event world
+
+        static member private handleAsScreenTransition4<'d> eventHandling destinationAddress (_ : 'd Event) world =
             let destinationScreen = World.getScreen destinationAddress world
             match World.tryTransitionScreen destinationAddress destinationScreen world with
-            | Some world -> (Cascade, world)
+            | Some world -> (eventHandling, world)
             | None ->
                 trace <| "Program Error: Invalid screen transition for destination address '" + acstring destinationAddress + "'."
-                (Cascade, world)
+                (eventHandling, world)
+
+        static member handleAsScreenTransition<'d> destinationAddress event world =
+            World.handleAsScreenTransition4<'d> Cascade destinationAddress event world
+
+        static member handleAsScreenTransitionBy<'d> by destinationAddress event (world : World) =
+            let (eventHandling, world) = by event world
+            World.handleAsScreenTransition4<'d> eventHandling destinationAddress event world
 
         static member private updateScreenTransition1 screen transition =
             if screen.TransitionTicksNp = transition.TransitionLifetime then (true, { screen with TransitionTicksNp = 0L })

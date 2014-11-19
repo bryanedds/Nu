@@ -38,6 +38,7 @@ module Constants =
     let TitleGroupName = DefaultGroupName
     let TitleGroupAddress = satoga TitleAddress TitleGroupName
     let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["NewGame"]
+    let ClickTitleLoadGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["LoadGame"]
     let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["Credits"]
     let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["Exit"]
 
