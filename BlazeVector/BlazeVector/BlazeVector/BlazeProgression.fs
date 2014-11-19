@@ -13,29 +13,28 @@ module BlazeProgression =
     type BlazeComponentFactory () =
         inherit UserComponentFactory ()
 
+        // currently we have no game-specific facets to create, so no need to override MakeFacets.
+
         // make our game-specific entity dispatchers...
         override this.MakeEntityDispatchers () =
             Map.ofList
-                [typeof<BulletDispatcher>.Name, BulletDispatcher () :> EntityDispatcher
-                 typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher
-                 typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher]
+                [(typeof<BulletDispatcher>.Name, BulletDispatcher () :> EntityDispatcher)
+                 (typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher)
+                 (typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher)]
 
         // make our game-specific group dispatchers...
         override this.MakeGroupDispatchers () =
             Map.ofList
-                [typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> GroupDispatcher]
+                [(typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> GroupDispatcher)]
 
         // make our game-specific screen dispatchers...
         override this.MakeScreenDispatchers () =
             Map.ofList
-                [typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> ScreenDispatcher]
+                [(typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> ScreenDispatcher)]
 
-        // make our game-specific game dispatchers...
-        override this.MakeGameDispatchers () =
-            Map.ofList
-                [typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> GameDispatcher]
-
-        // currently we have no game-specific facets to create, so no need to override MakeFacets.
+        // make our game-specific game dispatcher...
+        override this.MakeOptGameDispatcher () =
+            Some (typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> GameDispatcher)
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =

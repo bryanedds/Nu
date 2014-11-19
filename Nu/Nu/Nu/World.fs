@@ -556,23 +556,18 @@ module WorldModule =
             | Right assetMetadataMap ->
 
                 // make user components
+                let userFacets = userComponentFactory.MakeFacets ()
                 let userEntityDispatchers = userComponentFactory.MakeEntityDispatchers ()
                 let userGroupDispatchers = userComponentFactory.MakeGroupDispatchers ()
                 let userScreenDispatchers = userComponentFactory.MakeScreenDispatchers ()
-                let userGameDispatchers = userComponentFactory.MakeGameDispatchers ()
-                let userFacets = userComponentFactory.MakeFacets ()
+                let userOptGameDispatcher = userComponentFactory.MakeOptGameDispatcher ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
                 let activeGameDispatcher =
-                    match Map.toValueList userGameDispatchers with
-                    | [] -> defaultGameDispatcher
-                    | [singlet] -> singlet
-                    | head :: _ ->
-                        debug <|
-                            "Received more than one GameDispatcher from userComponentFactory. " +
-                            "Defaulting to '" + Reflection.getTypeName head + "'."
-                        head
+                    match userOptGameDispatcher with
+                    | Some (_, gameDispatcher) -> gameDispatcher
+                    | None -> defaultGameDispatcher
 
                 // make entity dispatchers
                 // TODO: see if we can reflectively generate these
@@ -602,7 +597,10 @@ module WorldModule =
 
                 // make game dispatchers
                 let defaultGameDispatchers = Map.ofList [typeof<GameDispatcher>.Name, defaultGameDispatcher]
-                let gameDispatchers = Map.addMany (Map.toSeq userGameDispatchers) defaultGameDispatchers
+                let gameDispatchers = 
+                    match userOptGameDispatcher with
+                    | Some (gameDispatcherName, gameDispatcher) -> Map.add gameDispatcherName gameDispatcher defaultGameDispatchers
+                    | None -> defaultGameDispatchers
 
                 // make facets
                 let defaultFacets =

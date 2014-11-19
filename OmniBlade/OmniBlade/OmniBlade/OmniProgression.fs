@@ -13,12 +13,11 @@ module OmniProgression =
 
         override this.MakeGroupDispatchers () =
             Map.ofList
-                [typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> GroupDispatcher
-                 typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> GroupDispatcher]
+                [(typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> GroupDispatcher)
+                 (typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> GroupDispatcher)]
 
-        override this.MakeGameDispatchers () =
-            Map.ofList
-                [typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> GameDispatcher]
+        override this.MakeOptGameDispatcher () =
+            Some (typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> GameDispatcher)
 
     let addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
