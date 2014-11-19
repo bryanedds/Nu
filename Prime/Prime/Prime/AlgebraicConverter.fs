@@ -1,5 +1,6 @@
 ﻿namespace Prime
 open System
+open System.Collections
 open System.ComponentModel
 open System.Reflection
 open Microsoft.FSharp.Reflection
@@ -8,21 +9,21 @@ open Prime
 [<AutoOpen>]
 module AlgebraicConverterModule =
 
+    let FSharpAssembly =
+        Array.find
+            (fun (assembly : Assembly) -> assembly.FullName.Contains "FSharp.Core")
+            (AppDomain.CurrentDomain.GetAssemblies ())
+
     type AlgebraicConverter (targetType : Type) =
         inherit TypeConverter ()
 
-        let objToObjList source =
-            let sourceType = source.GetType ()
-            let headProperty = sourceType.GetProperty "Head"
-            let tailProperty = sourceType.GetProperty "Tail"
-            let isEmptyProperty = sourceType.GetProperty "IsEmpty"
-            let mutable list = []
-            let mutable tail = source
-            while not (isEmptyProperty.GetValue tail :?> bool) do
-                let head = headProperty.GetValue tail
-                list <- head :: list
-                tail <- tailProperty.GetValue tail
-            list
+        let objToObjList (source : obj) =
+            let iEnumerable = source :?> IEnumerable
+            List.ofSeq <| enumerable<obj> iEnumerable
+
+        let objToComparableSet (source : obj) =
+            let iEnumerable = source :?> IEnumerable
+            Set.ofSeq <| enumerable<IComparable> iEnumerable
 
         let rec toString source (sourceType : Type) =
 
@@ -41,7 +42,16 @@ module AlgebraicConverterModule =
                             items
                     let itemsStr = String.Join (AlgebraicReader.SpacedSeparatorStr, itemsStrs)
                     AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
-        
+            
+                elif sourceType.Name = typedefof<_ Set>.Name then
+                    let items = objToComparableSet source
+                    let itemsStrs =
+                        Set.map
+                            (fun item -> toString item (sourceType.GetGenericArguments ()).[0])
+                            items
+                    let itemsStr = String.Join (AlgebraicReader.SpacedSeparatorStr, itemsStrs)
+                    AlgebraicReader.OpenComplexValueStr + itemsStr + AlgebraicReader.CloseComplexValueStr
+
                 elif FSharpType.IsTuple sourceType then
                     let tupleFields = FSharpValue.GetTupleFields source
                     let tupleFieldStrs =
@@ -97,10 +107,23 @@ module AlgebraicConverterModule =
                 if destType.Name = typedefof<_ list>.Name then
                     match readerValue with
                     | :? (obj list) as readerValueList ->
-                        let list = List.map (fromReaderValue (destType.GetGenericArguments ()).[0]) readerValueList
-                        list :> obj
+                        let elementType = (destType.GetGenericArguments ()).[0]
+                        let list = List.map (fromReaderValue elementType) readerValueList
+                        let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
+                        let ofSeq = ((FSharpAssembly.GetType "Microsoft.FSharp.Collections.ListModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
+                        ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
                     | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
-        
+
+                elif destType.Name = typedefof<_ Set>.Name then
+                    match readerValue with
+                    | :? (obj list) as readerValueList ->
+                        let elementType = (destType.GetGenericArguments ()).[0]
+                        let list = List.map (fromReaderValue elementType) readerValueList
+                        let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
+                        let ofSeq = ((FSharpAssembly.GetType "Microsoft.FSharp.Collections.SetModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
+                        ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
+                    | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
+
                 elif FSharpType.IsTuple destType then
                     let tupleReaderValues = readerValue :?> obj list
                     let tupleValues =

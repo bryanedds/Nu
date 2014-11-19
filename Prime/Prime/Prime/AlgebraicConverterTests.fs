@@ -33,8 +33,8 @@ module AlgebraicConverterTests =
         Assert.Equal<Either<unit, string>> (Right "string", value)
 
     let [<Fact>] canConvertStringToIntList () =
-        let value = (AlgebraicConverter typeof<int list>).ConvertFromString "[0 | 1]" :?> obj list
-        Assert.Equal<obj list> ([0 :> obj; 1 :> obj], value)
+        let value = (AlgebraicConverter typeof<int list>).ConvertFromString "[0 | 1]" :?> int list
+        Assert.Equal<int list> ([0; 1], value)
 
     let [<Fact>] canConvertStringToTuple () =
         let value = (AlgebraicConverter typeof<int * int>).ConvertFromString "[0 | 1]" :?> int * int

@@ -11,10 +11,10 @@ module CharacterStateModule =
         | Lightning // beats water
 
     type StatusType =
-        | Defend // also implies countering
-        | Poison
-        | Mute
-        | Sleep
+        | Defending // also implies countering
+        | Poisoned
+        | Muted
+        | Sleeping
 
     type EquipmentType =
         | Weapon
