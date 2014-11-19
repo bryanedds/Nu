@@ -162,7 +162,7 @@ module WorldGroupModule =
         static member writeGroup (writer : XmlWriter) groupHierarchy world =
             let (group : Group, entities) = groupHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget tautology writer group
+            Serialization.writePropertiesFromTarget tautology2 writer group
             writer.WriteStartElement EntitiesNodeName
             World.writeEntities writer entities world
             writer.WriteEndElement ()
