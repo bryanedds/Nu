@@ -73,8 +73,7 @@ module WorldGameModule =
         static member writeGame (writer : XmlWriter) gameHierarchy world =
             let (game : Game, screensHierarchy) = gameHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
-            let shouldWriteProperty = fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName game world.State.Overlayer
-            Serialization.writePropertiesFromTarget shouldWriteProperty writer game
+            Serialization.writePropertiesFromTarget tautology writer game
             writer.WriteStartElement ScreensNodeName
             World.writeScreens writer screensHierarchy world
             writer.WriteEndElement ()

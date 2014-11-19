@@ -569,6 +569,15 @@ module WorldModule =
                     | Some (_, gameDispatcher) -> gameDispatcher
                     | None -> defaultGameDispatcher
 
+                // make facets
+                let defaultFacets =
+                    Map.ofList
+                        [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
+                         typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
+                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet
+                         typeof<GuiFacet>.Name, GuiFacet () :> Facet]
+                let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
+
                 // make entity dispatchers
                 // TODO: see if we can reflectively generate these
                 let defaultEntityDispatchers =
@@ -601,15 +610,6 @@ module WorldModule =
                     match userOptGameDispatcher with
                     | Some (gameDispatcherName, gameDispatcher) -> Map.add gameDispatcherName gameDispatcher defaultGameDispatchers
                     | None -> defaultGameDispatchers
-
-                // make facets
-                let defaultFacets =
-                    Map.ofList
-                        [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
-                         typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
-                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet
-                         typeof<GuiFacet>.Name, GuiFacet () :> Facet]
-                let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
 
                 // make intrinsic overlays
                 let dispatchers =

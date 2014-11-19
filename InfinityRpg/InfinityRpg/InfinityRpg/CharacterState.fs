@@ -178,6 +178,7 @@ module CharacterStateModule =
           EquippedRelics : RelicType list
           AddedExperience : int } // level is calculated from base experience + added experience
 
+    // TODO: should I move this into CharacterState?
     type ActivityState =
         | Acting of ActionData
         | Navigating

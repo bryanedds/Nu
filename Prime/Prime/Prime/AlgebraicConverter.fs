@@ -9,9 +9,11 @@ open Prime
 [<AutoOpen>]
 module AlgebraicConverterModule =
 
-    let FSharpAssembly =
+    // NOTE: had to do some reflection hacking get this assembly as it was the only way I could
+    // access ListModule.OfSeq dynamically.
+    let private FSharpCoreAssembly =
         Array.find
-            (fun (assembly : Assembly) -> assembly.FullName.Contains "FSharp.Core")
+            (fun (assembly : Assembly) -> assembly.FullName.StartsWith "FSharp.Core,")
             (AppDomain.CurrentDomain.GetAssemblies ())
 
     type AlgebraicConverter (targetType : Type) =
@@ -110,7 +112,7 @@ module AlgebraicConverterModule =
                         let elementType = (destType.GetGenericArguments ()).[0]
                         let list = List.map (fromReaderValue elementType) readerValueList
                         let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
-                        let ofSeq = ((FSharpAssembly.GetType "Microsoft.FSharp.Collections.ListModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
+                        let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.ListModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                         ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
                     | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
 
@@ -120,7 +122,7 @@ module AlgebraicConverterModule =
                         let elementType = (destType.GetGenericArguments ()).[0]
                         let list = List.map (fromReaderValue elementType) readerValueList
                         let cast = (typeof<System.Linq.Enumerable>.GetMethod ("Cast", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
-                        let ofSeq = ((FSharpAssembly.GetType "Microsoft.FSharp.Collections.SetModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
+                        let ofSeq = ((FSharpCoreAssembly.GetType "Microsoft.FSharp.Collections.SetModule").GetMethod ("OfSeq", BindingFlags.Static ||| BindingFlags.Public)).MakeGenericMethod [|elementType|]
                         ofSeq.Invoke (null, [|cast.Invoke (null, [|list|])|])
                     | _ -> failwith "Unexpected match failure in Nu.AlgebraicConverter.fromReadValue."
 
@@ -199,8 +201,8 @@ module AlgebraicConverterModule =
             | null -> source
             | _ ->
                 let sourceType = source.GetType ()
-                if sourceType = targetType then source
-                else
+                if sourceType <> targetType then
                     match source with
                     | :? string as sourceStr -> fromString targetType sourceStr
                     | _ -> failwith "Invalid AlgebraicConverter conversion from string."
+                else source
