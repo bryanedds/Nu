@@ -50,7 +50,7 @@ module Overlayer =
                         optNode
                 | leaf -> Some leaf
 
-    let private getPropertyState overlayName propertyName target overlayer =
+    let private getPropertyState overlayName propertyName propertyType target overlayer =
         match trySelectNode overlayName propertyName overlayer with
         | Some overlayNode -> 
             let targetType = target.GetType ()
@@ -69,8 +69,7 @@ module Overlayer =
                 | (targetProperty, _) -> Some <| targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
-                let propertyValueType = propertyValue.GetType ()
-                let converter = AlgebraicConverter propertyValueType
+                let converter = AlgebraicConverter propertyType
                 if converter.CanConvertFrom typeof<string> then
                     let overlayValue = converter.ConvertFromString overlayNode.InnerText
                     if overlayValue = propertyValue then Overlaid else Altered
@@ -78,10 +77,10 @@ module Overlayer =
             | None -> Bare
         | None -> Bare
 
-    let private isPropertyOverlaid overlayName propertyName target overlayer =
-        getPropertyState overlayName propertyName target overlayer = Overlaid
+    let private isPropertyOverlaid overlayName propertyName propertyType target overlayer =
+        getPropertyState overlayName propertyName propertyType target overlayer = Overlaid
 
-    let private isPropertyOverlaid3 propertyName target overlayer =
+    let private isPropertyOverlaid3 propertyName propertyType target overlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "OptOverlayName" with
         | null -> false
@@ -89,7 +88,7 @@ module Overlayer =
             match optOverlayNameProperty.GetValue target with
             | :? (string option) as optOverlayName ->
                 match optOverlayName with
-                | Some overlayName -> isPropertyOverlaid overlayName propertyName target overlayer
+                | Some overlayName -> isPropertyOverlaid overlayName propertyName propertyType target overlayer
                 | None -> false
             | _ -> false
 
@@ -97,7 +96,7 @@ module Overlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
             (match optOldOverlayName with
-             | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name target oldOverlayer
+             | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name property.PropertyType target oldOverlayer
              | None -> false)
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
@@ -137,7 +136,7 @@ module Overlayer =
                         (fun xFields (aType, node : XmlNode) ->
                             let shouldApplyOverlay =
                                 match optOldOverlayName with
-                                | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name target oldOverlayer
+                                | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name aType target oldOverlayer
                                 | None -> false
                             if shouldApplyOverlay then
                                 let value = AlgebraicDescriptor.convertFromString node.InnerText aType
@@ -174,12 +173,12 @@ module Overlayer =
         applyOverlay5 optOldOverlayName newOverlayName target overlayer overlayer
 
     /// Query that a property should be serialized.
-    let shouldPropertySerialize overlayName propertyName target overlayer =
-        not <| isPropertyOverlaid overlayName propertyName target overlayer
+    let shouldPropertySerialize overlayName propertyName propertyType target overlayer =
+        not <| isPropertyOverlaid overlayName propertyName propertyType target overlayer
 
     /// Query that a property should be serialized.
-    let shouldPropertySerialize3 propertyName target overlayer =
-        not <| isPropertyOverlaid3 propertyName target overlayer
+    let shouldPropertySerialize3 propertyName propertyType target overlayer =
+        not <| isPropertyOverlaid3 propertyName propertyType target overlayer
 
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.

@@ -127,8 +127,9 @@ module Serialization =
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
         for xFieldKvp in xtension.XFields do
             let xFieldName = xFieldKvp.Key
+            let xFieldType = xFieldKvp.Value.FieldType
             if  isPropertyPersistentByName xFieldName &&
-                shouldWriteProperty xFieldName then
+                shouldWriteProperty xFieldName xFieldType then
                 let xValue = xFieldKvp.Value.FieldValue
                 let xValueType = xValue.GetType ()
                 let xValueStr = (AlgebraicConverter xValueType).ConvertToString xValue
@@ -152,7 +153,7 @@ module Serialization =
                 writer.WriteEndElement ()
             | _ ->
                 if  isPropertyPersistent target property &&
-                    shouldWriteProperty property.Name then
+                    shouldWriteProperty property.Name property.PropertyType then
                     let converter = AlgebraicConverter property.PropertyType
                     let valueStr = converter.ConvertToString propertyValue
                     writer.WriteElementString (property.Name, valueStr)

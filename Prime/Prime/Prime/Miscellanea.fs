@@ -14,9 +14,17 @@ module Miscellanea =
     /// No matter what you pass it, it returns true.
     let inline tautology _ = true
 
+    /// The tautology function with two arguments.
+    /// No matter what you pass it, it returns true.
+    let inline tautology2 _ _ = true
+
     /// The absurdity function.
     /// No matter what you pass it, it returns false.
     let inline absurdity _ = false
+
+    /// The absurdity function with two arguments.
+    /// No matter what you pass it, it returns false.
+    let inline absurdity2 _ _ = false
 
     /// Convert any value to an obj.
     let inline objectify x = x :> obj

@@ -388,7 +388,8 @@ module WorldEntityModule =
 
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
-            let shouldWriteProperty = fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity world.State.Overlayer
+            let shouldWriteProperty = fun propertyName propertyType ->
+                Overlayer.shouldPropertySerialize3 propertyName propertyType entity world.State.Overlayer
             Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
         static member writeEntities (writer : XmlWriter) entities world =
