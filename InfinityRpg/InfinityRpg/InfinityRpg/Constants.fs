@@ -4,8 +4,11 @@ open Nu.Constants
 open Nu.WorldConstants
 module Constants =
 
-    // misc
+    // file paths
     let SaveFilePath = "InfinityRpg.sav"
+    let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
+    let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
+    let HudFilePath = "Assets/Gui/Hud.nugroup"
 
     // package constants
     let GuiPackageName = "Gui"
@@ -18,7 +21,8 @@ module Constants =
           DissolveImage = { ImagePackageName = GuiPackageName; ImageAssetName = "Dissolve" }}
 
     // splash constants
-    let NuSplashAddress = stoa<Screen> "Splash"
+    let NuSplashName = "Splash"
+    let NuSplashAddress = ltoa<Screen> [NuSplashName]
     let NuSplashData =
         { DissolveData = DissolveData
           IdlingTime = 60L
@@ -29,19 +33,39 @@ module Constants =
     let FieldTileSheetImage = { ImagePackageName = GameplayPackageName; ImageAssetName = "FieldTileSheet" }
 
     // title constants
-    let TitleAddress = stoa<Screen> "Title"
-    let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
-    let ClickTitleNewGameEventAddress = stoa<unit> "Click/Title/Group/NewGame"
-    let ClickTitleCreditsEventAddress = stoa<unit> "Click/Title/Group/Credits"
-    let ClickTitleExitEventAddress = stoa<unit> "Click/Title/Group/Exit"
+    let TitleName = "Title"
+    let TitleAddress = ltoa<Screen> [TitleName]
+    let TitleGroupName = DefaultGroupName
+    let TitleGroupAddress = satoga TitleAddress TitleGroupName
+    let ClickTitleNewGameEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["NewGame"]
+    let ClickTitleCreditsEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["Credits"]
+    let ClickTitleExitEventAddress = ClickEventAddress ->>- TitleGroupAddress ->- ltoa ["Exit"]
 
     // credits constants
-    let CreditsAddress = stoa<Screen> "Credits"
-    let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
-    let ClickCreditsBackEventAddress = stoa<unit> "Click/Credits/Group/Back"
+    let CreditsName = "Credits"
+    let CreditsAddress = ltoa<Screen> [CreditsName]
+    let CreditsGroupName = DefaultGroupName
+    let CreditsGroupAddress = satoga CreditsAddress CreditsGroupName
+    let ClickCreditsBackEventAddress = ClickEventAddress ->>- CreditsGroupAddress ->- ltoa ["Back"]
 
     // gameplay constants
-    let GameplayAddress = stoa<Screen> "Gameplay"
-    let GameplayGroupFilePath = "Assets/Gui/Gameplay.nugroup"
-    let ClickGameplayBackEventAddress = stoa<unit> "Click/Gameplay/Group/Back"
-    let ClickGameplaySaveGameEventAddress = stoa<unit> "Click/Gameplay/Group/SaveGame"
+    let GameplayName = "Gameplay"
+    let GameplayAddress = ltoa<Screen> [GameplayName]
+
+    // hud constants
+    let HudName = "Hud"
+    let HudAddress = satoga GameplayAddress HudName
+    let ClickHudBackEventAddress = ClickEventAddress ->>- HudAddress ->- ltoa ["Back"]
+    let ClickHudSaveGameEventAddress = ClickEventAddress ->>- HudAddress ->- ltoa ["SaveGame"]
+
+    // scene constants
+    let SceneName = "Scene"
+    let SceneAddress = satoga GameplayAddress SceneName
+
+    // field constants
+    let FieldName = "Field"
+    let FieldAddress = gatoea SceneAddress FieldName
+
+    // player character constants
+    let PlayerCharacterName = "PlayerCharacter"
+    let PlayerCharacterAddress = gatoea SceneAddress PlayerCharacterName

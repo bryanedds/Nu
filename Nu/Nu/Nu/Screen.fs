@@ -25,6 +25,7 @@ module ScreenModule =
         static member setTransitionTicks state screen = { screen with TransitionTicksNp = state }
         static member setIncoming incoming screen = { screen with Incoming = incoming }
         static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
+        static member setPersistent persistent (screen : Screen) = { screen with Persistent = persistent }
 
         static member register address (screen : Screen) (world : World) : Screen * World =
             screen.DispatcherNp.Register (address, screen, world)

@@ -32,8 +32,8 @@ module FieldDispatcherModule =
 
         static member makeGrid bounds =
             seq {
-                for i in bounds.BottomLeft.X .. bounds.TopRight.X do
-                    for j in bounds.BottomLeft.Y .. bounds.TopRight.Y do
+                for i in bounds.CornerNegative.X .. bounds.CornerPositive.X do
+                    for j in bounds.CornerNegative.Y .. bounds.CornerPositive.Y do
                         yield Vector2i (i, j) }
 
         static member generateEmptyMap (size : Vector2i) =
@@ -102,7 +102,7 @@ module FieldDispatcherModule =
                 grid
 
         static member make tileSheet size pathEdges rand =
-            let buildBounds = { BottomLeft = Vector2i.One; TopRight = size - Vector2i.One }
+            let buildBounds = { CornerNegative = Vector2i.One; CornerPositive = size - Vector2i.One }
             let generatedMap = FieldMap.generateEmptyMap size
             let (generatedMap, rand) = FieldMap.addPaths buildBounds pathEdges generatedMap rand
             let (generatedMap, rand) = FieldMap.addTrees buildBounds generatedMap rand
@@ -122,14 +122,9 @@ module FieldDispatcherModule =
 
         static let [<Literal>] FieldTileSheetRun = 4
         static let DefaultRand = Rand.makeDefault ()
-        static let DefaultSize = Vector2i (20, 20)
-        
-        static let DefaultPathEdges =
-            [(Vector2i (1, 16), Vector2i (19, 16))
-             (Vector2i (16, 1), Vector2i (16, 19))]
-        
-        static let DefaultMap =
-            FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
+        static let DefaultSize = Vector2i (4, 4)
+        static let DefaultPathEdges = [(Vector2i (1, 1), Vector2i (2, 2))]
+        static let DefaultMap = FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
 
         static let getOptTileInset (tileSheetSize : Vector2i) (tileSize : Vector2i) (tileSheetCoords : Vector2i) =
             let tileOffset = Vector2i.Multiply (tileSheetCoords, tileSize)
@@ -401,7 +396,28 @@ module CharacterCameraFacetModule =
 
         static let handleTick event world =
             let character : Entity = World.unwrapS event world
-            let camera = { world.Camera with EyeCenter = character.Position + character.Size * 0.5f }
+            let eyeCenter = character.Position + character.Size * 0.5f
+            let eyeCenter =
+                match World.getOptEntity FieldAddress world with
+                | Some field ->
+                    let eyeSize = world.Camera.EyeSize
+                    let eyeCornerNegative = eyeCenter - eyeSize * 0.5f
+                    let eyeCornerPositive = eyeCenter + eyeSize * 0.5f
+                    let fieldCornerNegative = field.Position
+                    let fieldCornerPositive = field.Position + field.Size
+                    let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
+                    let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
+                    let eyeCenterX =
+                        if eyeCornerNegative.X < fieldCornerNegative.X then fieldBoundsNegative.X
+                        elif eyeCornerPositive.X > fieldCornerPositive.X then fieldBoundsPositive.X
+                        else eyeCenter.X
+                    let eyeCenterY =
+                        if eyeCornerNegative.Y < fieldCornerNegative.Y then fieldBoundsNegative.Y
+                        elif eyeCornerPositive.Y > fieldCornerPositive.Y then fieldBoundsPositive.Y
+                        else eyeCenter.Y
+                    Vector2 (eyeCenterX, eyeCenterY)
+                | None -> eyeCenter
+            let camera = { world.Camera with EyeCenter = eyeCenter }
             (Cascade, World.setCamera camera world)
 
         override facet.Register (address, entity, world) =
@@ -421,3 +437,49 @@ module InfinityRpgModule =
 
         static member FieldDefinitions =
             [define? Seed Rand.DefaultSeed]
+
+[<AutoOpen>]
+module GameplayDispatcherModule =
+
+    type GameplayDispatcher () =
+        inherit ScreenDispatcher ()
+
+        let handleStartPlay _ world =
+
+            // make field            
+            let rand = Rand.make world.Game.Seed
+            let pathEdges = [(Vector2i (1, 10), Vector2i (20, 10))]
+            let fieldMap = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdges rand
+            let field = World.makeEntity typeof<FieldDispatcher>.Name (Some FieldName) world
+            let field = Entity.setFieldMapNp fieldMap field
+            let field = Entity.setSize (Entity.getQuickSize field world) field
+            let field = Entity.setPersistent false field
+
+            // make character
+            let playerCharacter = World.makeEntity typeof<PlayerCharacterDispatcher>.Name (Some PlayerCharacterName) world
+            
+            // make entities value
+            let entities = Map.ofList [(field.Name, field); (playerCharacter.Name, playerCharacter)]
+
+            // make scene, and add scene hierarchy to the world!
+            let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
+            let sceneHierarchy = (scene, entities)
+            let world = snd <| World.addGroup SceneAddress sceneHierarchy world
+            (Cascade, world)
+
+        let handleStoppingPlay _ world =
+            //let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
+            (Cascade, world)
+
+        let handleStopPlay _ world =
+            let scene = World.getGroup SceneAddress world
+            let world = snd <| World.removeGroup SceneAddress scene world
+            (Cascade, world)
+
+        override dispatcher.Register (address, screen, world) =
+            let world =
+                world |>
+                World.monitor address (SelectEventAddress ->>- address) handleStartPlay |>
+                World.monitor address (OutgoingStartEventAddress ->>- address) handleStoppingPlay |>
+                World.monitor address (DeselectEventAddress ->>- address) handleStopPlay
+            (screen, world)

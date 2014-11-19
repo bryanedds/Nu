@@ -13,6 +13,8 @@ module GroupModule =
 
     type Group with
 
+        static member setPersistent persistent (group : Group) = { group with Persistent = persistent }
+
         static member register address (group : Group) (world : World) : Group * World =
             group.DispatcherNp.Register (address, group, world)
         
@@ -45,19 +47,19 @@ module WorldGroupModule =
         static member private groupAdder (address : Group Address) world child =
             match address.Names with
             | [screenName; groupName] ->
-                let optGroupMap = Map.tryFind screenName world.Groups
-                match optGroupMap with
+                match Map.tryFind screenName world.Groups with
                 | Some groupMap ->
                     let groupMap = Map.add groupName child groupMap
                     { world with Groups = Map.add screenName groupMap world.Groups }
-                | None -> { world with Groups = Map.singleton screenName <| Map.singleton groupName child }
+                | None ->
+                    let groupMap = Map.add screenName (Map.singleton groupName child) world.Groups
+                    { world with Groups = groupMap }
             | _ -> failwith <| "Invalid group address '" + acstring address + "'."
 
         static member private groupRemover (address : Group Address) world =
             match address.Names with
             | [screenName; groupName] ->
-                let optGroupMap = Map.tryFind screenName world.Groups
-                match optGroupMap with
+                match Map.tryFind screenName world.Groups with
                 | Some groupMap ->
                     let groupMap = Map.remove groupName groupMap
                     { world with Groups = Map.add screenName groupMap world.Groups }

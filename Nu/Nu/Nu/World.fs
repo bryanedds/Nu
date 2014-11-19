@@ -207,7 +207,7 @@ module WorldModule =
             let world = World.subscribe SplashScreenTickKey event.SubscriberAddress TickEventAddress (World.handleSplashScreenIdleTick idlingTime 0L) world
             (Resolve, world)
 
-        static member addSplashScreenFromData persistent splashData dispatcherName address destination world =
+        static member addSplashScreen persistent splashData dispatcherName address destination world =
             let splashScreen = { World.makeDissolveScreen splashData.DissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let splashGroup = { World.makeGroup typeof<GroupDispatcher>.Name (Some "SplashGroup") world with Persistent = persistent }
             let splashLabel = { World.makeEntity typeof<LabelDispatcher>.Name (Some "SplashLabel") world with Persistent = persistent }
@@ -220,6 +220,11 @@ module WorldModule =
             let world = World.monitor address (IncomingFinishEventAddress ->>- address) (World.handleSplashScreenIdle splashData.IdlingTime) world
             let world = World.monitor address (OutgoingFinishEventAddress ->>- address) (World.handleAsScreenTransitionFromSplash destination) world
             (splashScreen, world)
+
+        static member addDissolveScreen persistent dissolveData dispatcherName address world =
+            let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
+            let dissolveScreenHierarchy = (dissolveScreen, Map.empty)
+            World.addScreen address dissolveScreenHierarchy world
 
         static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName address groupFilePath world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }

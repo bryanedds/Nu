@@ -25,9 +25,9 @@ module Progression =
         World.subscribe4 GameAddress ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     let private addGameplayScreen world =
-        let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name GameplayAddress GameplayGroupFilePath world
-        let world = World.subscribe4 GameAddress ClickGameplayBackEventAddress (World.handleAsScreenTransition TitleAddress) world
-        World.subscribe4 GameAddress ClickGameplaySaveGameEventAddress handleClickSaveGame world
+        let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name GameplayAddress HudFilePath world
+        let world = World.subscribe4 GameAddress ClickHudBackEventAddress (World.handleAsScreenTransition TitleAddress) world
+        World.subscribe4 GameAddress ClickHudSaveGameEventAddress handleClickSaveGame world
 
     let tryMakeInfinityRpgWorld sdlDeps userState =
         let componentFactory = InfinityRpgComponentFactory ()
@@ -38,7 +38,7 @@ module Progression =
             let world = addTitleScreen world
             let world = addCreditsScreen world
             let world = addGameplayScreen world
-            let (splashScreen, world) = World.addSplashScreenFromData false NuSplashData typeof<ScreenDispatcher>.Name NuSplashAddress TitleAddress world
+            let (splashScreen, world) = World.addSplashScreen false NuSplashData typeof<ScreenDispatcher>.Name NuSplashAddress TitleAddress world
             let world = snd <| World.selectScreen NuSplashAddress splashScreen world
             Right world
         | Left _ as left -> left
