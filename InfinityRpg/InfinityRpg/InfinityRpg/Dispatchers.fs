@@ -333,12 +333,9 @@ module InfinityRpgModule =
     
         member game.Seed = game?Seed : uint64
         static member setSeed (value : uint64) (game : Game) = game?Seed <- value
-        member game.ShallLoad = game?ShallLoad : bool
-        static member setShallLoad (value : bool) (game : Game) = game?ShallLoad <- value
 
     type InfinityRpgDispatcher () =
         inherit GameDispatcher ()
 
         static member FieldDefinitions =
-            [define? Seed Rand.DefaultSeed
-             define? ShallLoad false]
+            [define? Seed Rand.DefaultSeed]

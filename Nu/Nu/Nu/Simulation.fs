@@ -367,16 +367,16 @@ module SimulationModule =
 
     /// Provides a way to make user-defined components.
     and UserComponentFactory () =
+        abstract MakeFacets : unit -> Map<string, Facet>
+        default this.MakeFacets () = Map.empty
         abstract MakeEntityDispatchers : unit -> Map<string, EntityDispatcher>
         default this.MakeEntityDispatchers () = Map.empty
         abstract MakeGroupDispatchers : unit -> Map<string, GroupDispatcher>
         default this.MakeGroupDispatchers () = Map.empty
         abstract MakeScreenDispatchers : unit -> Map<string, ScreenDispatcher>
         default this.MakeScreenDispatchers () = Map.empty
-        abstract MakeGameDispatchers : unit -> Map<string, GameDispatcher>
-        default this.MakeGameDispatchers () = Map.empty
-        abstract MakeFacets : unit -> Map<string, Facet>
-        default this.MakeFacets () = Map.empty
+        abstract MakeOptGameDispatcher : unit -> (string * GameDispatcher) option
+        default this.MakeOptGameDispatcher () = None
 
 [<AutoOpen>]
 module WorldAddressModule =
