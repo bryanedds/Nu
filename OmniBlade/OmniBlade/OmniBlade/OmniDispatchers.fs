@@ -17,27 +17,27 @@ module OmniDispatchersModule =
         inherit GroupDispatcher ()
 
         let adjustFieldCamera groupAddress world =
-            let avatarAddress = gatoea groupAddress FieldAvatarName
-            let avatar = World.getEntity avatarAddress world
-            let camera = { world.Camera with EyeCenter = avatar.Position + avatar.Size * 0.5f }
+            let characterAddress = gatoea groupAddress FieldCharacterName
+            let character = World.getEntity characterAddress world
+            let camera = { world.Camera with EyeCenter = character.Position + character.Size * 0.5f }
             World.setCamera camera world
 
         let handleAdjustFieldCamera event world =
             let address = World.unwrapA event world
             (Cascade, adjustFieldCamera address world)
 
-        let handleMoveFieldAvatar event world =
+        let handleMoveFieldCharacter event world =
             let address = World.unwrapA event world
-            let avatarAddress = gatoea address FieldAvatarName
+            let characterAddress = gatoea address FieldCharacterName
             let feelerAddress = gatoea address FieldFeelerName
-            let avatar = World.getEntity avatarAddress world
+            let character = World.getEntity characterAddress world
             let feeler = World.getEntity feelerAddress world
             if feeler.IsTouched then
                 let mousePosition = World.getMousePositionF world
-                let mousePositionEntity = Entity.mouseToEntity mousePosition world avatar
-                let avatarCenter = avatar.Position + avatar.Size * 0.5f
-                let impulseVector = (mousePositionEntity - avatarCenter) * 5.0f
-                let world = World.applyBodyLinearImpulse impulseVector avatar.PhysicsId world 
+                let mousePositionEntity = Entity.mouseToEntity mousePosition world character
+                let characterCenter = character.Position + character.Size * 0.5f
+                let impulseVector = (mousePositionEntity - characterCenter) * 5.0f
+                let world = World.applyBodyLinearImpulse impulseVector character.PhysicsId world 
                 (Cascade, world)
             else
                 let impulses =
@@ -46,15 +46,15 @@ module OmniDispatchersModule =
                      (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Vector2 (0.0f, KeyboardMovementForce) else Vector2.Zero)
                      (if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Vector2 (0.0f, -KeyboardMovementForce) else Vector2.Zero)]
                 let impulse = List.reduce add impulses
-                let world = World.applyBodyLinearImpulse impulse avatar.PhysicsId world 
+                let world = World.applyBodyLinearImpulse impulse character.PhysicsId world 
                 (Cascade, world)
 
-        override dispatcher.Register (address, avatar, world) =
-            let world = World.monitor address TickEventAddress handleMoveFieldAvatar world
+        override dispatcher.Register (address, character, world) =
+            let world = World.monitor address TickEventAddress handleMoveFieldCharacter world
             let world = World.monitor address TickEventAddress handleAdjustFieldCamera world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             let world = adjustFieldCamera address world
-            (avatar, world)
+            (character, world)
 
     type BattleGroupDispatcher () =
         inherit GroupDispatcher ()

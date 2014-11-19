@@ -11,7 +11,7 @@ module OmniConstants =
     // misc constants
     let GuiPackageName = "Gui"
     let FieldFeelerName = "Feeler"
-    let FieldAvatarName = "Avatar"
+    let FieldCharacterName = "Character"
 
     // dissolve constants
     let DissolveData =

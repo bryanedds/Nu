@@ -47,6 +47,8 @@
             this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
             this.createToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
+            this.changeGroupNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.createContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deleteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -55,7 +57,6 @@
             this.copyContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -95,8 +96,7 @@
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
-            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
-            this.changeGroupNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -246,6 +246,18 @@
             this.deleteToolStripMenuItem.Size = new System.Drawing.Size(208, 24);
             this.deleteToolStripMenuItem.Text = "&Delete";
             // 
+            // toolStripMenuItem5
+            // 
+            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(205, 6);
+            // 
+            // changeGroupNameToolStripMenuItem
+            // 
+            this.changeGroupNameToolStripMenuItem.Enabled = false;
+            this.changeGroupNameToolStripMenuItem.Name = "changeGroupNameToolStripMenuItem";
+            this.changeGroupNameToolStripMenuItem.Size = new System.Drawing.Size(208, 24);
+            this.changeGroupNameToolStripMenuItem.Text = "Change Group Name";
+            // 
             // contextMenuStrip
             // 
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -309,20 +321,9 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(1384, 585);
-            this.splitContainer1.SplitterDistance = 1014;
+            this.splitContainer1.SplitterDistance = 1015;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1014, 585);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
             // 
             // splitContainer3
             // 
@@ -339,7 +340,7 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(367, 585);
+            this.splitContainer3.Size = new System.Drawing.Size(366, 585);
             this.splitContainer3.SplitterDistance = 384;
             this.splitContainer3.TabIndex = 2;
             // 
@@ -349,7 +350,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 73);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(367, 311);
+            this.propertyGrid.Size = new System.Drawing.Size(366, 311);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -364,7 +365,7 @@
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox1.Size = new System.Drawing.Size(367, 73);
+            this.groupBox1.Size = new System.Drawing.Size(366, 73);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "XFields";
@@ -425,7 +426,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(367, 197);
+            this.treeView.Size = new System.Drawing.Size(366, 197);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -472,7 +473,7 @@
             this.editWhileInteractiveCheckBox});
             this.toolStrip.Location = new System.Drawing.Point(92, 2);
             this.toolStrip.Name = "toolStrip";
-            this.toolStrip.Size = new System.Drawing.Size(1270, 25);
+            this.toolStrip.Size = new System.Drawing.Size(1296, 25);
             this.toolStrip.TabIndex = 1;
             this.toolStrip.Text = "toolStrip1";
             // 
@@ -502,8 +503,8 @@
             // positionSnapLabel
             // 
             this.positionSnapLabel.Name = "positionSnapLabel";
-            this.positionSnapLabel.Size = new System.Drawing.Size(79, 22);
-            this.positionSnapLabel.Text = "Position Snap";
+            this.positionSnapLabel.Size = new System.Drawing.Size(58, 22);
+            this.positionSnapLabel.Text = "Pos. Snap";
             // 
             // positionSnapTextBox
             // 
@@ -519,8 +520,8 @@
             // rotationSnapLabel
             // 
             this.rotationSnapLabel.Name = "rotationSnapLabel";
-            this.rotationSnapLabel.Size = new System.Drawing.Size(81, 22);
-            this.rotationSnapLabel.Text = "Rotation Snap";
+            this.rotationSnapLabel.Size = new System.Drawing.Size(57, 22);
+            this.rotationSnapLabel.Text = "Rot. Snap";
             // 
             // rotationSnapTextBox
             // 
@@ -544,10 +545,10 @@
             // 
             // createEntityComboBox
             // 
+            this.createEntityComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.createEntityComboBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
             this.createEntityComboBox.Name = "createEntityComboBox";
-            this.createEntityComboBox.Size = new System.Drawing.Size(130, 25);
-            this.createEntityComboBox.Text = "EntityDispatcher";
+            this.createEntityComboBox.Size = new System.Drawing.Size(170, 25);
             // 
             // creationDepthLabel
             // 
@@ -680,17 +681,16 @@
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(128, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit while Interactive)";
             // 
-            // toolStripMenuItem5
+            // displayPanel
             // 
-            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(205, 6);
-            // 
-            // changeGroupNameToolStripMenuItem
-            // 
-            this.changeGroupNameToolStripMenuItem.Enabled = false;
-            this.changeGroupNameToolStripMenuItem.Name = "changeGroupNameToolStripMenuItem";
-            this.changeGroupNameToolStripMenuItem.Size = new System.Drawing.Size(208, 24);
-            this.changeGroupNameToolStripMenuItem.Text = "Change Group Name";
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(1015, 585);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
             // 
             // NuEditForm
             // 

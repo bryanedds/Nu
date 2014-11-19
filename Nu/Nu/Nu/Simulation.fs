@@ -222,7 +222,7 @@ module SimulationModule =
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
-    /// to implement things like buttons, avatars, blocks, and things of that sort.
+    /// to implement things like buttons, characters, blocks, and things of that sort.
     /// TODO: now that there are field descriptors, consider making their persistence configurable
     /// with data instead of name-suffixing
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
