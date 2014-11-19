@@ -70,9 +70,7 @@ module Assets =
     let private getAssetAssociations (node : XmlNode) =
         match node.Attributes.GetNamedItem AssociationsAttributeName with
         | null -> []
-        | associations ->
-            let associations = AlgebraicDescriptor.convertFromString associations.InnerText typeof<string list>
-            associations :?> obj list |> List.map (fun obj -> obj :?> string)
+        | associations -> AlgebraicDescriptor.convertFromString associations.InnerText typeof<string list> :?> string list
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -104,8 +102,7 @@ module Assets =
         match node.Attributes.GetNamedItem RefinementsAttributeName with
         | null -> []
         | refinements ->
-            let refinements = AlgebraicDescriptor.convertFromString refinements.InnerText typeof<string list>
-            let refinements = refinements :?> obj list |> List.map (fun obj -> obj :?> string)
+            let refinements = AlgebraicDescriptor.convertFromString refinements.InnerText typeof<string list> :?> string list
             List.map Refinement.stringToRefinement refinements
 
     let private writeMagickImageAsPng filePath (image : MagickImage) =

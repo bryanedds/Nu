@@ -40,7 +40,7 @@ module Overlayer =
                     | null -> None
                     | includeNames ->
                         let includeNames = AlgebraicDescriptor.convertFromString includeNames.InnerXml typeof<string list>
-                        let includeNames = includeNames :?> obj list |> List.map (fun obj -> obj :?> string) |> Array.ofList
+                        let includeNames = includeNames :?> string list |> Array.ofList
                         let mutable optNode = None
                         let mutable enr = includeNames.GetEnumerator ()
                         while enr.MoveNext () && Option.isNone optNode do

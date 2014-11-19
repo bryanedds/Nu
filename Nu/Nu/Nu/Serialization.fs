@@ -53,8 +53,7 @@ module Serialization =
     /// Read facet names from an xml node.
     let readFacetNames (node : XmlNode) =
         let facetNamesStr = node.InnerText
-        let facetNames = AlgebraicDescriptor.convertFromString facetNamesStr typeof<string list>
-        facetNames :?> obj list |> List.map (fun obj -> obj :?> string)
+        AlgebraicDescriptor.convertFromString facetNamesStr typeof<string list> :?> string list
 
     /// Read an Xtension from Xml.
     let readXtension valueNode =

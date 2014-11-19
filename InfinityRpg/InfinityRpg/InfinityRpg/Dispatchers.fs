@@ -311,14 +311,34 @@ module CharacterCameraFacetModule =
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
+    type Entity with
+    
+        member entity.CharacterState = entity?CharacterState : CharacterState
+        static member setCharacterState (value : CharacterState) (entity : Entity) = entity?CharacterState <- value
+
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
+
+        static let DefaultCharacterState =
+            { CharacterType = Player
+              HitPoints = 1
+              SpecialPoints = 1
+              PowerBuff = 1.0f
+              ShieldBuff = 1.0f
+              MindBuff = 1.0f
+              CounterBuff = 1.0f
+              Statuses = Set.singleton Poisoned
+              EquippedWeapon = None
+              EquippedArmor = None
+              EquippedRelics = []
+              AddedExperience = 0 }
 
         static member FieldDefinitions =
             [define? GravityScale 0.0f
              define? LinearDamping 0.0f
              define? FixedRotation true
-             define? CollisionExpr "Circle"]
+             define? CollisionExpr "Circle"
+             define? CharacterState DefaultCharacterState]
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name
