@@ -175,10 +175,10 @@ module WorldEntityModule =
 
         static member getEntity address world = Option.get <| World.optEntityFinder address world
         static member private setEntityWithoutEvent address entity world = World.entityAdder address world entity
-        static member setEntity address entity world = 
-                let oldEntity = Option.get <| World.optEntityFinder address world
-                let world = World.entityAdder address world entity
-                World.publish4 address (EntityChangeEventAddress ->>- address) { OldEntity = oldEntity } world
+        static member setEntity address entity world =
+            let oldEntity = Option.get <| World.optEntityFinder address world
+            let world = World.entityAdder address world entity
+            World.publish4 address (EntityChangeEventAddress ->>- address) { OldEntity = oldEntity } world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world
