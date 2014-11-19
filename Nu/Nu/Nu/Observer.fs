@@ -7,7 +7,7 @@ open Nu.Constants
 open Nu.WorldConstants
 
 [<AutoOpen>]
-module ReactModule =
+module ObservableModule =
 
     /// An observable event in the reactive style.
     /// TODO: I bet there's a monad in here somewhere...
@@ -17,11 +17,11 @@ module ReactModule =
         static member make<'a> observerAddress subscribe =
             { ObserverAddress = observerAddress; Subscribe = subscribe }
 
-module React =
+module Observer =
 
     (* Primitive Combinators *)
 
-    let from<'o, 'a> (eventAddress : 'a Address) (observerAddress : 'o Address) =
+    let observe<'o, 'a> (observerAddress : 'o Address) (eventAddress : 'a Address) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionAddress = ltoa<'a> [acstring subscriptionKey]
