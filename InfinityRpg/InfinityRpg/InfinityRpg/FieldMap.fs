@@ -96,7 +96,7 @@ module FieldMapModule =
                 grid
 
         static member make tileSheet size pathEdges rand =
-            let buildBounds = { CornerNegative = Vector2i.One; CornerPositive = size - Vector2i.One }
+            let buildBounds = { CornerNegative = Vector2i.One; CornerPositive = size - Vector2i.One * 2 }
             let generatedMap = FieldMap.generateEmptyMap size
             let (generatedMap, rand) = FieldMap.addPaths buildBounds pathEdges generatedMap rand
             let (generatedMap, rand) = FieldMap.addTrees buildBounds generatedMap rand

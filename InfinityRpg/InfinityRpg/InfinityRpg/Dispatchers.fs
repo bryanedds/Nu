@@ -154,24 +154,6 @@ module FieldDispatcherModule =
             | None -> DefaultEntitySize
 
 [<AutoOpen>]
-module PlayerCharacterDispatcherModule =
-
-    type PlayerCharacterDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member FieldDefinitions =
-            [define? GravityScale 0.0f
-             define? LinearDamping 0.0f
-             define? FixedRotation true
-             define? CollisionExpr "Circle"]
-
-        static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
-             "CharacterAnimationFacet"
-             "CharacterControlFacet"
-             "CharacterCameraFacet"]
-
-[<AutoOpen>]
 module CharacterAnimationFacetModule =
 
     type CharacterAnimationType =
@@ -284,7 +266,7 @@ module CharacterControlFacetModule =
             else (Cascade, world)
 
         static member RequiredDispatcherName =
-            typeof<PlayerCharacterDispatcher>.Name
+            "CharacterDispatcher"
 
         override facet.Register (address, entity, world) =
             let world = observe address KeyboardKeyChangeEventAddress |> monitor handleKeyboardKeyChange world |> snd
@@ -325,6 +307,30 @@ module CharacterCameraFacetModule =
         override facet.Register (address, entity, world) =
             let world = observe address TickEventAddress |> monitor handleTick world |> snd
             (entity, world)
+
+[<AutoOpen>]
+module CharacterDispatcherModule =
+
+    type CharacterDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member FieldDefinitions =
+            [define? GravityScale 0.0f
+             define? LinearDamping 0.0f
+             define? FixedRotation true
+             define? CollisionExpr "Circle"]
+
+        static member IntrinsicFacetNames =
+            [typeof<RigidBodyFacet>.Name
+             typeof<CharacterAnimationFacet>.Name
+             typeof<CharacterControlFacet>.Name
+             typeof<CharacterCameraFacet>.Name]
+
+[<AutoOpen>]
+module PlayerCharacterDispatcherModule =
+
+    type PlayerCharacterDispatcher () =
+        inherit CharacterDispatcher ()
 
 [<AutoOpen>]
 module InfinityRpgModule =

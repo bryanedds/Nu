@@ -20,6 +20,7 @@ module ComponentFactoryModule =
         override this.MakeEntityDispatchers () =
             Map.ofList
                 [(typeof<FieldDispatcher>.Name, FieldDispatcher () :> EntityDispatcher)
+                 (typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> EntityDispatcher)
                  (typeof<PlayerCharacterDispatcher>.Name, PlayerCharacterDispatcher () :> EntityDispatcher)]
 
         override this.MakeOptGameDispatcher () =

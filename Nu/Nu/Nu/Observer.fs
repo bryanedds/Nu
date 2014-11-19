@@ -33,7 +33,6 @@ module Observer =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observerAddress; Subscribe = subscribe }
 
-    // TODO: find a better name for this?
     let using handleEvent (observable : Observable<'o, 'a>) =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
@@ -44,6 +43,7 @@ module Observer =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
+    // TODO: implement this with callback state instead of the rat's nest of subscriptions.
     let product (eventAddress : 'b Address) (observable : Observable<'o, 'a>) : Observable<'o, 'a * 'b> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()

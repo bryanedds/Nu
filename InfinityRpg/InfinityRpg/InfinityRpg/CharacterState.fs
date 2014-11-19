@@ -92,7 +92,7 @@ module CharacterStateModule =
 
     type CharacterType =
         | Player
-        | Slimebo
+        | Goopy
         | Skelebone
         | Dargon
 
@@ -164,13 +164,12 @@ module CharacterStateModule =
           BaseActions : ActionData list // base actions for all instances of character
           Reward : RewardData }
 
-    type Character =
-        { Id : Guid
-          CharacterType : CharacterType
+    type CharacterState =
+        { CharacterType : CharacterType
           HitPoints : int // hp max is calculated
           SpecialPoints : int // sp max is calculated
           PowerBuff : single // rate at which power is buffed / debuffed
-          SheildBuff : single // rate at which shield is buffed / debuffed
+          ShieldBuff : single // rate at which shield is buffed / debuffed
           MindBuff : single // rate at which mind is buffed / debuffed
           CounterBuff : single // rate at which counter is buffed / debuffed
           Statuses : StatusType Set
@@ -179,7 +178,7 @@ module CharacterStateModule =
           EquippedRelics : RelicType list
           AddedExperience : int } // level is calculated from base experience + added experience
 
-    type CharacterState =
+    type ActivityState =
         | Acting of ActionData
         | Navigating
         | Standing

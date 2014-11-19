@@ -99,10 +99,9 @@ module MetamapModule =
                         containCount <= 1)
             Seq.unfold
                 (fun (source, trail, rand) ->
-                    let trail = Set.add source trail
                     match Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit optBias source rand with
                     | Some (destination, rand) ->
-                        let state = (destination, trail, rand)
+                        let state = (destination, Set.add destination trail, rand)
                         Some ((source, rand), state)
                     | None -> None)
                 (source, Set.empty, rand)
@@ -150,7 +149,7 @@ module MetamapModule =
 
         static member wanderToDestination stumbleBounds source destination rand =
             let optBias = Some (destination, 6)
-            let maxPathLength = stumbleBounds.CornerPositive.X * stumbleBounds.CornerPositive.Y / 2
+            let maxPathLength = stumbleBounds.CornerPositive.X * stumbleBounds.CornerPositive.Y / 2 + 1
             let stumbleLimit = 16
             let predicate = fun path ->
                 let path = Seq.tryTake maxPathLength path

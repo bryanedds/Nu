@@ -12,6 +12,8 @@ open InfinityRpg.Constants
 [<RequireQualifiedAccess>]
 module Progression =
 
+    // TODO: consider moving nearly all of this into InfinityRpgDispatcher.
+
     let private makeField world =
         let rand = Rand.make world.Game.Seed
         let pathEdges = [(Vector2i (1, 10), Vector2i (20, 10))]
