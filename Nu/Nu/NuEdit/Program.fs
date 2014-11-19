@@ -87,7 +87,7 @@ module Program =
              attributes)
 
         let propertyName = match property with EntityXFieldDescriptor x -> x.FieldName | EntityPropertyInfo p -> p.Name
-        let propertyType = match property with EntityXFieldDescriptor x -> Type.GetTypeUnqualified x.TypeName | EntityPropertyInfo p -> p.PropertyType
+        let propertyType = match property with EntityXFieldDescriptor x -> x.FieldType | EntityPropertyInfo p -> p.PropertyType
         let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
 
         /// Synchonize an entity after an overlay change.
@@ -199,12 +199,11 @@ module Program =
                     let xtension = property.GetValue entity :?> Xtension
                     let xFieldDescriptors =
                         Seq.fold
-                            (fun xFieldDescriptors (xField : KeyValuePair<string, obj>) ->
-                                let fieldName = xField.Key
-                                let fieldValue = xField.Value
-                                let fieldType = fieldValue.GetType ()
+                            (fun xFieldDescriptors (xFieldKvp : KeyValuePair<string, XField>) ->
+                                let fieldName = xFieldKvp.Key
+                                let fieldType = xFieldKvp.Value.FieldType
                                 if Serialization.isPropertyPersistentByName fieldName then
-                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; TypeName = fieldType.FullName }
+                                    let xFieldDescriptor = EntityXFieldDescriptor { FieldName = fieldName; FieldType = fieldType }
                                     let xFieldDescriptor = EntityPropertyDescriptor (xFieldDescriptor, [|typeConverterAttribute|])
                                     xFieldDescriptor :> PropertyDescriptor :: xFieldDescriptors
                                 else xFieldDescriptors)
@@ -664,7 +663,8 @@ module Program =
                         let world = pushPastWorld world world
                         let entity = World.getEntity entityTds.Address world
                         let xFieldValue = if aType = typeof<string> then String.Empty :> obj else Activator.CreateInstance aType
-                        let xFields = Map.add xFieldName xFieldValue entity.Xtension.XFields
+                        let xField = { FieldValue = xFieldValue; FieldType = aType }
+                        let xFields = Map.add xFieldName xField entity.Xtension.XFields
                         let entity = { entity with Xtension = { entity.Xtension with XFields = xFields }}
                         let world = World.setEntity entityTds.Address entity world
                         entityTds.RefWorld := world // must be set for property grid

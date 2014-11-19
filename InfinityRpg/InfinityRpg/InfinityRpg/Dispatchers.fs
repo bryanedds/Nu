@@ -313,32 +313,54 @@ module CharacterDispatcherModule =
 
     type Entity with
     
-        member entity.CharacterState = entity?CharacterState : CharacterState
-        static member setCharacterState (value : CharacterState) (entity : Entity) = entity?CharacterState <- value
+        member entity.CharacterType = entity?CharacterType : CharacterType
+        static member setCharacterType (value : CharacterType) (entity : Entity) = entity?CharacterType <- value
+        member entity.ActivityState = entity?ActivityState : ActivityState
+        static member setActivityState (value : ActivityState) (entity : Entity) = entity?ActivityState <- value
+        member entity.HitPoints = entity?HitPoints : int
+        static member setHitPoints (value : int) (entity : Entity) = entity?HitPoints <- value
+        member entity.SpecialPoints = entity?SpecialPoints : int
+        static member setSpecialPoints (value : int) (entity : Entity) = entity?SpecialPoints <- value
+        member entity.PowerBuff = entity?PowerBuff : single
+        static member setPowerBuff (value : single) (entity : Entity) = entity?PowerBuff <- value
+        member entity.ShieldBuff = entity?ShieldBuff : single
+        static member setShieldBuff (value : single) (entity : Entity) = entity?ShieldBuff <- value
+        member entity.MindBuff = entity?MindBuff : single
+        static member setMindBuff (value : single) (entity : Entity) = entity?MindBuff <- value
+        member entity.CounterBuff = entity?CounterBuff : single
+        static member setCounterBuff (value : single) (entity : Entity) = entity?CounterBuff <- value
+        member entity.Statuses = entity?Statuses : StatusType Set
+        static member setStatuses (value : StatusType Set) (entity : Entity) = entity?Statuses <- value
+        member entity.EquippedWeapon = entity?EquippedWeapon : WeaponType option
+        static member setEquippedWeapon (value : WeaponType option) (entity : Entity) = entity?EquippedWeapon <- value
+        member entity.EquippedArmor = entity?EquippedArmor : ArmorType option
+        static member setEquippedArmor (value : ArmorType option) (entity : Entity) = entity?EquippedArmor <- value
+        member entity.EquippedRelics = entity?EquippedRelics : RelicType list
+        static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
+        member entity.AddedExperience = entity?AddedExperience : int
+        static member setAddedExperience (value : int) (entity : Entity) = entity?AddedExperience <- value
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
-
-        static let DefaultCharacterState =
-            { CharacterType = Player
-              HitPoints = 1
-              SpecialPoints = 1
-              PowerBuff = 1.0f
-              ShieldBuff = 1.0f
-              MindBuff = 1.0f
-              CounterBuff = 1.0f
-              Statuses = Set.singleton Poisoned
-              EquippedWeapon = None
-              EquippedArmor = None
-              EquippedRelics = []
-              AddedExperience = 0 }
 
         static member FieldDefinitions =
             [define? GravityScale 0.0f
              define? LinearDamping 0.0f
              define? FixedRotation true
              define? CollisionExpr "Circle"
-             define? CharacterState DefaultCharacterState]
+             define? CharacterType Player
+             define? ActivityState Standing
+             define? HitPoints 1 // hp max is calculated
+             define? SpecialPoints 1 // sp max is calculated
+             define? PowerBuff 1.0f // rate at which power is buffed / debuffed
+             define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
+             define? MindBuff 1.0f // rate at which mind is buffed / debuffed
+             define? CounterBuff 1.0f // rate at which counter is buffed / debuffed
+             define? Statuses Set.empty<StatusType>
+             define? EquippedWeapon Option<WeaponType>.None
+             define? EquippedArmor Option<ArmorType>.None
+             define? EquippedRelics list<RelicType>.Empty
+             define? AddedExperience 0] // level is calculated from base experience + added experience
 
         static member IntrinsicFacetNames =
             [typeof<RigidBodyFacet>.Name

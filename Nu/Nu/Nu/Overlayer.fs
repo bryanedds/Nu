@@ -65,7 +65,7 @@ module Overlayer =
             let optPropertyValue =
                 match (optProperty, optXtension) with
                 | (null, None) -> None
-                | (null, Some xtension) -> Some <| Map.find overlayNode.Name xtension.XFields
+                | (null, Some xtension) -> Some (Map.find overlayNode.Name xtension.XFields).FieldValue
                 | (targetProperty, _) -> Some <| targetProperty.GetValue target
             match optPropertyValue with
             | Some propertyValue ->
@@ -125,9 +125,9 @@ module Overlayer =
             | :? Xtension as xtension ->
                 let optNodes =
                     Seq.fold
-                        (fun optNodes (kvp : KeyValuePair<string, obj>) ->
+                        (fun optNodes (kvp : KeyValuePair<string, XField>) ->
                             match trySelectNode newOverlayName kvp.Key newOverlayer with
-                            | Some node -> (kvp.Value.GetType (), node) :: optNodes
+                            | Some node -> (kvp.Value.FieldType, node) :: optNodes
                             | None -> optNodes)
                         []
                         xtension.XFields
@@ -141,7 +141,8 @@ module Overlayer =
                                 | None -> false
                             if shouldApplyOverlay then
                                 let value = AlgebraicDescriptor.convertFromString node.InnerText aType
-                                (node.Name, value) :: xFields
+                                let xField = { FieldValue = value; FieldType = aType }
+                                (node.Name, xField) :: xFields
                             else xFields)
                         []
                         nodes
