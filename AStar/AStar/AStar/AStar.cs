@@ -43,7 +43,7 @@ namespace AStar
         }
     }
 
-    internal class Path<Node> : IEnumerable<Node>
+    public class Path<Node> : IEnumerable<Node>
     {
         public Node LastStep { get; private set; }
         public Path<Node> PreviousSteps { get; private set; }
@@ -75,7 +75,7 @@ namespace AStar
         IEnumerable<N> Neighbours { get; }
     }
 
-    static class AStar
+    public static class AStar
     {
         static public Path<Node> FindPath<Node>(
             Node start,
