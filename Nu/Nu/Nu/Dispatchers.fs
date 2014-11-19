@@ -660,9 +660,9 @@ module BoxDispatcherModule =
              typeof<SpriteFacet>.Name]
 
 [<AutoOpen>]
-module AvatarDispatcherModule =
+module TopViewCharacterDispatcherModule =
 
-    type AvatarDispatcher () =
+    type TopViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =
@@ -677,9 +677,9 @@ module AvatarDispatcherModule =
              typeof<SpriteFacet>.Name]
 
 [<AutoOpen>]
-module CharacterDispatcherModule =
+module SideViewCharacterDispatcherModule =
 
-    type CharacterDispatcher () =
+    type SideViewCharacterDispatcher () =
         inherit EntityDispatcher ()
 
         static member FieldDefinitions =

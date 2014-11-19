@@ -279,6 +279,7 @@ module Program =
         form.createEntityComboBox.Items.Clear ()
         for dispatcherKvp in world.Components.EntityDispatchers do
             ignore <| form.createEntityComboBox.Items.Add dispatcherKvp.Key
+        form.createEntityComboBox.SelectedIndex <- 0
 
     let populateTreeViewGroups (form : NuEditForm) world =
         for dispatcherKvp in world.Components.EntityDispatchers do

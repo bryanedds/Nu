@@ -572,8 +572,8 @@ module WorldModule =
                          typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> EntityDispatcher
                          typeof<BlockDispatcher>.Name, BlockDispatcher () :> EntityDispatcher
                          typeof<BoxDispatcher>.Name, BoxDispatcher () :> EntityDispatcher
-                         typeof<AvatarDispatcher>.Name, AvatarDispatcher () :> EntityDispatcher
-                         typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> EntityDispatcher
+                         typeof<TopViewCharacterDispatcher>.Name, TopViewCharacterDispatcher () :> EntityDispatcher
+                         typeof<SideViewCharacterDispatcher>.Name, SideViewCharacterDispatcher () :> EntityDispatcher
                          typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> EntityDispatcher]
                 let entityDispatchers = Map.addMany (Map.toSeq userEntityDispatchers) defaultEntityDispatchers
 

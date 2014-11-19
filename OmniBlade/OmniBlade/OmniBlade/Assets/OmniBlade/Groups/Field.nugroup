@@ -3,12 +3,12 @@
   <Group dispatcherName="FieldGroupDispatcher">
     <Name>Group</Name>
     <Entities>
-      <Entity dispatcherName="AvatarDispatcher">
-        <Name>Avatar</Name>
+      <Entity dispatcherName="TopViewCharacterDispatcher">
+        <Name>Character</Name>
         <Depth>2</Depth>
         <Position>600.3199, 600</Position>
         <Size>64, 64</Size>
-        <OptOverlayName>[Some | AvatarDispatcher]</OptOverlayName>
+        <OptOverlayName>[Some | TopViewCharacterDispatcher]</OptOverlayName>
         <Xtension>
           <SpriteImage type="Nu.RenderingModule+Image">[Default | Image7]</SpriteImage>
         </Xtension>

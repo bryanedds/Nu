@@ -13,105 +13,6 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module FieldDispatcherModule =
 
-    type FieldTileType =
-        | Impassable
-        | Passable
-
-    type FieldTile =
-        { FieldTileSheetCoords : Vector2i
-          FieldTileType : FieldTileType }
-
-    type [<NoEquality; NoComparison>] FieldMap =
-        { FieldSize : Vector2i
-          FieldTiles : Map<Vector2i, FieldTile>
-          FieldTileSheet : Image }
-
-        static member PathTile = { FieldTileSheetCoords = Vector2i (3, 0); FieldTileType = Passable }
-        static member GrassTile = { FieldTileSheetCoords = Vector2i (3, 3); FieldTileType = Passable }
-        static member TreeTile = { FieldTileSheetCoords = Vector2i (1, 1); FieldTileType = Impassable }
-
-        static member makeGrid bounds =
-            seq {
-                for i in bounds.CornerNegative.X .. bounds.CornerPositive.X do
-                    for j in bounds.CornerNegative.Y .. bounds.CornerPositive.Y do
-                        yield Vector2i (i, j) }
-
-        static member generateEmptyMap (size : Vector2i) =
-            Map.ofList
-                [for i in 0 .. size.X - 1 do
-                    for j in 0 .. size.Y - 1 do
-                        let tileCoords = Vector2i (i, j)
-                        yield (tileCoords, FieldMap.GrassTile)]
-
-        static member addPaths buildBounds pathEdges generatedMap rand =
-            
-            let (paths, rand) =
-                List.fold
-                    (fun (paths, rand) (source, destination) ->
-                        let (path, rand) = Direction.wanderToDestination buildBounds source destination rand
-                        (path :: paths, rand))
-                    ([], rand)
-                    pathEdges
-
-            let generatedMap =
-                Seq.fold
-                    (fun generatedMap path ->
-                        let generatedMap' =
-                            Seq.fold
-                                (fun generatedMap tileCoords -> Map.add tileCoords FieldMap.PathTile generatedMap)
-                                generatedMap
-                                path
-                        generatedMap @@ generatedMap')
-                    generatedMap
-                    paths
-
-            (generatedMap, rand)
-
-        static member addTrees buildBounds generatedMap rand =
-            let grid = FieldMap.makeGrid buildBounds
-            Seq.fold
-                (fun (generatedMap, rand) point ->
-                    let (n, rand) = Rand.nextIntUnder 16 rand
-                    if n = 0 && Map.find point generatedMap <> FieldMap.PathTile then (Map.add point FieldMap.TreeTile generatedMap, rand)
-                    else (generatedMap, Rand.advance rand))
-                (generatedMap, rand)
-                grid
-
-        static member spreadTrees buildBounds generatedMap rand =
-            let originalMap = generatedMap
-            let grid = FieldMap.makeGrid buildBounds
-            Seq.fold
-                (fun (generatedMap, rand) point ->
-                    let tile = Map.find point originalMap
-                    if  tile <> FieldMap.PathTile &&
-                        Bounds.isPointInBounds point buildBounds then
-                        let upPoint = point + Vector2i.Up
-                        let rightPoint = point + Vector2i.Right
-                        let downPoint = point + Vector2i.Down
-                        let leftPoint = point + Vector2i.Left
-                        if  Bounds.isPointInBounds upPoint buildBounds && Map.find upPoint originalMap = FieldMap.TreeTile ||
-                            Bounds.isPointInBounds rightPoint buildBounds && Map.find rightPoint originalMap = FieldMap.TreeTile ||
-                            Bounds.isPointInBounds downPoint buildBounds && Map.find downPoint originalMap = FieldMap.TreeTile ||
-                            Bounds.isPointInBounds leftPoint buildBounds && Map.find leftPoint originalMap = FieldMap.TreeTile then
-                            let (n, rand) = Rand.nextIntUnder 3 rand
-                            if n = 0 then (Map.add point FieldMap.TreeTile generatedMap, rand)
-                            else (generatedMap, Rand.advance rand)
-                        else (generatedMap, Rand.advance rand)
-                    else (generatedMap, Rand.advance rand))
-                (generatedMap, rand)
-                grid
-
-        static member make tileSheet size pathEdges rand =
-            let buildBounds = { CornerNegative = Vector2i.One; CornerPositive = size - Vector2i.One }
-            let generatedMap = FieldMap.generateEmptyMap size
-            let (generatedMap, rand) = FieldMap.addPaths buildBounds pathEdges generatedMap rand
-            let (generatedMap, rand) = FieldMap.addTrees buildBounds generatedMap rand
-            let (generatedMap, rand) = FieldMap.spreadTrees buildBounds generatedMap rand
-            let (generatedMap, rand) = FieldMap.spreadTrees buildBounds generatedMap rand
-            { FieldSize = size
-              FieldTiles = generatedMap
-              FieldTileSheet = tileSheet }
-
     type Entity with
     
         member entity.FieldMapNp = entity?FieldMapNp : FieldMap
@@ -124,7 +25,7 @@ module FieldDispatcherModule =
         static let DefaultRand = Rand.makeDefault ()
         static let DefaultSize = Vector2i (4, 4)
         static let DefaultPathEdges = [(Vector2i (1, 1), Vector2i (2, 2))]
-        static let DefaultMap = FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
+        static let DefaultFieldMap = FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
 
         static let getOptTileInset (tileSheetSize : Vector2i) (tileSize : Vector2i) (tileSheetCoords : Vector2i) =
             let tileOffset = Vector2i.Multiply (tileSheetCoords, tileSize)
@@ -196,7 +97,7 @@ module FieldDispatcherModule =
              define? Restitution 0.0f
              define? CollisionCategories "1"
              define? CollisionMask "*"
-             define? FieldMapNp DefaultMap]
+             define? FieldMapNp DefaultFieldMap]
 
         override dispatcher.Register (address, field, world) =
             let world = registerTilePhysics address field world
@@ -430,56 +331,10 @@ module InfinityRpgModule =
     type Game with
     
         member game.Seed = game?Seed : uint64
-        static member setSeed (value : uint64) (game : Entity) = game?Seed <- value
+        static member setSeed (value : uint64) (game : Game) = game?Seed <- value
 
     type InfinityRpgDispatcher () =
         inherit GameDispatcher ()
 
         static member FieldDefinitions =
             [define? Seed Rand.DefaultSeed]
-
-[<AutoOpen>]
-module GameplayDispatcherModule =
-
-    type GameplayDispatcher () =
-        inherit ScreenDispatcher ()
-
-        let handleStartPlay _ world =
-
-            // make field            
-            let rand = Rand.make world.Game.Seed
-            let pathEdges = [(Vector2i (1, 10), Vector2i (20, 10))]
-            let fieldMap = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdges rand
-            let field = World.makeEntity typeof<FieldDispatcher>.Name (Some FieldName) world
-            let field = Entity.setFieldMapNp fieldMap field
-            let field = Entity.setSize (Entity.getQuickSize field world) field
-            let field = Entity.setPersistent false field
-
-            // make character
-            let playerCharacter = World.makeEntity typeof<PlayerCharacterDispatcher>.Name (Some PlayerCharacterName) world
-            
-            // make entities value
-            let entities = Map.ofList [(field.Name, field); (playerCharacter.Name, playerCharacter)]
-
-            // make scene, and add scene hierarchy to the world!
-            let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
-            let sceneHierarchy = (scene, entities)
-            let world = snd <| World.addGroup SceneAddress sceneHierarchy world
-            (Cascade, world)
-
-        let handleStoppingPlay _ world =
-            //let world = World.fadeOutSong DefaultTimeToFadeOutSongMs world
-            (Cascade, world)
-
-        let handleStopPlay _ world =
-            let scene = World.getGroup SceneAddress world
-            let world = snd <| World.removeGroup SceneAddress scene world
-            (Cascade, world)
-
-        override dispatcher.Register (address, screen, world) =
-            let world =
-                world |>
-                World.monitor address (SelectEventAddress ->>- address) handleStartPlay |>
-                World.monitor address (OutgoingStartEventAddress ->>- address) handleStoppingPlay |>
-                World.monitor address (DeselectEventAddress ->>- address) handleStopPlay
-            (screen, world)
