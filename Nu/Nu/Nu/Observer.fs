@@ -44,13 +44,14 @@ module Observer =
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
-    let product (eventAddress : 'a Address) (observable : Observable<'o, 'a>) : Observable<'o, 'a * 'b> =
+    let product (eventAddress : 'b Address) (observable : Observable<'o, 'a>) : Observable<'o, 'a * 'b> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionKey' = World.makeSubscriptionKey ()
-            let subscriptionAddress = ltoa<'b> [acstring subscriptionKey]
-            let subscriptionAddress' = ltoa<'a * 'b> [acstring subscriptionKey']
-            let (_, unsubscribe, world) = observable.Subscribe world
+            let subscriptionKey'' = World.makeSubscriptionKey ()
+            let (subscriptionAddress, unsubscribe, world) = observable.Subscribe world
+            let subscriptionAddress' = eventAddress
+            let subscriptionAddress'' = ltoa<'a * 'b> [acstring subscriptionKey'']
             let unsubscribe = fun world ->
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
@@ -58,36 +59,38 @@ module Observer =
             let subscription = fun event world ->
                 let subscription' = fun event' world ->
                     let eventData = (event.Data, event'.Data)
-                    let world = World.publish<obj, 'a * 'b> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress' eventData world
+                    let world = World.publish<obj, 'a * 'b> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress'' eventData world
+                    let world = World.unsubscribe subscriptionKey' world
                     (Cascade, world)
-                let world = World.subscribe<'o, 'b> subscriptionKey' observable.ObserverAddress subscriptionAddress subscription' world
+                let world = World.subscribe<'o, 'b> subscriptionKey' observable.ObserverAddress subscriptionAddress' subscription' world
                 (Cascade, world)
-            let world = World.subscribe<'o, 'a> subscriptionKey observable.ObserverAddress eventAddress subscription world
-            (subscriptionAddress, unsubscribe, world)
+            let world = World.subscribe<'o, 'a> subscriptionKey observable.ObserverAddress subscriptionAddress subscription world
+            (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
-    let sum (eventAddress : 'a Address) (observable : Observable<'o, 'a>) : Observable<'o, Either<'a, 'b>> =
+    let sum (eventAddress : 'b Address) (observable : Observable<'o, 'a>) : Observable<'o, Either<'a, 'b>> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
             let subscriptionKey' = World.makeSubscriptionKey ()
-            let subscriptionAddress = ltoa<'b> [acstring subscriptionKey]
-            let subscriptionAddress' = ltoa<Either<'a, 'b>> [acstring subscriptionKey']
-            let (_, unsubscribe, world) = observable.Subscribe world
+            let subscriptionKey'' = World.makeSubscriptionKey ()
+            let (subscriptionAddress, unsubscribe, world) = observable.Subscribe world
+            let subscriptionAddress' = eventAddress
+            let subscriptionAddress'' = ltoa<Either<'a, 'b>> [acstring subscriptionKey'']
             let unsubscribe = fun world ->
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
                 World.unsubscribe subscriptionKey' world
             let subscription = fun event world ->
                 let eventData = Left event.Data
-                let world = World.publish<obj, Either<'a, 'b>> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress' eventData world
+                let world = World.publish<obj, Either<'a, 'b>> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress'' eventData world
                 (Cascade, world)
             let subscription' = fun event world ->
                 let eventData = Right event.Data
-                let world = World.publish<obj, Either<'a, 'b>> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress' eventData world
+                let world = World.publish<obj, Either<'a, 'b>> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress'' eventData world
                 (Cascade, world)
-            let world = World.subscribe<'o, 'a> subscriptionKey observable.ObserverAddress eventAddress subscription world
-            let world = World.subscribe<'o, 'b> subscriptionKey' observable.ObserverAddress subscriptionAddress subscription' world
-            (subscriptionAddress, unsubscribe, world)
+            let world = World.subscribe<'o, 'b> subscriptionKey' observable.ObserverAddress subscriptionAddress' subscription' world
+            let world = World.subscribe<'o, 'a> subscriptionKey observable.ObserverAddress subscriptionAddress subscription world
+            (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
     let filter (pred : 'a Event -> World -> bool) (observable : Observable<'o, 'a>) =
@@ -210,22 +213,22 @@ module Observer =
     let subscribe2 world observable =
         observable.Subscribe world |> _bc
 
-    let subscribe eventAddress world observable =
-        observable |> using eventAddress |> subscribe2 world
+    let subscribe handleEvent world observable =
+        observable |> using handleEvent |> subscribe2 world
 
     let lifetime (observable : Observable<'o, 'a>) : Observable<'o, 'a> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
-            let removingEventKey = World.makeSubscriptionKey ()
+            let subscriptionKey' = World.makeSubscriptionKey ()
             let subscriptionAddress = ltoa<'a> [acstring subscriptionKey]
-            let removingEventAddress = RemovingEventAddress ->>- observable.ObserverAddress
+            let subscriptionAddress' = RemovingEventAddress ->>- observable.ObserverAddress
             let (eventAddress, unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world ->
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
-                World.unsubscribe removingEventKey world
+                World.unsubscribe subscriptionKey' world
             let handleRemoving = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = World.subscribe removingEventKey observable.ObserverAddress removingEventAddress handleRemoving world
+            let world = World.subscribe subscriptionKey' observable.ObserverAddress subscriptionAddress' handleRemoving world
             let subscription = fun event world ->
                 let world = World.publish<obj, 'a> World.sortSubscriptionsNone event.PublisherAddress subscriptionAddress event.Data world
                 (Cascade, world)

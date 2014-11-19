@@ -323,7 +323,7 @@ module CharacterCameraFacetModule =
             (Cascade, World.setCamera camera world)
 
         override facet.Register (address, entity, world) =
-            let world = observe TickEventAddress address |> monitor handleTick world |> snd
+            let world = observe address TickEventAddress |> monitor handleTick world |> snd
             (entity, world)
 
 [<AutoOpen>]
