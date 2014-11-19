@@ -32,7 +32,7 @@ module ReflectionModule =
             if Array.exists (fun gta -> gta = typeof<obj>) fieldType.GenericTypeArguments then
                 failwith <|
                     "Generic field definition lacking type information for field '" + fieldName + "'. " +
-                    "Use explicit type annotations on all values that carry incomplete type information such as empty lists."
+                    "Use explicit typing on all values that carry incomplete type information such as empty lists, empty sets, and none options,."
 
         static member make fieldName fieldType fieldExpr =
             FieldDefinition.validate fieldName fieldType fieldExpr
@@ -98,8 +98,9 @@ module Reflection =
                 | xtensionProperty ->
                     match xtensionProperty.GetValue target with
                     | :? Xtension as xtension ->
-                        let xfields = Map.add fieldDefinition.FieldName fieldValue xtension.XFields
-                        let xtension = { xtension with XFields = xfields }
+                        let xField = { FieldValue = fieldValue; FieldType = fieldDefinition.FieldType }
+                        let xFields = Map.add fieldDefinition.FieldName xField xtension.XFields
+                        let xtension = { xtension with XFields = xFields }
                         xtensionProperty.SetValue (target, xtension)
                     | _ -> failwith <| "Invalid field '" + fieldDefinition.FieldName + "' for target type '" + targetType.Name + "'."
             | property -> property.SetValue (target, fieldValue)

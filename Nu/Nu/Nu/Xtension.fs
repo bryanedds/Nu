@@ -20,12 +20,16 @@ module XtensionModule =
         member this.DefaultValue = defaultValue
         
     /// Describes an XField.
-    type XFieldDescriptor =
+    type [<StructuralEquality; NoComparison>] XFieldDescriptor =
         { FieldName : string
-          TypeName : string } // the .NET type name
+          FieldType : Type }
+
+    type [<StructuralEquality; NoComparison>] XField =
+        { FieldValue : obj
+          FieldType : Type }
 
     /// An indexible collection of XFields.
-    type XFields = Map<string, obj>
+    type XFields = Map<string, XField>
 
     /// Xtensions (and their supporting types) are a dynamic, functional, and semi-convenient way
     /// to implement dynamic fields.
@@ -64,7 +68,7 @@ module XtensionModule =
             | Some field ->
                 
                 // return field directly if the return type matches, otherwise the default value for that type
-                match field with
+                match field.FieldValue with
                 | :? 'r as fieldValue -> fieldValue
                 | _ -> Xtension.tryGetDefaultValue xtension memberName
 
@@ -75,7 +79,7 @@ module XtensionModule =
 
         /// The dynamic assignment operator for an Xtension.
         /// Example - let entity = entity.Position <- Vector2 (4.0, 5.0).
-        static member (?<-) (xtension, fieldName, value) =
+        static member (?<-) (xtension, fieldName, value : 'a) =
     #if DEBUG
             // nop'ed outside of debug mode for efficiency
             // TODO: consider writing a 'Map.addDidContainKey' function to efficently add and return a
@@ -84,7 +88,7 @@ module XtensionModule =
             then failwith "Cannot add field to a sealed Xtension."
             else
     #endif
-                let xFields = Map.add fieldName (value :> obj) xtension.XFields
+                let xFields = Map.add fieldName { FieldValue = value :> obj; FieldType = typeof<'a> } xtension.XFields
                 { xtension with XFields = xFields }
 
 [<RequireQualifiedAccess>]

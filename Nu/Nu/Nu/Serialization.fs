@@ -34,7 +34,7 @@ module Serialization =
                 let xValueStr = xNode.InnerText
                 let converter = AlgebraicConverter aType
                 if converter.CanConvertFrom typeof<string>
-                then Map.add xNode.Name (converter.ConvertFromString xValueStr) xFields
+                then Map.add xNode.Name { FieldValue = converter.ConvertFromString xValueStr; FieldType = aType } xFields
                 else debug <| "Cannot convert string '" + xValueStr + "' to type '" + typeName + "'."; xFields)
             Map.empty
             childNodes
@@ -125,11 +125,11 @@ module Serialization =
     // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
     /// XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
     let writeXtension shouldWriteProperty (writer : XmlWriter) xtension =
-        for xField in xtension.XFields do
-            let xFieldName = xField.Key
+        for xFieldKvp in xtension.XFields do
+            let xFieldName = xFieldKvp.Key
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName then
-                let xValue = xField.Value
+                let xValue = xFieldKvp.Value.FieldValue
                 let xValueType = xValue.GetType ()
                 let xValueStr = (AlgebraicConverter xValueType).ConvertToString xValue
                 writer.WriteStartElement xFieldName

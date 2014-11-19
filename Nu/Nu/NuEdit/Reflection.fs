@@ -25,7 +25,7 @@ module Reflection =
         match property with
         | EntityXFieldDescriptor x ->
             let xtension = entity.Xtension
-            Map.find x.FieldName xtension.XFields
+            (Map.find x.FieldName xtension.XFields).FieldValue
         | EntityPropertyInfo p ->
             if containsProperty<Entity> p then p.GetValue entity
             else p.GetValue entity
@@ -33,7 +33,8 @@ module Reflection =
     let setEntityPropertyValue property value (entity : Entity) =
         match property with
         | EntityXFieldDescriptor x ->
-            let xFields = Map.add x.FieldName value entity.Xtension.XFields
+            let xField = { FieldValue = value; FieldType = x.FieldType }
+            let xFields = Map.add x.FieldName xField entity.Xtension.XFields
             { entity with Xtension = { entity.Xtension with XFields = xFields }}
         | EntityPropertyInfo p ->
             let entity = { entity with Id = entity.Id } // NOTE: hacky copy
