@@ -7,6 +7,7 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
+open Nu.Observer
 open InfinityRpg
 open InfinityRpg.Constants
 
@@ -286,7 +287,7 @@ module CharacterControlFacetModule =
             typeof<PlayerCharacterDispatcher>.Name
 
         override facet.Register (address, entity, world) =
-            let world = React.from KeyboardKeyChangeEventAddress address |> React.monitor handleKeyboardKeyChange world |> snd
+            let world = observe address KeyboardKeyChangeEventAddress |> monitor handleKeyboardKeyChange world |> snd
             (entity, world)
 
 [<AutoOpen>]
@@ -322,7 +323,7 @@ module CharacterCameraFacetModule =
             (Cascade, World.setCamera camera world)
 
         override facet.Register (address, entity, world) =
-            let world = React.from TickEventAddress address |> React.monitor handleTick world |> snd
+            let world = observe TickEventAddress address |> monitor handleTick world |> snd
             (entity, world)
 
 [<AutoOpen>]

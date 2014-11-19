@@ -5,7 +5,7 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.React
+open Nu.Observer
 module ReactTests =
 
     let IntEventAddress = stoa<int> "Test"
@@ -16,14 +16,14 @@ module ReactTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = from UnitEventAddress (atooa UnitEventAddress) |> subscribe incUserStateAndCascade world |> snd
+        let world = observe (atooa UnitEventAddress) UnitEventAddress |> subscribe incUserStateAndCascade world |> snd
         let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let observable = from UnitEventAddress (atooa UnitEventAddress) |> using incUserStateAndCascade
+        let observable = observe (atooa UnitEventAddress) UnitEventAddress |> using incUserStateAndCascade
         let world = snd <| subscribe2 world observable
         let (unsubscribe, world) = subscribe2 world observable
         let world = unsubscribe world
@@ -33,7 +33,7 @@ module ReactTests =
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = from UnitEventAddress (atooa UnitEventAddress) |> subscribe incUserStateAndCascade world
+        let (unsubscribe, world) = observe (atooa UnitEventAddress) UnitEventAddress |> subscribe incUserStateAndCascade world
         let world = unsubscribe world
         let world = World.publish4 GameAddress UnitEventAddress () world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
@@ -43,7 +43,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            from UnitEventAddress (atooa UnitEventAddress) |>
+            observe (atooa UnitEventAddress) UnitEventAddress |>
             filter (fun _ world -> World.getUserState world = 0) |>
             subscribe incUserStateAndCascade world |>
             snd
@@ -55,7 +55,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            from IntEventAddress (atooa UnitEventAddress) |>
+            observe (atooa UnitEventAddress) IntEventAddress |>
             map (fun event _ -> event.Data * 2) |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) world |>
             snd
@@ -66,7 +66,7 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            from IntEventAddress (atooa UnitEventAddress) |>
+            observe (atooa UnitEventAddress) IntEventAddress |>
             scan (fun acc event _ -> acc + event.Data) 0 |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) world |>
             snd
@@ -77,7 +77,7 @@ module ReactTests =
     let [<Fact>] scanDoesntLeaveGarbage () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = from IntEventAddress (atooa UnitEventAddress) |> scan2 (fun a _ _ -> a) |> subscribe2 world
+        let (unsubscribe, world) = observe (atooa UnitEventAddress) IntEventAddress |> scan2 (fun a _ _ -> a) |> subscribe2 world
         let world = World.publish4 GameAddress IntEventAddress 0 world
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates

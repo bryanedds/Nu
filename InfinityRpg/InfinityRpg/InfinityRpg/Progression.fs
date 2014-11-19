@@ -5,6 +5,7 @@ open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
+open Nu.Observer
 open InfinityRpg
 open InfinityRpg.Constants
 
@@ -89,6 +90,7 @@ module Progression =
 
     let private addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
+        //let world = from GameAddress ClickTitleCreditsEventAddress
         let world = World.subscribe4 GameAddress ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
         let world = World.subscribe4 GameAddress ClickTitleNewGameEventAddress (World.handleAsScreenTransitionBy handleClickNewGame GameplayAddress) world
         let world = World.subscribe4 GameAddress ClickTitleLoadGameEventAddress (World.handleAsScreenTransitionBy handleClickLoadGame GameplayAddress) world
