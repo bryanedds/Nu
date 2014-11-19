@@ -212,8 +212,8 @@ module Reflection =
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher
-                | None -> false
-            | _ -> false
+                | None -> failwith <| "Could not find required dispatcher '" + reqdDispatcherName + "' in dispatcher map."
+            | _ -> failwith <| "Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string."
 
     /// Check for facet compatibility with the target's dispatcher.
     let isFacetCompatibleWithDispatcher dispatcherMap (facet : obj) (target : obj) =
