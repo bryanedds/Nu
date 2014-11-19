@@ -173,12 +173,12 @@ module Overlayer =
         applyOverlay5 optOldOverlayName newOverlayName target overlayer overlayer
 
     /// Query that a property should be serialized.
-    let shouldPropertySerialize overlayName propertyName entity overlayer =
-        not <| isPropertyOverlaid overlayName propertyName entity overlayer
+    let shouldPropertySerialize overlayName propertyName target overlayer =
+        not <| isPropertyOverlaid overlayName propertyName target overlayer
 
     /// Query that a property should be serialized.
-    let shouldPropertySerialize3 propertyName entity overlayer =
-        not <| isPropertyOverlaid3 propertyName entity overlayer
+    let shouldPropertySerialize3 propertyName target overlayer =
+        not <| isPropertyOverlaid3 propertyName target overlayer
 
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.

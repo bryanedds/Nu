@@ -23,6 +23,7 @@ module EntityModule =
         static member setRotation rotation (entity : Entity) = { entity with Rotation = rotation }
         static member setVisible visible (entity : Entity) = { entity with Visible = visible }
         static member setViewType viewType (entity : Entity) = { entity with ViewType = viewType }
+        static member setPersistent persistent (entity : Entity) = { entity with Persistent = persistent }
 
         static member register address (entity : Entity) world =
             let (entity, world) = entity.DispatcherNp.Register (address, entity, world)
@@ -139,11 +140,9 @@ module WorldEntityModule =
         static member private entityAdder (address : Entity Address) world (entity : Entity) =
             match address.Names with
             | [screenName; groupName; entityName] ->
-                let optGroupMap = Map.tryFind screenName world.Entities
-                match optGroupMap with
+                match Map.tryFind screenName world.Entities with
                 | Some groupMap ->
-                    let optEntityMap = Map.tryFind groupName groupMap
-                    match optEntityMap with
+                    match Map.tryFind groupName groupMap with
                     | Some entityMap ->
                         let entityMap = Map.add entityName entity entityMap
                         let groupMap = Map.add groupName entityMap groupMap
@@ -389,10 +388,8 @@ module WorldEntityModule =
 
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget 
-                (fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity world.State.Overlayer)
-                writer
-                entity
+            let shouldWriteProperty = fun propertyName -> Overlayer.shouldPropertySerialize3 propertyName entity world.State.Overlayer
+            Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
         static member writeEntities (writer : XmlWriter) entities world =
             let entitiesSorted =

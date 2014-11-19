@@ -13,15 +13,15 @@ module MetamapModule =
     let mutable DebugWanderCounter = 0
 
     type Bounds =
-        { BottomLeft : Vector2i
-          TopRight : Vector2i }
+        { CornerNegative : Vector2i
+          CornerPositive : Vector2i }
 
         static member isPointInBounds (point : Vector2i) bounds =
             not
-                (point.X < bounds.BottomLeft.X ||
-                 point.X > bounds.TopRight.X ||
-                 point.Y < bounds.BottomLeft.Y ||
-                 point.Y > bounds.TopRight.Y)
+                (point.X < bounds.CornerNegative.X ||
+                 point.X > bounds.CornerPositive.X ||
+                 point.Y < bounds.CornerNegative.Y ||
+                 point.Y > bounds.CornerPositive.Y)
 
     type Tracking =
         | BackTracking
@@ -150,7 +150,7 @@ module MetamapModule =
 
         static member wanderToDestination stumbleBounds source destination rand =
             let optBias = Some (destination, 6)
-            let maxPathLength = stumbleBounds.TopRight.X * stumbleBounds.TopRight.Y / 2
+            let maxPathLength = stumbleBounds.CornerPositive.X * stumbleBounds.CornerPositive.Y / 2
             let stumbleLimit = 16
             let predicate = fun path ->
                 let path = Seq.tryTake maxPathLength path

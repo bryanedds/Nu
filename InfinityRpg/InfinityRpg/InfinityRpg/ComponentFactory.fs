@@ -22,6 +22,10 @@ module ComponentFactoryModule =
                 [(typeof<FieldDispatcher>.Name, FieldDispatcher () :> EntityDispatcher)
                  (typeof<PlayerCharacterDispatcher>.Name, PlayerCharacterDispatcher () :> EntityDispatcher)]
 
+        override this.MakeScreenDispatchers () =
+            Map.ofList
+                [(typeof<GameplayDispatcher>.Name, GameplayDispatcher () :> ScreenDispatcher)]
+
         override this.MakeGameDispatchers () =
             Map.ofList
                 [(typeof<InfinityRpgDispatcher>.Name, InfinityRpgDispatcher () :> GameDispatcher)]
