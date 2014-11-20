@@ -70,7 +70,8 @@
     <Compile Include="CharacterState.fs" />
     <Compile Include="CharacterFacets.fs" />
     <Compile Include="CharacterDispatcher.fs" />
-    <Compile Include="PlayerCharacterDispatch.fs" />
+    <Compile Include="PlayerCharacterDispatcher.fs" />
+    <Compile Include="GameplayDispatcher.fs" />
     <Compile Include="InfinityRpgDispatcher.fs" />
     <Compile Include="ComponentFactory.fs" />
     <Compile Include="Program.fs" />

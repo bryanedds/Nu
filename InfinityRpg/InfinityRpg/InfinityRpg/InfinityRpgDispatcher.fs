@@ -84,7 +84,7 @@ module InfinityRpgModule =
             let world = snd <| World.removeGroup SceneAddress scene world
             (Cascade, world)
 
-        static let addTitleScreen world =
+        static let addTitle world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
             let world = World.subscribe4 GameAddress ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
             let world = World.subscribe4 GameAddress ClickTitleNewGameEventAddress (World.handleAsScreenTransition GameplayAddress) world
@@ -93,11 +93,11 @@ module InfinityRpgModule =
             let world = observe GameAddress ClickTitleLoadGameEventAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleLoadGame world |> snd
             World.subscribe4 GameAddress ClickTitleExitEventAddress World.handleAsExit world
 
-        static let addCreditsScreen world =
+        static let addCredits world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath world
             World.subscribe4 GameAddress ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
-        static let addGameplayScreen world =
+        static let addGameplay world =
             let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<ScreenDispatcher>.Name GameplayAddress HudFilePath world
             let world = World.setGroup HudAddress (Group.setPersistent false <| World.getGroup HudAddress world) world
             let world = World.subscribe4 GameAddress ClickHudBackEventAddress (World.handleAsScreenTransition TitleAddress) world
@@ -109,9 +109,10 @@ module InfinityRpgModule =
 
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse GuiPackageName world
-            let world = addTitleScreen world
-            let world = addCreditsScreen world
-            let world = addGameplayScreen world
+            let world = World.hintRenderPackageUse GameplayPackageName world
+            let world = addTitle world
+            let world = addCredits world
+            let world = addGameplay world
             let (splashScreen, world) = World.addSplashScreen false NuSplashData typeof<ScreenDispatcher>.Name NuSplashAddress TitleAddress world
             let world = snd <| World.selectScreen NuSplashAddress splashScreen world
             (game, world)
