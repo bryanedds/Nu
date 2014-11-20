@@ -2,10 +2,11 @@
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
+    <Persistent>True</Persistent>
     <Xtension />
     <Entities>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-456, -56</Position>
+        <Position>-456, -40</Position>
         <Size>512, 128</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
@@ -14,7 +15,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
-        <Position>-184, -232</Position>
+        <Position>-184, -224</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -24,7 +25,7 @@
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Credits</Name>
-        <Position>-512, 16</Position>
+        <Position>-512, 32</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
@@ -33,7 +34,7 @@
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>32, -160</Position>
+        <Position>32, -144</Position>
         <Size>512, 128</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
@@ -41,7 +42,7 @@
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>-424, -160</Position>
+        <Position>-424, -144</Position>
         <Size>512, 128</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
@@ -49,7 +50,7 @@
         </Xtension>
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
-        <Position>64, -56</Position>
+        <Position>64, -40</Position>
         <Size>512, 128</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
