@@ -105,7 +105,7 @@ module RenderingModule =
           LayeredDescriptor : LayeredDescriptor }
 
     /// Describes how to render something to the rendering system.
-    type [<StructuralEquality; NoComparison>] RenderDescriptor =
+    type [<StructuralEquality; NoComparison>] RenderingDescriptor =
         | LayerableDescriptor of LayerableDescriptor
 
     /// Hint that a rendering asset package with the given name should be loaded. Should be used to
@@ -137,7 +137,7 @@ module RenderingModule =
         abstract HandleRenderExit : unit -> IRenderer
 
         /// Render a frame of the game.
-        abstract Render : Camera * RenderMessage rQueue * RenderDescriptor list -> IRenderer
+        abstract Render : Camera * RenderMessage rQueue * RenderingDescriptor list -> IRenderer
 
     /// The primary implementation of IRenderer.
     type [<ReferenceEquality>] Renderer =
@@ -410,13 +410,14 @@ module RenderingModule =
             | TileLayerDescriptor descriptor -> Renderer.renderTileLayerDescriptor viewAbsolute viewRelative camera descriptor renderer
             | TextDescriptor descriptor -> Renderer.renderTextDescriptor viewAbsolute viewRelative camera descriptor renderer
 
-        static member private renderDescriptors camera renderDescriptorsValue renderer =
+        static member private renderDescriptors camera renderDescriptors renderer =
             let renderContext = renderer.RenderContext
             let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
             match targetResult with
             | 0 ->
                 ignore <| SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD)
-                let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsValue
+                let renderDescriptorsRev = List.rev renderDescriptors
+                let renderDescriptorsSorted = List.sortBy (fun (LayerableDescriptor descriptor) -> descriptor.Depth) renderDescriptorsRev
                 let layeredDescriptors = List.map (fun (LayerableDescriptor descriptor) -> descriptor.LayeredDescriptor) renderDescriptorsSorted
                 let viewAbsolute = Matrix3.InvertView <| Camera.getViewAbsoluteI camera
                 let viewRelative = Matrix3.InvertView <| Camera.getViewRelativeI camera
@@ -442,9 +443,9 @@ module RenderingModule =
                 let renderer = { renderer with RenderAssetMap = Map.empty }
                 renderer :> IRenderer
 
-            member renderer.Render (camera, renderMessages, renderDescriptorsValue) =
+            member renderer.Render (camera, renderMessages, renderDescriptors) =
                 let renderer = Renderer.handleRenderMessages renderMessages renderer
-                let renderer = Renderer.renderDescriptors camera renderDescriptorsValue renderer
+                let renderer = Renderer.renderDescriptors camera renderDescriptors renderer
                 renderer :> IRenderer
 
     /// The mock implementation of IRenderer.

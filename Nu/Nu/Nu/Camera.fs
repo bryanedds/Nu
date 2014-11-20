@@ -19,8 +19,8 @@ module CameraModule =
 [<RequireQualifiedAccess>]
 module Camera =
 
-    /// Get the view of the camera in absolute terms (world space) with the original single values.
-    let getViewAbsoluteF (_ : Camera) =
+    /// Get the view of the camera in absolute terms (world space).
+    let getViewAbsolute (_ : Camera) =
         Matrix3.Identity
         
     /// Get the view of the camera in absolute terms (world space) with translation sliced on
@@ -31,7 +31,7 @@ module Camera =
     /// The relative view of the camera with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
-    let getViewRelativeF camera =
+    let getViewRelative camera =
         let translation = camera.EyeCenter
         Matrix3.CreateFromTranslation translation
 
