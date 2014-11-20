@@ -404,6 +404,16 @@ module TextDispatcherModule =
                 [LayerableDescriptor
                     { Depth = text.Depth
                       LayeredDescriptor =
+                        TextDescriptor
+                            { Text = text.Text
+                              Position = (text.Position + text.TextOffset)
+                              Size = text.Size - text.TextOffset
+                              ViewType = Absolute
+                              Font = text.TextFont
+                              Color = text.TextColor }}
+                 LayerableDescriptor
+                    { Depth = text.Depth
+                      LayeredDescriptor =
                         SpriteDescriptor
                             { Position = text.Position
                               Size = text.Size
@@ -411,17 +421,7 @@ module TextDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = text.BackgroundImage
-                              Color = Vector4.One }}
-                 LayerableDescriptor
-                    { Depth = text.Depth
-                      LayeredDescriptor =
-                        TextDescriptor
-                            { Text = text.Text
-                              Position = (text.Position + text.TextOffset)
-                              Size = text.Size - text.TextOffset
-                              ViewType = Absolute
-                              Font = text.TextFont
-                              Color = text.TextColor }}]
+                              Color = Vector4.One }}]
             else []
 
         override dispatcher.GetQuickSize (text, world) =
@@ -606,23 +606,23 @@ module FillBarDispatcherModule =
                     { Depth = fillBar.Depth
                       LayeredDescriptor =
                         SpriteDescriptor
-                            { Position = fillBarSpritePosition
-                              Size = fillBarSpriteSize
-                              Rotation = 0.0f
-                              ViewType = Absolute
-                              OptInset = None
-                              Image = fillBar.FillImage
-                              Color = Vector4.One }}
-                 LayerableDescriptor
-                    { Depth = fillBar.Depth
-                      LayeredDescriptor =
-                        SpriteDescriptor
                             { Position = fillBar.Position
                               Size = fillBar.Size
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
                               Image = fillBar.BorderImage
+                              Color = Vector4.One }}
+                 LayerableDescriptor
+                    { Depth = fillBar.Depth
+                      LayeredDescriptor =
+                        SpriteDescriptor
+                            { Position = fillBarSpritePosition
+                              Size = fillBarSpriteSize
+                              Rotation = 0.0f
+                              ViewType = Absolute
+                              OptInset = None
+                              Image = fillBar.FillImage
                               Color = Vector4.One }}]
             else []
 

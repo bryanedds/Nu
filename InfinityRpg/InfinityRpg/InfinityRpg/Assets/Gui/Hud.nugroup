@@ -12,8 +12,8 @@
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[Gui | SaveGameDown]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[Gui | SaveGameUp]</UpImage>
+          <DownImage type="Nu.RenderModule+Image">[Gui | SaveGameDown]</DownImage>
+          <UpImage type="Nu.RenderModule+Image">[Gui | SaveGameUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
@@ -23,8 +23,8 @@
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
-          <DownImage type="Nu.RenderingModule+Image">[Gui | BackDown]</DownImage>
-          <UpImage type="Nu.RenderingModule+Image">[Gui | BackUp]</UpImage>
+          <DownImage type="Nu.RenderModule+Image">[Gui | BackDown]</DownImage>
+          <UpImage type="Nu.RenderModule+Image">[Gui | BackUp]</UpImage>
         </Xtension>
       </Entity>
       <Entity dispatcherName="FeelerDispatcher">

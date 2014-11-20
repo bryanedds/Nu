@@ -11,7 +11,7 @@ open Nu
 open Nu.Constants
 
 [<AutoOpen>]
-module RenderingModule =
+module RenderModule =
 
     /// Describes an image asset.
     /// NOTE: it would be preferable to make Image (and other asset types) using a Haskell-style
@@ -105,24 +105,24 @@ module RenderingModule =
           LayeredDescriptor : LayeredDescriptor }
 
     /// Describes how to render something to the rendering system.
-    type [<StructuralEquality; NoComparison>] RenderingDescriptor =
+    type [<StructuralEquality; NoComparison>] RenderDescriptor =
         | LayerableDescriptor of LayerableDescriptor
 
     /// Hint that a rendering asset package with the given name should be loaded. Should be used to
     /// avoid loading assets at inconvenient times (such as in the middle of game play!)
-    type [<StructuralEquality; NoComparison>] HintRenderingPackageUseMessage =
+    type [<StructuralEquality; NoComparison>] HintRenderPackageUseMessage =
         { PackageName : string }
         
     /// Hint that a rendering package should be unloaded since its assets will not be used again
-    /// (or until specified via a HintRenderingPackageUseMessage).
-    type [<StructuralEquality; NoComparison>] HintRenderingPackageDisuseMessage =
+    /// (or until specified via a HintRenderPackageUseMessage).
+    type [<StructuralEquality; NoComparison>] HintRenderPackageDisuseMessage =
         { PackageName : string }
 
     /// A message to the rendering system.
     type [<StructuralEquality; NoComparison>] RenderMessage =
-        | HintRenderingPackageUseMessage of HintRenderingPackageUseMessage
-        | HintRenderingPackageDisuseMessage of HintRenderingPackageDisuseMessage
-        | ReloadRenderingAssetsMessage
+        | HintRenderPackageUseMessage of HintRenderPackageUseMessage
+        | HintRenderPackageDisuseMessage of HintRenderPackageDisuseMessage
+        | ReloadRenderAssetsMessage
         //| ScreenFlashMessage of ...
 
     /// An asset that is used for rendering.
@@ -137,7 +137,7 @@ module RenderingModule =
         abstract HandleRenderExit : unit -> IRenderer
 
         /// Render a frame of the game.
-        abstract Render : Camera * RenderMessage rQueue * RenderingDescriptor list -> IRenderer
+        abstract Render : Camera * RenderMessage rQueue * RenderDescriptor list -> IRenderer
 
     /// The primary implementation of IRenderer.
     type [<ReferenceEquality>] Renderer =
@@ -178,7 +178,7 @@ module RenderingModule =
             | _ -> trace <| "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
         static member private tryLoadRenderPackage packageName renderer =
-            let optAssets = Assets.tryLoadAssetsFromPackage true (Some RenderingAssociation) packageName renderer.AssetGraphFilePath
+            let optAssets = Assets.tryLoadAssetsFromPackage true (Some RenderAssociation) packageName renderer.AssetGraphFilePath
             match optAssets with
             | Right assets ->
                 let optRenderAssets = List.map (Renderer.tryLoadRenderAsset2 renderer.RenderContext) assets
@@ -206,10 +206,10 @@ module RenderingModule =
                     (renderer, Map.tryFind assetTag.PackageName renderer.RenderAssetMap)
             (renderer, Option.bind (fun assetMap -> Map.tryFind assetTag.AssetName assetMap) optAssetMap)
 
-        static member private handleHintRenderingPackageUse (hintPackageUse : HintRenderingPackageUseMessage) renderer =
+        static member private handleHintRenderPackageUse (hintPackageUse : HintRenderPackageUseMessage) renderer =
             Renderer.tryLoadRenderPackage hintPackageUse.PackageName renderer
     
-        static member private handleHintRenderingPackageDisuse (hintPackageDisuse : HintRenderingPackageDisuseMessage) renderer =
+        static member private handleHintRenderPackageDisuse (hintPackageDisuse : HintRenderPackageDisuseMessage) renderer =
             let packageName = hintPackageDisuse.PackageName
             let optAssets = Map.tryFind packageName renderer.RenderAssetMap
             match optAssets with
@@ -218,7 +218,7 @@ module RenderingModule =
                 { renderer with RenderAssetMap = Map.remove packageName renderer.RenderAssetMap }
             | None -> renderer
 
-        static member private handleReloadRenderingAssets renderer =
+        static member private handleReloadRenderAssets renderer =
             let oldAssetMap = renderer.RenderAssetMap
             let renderer = { renderer with RenderAssetMap = Map.empty }
             List.fold
@@ -228,9 +228,9 @@ module RenderingModule =
 
         static member private handleRenderMessage renderer renderMessage =
             match renderMessage with
-            | HintRenderingPackageUseMessage hintPackageUse -> Renderer.handleHintRenderingPackageUse hintPackageUse renderer
-            | HintRenderingPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderingPackageDisuse hintPackageDisuse renderer
-            | ReloadRenderingAssetsMessage  -> Renderer.handleReloadRenderingAssets renderer
+            | HintRenderPackageUseMessage hintPackageUse -> Renderer.handleHintRenderPackageUse hintPackageUse renderer
+            | HintRenderPackageDisuseMessage hintPackageDisuse -> Renderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
+            | ReloadRenderAssetsMessage  -> Renderer.handleReloadRenderAssets renderer
 
         static member private handleRenderMessages (renderMessages : RenderMessage rQueue) renderer =
             List.fold Renderer.handleRenderMessage renderer (List.rev renderMessages)
@@ -283,7 +283,7 @@ module RenderingModule =
                             rotation,
                             ref rotationCenter,
                             SDL.SDL_RendererFlip.SDL_FLIP_NONE)
-                    if renderResult <> 0 then note <| "Rendering error - could not render texture for sprite '" + acstring imageAssetTag + "' due to '" + SDL.SDL_GetError () + "."
+                    if renderResult <> 0 then note <| "Render error - could not render texture for sprite '" + acstring imageAssetTag + "' due to '" + SDL.SDL_GetError () + "."
                     renderer
                 | _ -> trace "Cannot render sprite with a non-texture asset."; renderer
             | None -> note <| "SpriteDescriptor failed to render due to unloadable assets for '" + acstring imageAssetTag + "'."; renderer
@@ -350,7 +350,7 @@ module RenderingModule =
                                 refTileDestRect := destRect
                                 refTileRotationCenter := rotationCenter
                                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, refTileSourceRect, refTileDestRect, rotation, refTileRotationCenter, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
-                                if renderResult <> 0 then note <| "Rendering error - could not render texture for tile '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
+                                if renderResult <> 0 then note <| "Render error - could not render texture for tile '" + acstring descriptor + "' due to '" + SDL.SDL_GetError () + ".")
                         tiles
                     renderer
                 | _ -> trace "Cannot render tile with a non-texture asset."; renderer
@@ -423,7 +423,7 @@ module RenderingModule =
                 let viewRelative = Matrix3.InvertView <| Camera.getViewRelativeI camera
                 List.fold (Renderer.renderLayerableDescriptor viewAbsolute viewRelative camera) renderer layeredDescriptors
             | _ ->
-                trace <| "Rendering error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
+                trace <| "Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + "."
                 renderer
 
         /// Make a Renderer.

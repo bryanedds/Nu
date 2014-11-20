@@ -73,7 +73,7 @@
     <Compile Include="Camera.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Physics.fs" />
-    <Compile Include="Rendering.fs" />
+    <Compile Include="Render.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="Input.fs" />

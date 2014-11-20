@@ -95,7 +95,7 @@ module BlazeProgression =
         | Right world ->
 
             // hint to the renderer that the Gui package should be loaded up front
-            let world = World.hintRenderingPackageUse GuiPackageName world
+            let world = World.hintRenderPackageUse GuiPackageName world
             
             // add our Gui screens to the world
             let world = addTitleScreen world

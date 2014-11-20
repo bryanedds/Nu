@@ -43,7 +43,7 @@ module OmniProgression =
         let optWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false userState
         match optWorld with
         | Right world ->
-            let world = World.hintRenderingPackageUse GuiPackageName world
+            let world = World.hintRenderPackageUse GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
             let (splashScreen, world) = World.addSplashScreen false SplashData typeof<ScreenDispatcher>.Name SplashAddress TitleAddress world
             let world = addTitleScreen world
