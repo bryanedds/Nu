@@ -878,7 +878,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let eitherWorld = World.tryMake sdlDeps userComponentFactory GuiAndPhysics true editorState
+        let eitherWorld = World.tryMake false true GuiAndPhysics editorState userComponentFactory sdlDeps
         match eitherWorld with
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world

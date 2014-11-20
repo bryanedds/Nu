@@ -83,14 +83,14 @@ module BlazeProgression =
         World.subscribe4 GameAddress ClickStageBackEventAddress (World.handleAsScreenTransition TitleAddress) world
 
     // here we make the BlazeVector world in a callback from the World.run function.
-    let tryMakeBlazeVectorWorld sdlDeps userState =
+    let tryMakeBlazeVectorWorld userState sdlDeps =
 
         // create our game's component factory
         let blazeComponentFactory = BlazeComponentFactory ()
 
         // we use World.tryMake to create an empty world that we will transform to create the
         // BlazeVector world
-        let eitherWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false userState
+        let eitherWorld = World.tryMake false true GuiAndPhysicsAndGamePlay userState blazeComponentFactory sdlDeps 
         match eitherWorld with
         | Right world ->
 
