@@ -2,11 +2,12 @@
 <Root>
   <Group dispatcherName="GroupDispatcher">
     <Name>Group</Name>
+    <Persistent>True</Persistent>
     <Xtension />
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-416, -216</Position>
+        <Position>-416, -224</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -16,7 +17,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>40, -216</Position>
+        <Position>32, -224</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -26,7 +27,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
-        <Position>40, -72</Position>
+        <Position>32, -112</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -36,7 +37,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
-        <Position>-416, -72</Position>
+        <Position>-416, -112</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -46,7 +47,7 @@
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Title</Name>
-        <Position>-512, 16</Position>
+        <Position>-504, -8</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
