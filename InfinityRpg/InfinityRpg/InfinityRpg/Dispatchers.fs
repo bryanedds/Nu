@@ -270,45 +270,40 @@ module CharacterControlFacetModule =
             then (destination, Arrived)
             else (next, Arriving)
 
-        static let checkOpenDirection currentTile fieldTiles direction =
+        static let checkOpenDirection currentPositionI fieldTiles direction =
             let directionVector = Direction.toVector2i direction
-            match Map.tryFind (currentTile + directionVector) fieldTiles with
+            match Map.tryFind (currentPositionI + directionVector) fieldTiles with
             | Some tile -> tile.FieldTileType = Passable
             | None -> true
 
         static let getOpenDirections (position : Vector2) world =
             match World.getOptEntity FieldAddress world with
             | Some field ->
-                let currentTile =
+                let currentPositionI =
                     Vector2i
                         (int <| position.X / WalkLength,
                          int <| position.Y / WalkLength)
                 let fieldTiles = field.FieldMapNp.FieldTiles
                 Set.ofSeq <|
                     seq {
-                        if checkOpenDirection currentTile fieldTiles North then yield North
-                        if checkOpenDirection currentTile fieldTiles East then yield East
-                        if checkOpenDirection currentTile fieldTiles South then yield South
-                        if checkOpenDirection currentTile fieldTiles West then yield West }
+                        if checkOpenDirection currentPositionI fieldTiles North then yield North
+                        if checkOpenDirection currentPositionI fieldTiles East then yield East
+                        if checkOpenDirection currentPositionI fieldTiles South then yield South
+                        if checkOpenDirection currentPositionI fieldTiles West then yield West }
             | None -> Set.empty
 
         static let tickInput address (character : Entity) world =
-            let openDirections = getOpenDirections character.Position world
             let optWalkDirection =
                 if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some North
                 elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some South
                 elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some East
                 elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some West
                 else None
-            let optWalkDestination =
+            let openDirections = getOpenDirections character.Position world
+            let startWalking =
                 match optWalkDirection with
-                | Some walkDirection ->
-                    match walkDirection with
-                    | North -> if Set.contains North openDirections then Some <| character.Position.Y + WalkLength else None
-                    | East -> if Set.contains East openDirections then Some <| character.Position.X + WalkLength else None
-                    | South -> if Set.contains South openDirections then Some <| character.Position.Y - WalkLength else None
-                    | West -> if Set.contains West openDirections then Some <| character.Position.X - WalkLength else None
-                | None -> None
+                | Some walkDirection -> Set.contains walkDirection openDirections
+                | None -> false
             let characterAnimationState = character.CharacterAnimationState
             let characterAnimationState =
                 match optWalkDirection with
@@ -316,25 +311,29 @@ module CharacterControlFacetModule =
                 | None -> characterAnimationState
             let character = Entity.setCharacterAnimationState characterAnimationState character
             let character =
-                match (optWalkDirection, optWalkDestination) with
-                | (Some walkDirection, Some walkDestination) ->
-                    let activityState = Walking { WalkDirection = walkDirection; WalkDestination = walkDestination }
+                match (optWalkDirection, startWalking) with
+                | (Some walkDirection, true) ->
+                    let walkOrigin = Vector2i (character.Position / WalkLength)
+                    let walkGoal = walkOrigin + Direction.toVector2i walkDirection
+                    let activityState = Walking { WalkDirection = walkDirection; WalkOrigin = walkOrigin; WalkGoal = walkGoal }
                     Entity.setActivityState activityState character
-                | (None, Some _) ->
+                | (None, true) ->
                     failwith <|
                         "Unexpected match in InfinityRpg.CharacterControlFacet.tickInput. " +
                         "Logically, this match should never happen."
-                | (Some _, None) -> character
-                | (None, None) -> character
+                | (Some _, false) -> character
+                | (None, false) -> character
             World.setEntity address character world
 
         static let tickWalking address (character : Entity) walkDescriptor world =
+            let walkDestinationI = walkDescriptor.WalkOrigin + Direction.toVector2i walkDescriptor.WalkDirection
+            let walkDestination = walkDestinationI.Vector2 * WalkLength
             let (newPosition, arrival) =
                 match walkDescriptor.WalkDirection with
-                | North -> let (newY, arrival) = walk true character.Position.Y walkDescriptor.WalkDestination in (Vector2 (character.Position.X, newY), arrival)
-                | East -> let (newX, arrival) = walk true character.Position.X walkDescriptor.WalkDestination in (Vector2 (newX, character.Position.Y), arrival)
-                | South -> let (newY, arrival) = walk false character.Position.Y walkDescriptor.WalkDestination in (Vector2 (character.Position.X, newY), arrival)
-                | West -> let (newX, arrival) = walk false character.Position.X walkDescriptor.WalkDestination in (Vector2 (newX, character.Position.Y), arrival)
+                | North -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+                | East -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+                | South -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+                | West -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
             let character = Entity.setPosition newPosition character
             let character = match arrival with Arriving -> character | Arrived -> Entity.setActivityState Standing character
             let world = World.setEntity address character world

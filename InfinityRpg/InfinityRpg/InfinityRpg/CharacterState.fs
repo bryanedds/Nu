@@ -167,7 +167,8 @@ module CharacterStateModule =
 
     type WalkDescriptor =
         { WalkDirection : Direction
-          WalkDestination : single }
+          WalkOrigin : Vector2i
+          WalkGoal : Vector2i }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
         | Standing
