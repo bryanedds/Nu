@@ -28,6 +28,8 @@ open NuEdit.Reflection
 module ProgramModule =
 
     // TODO: increase warning level to 5.
+    // TODO: implement entity freezing, then quick size on create.
+    // TODO: implement selection box rendering.
 
     type WorldChanger = World -> World
 

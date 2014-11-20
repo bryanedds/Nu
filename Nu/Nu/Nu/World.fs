@@ -120,7 +120,7 @@ module WorldModule =
                 | None -> None
             | None -> None
 
-        // TODO: replace this with more sophsticated use of handleAsScreenTransition4, and so on for its brethren.
+        // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
         static member private handleAsScreenTransitionFromSplash4<'d> eventHandling destinationAddress (_ : 'd Event) world =
             let destinationScreen = World.getScreen destinationAddress world
             let world = snd <| World.selectScreen destinationAddress destinationScreen world
