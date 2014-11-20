@@ -38,80 +38,8 @@ module FieldDispatcherModule =
                     single <| tileOffset.Y + tileSize.Y)
             Some tileInset
 
-        static let getOptTileBodyProperties (field : Entity) (tileCoords : Vector2i) tile world =
-            match tile.FieldTileType with
-            | Impassable ->
-                let fieldMap = field.FieldMapNp
-                let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
-                match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
-                | Some tileSheetSize ->
-                    let tileSize = tileSheetSize / FieldTileSheetRun
-                    let tileOffset = Vector2i.Multiply (tileSize, tileCoords)
-                    let tilePosition = Vector2i field.Position + tileOffset + tileSize / 2
-                    let bodyProperties =
-                        { BodyId = intsToGuid tileCoords.X tileCoords.Y
-                          Position = tilePosition.Vector2
-                          Rotation = field.Rotation
-                          Shape = BoxShape { Extent = tileSize.Vector2 * 0.5f; Center = Vector2.Zero }
-                          BodyType = BodyType.Static
-                          Density = NormalDensity
-                          Friction = field.Friction
-                          Restitution = field.Restitution
-                          FixedRotation = true
-                          LinearDamping = 0.0f
-                          AngularDamping = 0.0f
-                          GravityScale = 0.0f
-                          CollisionCategories = Physics.toCollisionCategories field.CollisionCategories
-                          CollisionMask = Physics.toCollisionCategories field.CollisionMask
-                          IsBullet = false
-                          IsSensor = false }
-                    Some bodyProperties
-                | None -> note <| "Could not find tile sheet asset '" + acstring fieldTileSheetAssetTag + "'."; None
-            | Passable -> None
-        
-        static let registerTilePhysics address (field : Entity) world =
-            let bodyPropertyList =
-                Map.fold
-                    (fun bodyPropertyList tileCoords tile ->
-                        match getOptTileBodyProperties field tileCoords tile world with
-                        | Some bodyProperties -> bodyProperties :: bodyPropertyList
-                        | None -> bodyPropertyList)
-                    []
-                    field.FieldMapNp.FieldTiles
-            World.createBodies address field.Id bodyPropertyList world
-
-        static let unregisterTilePhysics (field : Entity) world =
-            let physicsIds =
-                Map.fold
-                    (fun physicsIds (tileCoords : Vector2i) tile ->
-                        match tile.FieldTileType with
-                        | Impassable ->
-                            let physicsId = { SourceId = field.Id; BodyId = intsToGuid tileCoords.X tileCoords.Y }
-                            physicsId :: physicsIds
-                        | Passable -> physicsIds)
-                    []
-                    field.FieldMapNp.FieldTiles
-            World.destroyBodies physicsIds world
-
         static member FieldDefinitions =
-            [define? Friction 0.0f
-             define? Restitution 0.0f
-             define? CollisionCategories "1"
-             define? CollisionMask "*"
-             define? FieldMapNp DefaultFieldMap]
-
-        override dispatcher.Register (address, field, world) =
-            let world = registerTilePhysics address field world
-            (field, world)
-
-        override dispatcher.Unregister (_, field, world) =
-            let world = unregisterTilePhysics field world
-            (field, world)
-            
-        override dispatcher.PropagatePhysics (address, tileMap, world) =
-            world |>
-                unregisterTilePhysics tileMap |>
-                registerTilePhysics address tileMap
+            [define? FieldMapNp DefaultFieldMap]
 
         override dispatcher.GetRenderDescriptors (field, world) =
             if field.Visible then
@@ -152,6 +80,56 @@ module FieldDispatcherModule =
                 let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
                 Vector2 (single size.X, single size.Y)
             | None -> DefaultEntitySize
+
+[<AutoOpen>]
+module CharacterStateFacetModule =
+
+    type Entity with
+    
+        member entity.CharacterType = entity?CharacterType : CharacterType
+        static member setCharacterType (value : CharacterType) (entity : Entity) = entity?CharacterType <- value
+        member entity.ActivityState = entity?ActivityState : ActivityState
+        static member setActivityState (value : ActivityState) (entity : Entity) = entity?ActivityState <- value
+        member entity.HitPoints = entity?HitPoints : int
+        static member setHitPoints (value : int) (entity : Entity) = entity?HitPoints <- value
+        member entity.SpecialPoints = entity?SpecialPoints : int
+        static member setSpecialPoints (value : int) (entity : Entity) = entity?SpecialPoints <- value
+        member entity.PowerBuff = entity?PowerBuff : single
+        static member setPowerBuff (value : single) (entity : Entity) = entity?PowerBuff <- value
+        member entity.ShieldBuff = entity?ShieldBuff : single
+        static member setShieldBuff (value : single) (entity : Entity) = entity?ShieldBuff <- value
+        member entity.MindBuff = entity?MindBuff : single
+        static member setMindBuff (value : single) (entity : Entity) = entity?MindBuff <- value
+        member entity.CounterBuff = entity?CounterBuff : single
+        static member setCounterBuff (value : single) (entity : Entity) = entity?CounterBuff <- value
+        member entity.Statuses = entity?Statuses : StatusType Set
+        static member setStatuses (value : StatusType Set) (entity : Entity) = entity?Statuses <- value
+        member entity.EquippedWeapon = entity?EquippedWeapon : WeaponType option
+        static member setEquippedWeapon (value : WeaponType option) (entity : Entity) = entity?EquippedWeapon <- value
+        member entity.EquippedArmor = entity?EquippedArmor : ArmorType option
+        static member setEquippedArmor (value : ArmorType option) (entity : Entity) = entity?EquippedArmor <- value
+        member entity.EquippedRelics = entity?EquippedRelics : RelicType list
+        static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
+        member entity.AddedExperience = entity?AddedExperience : int
+        static member setAddedExperience (value : int) (entity : Entity) = entity?AddedExperience <- value
+
+    type CharacterStateFacet () =
+        inherit Facet ()
+
+        static member FieldDefinitions =
+            [define? CharacterType Player
+             define? ActivityState Standing
+             define? HitPoints 1 // hp max is calculated
+             define? SpecialPoints 1 // sp max is calculated
+             define? PowerBuff 1.0f // rate at which power is buffed / debuffed
+             define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
+             define? MindBuff 1.0f // rate at which mind is buffed / debuffed
+             define? CounterBuff 1.0f // rate at which counter is buffed / debuffed
+             define? Statuses Set.empty<StatusType>
+             define? EquippedWeapon Option<WeaponType>.None
+             define? EquippedArmor Option<ArmorType>.None
+             define? EquippedRelics list<RelicType>.Empty
+             define? AddedExperience 0] // level is calculated from base experience + added experience
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =
@@ -233,46 +211,6 @@ module CharacterAnimationFacetModule =
             else []
 
 [<AutoOpen>]
-module CharacterControlFacetModule =
-
-    type CharacterControlFacet () =
-        inherit Facet ()
-
-        static let [<Literal>] WalkForce = 200.0f
-
-        static let handleKeyboardKeyChange event world =
-            let (address, character : Entity, keyData) = World.unwrapASD event world
-            if not keyData.IsRepeat then
-                let xForce =
-                    if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then WalkForce
-                    elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then -WalkForce
-                    else 0.0f
-                let yForce =
-                    if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then WalkForce
-                    elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then -WalkForce
-                    else 0.0f
-                let force = Vector2 (xForce, yForce)
-                let world = World.setBodyLinearVelocity force character.PhysicsId world
-                let facingDirection =
-                    if force.X > 0.0f then East
-                    elif force.X < 0.0f then West
-                    elif force.Y > 0.0f then North
-                    elif force.Y < 0.0f then South
-                    else character.CharacterAnimationState.CharacterAnimationDirection
-                let characterState = { character.CharacterAnimationState with CharacterAnimationDirection = facingDirection }
-                let character = Entity.setCharacterAnimationState characterState character
-                let world = World.setEntity address character world
-                (Cascade, world)
-            else (Cascade, world)
-
-        static member RequiredDispatcherName =
-            "CharacterDispatcher"
-
-        override facet.Register (address, entity, world) =
-            let world = observe address KeyboardKeyChangeEventAddress |> monitor handleKeyboardKeyChange world |> snd
-            (entity, world)
-
-[<AutoOpen>]
 module CharacterCameraFacetModule =
 
     type CharacterCameraFacet () =
@@ -309,61 +247,80 @@ module CharacterCameraFacetModule =
             (entity, world)
 
 [<AutoOpen>]
-module CharacterDispatcherModule =
+module CharacterControlFacetModule =
 
-    type Entity with
-    
-        member entity.CharacterType = entity?CharacterType : CharacterType
-        static member setCharacterType (value : CharacterType) (entity : Entity) = entity?CharacterType <- value
-        member entity.ActivityState = entity?ActivityState : ActivityState
-        static member setActivityState (value : ActivityState) (entity : Entity) = entity?ActivityState <- value
-        member entity.HitPoints = entity?HitPoints : int
-        static member setHitPoints (value : int) (entity : Entity) = entity?HitPoints <- value
-        member entity.SpecialPoints = entity?SpecialPoints : int
-        static member setSpecialPoints (value : int) (entity : Entity) = entity?SpecialPoints <- value
-        member entity.PowerBuff = entity?PowerBuff : single
-        static member setPowerBuff (value : single) (entity : Entity) = entity?PowerBuff <- value
-        member entity.ShieldBuff = entity?ShieldBuff : single
-        static member setShieldBuff (value : single) (entity : Entity) = entity?ShieldBuff <- value
-        member entity.MindBuff = entity?MindBuff : single
-        static member setMindBuff (value : single) (entity : Entity) = entity?MindBuff <- value
-        member entity.CounterBuff = entity?CounterBuff : single
-        static member setCounterBuff (value : single) (entity : Entity) = entity?CounterBuff <- value
-        member entity.Statuses = entity?Statuses : StatusType Set
-        static member setStatuses (value : StatusType Set) (entity : Entity) = entity?Statuses <- value
-        member entity.EquippedWeapon = entity?EquippedWeapon : WeaponType option
-        static member setEquippedWeapon (value : WeaponType option) (entity : Entity) = entity?EquippedWeapon <- value
-        member entity.EquippedArmor = entity?EquippedArmor : ArmorType option
-        static member setEquippedArmor (value : ArmorType option) (entity : Entity) = entity?EquippedArmor <- value
-        member entity.EquippedRelics = entity?EquippedRelics : RelicType list
-        static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
-        member entity.AddedExperience = entity?AddedExperience : int
-        static member setAddedExperience (value : int) (entity : Entity) = entity?AddedExperience <- value
+    type Arrival =
+        | Arriving
+        | Arrived
+
+    type CharacterControlFacet () =
+        inherit Facet ()
+
+        static let [<Literal>] WalkSpeed = 4.0f
+        static let [<Literal>] WalkLength = 64.0f
+
+        static let walk positive current destination =
+            let (walkSpeed, delta) =
+                if positive
+                then (WalkSpeed, destination - current)
+                else (-WalkSpeed, current - destination)
+            let next = current + walkSpeed
+            let newDelta = if positive then destination - next else next - destination
+            if newDelta < WalkSpeed
+            then (destination, Arrived)
+            else (next, Arriving)
+
+        static let tickInput address (character : Entity) world =
+            let optWalkDescriptor =
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some { WalkDirection = North; WalkDestination = character.Position.Y + WalkLength }
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some { WalkDirection = South; WalkDestination = character.Position.Y - WalkLength }
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some { WalkDirection = East; WalkDestination = character.Position.X + WalkLength }
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some { WalkDirection = West; WalkDestination = character.Position.X - WalkLength }
+                else None
+            match optWalkDescriptor with
+            | Some walkDescriptor ->
+                let characterState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDescriptor.WalkDirection }
+                let character = Entity.setCharacterAnimationState characterState character
+                let character = Entity.setActivityState (Walking walkDescriptor) character
+                World.setEntity address character world
+            | None -> world
+
+        static let tickWalking address (character : Entity) walkDescriptor world =
+            let (newPosition, arrival) =
+                match walkDescriptor.WalkDirection with
+                | North -> let (newY, arrival) = walk true character.Position.Y walkDescriptor.WalkDestination in (Vector2 (character.Position.X, newY), arrival)
+                | East -> let (newX, arrival) = walk true character.Position.X walkDescriptor.WalkDestination in (Vector2 (newX, character.Position.Y), arrival)
+                | South -> let (newY, arrival) = walk false character.Position.Y walkDescriptor.WalkDestination in (Vector2 (character.Position.X, newY), arrival)
+                | West -> let (newX, arrival) = walk false character.Position.X walkDescriptor.WalkDestination in (Vector2 (newX, character.Position.Y), arrival)
+            let character = Entity.setPosition newPosition character
+            let character = match arrival with Arriving -> character | Arrived -> Entity.setActivityState Standing character
+            let world = World.setEntity address character world
+            match character.ActivityState with
+            | Standing -> tickInput address character world
+            | Walking _ | Acting _ -> world
+
+        static let handleTick event world =
+            let (address, character : Entity) = World.unwrapAS event world
+            match character.ActivityState with
+            | Standing -> (Cascade, tickInput address character world)
+            | Walking walkDescriptor -> (Cascade, tickWalking address character walkDescriptor world)
+            | Acting _ -> (Cascade, world)
+
+        static member RequiredDispatcherName =
+            "CharacterDispatcher"
+
+        override facet.Register (address, entity, world) =
+            let world = observe address TickEventAddress |> filter isSelectedScreenIdling |> monitor handleTick world |> snd
+            (entity, world)
+
+[<AutoOpen>]
+module CharacterDispatcherModule =
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
 
-        static member FieldDefinitions =
-            [define? GravityScale 0.0f
-             define? LinearDamping 0.0f
-             define? FixedRotation true
-             define? CollisionExpr "Circle"
-             define? CharacterType Player
-             define? ActivityState Standing
-             define? HitPoints 1 // hp max is calculated
-             define? SpecialPoints 1 // sp max is calculated
-             define? PowerBuff 1.0f // rate at which power is buffed / debuffed
-             define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
-             define? MindBuff 1.0f // rate at which mind is buffed / debuffed
-             define? CounterBuff 1.0f // rate at which counter is buffed / debuffed
-             define? Statuses Set.empty<StatusType>
-             define? EquippedWeapon Option<WeaponType>.None
-             define? EquippedArmor Option<ArmorType>.None
-             define? EquippedRelics list<RelicType>.Empty
-             define? AddedExperience 0] // level is calculated from base experience + added experience
-
         static member IntrinsicFacetNames =
-            [typeof<RigidBodyFacet>.Name
+            [typeof<CharacterStateFacet>.Name
              typeof<CharacterAnimationFacet>.Name
              typeof<CharacterControlFacet>.Name
              typeof<CharacterCameraFacet>.Name]

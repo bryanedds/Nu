@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open OpenTK
 open Nu
 
 [<AutoOpen>]
@@ -164,7 +165,11 @@ module CharacterStateModule =
           BaseActions : ActionData list // base actions for all instances of character
           Reward : RewardData }
 
-    type ActivityState =
-        | Acting of ActionData
-        | Navigating
+    type WalkDescriptor =
+        { WalkDirection : Direction
+          WalkDestination : single }
+
+    type [<StructuralEquality; NoComparison>] ActivityState =
         | Standing
+        | Walking of WalkDescriptor
+        | Acting of ActionData

@@ -13,7 +13,8 @@ module ComponentFactoryModule =
 
         override this.MakeFacets () =
             Map.ofList
-                [(typeof<CharacterAnimationFacet>.Name, CharacterAnimationFacet () :> Facet)
+                [(typeof<CharacterStateFacet>.Name, CharacterStateFacet () :> Facet)
+                 (typeof<CharacterAnimationFacet>.Name, CharacterAnimationFacet () :> Facet)
                  (typeof<CharacterControlFacet>.Name, CharacterControlFacet () :> Facet)
                  (typeof<CharacterCameraFacet>.Name, CharacterCameraFacet () :> Facet)]
 
