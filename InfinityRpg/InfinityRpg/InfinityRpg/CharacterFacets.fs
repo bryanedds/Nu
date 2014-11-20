@@ -278,7 +278,7 @@ module CharacterControlFacetModule =
             | Acting _ -> (Cascade, world)
 
         static member RequiredDispatcherName =
-            "CharacterDispatcher"
+            "CharacterDispatcher" // forward referenced
 
         override facet.Register (address, entity, world) =
             let world = observe address TickEventAddress |> filter isSelectedScreenIdling |> monitor handleTick world |> snd

@@ -1,13 +1,10 @@
 ﻿namespace InfinityRpg
 open System
-open System.ComponentModel
-open SDL2
 open OpenTK
 open Prime
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
-open Nu.Observer
 open InfinityRpg
 open InfinityRpg.Constants
 
