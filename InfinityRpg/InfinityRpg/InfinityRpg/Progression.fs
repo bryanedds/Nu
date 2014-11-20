@@ -35,6 +35,7 @@ module Progression =
 
         // make character
         let playerCharacter = World.makeEntity typeof<PlayerCharacterDispatcher>.Name (Some PlayerCharacterName) world
+        let playerCharacter = Entity.setDepth 1.0f playerCharacter
 
         // make scene hierarchy
         let entities = Map.ofList [(field.Name, field); (playerCharacter.Name, playerCharacter)]
