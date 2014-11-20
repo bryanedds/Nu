@@ -12,47 +12,47 @@ module FieldMapModule =
         | Passable
 
     type FieldTile =
-        { FieldTileSheetCoords : Vector2i
+        { FieldTileSheetPositionM : Vector2i
           FieldTileType : FieldTileType }
 
     type [<NoEquality; NoComparison>] FieldMap =
-        { FieldSize : Vector2i
+        { FieldSizeM : Vector2i
           FieldTiles : Map<Vector2i, FieldTile>
           FieldTileSheet : Image }
 
-        static member PathTile = { FieldTileSheetCoords = Vector2i (3, 0); FieldTileType = Passable }
-        static member GrassTile = { FieldTileSheetCoords = Vector2i (3, 3); FieldTileType = Passable }
-        static member TreeTile = { FieldTileSheetCoords = Vector2i (1, 1); FieldTileType = Impassable }
+        static member PathTile = { FieldTileSheetPositionM = Vector2i (3, 0); FieldTileType = Passable }
+        static member GrassTile = { FieldTileSheetPositionM = Vector2i (3, 3); FieldTileType = Passable }
+        static member TreeTile = { FieldTileSheetPositionM = Vector2i (1, 1); FieldTileType = Impassable }
 
-        static member makeGrid bounds =
+        static member makeGrid boundsM =
             seq {
-                for i in bounds.CornerNegative.X .. bounds.CornerPositive.X do
-                    for j in bounds.CornerNegative.Y .. bounds.CornerPositive.Y do
+                for i in boundsM.CornerNegative.X .. boundsM.CornerPositive.X do
+                    for j in boundsM.CornerNegative.Y .. boundsM.CornerPositive.Y do
                         yield Vector2i (i, j) }
 
-        static member generateEmptyMap (size : Vector2i) =
+        static member generateEmptyMap (sizeM : Vector2i) =
             Map.ofList
-                [for i in 0 .. size.X - 1 do
-                    for j in 0 .. size.Y - 1 do
-                        let tileCoords = Vector2i (i, j)
-                        yield (tileCoords, FieldMap.GrassTile)]
+                [for i in 0 .. sizeM.X - 1 do
+                    for j in 0 .. sizeM.Y - 1 do
+                        let tileCoordsM = Vector2i (i, j)
+                        yield (tileCoordsM, FieldMap.GrassTile)]
 
-        static member addPaths buildBounds pathEdges generatedMap rand =
+        static member addPaths buildBoundsM pathEdgesM generatedMap rand =
             
             let (paths, rand) =
                 List.fold
-                    (fun (paths, rand) (source, destination) ->
-                        let (path, rand) = Direction.wanderToDestination buildBounds source destination rand
+                    (fun (paths, rand) (sourceM, destinationM) ->
+                        let (path, rand) = Direction.wanderToDestination buildBoundsM sourceM destinationM rand
                         (path :: paths, rand))
                     ([], rand)
-                    pathEdges
+                    pathEdgesM
 
             let generatedMap =
                 Seq.fold
                     (fun generatedMap path ->
                         let generatedMap' =
                             Seq.fold
-                                (fun generatedMap tileCoords -> Map.add tileCoords FieldMap.PathTile generatedMap)
+                                (fun generatedMap tilePositionM -> Map.add tilePositionM FieldMap.PathTile generatedMap)
                                 generatedMap
                                 path
                         generatedMap @@ generatedMap')
@@ -61,47 +61,48 @@ module FieldMapModule =
 
             (generatedMap, rand)
 
-        static member addTrees buildBounds generatedMap rand =
-            let grid = FieldMap.makeGrid buildBounds
+        static member addTrees buildBoundsM generatedMap rand =
+            let grid = FieldMap.makeGrid buildBoundsM
             Seq.fold
-                (fun (generatedMap, rand) point ->
+                (fun (generatedMap, rand) positionM ->
                     let (n, rand) = Rand.nextIntUnder 16 rand
-                    if n = 0 && Map.find point generatedMap <> FieldMap.PathTile then (Map.add point FieldMap.TreeTile generatedMap, rand)
+                    if n = 0 && Map.find positionM generatedMap <> FieldMap.PathTile
+                    then (Map.add positionM FieldMap.TreeTile generatedMap, rand)
                     else (generatedMap, Rand.advance rand))
                 (generatedMap, rand)
                 grid
 
-        static member spreadTrees buildBounds generatedMap rand =
+        static member spreadTrees buildBoundsM generatedMap rand =
             let originalMap = generatedMap
-            let grid = FieldMap.makeGrid buildBounds
+            let grid = FieldMap.makeGrid buildBoundsM
             Seq.fold
-                (fun (generatedMap, rand) point ->
-                    let tile = Map.find point originalMap
+                (fun (generatedMap, rand) positionM ->
+                    let tile = Map.find positionM originalMap
                     if  tile <> FieldMap.PathTile &&
-                        Bounds.isPointInBounds point buildBounds then
-                        let upPoint = point + Vector2i.Up
-                        let rightPoint = point + Vector2i.Right
-                        let downPoint = point + Vector2i.Down
-                        let leftPoint = point + Vector2i.Left
-                        if  Bounds.isPointInBounds upPoint buildBounds && Map.find upPoint originalMap = FieldMap.TreeTile ||
-                            Bounds.isPointInBounds rightPoint buildBounds && Map.find rightPoint originalMap = FieldMap.TreeTile ||
-                            Bounds.isPointInBounds downPoint buildBounds && Map.find downPoint originalMap = FieldMap.TreeTile ||
-                            Bounds.isPointInBounds leftPoint buildBounds && Map.find leftPoint originalMap = FieldMap.TreeTile then
+                        MapBounds.isPointInBounds positionM buildBoundsM then
+                        let upM = positionM + Vector2i.Up
+                        let rightM = positionM + Vector2i.Right
+                        let downM = positionM + Vector2i.Down
+                        let leftM = positionM + Vector2i.Left
+                        if  MapBounds.isPointInBounds upM buildBoundsM && Map.find upM originalMap = FieldMap.TreeTile ||
+                            MapBounds.isPointInBounds rightM buildBoundsM && Map.find rightM originalMap = FieldMap.TreeTile ||
+                            MapBounds.isPointInBounds downM buildBoundsM && Map.find downM originalMap = FieldMap.TreeTile ||
+                            MapBounds.isPointInBounds leftM buildBoundsM && Map.find leftM originalMap = FieldMap.TreeTile then
                             let (n, rand) = Rand.nextIntUnder 3 rand
-                            if n = 0 then (Map.add point FieldMap.TreeTile generatedMap, rand)
+                            if n = 0 then (Map.add positionM FieldMap.TreeTile generatedMap, rand)
                             else (generatedMap, Rand.advance rand)
                         else (generatedMap, Rand.advance rand)
                     else (generatedMap, Rand.advance rand))
                 (generatedMap, rand)
                 grid
 
-        static member make tileSheet size pathEdges rand =
-            let buildBounds = { CornerNegative = Vector2i.One; CornerPositive = size - Vector2i.One * 2 }
-            let generatedMap = FieldMap.generateEmptyMap size
-            let (generatedMap, rand) = FieldMap.addPaths buildBounds pathEdges generatedMap rand
-            let (generatedMap, rand) = FieldMap.addTrees buildBounds generatedMap rand
-            let (generatedMap, rand) = FieldMap.spreadTrees buildBounds generatedMap rand
-            let (generatedMap, rand) = FieldMap.spreadTrees buildBounds generatedMap rand
-            { FieldSize = size
+        static member make tileSheet sizeM pathEdgesM rand =
+            let buildBoundsM = { CornerNegative = Vector2i.One; CornerPositive = sizeM - Vector2i.One * 2 }
+            let generatedMap = FieldMap.generateEmptyMap sizeM
+            let (generatedMap, rand) = FieldMap.addPaths buildBoundsM pathEdgesM generatedMap rand
+            let (generatedMap, rand) = FieldMap.addTrees buildBoundsM generatedMap rand
+            let (generatedMap, rand) = FieldMap.spreadTrees buildBoundsM generatedMap rand
+            let (generatedMap, rand) = FieldMap.spreadTrees buildBoundsM generatedMap rand
+            { FieldSizeM = sizeM
               FieldTiles = generatedMap
               FieldTileSheet = tileSheet }

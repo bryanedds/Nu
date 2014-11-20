@@ -22,20 +22,19 @@ module FieldDispatcherModule =
     type FieldDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] FieldTileSheetRun = 4
         static let DefaultRand = Rand.makeDefault ()
-        static let DefaultSize = Vector2i (4, 4)
-        static let DefaultPathEdges = [(Vector2i (1, 1), Vector2i (2, 2))]
-        static let DefaultFieldMap = FieldMap.make FieldTileSheetImage DefaultSize DefaultPathEdges DefaultRand
+        static let DefaultSizeM = Vector2i (4, 4)
+        static let DefaultPathEdgesM = [(Vector2i (1, 1), Vector2i (2, 2))]
+        static let DefaultFieldMap = FieldMap.make FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
 
-        static let getOptTileInset (tileSheetSize : Vector2i) (tileSize : Vector2i) (tileSheetCoords : Vector2i) =
-            let tileOffset = Vector2i.Multiply (tileSheetCoords, tileSize)
+        static let getOptTileInset (tileSheetPositionM : Vector2i) =
+            let tileOffsetM = Vector2i.Multiply (tileSheetPositionM, TileSizeI)
             let tileInset =
                 Vector4 (
-                    single tileOffset.X,
-                    single tileOffset.Y,
-                    single <| tileOffset.X + tileSize.X,
-                    single <| tileOffset.Y + tileSize.Y)
+                    single tileOffsetM.X,
+                    single tileOffsetM.Y,
+                    single <| tileOffsetM.X + TileSizeI.X,
+                    single <| tileOffsetM.Y + TileSizeI.Y)
             Some tileInset
 
         static member FieldDefinitions =
@@ -47,20 +46,19 @@ module FieldDispatcherModule =
                 let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
                 match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
                 | Some tileSheetSize ->
-                    let tileSize = tileSheetSize / FieldTileSheetRun
-                    let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
-                    if Camera.inView3 field.ViewType field.Position size.Vector2 world.Camera then
+                    let size = Vector2.Multiply (TileSize, TileSheetSize)
+                    if Camera.inView3 field.ViewType field.Position size world.Camera then
                         let sprites =
                             Map.fold
                                 (fun sprites tileCoords tile ->
-                                    let tileOffset = Vector2i.Multiply (tileCoords, tileSize)
+                                    let tileOffset = Vector2i.Multiply (tileCoords, TileSizeI)
                                     let tilePosition = Vector2i field.Position + tileOffset
                                     let sprite =
                                         { Position = tilePosition.Vector2
-                                          Size = tileSize.Vector2
+                                          Size = TileSize
                                           Rotation = field.Rotation
                                           ViewType = field.ViewType
-                                          OptInset = getOptTileInset tileSheetSize tileSize tile.FieldTileSheetCoords
+                                          OptInset = getOptTileInset tile.FieldTileSheetPositionM
                                           Image = fieldMap.FieldTileSheet
                                           Color = Vector4.One }
                                     sprite :: sprites)
@@ -73,13 +71,7 @@ module FieldDispatcherModule =
 
         override dispatcher.GetQuickSize (field, world) =
             let fieldMap = field.FieldMapNp
-            let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
-            match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
-            | Some tileSheetSize ->
-                let tileSize = tileSheetSize / FieldTileSheetRun
-                let size = Vector2i.Multiply (tileSize, fieldMap.FieldSize)
-                Vector2 (single size.X, single size.Y)
-            | None -> DefaultEntitySize
+            Vector2.Multiply (TileSize, fieldMap.FieldSizeM.Vector2)
 
 [<AutoOpen>]
 module CharacterStateFacetModule =
@@ -257,7 +249,6 @@ module CharacterControlFacetModule =
         inherit Facet ()
 
         static let [<Literal>] WalkSpeed = 4.0f
-        static let [<Literal>] WalkLength = 64.0f // TODO: get this from map tile size?
 
         static let walk positive current destination =
             let (walkSpeed, delta) =
@@ -270,26 +261,26 @@ module CharacterControlFacetModule =
             then (destination, Arrived)
             else (next, Arriving)
 
-        static let checkOpenDirection currentPositionI fieldTiles direction =
+        static let checkOpenDirection currentPositionM fieldTiles direction =
             let directionVector = Direction.toVector2i direction
-            match Map.tryFind (currentPositionI + directionVector) fieldTiles with
+            match Map.tryFind (currentPositionM + directionVector) fieldTiles with
             | Some tile -> tile.FieldTileType = Passable
             | None -> true
 
         static let getOpenDirections (position : Vector2) world =
             match World.getOptEntity FieldAddress world with
             | Some field ->
-                let currentPositionI =
+                let currentPositionM =
                     Vector2i
-                        (int <| position.X / WalkLength,
-                         int <| position.Y / WalkLength)
+                        (int <| position.X / TileSize.X,
+                         int <| position.Y / TileSize.Y)
                 let fieldTiles = field.FieldMapNp.FieldTiles
                 Set.ofSeq <|
                     seq {
-                        if checkOpenDirection currentPositionI fieldTiles North then yield North
-                        if checkOpenDirection currentPositionI fieldTiles East then yield East
-                        if checkOpenDirection currentPositionI fieldTiles South then yield South
-                        if checkOpenDirection currentPositionI fieldTiles West then yield West }
+                        if checkOpenDirection currentPositionM fieldTiles North then yield North
+                        if checkOpenDirection currentPositionM fieldTiles East then yield East
+                        if checkOpenDirection currentPositionM fieldTiles South then yield South
+                        if checkOpenDirection currentPositionM fieldTiles West then yield West }
             | None -> Set.ofList [North; East; South; West]
 
         static let tickInput address (character : Entity) world =
@@ -313,9 +304,9 @@ module CharacterControlFacetModule =
             let character =
                 match (optWalkDirection, startWalking) with
                 | (Some walkDirection, true) ->
-                    let walkOrigin = Vector2i (character.Position / WalkLength)
-                    let walkGoal = walkOrigin + Direction.toVector2i walkDirection
-                    let activityState = Walking { WalkDirection = walkDirection; WalkOrigin = walkOrigin; WalkGoal = walkGoal }
+                    let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
+                    let walkGoalM = walkOriginM + Direction.toVector2i walkDirection
+                    let activityState = Walking { WalkDirection = walkDirection; WalkOriginM = walkOriginM; WalkGoalM = walkGoalM }
                     Entity.setActivityState activityState character
                 | (None, true) ->
                     failwith <|
@@ -326,8 +317,9 @@ module CharacterControlFacetModule =
             World.setEntity address character world
 
         static let tickWalking address (character : Entity) walkDescriptor world =
-            let walkDestinationI = walkDescriptor.WalkOrigin + Direction.toVector2i walkDescriptor.WalkDirection
-            let walkDestination = walkDestinationI.Vector2 * WalkLength
+            let walkDistanceI = match walkDescriptor.WalkDirection with North | South -> TileSizeI.Y | East | West -> TileSizeI.X
+            let walkDestinationM = walkDistanceI * (walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection)
+            let walkDestination = walkDestinationM.Vector2
             let (newPosition, arrival) =
                 match walkDescriptor.WalkDirection with
                 | North -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)

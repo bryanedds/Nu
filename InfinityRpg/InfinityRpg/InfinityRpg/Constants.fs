@@ -1,8 +1,16 @@
 ﻿namespace InfinityRpg
+open OpenTK
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
 module Constants =
+
+    // misc constants
+    let TileSizeI = Vector2i 64
+    let TileSize = let t = TileSizeI in t.Vector2
+    let TileSheetSizeM = Vector2i 4
+    let TileSheetSizeI = TileSheetSizeM * 64
+    let TileSheetSize = let t = TileSheetSizeI in t.Vector2
 
     // file paths
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"

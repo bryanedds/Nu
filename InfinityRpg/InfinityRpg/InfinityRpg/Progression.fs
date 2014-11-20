@@ -16,8 +16,8 @@ module Progression =
 
     let private makeField world =
         let rand = Rand.make world.Game.Seed
-        let pathEdges = [(Vector2i (1, 10), Vector2i (20, 10))]
-        let fieldMap = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdges rand
+        let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
+        let fieldMap = FieldMap.make FieldTileSheetImage (Vector2i 22) pathEdgesM rand
         let field = World.makeEntity typeof<FieldDispatcher>.Name (Some FieldName) world
         let field = Entity.setFieldMapNp fieldMap field
         let field = Entity.setSize (Entity.getQuickSize field world) field

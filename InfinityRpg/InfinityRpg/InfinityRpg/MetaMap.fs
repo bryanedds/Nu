@@ -12,7 +12,7 @@ module MetamapModule =
     let mutable DebugTryStumbleCounter = 0
     let mutable DebugWanderCounter = 0
 
-    type Bounds =
+    type MapBounds =
         { CornerNegative : Vector2i
           CornerPositive : Vector2i }
 
@@ -92,7 +92,7 @@ module MetamapModule =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =
                 fun (trail : Vector2i Set) (destination : Vector2i, rand) ->
-                    Bounds.isPointInBounds destination stumbleBounds &&
+                    MapBounds.isPointInBounds destination stumbleBounds &&
                     (match tracking with
                      | BackTracking -> true
                      | NoBackTracking -> not <| Set.contains destination trail

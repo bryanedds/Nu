@@ -39,6 +39,7 @@ namespace OpenTK
             return CompareTo((Vector2i)that);
         }
 
+        // TODO: add Vector2i constructor to Vector2, and remove this.
         public Vector2 Vector2
         {
             get { return new Vector2(this.X, this.Y); }
