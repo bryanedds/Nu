@@ -31,6 +31,6 @@ module Program =
               AudioChunkSize = AudioBufferSizeDefault }
 
         World.run
-            (fun sdlDeps -> OmniProgression.tryMakeOmniBladeWorld sdlDeps ())
+            (fun sdlDeps -> OmniProgression.tryMakeOmniBladeWorld () sdlDeps)
             (fun world -> world)
             sdlConfig

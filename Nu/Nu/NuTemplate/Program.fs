@@ -14,11 +14,11 @@ module Program =
 
     // this the entry point for the your Nu application
     let [<EntryPoint>] main _ =
-    
+
         // this initializes miscellaneous values required by the engine. This should always be the
         // first line in your game program.
         World.init ()
-        
+
         // this specifies the manner in which the game is viewed. With this configuration, a new
         // window is created with a title of "$safeprojectname$".
         let sdlViewConfig =
@@ -27,7 +27,7 @@ module Program =
                   WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
                   WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
                   WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
-                  
+
         // this specifies the manner in which the game's rendering takes place. With this
         // configuration, rendering is hardware-accelerated and synchronized with the system's
         // vertical re-trace, making for fast and smooth rendering.
@@ -35,7 +35,7 @@ module Program =
             enum<SDL.SDL_RendererFlags>
                 (int SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
                  int SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC)
-                 
+
         // this makes a configuration record with the specifications we set out above.
         let sdlConfig =
             { ViewConfig = sdlViewConfig
@@ -53,14 +53,12 @@ module Program =
             // user-defined game dispatcher returned from a user-defined component factory will
             // be used as your game's dispatcher.
             let userComponentFactory = $safeprojectname$ComponentFactory ()
-            
-            // here is an attempt to make the world using SDL dependencies that will be created
-            // from the invoking function using the SDL configuration that we defined above, the
-            // component factory above, a boolean that protects from a Farseer physics bug but
-            // slows down the engine badly, and a value that could have been used to user-defined
-            // data to the world had we needed it (we don't, so we pass unit).
-            World.tryMake sdlDeps userComponentFactory GuiAndPhysicsAndGamePlay false ()
-            
+
+            // here is an attempt to make the world with the various initial states, component
+            // factory, and SDL dependencies. Note that the first boolean, when true, protects from
+            // a Farseer physics bug but slows down the engine badly, so that's why it's false.
+            World.tryMake false true GuiAndPhysicsAndGamePlay () userComponentFactory sdlDeps
+
         // this is a callback that specifies your game's unique behavior when updating the world
         // every tick. The World value is the state of the world after the callback has transformed
         // the one it receives. It is here where we first clearly see Nu's purely-functional(ish)

@@ -545,11 +545,12 @@ module WorldModule =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
         static member tryMake
-            sdlDeps
-            (userComponentFactory : UserComponentFactory)
-            interactivity
             farseerCautionMode
-            userState =
+            useLoadedGameDispatcher
+            interactivity
+            userState
+            (userComponentFactory : UserComponentFactory)
+            sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
@@ -565,9 +566,11 @@ module WorldModule =
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
                 let activeGameDispatcher =
-                    match userOptGameDispatcher with
-                    | Some (_, gameDispatcher) -> gameDispatcher
-                    | None -> defaultGameDispatcher
+                    if useLoadedGameDispatcher then
+                        match userOptGameDispatcher with
+                        | Some (_, gameDispatcher) -> gameDispatcher
+                        | None -> defaultGameDispatcher
+                    else defaultGameDispatcher
 
                 // make facets
                 let defaultFacets =

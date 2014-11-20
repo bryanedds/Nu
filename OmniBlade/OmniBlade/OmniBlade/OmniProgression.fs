@@ -38,9 +38,9 @@ module OmniProgression =
         let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name FieldAddress FieldGroupFilePath world
         World.subscribe4 GameAddress ClickFieldBackEvent (World.handleAsScreenTransition TitleAddress) world
 
-    let tryMakeOmniBladeWorld sdlDeps userState =
+    let tryMakeOmniBladeWorld userState sdlDeps =
         let omniComponentFactory = OmniComponentFactory ()
-        let eitherWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false userState
+        let eitherWorld = World.tryMake false true GuiAndPhysics userState omniComponentFactory sdlDeps
         match eitherWorld with
         | Right world ->
             let world = World.hintRenderPackageUse GuiPackageName world
