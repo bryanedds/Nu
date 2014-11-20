@@ -57,7 +57,6 @@
             this.copyContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pasteContextMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.propertyGrid = new System.Windows.Forms.PropertyGrid();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -97,6 +96,7 @@
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.interactivityButton = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
+            this.displayPanel = new NuEditDesign.SelectablePanel();
             this.menuStrip.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -120,7 +120,7 @@
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
             this.menuStrip.Padding = new System.Windows.Forms.Padding(4, 2, 0, 2);
-            this.menuStrip.Size = new System.Drawing.Size(1384, 27);
+            this.menuStrip.Size = new System.Drawing.Size(1334, 27);
             this.menuStrip.TabIndex = 0;
             this.menuStrip.Text = "menuStrip1";
             // 
@@ -320,21 +320,10 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
-            this.splitContainer1.Size = new System.Drawing.Size(1384, 735);
-            this.splitContainer1.SplitterDistance = 1016;
+            this.splitContainer1.Size = new System.Drawing.Size(1334, 685);
+            this.splitContainer1.SplitterDistance = 966;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 3;
-            // 
-            // displayPanel
-            // 
-            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
-            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.displayPanel.Location = new System.Drawing.Point(0, 0);
-            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
-            this.displayPanel.Name = "displayPanel";
-            this.displayPanel.Size = new System.Drawing.Size(1016, 735);
-            this.displayPanel.TabIndex = 0;
-            this.displayPanel.TabStop = true;
             // 
             // splitContainer3
             // 
@@ -351,8 +340,8 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.treeView);
-            this.splitContainer3.Size = new System.Drawing.Size(365, 735);
-            this.splitContainer3.SplitterDistance = 482;
+            this.splitContainer3.Size = new System.Drawing.Size(365, 685);
+            this.splitContainer3.SplitterDistance = 449;
             this.splitContainer3.TabIndex = 2;
             // 
             // propertyGrid
@@ -361,7 +350,7 @@
             this.propertyGrid.Location = new System.Drawing.Point(0, 73);
             this.propertyGrid.Margin = new System.Windows.Forms.Padding(2);
             this.propertyGrid.Name = "propertyGrid";
-            this.propertyGrid.Size = new System.Drawing.Size(365, 409);
+            this.propertyGrid.Size = new System.Drawing.Size(365, 376);
             this.propertyGrid.TabIndex = 0;
             this.propertyGrid.ToolbarVisible = false;
             // 
@@ -437,7 +426,7 @@
             this.treeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView.Location = new System.Drawing.Point(0, 0);
             this.treeView.Name = "treeView";
-            this.treeView.Size = new System.Drawing.Size(365, 249);
+            this.treeView.Size = new System.Drawing.Size(365, 232);
             this.treeView.TabIndex = 1;
             // 
             // openFileDialog
@@ -692,11 +681,22 @@
             this.editWhileInteractiveCheckBox.Size = new System.Drawing.Size(128, 22);
             this.editWhileInteractiveCheckBox.Text = "(Edit while Interactive)";
             // 
+            // displayPanel
+            // 
+            this.displayPanel.ContextMenuStrip = this.contextMenuStrip;
+            this.displayPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.displayPanel.Location = new System.Drawing.Point(0, 0);
+            this.displayPanel.Margin = new System.Windows.Forms.Padding(2);
+            this.displayPanel.Name = "displayPanel";
+            this.displayPanel.Size = new System.Drawing.Size(966, 685);
+            this.displayPanel.TabIndex = 0;
+            this.displayPanel.TabStop = true;
+            // 
             // NuEditForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1384, 762);
+            this.ClientSize = new System.Drawing.Size(1334, 712);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip);
