@@ -287,8 +287,6 @@ module Program =
             let treeGroup = TreeNode dispatcherKvp.Key
             treeGroup.Name <- treeGroup.Text
             ignore <| form.treeView.Nodes.Add treeGroup
-        let noneGroup = TreeNode "[No Dispatcher]"
-        ignore <| form.treeView.Nodes.Add noneGroup
 
     let populateTreeViewNodes (form : NuEditForm) world =
         let groupAddress = (World.getUserState world).GroupAddress
@@ -306,6 +304,7 @@ module Program =
                 if node.Parent.IsExpanded then
                     form.treeView.SelectedNode <- node
                     node.EnsureVisible ()
+                else form.treeView.SelectedNode <- null
         | _ -> ()
 
     let refreshPropertyGrid (form : NuEditForm) world =
