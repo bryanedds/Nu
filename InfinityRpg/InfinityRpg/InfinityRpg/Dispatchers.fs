@@ -257,7 +257,7 @@ module CharacterControlFacetModule =
         inherit Facet ()
 
         static let [<Literal>] WalkSpeed = 4.0f
-        static let [<Literal>] WalkLength = 64.0f
+        static let [<Literal>] WalkLength = 64.0f // TODO: get this from map tile size?
 
         static let walk positive current destination =
             let (walkSpeed, delta) =
@@ -270,20 +270,63 @@ module CharacterControlFacetModule =
             then (destination, Arrived)
             else (next, Arriving)
 
+        static let checkOpenDirection currentTile fieldTiles direction =
+            let directionVector = Direction.toVector2i direction
+            match Map.tryFind (currentTile + directionVector) fieldTiles with
+            | Some tile -> tile.FieldTileType = Passable
+            | None -> true
+
+        static let getOpenDirections (position : Vector2) world =
+            match World.getOptEntity FieldAddress world with
+            | Some field ->
+                let currentTile =
+                    Vector2i
+                        (int <| position.X / WalkLength,
+                         int <| position.Y / WalkLength)
+                let fieldTiles = field.FieldMapNp.FieldTiles
+                Set.ofSeq <|
+                    seq {
+                        if checkOpenDirection currentTile fieldTiles North then yield North
+                        if checkOpenDirection currentTile fieldTiles East then yield East
+                        if checkOpenDirection currentTile fieldTiles South then yield South
+                        if checkOpenDirection currentTile fieldTiles West then yield West }
+            | None -> Set.empty
+
         static let tickInput address (character : Entity) world =
-            let optWalkDescriptor =
-                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some { WalkDirection = North; WalkDestination = character.Position.Y + WalkLength }
-                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some { WalkDirection = South; WalkDestination = character.Position.Y - WalkLength }
-                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some { WalkDirection = East; WalkDestination = character.Position.X + WalkLength }
-                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some { WalkDirection = West; WalkDestination = character.Position.X - WalkLength }
+            let openDirections = getOpenDirections character.Position world
+            let optWalkDirection =
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some North
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some South
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some East
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some West
                 else None
-            match optWalkDescriptor with
-            | Some walkDescriptor ->
-                let characterState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDescriptor.WalkDirection }
-                let character = Entity.setCharacterAnimationState characterState character
-                let character = Entity.setActivityState (Walking walkDescriptor) character
-                World.setEntity address character world
-            | None -> world
+            let optWalkDestination =
+                match optWalkDirection with
+                | Some walkDirection ->
+                    match walkDirection with
+                    | North -> if Set.contains North openDirections then Some <| character.Position.Y + WalkLength else None
+                    | East -> if Set.contains East openDirections then Some <| character.Position.X + WalkLength else None
+                    | South -> if Set.contains South openDirections then Some <| character.Position.Y - WalkLength else None
+                    | West -> if Set.contains West openDirections then Some <| character.Position.X - WalkLength else None
+                | None -> None
+            let characterAnimationState = character.CharacterAnimationState
+            let characterAnimationState =
+                match optWalkDirection with
+                | Some walkDirection -> {characterAnimationState  with CharacterAnimationDirection = walkDirection }
+                | None -> characterAnimationState
+            let character = Entity.setCharacterAnimationState characterAnimationState character
+            let character =
+                match (optWalkDirection, optWalkDestination) with
+                | (Some walkDirection, Some walkDestination) ->
+                    let activityState = Walking { WalkDirection = walkDirection; WalkDestination = walkDestination }
+                    Entity.setActivityState activityState character
+                | (None, Some _) ->
+                    failwith <|
+                        "Unexpected match in InfinityRpg.CharacterControlFacet.tickInput. " +
+                        "Logically, this match should never happen."
+                | (Some _, None) -> character
+                | (None, None) -> character
+            World.setEntity address character world
 
         static let tickWalking address (character : Entity) walkDescriptor world =
             let (newPosition, arrival) =
