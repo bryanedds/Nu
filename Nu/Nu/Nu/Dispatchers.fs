@@ -253,8 +253,8 @@ module ButtonDispatcherModule =
 
     type Entity with
 
-        member button.IsDown = button?IsDown : bool
-        static member setIsDown (value : bool) (button : Entity) = button?IsDown <- value
+        member button.Down = button?Down : bool
+        static member setDown (value : bool) (button : Entity) = button?Down <- value
         member button.UpImage = button?UpImage : Image
         static member setUpImage (value : Image) (button : Entity) = button?UpImage <- value
         member button.DownImage = button?DownImage : Image
@@ -270,7 +270,7 @@ module ButtonDispatcherModule =
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
                 if Math.isPointInBounds3 mousePositionButton button.Position button.Size then
-                    let button = Entity.setIsDown true button
+                    let button = Entity.setDown true button
                     let world = World.setEntity address button world
                     let world = World.publish4 address (DownEventAddress ->>- address) () world
                     (Resolve, world)
@@ -282,10 +282,10 @@ module ButtonDispatcherModule =
             if World.isAddressSelected address world && button.Enabled && button.Visible then
                 let mousePositionButton = Entity.mouseToEntity mouseButtonData.Position world button
                 let world =
-                    let button = Entity.setIsDown false button
+                    let button = Entity.setDown false button
                     let world = World.setEntity address button world
                     World.publish4 address (UpEventAddress ->>- address) () world
-                if Math.isPointInBounds3 mousePositionButton button.Position button.Size && button.IsDown then
+                if Math.isPointInBounds3 mousePositionButton button.Position button.Size && button.Down then
                     let world = World.publish4 address (ClickEventAddress ->>- address) () world
                     let world = World.playSound button.ClickSound 1.0f world
                     (Resolve, world)
@@ -294,7 +294,7 @@ module ButtonDispatcherModule =
 
         static member FieldDefinitions =
             [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? IsDown false
+             define? Down false
              define? UpImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? DownImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
              define? ClickSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
@@ -320,7 +320,7 @@ module ButtonDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Image = if button.IsDown then button.DownImage else button.UpImage
+                              Image = if button.Down then button.DownImage else button.UpImage
                               Color = Vector4.One }}]
             else []
 
@@ -435,10 +435,10 @@ module ToggleDispatcherModule =
 
     type Entity with
 
-        member toggle.IsOn = toggle?IsOn : bool
-        static member setIsOn (value : bool) (toggle : Entity) = toggle?IsOn <- value
-        member toggle.IsPressed = toggle?IsPressed : bool
-        static member setIsPressed (value : bool) (toggle : Entity) = toggle?IsPressed <- value
+        member toggle.On = toggle?IsOn : bool
+        static member setOn (value : bool) (toggle : Entity) = toggle?On <- value
+        member toggle.Pressed = toggle?Pressed : bool
+        static member setPressed (value : bool) (toggle : Entity) = toggle?Pressed <- value
         member toggle.OffImage = toggle?OffImage : Image
         static member setOffImage (value : Image) (toggle : Entity) = toggle?OffImage <- value
         member toggle.OnImage = toggle?OnImage : Image
@@ -454,7 +454,7 @@ module ToggleDispatcherModule =
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
                 if Math.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                    let toggle = Entity.setIsPressed true toggle
+                    let toggle = Entity.setPressed true toggle
                     let world = World.setEntity address toggle world
                     (Resolve, world)
                 else (Cascade, world)
@@ -462,13 +462,13 @@ module ToggleDispatcherModule =
 
         let handleMouseLeftUp event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
-            if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.IsPressed then
+            if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.Pressed then
                 let mousePositionToggle = Entity.mouseToEntity mouseButtonData.Position world toggle
-                let toggle = Entity.setIsPressed false toggle
+                let toggle = Entity.setPressed false toggle
                 if Math.isPointInBounds3 mousePositionToggle toggle.Position toggle.Size then
-                    let toggle = Entity.setIsOn (not toggle.IsOn) toggle
+                    let toggle = Entity.setOn (not toggle.On) toggle
                     let world = World.setEntity address toggle world
-                    let eventAddress = if toggle.IsOn then OnEventAddress else OffEventAddress
+                    let eventAddress = if toggle.On then OnEventAddress else OffEventAddress
                     let world = World.publish4 address (eventAddress ->>- address) () world
                     let world = World.playSound toggle.ToggleSound 1.0f world
                     (Resolve, world)
@@ -479,8 +479,8 @@ module ToggleDispatcherModule =
 
         static member FieldDefinitions =
             [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? IsOn false
-             define? IsPressed false
+             define? On false
+             define? Pressed false
              define? OffImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? OnImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
              define? ToggleSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
@@ -506,7 +506,7 @@ module ToggleDispatcherModule =
                               Rotation = 0.0f
                               ViewType = Absolute
                               OptInset = None
-                              Image = if toggle.IsOn || toggle.IsPressed then toggle.OnImage else toggle.OffImage
+                              Image = if toggle.On || toggle.Pressed then toggle.OnImage else toggle.OffImage
                               Color = Vector4.One }}]
             else []
 
@@ -521,8 +521,8 @@ module FeelerDispatcherModule =
 
     type Entity with
 
-        member feeler.IsTouched = feeler?IsTouched : bool
-        static member setIsTouched (value : bool) (feeler : Entity) = feeler?IsTouched <- value
+        member feeler.Touched = feeler?Touched : bool
+        static member setTouched (value : bool) (feeler : Entity) = feeler?Touched <- value
 
     type FeelerDispatcher () =
         inherit EntityDispatcher ()
@@ -532,7 +532,7 @@ module FeelerDispatcherModule =
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
                 let mousePositionFeeler = Entity.mouseToEntity mouseButtonData.Position world feeler
                 if Math.isPointInBounds3 mousePositionFeeler feeler.Position feeler.Size then
-                    let feeler = Entity.setIsTouched true feeler
+                    let feeler = Entity.setTouched true feeler
                     let world = World.setEntity address feeler world
                     let world = World.publish4 address (TouchEventAddress ->>- address) mouseButtonData world
                     (Resolve, world)
@@ -542,7 +542,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftUp event world =
             let (address, feeler : Entity) = World.unwrapAS event world
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
-                let feeler = Entity.setIsTouched false feeler
+                let feeler = Entity.setTouched false feeler
                 let world = World.setEntity address feeler world
                 let world = World.publish4 address (ReleaseEventAddress ->>- address) () world
                 (Resolve, world)
@@ -550,7 +550,7 @@ module FeelerDispatcherModule =
 
         static member FieldDefinitions =
             [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? IsTouched false]
+             define? Touched false]
 
         static member IntrinsicFacetNames =
             [typeof<GuiFacet>.Name]

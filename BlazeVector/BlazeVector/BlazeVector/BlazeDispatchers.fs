@@ -216,7 +216,7 @@ module PlayerModule =
 
         let handleJumpByKeyboardKey event world =
             let keyboardKeyData = World.unwrapD event world
-            match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.IsRepeat) with
+            match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.Repeated) with
             | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
             | _ -> (Cascade, world)
 
