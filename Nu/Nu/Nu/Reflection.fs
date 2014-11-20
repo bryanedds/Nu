@@ -231,7 +231,7 @@ module Reflection =
                 (fun facetName ->
                     match Map.tryFind facetName facetMap with
                     | Some facet -> facet
-                    | None -> failwith <| "Could not locate facet '" + facetName + "'.")
+                    | None -> failwith <| "Could not find facet '" + facetName + "' in facet map.")
                 facetNames
         let targetType = target.GetType ()
         match targetType.GetPropertyWritable "FacetsNp" with

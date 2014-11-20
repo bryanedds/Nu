@@ -306,4 +306,6 @@ module Observer =
 
     let isGamePlaying _ world = World.isGamePlaying world
     let isPhysicsRunning _ world = World.isPhysicsRunning world
-    //let isSelected event world = World.isAddressSelected event.ObservableAddress world
+    let isSelected event world = World.isAddressSelected event.SubscriberAddress world
+    let isSelectedScreenIdling _ world = World.isSelectedScreenIdling world
+    let isSelectedScreenTransitioning _ world = World.isSelectedScreenTransitioning world
