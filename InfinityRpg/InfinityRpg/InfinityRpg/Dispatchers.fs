@@ -290,7 +290,7 @@ module CharacterControlFacetModule =
                         if checkOpenDirection currentPositionI fieldTiles East then yield East
                         if checkOpenDirection currentPositionI fieldTiles South then yield South
                         if checkOpenDirection currentPositionI fieldTiles West then yield West }
-            | None -> Set.empty
+            | None -> Set.ofList [North; East; South; West]
 
         static let tickInput address (character : Entity) world =
             let optWalkDirection =

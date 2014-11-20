@@ -8,8 +8,8 @@
       <Entity dispatcherName="ButtonDispatcher">
         <Name>SaveGame</Name>
         <Position>88, -184</Position>
+        <Depth>10</Depth>
         <Size>384, 64</Size>
-        <FacetNames>[]</FacetNames>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderingModule+Image">[Gui | SaveGameDown]</DownImage>
@@ -19,13 +19,21 @@
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Back</Name>
         <Position>88, -256</Position>
+        <Depth>10</Depth>
         <Size>384, 64</Size>
-        <FacetNames>[]</FacetNames>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderingModule+Image">[Gui | BackDown]</DownImage>
           <UpImage type="Nu.RenderingModule+Image">[Gui | BackUp]</UpImage>
         </Xtension>
+      </Entity>
+      <Entity dispatcherName="FeelerDispatcher">
+        <Name>Feeler</Name>
+        <Position>-480, -272</Position>
+        <Depth>9</Depth>
+        <Size>960, 544</Size>
+        <OptOverlayName>[Some | FeelerDispatcher]</OptOverlayName>
+        <Xtension />
       </Entity>
     </Entities>
   </Group>
