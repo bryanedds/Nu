@@ -66,10 +66,13 @@
     <Compile Include="Constants.fs" />
     <Compile Include="MetaMap.fs" />
     <Compile Include="FieldMap.fs" />
+    <Compile Include="FieldDispatcher.fs" />
     <Compile Include="CharacterState.fs" />
-    <Compile Include="Dispatchers.fs" />
+    <Compile Include="CharacterFacets.fs" />
+    <Compile Include="CharacterDispatcher.fs" />
+    <Compile Include="PlayerCharacterDispatch.fs" />
+    <Compile Include="InfinityRpgDispatcher.fs" />
     <Compile Include="ComponentFactory.fs" />
-    <Compile Include="Progression.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="AssetGraph.xml">

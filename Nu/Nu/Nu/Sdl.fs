@@ -152,8 +152,8 @@ module Sdl =
                                 (fun () -> SDL_mixer.Mix_CloseAudio ())
                                 (fun () ->
                                     let sdlDeps = { RenderContext = renderContext; Window = window; Config = sdlConfig }
-                                    let optWorld = handleTryMakeWorld sdlDeps
-                                    match optWorld with
+                                    let eitherWorld = handleTryMakeWorld sdlDeps
+                                    match eitherWorld with
                                     | Right world ->
                                         run8 handleEvent handleUpdate handleRender handlePlay handleExit sdlDeps Running world
                                         SuccessExitCode

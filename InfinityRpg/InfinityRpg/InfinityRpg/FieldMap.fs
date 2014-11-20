@@ -80,14 +80,14 @@ module FieldMapModule =
                     let tile = Map.find positionM originalMap
                     if  tile <> FieldMap.PathTile &&
                         MapBounds.isPointInBounds positionM buildBoundsM then
-                        let upM = positionM + Vector2i.Up
-                        let rightM = positionM + Vector2i.Right
-                        let downM = positionM + Vector2i.Down
-                        let leftM = positionM + Vector2i.Left
-                        if  MapBounds.isPointInBounds upM buildBoundsM && Map.find upM originalMap = FieldMap.TreeTile ||
-                            MapBounds.isPointInBounds rightM buildBoundsM && Map.find rightM originalMap = FieldMap.TreeTile ||
-                            MapBounds.isPointInBounds downM buildBoundsM && Map.find downM originalMap = FieldMap.TreeTile ||
-                            MapBounds.isPointInBounds leftM buildBoundsM && Map.find leftM originalMap = FieldMap.TreeTile then
+                        let upPositionM = positionM + Vector2i.Up
+                        let rightPositionM = positionM + Vector2i.Right
+                        let downPositionM = positionM + Vector2i.Down
+                        let leftPositionM = positionM + Vector2i.Left
+                        if  MapBounds.isPointInBounds upPositionM buildBoundsM && Map.find upPositionM originalMap = FieldMap.TreeTile ||
+                            MapBounds.isPointInBounds rightPositionM buildBoundsM && Map.find rightPositionM originalMap = FieldMap.TreeTile ||
+                            MapBounds.isPointInBounds downPositionM buildBoundsM && Map.find downPositionM originalMap = FieldMap.TreeTile ||
+                            MapBounds.isPointInBounds leftPositionM buildBoundsM && Map.find leftPositionM originalMap = FieldMap.TreeTile then
                             let (n, rand) = Rand.nextIntUnder 3 rand
                             if n = 0 then (Map.add positionM FieldMap.TreeTile generatedMap, rand)
                             else (generatedMap, Rand.advance rand)
