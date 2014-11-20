@@ -472,7 +472,7 @@ module WorldModule =
                     let mouseButtonEventAddress = ltoa [MouseButton.toEventName mouseButton]
                     let mouseButtonDownEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Down"]
                     let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Change"]
-                    let eventData = { Position = mousePosition; Button = mouseButton; IsDown = true }
+                    let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let world = World.publish World.sortSubscriptionsByPickingPriority GameAddress mouseButtonDownEventAddress eventData world
                     World.publish World.sortSubscriptionsByPickingPriority GameAddress mouseButtonChangeEventAddress eventData world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
@@ -481,19 +481,19 @@ module WorldModule =
                     let mouseButtonEventAddress = ltoa [MouseButton.toEventName mouseButton]
                     let mouseButtonUpEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Up"]
                     let mouseButtonChangeEventAddress = MouseEventAddress -<- mouseButtonEventAddress -<- ltoa<MouseButtonData> ["Change"]
-                    let eventData = { Position = mousePosition; Button = mouseButton; IsDown = false }
+                    let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let world = World.publish World.sortSubscriptionsByPickingPriority GameAddress mouseButtonUpEventAddress eventData world
                     World.publish World.sortSubscriptionsByPickingPriority GameAddress mouseButtonChangeEventAddress eventData world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = event.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0; IsDown = true }
+                    let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let world = World.publish World.sortSubscriptionsByHierarchy GameAddress KeyboardKeyDownEventAddress eventData world
                     World.publish World.sortSubscriptionsByHierarchy GameAddress KeyboardKeyChangeEventAddress eventData world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = event.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; IsRepeat = keyboard.repeat <> byte 0; IsDown = false }
+                    let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let world = World.publish World.sortSubscriptionsByHierarchy GameAddress KeyboardKeyUpEventAddress eventData world
                     World.publish World.sortSubscriptionsByHierarchy GameAddress KeyboardKeyChangeEventAddress eventData world
                 | _ -> world

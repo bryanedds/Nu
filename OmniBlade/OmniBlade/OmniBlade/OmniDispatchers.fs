@@ -32,7 +32,7 @@ module OmniDispatchersModule =
             let feelerAddress = gatoea address FieldFeelerName
             let character = World.getEntity characterAddress world
             let feeler = World.getEntity feelerAddress world
-            if feeler.IsTouched then
+            if feeler.Touched then
                 let mousePosition = World.getMousePositionF world
                 let mousePositionEntity = Entity.mouseToEntity mousePosition world character
                 let characterCenter = character.Position + character.Size * 0.5f

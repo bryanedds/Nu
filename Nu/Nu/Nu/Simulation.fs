@@ -79,13 +79,13 @@ module SimulationModule =
     type [<StructuralEquality; NoComparison>] MouseButtonData =
         { Position : Vector2
           Button : MouseButton
-          IsDown : bool }
+          Down : bool }
 
     /// The data for a keyboard key event.
     type [<StructuralEquality; NoComparison>] KeyboardKeyData =
         { ScanCode : int
-          IsRepeat : bool
-          IsDown : bool }
+          Repeated : bool
+          Down : bool }
 
     /// The data for a collision event.
     type [<StructuralEquality; NoComparison>] CollisionData =

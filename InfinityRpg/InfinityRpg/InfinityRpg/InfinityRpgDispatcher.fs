@@ -79,7 +79,7 @@ module InfinityRpgModule =
             World.writeGameToFile SaveFilePath gameHierarchy world
             (Cascade, world)
 
-        static let handleStopGameplay _ world =
+        static let handleDeselectGameplay _ world =
             let scene = World.getGroup SceneAddress world
             let world = snd <| World.removeGroup SceneAddress scene world
             (Cascade, world)
@@ -102,12 +102,12 @@ module InfinityRpgModule =
             let world = World.setGroup HudAddress (Group.setPersistent false <| World.getGroup HudAddress world) world
             let world = World.subscribe4 GameAddress ClickHudBackEventAddress (World.handleAsScreenTransition TitleAddress) world
             let world = World.subscribe4 GameAddress ClickHudSaveGameEventAddress handleClickSaveGame world
-            World.subscribe4 GameAddress (DeselectEventAddress ->>- GameplayAddress) handleStopGameplay world
+            World.subscribe4 GameAddress (DeselectEventAddress ->>- GameplayAddress) handleDeselectGameplay world
 
         static member FieldDefinitions =
             [define? Seed Rand.DefaultSeed]
 
-        override this.Register (game, world) =
+        override dispatcher.Register (game, world) =
             let world = World.hintRenderPackageUse GuiPackageName world
             let world = World.hintRenderPackageUse GameplayPackageName world
             let world = addTitle world

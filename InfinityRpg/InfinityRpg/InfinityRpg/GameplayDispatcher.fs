@@ -13,3 +13,6 @@ module GameplayDispatcherModule =
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
+
+        override dispatcher.Register (address, screen, world) =
+            (screen, world)
