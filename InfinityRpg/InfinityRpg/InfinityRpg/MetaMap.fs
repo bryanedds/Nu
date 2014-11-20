@@ -30,7 +30,7 @@ module MetamapModule =
 
     type Direction with
 
-        static member intToDirection n =
+        static member fromInt n =
             match n with
             | 0 -> North
             | 1 -> East
@@ -38,10 +38,17 @@ module MetamapModule =
             | 3 -> West
             | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
 
+        static member toVector2i direction =
+            match direction with
+            | North -> Vector2i.Up
+            | East -> Vector2i.Right
+            | South -> Vector2i.Down
+            | West -> Vector2i.Left
+
         static member next rand =
             let randMax = 4
             let (randValue, rand) = Rand.nextIntUnder randMax rand
-            let direction = Direction.intToDirection randValue
+            let direction = Direction.fromInt randValue
             (direction, rand)
 
         static member walk (source : Vector2i) direction =
