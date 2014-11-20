@@ -29,7 +29,7 @@ System.IO.Directory.SetCurrentDirectory "C:/Development/FPWorks/Nu/Nu/Nu/bin/Deb
 #load "Camera.fs"
 #load "Assets.fs"
 #load "Physics.fs"
-#load "Rendering.fs"
+#load "Render.fs"
 #load "Audio.fs"
 #load "Metadata.fs"
 #load "Input.fs"

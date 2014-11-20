@@ -102,7 +102,7 @@ module Progression =
         let optWorld = World.tryMake sdlDeps componentFactory GuiAndPhysicsAndGamePlay false userState
         match optWorld with
         | Right world ->
-            let world = World.hintRenderingPackageUse GuiPackageName world
+            let world = World.hintRenderPackageUse GuiPackageName world
             let world = addTitleScreen world
             let world = addCreditsScreen world
             let world = addGameplayScreen world

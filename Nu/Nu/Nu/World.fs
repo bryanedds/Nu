@@ -326,7 +326,7 @@ module WorldModule =
                     
                         // reload assets
                         let world = World.setAssetMetadataMap assetMetadataMap world
-                        let world = World.reloadRenderingAssets world
+                        let world = World.reloadRenderAssets world
                         let world = World.reloadAudioAssets world
                         Right world
             
@@ -340,7 +340,7 @@ module WorldModule =
             // messages), all messages are eliminated. If this poses an issue, the editor will have
             // to instead store past / future worlds only once their current frame has been
             // processed (integrated, advanced, rendered, played, et al).
-            let world = World.clearRenderingMessages world
+            let world = World.clearRenderMessages world
             let world = World.clearAudioMessages world
             let world = World.clearPhysicsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
@@ -402,8 +402,8 @@ module WorldModule =
 
         static member private render world =
             let renderDescriptors = World.getRenderDescriptors world
-            let renderingMessages = world.MessageQueues.RenderingMessages
-            let world = World.clearRenderingMessages world
+            let renderingMessages = world.MessageQueues.RenderMessages
+            let world = World.clearRenderMessages world
             let renderer = world.Subsystems.Renderer.Render (world.Camera, renderingMessages, renderDescriptors)
             World.setRenderer renderer world
 
@@ -636,7 +636,7 @@ module WorldModule =
                 // make the world's message queues
                 let messageQueues =
                     { AudioMessages = [HintAudioPackageUseMessage { PackageName = DefaultPackageName }]
-                      RenderingMessages = [HintRenderingPackageUseMessage { PackageName = DefaultPackageName }]
+                      RenderMessages = [HintRenderPackageUseMessage { PackageName = DefaultPackageName }]
                       PhysicsMessages = [] }
 
                 // make the world's callbacks
@@ -701,7 +701,7 @@ module WorldModule =
             // make the world's message queues
             let messageQueues =
                 { AudioMessages = []
-                  RenderingMessages = []
+                  RenderMessages = []
                   PhysicsMessages = [] }
 
             // make the world's callbacks

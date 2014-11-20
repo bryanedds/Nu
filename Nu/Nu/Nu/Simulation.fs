@@ -326,7 +326,7 @@ module SimulationModule =
     /// The world's message queues.
     and [<ReferenceEquality>] MessageQueues =
         { AudioMessages : AudioMessage rQueue
-          RenderingMessages : RenderMessage rQueue
+          RenderMessages : RenderMessage rQueue
           PhysicsMessages : PhysicsMessage rQueue }
 
     /// The world's higher order facilities.
@@ -711,8 +711,8 @@ module World =
         { world with MessageQueues = messageQueues }
 
     /// Clear the rendering messages.
-    let internal clearRenderingMessages world =
-        let messageQueues = { world.MessageQueues with RenderingMessages = [] }
+    let internal clearRenderMessages world =
+        let messageQueues = { world.MessageQueues with RenderMessages = [] }
         { world with MessageQueues = messageQueues }
 
     /// Clear the physics messages.
@@ -726,8 +726,8 @@ module World =
         { world with MessageQueues = messageQueues }
 
     /// Add a rendering message to the world.
-    let addRenderingMessage message world =
-        let messageQueues = { world.MessageQueues with RenderingMessages = message :: world.MessageQueues.RenderingMessages }
+    let addRenderMessage message world =
+        let messageQueues = { world.MessageQueues with RenderMessages = message :: world.MessageQueues.RenderMessages }
         { world with MessageQueues = messageQueues }
 
     /// Add an audio message to the world.
@@ -931,26 +931,26 @@ module WorldPhysicsModule =
             World.addPhysicsMessage applyBodyForceMessage world
 
 [<AutoOpen>]
-module WorldRenderingModule =
+module WorldRenderModule =
 
     type World with
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
-        static member hintRenderingPackageUse packageName world =
-            let hintRenderingPackageUseMessage = HintRenderingPackageUseMessage { PackageName = packageName }
-            World.addRenderingMessage hintRenderingPackageUseMessage world
+        static member hintRenderPackageUse packageName world =
+            let hintRenderPackageUseMessage = HintRenderPackageUseMessage { PackageName = packageName }
+            World.addRenderMessage hintRenderPackageUseMessage world
             
         /// Hint that a rendering package should be unloaded since its assets will not be used
-        /// again (or until specified via World.hintRenderingPackageUse).
-        static member hintRenderingPackageDisuse packageName world =
-            let hintRenderingPackageDisuseMessage = HintRenderingPackageDisuseMessage { PackageName = packageName }
-            World.addRenderingMessage hintRenderingPackageDisuseMessage world
+        /// again (or until specified via World.hintRenderPackageUse).
+        static member hintRenderPackageDisuse packageName world =
+            let hintRenderPackageDisuseMessage = HintRenderPackageDisuseMessage { PackageName = packageName }
+            World.addRenderMessage hintRenderPackageDisuseMessage world
             
         /// Send a message to the renderer to reload its rendering assets.
-        static member reloadRenderingAssets world =
-            let reloadRenderingAssetsMessage = ReloadRenderingAssetsMessage
-            World.addRenderingMessage reloadRenderingAssetsMessage world
+        static member reloadRenderAssets world =
+            let reloadRenderAssetsMessage = ReloadRenderAssetsMessage
+            World.addRenderMessage reloadRenderAssetsMessage world
 
 [<AutoOpen>]
 module WorldAudioModule =
