@@ -90,8 +90,8 @@ module BlazeProgression =
 
         // we use World.tryMake to create an empty world that we will transform to create the
         // BlazeVector world
-        let optWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false userState
-        match optWorld with
+        let eitherWorld = World.tryMake sdlDeps blazeComponentFactory GuiAndPhysicsAndGamePlay false userState
+        match eitherWorld with
         | Right world ->
 
             // hint to the renderer that the Gui package should be loaded up front

@@ -878,8 +878,8 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let optWorld = World.tryMake sdlDeps userComponentFactory GuiAndPhysics true editorState
-        match optWorld with
+        let eitherWorld = World.tryMake sdlDeps userComponentFactory GuiAndPhysics true editorState
+        match eitherWorld with
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
             let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world

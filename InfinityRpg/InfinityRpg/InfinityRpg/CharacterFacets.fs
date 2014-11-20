@@ -1,6 +1,5 @@
 ﻿namespace InfinityRpg
 open System
-open System.ComponentModel
 open SDL2
 open OpenTK
 open Prime
@@ -10,68 +9,6 @@ open Nu.WorldConstants
 open Nu.Observer
 open InfinityRpg
 open InfinityRpg.Constants
-
-[<AutoOpen>]
-module FieldDispatcherModule =
-
-    type Entity with
-    
-        member entity.FieldMapNp = entity?FieldMapNp : FieldMap
-        static member setFieldMapNp (value : FieldMap) (entity : Entity) = entity?FieldMapNp <- value
-
-    type FieldDispatcher () =
-        inherit EntityDispatcher ()
-
-        static let DefaultRand = Rand.makeDefault ()
-        static let DefaultSizeM = Vector2i (4, 4)
-        static let DefaultPathEdgesM = [(Vector2i (1, 1), Vector2i (2, 2))]
-        static let DefaultFieldMap = FieldMap.make FieldTileSheetImage DefaultSizeM DefaultPathEdgesM DefaultRand
-
-        static let getOptTileInset (tileSheetPositionM : Vector2i) =
-            let tileOffsetM = Vector2i.Multiply (tileSheetPositionM, TileSizeI)
-            let tileInset =
-                Vector4 (
-                    single tileOffsetM.X,
-                    single tileOffsetM.Y,
-                    single <| tileOffsetM.X + TileSizeI.X,
-                    single <| tileOffsetM.Y + TileSizeI.Y)
-            Some tileInset
-
-        static member FieldDefinitions =
-            [define? FieldMapNp DefaultFieldMap]
-
-        override dispatcher.GetRenderDescriptors (field, world) =
-            if field.Visible then
-                let fieldMap = field.FieldMapNp
-                let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
-                match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
-                | Some tileSheetSize ->
-                    let size = Vector2.Multiply (TileSize, TileSheetSize)
-                    if Camera.inView3 field.ViewType field.Position size world.Camera then
-                        let sprites =
-                            Map.fold
-                                (fun sprites tileCoords tile ->
-                                    let tileOffset = Vector2i.Multiply (tileCoords, TileSizeI)
-                                    let tilePosition = Vector2i field.Position + tileOffset
-                                    let sprite =
-                                        { Position = tilePosition.Vector2
-                                          Size = TileSize
-                                          Rotation = field.Rotation
-                                          ViewType = field.ViewType
-                                          OptInset = getOptTileInset tile.FieldTileSheetPositionM
-                                          Image = fieldMap.FieldTileSheet
-                                          Color = Vector4.One }
-                                    sprite :: sprites)
-                                []
-                                fieldMap.FieldTiles
-                        [LayerableDescriptor { Depth = field.Depth; LayeredDescriptor = SpritesDescriptor sprites }]
-                    else []
-                | None -> []
-            else []
-
-        override dispatcher.GetQuickSize (field, world) =
-            let fieldMap = field.FieldMapNp
-            Vector2.Multiply (TileSize, fieldMap.FieldSizeM.Vector2)
 
 [<AutoOpen>]
 module CharacterStateFacetModule =
@@ -346,35 +283,3 @@ module CharacterControlFacetModule =
         override facet.Register (address, entity, world) =
             let world = observe address TickEventAddress |> filter isSelectedScreenIdling |> monitor handleTick world |> snd
             (entity, world)
-
-[<AutoOpen>]
-module CharacterDispatcherModule =
-
-    type CharacterDispatcher () =
-        inherit EntityDispatcher ()
-
-        static member IntrinsicFacetNames =
-            [typeof<CharacterStateFacet>.Name
-             typeof<CharacterAnimationFacet>.Name
-             typeof<CharacterControlFacet>.Name
-             typeof<CharacterCameraFacet>.Name]
-
-[<AutoOpen>]
-module PlayerCharacterDispatcherModule =
-
-    type PlayerCharacterDispatcher () =
-        inherit CharacterDispatcher ()
-
-[<AutoOpen>]
-module InfinityRpgModule =
-
-    type Game with
-    
-        member game.Seed = game?Seed : uint64
-        static member setSeed (value : uint64) (game : Game) = game?Seed <- value
-
-    type InfinityRpgDispatcher () =
-        inherit GameDispatcher ()
-
-        static member FieldDefinitions =
-            [define? Seed Rand.DefaultSeed]

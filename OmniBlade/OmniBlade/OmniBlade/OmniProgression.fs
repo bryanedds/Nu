@@ -40,8 +40,8 @@ module OmniProgression =
 
     let tryMakeOmniBladeWorld sdlDeps userState =
         let omniComponentFactory = OmniComponentFactory ()
-        let optWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false userState
-        match optWorld with
+        let eitherWorld = World.tryMake sdlDeps omniComponentFactory GuiAndPhysics false userState
+        match eitherWorld with
         | Right world ->
             let world = World.hintRenderPackageUse GuiPackageName world
             let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
