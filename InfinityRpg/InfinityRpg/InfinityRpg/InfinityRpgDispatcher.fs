@@ -86,23 +86,23 @@ module InfinityRpgModule =
 
         static let addTitle world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
-            let world = World.subscribe4 GameAddress ClickTitleCreditsEventAddress (World.handleAsScreenTransition CreditsAddress) world
-            let world = World.subscribe4 GameAddress ClickTitleNewGameEventAddress (World.handleAsScreenTransition GameplayAddress) world
-            let world = World.subscribe4 GameAddress ClickTitleLoadGameEventAddress (World.handleAsScreenTransition GameplayAddress) world
-            let world = observe GameAddress ClickTitleNewGameEventAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleNewGame world |> snd
-            let world = observe GameAddress ClickTitleLoadGameEventAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleLoadGame world |> snd
-            World.subscribe4 GameAddress ClickTitleExitEventAddress World.handleAsExit world
+            let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
+            let world = World.subscribe4 (World.handleAsScreenTransition GameplayAddress) ClickTitleNewGameEventAddress GameAddress world
+            let world = World.subscribe4 (World.handleAsScreenTransition GameplayAddress) ClickTitleLoadGameEventAddress GameAddress world
+            let world = observe ClickTitleNewGameEventAddress GameAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleNewGame world |> snd
+            let world = observe ClickTitleLoadGameEventAddress GameAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleLoadGame world |> snd
+            World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
 
         static let addCredits world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name CreditsAddress CreditsGroupFilePath world
-            World.subscribe4 GameAddress ClickCreditsBackEventAddress (World.handleAsScreenTransition TitleAddress) world
+            World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickCreditsBackEventAddress GameAddress world
 
         static let addGameplay world =
             let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<ScreenDispatcher>.Name GameplayAddress HudFilePath world
             let world = World.setGroup HudAddress (Group.setPersistent false <| World.getGroup HudAddress world) world
-            let world = World.subscribe4 GameAddress ClickHudBackEventAddress (World.handleAsScreenTransition TitleAddress) world
-            let world = World.subscribe4 GameAddress ClickHudSaveGameEventAddress handleClickSaveGame world
-            World.subscribe4 GameAddress (DeselectEventAddress ->>- GameplayAddress) handleDeselectGameplay world
+            let world = World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickHudBackEventAddress GameAddress world
+            let world = World.subscribe4 handleClickSaveGame ClickHudSaveGameEventAddress GameAddress world
+            World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- GameplayAddress) GameAddress world
 
         static member FieldDefinitions =
             [define? Seed Rand.DefaultSeed]

@@ -37,41 +37,41 @@ module WorldTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeAndPublishTwiceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 GameAddress UnitEventAddress () world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.publish4 () UnitEventAddress GameAddress world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeTwiceAndPublishWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
-        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] subscribeWithResolutionWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndResolve world
-        let world = World.subscribe4 GameAddress UnitEventAddress incUserStateAndCascade world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.subscribe4 incUserStateAndResolve UnitEventAddress GameAddress world
+        let world = World.subscribe4 incUserStateAndCascade UnitEventAddress GameAddress world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let key = World.makeSubscriptionKey ()
         let world = World.makeEmpty 0
-        let world = World.subscribe key GameAddress UnitEventAddress incUserStateAndResolve world
+        let world = World.subscribe key incUserStateAndResolve UnitEventAddress GameAddress world
         let world = World.unsubscribe key world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (0, World.getUserState world)
 
     let [<Fact>] entitySubscribeWorks () =
@@ -84,11 +84,11 @@ module WorldTests =
         let screenHierarchy = (screen, groupsHierarchy)
         let world = snd <| World.addScreen TestScreenAddress screenHierarchy world
         let handleEvent = fun event world ->
-            let entity = World.unwrapS<Entity, string> event world
+            let entity = World.unwrapS<string, Entity> event world
             let world = World.setUserState entity.Name world
             (Cascade, world)
-        let world = World.subscribe4 TestEntityAddress StringEventAddress handleEvent world
-        let world = World.publish4 GameAddress StringEventAddress String.Empty world
+        let world = World.subscribe4 handleEvent StringEventAddress TestEntityAddress world
+        let world = World.publish4 String.Empty StringEventAddress GameAddress world
         Assert.Equal<string> (TestEntityName, World.getUserState world)
 
     let [<Fact>] gameSerializationWorks () =

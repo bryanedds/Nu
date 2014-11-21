@@ -566,7 +566,7 @@ module World =
         publishSorter subList world
 
     /// Publish an event.
-    let publish<'p, 'd> publishSorter (publisherAddress : 'p Address) (eventAddress : 'd Address) (eventData : 'd) world =
+    let publish<'d, 'p> publishSorter (eventData : 'd) (eventAddress : 'd Address) (publisherAddress : 'p Address) world =
         let objEventAddress = atooa eventAddress
         let subscriptions = getSubscriptionsSorted publishSorter objEventAddress world
         let (_, world) =
@@ -588,11 +588,11 @@ module World =
         world
 
     /// Publish an event.
-    let publish4<'p, 'd> (publisherAddress : 'p Address) (eventAddress : 'd Address) (eventData : 'd) world =
-        publish sortSubscriptionsByHierarchy publisherAddress eventAddress eventData world
+    let publish4<'d, 'p> (eventData : 'd) (eventAddress : 'd Address) (publisherAddress : 'p Address) world =
+        publish sortSubscriptionsByHierarchy eventData eventAddress publisherAddress world
 
     /// Subscribe to an event.
-    let subscribe<'s, 'd> subscriptionKey (subscriberAddress : 's Address) (eventAddress : 'd Address) (subscription : 'd Subscription) world =
+    let subscribe<'d, 's> subscriptionKey (subscription : 'd Subscription) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
         if not <| Address.isEmpty eventAddress then
             let objEventAddress = atooa eventAddress
             let subscriptions =
@@ -606,8 +606,8 @@ module World =
         else failwith "Event name cannot be empty."
 
     /// Subscribe to an event.
-    let subscribe4<'s, 'd> (subscriberAddress : 's Address) (eventAddress : 'd Address) (subscription : 'd Subscription) world =
-        subscribe (makeSubscriptionKey ()) subscriberAddress eventAddress subscription world
+    let subscribe4<'d, 's> (subscription : 'd Subscription) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
+        subscribe (makeSubscriptionKey ()) subscription eventAddress subscriberAddress world
 
     /// Unsubscribe from an event.
     let unsubscribe subscriptionKey world =
@@ -632,17 +632,17 @@ module World =
         | None -> world
 
     /// Keep active a subscription for the lifetime of a simulant.
-    let monitor<'s, 'd> (subscriberAddress : 's Address) (eventAddress : 'd Address) (subscription : 'd Subscription) world =
+    let monitor<'d, 's> (subscription : 'd Subscription) (eventAddress : 'd Address) (subscriberAddress : 's Address) world =
         if not <| Address.isEmpty subscriberAddress then
             let monitorKey = makeSubscriptionKey ()
             let removalKey = makeSubscriptionKey ()
-            let world = subscribe<'s, 'd> monitorKey subscriberAddress eventAddress subscription world
+            let world = subscribe<'d, 's> monitorKey subscription eventAddress subscriberAddress world
             let subscription' = fun _ world ->
                 let world = unsubscribe removalKey world
                 let world = unsubscribe monitorKey world
                 (Cascade, world)
             let removingEventAddress = WorldConstants.RemovingEventAddress ->- atooa subscriberAddress
-            subscribe<'s, unit> removalKey subscriberAddress removingEventAddress subscription' world
+            subscribe<unit, 's> removalKey subscription' removingEventAddress subscriberAddress world
         else failwith "Cannot monitor events with an anonymous subscriber."
 
     /// Set the Camera field of the world.
@@ -1061,64 +1061,64 @@ module WorldEventModule =
         /// Unwrap commonly-useful values of an event.
         /// TODO: these implementations build in the notion that only simulants are addressable.
         /// While this is true for now, it may not be true later. Make this more general!
-        static member unwrapASDE<'s, 'd> (event : 'd Event) world =
+        static member unwrapASDE<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapASD<'s, 'd> (event : 'd Event) world =
+        static member unwrapASD<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapASE<'s, 'd> (event : 'd Event) world =
+        static member unwrapASE<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapADE<'s, 'd> (event : 'd Event) (_ : World) =
+        static member unwrapADE<'d, 's> (event : 'd Event) (_ : World) =
             (Address.changeType<obj, 's> event.SubscriberAddress, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapSDE<'s, 'd> (event : 'd Event) world =
+        static member unwrapSDE<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapAS<'s, 'd> (event : 'd Event) world =
+        static member unwrapAS<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapAD<'s, 'd> (event : 'd Event) (_ : World) =
+        static member unwrapAD<'d, 's> (event : 'd Event) (_ : World) =
             (Address.changeType<obj, 's> event.SubscriberAddress, event.Data)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapAE<'s, 'd> (event : 'd Event) (_ : World) =
+        static member unwrapAE<'d, 's> (event : 'd Event) (_ : World) =
             (Address.changeType<obj, 's> event.SubscriberAddress, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapSD<'s, 'd> (event : 'd Event) world =
+        static member unwrapSD<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event.Data)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapSE<'s, 'd> (event : 'd Event) world =
+        static member unwrapSE<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (subscriber, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapDE<'s, 'd> (event : 'd Event) (_ : World) =
+        static member unwrapDE<'d, 's> (event : 'd Event) (_ : World) =
             (event.Data, event)
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapA<'s, 'd> (event : 'd Event) (_ : World) =
+        static member unwrapA<'d, 's> (event : 'd Event) (_ : World) =
             Address.changeType<obj, 's> event.SubscriberAddress
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapS<'s, 'd> (event : 'd Event) world =
+        static member unwrapS<'d, 's> (event : 'd Event) world =
             World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
 
         /// Unwrap commonly-useful values of an event.
-        static member unwrapD<'s, 'd> (event : 'd Event) (_ : World) =
+        static member unwrapD<'d, 's> (event : 'd Event) (_ : World) =
             event.Data

@@ -50,8 +50,8 @@ module OmniDispatchersModule =
                 (Cascade, world)
 
         override dispatcher.Register (address, character, world) =
-            let world = World.monitor address TickEventAddress handleMoveFieldCharacter world
-            let world = World.monitor address TickEventAddress handleAdjustFieldCamera world
+            let world = World.monitor handleMoveFieldCharacter TickEventAddress address world
+            let world = World.monitor handleAdjustFieldCamera TickEventAddress address world
             let world = World.addPhysicsMessage (SetGravityMessage Vector2.Zero) world
             let world = adjustFieldCamera address world
             (character, world)
