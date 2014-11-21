@@ -179,18 +179,21 @@ module AlgebraicConverterModule =
             true
         
         override this.ConvertTo (_, _, source, destType) =
-            if destType = typeof<string> then
-                match source with
-                | null ->
-                    // here we infer that we're dealing with the zero case of a union
-                    (FSharpType.GetUnionCases targetType).[0].Name :> obj
-                | _ ->
+            match source with
+            | null -> null // WHY THE FUCK IS THIS EVER null???
+            | _ ->
+                if destType = typeof<string> then
+                    match source with
+                    | null ->
+                        // here we infer that we're dealing with the zero case of a union
+                        (FSharpType.GetUnionCases targetType).[0].Name :> obj
+                    | _ ->
+                        let sourceType = source.GetType ()
+                        toString source sourceType :> obj
+                else
                     let sourceType = source.GetType ()
-                    toString source sourceType :> obj
-            else
-                let sourceType = source.GetType ()
-                if destType = sourceType then source
-                else failwith "Invalid AlgebraicConverter conversion to source."
+                    if destType = sourceType then source
+                    else failwith "Invalid AlgebraicConverter conversion to source."
 
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string> ||

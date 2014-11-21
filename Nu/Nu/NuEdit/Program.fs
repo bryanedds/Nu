@@ -119,9 +119,9 @@ module Program =
             not propertyCanWrite ||
             not <| Serialization.isPropertyPersistentByName propertyName
 
-        override this.GetValue optSource =
-            match optSource with
-            | null -> null
+        override this.GetValue source =
+            match source with
+            | null -> null // WHY THE FUCK IS THIS EVER null???
             | source ->
                 let entityTds = source :?> EntityTypeDescriptorSource
                 let entity = World.getEntity entityTds.Address !entityTds.RefWorld

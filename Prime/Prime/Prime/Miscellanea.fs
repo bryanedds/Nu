@@ -79,6 +79,9 @@ module Miscellanea =
     /// Sequences two functions like Haskell ($).
     let inline ( ^^ ) f g = f g
 
+    /// Sequences two functions like Haskell ($).
+    let inline ( ^| ) f g = f g
+
     /// Combine the contents of two maps, taking an item from the second map in the case of a key
     /// conflict.
     let inline ( @@ ) map map2 =

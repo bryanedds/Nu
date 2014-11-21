@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open AStar
 open OpenTK
 open Nu
 
@@ -165,13 +166,36 @@ module CharacterStateModule =
           BaseActions : ActionData list // base actions for all instances of character
           Reward : RewardData }
 
+    type [<CustomEquality; NoComparison>] NavigationNode =
+        { PositionM : Vector2i
+          mutable Neighbors : NavigationNode list } // OPTIMIZATION: has to be mutable to be efficiently populated.
+
+        interface NavigationNode IHasNeighbors with
+            member this.Neighbors = this.Neighbors :> _ seq
+
+        interface NavigationNode IEquatable with
+            member this.Equals that =
+                this.PositionM = that.PositionM
+
+        override this.Equals that =
+            match that with
+            | :? NavigationNode as that -> this.PositionM = that.PositionM
+            | _ -> false
+
+        override this.GetHashCode () =
+            hash this.PositionM
+
+    type WalkState =
+        | WalkFinished
+        | Walking
+
     type WalkDescriptor =
         { WalkDirection : Direction
           WalkOriginM : Vector2i }
 
-    type NavigationDescriptor =
+    type [<StructuralEquality; NoComparison>] NavigationDescriptor =
         { WalkDescriptor : WalkDescriptor
-          NavigationGoalM : Vector2i }
+          OptNavigationPath : NavigationNode list option }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
         | Standing
@@ -182,7 +206,3 @@ module CharacterStateModule =
         | AdvanceWithDirection of Direction
         | AdvanceWithAI // of ...
         | AdvanceOnly
-
-    type WalkState =
-        | WalkFinished
-        | Walking

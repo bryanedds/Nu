@@ -143,7 +143,7 @@ module MetamapModule =
 
         static member concretizePath maxLength abstractPath rand =
             let path = List.ofSeq <| Seq.tryTake maxLength abstractPath
-            (List.map fst path, snd ^^ List.last path)
+            (List.map fst path, snd <| List.last path)
 
         static member concretizeOptPath maxLength abstractPath rand =
             match abstractPath with
