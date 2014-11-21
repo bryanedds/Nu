@@ -61,7 +61,7 @@ module CharacterActivity =
         let characterAnimationState = character.CharacterAnimationState
         let characterAnimationState =
             match optWalkDirection with
-            | Some walkDirection -> {characterAnimationState  with CharacterAnimationDirection = walkDirection }
+            | Some walkDirection -> { characterAnimationState with CharacterAnimationDirection = walkDirection }
             | None -> characterAnimationState
         let character = Entity.setCharacterAnimationState characterAnimationState character
         let character =
@@ -105,6 +105,32 @@ module CharacterActivity =
         | Navigating navigationDescriptor -> advanceNavigationState characterAddress character navigationDescriptor world
         | Acting _ -> world
 
+    let getTouchDirection (character : Entity) touchPosition world =
+        let touchPositionW = Camera.mouseToWorld touchPosition character.ViewType world.Camera
+        let touchPositionE = touchPositionW - (character.Position + character.Size * 0.5f)
+        Direction.fromVector2 touchPositionE
+
+    let touchStandState characterAddress character touchPosition world =
+        let walkDirection = getTouchDirection character touchPosition world    
+        let openDirections = getOpenDirections character.Position world
+        let startWalking = Set.contains walkDirection openDirections
+        let character =
+            if startWalking then
+                let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
+                let navigationGoalM = walkOriginM + Direction.toVector2i walkDirection
+                let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
+                let activityState = Navigating { WalkDescriptor = walkDescriptor; NavigationGoalM = navigationGoalM }
+                Entity.setActivityState activityState character
+            else character
+        let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
+        let character = Entity.setCharacterAnimationState characterAnimationState character
+        World.setEntity characterAddress character world
+
+    let touch characterAddress (character : Entity) touchPosition world =
+        match character.ActivityState with
+        | Standing -> touchStandState characterAddress character touchPosition world
+        | Navigating _ | Acting _ -> world
+
 [<AutoOpen>]
 module CharacterActivityModule =
 
@@ -118,15 +144,5 @@ module CharacterActivityModule =
         static member advanceCharacterActivity characterAddress character activityAdvancement world =
             CharacterActivity.advance characterAddress character activityAdvancement world
 
-        static member touchCharacterActivity characterAddress (character : Entity) touchPosition world =
-            match character.ActivityState with
-            | Standing ->
-                let touchPositionW = Camera.mouseToWorld touchPosition character.ViewType world.Camera
-                let walkDirection = Direction.fromVector2 touchPositionW
-                let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
-                let navigationGoalM = walkOriginM + Direction.toVector2i walkDirection
-                let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
-                let activityState = Navigating { WalkDescriptor = walkDescriptor; NavigationGoalM = navigationGoalM }
-                let character = Entity.setActivityState activityState character
-                World.setEntity characterAddress character world
-            | Navigating _ | Acting _ -> world
+        static member touchCharacterActivity characterAddress character touchPosition world =
+            CharacterActivity.touch characterAddress character touchPosition world
