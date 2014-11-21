@@ -17,5 +17,4 @@ module CharacterDispatcherModule =
         static member IntrinsicFacetNames =
             [typeof<CharacterStateFacet>.Name
              typeof<CharacterAnimationFacet>.Name
-             typeof<CharacterControlFacet>.Name
              typeof<CharacterCameraFacet>.Name]

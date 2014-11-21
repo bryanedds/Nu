@@ -167,10 +167,17 @@ module CharacterStateModule =
 
     type WalkDescriptor =
         { WalkDirection : Direction
-          WalkOriginM : Vector2i
-          WalkGoalM : Vector2i }
+          WalkOriginM : Vector2i }
+
+    type NavigationDescriptor =
+        { WalkDescriptor : WalkDescriptor
+          NavigationGoalM : Vector2i }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
         | Standing
-        | Walking of WalkDescriptor
+        | Navigating of NavigationDescriptor
         | Acting of ActionData
+
+    type Arrival =
+        | Arriving
+        | Arrived

@@ -200,10 +200,11 @@ module EntityDispatcherModule =
 
     type Entity with
     
-        static member private sortFstDesc (priority, _) (priority2, _) =
-            if priority = priority2 then 0
-            elif priority > priority2 then -1
-            else 1
+        // OPTIMIZATION: priority annotated as single to decrease GC pressure.
+        static member private sortFstDesc (priority : single, _) (priority2 : single, _) =
+            if priority > priority2 then -1
+            elif priority < priority2 then 1
+            else 0
 
         static member mouseToEntity position world (entity : Entity) =
             let positionScreen = Camera.mouseToScreen position world.Camera

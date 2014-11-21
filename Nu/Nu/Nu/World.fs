@@ -94,9 +94,14 @@ module WorldModule =
             let world = World.setScreen address screen world
             (screen, world)
 
-        static member selectScreen address screen world =
-            let (screen, world) = World.setScreenState IncomingState address screen world
-            let world = World.setOptSelectedScreenAddress (Some address) world
+        static member selectScreen screenAddress screen world =
+            let world =
+                match World.getOptSelectedScreenAddress world with
+                | Some selectedScreenAddress ->  World.publish4 () (DeselectEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
+                | None -> world
+            let (screen, world) = World.setScreenState IncomingState screenAddress screen world
+            let world = World.setOptSelectedScreenAddress (Some screenAddress) world
+            let world = World.publish4 () (SelectEventAddress ->>- screenAddress) screenAddress world
             (screen, world)
 
         static member tryTransitionScreen destinationAddress destinationScreen world =
@@ -159,10 +164,6 @@ module WorldModule =
                 let selectedScreen = World.getScreen selectedScreenAddress world
                 match selectedScreen.ScreenStateNp with
                 | IncomingState ->
-                    let world =
-                        if selectedScreen.TransitionTicksNp = 0L
-                        then World.publish4 () (SelectEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
-                        else world
                     match world.State.Liveness with
                     | Running ->
                         let world =
@@ -189,7 +190,6 @@ module WorldModule =
                         let world = World.setScreen selectedScreenAddress selectedScreen world
                         if finished then
                             let world = snd <| World.setScreenState IdlingState selectedScreenAddress selectedScreen world
-                            let world = World.publish4 () (DeselectEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
                             match world.State.Liveness with
                             | Running -> World.publish4 () (OutgoingFinishEventAddress ->>- selectedScreenAddress) selectedScreenAddress world
                             | Exiting -> world
