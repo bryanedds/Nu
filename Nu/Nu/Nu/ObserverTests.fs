@@ -16,26 +16,26 @@ module ReactTests =
     let [<Fact>] subscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let world = observe (atooa UnitEventAddress) UnitEventAddress |> subscribe incUserStateAndCascade world |> snd
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = observe UnitEventAddress (atooa UnitEventAddress) |> subscribe incUserStateAndCascade world |> snd
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] subscribeTwiceUnsubscribeOnceWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let observable = observe (atooa UnitEventAddress) UnitEventAddress |> using incUserStateAndCascade
+        let observable = observe UnitEventAddress (atooa UnitEventAddress) |> using incUserStateAndCascade
         let world = snd <| subscribe2 world observable
         let (unsubscribe, world) = subscribe2 world observable
         let world = unsubscribe world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] unsubscribeWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = observe (atooa UnitEventAddress) UnitEventAddress |> subscribe incUserStateAndCascade world
+        let (unsubscribe, world) = observe UnitEventAddress (atooa UnitEventAddress) |> subscribe incUserStateAndCascade world
         let world = unsubscribe world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.True <| Map.isEmpty world.Callbacks.Subscriptions
         Assert.Equal (0, World.getUserState world)
 
@@ -43,41 +43,41 @@ module ReactTests =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            observe (atooa UnitEventAddress) UnitEventAddress |>
+            observe UnitEventAddress (atooa UnitEventAddress) |>
             filter (fun _ world -> World.getUserState world = 0) |>
             subscribe incUserStateAndCascade world |>
             snd
-        let world = World.publish4 GameAddress UnitEventAddress () world
-        let world = World.publish4 GameAddress UnitEventAddress () world
+        let world = World.publish4 () UnitEventAddress GameAddress world
+        let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
 
     let [<Fact>] mapWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            observe (atooa UnitEventAddress) IntEventAddress |>
+            observe IntEventAddress (atooa UnitEventAddress) |>
             map (fun event _ -> event.Data * 2) |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) world |>
             snd
-        let world = World.publish4 GameAddress IntEventAddress 1 world
+        let world = World.publish4 1 IntEventAddress GameAddress world
         Assert.Equal (2, World.getUserState world)
 
     let [<Fact>] scanWorks () =
         World.init ()
         let world = World.makeEmpty 0
         let world =
-            observe (atooa UnitEventAddress) IntEventAddress |>
+            observe IntEventAddress (atooa UnitEventAddress) |>
             scan (fun acc event _ -> acc + event.Data) 0 |>
             subscribe (fun event world -> (Cascade, World.setUserState event.Data world)) world |>
             snd
-        let world = World.publish4 GameAddress IntEventAddress 1 world
-        let world = World.publish4 GameAddress IntEventAddress 2 world
+        let world = World.publish4 1 IntEventAddress GameAddress world
+        let world = World.publish4 2 IntEventAddress GameAddress world
         Assert.Equal (3, World.getUserState world)
 
     let [<Fact>] scanDoesntLeaveGarbage () =
         World.init ()
         let world = World.makeEmpty 0
-        let (unsubscribe, world) = observe (atooa UnitEventAddress) IntEventAddress |> scan2 (fun a _ _ -> a) |> subscribe2 world
-        let world = World.publish4 GameAddress IntEventAddress 0 world
+        let (unsubscribe, world) = observe IntEventAddress (atooa UnitEventAddress) |> scan2 (fun a _ _ -> a) |> subscribe2 world
+        let world = World.publish4 0 IntEventAddress GameAddress world
         let world = unsubscribe world
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates

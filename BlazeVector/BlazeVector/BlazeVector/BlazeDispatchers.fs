@@ -57,8 +57,8 @@ module BulletModule =
              typeof<SpriteFacet>.Name]
 
         override dispatcher.Register (address, bullet, world) =
-            let world = World.monitor address TickEventAddress handleTick world
-            let world = World.monitor address (CollisionEventAddress ->>- address) handleCollision world
+            let world = World.monitor handleTick TickEventAddress address world
+            let world = World.monitor handleCollision (CollisionEventAddress ->>- address) address world
             (bullet, world)
 
 [<AutoOpen>]
@@ -124,8 +124,8 @@ module EnemyModule =
         override dispatcher.Register (address, enemy, world) =
             let world =
                 world |>
-                World.monitor address TickEventAddress handleTick |>
-                World.monitor address (CollisionEventAddress ->>- address) handleCollision
+                World.monitor handleTick TickEventAddress address |>
+                World.monitor handleCollision (CollisionEventAddress ->>- address) address
             (enemy, world)
 
 [<AutoOpen>]
@@ -241,10 +241,10 @@ module PlayerModule =
         override dispatcher.Register (address, player, world) =
             let world =
                 world |>
-                World.monitor address TickEventAddress handleSpawnBullet |>
-                World.monitor address TickEventAddress handleMovement |>
-                World.monitor address MouseLeftDownEventAddress handleJump |>
-                World.monitor address KeyboardKeyDownEventAddress handleJumpByKeyboardKey
+                World.monitor handleSpawnBullet TickEventAddress address |>
+                World.monitor handleMovement TickEventAddress address |>
+                World.monitor handleJump MouseLeftDownEventAddress address |>
+                World.monitor handleJumpByKeyboardKey KeyboardKeyDownEventAddress address
             (player, world)
 
 [<AutoOpen>]
@@ -287,8 +287,8 @@ module StagePlayModule =
         override dispatcher.Register (address, group, world) =
             let world =
                 world |>
-                World.monitor address TickEventAddress handleAdjustCamera |>
-                World.monitor address TickEventAddress handlePlayerFall
+                World.monitor handleAdjustCamera TickEventAddress address |>
+                World.monitor handlePlayerFall TickEventAddress address
             let world = adjustCamera address world
             (group, world)
 
@@ -338,9 +338,9 @@ module StageScreenModule =
         override dispatcher.Register (address, screen, world) =
             let world =
                 world |>
-                World.monitor address (SelectEventAddress ->>- address) handleStartPlay |>
-                World.monitor address (OutgoingStartEventAddress ->>- address) handleStoppingPlay |>
-                World.monitor address (DeselectEventAddress ->>- address) handleStopPlay
+                World.monitor handleStartPlay (SelectEventAddress ->>- address) address |>
+                World.monitor handleStoppingPlay (OutgoingStartEventAddress ->>- address) address |>
+                World.monitor handleStopPlay (DeselectEventAddress ->>- address) address
             (screen, world)
 
 [<AutoOpen>]

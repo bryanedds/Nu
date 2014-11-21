@@ -172,7 +172,7 @@ module CharacterCameraFacetModule =
             (Cascade, World.setCamera camera world)
 
         override facet.Register (address, entity, world) =
-            let world = observe address TickEventAddress |> monitor handleTick world |> snd
+            let world = observe TickEventAddress address |> monitor handleTick world |> snd
             (entity, world)
 
 [<AutoOpen>]
@@ -281,5 +281,5 @@ module CharacterControlFacetModule =
             "CharacterDispatcher" // forward referenced
 
         override facet.Register (address, entity, world) =
-            let world = observe address TickEventAddress |> filter isSelectedScreenIdling |> monitor handleTick world |> snd
+            let world = observe TickEventAddress address |> filter isSelectedScreenIdling |> monitor handleTick world |> snd
             (entity, world)
