@@ -380,8 +380,8 @@ module Program =
             match tryMousePick form mousePosition worldChangers refWorld world with
             | Some (entity, entityAddress) ->
                 let world = pushPastWorld world world
-                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                let dragState = DragEntityPosition (entity.Position + mousePositionEntity, mousePositionEntity, entityAddress)
+                let mousePositionWorld = Camera.mouseToWorld mousePosition entity.ViewType world.Camera
+                let dragState = DragEntityPosition (entity.Position + mousePositionWorld, mousePositionWorld, entityAddress)
                 let world = World.transformUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
                 (handled, world)
             | None -> (handled, world)
@@ -505,8 +505,10 @@ module Program =
                 let world = pushPastWorld world world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
-                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                let entityPosition = if atMouse then mousePositionEntity else world.Camera.EyeCenter
+                let entityPosition =
+                    if atMouse
+                    then Camera.mouseToWorld mousePosition entity.ViewType world.Camera
+                    else Camera.mouseToWorld (world.Camera.EyeSize * 0.5f) entity.ViewType world.Camera
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea groupAddress entity.Name
@@ -619,8 +621,8 @@ module Program =
                 let entity = { entity with Id = id; Name = acstring id }
                 let entityPosition =
                     if atMouse
-                    then Entity.mouseToEntity editorState.RightClickPosition world entity
-                    else world.Camera.EyeCenter
+                    then Camera.mouseToWorld editorState.RightClickPosition entity.ViewType world.Camera
+                    else Camera.mouseToWorld (world.Camera.EyeSize * 0.5f) entity.ViewType world.Camera
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
@@ -747,15 +749,15 @@ module Program =
         if not <| canEditWithMouse form world then
             let editorState = World.getUserState world
             match editorState.DragEntityState with
-            | DragEntityPosition (pickOffset, mousePositionEntityOrig, address) ->
+            | DragEntityPosition (pickOffset, mousePositionWorldOrig, address) ->
                 let (positionSnap, _) = getSnaps form
                 let entity = World.getEntity address world
                 let mousePosition = World.getMousePositionF world
-                let mousePositionEntity = Entity.mouseToEntity mousePosition world entity
-                let entityPosition = (pickOffset - mousePositionEntityOrig) + (mousePositionEntity - mousePositionEntityOrig)
+                let mousePositionWorld = Camera.mouseToWorld mousePosition entity.ViewType world.Camera
+                let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entity = Entity.setPositionSnapped positionSnap entityPosition entity
                 let world = World.setEntity address entity world
-                let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionEntityOrig, address) }
+                let editorState = { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, address) }
                 let world = World.setUserState editorState world
                 let world = Entity.propagatePhysics address entity world
                 form.propertyGrid.Refresh ()
@@ -878,7 +880,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let eitherWorld = World.tryMake false true GuiAndPhysics editorState userComponentFactory sdlDeps
+        let eitherWorld = World.tryMake true false GuiAndPhysics editorState userComponentFactory sdlDeps
         match eitherWorld with
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world

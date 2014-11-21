@@ -73,10 +73,21 @@ module Camera =
         let viewBounds = getViewBounds viewType camera
         Math.isBoundsInBounds3 position size viewBounds
 
-    /// Transform the given mouse position to the camera's sight.
+    /// Transform the given mouse position to screen space.
     let mouseToScreen (position : Vector2) camera =
         let positionScreen =
             Vector2 (
                 position.X - camera.EyeSize.X * 0.5f,
                 -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
         positionScreen
+
+    /// Transform the given mouse position to world space.
+    let mouseToWorld position viewType camera =
+        let positionScreen = mouseToScreen position camera
+        let getView =
+            match viewType with
+            | Relative -> getViewRelative
+            | Absolute -> getViewAbsolute
+        let view = getView camera
+        let positionEntity = positionScreen * view
+        positionEntity

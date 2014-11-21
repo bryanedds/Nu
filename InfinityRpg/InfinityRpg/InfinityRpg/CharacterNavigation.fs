@@ -110,7 +110,6 @@ module CharacterActivityModule =
 
     type CharacterActivityAdvancement =
         | AdvanceWithDirection of Direction
-        | AdvanceWithTouch of Vector2i
         | AdvanceWithAI // of ...
         | AdvanceOnly
 
@@ -118,3 +117,16 @@ module CharacterActivityModule =
 
         static member advanceCharacterActivity characterAddress character activityAdvancement world =
             CharacterActivity.advance characterAddress character activityAdvancement world
+
+        static member touchCharacterActivity characterAddress (character : Entity) touchPosition world =
+            match character.ActivityState with
+            | Standing ->
+                let touchPositionW = Camera.mouseToWorld touchPosition character.ViewType world.Camera
+                let walkDirection = Direction.fromVector2 touchPositionW
+                let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
+                let navigationGoalM = walkOriginM + Direction.toVector2i walkDirection
+                let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
+                let activityState = Navigating { WalkDescriptor = walkDescriptor; NavigationGoalM = navigationGoalM }
+                let character = Entity.setActivityState activityState character
+                World.setEntity characterAddress character world
+            | Navigating _ | Acting _ -> world
