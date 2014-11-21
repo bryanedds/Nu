@@ -39,12 +39,12 @@ module InfinityRpgModule =
             // make field
             let field = makeField world
 
-            // make character
-            let playerCharacter = World.makeEntity typeof<PlayerCharacterDispatcher>.Name (Some PlayerCharacterName) world
-            let playerCharacter = Entity.setDepth 1.0f playerCharacter
+            // make player
+            let player = World.makeEntity typeof<PlayerDispatcher>.Name (Some PlayerName) world
+            let player = Entity.setDepth 1.0f player
 
             // make scene hierarchy
-            let entities = Map.ofList [(field.Name, field); (playerCharacter.Name, playerCharacter)]
+            let entities = Map.ofList [(field.Name, field); (player.Name, player)]
             let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
             let sceneHierarchy = (scene, entities)
 
@@ -98,7 +98,7 @@ module InfinityRpgModule =
             World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickCreditsBackEventAddress GameAddress world
 
         static let addGameplay world =
-            let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<ScreenDispatcher>.Name GameplayAddress HudFilePath world
+            let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name GameplayAddress HudFilePath world
             let world = World.setGroup HudAddress (Group.setPersistent false <| World.getGroup HudAddress world) world
             let world = World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickHudBackEventAddress GameAddress world
             let world = World.subscribe4 handleClickSaveGame ClickHudSaveGameEventAddress GameAddress world

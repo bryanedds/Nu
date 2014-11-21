@@ -11,6 +11,7 @@ module Constants =
     let TileSheetSizeM = Vector2i 4
     let TileSheetSizeI = TileSheetSizeM * 64
     let TileSheetSize = let t = TileSheetSizeI in t.Vector2
+    let CharacterWalkSpeed = 4.0f
 
     // file paths
     let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
@@ -77,6 +78,6 @@ module Constants =
     let FieldName = "Field"
     let FieldAddress = gatoea SceneAddress FieldName
 
-    // player character constants
-    let PlayerCharacterName = "PlayerCharacter"
-    let PlayerCharacterAddress = gatoea SceneAddress PlayerCharacterName
+    // player constants
+    let PlayerName = "Player"
+    let PlayerAddress = gatoea SceneAddress PlayerName

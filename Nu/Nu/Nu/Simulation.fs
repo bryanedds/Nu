@@ -469,6 +469,12 @@ module WorldConstants =
 module World =
 
     let private AnyEventAddressesCache = Dictionary<obj Address, obj Address list> HashIdentity.Structural
+
+    // OPTIMIZATION: priority annotated as single to decrease GC pressure.
+    let private sortFstDesc (priority : single, _) (priority2 : single, _) =
+        if priority > priority2 then -1
+        elif priority < priority2 then 1
+        else 0
     
     let private boxSubscription<'d> (subscription : 'd Subscription) =
         let boxableSubscription = fun (event : obj) world ->
@@ -488,12 +494,6 @@ module World =
     /// Make a callback key used to track callback states.
     let makeCallbackKey () =
         Guid.NewGuid ()
-
-    // OPTIMIZATION: priority annotated as single to decrease GC pressure.
-    let private sortFstDesc (priority : single, _) (priority2 : single, _) =
-        if priority = priority2 then 0
-        elif priority > priority2 then -1
-        else 1
 
     /// Get a simulant at the given address from the world.
     let mutable getSimulant = Unchecked.defaultof<Simulant Address -> World -> Simulant>

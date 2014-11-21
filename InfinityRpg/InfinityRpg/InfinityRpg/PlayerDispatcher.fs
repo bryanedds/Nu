@@ -9,7 +9,7 @@ open InfinityRpg
 open InfinityRpg.Constants
 
 [<AutoOpen>]
-module PlayerCharacterDispatcherModule =
+module PlayerDispatcherModule =
 
-    type PlayerCharacterDispatcher () =
+    type PlayerDispatcher () =
         inherit CharacterDispatcher ()
