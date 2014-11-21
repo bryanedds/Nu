@@ -179,5 +179,10 @@ module CharacterStateModule =
         | Acting of ActionData
 
     type Arrival =
-        | Arriving
         | Arrived
+        | Arriving
+
+    type CharacterActivityAdvancement =
+        | AdvanceWithDirection of Direction
+        | AdvanceWithAI // of ...
+        | AdvanceOnly

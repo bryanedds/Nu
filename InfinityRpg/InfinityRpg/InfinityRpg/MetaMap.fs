@@ -48,6 +48,9 @@ module MetamapModule =
                 else West
             else failwith "Direction cannot be derived from Vector2.Zero."
 
+        static member fromVector2i (v : Vector2i) =
+            Direction.fromVector2 v.Vector2
+
         static member toVector2i direction =
             match direction with
             | North -> Vector2i.Up
