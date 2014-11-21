@@ -47,15 +47,15 @@ namespace AStar
     {
         public Node LastStep { get; private set; }
         public Path<Node> PreviousSteps { get; private set; }
-        public double TotalCost { get; private set; }
-        private Path(Node lastStep, Path<Node> previousSteps, double totalCost)
+        public float TotalCost { get; private set; }
+        private Path(Node lastStep, Path<Node> previousSteps, float totalCost)
         {
             LastStep = lastStep;
             PreviousSteps = previousSteps;
             TotalCost = totalCost;
         }
         public Path(Node start) : this(start, null, 0) { }
-        public Path<Node> AddStep(Node step, double stepCost)
+        public Path<Node> AddStep(Node step, float stepCost)
         {
             return new Path<Node>(step, this, TotalCost + stepCost);
         }
@@ -70,9 +70,9 @@ namespace AStar
         }
     }
 
-    public interface IHasNeighbours<N>
+    public interface IHasNeighbors<N>
     {
-        IEnumerable<N> Neighbours { get; }
+        IEnumerable<N> Neighbors { get; }
     }
 
     public static class AStar
@@ -80,12 +80,12 @@ namespace AStar
         static public Path<Node> FindPath<Node>(
             Node start,
             Node destination,
-            Func<Node, Node, double> distance,
-            Func<Node, double> estimate)
-            where Node : IHasNeighbours<Node>
+            Func<Node, Node, float> distance,
+            Func<Node, float> estimate)
+            where Node : IHasNeighbors<Node>
         {
             var closed = new HashSet<Node>();
-            var queue = new PriorityQueue<double, Path<Node>>();
+            var queue = new PriorityQueue<float, Path<Node>>();
             queue.Enqueue(0, new Path<Node>(start));
             while (!queue.IsEmpty)
             {
@@ -95,9 +95,9 @@ namespace AStar
                 if (path.LastStep.Equals(destination))
                     return path;
                 closed.Add(path.LastStep);
-                foreach (Node n in path.LastStep.Neighbours)
+                foreach (Node n in path.LastStep.Neighbors)
                 {
-                    double d = distance(path.LastStep, n);
+                    float d = distance(path.LastStep, n);
                     var newPath = path.AddStep(n, d);
                     queue.Enqueue(newPath.TotalCost + estimate(n), newPath);
                 }

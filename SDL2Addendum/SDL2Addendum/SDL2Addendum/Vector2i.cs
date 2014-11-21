@@ -39,10 +39,20 @@ namespace OpenTK
             return CompareTo((Vector2i)that);
         }
 
-        // TODO: add Vector2i constructor to Vector2, and remove this.
+        // TODO: add Vector2i constructor to Vector2, and remove 
         public Vector2 Vector2
         {
-            get { return new Vector2(this.X, this.Y); }
+            get { return new Vector2(X, Y); }
+        }
+
+        public float LengthSquared
+        {
+            get { return X * X + Y * Y; }
+        }
+
+        public float Length
+        {
+            get { return (float)Math.Sqrt(LengthSquared); }
         }
 
         public static Vector2i operator +(Vector2i v, Vector2i v2)
@@ -110,12 +120,12 @@ namespace OpenTK
 
         public override string ToString()
         {
-            return "(" + this.X + ", " + this.Y + ")";
+            return "(" + X + ", " + Y + ")";
         }
 
         public override int GetHashCode()
         {
-            return this.X ^ this.Y;
+            return X ^ Y;
         }
 
         public int X;

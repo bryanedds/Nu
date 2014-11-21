@@ -2,6 +2,7 @@
 open System
 open SDL2
 open OpenTK
+open AStar
 open Prime
 open Nu
 open Nu.Constants
@@ -13,7 +14,7 @@ open InfinityRpg.Constants
 [<RequireQualifiedAccess>]
 module CharacterActivity =
 
-    let walk positive current destination =
+    let private walk positive current destination =
         let (walkSpeed, delta) =
             if positive
             then (CharacterWalkSpeed, destination - current)
@@ -24,59 +25,58 @@ module CharacterActivity =
         then (destination, WalkFinished)
         else (next, Walking)
 
-    let checkOpenDirection currentPositionM fieldTiles direction =
-        let directionVector = Direction.toVector2i direction
-        match Map.tryFind (currentPositionM + directionVector) fieldTiles with
+    let private isTilePassable fieldTiles positionM =
+        match Map.tryFind positionM fieldTiles with
         | Some tile -> tile.FieldTileType = Passable
-        | None -> true
+        | None -> false
 
-    let getOpenDirections (position : Vector2) world =
+    let private getOpenDirectionsFromPositionM (field : Entity) positionM =
+        let fieldTiles = field.FieldMapNp.FieldTiles
+        Set.ofSeq <|
+            seq {
+                if isTilePassable fieldTiles (positionM + Vector2i.Up) then yield North
+                if isTilePassable fieldTiles (positionM + Vector2i.Right) then yield East
+                if isTilePassable fieldTiles (positionM + Vector2i.Down) then yield South
+                if isTilePassable fieldTiles (positionM + Vector2i.Left) then yield West }
+
+    let private getOpenDirections (position : Vector2) world =
         match World.getOptEntity FieldAddress world with
         | Some field ->
-            let currentPositionM =
-                Vector2i
-                    (int <| position.X / TileSize.X,
-                     int <| position.Y / TileSize.Y)
-            let fieldTiles = field.FieldMapNp.FieldTiles
-            Set.ofSeq <|
-                seq {
-                    if checkOpenDirection currentPositionM fieldTiles North then yield North
-                    if checkOpenDirection currentPositionM fieldTiles East then yield East
-                    if checkOpenDirection currentPositionM fieldTiles South then yield South
-                    if checkOpenDirection currentPositionM fieldTiles West then yield West }
+            let positionM = Vector2i (int <| position.X / TileSize.X, int <| position.Y / TileSize.Y)
+            getOpenDirectionsFromPositionM field positionM
         | None -> Set.ofList [North; East; South; West]
 
-    let advanceStandingState walkDirection (character : Entity) world =
+    let private getOpenNeighborPositions (field : Entity) positionM =
+        let openDirections = getOpenDirectionsFromPositionM field positionM
+        Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
+
+    let private advanceDuringStandingStateWithDirection walkDirection (character : Entity) world =
         let openDirections = getOpenDirections character.Position world
-        let startWalking = Set.contains walkDirection openDirections
-        let characterAnimationState = character.CharacterAnimationState
-        let characterAnimationState = { characterAnimationState with CharacterAnimationDirection = walkDirection }
+        let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character
+        let startWalking = Set.contains walkDirection openDirections
         if startWalking then
             let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
-            let navigationGoalM = walkOriginM + Direction.toVector2i walkDirection
             let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
-            let activityState = Navigating { WalkDescriptor = walkDescriptor; NavigationGoalM = navigationGoalM }
+            let activityState = Navigating { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
             Entity.setActivityState activityState character
         else character
 
-    let private advanceNavigatingStatePostWalk navigationDescriptor (character : Entity) world =
+    let private advanceAfterNavigatingStateAdvancement navigationDescriptor (character : Entity) world =
         let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
-        let navigationRemaining = navigationDescriptor.NavigationGoalM - characterPositionM
-        if navigationRemaining <> Vector2i.Zero then
-            let walkDirection = Direction.fromVector2i navigationRemaining
+        match navigationDescriptor.OptNavigationPath with
+        | Some [] -> failwith "NavigationPath should never be empty here."
+        | Some (_ :: []) -> Entity.setActivityState Standing character
+        | Some (currentNode :: navigationPath) ->
+            let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - currentNode.PositionM
+            let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
+            let character = Entity.setCharacterAnimationState characterAnimationState character
             let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
-            let navigationDescriptor = { navigationDescriptor with WalkDescriptor = walkDescriptor }
-            let openDirections = getOpenDirections character.Position world
-            let stillNavigating = Set.contains walkDirection openDirections
-            if stillNavigating then
-                let character = Entity.setActivityState (Navigating navigationDescriptor) character
-                let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
-                Entity.setCharacterAnimationState characterAnimationState character
-            else Entity.setActivityState Standing character
-        else Entity.setActivityState Standing character
+            let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+            Entity.setActivityState (Navigating navigationDescriptor) character
+        | None -> Entity.setActivityState Standing character
 
-    let private advanceNavigatingState navigationDescriptor (character : Entity) world =
+    let private advanceDuringNavigatingState navigationDescriptor (character : Entity) world =
         let walkDescriptor = navigationDescriptor.WalkDescriptor
         let walkDistanceI = match walkDescriptor.WalkDirection with North | South -> TileSizeI.Y | East | West -> TileSizeI.X
         let walkDestinationI = walkDistanceI * (walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection)
@@ -89,49 +89,71 @@ module CharacterActivity =
             | West -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
         let character = Entity.setPosition newPosition character
         match walkState with
-        | WalkFinished -> advanceNavigatingStatePostWalk navigationDescriptor character world
+        | WalkFinished -> advanceAfterNavigatingStateAdvancement navigationDescriptor character world
         | Walking -> character
 
     let advance advancementType (character : Entity) world =
         match character.ActivityState with
         | Standing ->
             match advancementType with
-            | AdvanceWithDirection direction -> advanceStandingState direction character world
+            | AdvanceWithDirection direction -> advanceDuringStandingStateWithDirection direction character world
             | AdvanceWithAI -> character
             | AdvanceOnly -> character
         | Navigating navigationDescriptor ->
             match advancementType with
             | AdvanceWithDirection direction ->
-                let character = advanceNavigatingState navigationDescriptor character world
+                let character = advanceDuringNavigatingState navigationDescriptor character world
                 match character.ActivityState with // advance stand state if possible for smooth direction input
-                | Standing -> advanceStandingState direction character world
+                | Standing -> advanceDuringStandingStateWithDirection direction character world
                 | Navigating _ | Acting _ -> character
             | AdvanceWithAI -> character
-            | AdvanceOnly -> advanceNavigatingState navigationDescriptor character world
+            | AdvanceOnly -> advanceDuringNavigatingState navigationDescriptor character world
         | Acting _ -> character
 
-    let private getTouchGoalAndDirection touchPosition (character : Entity) world =
-        let touchPositionW = Camera.mouseToWorld character.ViewType touchPosition world.Camera
+    let private tryGetNavigationPath camera (field : Entity) touchPosition (character : Entity) =
+        let touchPositionW = Camera.mouseToWorld character.ViewType touchPosition camera
         let touchPositionE = touchPositionW - (character.Position + character.Size * 0.5f)
-        let touchDirection = Direction.fromVector2 touchPositionE
         let touchGoalM = Vector2i (Vector2.Divide (touchPositionW, TileSize))
-        (touchDirection, touchGoalM)
+        let nodes = Map.map (fun positionM _ -> { PositionM = positionM; Neighbors = [] }) field.FieldMapNp.FieldTiles
+        Map.iter
+            (fun positionM node -> 
+                let neighborPositions = getOpenNeighborPositions field positionM |> List.ofSeq
+                let neighbors =
+                    List.fold
+                        (fun neighbors neighborPosition ->
+                            match Map.tryFind neighborPosition nodes with
+                            | Some node -> node :: neighbors
+                            | None -> neighbors)
+                        []
+                        neighborPositions
+                node.Neighbors <- neighbors)
+            nodes
+        let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
+        let currentNode = Map.find characterPositionM nodes
+        let goalNode = Map.find touchGoalM nodes
+        match AStar.FindPath (currentNode, goalNode, (fun n n2 -> 1.0f), (fun n -> let v = n.PositionM - touchGoalM in v.LengthSquared)) with
+        | null -> None
+        | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-    let private touchDuringStandState touchPosition character world =
-        let (walkDirection, navigationGoalM) = getTouchGoalAndDirection touchPosition character world    
-        let openDirections = getOpenDirections character.Position world
-        let startWalking = Set.contains walkDirection openDirections
-        let character =
-            if startWalking then
-                let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
-                let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
-                let activityState = Navigating { WalkDescriptor = walkDescriptor; NavigationGoalM = navigationGoalM }
-                Entity.setActivityState activityState character
-            else character
-        let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
-        Entity.setCharacterAnimationState characterAnimationState character
+    let private touchDuringStandingState touchPosition character world =
+        match World.getOptEntity FieldAddress world with
+        | Some field ->
+            match tryGetNavigationPath world.Camera field touchPosition character with
+            | Some navigationPath ->
+                match navigationPath with
+                | [] -> character
+                | _ ->
+                    let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
+                    let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - walkOriginM
+                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
+                    let activityState = Navigating { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
+                    let character = Entity.setActivityState activityState character
+                    let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
+                    Entity.setCharacterAnimationState characterAnimationState character
+            | None -> character
+        | None -> character
 
     let touch touchPosition (character : Entity) world =
         match character.ActivityState with
-        | Standing -> touchDuringStandState touchPosition character world
+        | Standing -> touchDuringStandingState touchPosition character world
         | Navigating _ | Acting _ -> character
