@@ -20,7 +20,10 @@ module GameplayDispatcherModule =
             let world = World.advanceCharacterActivity PlayerAddress player AdvanceOnly world
             (Cascade, world)
 
-        static let handleTouchFeeler _ world =
+        static let handleTouchFeeler event world =
+            let touchPosition : Vector2 = World.unwrapD event world
+            let player = World.getEntity PlayerAddress world
+            let world = World.touchCharacterActivity PlayerAddress player touchPosition world
             (Cascade, world)
 
         override dispatcher.Register (address, screen, world) =

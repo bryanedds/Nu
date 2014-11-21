@@ -34,9 +34,9 @@ module OmniDispatchersModule =
             let feeler = World.getEntity feelerAddress world
             if feeler.Touched then
                 let mousePosition = World.getMousePositionF world
-                let mousePositionEntity = Entity.mouseToEntity mousePosition world character
+                let mousePositionWorld = Camera.mouseToWorld mousePosition character.ViewType world.Camera
                 let characterCenter = character.Position + character.Size * 0.5f
-                let impulseVector = (mousePositionEntity - characterCenter) * 5.0f
+                let impulseVector = (mousePositionWorld - characterCenter) * 5.0f
                 let world = World.applyBodyLinearImpulse impulseVector character.PhysicsId world 
                 (Cascade, world)
             else

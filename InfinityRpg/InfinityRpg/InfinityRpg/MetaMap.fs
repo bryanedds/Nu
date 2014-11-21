@@ -38,6 +38,16 @@ module MetamapModule =
             | 3 -> West
             | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
 
+        static member fromVector2 v =
+            if v <> Vector2.Zero then
+                let atan2 = Math.Atan2 (float v.Y, float v.X)
+                let angle = if atan2 < 0.0 then atan2 + Math.PI * 2.0 else atan2
+                if angle < Math.PI * 0.75 && angle >= Math.PI * 0.25 then North
+                elif angle < Math.PI * 0.25 || angle >= Math.PI * 1.75 then East
+                elif angle < Math.PI * 1.75 && angle >= Math.PI * 1.25 then South
+                else West
+            else failwith "Direction cannot be derived from Vector2.Zero."
+
         static member toVector2i direction =
             match direction with
             | North -> Vector2i.Up
