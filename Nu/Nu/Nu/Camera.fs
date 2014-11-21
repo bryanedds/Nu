@@ -74,16 +74,16 @@ module Camera =
         Math.isBoundsInBounds3 position size viewBounds
 
     /// Transform the given mouse position to screen space.
-    let mouseToScreen (position : Vector2) camera =
+    let mouseToScreen (mousePosition : Vector2) camera =
         let positionScreen =
             Vector2 (
-                position.X - camera.EyeSize.X * 0.5f,
-                -(position.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
+                mousePosition.X - camera.EyeSize.X * 0.5f,
+                -(mousePosition.Y - camera.EyeSize.Y * 0.5f)) // negation for right-handedness
         positionScreen
 
     /// Transform the given mouse position to world space.
-    let mouseToWorld position viewType camera =
-        let positionScreen = mouseToScreen position camera
+    let mouseToWorld viewType mousePosition camera =
+        let positionScreen = mouseToScreen mousePosition camera
         let getView =
             match viewType with
             | Relative -> getViewRelative
@@ -91,3 +91,8 @@ module Camera =
         let view = getView camera
         let positionEntity = positionScreen * view
         positionEntity
+
+    /// Transform the given mouse position to local space.
+    let mouseToLocal viewType localPosition mousePosition camera =
+        let positionWorld = mouseToWorld viewType mousePosition camera
+        localPosition - positionWorld

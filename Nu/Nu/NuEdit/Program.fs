@@ -380,7 +380,7 @@ module Program =
             match tryMousePick form mousePosition worldChangers refWorld world with
             | Some (entity, entityAddress) ->
                 let world = pushPastWorld world world
-                let mousePositionWorld = Camera.mouseToWorld mousePosition entity.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.Camera
                 let dragState = DragEntityPosition (entity.Position + mousePositionWorld, mousePositionWorld, entityAddress)
                 let world = World.transformUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
                 (handled, world)
@@ -507,8 +507,8 @@ module Program =
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
                     if atMouse
-                    then Camera.mouseToWorld mousePosition entity.ViewType world.Camera
-                    else Camera.mouseToWorld (world.Camera.EyeSize * 0.5f) entity.ViewType world.Camera
+                    then Camera.mouseToWorld entity.ViewType mousePosition world.Camera
+                    else Camera.mouseToWorld entity.ViewType (world.Camera.EyeSize * 0.5f) world.Camera
                 let entityTransform = { Transform.Position = entityPosition; Depth = getCreationDepth form; Size = entity.Size; Rotation = entity.Rotation }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea groupAddress entity.Name
@@ -621,8 +621,8 @@ module Program =
                 let entity = { entity with Id = id; Name = acstring id }
                 let entityPosition =
                     if atMouse
-                    then Camera.mouseToWorld editorState.RightClickPosition entity.ViewType world.Camera
-                    else Camera.mouseToWorld (world.Camera.EyeSize * 0.5f) entity.ViewType world.Camera
+                    then Camera.mouseToWorld entity.ViewType editorState.RightClickPosition world.Camera
+                    else Camera.mouseToWorld entity.ViewType (world.Camera.EyeSize * 0.5f) world.Camera
                 let entityTransform = { Entity.getTransform entity with Position = entityPosition }
                 let entity = Entity.setTransform positionSnap rotationSnap entityTransform entity
                 let entityAddress = gatoea editorState.GroupAddress entity.Name
@@ -753,7 +753,7 @@ module Program =
                 let (positionSnap, _) = getSnaps form
                 let entity = World.getEntity address world
                 let mousePosition = World.getMousePositionF world
-                let mousePositionWorld = Camera.mouseToWorld mousePosition entity.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.Camera
                 let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                 let entity = Entity.setPositionSnapped positionSnap entityPosition entity
                 let world = World.setEntity address entity world
