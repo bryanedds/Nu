@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open SDL2
 open OpenTK
 open Prime
 open Nu
@@ -16,8 +17,14 @@ module GameplayDispatcherModule =
         inherit ScreenDispatcher ()
 
         static let handleTick _ world =
+            let advancementType =
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then AdvanceWithDirection North
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then AdvanceWithDirection South
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then AdvanceWithDirection East
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then AdvanceWithDirection West
+                else AdvanceOnly
             let player = World.getEntity PlayerAddress world
-            let player = CharacterActivity.advance AdvanceOnly player world
+            let player = CharacterActivity.advance advancementType player world
             let world = World.setEntity PlayerAddress player world
             (Cascade, world)
 

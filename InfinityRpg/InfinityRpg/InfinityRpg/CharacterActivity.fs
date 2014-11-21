@@ -21,8 +21,8 @@ module CharacterActivity =
         let next = current + walkSpeed
         let newDelta = if positive then destination - next else next - destination
         if newDelta < CharacterWalkSpeed
-        then (destination, Arrived)
-        else (next, Arriving)
+        then (destination, WalkFinished)
+        else (next, Walking)
 
     let checkOpenDirection currentPositionM fieldTiles direction =
         let directionVector = Direction.toVector2i direction
@@ -46,85 +46,78 @@ module CharacterActivity =
                     if checkOpenDirection currentPositionM fieldTiles West then yield West }
         | None -> Set.ofList [North; East; South; West]
 
-    let advanceStandState (character : Entity) world =
-        let optWalkDirection =
-            if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some North
-            elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some South
-            elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some East
-            elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some West
-            else None
+    let advanceStandingState walkDirection (character : Entity) world =
         let openDirections = getOpenDirections character.Position world
-        let startWalking =
-            match optWalkDirection with
-            | Some walkDirection -> Set.contains walkDirection openDirections
-            | None -> false
+        let startWalking = Set.contains walkDirection openDirections
         let characterAnimationState = character.CharacterAnimationState
-        let characterAnimationState =
-            match optWalkDirection with
-            | Some walkDirection -> { characterAnimationState with CharacterAnimationDirection = walkDirection }
-            | None -> characterAnimationState
+        let characterAnimationState = { characterAnimationState with CharacterAnimationDirection = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character
-        match (optWalkDirection, startWalking) with
-        | (Some walkDirection, true) ->
+        if startWalking then
             let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
             let navigationGoalM = walkOriginM + Direction.toVector2i walkDirection
             let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
             let activityState = Navigating { WalkDescriptor = walkDescriptor; NavigationGoalM = navigationGoalM }
             Entity.setActivityState activityState character
-        | (None, true) ->
-            failwith <|
-                "Unexpected match in InfinityRpg.CharacterControlFacet.advanceInput. " +
-                "Logically, this match should never happen."
-        | (Some _, false) -> character
-        | (None, false) -> character
+        else character
 
-    let private advanceNavigationState navigationDescriptor (character : Entity) world =
+    let private advanceNavigatingStatePostWalk navigationDescriptor (character : Entity) world =
+        let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
+        let navigationRemaining = navigationDescriptor.NavigationGoalM - characterPositionM
+        if navigationRemaining <> Vector2i.Zero then
+            let walkDirection = Direction.fromVector2i navigationRemaining
+            let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
+            let navigationDescriptor = { navigationDescriptor with WalkDescriptor = walkDescriptor }
+            let openDirections = getOpenDirections character.Position world
+            let stillNavigating = Set.contains walkDirection openDirections
+            if stillNavigating then
+                let character = Entity.setActivityState (Navigating navigationDescriptor) character
+                let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
+                Entity.setCharacterAnimationState characterAnimationState character
+            else Entity.setActivityState Standing character
+        else Entity.setActivityState Standing character
+
+    let private advanceNavigatingState navigationDescriptor (character : Entity) world =
         let walkDescriptor = navigationDescriptor.WalkDescriptor
         let walkDistanceI = match walkDescriptor.WalkDirection with North | South -> TileSizeI.Y | East | West -> TileSizeI.X
         let walkDestinationI = walkDistanceI * (walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection)
         let walkDestination = walkDestinationI.Vector2
-        let (newPosition, arrival) =
+        let (newPosition, walkState) =
             match walkDescriptor.WalkDirection with
             | North -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
             | East -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
             | South -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
             | West -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
         let character = Entity.setPosition newPosition character
-        match arrival with
-        | Arrived ->
-            let walkDestinationM = Vector2i.Divide (walkDestinationI, TileSizeI)
-            let navigationRemaining = navigationDescriptor.NavigationGoalM - walkDestinationM
-            if navigationRemaining <> Vector2i.Zero then
-                let walkDirection = Direction.fromVector2i navigationRemaining
-                let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkDestinationM }
-                let navigationDescriptor = { navigationDescriptor with WalkDescriptor = walkDescriptor }
-                let openDirections = getOpenDirections character.Position world
-                let stillWalking = Set.contains walkDirection openDirections
-                if stillWalking then
-                    let character = Entity.setActivityState (Navigating navigationDescriptor) character
-                    let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
-                    Entity.setCharacterAnimationState characterAnimationState character
-                else Entity.setActivityState Standing character
-            else
-                let character = Entity.setActivityState Standing character
-                advanceStandState character world // keeps movement from directional input smooth
-        | Arriving -> character
+        match walkState with
+        | WalkFinished -> advanceNavigatingStatePostWalk navigationDescriptor character world
+        | Walking -> character
 
-    let advance activityAdvancement (character : Entity) world =
-        ignore activityAdvancement // TODO: use this
+    let advance advancementType (character : Entity) world =
         match character.ActivityState with
-        | Standing -> advanceStandState character world
-        | Navigating navigationDescriptor -> advanceNavigationState navigationDescriptor character world
+        | Standing ->
+            match advancementType with
+            | AdvanceWithDirection direction -> advanceStandingState direction character world
+            | AdvanceWithAI -> character
+            | AdvanceOnly -> character
+        | Navigating navigationDescriptor ->
+            match advancementType with
+            | AdvanceWithDirection direction ->
+                let character = advanceNavigatingState navigationDescriptor character world
+                match character.ActivityState with // advance stand state if possible for smooth direction input
+                | Standing -> advanceStandingState direction character world
+                | Navigating _ | Acting _ -> character
+            | AdvanceWithAI -> character
+            | AdvanceOnly -> advanceNavigatingState navigationDescriptor character world
         | Acting _ -> character
 
     let private getTouchGoalAndDirection touchPosition (character : Entity) world =
-        let touchPositionW = Camera.mouseToWorld touchPosition character.ViewType world.Camera
+        let touchPositionW = Camera.mouseToWorld character.ViewType touchPosition world.Camera
         let touchPositionE = touchPositionW - (character.Position + character.Size * 0.5f)
         let touchDirection = Direction.fromVector2 touchPositionE
         let touchGoalM = Vector2i (Vector2.Divide (touchPositionW, TileSize))
         (touchDirection, touchGoalM)
 
-    let private touchStandState touchPosition character world =
+    let private touchDuringStandState touchPosition character world =
         let (walkDirection, navigationGoalM) = getTouchGoalAndDirection touchPosition character world    
         let openDirections = getOpenDirections character.Position world
         let startWalking = Set.contains walkDirection openDirections
@@ -140,5 +133,5 @@ module CharacterActivity =
 
     let touch touchPosition (character : Entity) world =
         match character.ActivityState with
-        | Standing -> touchStandState touchPosition character world
+        | Standing -> touchDuringStandState touchPosition character world
         | Navigating _ | Acting _ -> character

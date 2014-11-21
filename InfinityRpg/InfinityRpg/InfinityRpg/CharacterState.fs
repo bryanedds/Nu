@@ -178,11 +178,11 @@ module CharacterStateModule =
         | Navigating of NavigationDescriptor
         | Acting of ActionData
 
-    type Arrival =
-        | Arrived
-        | Arriving
-
-    type CharacterActivityAdvancement =
+    type ActivityAdvancementType =
         | AdvanceWithDirection of Direction
         | AdvanceWithAI // of ...
         | AdvanceOnly
+
+    type WalkState =
+        | WalkFinished
+        | Walking

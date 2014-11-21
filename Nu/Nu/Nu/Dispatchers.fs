@@ -233,7 +233,7 @@ module EntityDispatcherModule =
             let entitiesSorted = Entity.pickingSort entities world
             List.tryFind
                 (fun entity ->
-                    let positionWorld = Camera.mouseToWorld position entity.ViewType world.Camera
+                    let positionWorld = Camera.mouseToWorld entity.ViewType position world.Camera
                     let transform = Entity.getTransform entity
                     let picked = Math.isPointInBounds3 positionWorld transform.Position transform.Size
                     picked)
@@ -259,7 +259,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown event world =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && button.Enabled && button.Visible then
-                let mousePositionWorld = Camera.mouseToWorld mouseButtonData.Position button.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld button.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size then
                     let button = Entity.setDown true button
                     let world = World.setEntity address button world
@@ -271,7 +271,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftUp event world =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && button.Enabled && button.Visible then
-                let mousePositionWorld = Camera.mouseToWorld mouseButtonData.Position button.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld button.ViewType mouseButtonData.Position world.Camera
                 let world =
                     let button = Entity.setDown false button
                     let world = World.setEntity address button world
@@ -443,7 +443,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftDown event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible then
-                let mousePositionWorld = Camera.mouseToWorld mouseButtonData.Position toggle.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld toggle.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size then
                     let toggle = Entity.setPressed true toggle
                     let world = World.setEntity address toggle world
@@ -454,7 +454,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftUp event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && toggle.Enabled && toggle.Visible && toggle.Pressed then
-                let mousePositionWorld = Camera.mouseToWorld mouseButtonData.Position toggle.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld toggle.ViewType mouseButtonData.Position world.Camera
                 let toggle = Entity.setPressed false toggle
                 if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size then
                     let toggle = Entity.setOn (not toggle.On) toggle
@@ -521,7 +521,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftDown event world =
             let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world && feeler.Enabled && feeler.Visible then
-                let mousePositionWorld = Camera.mouseToWorld mouseButtonData.Position feeler.ViewType world.Camera
+                let mousePositionWorld = Camera.mouseToWorld feeler.ViewType mouseButtonData.Position world.Camera
                 if Math.isPointInBounds3 mousePositionWorld feeler.Position feeler.Size then
                     let feeler = Entity.setTouched true feeler
                     let world = World.setEntity address feeler world
