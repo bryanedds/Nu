@@ -69,7 +69,7 @@
     <Compile Include="FieldDispatcher.fs" />
     <Compile Include="CharacterState.fs" />
     <Compile Include="CharacterFacets.fs" />
-    <Compile Include="CharacterNavigation.fs" />
+    <Compile Include="CharacterActivity.fs" />
     <Compile Include="CharacterDispatcher.fs" />
     <Compile Include="PlayerDispatcher.fs" />
     <Compile Include="GameplayDispatcher.fs" />
