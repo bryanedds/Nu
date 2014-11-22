@@ -56,8 +56,8 @@ module CharacterActivity =
         let character = Entity.setCharacterAnimationState characterAnimationState character
         let startWalking = Set.contains walkDirection openDirections
         if startWalking then
-            let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
-            let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
+            let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
+            let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = currentPositionM }
             let activityState = Navigating { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
             Entity.setActivityState activityState character
         else character
@@ -143,9 +143,9 @@ module CharacterActivity =
                 match navigationPath with
                 | [] -> character
                 | _ ->
-                    let walkOriginM = Vector2i (Vector2.Divide (character.Position, TileSize))
-                    let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - walkOriginM
-                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = walkOriginM }
+                    let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
+                    let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - currentPositionM
+                    let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = currentPositionM }
                     let activityState = Navigating { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
                     let character = Entity.setActivityState activityState character
                     let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
