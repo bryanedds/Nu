@@ -23,15 +23,17 @@ module GameplayDispatcherModule =
                 elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then AdvanceWithDirection East
                 elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then AdvanceWithDirection West
                 else AdvanceOnly
+            let field = World.getEntity FieldAddress world
             let player = World.getEntity PlayerAddress world
-            let player = CharacterActivity.advance advancementType player world
+            let player = CharacterActivity.advance advancementType field player world
             let world = World.setEntity PlayerAddress player world
             (Cascade, world)
 
         static let handleTouchFeeler event world =
             let touchPosition : Vector2 = World.unwrapD event world
+            let field = World.getEntity FieldAddress world
             let player = World.getEntity PlayerAddress world
-            let player = CharacterActivity.touch touchPosition player world
+            let player = CharacterActivity.touch touchPosition field player world
             let world = World.setEntity PlayerAddress player world
             (Cascade, world)
 
