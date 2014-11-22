@@ -122,9 +122,9 @@ module MetamapModule =
                     match Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit optBias source rand with
                     | Some (destination, rand) ->
                         let state = (destination, Set.add destination trail, rand)
-                        Some ((source, rand), state)
+                        Some ((destination, rand), state)
                     | None -> None)
-                (source, Set.empty, rand)
+                (source, Set.singleton source, rand)
 
         static member tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias tryLimit source rand =
             let take = if tryLimit <= 0 then id else Seq.take tryLimit

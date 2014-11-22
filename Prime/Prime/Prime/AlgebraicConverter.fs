@@ -34,8 +34,8 @@ module AlgebraicConverterModule =
                 let typeConverterType = typeConverter.GetType ()
                 let convertToString = typeConverterType.GetMethod ("ConvertToString", [|typeof<obj>|])
                 convertToString.Invoke (typeConverter, [|source|]) :?> string
-            | None ->
             
+            | None ->
                 if sourceType.Name = typedefof<_ list>.Name then
                     let items = objToObjList source
                     let itemsStrs =
@@ -105,7 +105,6 @@ module AlgebraicConverterModule =
                     let convertFrom = typeConverterType.GetMethod ("ConvertFrom", [|typeof<obj>|])
                     convertFrom.Invoke (typeConverter, [|readerValue|])
             | None ->
-
                 if destType.Name = typedefof<_ list>.Name then
                     match readerValue with
                     | :? (obj list) as readerValueList ->
