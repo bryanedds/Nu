@@ -141,7 +141,13 @@ module CharacterActivity =
         let goalNode = Map.find touchPositionM nodes
         let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
         let currentNode = Map.find characterPositionM nodes
-        match AStar.FindPath (currentNode, goalNode, (fun n n2 -> 1.0f), (fun n -> let v = (n.PositionM - touchPositionM) in v.Length)) with
+        let optNavigationPath =
+            AStar.FindPath (
+                currentNode,
+                goalNode,
+                (fun n n2 -> if (n2.PositionM.Y <> n.PositionM.Y) then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
+                (fun n -> 0.0f))
+        match optNavigationPath with
         | null -> None
         | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
