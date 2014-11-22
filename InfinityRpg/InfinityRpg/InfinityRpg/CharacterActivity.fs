@@ -137,11 +137,11 @@ module CharacterActivity =
         let nodes = makeNodes field
         let touchPositionW = Camera.mouseToWorld character.ViewType touchPosition camera
         let touchPositionE = touchPositionW - (character.Position + character.Size * 0.5f)
-        let touchGoalM = Vector2i (Vector2.Divide (touchPositionW, TileSize))
-        let goalNode = Map.find touchGoalM nodes
+        let touchPositionM = Vector2i (Vector2.Divide (touchPositionW, TileSize))
+        let goalNode = Map.find touchPositionM nodes
         let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
         let currentNode = Map.find characterPositionM nodes
-        match AStar.FindPath (currentNode, goalNode, (fun n n2 -> 1.0f), (fun n -> let v = n.PositionM - touchGoalM in v.LengthSquared)) with
+        match AStar.FindPath (currentNode, goalNode, (fun n n2 -> 1.0f), (fun n -> let v = (n.PositionM - touchPositionM) in v.Length)) with
         | null -> None
         | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
