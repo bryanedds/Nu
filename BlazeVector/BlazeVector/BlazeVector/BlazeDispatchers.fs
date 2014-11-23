@@ -81,7 +81,7 @@ module EnemyModule =
 
         let die address (enemy : Entity) world =
             let world = snd <| World.removeEntity address enemy world
-            World.playSound ExplosionSound 1.0f world
+            World.playSound 1.0f ExplosionSound world
 
         let handleTick event world =
             let (address, enemy : Entity) = World.unwrapAS event world
@@ -99,7 +99,7 @@ module EnemyModule =
                 if isBullet then
                     let enemy = Entity.setHealth (enemy.Health - 1) enemy
                     let world = World.setEntity address enemy world
-                    let world = World.playSound HitSound 1.0f world
+                    let world = World.playSound 1.0f HitSound world
                     (Cascade, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -158,7 +158,7 @@ module PlayerModule =
 
         let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (50.0f, 0.0f)) bullet.PhysicsId world
-            let world = World.playSound ShotSound 1.0f world
+            let world = World.playSound 1.0f ShotSound world
             (bullet, world)
 
         let shootBullet playerAddress (player : Entity) world =
@@ -208,7 +208,7 @@ module PlayerModule =
                     world.State.TickTime <= player.LastTimeOnGroundNp + 10L then
                     let player = Entity.setLastTimeJumpNp world.State.TickTime player
                     let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) player.PhysicsId world
-                    let world = World.playSound JumpSound 1.0f world
+                    let world = World.playSound 1.0f JumpSound world
                     let world = World.setEntity address player world
                     (Cascade, world)
                 else (Cascade, world)
@@ -276,7 +276,7 @@ module StagePlayModule =
                 | Some titleScreen ->
                     if Entity.hasFallen player && World.isSelectedScreenIdling world then
                         let oldWorld = world
-                        let world = World.playSound DeathSound 1.0f world
+                        let world = World.playSound 1.0f DeathSound world
                         match World.tryTransitionScreen TitleAddress titleScreen world with
                         | Some world -> (Cascade, world)
                         | None -> (Cascade, oldWorld)
@@ -320,7 +320,7 @@ module StageScreenModule =
             let stagePlayHierarchy = (StagePlayName, World.readGroupFromFile StagePlayFilePath world)
             let groupsHierarchy = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
             let world = snd <| World.addGroups address groupsHierarchy world
-            let world = World.playSong DeadBlazeSong 1.0f 0 world
+            let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
         let handleStoppingPlay _ world =

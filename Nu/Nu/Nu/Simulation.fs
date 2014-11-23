@@ -958,24 +958,24 @@ module WorldAudioModule =
     type World with
 
         /// Send a message to the audio system to play a song.
-        static member playSong song volume timeToFadeOutSongMs world =
-            let playSongMessage = PlaySongMessage { Song = song; Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs }
+        static member playSong timeToFadeOutSongMs volume song world =
+            let playSongMessage = PlaySongMessage { Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs; Song = song }
             World.addAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
-        static member playSong6 songPackageName songAssetName volume timeToFadeOutSongMs world =
+        static member playSong6 timeToFadeOutSongMs volume songPackageName songAssetName world =
             let song = { SongPackageName = songPackageName; SongAssetName = songAssetName }
-            World.playSong song volume timeToFadeOutSongMs world
+            World.playSong timeToFadeOutSongMs volume song world
 
         /// Send a message to the audio system to play a sound.
-        static member playSound sound volume world =
+        static member playSound volume sound world =
             let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
             World.addAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a sound.
-        static member playSound5 soundPackageName soundAssetName volume world =
+        static member playSound5 volume soundPackageName soundAssetName world =
             let sound = { SoundPackageName = soundPackageName; SoundAssetName = soundAssetName }
-            World.playSound sound volume world
+            World.playSound volume sound world
 
         /// Send a message to the audio system to fade out a song.
         static member fadeOutSong timeToFadeOutSongMs world =

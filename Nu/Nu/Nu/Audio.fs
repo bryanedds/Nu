@@ -43,9 +43,9 @@ module AudioModule =
 
     /// A message to the audio system to play a song.
     type [<StructuralEquality; NoComparison>] PlaySongMessage =
-        { Song : Song
+        { TimeToFadeOutSongMs : int
           Volume : single
-          TimeToFadeOutSongMs : int }
+          Song : Song }
 
     /// A message to the audio system to play a sound.
     type [<StructuralEquality; NoComparison>] PlaySoundMessage =

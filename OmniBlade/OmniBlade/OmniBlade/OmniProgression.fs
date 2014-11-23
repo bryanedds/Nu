@@ -44,7 +44,7 @@ module OmniProgression =
         match eitherWorld with
         | Right world ->
             let world = World.hintRenderPackageUse GuiPackageName world
-            let world = World.playSong GameSong 1.0f DefaultTimeToFadeOutSongMs world
+            let world = World.playSong DefaultTimeToFadeOutSongMs 1.0f GameSong world
             let (splashScreen, world) = World.addSplashScreen false SplashData typeof<ScreenDispatcher>.Name SplashAddress TitleAddress world
             let world = addTitleScreen world
             let world = addLoadGameScreen world
