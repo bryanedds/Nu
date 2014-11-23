@@ -7,7 +7,7 @@
     <Entities>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Credits</Name>
-        <Position>-416, -224</Position>
+        <Position>-416, -200</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -17,7 +17,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>Exit</Name>
-        <Position>32, -224</Position>
+        <Position>32, -200</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -27,7 +27,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>LoadGame</Name>
-        <Position>32, -112</Position>
+        <Position>32, -80</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -37,7 +37,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>NewGame</Name>
-        <Position>-416, -112</Position>
+        <Position>-416, -80</Position>
         <Size>384, 64</Size>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -47,7 +47,7 @@
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>Title</Name>
-        <Position>-504, -8</Position>
+        <Position>-504, 0</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
