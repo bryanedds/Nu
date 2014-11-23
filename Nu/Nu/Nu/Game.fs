@@ -79,14 +79,18 @@ module WorldGameModule =
             writer.WriteEndElement ()
 
         static member writeGameToFile (filePath : string) gameHierarchy world =
+            let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
-            use writer = XmlWriter.Create (filePath, writerSettings)
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GameNodeName
             World.writeGame writer gameHierarchy world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
 
         static member readGame
             (gameNode : XmlNode)
