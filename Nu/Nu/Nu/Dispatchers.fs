@@ -280,7 +280,7 @@ module ButtonDispatcherModule =
                     let world = World.publish4 () (ClickEventAddress ->>- address) address world
                     let world =
                         match button.OptClickSound with
-                        | Some clickSound -> World.playSound clickSound 1.0f world
+                        | Some clickSound -> World.playSound 1.0f clickSound world
                         | None -> world
                     (Resolve, world)
                 else (Cascade, world)
@@ -437,8 +437,8 @@ module ToggleDispatcherModule =
         static member setOffImage (value : Image) (toggle : Entity) = toggle?OffImage <- value
         member toggle.OnImage = toggle?OnImage : Image
         static member setOnImage (value : Image) (toggle : Entity) = toggle?OnImage <- value
-        member toggle.ToggleSound = toggle?ToggleSound : Sound
-        static member setToggleSound (value : Sound) (toggle : Entity) = toggle?ToggleSound <- value
+        member toggle.OptToggleSound = toggle?OptToggleSound : Sound option
+        static member setOptToggleSound (value : Sound option) (toggle : Entity) = toggle?OptToggleSound <- value
 
     type ToggleDispatcher () =
         inherit EntityDispatcher ()
@@ -464,7 +464,10 @@ module ToggleDispatcherModule =
                     let world = World.setEntity address toggle world
                     let eventAddress = if toggle.On then OnEventAddress else OffEventAddress
                     let world = World.publish4 () (eventAddress ->>- address) address world
-                    let world = World.playSound toggle.ToggleSound 1.0f world
+                    let world =
+                        match toggle.OptToggleSound with
+                        | Some toggleSound -> World.playSound 1.0f toggleSound world
+                        | None -> world
                     (Resolve, world)
                 else
                     let world = World.setEntity address toggle world

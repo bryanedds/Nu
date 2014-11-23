@@ -38,7 +38,7 @@ module BlazeProgression =
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
-        let world = World.playSong MachinerySong 1.0f 0 world
+        let world = World.playSong 0 1.0f MachinerySong world
         (Cascade, world)
 
     // this function handles playing the stage
@@ -106,7 +106,7 @@ module BlazeProgression =
             let (splashScreen, world) = World.addSplashScreen false SplashData typeof<ScreenDispatcher>.Name SplashAddress TitleAddress world
 
             // play a neat sound effect, select the splash screen, and we're off!
-            let world = World.playSound NuSplashSound 1.0f world
+            let world = World.playSound 1.0f NuSplashSound world
             let world = snd <| World.selectScreen SplashAddress splashScreen world
             Right world
 
