@@ -58,6 +58,9 @@ module MetamapModule =
             | South -> Vector2i.Down
             | West -> Vector2i.Left
 
+        static member toVector2 direction =
+            let v = Direction.toVector2i direction in v.Vector2
+
         static member next rand =
             let randMax = 4
             let (randValue, rand) = Rand.nextIntUnder randMax rand

@@ -131,7 +131,7 @@ module Serialization =
             if  isPropertyPersistentByName xFieldName &&
                 shouldWriteProperty xFieldName xFieldType then
                 let xValue = xFieldKvp.Value.FieldValue
-                let xValueType = xValue.GetType ()
+                let xValueType = xFieldKvp.Value.FieldType
                 let xValueStr = (AlgebraicConverter xValueType).ConvertToString xValue
                 writer.WriteStartElement xFieldName
                 writer.WriteAttributeString (TypeAttributeName, xValueType.FullName)

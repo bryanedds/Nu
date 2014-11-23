@@ -250,8 +250,8 @@ module ButtonDispatcherModule =
         static member setUpImage (value : Image) (button : Entity) = button?UpImage <- value
         member button.DownImage = button?DownImage : Image
         static member setDownImage (value : Image) (button : Entity) = button?DownImage <- value
-        member button.ClickSound = button?ClickSound : Sound
-        static member setClickSound (value : Sound) (button : Entity) = button?ClickSound <- value
+        member button.OptClickSound = button?OptClickSound : Sound option
+        static member setOptClickSound (value : Sound option) (button : Entity) = button?OptClickSound <- value
 
     type ButtonDispatcher () =
         inherit EntityDispatcher ()
@@ -278,7 +278,10 @@ module ButtonDispatcherModule =
                     World.publish4 () (UpEventAddress ->>- address) address world
                 if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Down then
                     let world = World.publish4 () (ClickEventAddress ->>- address) address world
-                    let world = World.playSound button.ClickSound 1.0f world
+                    let world =
+                        match button.OptClickSound with
+                        | Some clickSound -> World.playSound clickSound 1.0f world
+                        | None -> world
                     (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
@@ -288,7 +291,7 @@ module ButtonDispatcherModule =
              define? Down false
              define? UpImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? DownImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? ClickSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
+             define? OptClickSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
 
         static member IntrinsicFacetNames =
             [typeof<GuiFacet>.Name]

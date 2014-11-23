@@ -67,6 +67,14 @@ module Constants =
     let HudAddress = satoga GameplayAddress HudName
     let HudFeelerName = "Feeler"
     let HudFeelerAddress = gatoea HudAddress HudFeelerName
+    let HudDetailUpName = "DetailUp"
+    let HudDetailUpAddress = gatoea HudAddress HudDetailUpName
+    let HudDetailRightName = "DetailRight"
+    let HudDetailRightAddress = gatoea HudAddress HudDetailRightName
+    let HudDetailDownName = "DetailDown"
+    let HudDetailDownAddress = gatoea HudAddress HudDetailDownName
+    let HudDetailLeftName = "DetailLeft"
+    let HudDetailLeftAddress = gatoea HudAddress HudDetailLeftName
     let ClickHudBackEventAddress = ClickEventAddress ->>- HudAddress ->- ltoa ["Back"]
     let ClickHudSaveGameEventAddress = ClickEventAddress ->>- HudAddress ->- ltoa ["SaveGame"]
 

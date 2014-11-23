@@ -168,11 +168,12 @@ module WorldGroupModule =
             writer.WriteEndElement ()
 
         static member writeGroupToFile (filePath : string) groupHierarchy world =
+            let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
             // XmlWriter.Create <| (document.CreateNavigator ()).AppendChild ()
-            use writer = XmlWriter.Create (filePath, writerSettings)
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GroupNodeName
@@ -180,6 +181,9 @@ module WorldGroupModule =
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
 
         static member writeGroups (writer : XmlWriter) groupsHierarchy world =
             let groupsHierarchy =
