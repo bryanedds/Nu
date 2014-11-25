@@ -224,7 +224,10 @@ module SimulationModule =
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// TODO: now that there are field descriptors, consider making their persistence configurable
-    /// with data instead of name-suffixing
+    /// with data instead of name-suffixing.
+    /// TODO: also now that there is sufficient type metadata in field descriptors, consider
+    /// removing type names from serialized xfields as well as removing the ability to dynamically
+    /// add and remove xfields in the editor.
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
@@ -959,7 +962,7 @@ module WorldAudioModule =
 
         /// Send a message to the audio system to play a song.
         static member playSong timeToFadeOutSongMs volume song world =
-            let playSongMessage = PlaySongMessage { Volume = volume; TimeToFadeOutSongMs = timeToFadeOutSongMs; Song = song }
+            let playSongMessage = PlaySongMessage { TimeToFadeOutSongMs = timeToFadeOutSongMs; Volume = volume; Song = song }
             World.addAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.

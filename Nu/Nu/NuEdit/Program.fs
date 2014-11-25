@@ -64,7 +64,7 @@ module Program =
 
     let getPickableEntities world =
         let groupAddress = (World.getUserState world).GroupAddress
-        let entityMap = World.getEntities groupAddress world
+        let entityMap = World.getEntityMap groupAddress world
         Map.toValueList entityMap
 
     let pushPastWorld pastWorld world =
@@ -290,7 +290,7 @@ module Program =
 
     let populateTreeViewNodes (form : NuEditForm) world =
         let groupAddress = (World.getUserState world).GroupAddress
-        for entityKvp in World.getEntities groupAddress world do
+        for entityKvp in World.getEntityMap groupAddress world do
         let entityAddress = gatoea groupAddress entityKvp.Key
         addTreeViewNode form entityAddress world
 
@@ -428,8 +428,8 @@ module Program =
     let trySaveFile filePath world =
         try let groupAddress = (World.getUserState world).GroupAddress
             let group = World.getGroup groupAddress world
-            let entities = World.getEntities groupAddress world
-            let groupHierarchy = (group, entities)
+            let entityMap = World.getEntityMap groupAddress world
+            let groupHierarchy = (group, entityMap)
             World.writeGroupToFile filePath groupHierarchy world
         with exn ->
             ignore <|
@@ -579,7 +579,7 @@ module Program =
 
     let handleFormInteractivityChanged (form : NuEditForm) (worldChangers : WorldChangers) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
-            // TODO: enable disabling of physics as well
+            // TODO: allow disabling of physics as well
             let interactivity = if form.interactivityButton.Checked then GuiAndPhysicsAndGamePlay else GuiAndPhysics
             let pastWorld = world
             let world = World.setInteractivity interactivity world
@@ -885,8 +885,8 @@ module Program =
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
             let group = World.makeGroup typeof<GroupDispatcher>.Name (Some DefaultGroupName) world
-            let groupsHierarchy = Map.singleton group.Name (group, Map.empty)
-            let screenHierarchy = (screen, groupsHierarchy)
+            let groupHierarchies = Map.singleton group.Name (group, Map.empty)
+            let screenHierarchy = (screen, groupHierarchies)
             let world = snd <| World.addScreen EditorScreenAddress screenHierarchy world
             let world = World.setOptSelectedScreenAddress (Some EditorScreenAddress) world 
             let world = World.subscribe4 (handleNuMouseRightDown form worldChangers refWorld) MouseRightDownEventAddress GameAddress world

@@ -9,13 +9,10 @@ open InfinityRpg
 open InfinityRpg.Constants
 
 [<AutoOpen>]
-module PlayerDispatcherModule =
+module EnemyDispatcherModule =
 
-    type PlayerDispatcher () =
+    type EnemyDispatcher () =
         inherit CharacterDispatcher ()
 
         static member FieldDefinitions =
-            [define? ControlType Player]
-
-        static member IntrinsicFacetNames =
-            [typeof<CharacterCameraFacet>.Name]
+            [define? ControlType Random]

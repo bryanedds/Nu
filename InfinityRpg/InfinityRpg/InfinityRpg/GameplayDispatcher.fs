@@ -16,12 +16,22 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
+        static let getPlayer world =
+            World.getEntity PlayerAddress world
+
+        static let getField world =
+            World.getEntity FieldAddress world
+
+        static let getEnemies world =
+            World.getEntities SceneAddress world |>
+            Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>)
+
         static let handleTick _ world =
             let advancementType =
-                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then AdvanceWithDirection North
-                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then AdvanceWithDirection South
-                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then AdvanceWithDirection East
+                if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then AdvanceWithDirection East
                 elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then AdvanceWithDirection West
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then AdvanceWithDirection North
+                elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then AdvanceWithDirection South
                 else AdvanceOnly
             let field = World.getEntity FieldAddress world
             let player = World.getEntity PlayerAddress world
@@ -41,15 +51,12 @@ module GameplayDispatcherModule =
         static let handleDownDetail direction event world =
             let field = World.getEntity FieldAddress world
             let player = World.getEntity PlayerAddress world
-            let touchPosition = player.Position + player.Size * 0.5f + Vector2.Multiply (Direction.toVector2 direction, TileSize)
-            let player =
-                if Math.isPointInBounds3 touchPosition field.Position (field.Position + Entity.getQuickSize field world)
-                then CharacterActivity.touch touchPosition field player
-                else player
+            let player = CharacterActivity.detailTouch direction field player
             let world = World.setEntity PlayerAddress player world
             (Cascade, world)
 
         override dispatcher.Register (address, screen, world) =
+            if address <> GameplayAddress then failwith "Invalid address for GameplayDispatcher screen."
             let world = observe TickEventAddress address |> filter isSelected |> monitor handleTick world |> snd
             let world = observe (TouchEventAddress ->>- HudFeelerAddress) address |> filter isSelected |> monitor handleTouchFeeler world |> snd
             let world = observe (TouchEventAddress ->>- HudFeelerAddress) address |> filter isSelected |> monitor handleTouchFeeler world |> snd

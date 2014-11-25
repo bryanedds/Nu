@@ -120,14 +120,16 @@ module MetamapModule =
                              Set.contains (destination + Vector2i.Left) trail]
                         let containCount = List.filter ((=) true) contains |> List.length
                         containCount <= 1)
-            Seq.unfold
-                (fun (source, trail, rand) ->
-                    match Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit optBias source rand with
-                    | Some (destination, rand) ->
-                        let state = (destination, Set.add destination trail, rand)
-                        Some ((destination, rand), state)
-                    | None -> None)
-                (source, Set.singleton source, rand)
+            let tail =
+                Seq.unfold
+                    (fun (source, trail, rand) ->
+                        match Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit optBias source rand with
+                        | Some (destination, rand) ->
+                            let state = (destination, Set.add destination trail, rand)
+                            Some ((destination, rand), state)
+                        | None -> None)
+                    (source, Set.singleton source, rand)
+            seq { yield (source, rand); yield! tail }
 
         static member tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias tryLimit source rand =
             let take = if tryLimit <= 0 then id else Seq.take tryLimit
@@ -168,7 +170,8 @@ module MetamapModule =
                     List.length sites = Set.count uniqueSites
                 else false
             let path = Direction.tryWanderUntil predicate stumbleLimit stumbleBounds BackTracking None tryLimit source rand
-            Direction.concretizeOptPath maxLength path rand
+            let path = Direction.concretizeOptPath maxLength path rand
+            path
 
         static member wanderToDestination stumbleBounds source destination rand =
             let optBias = Some (destination, 6)
@@ -180,7 +183,8 @@ module MetamapModule =
             let path = Direction.wanderUntil predicate stumbleLimit stumbleBounds NoAdjacentTracking optBias source rand
             let pathDesiredEnd = Seq.findIndex (fun (point, _) -> point = destination) path + 1
             let pathTrimmed = Seq.take pathDesiredEnd path
-            Direction.concretizePath maxPathLength pathTrimmed rand
+            let path = Direction.concretizePath maxPathLength pathTrimmed rand
+            path
 
     type MetaTile<'k when 'k : comparison> =
         { ClosedSides : Direction Set

@@ -78,7 +78,7 @@ module Reflection =
             then baseType :: getBaseTypesExceptObject baseType
             else []
 
-    /// Queries that the target type offers dispatcher behavior congruent to the given dispatcher.
+    /// Query that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) dispatcher =
         let dispatcherType = dispatcher.GetType ()
         let result =
@@ -209,7 +209,7 @@ module Reflection =
                 | Some reqdDispatcher ->
                     let reqdDispatcherType = reqdDispatcher.GetType ()
                     match targetType.GetProperty "DispatcherNp" with
-                    | null -> false
+                    | null -> failwith <| "Target '" + acstring target + "' does not implement dispatching in a compatible way."
                     | dispatcherNpProperty ->
                         let dispatcher = dispatcherNpProperty.GetValue target
                         dispatchesAs reqdDispatcherType dispatcher

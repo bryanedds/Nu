@@ -32,7 +32,7 @@ module InfinityRpgModule =
         static let handleNewGame _ world =
 
             // change game seed
-            let systemRandomSeed = uint64 <| (Random ()).Next ()
+            let systemRandomSeed = uint64 <| (new Random ()).Next ()
             let game = Game.setSeed systemRandomSeed world.Game
             let world = World.setGame game world
 
@@ -75,7 +75,7 @@ module InfinityRpgModule =
             (Cascade, world)
 
         static let handleClickSaveGame _ world =
-            let gameHierarchy = World.getGame' world
+            let gameHierarchy = World.getGameHierarchy world
             World.writeGameToFile SaveFilePath gameHierarchy world
             (Cascade, world)
 
