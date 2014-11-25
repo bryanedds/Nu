@@ -36,6 +36,9 @@ module ScreenModule =
         static member isIdling screen =
             screen.ScreenStateNp = IdlingState
 
+        static member dispatchesAs (dispatcherTargetType : Type) (screen : Screen) =
+            Reflection.dispatchesAs dispatcherTargetType screen.DispatcherNp
+
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Id = id
@@ -78,31 +81,39 @@ module WorldScreenModule =
             | Some screen -> World.setScreen address screen world
             | None -> World.screenRemover address world
 
-        static member getOptScreen' address world =
+        static member getOptScreenHierarchy address world =
             match World.getOptScreen address world with
             | Some screen ->
-                let groupsHierarchy = World.getGroups' address world
-                Some (screen, groupsHierarchy)
+                let groupHierarchies = World.getGroupHierarchies address world
+                Some (screen, groupHierarchies)
             | None -> None
         
-        static member getScreen' address world =
-            Option.get <| World.getOptScreen' address world
+        static member getScreenHierarchy address world =
+            Option.get <| World.getOptScreenHierarchy address world
 
-        static member getScreens world =
+        static member getScreenMap world =
             world.Screens
 
-        static member getScreens2 screenNames world =
-            let screenNames = Set.ofSeq screenNames
-            let screens = World.getScreens world
-            Map.filter (fun screenName _ -> Set.contains screenName screenNames) screens
+        static member getScreens world =
+            let screenMap = World.getScreenMap world
+            Map.toValueSeq screenMap
 
-        static member getScreens' world =
-            let screens = World.getScreens world
+        static member getScreenMap2 screenNames world =
+            let screenNames = Set.ofSeq screenNames
+            let screenMap = World.getScreenMap world
+            Map.filter (fun screenName _ -> Set.contains screenName screenNames) screenMap
+
+        static member getScreens2 screenNames world =
+            let screenMap = World.getScreenMap2 screenNames world
+            Map.toValueSeq screenMap
+
+        static member getScreenHierarchies world =
+            let screens = World.getScreenMap world
             Map.map
                 (fun screenName screen ->
                     let screenAddress = ltoa<Screen> [screenName]
-                    let groupsHierarchy = World.getGroups' screenAddress world
-                    (screen, groupsHierarchy))
+                    let groupHierarchies = World.getGroupHierarchies screenAddress world
+                    (screen, groupHierarchies))
                 screens
 
         static member private registerScreen address screen world =
@@ -113,8 +124,8 @@ module WorldScreenModule =
 
         static member removeScreenImmediate address screen world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
-            let groups = World.getGroups address world
-            let world = snd <| World.removeGroupsImmediate address groups world
+            let groupMap = World.getGroupMap address world
+            let world = snd <| World.removeGroupsImmediate address groupMap world
             let (screen, world) = World.unregisterScreen address screen world
             let world = World.setOptScreen address None world
             (screen, world)
@@ -130,34 +141,34 @@ module WorldScreenModule =
             (screen, world)
 
         static member addScreen address screenHierarchy world =
-            let (screen, groupsHierarchy) = screenHierarchy
+            let (screen, groupHierarchies) = screenHierarchy
             if not <| World.containsScreen address world then
                 let (screen, world) =
                     match World.getOptScreen address world with
                     | Some _ -> World.removeScreenImmediate address screen world
                     | None -> (screen, world)
                 let world = World.setScreen address screen world
-                let world = snd <| World.addGroups address groupsHierarchy world
+                let world = snd <| World.addGroups address groupHierarchies world
                 let (screen, world) = World.registerScreen address screen world
                 let world = World.publish4 () (AddEventAddress ->>- address) address world
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
         static member writeScreen (writer : XmlWriter) screenHierarchy world =
-            let (screen : Screen, groupsHierarchy) = screenHierarchy
+            let (screen : Screen, groupHierarchies) = screenHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology2 writer screen
             writer.WriteStartElement GroupsNodeName
-            World.writeGroups writer groupsHierarchy world
+            World.writeGroups writer groupHierarchies world
             writer.WriteEndElement ()
 
-        static member writeScreens (writer : XmlWriter) screensHierarchy world =
-            let screensHierarchy =
+        static member writeScreens (writer : XmlWriter) screenHierarchies world =
+            let screenHierarchies =
                 List.sortBy
                     (fun (screen : Screen, _) -> screen.CreationTimeNp)
-                    (Map.toValueList screensHierarchy)
-            let screensHierarchy = List.filter (fun (screen : Screen, _) -> screen.Persistent) screensHierarchy
-            for screenHierarchy in screensHierarchy do
+                    (Map.toValueList screenHierarchies)
+            let screenHierarchies = List.filter (fun (screen : Screen, _) -> screen.Persistent) screenHierarchies
+            for screenHierarchy in screenHierarchies do
                 writer.WriteStartElement ScreenNodeName
                 World.writeScreen writer screenHierarchy world
                 writer.WriteEndElement ()
@@ -179,8 +190,8 @@ module WorldScreenModule =
             let screen = Screen.make dispatcher None
             Reflection.attachFields screen.DispatcherNp screen
             Serialization.readPropertiesToTarget screenNode screen
-            let groupsHierarchy = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
-            (screen, groupsHierarchy)
+            let groupHierarchies = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
+            (screen, groupHierarchies)
 
         static member readScreens
             (parentNode : XmlNode)
@@ -193,7 +204,7 @@ module WorldScreenModule =
             | screensNode ->
                 let screenNodes = screensNode.SelectNodes ScreenNodeName
                 Seq.fold
-                    (fun screensHierarchy screenNode ->
+                    (fun screenHierarchies screenNode ->
                         let screenHierarchy =
                             World.readScreen
                                 screenNode
@@ -202,7 +213,7 @@ module WorldScreenModule =
                                 defaultEntityDispatcherName
                                 world
                         let screenName = (fst screenHierarchy).Name
-                        Map.add screenName screenHierarchy screensHierarchy)
+                        Map.add screenName screenHierarchy screenHierarchies)
                     Map.empty
                     (enumerable screenNodes)
 

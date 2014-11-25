@@ -21,6 +21,9 @@ module GroupModule =
         static member unregister address (group : Group) (world : World) : Group * World =
             group.DispatcherNp.Unregister (address, group, world)
 
+        static member dispatchesAs (dispatcherTargetType : Type) (group : Group) =
+            Reflection.dispatchesAs dispatcherTargetType group.DispatcherNp
+
         static member make dispatcher optName =
             let id = Core.makeId ()
             { Group.Id = id
@@ -75,17 +78,17 @@ module WorldGroupModule =
             | Some group -> World.setGroup address group world
             | None -> World.groupRemover address world
 
-        static member getOptGroup' address world =
+        static member getOptGroupHierarchy address world =
             match World.getOptGroup address world with
             | Some group ->
-                let entities = World.getEntities address world
-                Some (group, entities)
+                let entityMap = World.getEntityMap address world
+                Some (group, entityMap)
             | None -> None
         
-        static member getGroup' address world =
-            Option.get <| World.getOptGroup' address world
+        static member getGroupHierarchy address world =
+            Option.get <| World.getOptGroupHierarchy address world
 
-        static member getGroups (screenAddress : Screen Address) world =
+        static member getGroupMap (screenAddress : Screen Address) world =
             match screenAddress.Names with
             | [screenName] ->
                 match Map.tryFind screenName world.Groups with
@@ -93,19 +96,27 @@ module WorldGroupModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid screen address '" + acstring screenAddress + "'."
 
-        static member getGroups3 (screenAddress : Screen Address) groupNames world =
-            let groupNames = Set.ofSeq groupNames
-            let groups = World.getGroups screenAddress world
-            Map.filter (fun groupName _ -> Set.contains groupName groupNames) groups
+        static member getGroups screenAddress world =
+            let groupMap = World.getGroupMap screenAddress world
+            Map.toValueSeq groupMap
 
-        static member getGroups' screenAddress world =
-            let groups = World.getGroups screenAddress world
+        static member getGroupMap3 groupNames (screenAddress : Screen Address) world =
+            let groupNames = Set.ofSeq groupNames
+            let groupMap = World.getGroupMap screenAddress world
+            Map.filter (fun groupName _ -> Set.contains groupName groupNames) groupMap
+
+        static member getGroups3 groupNames screenAddress world =
+            let groups = World.getGroupMap3 screenAddress groupNames world
+            Map.toValueSeq groups
+
+        static member getGroupHierarchies screenAddress world =
+            let groupMap = World.getGroupMap screenAddress world
             Map.map
                 (fun groupName group ->
                     let groupAddress = satoga screenAddress groupName
-                    let entities = World.getEntities groupAddress world
-                    (group, entities))
-                groups
+                    let entityMap = World.getEntityMap groupAddress world
+                    (group, entityMap))
+                groupMap
 
         static member private registerGroup address group world =
             Group.register address group world
@@ -116,8 +127,8 @@ module WorldGroupModule =
         static member removeGroupImmediate address group world =
             let world = World.publish4 () (RemovingEventAddress ->>- address) address world
             let (group, world) = World.unregisterGroup address group world
-            let entities = World.getEntities address world
-            let world = snd <| World.removeEntitiesImmediate address entities world
+            let entityMap = World.getEntityMap address world
+            let world = snd <| World.removeEntitiesImmediate address entityMap world
             let world = World.setOptGroup address None world
             (group, world)
 
@@ -151,14 +162,14 @@ module WorldGroupModule =
                 (group, world)
             else failwith <| "Adding a group that the world already contains at address '" + acstring address + "'."
 
-        static member addGroups screenAddress groupsHierarchy world =
+        static member addGroups screenAddress groupHierarchies world =
             Map.fold
                 (fun (groups, world) groupName groupHierarchy ->
                     let (group, world) = World.addGroup (satoga screenAddress groupName) groupHierarchy world
                     (group :: groups, world))
                 ([], world)
-                groupsHierarchy
-    
+                groupHierarchies
+
         static member writeGroup (writer : XmlWriter) groupHierarchy world =
             let (group : Group, entities) = groupHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
@@ -185,13 +196,13 @@ module WorldGroupModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        static member writeGroups (writer : XmlWriter) groupsHierarchy world =
-            let groupsHierarchy =
+        static member writeGroups (writer : XmlWriter) groupHierarchies world =
+            let groupHierarchies =
                 List.sortBy
                     (fun (group : Group, _) -> group.CreationTimeNp)
-                    (Map.toValueList groupsHierarchy)
-            let groupsHierarchy = List.filter (fun (group : Group, _) -> group.Persistent) groupsHierarchy
-            for groupHierarchy in groupsHierarchy do
+                    (Map.toValueList groupHierarchies)
+            let groupHierarchies = List.filter (fun (group : Group, _) -> group.Persistent) groupHierarchies
+            for groupHierarchy in groupHierarchies do
                 writer.WriteStartElement GroupNodeName
                 World.writeGroup writer groupHierarchy world
                 writer.WriteEndElement ()
@@ -236,10 +247,10 @@ module WorldGroupModule =
             | groupsNode ->
                 let groupNodes = groupsNode.SelectNodes GroupNodeName
                 Seq.fold
-                    (fun groupsHierarchy groupNode ->
+                    (fun groupHierarchies groupNode ->
                         let groupHierarchy = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName world
                         let groupName = (fst groupHierarchy).Name
-                        Map.add groupName groupHierarchy groupsHierarchy)
+                        Map.add groupName groupHierarchy groupHierarchies)
                     Map.empty
                     (enumerable groupNodes)
 

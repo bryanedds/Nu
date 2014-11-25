@@ -95,7 +95,7 @@ module EnemyModule =
             let (address, enemy : Entity, collisionData) = World.unwrapASD event world
             if World.isGamePlaying world then
                 let collidee = World.getEntity collisionData.Collidee world
-                let isBullet = Reflection.dispatchesAs typeof<BulletDispatcher> collidee.DispatcherNp
+                let isBullet = Entity.dispatchesAs typeof<BulletDispatcher> collidee
                 if isBullet then
                     let enemy = Entity.setHealth (enemy.Health - 1) enemy
                     let world = World.setEntity address enemy world
@@ -318,8 +318,8 @@ module StageScreenModule =
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
             let stagePlayHierarchy = (StagePlayName, World.readGroupFromFile StagePlayFilePath world)
-            let groupsHierarchy = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
-            let world = snd <| World.addGroups address groupsHierarchy world
+            let groupHierarchies = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
+            let world = snd <| World.addGroups address groupHierarchies world
             let world = World.playSong 0 1.0f DeadBlazeSong world
             (Cascade, world)
 
@@ -331,8 +331,8 @@ module StageScreenModule =
             let address = World.unwrapA event world
             let sectionNames = [for i in 0 .. SectionCount do yield SectionName + acstring i]
             let groupNames = StagePlayName :: sectionNames
-            let groups = World.getGroups3 address groupNames world
-            let world = snd <| World.removeGroups address groups world
+            let groupMap = World.getGroupMap3 groupNames address world
+            let world = snd <| World.removeGroups address groupMap world
             (Cascade, world)
 
         override dispatcher.Register (address, screen, world) =

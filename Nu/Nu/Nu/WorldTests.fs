@@ -80,8 +80,8 @@ module WorldTests =
         let entity = World.makeEntity typeof<EntityDispatcher>.Name (Some TestEntityName) world
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
-        let groupsHierarchy = Map.singleton group.Name (group, Map.singleton entity.Name entity)
-        let screenHierarchy = (screen, groupsHierarchy)
+        let groupHierarchies = Map.singleton group.Name (group, Map.singleton entity.Name entity)
+        let screenHierarchy = (screen, groupHierarchies)
         let world = snd <| World.addScreen TestScreenAddress screenHierarchy world
         let handleEvent = fun event world ->
             let entity = World.unwrapS<string, Entity> event world
@@ -99,11 +99,11 @@ module WorldTests =
         let group = World.makeGroup typeof<GroupDispatcher>.Name (Some TestGroupName) world
         let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some TestScreenName) world
         let game = world.Game
-        let screensHierarchy =
+        let screenHierarchies =
             Map.singleton screen.Name <|
                 (screen, Map.singleton group.Name <|
                     (group, Map.singleton entity.Name entity))
-        let gameHierarchy = (game, screensHierarchy)
+        let gameHierarchy = (game, screenHierarchies)
         World.writeGameToFile TestFilePath gameHierarchy world
         let (game', screens') = World.readGameFromFile TestFilePath world
         Assert.Equal<string> (game.Name, game'.Name)

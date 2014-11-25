@@ -229,8 +229,8 @@ module WorldModule =
             let splashLabel = Entity.setSize world.Camera.EyeSize splashLabel
             let splashLabel = Entity.setPosition (-world.Camera.EyeSize * 0.5f) splashLabel
             let splashLabel = Entity.setLabelImage splashData.SplashImage splashLabel
-            let splashGroupsHierarchy = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
-            let splashScreenHierarchy = (splashScreen, splashGroupsHierarchy)
+            let splashGroupHierarchies = Map.singleton splashGroup.Name (splashGroup, Map.singleton splashLabel.Name splashLabel)
+            let splashScreenHierarchy = (splashScreen, splashGroupHierarchies)
             let world = snd <| World.addScreen address splashScreenHierarchy world
             let world = World.monitor (World.handleSplashScreenIdle splashData.IdlingTime) (IncomingFinishEventAddress ->>- address) address world
             let world = World.monitor (World.handleAsScreenTransitionFromSplash destination) (OutgoingFinishEventAddress ->>- address) address world
@@ -244,8 +244,8 @@ module WorldModule =
         static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName address groupFilePath world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
             let (group, entities) = World.readGroupFromFile groupFilePath world
-            let dissolveGroupsHierarchy = Map.singleton group.Name (group, entities)
-            let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupsHierarchy)
+            let dissolveGroupHierarchies = Map.singleton group.Name (group, entities)
+            let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupHierarchies)
             World.addScreen address dissolveScreenHierarchy world
 
         static member private createIntrinsicOverlays dispatchers facets =
@@ -344,13 +344,13 @@ module WorldModule =
             let world = World.clearAudioMessages world
             let world = World.clearPhysicsMessages world
             let world = World.addPhysicsMessage RebuildPhysicsHackMessage world
-            let entities = World.getEntities groupAddress world
+            let entityMap = World.getEntityMap groupAddress world
             Map.fold
                 (fun world _ (entity : Entity) ->
                     let entityAddress = gatoea groupAddress entity.Name
                     Entity.propagatePhysics entityAddress entity world)
                 world
-                entities
+                entityMap
 
         static member private play world =
             let audioMessages = world.MessageQueues.AudioMessages

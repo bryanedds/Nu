@@ -128,5 +128,6 @@
   </ItemGroup>
   <Target Name="AfterClean">
     <RemoveDir Directories="$(OutDir)Assets"/>
+    <RemoveDir Directories="$(OutDir)Refinement"/>
   </Target>
 </Project>

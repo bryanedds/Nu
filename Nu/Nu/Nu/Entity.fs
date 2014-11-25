@@ -81,6 +81,9 @@ module EntityModule =
                     facetFieldDefinitions
             else false
 
+        static member dispatchesAs (dispatcherTargetType : Type) (entity : Entity) =
+            Reflection.dispatchesAs dispatcherTargetType entity.DispatcherNp
+
         static member make dispatcherName dispatcher optName =
             let id = Core.makeId ()
             { Id = id
@@ -187,7 +190,7 @@ module WorldEntityModule =
             | Some entity -> World.entityAdder address world entity
             | None -> World.entityRemover address world
 
-        static member getEntities (groupAddress : Group Address) world =
+        static member getEntityMap (groupAddress : Group Address) world =
             match groupAddress.Names with
             | [screenName; groupName] ->
                 match Map.tryFind screenName world.Entities with
@@ -198,10 +201,18 @@ module WorldEntityModule =
                 | None -> Map.empty
             | _ -> failwith <| "Invalid group address '" + acstring groupAddress + "'."
 
-        static member getEntities3 (groupAddress : Group Address) entityNames world =
+        static member getEntities groupAddress world =
+            let entityMap = World.getEntityMap groupAddress world
+            Map.toValueSeq entityMap
+
+        static member getEntityMap3 entityNames (groupAddress : Group Address) world =
             let entityNames = Set.ofSeq entityNames
-            let entitys = World.getEntities groupAddress world
-            Map.filter (fun entityName _ -> Set.contains entityName entityNames) entitys
+            let entityMap = World.getEntityMap groupAddress world
+            Map.filter (fun entityName _ -> Set.contains entityName entityNames) entityMap
+
+        static member getEntities3 entityNames groupAddress world =
+            let entityMap = World.getEntityMap3 groupAddress entityNames world
+            Map.toValueSeq entityMap
 
         static member private registerEntity address entity world =
             Entity.register address entity world
