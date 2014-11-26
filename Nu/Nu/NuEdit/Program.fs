@@ -430,7 +430,7 @@ module Program =
             let group = World.getGroup groupAddress world
             let entityMap = World.getEntityMap groupAddress world
             let groupHierarchy = (group, entityMap)
-            World.writeGroupToFile filePath groupHierarchy world
+            World.writeGroupHierarchyToFile filePath groupHierarchy world
         with exn ->
             ignore <|
                 MessageBox.Show
@@ -449,7 +449,7 @@ module Program =
             let world = snd <| World.removeGroupImmediate groupAddress group world
             
             // load and add group
-            let groupHierarchy = World.readGroupFromFile filePath world
+            let groupHierarchy = World.readGroupHierarchyFromFile filePath world
             let groupAddress = satoga EditorScreenAddress <| (fst groupHierarchy).Name
             let editorState = { editorState with GroupAddress = groupAddress }
             let world = World.setUserState editorState world

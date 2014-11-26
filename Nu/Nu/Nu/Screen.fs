@@ -1,5 +1,6 @@
 ﻿namespace Nu
 open System
+open System.IO
 open System.Xml
 open Prime
 open Nu
@@ -154,15 +155,28 @@ module WorldScreenModule =
                 (screen, world)
             else failwith <| "Adding a screen that the world already contains at address '" + acstring address + "'."
 
-        static member writeScreen (writer : XmlWriter) screenHierarchy world =
+        static member makeScreen dispatcherName optName world =
+            let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
+            let screen = Screen.make dispatcher optName
+            Reflection.attachFields dispatcher screen
+            screen
+        
+        static member makeDissolveScreen dissolveData dispatcherName optName world =
+            let optDissolveImage = Some dissolveData.DissolveImage
+            let screen = World.makeScreen dispatcherName optName world
+            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
+            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
+            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+
+        static member writeScreenHierarchy (writer : XmlWriter) screenHierarchy world =
             let (screen : Screen, groupHierarchies) = screenHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology2 writer screen
             writer.WriteStartElement GroupsNodeName
-            World.writeGroups writer groupHierarchies world
+            World.writeGroupHierarchies writer groupHierarchies world
             writer.WriteEndElement ()
 
-        static member writeScreens (writer : XmlWriter) screenHierarchies world =
+        static member writeScreenHierarchies (writer : XmlWriter) screenHierarchies world =
             let screenHierarchies =
                 List.sortBy
                     (fun (screen : Screen, _) -> screen.CreationTimeNp)
@@ -170,10 +184,10 @@ module WorldScreenModule =
             let screenHierarchies = List.filter (fun (screen : Screen, _) -> screen.Persistent) screenHierarchies
             for screenHierarchy in screenHierarchies do
                 writer.WriteStartElement ScreenNodeName
-                World.writeScreen writer screenHierarchy world
+                World.writeScreenHierarchy writer screenHierarchy world
                 writer.WriteEndElement ()
 
-        static member readScreen
+        static member readScreenHierarchy
             (screenNode : XmlNode)
             defaultDispatcherName
             defaultGroupDispatcherName
@@ -190,10 +204,10 @@ module WorldScreenModule =
             let screen = Screen.make dispatcher None
             Reflection.attachFields screen.DispatcherNp screen
             Serialization.readPropertiesToTarget screenNode screen
-            let groupHierarchies = World.readGroups (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
+            let groupHierarchies = World.readGroupHierarchies (screenNode : XmlNode) defaultGroupDispatcherName defaultEntityDispatcherName world
             (screen, groupHierarchies)
 
-        static member readScreens
+        static member readScreenHierarchies
             (parentNode : XmlNode)
             defaultDispatcherName
             defaultGroupDispatcherName
@@ -206,7 +220,7 @@ module WorldScreenModule =
                 Seq.fold
                     (fun screenHierarchies screenNode ->
                         let screenHierarchy =
-                            World.readScreen
+                            World.readScreenHierarchy
                                 screenNode
                                 defaultDispatcherName
                                 defaultGroupDispatcherName
@@ -217,15 +231,29 @@ module WorldScreenModule =
                     Map.empty
                     (enumerable screenNodes)
 
-        static member makeScreen dispatcherName optName world =
-            let dispatcher = Map.find dispatcherName world.Components.ScreenDispatchers
-            let screen = Screen.make dispatcher optName
-            Reflection.attachFields dispatcher screen
-            screen
-        
-        static member makeDissolveScreen dissolveData dispatcherName optName world =
-            let optDissolveImage = Some dissolveData.DissolveImage
-            let screen = World.makeScreen dispatcherName optName world
-            let incomingDissolve = { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; OptDissolveImage = optDissolveImage }
-            let outgoingDissolve = { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; OptDissolveImage = optDissolveImage }
-            { screen with Incoming = incomingDissolve; Outgoing = outgoingDissolve }
+        static member writeScreenHierarchyToFile (filePath : string) screenHierarchy world =
+            let filePathTmp = filePath + ".tmp"
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement ScreenNodeName
+            World.writeScreenHierarchy writer screenHierarchy world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
+
+        static member readScreenHierarchyFromFile (filePath : string) world =
+            use file = new FileStream (filePath, FileMode.Open)
+            use reader = XmlReader.Create file
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            let rootNode = document.[RootNodeName]
+            let screenNode = rootNode.[ScreenNodeName]
+            World.readScreenHierarchy
+                screenNode
+                typeof<ScreenDispatcher>.Name
+                typeof<GroupDispatcher>.Name
+                typeof<EntityDispatcher>.Name
+                world

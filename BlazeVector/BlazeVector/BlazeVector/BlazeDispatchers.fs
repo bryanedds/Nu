@@ -304,7 +304,7 @@ module StageScreenModule =
                 entities
 
         let makeSectionFromFile filePath sectionName xShift world =
-            let (sectionGroup, sectionEntities) = World.readGroupFromFile filePath world
+            let (sectionGroup, sectionEntities) = World.readGroupHierarchyFromFile filePath world
             let sectionEntities = shiftEntities xShift sectionEntities
             (sectionName, (sectionGroup, sectionEntities))
 
@@ -317,7 +317,7 @@ module StageScreenModule =
                     let xShift = 2048.0f
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
                     yield makeSectionFromFile sectionFilePaths.[sectionFilePathIndex] (SectionName + acstring i) (xShift * single i) world]
-            let stagePlayHierarchy = (StagePlayName, World.readGroupFromFile StagePlayFilePath world)
+            let stagePlayHierarchy = (StagePlayName, World.readGroupHierarchyFromFile StagePlayFilePath world)
             let groupHierarchies = Map.ofList <| stagePlayHierarchy :: sectionHierarchies
             let world = snd <| World.addGroups address groupHierarchies world
             let world = World.playSong 0 1.0f DeadBlazeSong world

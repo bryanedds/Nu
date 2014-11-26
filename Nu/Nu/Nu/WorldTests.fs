@@ -104,12 +104,12 @@ module WorldTests =
                 (screen, Map.singleton group.Name <|
                     (group, Map.singleton entity.Name entity))
         let gameHierarchy = (game, screenHierarchies)
-        World.writeGameToFile TestFilePath gameHierarchy world
-        let (game', screens') = World.readGameFromFile TestFilePath world
+        World.writeGameHierarchyToFile TestFilePath gameHierarchy world
+        let (game', screenHierarchies) = World.readGameHierarchyFromFile TestFilePath world
         Assert.Equal<string> (game.Name, game'.Name)
-        let (screen', groups') = Map.find TestScreenName screens'
+        let (screen', groupHierarchies) = Map.find TestScreenName screenHierarchies
         Assert.Equal<string> (screen.Name, screen'.Name)
-        let (group', entities') = Map.find TestGroupName groups'
+        let (group', entities) = Map.find TestGroupName groupHierarchies
         Assert.Equal<string> (group.Name, group'.Name)
-        let entity' = Map.find TestEntityName entities'
+        let entity' = Map.find TestEntityName entities
         Assert.Equal<string> (entity.Name, entity'.Name)

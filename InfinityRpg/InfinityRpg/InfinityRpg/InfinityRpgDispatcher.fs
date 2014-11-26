@@ -12,11 +12,6 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module InfinityRpgModule =
 
-    type Game with
-    
-        member game.RandState = game?RandState : uint64
-        static member setRandState (value : uint64) (game : Game) = game?RandState <- value
-
     type InfinityRpgDispatcher () =
         inherit GameDispatcher ()
 
@@ -35,9 +30,6 @@ module InfinityRpgModule =
             let world = snd <| World.addDissolveScreenFromGroupFile true DissolveData typeof<GameplayDispatcher>.Name GameplayAddress HudFilePath world
             let world = World.setGroup HudAddress (Group.setPersistent false <| World.getGroup HudAddress world) world
             World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickHudBackEventAddress GameAddress world
-
-        static member FieldDefinitions =
-            [define? RandState Rand.DefaultSeedState]
 
         override dispatcher.Register (game, world) =
             let world = World.hintRenderPackageUse GuiPackageName world

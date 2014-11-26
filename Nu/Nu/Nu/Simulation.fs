@@ -60,7 +60,7 @@ module ScreenStateModule =
 [<AutoOpen>]
 module SimulationModule =
 
-    /// The state of one of a screen's transitions.
+    /// Describes one of a screen's transition processes.
     type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
         { TransitionLifetime : int64
           TransitionType : TransitionType

@@ -263,6 +263,15 @@ module WorldEntityModule =
         static member addEntities (groupAddress : Group Address) entities world =
             World.transformSimulants World.addEntity gatoea groupAddress entities world
 
+        static member makeEntity dispatcherName optName world =
+            let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
+            let entity = Entity.make dispatcherName dispatcher optName
+            let entity = World.attachIntrinsicFacetsViaNames entity world
+            Reflection.attachFields dispatcher entity
+            match World.trySynchronizeFacets [] None entity world with
+            | Right (entity, _) -> entity
+            | Left error -> debug error; entity
+
         static member private tryGetFacet facetName world =
             match Map.tryFind facetName world.Components.Facets with
             | Some facet -> Right <| facet
@@ -480,12 +489,3 @@ module WorldEntityModule =
                         Map.add entity.Name entity entities)
                     Map.empty
                     (enumerable entityNodes)
-
-        static member makeEntity dispatcherName optName world =
-            let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
-            let entity = Entity.make dispatcherName dispatcher optName
-            let entity = World.attachIntrinsicFacetsViaNames entity world
-            Reflection.attachFields dispatcher entity
-            match World.trySynchronizeFacets [] None entity world with
-            | Right (entity, _) -> entity
-            | Left error -> debug error; entity
