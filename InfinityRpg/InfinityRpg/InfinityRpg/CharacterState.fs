@@ -198,17 +198,17 @@ module CharacterStateModule =
           OptNavigationPath : NavigationNode list option }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
-        | Navigating of NavigationDescriptor
-        | Acting of ActionData
+        | Action of ActionData
+        | Navigation of NavigationDescriptor
         | NoActivity
 
-    type NewActivityReport =
-        | NewActivity
-        | NoNewActivity
-        static member join activityReport activityReport2 =
-            match (activityReport, activityReport2) with
-            | (NoNewActivity, NoNewActivity) -> NoNewActivity
-            | _ -> NewActivity
+    type TurnReport =
+        | TurnTaken
+        | NoTurnTaken
+        static member join turnReport turnReport2 =
+            match (turnReport, turnReport2) with
+            | (NoTurnTaken, NoTurnTaken) -> NoTurnTaken
+            | _ -> TurnTaken
 
     type ControlType =
         | Player
