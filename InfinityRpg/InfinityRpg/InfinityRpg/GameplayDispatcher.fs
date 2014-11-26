@@ -29,7 +29,7 @@ module GameplayDispatcherModule =
         static let getParticipants world =
             (getField world, List.ofSeq <| getEnemies world, getPlayer world)
 
-        static let tryInitEnemyWalking field (enemy : Entity) rand =
+        static let tryChangeEnemyActivityToWalk field (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
                 debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
@@ -37,24 +37,26 @@ module GameplayDispatcherModule =
             | Chaos ->
                 let (randResult, rand) = Rand.nextIntUnder 4 rand
                 let walkDirection = Direction.fromInt randResult
-                let enemy = snd <| CharacterActivity.tryChangeActivityToWalking walkDirection field enemy
+                let enemy = snd <| CharacterActivity.tryChangeActivityToWalk walkDirection field enemy
                 (enemy, rand)
             | Uncontrolled -> (enemy, rand)
 
-        static let tryInitEnemiesWalking field enemies rand =
+        static let tryChangeEnemyActivitiesToWalk field enemies rand =
             List.fold
                 (fun (enemies, rand) (enemy : Entity) ->
-                    let (enemy, rand) = tryInitEnemyWalking field enemy rand
+                    let (enemy, rand) = tryChangeEnemyActivityToWalk field enemy rand
                     (enemy :: enemies, rand))
                 ([], rand)
                 enemies
 
         static let advanceEnemyWalk playerActivityReport field (enemy : Entity) rand =
-            let wasNavigating = match enemy.ActivityState with Navigation _ -> true | _ -> false
-            let (_, enemy) = CharacterActivity.advanceNavigation field enemy
-            let justFinishedNavigation = wasNavigating && match enemy.ActivityState with Navigation _ -> false | _ -> true
+            let wasNavigating = ActivityState.isNavigating enemy.ActivityState
+            let enemy = snd <| CharacterActivity.advanceNavigation field enemy
             match playerActivityReport with
-            | TurnTaken -> if justFinishedNavigation then tryInitEnemyWalking field enemy rand else (enemy, rand)
+            | TurnTaken ->
+                let justFinishedNavigation = wasNavigating && ActivityState.isNavigating enemy.ActivityState
+                if justFinishedNavigation then tryChangeEnemyActivityToWalk field enemy rand
+                else (enemy, rand)
             | NoTurnTaken -> (enemy, rand)
 
         static let advanceEnemiesWalk playerActivityReport field enemies rand =
@@ -84,7 +86,7 @@ module GameplayDispatcherModule =
                 let (turnReport, player) =
                     match optWalkDirection with
                     | Some walkDirection ->
-                        if canPlayerAct enemies then CharacterActivity.tryChangeActivityToWalking walkDirection field player
+                        if canPlayerAct enemies then CharacterActivity.tryChangeActivityToWalk walkDirection field player
                         else (NoTurnTaken, player)
                     | None -> (NoTurnTaken, player)
                 let (turnReport2, player) = CharacterActivity.advanceNavigation field player
@@ -97,7 +99,7 @@ module GameplayDispatcherModule =
                     let rand = Rand.make world.Game?RandState
                     let (enemies, rand) =
                         match turnReport with
-                        | TurnTaken -> tryInitEnemiesWalking field enemies rand
+                        | TurnTaken -> tryChangeEnemyActivitiesToWalk field enemies rand
                         | NoTurnTaken -> (enemies, rand)
                     advanceEnemiesWalk turnReport field enemies rand
                 let world = World.setEntities SceneAddress enemies world
@@ -123,7 +125,7 @@ module GameplayDispatcherModule =
             let world =
                 if canPlayerAct then
                     let rand = Rand.make <| world.Game?RandState
-                    let (enemies, rand) = tryInitEnemiesWalking field enemies rand
+                    let (enemies, rand) = tryChangeEnemyActivitiesToWalk field enemies rand
                     let world = World.setEntities SceneAddress enemies world
                     let game = world.Game?RandState <- Rand.getState rand
                     World.setGame game world
@@ -138,16 +140,16 @@ module GameplayDispatcherModule =
             let (field, enemies, player) = getParticipants world
 
             // advance player
-            let (turnReport, player) =
-                if canPlayerAct enemies then CharacterActivity.tryChangeActivityToWalking direction field player
+            let (playerTurnReport, player) =
+                if canPlayerAct enemies then CharacterActivity.tryChangeActivityToWalk direction field player
                 else (NoTurnTaken, player)
             let world = World.setEntity PlayerAddress player world
 
             // advance enemies
             let world =
-                match turnReport with
+                match playerTurnReport with
                 | TurnTaken ->
-                    let (enemies, rand) = tryInitEnemiesWalking field (List.ofSeq enemies) (Rand.make <| world.Game?RandState)
+                    let (enemies, rand) = tryChangeEnemyActivitiesToWalk field (List.ofSeq enemies) (Rand.make <| world.Game?RandState)
                     let world = World.setEntities SceneAddress enemies world
                     let game = world.Game?RandState <- Rand.getState rand
                     World.setGame game world

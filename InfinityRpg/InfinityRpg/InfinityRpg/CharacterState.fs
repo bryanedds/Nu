@@ -187,7 +187,7 @@ module CharacterStateModule =
 
     type WalkState =
         | WalkFinished
-        | Walking
+        | WalkContinuing
 
     type WalkDescriptor =
         { WalkDirection : Direction
@@ -201,6 +201,11 @@ module CharacterStateModule =
         | Action of ActionData
         | Navigation of NavigationDescriptor
         | NoActivity
+        static member isNavigating activity =
+            match activity with
+            | Action _ -> false
+            | Navigation _ -> true
+            | NoActivity -> false
 
     type TurnReport =
         | TurnTaken

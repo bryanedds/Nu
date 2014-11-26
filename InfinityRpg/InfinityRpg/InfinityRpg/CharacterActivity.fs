@@ -23,7 +23,7 @@ module CharacterActivity =
         let newDelta = if positive then destination - next else next - destination
         if newDelta < CharacterWalkSpeed
         then (destination, WalkFinished)
-        else (next, Walking)
+        else (next, WalkContinuing)
 
     let private isTilePassable fieldTiles positionM =
         match Map.tryFind positionM fieldTiles with
@@ -47,7 +47,7 @@ module CharacterActivity =
         let openDirections = getOpenDirectionsFromPositionM field positionM
         Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
 
-    let private tryChangeActivityToWalkingInternal walkDirection field (character : Entity) =
+    let private tryChangeActivityToWalkInternal walkDirection field (character : Entity) =
         let openDirections = getOpenDirections character.Position field
         let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character
@@ -59,11 +59,11 @@ module CharacterActivity =
             (TurnTaken, character)
         else (NoTurnTaken, character)
 
-    let tryChangeActivityToWalking walkDirection field (character : Entity) =
+    let tryChangeActivityToWalk walkDirection field (character : Entity) =
         match character.ActivityState with
         | Action _ -> (NoTurnTaken, character)
         | Navigation _ -> (NoTurnTaken, character)
-        | NoActivity -> tryChangeActivityToWalkingInternal walkDirection field character
+        | NoActivity -> tryChangeActivityToWalkInternal walkDirection field character
 
     let private advanceNavigationPostWalk navigationDescriptor (character : Entity) =
         let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
@@ -97,7 +97,7 @@ module CharacterActivity =
             match navigationDescriptor.OptNavigationPath with
             | Some path -> if List.hasAtLeast 2 path then (TurnTaken, character) else (NoTurnTaken, character)
             | None -> (NoTurnTaken, character)
-        | Walking -> (NoTurnTaken, character)
+        | WalkContinuing -> (NoTurnTaken, character)
 
     let advanceNavigation field (character : Entity) =
         match character.ActivityState with
