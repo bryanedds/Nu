@@ -41,13 +41,15 @@ module CharacterStateFacetModule =
         static member setEquippedRelics (value : RelicType list) (entity : Entity) = entity?EquippedRelics <- value
         member entity.AddedExperience = entity?AddedExperience : int
         static member setAddedExperience (value : int) (entity : Entity) = entity?AddedExperience <- value
+        member entity.ControlType = entity?ControlType : ControlType
+        static member setControlType (value : ControlType) (entity : Entity) = entity?ControlType <- value
 
     type CharacterStateFacet () =
         inherit Facet ()
 
         static member FieldDefinitions =
             [define? CharacterType Player
-             define? ActivityState Standing
+             define? ActivityState NoActivity
              define? HitPoints 1 // hp max is calculated
              define? SpecialPoints 1 // sp max is calculated
              define? PowerBuff 1.0f // rate at which power is buffed / debuffed
@@ -58,7 +60,8 @@ module CharacterStateFacetModule =
              define? EquippedWeapon Option<WeaponType>.None
              define? EquippedArmor Option<ArmorType>.None
              define? EquippedRelics list<RelicType>.Empty
-             define? AddedExperience 0] // level is calculated from base experience + added experience
+             define? AddedExperience 0
+             define? ControlType Uncontrolled] // level is calculated from base experience + added experience
 
 [<AutoOpen>]
 module CharacterAnimationFacetModule =

@@ -29,6 +29,10 @@ module Miscellanea =
     /// Convert any value to an obj.
     let inline objectify x = x :> obj
 
+    /// Flip two function parameters.
+    /// TODO: curry and uncurry.
+    let inline flip f x y = f y x
+
     /// Convert any value to its type.
     let inline getType x = x.GetType ()
 

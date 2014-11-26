@@ -21,6 +21,7 @@ module ComponentFactoryModule =
         override this.MakeEntityDispatchers () =
             Map.ofList
                 [(typeof<FieldDispatcher>.Name, FieldDispatcher () :> EntityDispatcher)
+                 (typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher)
                  (typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> EntityDispatcher)
                  (typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher)]
 

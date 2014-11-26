@@ -11,16 +11,8 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
-    type ControlType =
-        | Player
-        | Random
-        | Uncontrolled
-
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
-
-        static member FieldDefinitions =
-            [define? ControlType Uncontrolled]
 
         static member IntrinsicFacetNames =
             [typeof<CharacterStateFacet>.Name

@@ -47,23 +47,29 @@ module CharacterActivity =
         let openDirections = getOpenDirectionsFromPositionM field positionM
         Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
 
-    let private beginWalkingIfApplicable walkDirection field (character : Entity) =
+    let private tryChangeActivityToWalkingInternal walkDirection field (character : Entity) =
         let openDirections = getOpenDirections character.Position field
         let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character
-        let startWalking = Set.contains walkDirection openDirections
-        if startWalking then
+        if Set.contains walkDirection openDirections then
             let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
             let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = currentPositionM }
             let activityState = Navigating { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
-            Entity.setActivityState activityState character
-        else character
+            let character = Entity.setActivityState activityState character
+            (NewActivity, character)
+        else (NoNewActivity, character)
 
-    let private continueWalkingIfApplicable navigationDescriptor (character : Entity) =
+    let tryChangeActivityToWalking walkDirection field (character : Entity) =
+        match character.ActivityState with
+        | Navigating _ -> (NoNewActivity, character)
+        | Acting _ -> (NoNewActivity, character)
+        | NoActivity -> tryChangeActivityToWalkingInternal walkDirection field character
+
+    let private advanceNavigationPostWalk navigationDescriptor (character : Entity) =
         let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
         match navigationDescriptor.OptNavigationPath with
         | Some [] -> failwith "NavigationPath should never be empty here."
-        | Some (_ :: []) -> Entity.setActivityState Standing character
+        | Some (_ :: []) -> Entity.setActivityState NoActivity character
         | Some (currentNode :: navigationPath) ->
             let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - currentNode.PositionM
             let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
@@ -71,9 +77,9 @@ module CharacterActivity =
             let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = characterPositionM }
             let navigationDescriptor = { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
             Entity.setActivityState (Navigating navigationDescriptor) character
-        | None -> Entity.setActivityState Standing character
+        | None -> Entity.setActivityState NoActivity character
 
-    let private advanceNavigation navigationDescriptor (character : Entity) =
+    let private advanceNavigationInternal navigationDescriptor (character : Entity) =
         let walkDescriptor = navigationDescriptor.WalkDescriptor
         let walkDistanceI = match walkDescriptor.WalkDirection with North | South -> TileSizeI.Y | East | West -> TileSizeI.X
         let walkDestinationI = walkDistanceI * (walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection)
@@ -86,26 +92,18 @@ module CharacterActivity =
             | West -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
         let character = Entity.setPosition newPosition character
         match walkState with
-        | WalkFinished -> continueWalkingIfApplicable navigationDescriptor character
-        | Walking -> character
+        | WalkFinished ->
+            let character = advanceNavigationPostWalk navigationDescriptor character
+            match navigationDescriptor.OptNavigationPath with
+            | Some path -> if List.hasAtLeast 2 path then (NewActivity, character) else (NoNewActivity, character)
+            | None -> (NoNewActivity, character)
+        | Walking -> (NoNewActivity, character)
 
-    let advance advancementType field (character : Entity) =
+    let advanceNavigation field (character : Entity) =
         match character.ActivityState with
-        | Standing ->
-            match advancementType with
-            | AdvanceWithDirection direction -> beginWalkingIfApplicable direction field character
-            | AdvanceWithAI -> character
-            | AdvanceOnly -> character
-        | Navigating navigationDescriptor ->
-            match advancementType with
-            | AdvanceWithDirection direction ->
-                let character = advanceNavigation navigationDescriptor character
-                match character.ActivityState with // advance stand state if possible for smooth direction input
-                | Standing -> beginWalkingIfApplicable direction field character
-                | Navigating _ | Acting _ -> character
-            | AdvanceWithAI -> character
-            | AdvanceOnly -> advanceNavigation navigationDescriptor character
-        | Acting _ -> character
+        | Navigating navigationDescriptor -> advanceNavigationInternal navigationDescriptor character
+        | Acting _ -> (NoNewActivity, character)
+        | NoActivity -> (NoNewActivity, character)
 
     let private makeNodes (field : Entity) =
         
@@ -150,7 +148,7 @@ module CharacterActivity =
         | null -> None
         | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-    let private touchDuringStandingState touchPosition field character =
+    let private touchDuringNoActivity touchPosition field character =
         match tryGetNavigationPath field touchPosition character with
         | Some navigationPath ->
             match navigationPath with
@@ -167,10 +165,5 @@ module CharacterActivity =
 
     let touch touchPosition field (character : Entity) =
         match character.ActivityState with
-        | Standing -> touchDuringStandingState touchPosition field character
         | Navigating _ | Acting _ -> character
-
-    let detailTouch touchDirection field (character : Entity) =
-        match character.ActivityState with
-        | Standing -> beginWalkingIfApplicable touchDirection field character
-        | Navigating _ | Acting _ -> character
+        | NoActivity -> touchDuringNoActivity touchPosition field character

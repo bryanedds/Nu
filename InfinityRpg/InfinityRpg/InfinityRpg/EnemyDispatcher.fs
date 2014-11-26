@@ -15,4 +15,4 @@ module EnemyDispatcherModule =
         inherit CharacterDispatcher ()
 
         static member FieldDefinitions =
-            [define? ControlType Random]
+            [define? ControlType Chaos]

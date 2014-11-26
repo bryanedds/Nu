@@ -104,6 +104,5 @@ module FieldMapModule =
             let (generatedMap, rand) = FieldMap.spreadTrees buildBoundsM generatedMap rand
             let (generatedMap, rand) = FieldMap.spreadTrees buildBoundsM generatedMap rand
             let (generatedMap, rand) = FieldMap.spreadTrees buildBoundsM generatedMap rand
-            { FieldSizeM = sizeM
-              FieldTiles = generatedMap
-              FieldTileSheet = tileSheet }
+            let fieldMap = { FieldSizeM = sizeM; FieldTiles = generatedMap; FieldTileSheet = tileSheet }
+            (fieldMap, rand)
