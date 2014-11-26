@@ -30,7 +30,7 @@ module CharacterActivity =
         | Some tile -> tile.FieldTileType = Passable
         | None -> false
 
-    let private getOpenDirectionsFromPositionM (field : Entity) positionM =
+    let private getOpenDirectionsFromPositionM positionM (field : Entity) =
         let fieldTiles = field.FieldMapNp.FieldTiles
         Set.ofSeq <|
             seq {
@@ -39,16 +39,16 @@ module CharacterActivity =
                 if isTilePassable fieldTiles (positionM + Vector2i.Down) then yield South
                 if isTilePassable fieldTiles (positionM + Vector2i.Left) then yield West }
 
-    let private getOpenDirections (position : Vector2) field =
+    let private getOpenDirectionsFromPosition (position : Vector2) field =
         let positionM = Vector2i (int <| position.X / TileSize.X, int <| position.Y / TileSize.Y)
-        getOpenDirectionsFromPositionM field positionM
+        getOpenDirectionsFromPositionM positionM field
 
-    let private getOpenNeighborPositions field positionM =
-        let openDirections = getOpenDirectionsFromPositionM field positionM
+    let private getOpenNeighborPositionMsFromPositionM field positionM =
+        let openDirections = getOpenDirectionsFromPositionM positionM field
         Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
 
-    let private tryChangeActivityToWalkInternal walkDirection field (character : Entity) =
-        let openDirections = getOpenDirections character.Position field
+    let private tryChangeActivityToNavigationByDirectionInternal walkDirection field (character : Entity) =
+        let openDirections = getOpenDirectionsFromPosition character.Position field
         let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character
         if Set.contains walkDirection openDirections then
@@ -59,13 +59,13 @@ module CharacterActivity =
             (TurnTaken, character)
         else (NoTurnTaken, character)
 
-    let tryChangeActivityToWalk walkDirection field (character : Entity) =
+    let tryChangeActivityToNavigationByDirection walkDirection field (character : Entity) =
         match character.ActivityState with
         | Action _ -> (NoTurnTaken, character)
         | Navigation _ -> (NoTurnTaken, character)
-        | NoActivity -> tryChangeActivityToWalkInternal walkDirection field character
+        | NoActivity -> tryChangeActivityToNavigationByDirectionInternal walkDirection field character
 
-    let private advanceNavigationPostWalk navigationDescriptor (character : Entity) =
+    let private advanceNavigationAfterWalkFinished navigationDescriptor (character : Entity) =
         let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
         match navigationDescriptor.OptNavigationPath with
         | Some [] -> failwith "NavigationPath should never be empty here."
@@ -93,7 +93,7 @@ module CharacterActivity =
         let character = Entity.setPosition newPosition character
         match walkState with
         | WalkFinished ->
-            let character = advanceNavigationPostWalk navigationDescriptor character
+            let character = advanceNavigationAfterWalkFinished navigationDescriptor character
             match navigationDescriptor.OptNavigationPath with
             | Some path -> if List.hasAtLeast 2 path then (TurnTaken, character) else (NoTurnTaken, character)
             | None -> (NoTurnTaken, character)
@@ -116,15 +116,15 @@ module CharacterActivity =
         // OPTIMIZATION: populate node neghbors imperatively for speed
         Map.iter
             (fun positionM node -> 
-                let neighborPositions = getOpenNeighborPositions field positionM |> List.ofSeq
+                let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM field positionM
                 let neighbors =
                     List.fold
-                        (fun neighbors neighborPosition ->
-                            match Map.tryFind neighborPosition nodes with
+                        (fun neighbors neighborPositionM ->
+                            match Map.tryFind neighborPositionM nodes with
                             | Some node -> node :: neighbors
                             | None -> neighbors)
                         []
-                        neighborPositions
+                        neighborPositionMs
                 node.Neighbors <- neighbors)
             nodes
 
@@ -148,7 +148,7 @@ module CharacterActivity =
         | null -> None
         | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-    let private touchDuringNoActivity touchPosition field character =
+    let private tryChangeActivityToNavigationByTouch touchPosition field character =
         match tryGetNavigationPath field touchPosition character with
         | Some navigationPath ->
             match navigationPath with
@@ -167,4 +167,4 @@ module CharacterActivity =
         match character.ActivityState with
         | Action _ -> character
         | Navigation _ -> character
-        | NoActivity -> touchDuringNoActivity touchPosition field character
+        | NoActivity -> tryChangeActivityToNavigationByTouch touchPosition field character
