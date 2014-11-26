@@ -37,7 +37,7 @@ module GameplayDispatcherModule =
             | Chaos ->
                 let (randResult, rand) = Rand.nextIntUnder 4 rand
                 let walkDirection = Direction.fromInt randResult
-                let enemy = snd <| CharacterActivity.tryChangeActivityToWalk walkDirection field enemy
+                let enemy = snd <| CharacterActivity.tryChangeActivityToNavigationByDirection walkDirection field enemy
                 (enemy, rand)
             | Uncontrolled -> (enemy, rand)
 
@@ -86,7 +86,8 @@ module GameplayDispatcherModule =
                 let (turnReport, player) =
                     match optWalkDirection with
                     | Some walkDirection ->
-                        if canPlayerAct enemies then CharacterActivity.tryChangeActivityToWalk walkDirection field player
+                        if canPlayerAct enemies
+                        then CharacterActivity.tryChangeActivityToNavigationByDirection walkDirection field player
                         else (NoTurnTaken, player)
                     | None -> (NoTurnTaken, player)
                 let (turnReport2, player) = CharacterActivity.advanceNavigation field player
@@ -141,7 +142,8 @@ module GameplayDispatcherModule =
 
             // advance player
             let (playerTurnReport, player) =
-                if canPlayerAct enemies then CharacterActivity.tryChangeActivityToWalk direction field player
+                if canPlayerAct enemies
+                then CharacterActivity.tryChangeActivityToNavigationByDirection direction field player
                 else (NoTurnTaken, player)
             let world = World.setEntity PlayerAddress player world
 
