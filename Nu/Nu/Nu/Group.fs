@@ -240,13 +240,6 @@ module WorldGroupModule =
             // return the initialized group and entities
             (group, entities)
 
-        static member readGroupHierarchyFromFile filePath world =
-            let document = XmlDocument ()
-            document.Load (filePath : string)
-            let rootNode = document.[RootNodeName]
-            let groupNode = rootNode.[GroupNodeName]
-            World.readGroupHierarchy groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
-
         static member readGroupHierarchies (parentNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
             match parentNode.SelectSingleNode GroupsNodeName with
             | null -> Map.empty
@@ -259,3 +252,10 @@ module WorldGroupModule =
                         Map.add groupName groupHierarchy groupHierarchies)
                     Map.empty
                     (enumerable groupNodes)
+
+        static member readGroupHierarchyFromFile (filePath : string) world =
+            use reader = XmlReader.Create filePath
+            let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
+            let rootNode = document.[RootNodeName]
+            let groupNode = rootNode.[GroupNodeName]
+            World.readGroupHierarchy groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world

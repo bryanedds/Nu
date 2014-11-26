@@ -37,7 +37,7 @@
       </Entity>
       <Entity dispatcherName="LabelDispatcher">
         <Name>DetailBacking</Name>
-        <Position>-424, -248</Position>
+        <Position>-448, -240</Position>
         <Depth>9</Depth>
         <Size>224, 224</Size>
         <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
@@ -47,7 +47,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailDown</Name>
-        <Position>-344, -240</Position>
+        <Position>-368, -232</Position>
         <Depth>10</Depth>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -58,7 +58,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailLeft</Name>
-        <Position>-416, -168</Position>
+        <Position>-440, -160</Position>
         <Depth>10</Depth>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -69,7 +69,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailRight</Name>
-        <Position>-272, -168</Position>
+        <Position>-296, -160</Position>
         <Depth>10</Depth>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
@@ -80,7 +80,7 @@
       </Entity>
       <Entity dispatcherName="ButtonDispatcher">
         <Name>DetailUp</Name>
-        <Position>-344, -96</Position>
+        <Position>-368, -88</Position>
         <Depth>10</Depth>
         <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
