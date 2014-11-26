@@ -57,7 +57,7 @@ module XtensionModule =
         /// Try to get the default value for a given xtension member, returning None when defaulting is disallowed.
         static member private tryGetDefaultValue (this : Xtension) memberName : 'r =
             if this.CanDefault then Xtension.getDefaultValue ()
-            else failwith <| "The Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
+            else failwith <| "Xtension field '" + memberName + "' does not exist and no default is permitted because CanDefault is false."
 
         /// The dynamic look-up operator for an Xtension.
         /// Example -   let parallax = entity?Parallax : single
@@ -70,7 +70,7 @@ module XtensionModule =
                 // return field directly if the return type matches, otherwise the default value for that type
                 match field.FieldValue with
                 | :? 'r as fieldValue -> fieldValue
-                | _ -> Xtension.tryGetDefaultValue xtension memberName
+                | _ -> failwith <| "Xtension field '" + memberName + "' of type '" + field.FieldType.Name + "' is not of the expected type '" + typeof<'r>.Name + "'."
 
             | None ->
 

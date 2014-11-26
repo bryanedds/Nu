@@ -23,11 +23,7 @@ let inline at index (list : 'a list) =
 
 /// Check that a predicate passes for NO items in a list.
 let rec notExists pred list =
-    match list with
-    | [] -> true
-    | head :: tail ->
-        if pred head then false
-        else notExists pred tail
+    Seq.notExists pred list
 
 let rec private subpartitionPlus fnOptU list left right =
     match list with
@@ -128,7 +124,7 @@ let rec roll roller state (list : 'a list) =
 
 /// Windowed for lists.
 let windowed count (list : 'a list) =
-    List.ofSeq (Seq.windowed count list)
+    List.ofSeq <| Seq.windowed count list
 
 /// Zip two lists by a function.
 /// TODO: optimize with program fusion.

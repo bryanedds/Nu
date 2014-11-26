@@ -198,11 +198,19 @@ module CharacterStateModule =
           OptNavigationPath : NavigationNode list option }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
-        | Standing
         | Navigating of NavigationDescriptor
         | Acting of ActionData
+        | NoActivity
 
-    type ActivityAdvancementType =
-        | AdvanceWithDirection of Direction
-        | AdvanceWithAI // of ...
-        | AdvanceOnly
+    type NewActivityReport =
+        | NewActivity
+        | NoNewActivity
+        static member join activityReport activityReport2 =
+            match (activityReport, activityReport2) with
+            | (NoNewActivity, NoNewActivity) -> NoNewActivity
+            | _ -> NewActivity
+
+    type ControlType =
+        | Player
+        | Chaos
+        | Uncontrolled

@@ -214,6 +214,12 @@ module WorldEntityModule =
             let entityMap = World.getEntityMap3 groupAddress entityNames world
             Map.toValueSeq entityMap
 
+        static member setEntities groupAddress entities world =
+            Seq.fold
+                (fun world (entity : Entity) -> World.setEntity (gatoea groupAddress entity.Name) entity world)
+                world
+                entities
+
         static member private registerEntity address entity world =
             Entity.register address entity world
 

@@ -6,35 +6,38 @@ module RandModule =
 
     /// Implements an immutable random number generator using the xorshift* algorithm.
     type [<StructuralEquality; NoComparison>] Rand =
-        { Current : uint64 }
+        { RandState : uint64 }
 
 [<RequireQualifiedAccess>]
 module Rand =
 
     // NOTE: number generated via http://www.random.org/bytes/
-    let [<Literal>] DefaultSeed = 0xa529cb6f5f0385edUL
+    let [<Literal>] DefaultSeedState = 0xa529cb6f5f0385edUL
 
-    let make seed =
-        if seed = 0UL then failwith "Seed for Rand may not be zero."
-        { Current = seed }
+    let make seedState =
+        if seedState = 0UL then failwith "Seed for Rand may not be zero."
+        { RandState = seedState }
 
     let makeDefault () =
-        make DefaultSeed
+        make DefaultSeedState
 
-    let makeFromInt (seed : int) =
-        let seedMultiplier = UInt64.MaxValue / uint64 UInt32.MaxValue
-        let seedUi64 = uint64 seed * seedMultiplier
-        make seedUi64
+    let makeFromInt (seedState : int) =
+        let seedStateMultiplier = UInt64.MaxValue / uint64 UInt32.MaxValue
+        let seedStateUi64 = uint64 seedState * seedStateMultiplier
+        make seedStateUi64
+
+    let getState rand =
+        rand.RandState
 
     let advance rand =
-        let c = rand.Current
+        let c = rand.RandState
         let c = c ^^^ (c >>> 12)
         let c = c ^^^ (c <<< 25)
         let c = c ^^^ (c >>> 27)
-        { Current = c }
+        { RandState = c }
 
     let sample rand =
-        rand.Current * 2685821657736338717UL
+        rand.RandState * 2685821657736338717UL
 
     let nextDouble rand =
         let rand = advance rand
