@@ -243,7 +243,7 @@ module WorldModule =
 
         static member addDissolveScreenFromGroupFile persistent dissolveData dispatcherName address groupFilePath world =
             let dissolveScreen = { World.makeDissolveScreen dissolveData dispatcherName (Some <| Address.head address) world with Persistent = persistent }
-            let (group, entities) = World.readGroupFromFile groupFilePath world
+            let (group, entities) = World.readGroupHierarchyFromFile groupFilePath world
             let dissolveGroupHierarchies = Map.singleton group.Name (group, entities)
             let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupHierarchies)
             World.addScreen address dissolveScreenHierarchy world

@@ -170,7 +170,13 @@ module WorldGroupModule =
                 ([], world)
                 groupHierarchies
 
-        static member writeGroup (writer : XmlWriter) groupHierarchy world =
+        static member makeGroup dispatcherName optName world =
+            let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
+            let group = Group.make dispatcher optName
+            Reflection.attachFields dispatcher group
+            group
+
+        static member writeGroupHierarchy (writer : XmlWriter) groupHierarchy world =
             let (group : Group, entities) = groupHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (group.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology2 writer group
@@ -178,7 +184,7 @@ module WorldGroupModule =
             World.writeEntities writer entities world
             writer.WriteEndElement ()
 
-        static member writeGroupToFile (filePath : string) groupHierarchy world =
+        static member writeGroupHierarchyToFile (filePath : string) groupHierarchy world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
@@ -188,7 +194,7 @@ module WorldGroupModule =
             writer.WriteStartDocument ()
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GroupNodeName
-            World.writeGroup writer groupHierarchy world
+            World.writeGroupHierarchy writer groupHierarchy world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.WriteEndDocument ()
@@ -196,7 +202,7 @@ module WorldGroupModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        static member writeGroups (writer : XmlWriter) groupHierarchies world =
+        static member writeGroupHierarchies (writer : XmlWriter) groupHierarchies world =
             let groupHierarchies =
                 List.sortBy
                     (fun (group : Group, _) -> group.CreationTimeNp)
@@ -204,10 +210,10 @@ module WorldGroupModule =
             let groupHierarchies = List.filter (fun (group : Group, _) -> group.Persistent) groupHierarchies
             for groupHierarchy in groupHierarchies do
                 writer.WriteStartElement GroupNodeName
-                World.writeGroup writer groupHierarchy world
+                World.writeGroupHierarchy writer groupHierarchy world
                 writer.WriteEndElement ()
 
-        static member readGroup (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+        static member readGroupHierarchy (groupNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
 
             // read in the dispatcher name and create the dispatcher
             let dispatcherName = Serialization.readDispatcherName defaultDispatcherName groupNode
@@ -234,28 +240,22 @@ module WorldGroupModule =
             // return the initialized group and entities
             (group, entities)
 
-        static member readGroupFromFile filePath world =
+        static member readGroupHierarchyFromFile filePath world =
             let document = XmlDocument ()
             document.Load (filePath : string)
             let rootNode = document.[RootNodeName]
             let groupNode = rootNode.[GroupNodeName]
-            World.readGroup groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
+            World.readGroupHierarchy groupNode typeof<GroupDispatcher>.Name typeof<EntityDispatcher>.Name world
 
-        static member readGroups (parentNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
+        static member readGroupHierarchies (parentNode : XmlNode) defaultDispatcherName defaultEntityDispatcherName world =
             match parentNode.SelectSingleNode GroupsNodeName with
             | null -> Map.empty
             | groupsNode ->
                 let groupNodes = groupsNode.SelectNodes GroupNodeName
                 Seq.fold
                     (fun groupHierarchies groupNode ->
-                        let groupHierarchy = World.readGroup groupNode defaultDispatcherName defaultEntityDispatcherName world
+                        let groupHierarchy = World.readGroupHierarchy groupNode defaultDispatcherName defaultEntityDispatcherName world
                         let groupName = (fst groupHierarchy).Name
                         Map.add groupName groupHierarchy groupHierarchies)
                     Map.empty
                     (enumerable groupNodes)
-
-        static member makeGroup dispatcherName optName world =
-            let dispatcher = Map.find dispatcherName world.Components.GroupDispatchers
-            let group = Group.make dispatcher optName
-            Reflection.attachFields dispatcher group
-            group

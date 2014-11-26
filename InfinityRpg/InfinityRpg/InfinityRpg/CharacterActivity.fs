@@ -152,7 +152,7 @@ module CharacterActivity =
         match tryGetNavigationPath field touchPosition character with
         | Some navigationPath ->
             match navigationPath with
-            | [] -> character
+            | [] -> (NoTurnTaken, character)
             | _ ->
                 let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
                 let walkDirection = Direction.fromVector2i <| (List.head navigationPath).PositionM - currentPositionM
@@ -160,11 +160,12 @@ module CharacterActivity =
                 let activityState = Navigation { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
                 let character = Entity.setActivityState activityState character
                 let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
-                Entity.setCharacterAnimationState characterAnimationState character
-        | None -> character
+                let character = Entity.setCharacterAnimationState characterAnimationState character
+                (TurnTaken, character)
+        | None -> (NoTurnTaken, character)
 
     let touch touchPosition field (character : Entity) =
         match character.ActivityState with
-        | Action _ -> character
-        | Navigation _ -> character
+        | Action _ -> (NoTurnTaken, character)
+        | Navigation _ -> (NoTurnTaken, character)
         | NoActivity -> tryChangeActivityToNavigationByTouch touchPosition field character

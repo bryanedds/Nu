@@ -73,29 +73,29 @@ module WorldGameModule =
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
-        static member writeGame (writer : XmlWriter) gameHierarchy world =
+        static member writeGameHierarchy (writer : XmlWriter) gameHierarchy world =
             let (game : Game, screenHierarchies) = gameHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
             Serialization.writePropertiesFromTarget tautology2 writer game
             writer.WriteStartElement ScreensNodeName
-            World.writeScreens writer screenHierarchies world
+            World.writeScreenHierarchies writer screenHierarchies world
             writer.WriteEndElement ()
 
-        static member writeGameToFile (filePath : string) gameHierarchy world =
+        static member writeGameHierarchyToFile (filePath : string) gameHierarchy world =
             let filePathTmp = filePath + ".tmp"
             let writerSettings = XmlWriterSettings ()
             writerSettings.Indent <- true
             use writer = XmlWriter.Create (filePathTmp, writerSettings)
             writer.WriteStartElement RootNodeName
             writer.WriteStartElement GameNodeName
-            World.writeGame writer gameHierarchy world
+            World.writeGameHierarchy writer gameHierarchy world
             writer.WriteEndElement ()
             writer.WriteEndElement ()
             writer.Dispose ()
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        static member readGame
+        static member readGameHierarchy
             (gameNode : XmlNode)
             defaultDispatcherName
             defaultScreenDispatcherName
@@ -114,7 +114,7 @@ module WorldGameModule =
             Reflection.attachFields game.DispatcherNp game
             Serialization.readPropertiesToTarget gameNode game
             let screenHierarchies =
-                World.readScreens
+                World.readScreenHierarchies
                     (gameNode : XmlNode)
                     defaultScreenDispatcherName
                     defaultGroupDispatcherName
@@ -122,11 +122,14 @@ module WorldGameModule =
                     world
             (game, screenHierarchies)
 
-        static member readGameFromFile (filePath : string) world =
-            use reader = XmlReader.Create (new FileStream (filePath, FileMode.Open) :> Stream)
+        static member readGameHierarchyFromFile (filePath : string) world =
+            use file = new FileStream (filePath, FileMode.Open)
+            use reader = XmlReader.Create file
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
-            World.readGame
-                ((document.SelectSingleNode RootNodeName).SelectSingleNode GameNodeName)
+            let rootNode = document.[RootNodeName]
+            let gameNode = rootNode.[GameNodeName]
+            World.readGameHierarchy
+                gameNode
                 typeof<GameDispatcher>.Name
                 typeof<ScreenDispatcher>.Name
                 typeof<GroupDispatcher>.Name

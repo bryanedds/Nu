@@ -13,6 +13,13 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module GameplayDispatcherModule =
 
+    type Screen with
+    
+        member screen.ContentRandState = screen?ContentRandState : uint64
+        static member setContentRandState (value : uint64) (screen : Screen) = screen?ContentRandState <- value
+        member screen.OngoingRandState = screen?OngoingRandState : uint64
+        static member setOngoingRandState (value : uint64) (screen : Screen) = screen?OngoingRandState <- value
+
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
@@ -27,7 +34,7 @@ module GameplayDispatcherModule =
             World.getEntity PlayerAddress world
 
         static let getParticipants world =
-            (getField world, List.ofSeq <| getEnemies world, getPlayer world)
+            (getField world, List.ofSeq <| getEnemies world, getPlayer world, World.getScreen GameplayAddress world)
 
         static let tryChangeEnemyActivityToWalk field (enemy : Entity) rand =
             match enemy.ControlType with
@@ -54,7 +61,7 @@ module GameplayDispatcherModule =
             let enemy = snd <| CharacterActivity.advanceNavigation field enemy
             match playerActivityReport with
             | TurnTaken ->
-                let justFinishedNavigation = wasNavigating && ActivityState.isNavigating enemy.ActivityState
+                let justFinishedNavigation = wasNavigating && ActivityState.isNotNavigating enemy.ActivityState
                 if justFinishedNavigation then tryChangeEnemyActivityToWalk field enemy rand
                 else (enemy, rand)
             | NoTurnTaken -> (enemy, rand)
@@ -73,39 +80,39 @@ module GameplayDispatcherModule =
         static let handleTick _ world =
 
             // get participants
-            let (field, enemies, player) = getParticipants world
+            let (field, enemies, player, gameplay) = getParticipants world
 
             // advance player - player always goes first in each turn
-            let (turnReport, player) =
+            let (playerTurnReport, player) =
                 let optWalkDirection =
                     if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some East
                     elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some West
                     elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some North
                     elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some South
                     else None
-                let (turnReport, player) =
+                let (playerTurnReport, player) =
                     match optWalkDirection with
                     | Some walkDirection ->
                         if canPlayerAct enemies
                         then CharacterActivity.tryChangeActivityToNavigationByDirection walkDirection field player
                         else (NoTurnTaken, player)
                     | None -> (NoTurnTaken, player)
-                let (turnReport2, player) = CharacterActivity.advanceNavigation field player
-                (TurnReport.join turnReport turnReport2, player)
+                let (playerTurnReport2, player) = CharacterActivity.advanceNavigation field player
+                (TurnReport.join playerTurnReport playerTurnReport2, player)
             let world = World.setEntity PlayerAddress player world
 
             // advance enemies
             let world =
                 let (enemies, rand) =
-                    let rand = Rand.make world.Game?RandState
+                    let rand = Rand.make gameplay.OngoingRandState
                     let (enemies, rand) =
-                        match turnReport with
+                        match playerTurnReport with
                         | TurnTaken -> tryChangeEnemyActivitiesToWalk field enemies rand
                         | NoTurnTaken -> (enemies, rand)
-                    advanceEnemiesWalk turnReport field enemies rand
+                    advanceEnemiesWalk playerTurnReport field enemies rand
                 let world = World.setEntities SceneAddress enemies world
-                let game = world.Game?RandState <- Rand.getState rand
-                World.setGame game world
+                let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
+                World.setScreen GameplayAddress gameplay world
 
             // cascade
             (Cascade, world)
@@ -115,22 +122,24 @@ module GameplayDispatcherModule =
             // pull in context
             let touchPosition : Vector2 = World.unwrapD event world
             let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
-            let (field, enemies, player) = getParticipants world
+            let (field, enemies, player, gameplay) = getParticipants world
             
             // advance player
-            let canPlayerAct = canPlayerAct enemies
-            let player = if canPlayerAct then CharacterActivity.touch touchPositionW field player else player
+            let (playerTurnReport, player) =
+                if canPlayerAct enemies then CharacterActivity.touch touchPositionW field player
+                else (NoTurnTaken, player)
             let world = World.setEntity PlayerAddress player world
             
             // advance enemies
             let world =
-                if canPlayerAct then
-                    let rand = Rand.make <| world.Game?RandState
+                match playerTurnReport with
+                | TurnTaken ->
+                    let rand = Rand.make gameplay.OngoingRandState
                     let (enemies, rand) = tryChangeEnemyActivitiesToWalk field enemies rand
                     let world = World.setEntities SceneAddress enemies world
-                    let game = world.Game?RandState <- Rand.getState rand
-                    World.setGame game world
-                else world
+                    let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
+                    World.setScreen GameplayAddress gameplay world
+                | NoTurnTaken -> world
 
             // cascade
             (Cascade, world)
@@ -138,7 +147,7 @@ module GameplayDispatcherModule =
         static let handleDownDetail direction event world =
             
             // grab participants
-            let (field, enemies, player) = getParticipants world
+            let (field, enemies, player, gameplay) = getParticipants world
 
             // advance player
             let (playerTurnReport, player) =
@@ -151,10 +160,11 @@ module GameplayDispatcherModule =
             let world =
                 match playerTurnReport with
                 | TurnTaken ->
-                    let (enemies, rand) = tryChangeEnemyActivitiesToWalk field (List.ofSeq enemies) (Rand.make <| world.Game?RandState)
+                    let rand = Rand.make gameplay.OngoingRandState
+                    let (enemies, rand) = tryChangeEnemyActivitiesToWalk field (List.ofSeq enemies) rand
                     let world = World.setEntities SceneAddress enemies world
-                    let game = world.Game?RandState <- Rand.getState rand
-                    World.setGame game world
+                    let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
+                    World.setScreen GameplayAddress gameplay world
                 | NoTurnTaken -> world
 
             // cascade
@@ -171,9 +181,17 @@ module GameplayDispatcherModule =
 
         static let handleNewGame _ world =
 
-            // make random seed
-            let systemRandomSeedState = uint64 <| (new Random ()).Next ()
-            let rand = Rand.make systemRandomSeedState
+            // get and initialize gameplay screen
+            let sysrandom = Random ()
+            let contentSeedState = uint64 <| sysrandom.Next ()
+            let ongoingSeedState = uint64 <| sysrandom.Next ()
+            let gameplay = World.getScreen GameplayAddress world
+            let gameplay = Screen.setContentRandState contentSeedState gameplay
+            let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
+            let world = World.setScreen GameplayAddress gameplay world
+
+            // make rand from gameplay
+            let rand = Rand.make gameplay.ContentRandState
 
             // make field
             let (field, rand) = makeField rand world
@@ -183,7 +201,6 @@ module GameplayDispatcherModule =
             let player = Entity.setDepth CharacterDepth player
 
             // make enemies
-            let rand = Rand.make world.Game?RandState
             let (enemyCount, rand) = Rand.nextIntUnder 10 rand
             let (enemies, rand) =
                 List.fold
@@ -206,48 +223,47 @@ module GameplayDispatcherModule =
 
             // add scene hierarchy to world
             let world = snd <| World.addGroup SceneAddress sceneHierarchy world
-
-            // update game rand state
-            let game = world.Game?RandState <- Rand.getState rand
-            let world = World.setGame game world
             (Cascade, world)
 
         static let handleLoadGame _ world =
 
-            // replace game value
-            let gameHierarchy = World.readGameFromFile SaveFilePath world
-            let (game, screenHierarchy) = gameHierarchy
-            let world = World.setGame game world
+            // read in gameplay screen
+            let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
+            let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
+            let gameplay = World.getScreen GameplayAddress world
+            let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
+            let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
+            let world = World.setScreen GameplayAddress gameplay world
 
-            // get rand from game
-            let rand = Rand.make world.Game?RandState
+            // make rand from gameplay
+            let rand = Rand.make gameplay.ContentRandState
 
             // make field
             let (field, rand) = makeField rand world
 
             // find scene hierarchy and add field to it
-            let sceneHierarchy = Map.find SceneName <| snd ^| Map.find GameplayName screenHierarchy
+            let sceneHierarchy = Map.find SceneName groupHierarchies
             let (scene, entities) = sceneHierarchy
             let entities = Map.add field.Name field entities
             let sceneHierarchy = (scene, entities)
 
             // add scene hierarchy to world
             let world = snd <| World.addGroup SceneAddress sceneHierarchy world
-
-            // update game rand state
-            let game = world.Game?RandState <- Rand.getState rand
-            let world = World.setGame game world
             (Cascade, world)
 
         static let handleClickSaveGame _ world =
-            let gameHierarchy = World.getGameHierarchy world
-            World.writeGameToFile SaveFilePath gameHierarchy world
+            let gameplayHierarchy = World.getScreenHierarchy GameplayAddress world
+            World.writeScreenHierarchyToFile SaveFilePath gameplayHierarchy world
             (Cascade, world)
 
         static let handleDeselectGameplay _ world =
             let scene = World.getGroup SceneAddress world
             let world = snd <| World.removeGroup SceneAddress scene world
             (Cascade, world)
+
+        static member FieldDefinitions =
+            [define? ContentRandState Rand.DefaultSeedState
+             define? OngoingRandState Rand.DefaultSeedState]
 
         override dispatcher.Register (address, screen, world) =
             if address <> GameplayAddress then failwith "Invalid address for GameplayDispatcher screen."

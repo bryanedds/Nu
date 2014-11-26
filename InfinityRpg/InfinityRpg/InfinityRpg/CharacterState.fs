@@ -206,6 +206,8 @@ module CharacterStateModule =
             | Action _ -> false
             | Navigation _ -> true
             | NoActivity -> false
+        static member isNotNavigating activity =
+            not <| ActivityState.isNavigating activity
 
     type TurnReport =
         | TurnTaken
