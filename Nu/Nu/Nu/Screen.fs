@@ -246,8 +246,7 @@ module WorldScreenModule =
             File.Move (filePathTmp, filePath)
 
         static member readScreenHierarchyFromFile (filePath : string) world =
-            use file = new FileStream (filePath, FileMode.Open)
-            use reader = XmlReader.Create file
+            use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let screenNode = rootNode.[ScreenNodeName]
