@@ -123,8 +123,7 @@ module WorldGameModule =
             (game, screenHierarchies)
 
         static member readGameHierarchyFromFile (filePath : string) world =
-            use file = new FileStream (filePath, FileMode.Open)
-            use reader = XmlReader.Create file
+            use reader = XmlReader.Create filePath
             let document = let emptyDoc = XmlDocument () in (emptyDoc.Load reader; emptyDoc)
             let rootNode = document.[RootNodeName]
             let gameNode = rootNode.[GameNodeName]
