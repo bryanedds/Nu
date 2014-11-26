@@ -187,6 +187,20 @@ module WorldScreenModule =
                 World.writeScreenHierarchy writer screenHierarchy world
                 writer.WriteEndElement ()
 
+        static member writeScreenHierarchyToFile (filePath : string) screenHierarchy world =
+            let filePathTmp = filePath + ".tmp"
+            let writerSettings = XmlWriterSettings ()
+            writerSettings.Indent <- true
+            use writer = XmlWriter.Create (filePathTmp, writerSettings)
+            writer.WriteStartElement RootNodeName
+            writer.WriteStartElement ScreenNodeName
+            World.writeScreenHierarchy writer screenHierarchy world
+            writer.WriteEndElement ()
+            writer.WriteEndElement ()
+            writer.Dispose ()
+            File.Delete filePath
+            File.Move (filePathTmp, filePath)
+
         static member readScreenHierarchy
             (screenNode : XmlNode)
             defaultDispatcherName
@@ -230,20 +244,6 @@ module WorldScreenModule =
                         Map.add screenName screenHierarchy screenHierarchies)
                     Map.empty
                     (enumerable screenNodes)
-
-        static member writeScreenHierarchyToFile (filePath : string) screenHierarchy world =
-            let filePathTmp = filePath + ".tmp"
-            let writerSettings = XmlWriterSettings ()
-            writerSettings.Indent <- true
-            use writer = XmlWriter.Create (filePathTmp, writerSettings)
-            writer.WriteStartElement RootNodeName
-            writer.WriteStartElement ScreenNodeName
-            World.writeScreenHierarchy writer screenHierarchy world
-            writer.WriteEndElement ()
-            writer.WriteEndElement ()
-            writer.Dispose ()
-            File.Delete filePath
-            File.Move (filePathTmp, filePath)
 
         static member readScreenHierarchyFromFile (filePath : string) world =
             use reader = XmlReader.Create filePath
