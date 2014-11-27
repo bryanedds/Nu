@@ -22,7 +22,7 @@ module Serialization =
         not (
             property.Name = NameFieldName &&
             property.PropertyType = typeof<string> &&
-            Guid.TryParse (property.GetValue target :?> string, ref Guid.Empty))
+            fst <| Guid.TryParse (property.GetValue target :?> string))
 
     /// Read an Xtension's fields from Xml.
     let readXFields (valueNode : XmlNode) =

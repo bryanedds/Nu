@@ -126,9 +126,9 @@ module Reflection =
     /// OPTIMIZATION: Memoized for efficiency since FieldDefinitions properties will likely return
     /// a newly constructed list.
     let getFieldDefinitionsNoInherit (targetType : Type) =
-        let refFieldDefinitions = ref []
-        if fieldDefinitionsCache.TryGetValue (targetType, refFieldDefinitions) then !refFieldDefinitions
-        else
+        match fieldDefinitionsCache.TryGetValue targetType with
+        | (true, fieldDefinitions) -> fieldDefinitions
+        | (false, _) ->
             let fieldDefinitions =
                 match targetType.GetProperty ("FieldDefinitions", BindingFlags.Static ||| BindingFlags.Public) with
                 | null -> []

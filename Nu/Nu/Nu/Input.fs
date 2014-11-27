@@ -48,10 +48,8 @@ module MouseState =
 
     /// Get the position of the mouse.
     let getPosition () =
-        let x = ref 0
-        let y = ref 0
-        ignore <| SDL.SDL_GetMouseState (x, y)
-        Vector2i (!x, !y)
+        let (_, x, y) = SDL.SDL_GetMouseState ()
+        Vector2i (x, y)
 
     /// Get the position of the mouse in floating-point coordinates.
     let getPositionF world =

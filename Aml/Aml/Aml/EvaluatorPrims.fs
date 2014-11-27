@@ -49,9 +49,9 @@ module EvaluatorPrims =
 
     /// Try to find a declaration entry.
     let tryFindDeclarationEntry name env =
-        let entry = ref Unchecked.defaultof<EnvEntry>
-        if env.EnvDeclarationFrame.TryGetValue (name, entry) then Some !entry
-        else None
+        match env.EnvDeclarationFrame.TryGetValue name with
+        | (true, entry) -> Some entry
+        | (false, _) -> None
 
     /// Try to find a declaration entry by the given search method.
     let tryFindDeclarationEntryBy by name env =
@@ -60,19 +60,19 @@ module EvaluatorPrims =
 
     /// Try to find a procedural entry plus directions on how to access it again.
     let tryFindProceduralEntry name env =
-        let offset = ref -1
-        let optIndex = ref None
+        let refOffset = ref -1
+        let refOptIndex = ref None
         let optEntry =
             List.tryFindPlus
                 (fun (frame : ProceduralFrame) ->
-                    offset := !offset + 1
-                    optIndex := Array.tryFindIndexRev (fun (entryName, _) -> name = entryName) frame
-                    match !optIndex with
+                    refOffset := !refOffset + 1
+                    refOptIndex := Array.tryFindIndexRev (fun (entryName, _) -> name = entryName) frame
+                    match !refOptIndex with
                     | Some index -> (true, Some frame.[index])
                     | None -> (false, None))
                 env.EnvProceduralFrames
         match optEntry with
-        | Some (Some (_, entry)) -> Some (entry, !offset, (!optIndex).Value)
+        | Some (Some (_, entry)) -> Some (entry, !refOffset, (!refOptIndex).Value)
         | Some None -> failwith "Unexpected match failure in 'Aml.Evaluator.Prims.tryFindProceduralEntry'."
         | None -> None
 
@@ -183,9 +183,9 @@ module EvaluatorPrims =
     
     /// Get a member from some composite members.
     let getMember memberName (members : MemberDictionary) env =
-        let mem = ref Unchecked.defaultof<Member>
-        if members.TryGetValue (memberName, mem) then (!mem).MemExpr
-        else makeViolationWithPositions ":v/eval/missingMember" ("Member '" + memberName + "' does not exist.") env
+        match members.TryGetValue memberName with
+        | (true, mem) -> mem.MemExpr
+        | (false, _) -> makeViolationWithPositions ":v/eval/missingMember" ("Member '" + memberName + "' does not exist.") env
 
     /// Get a value's type (not from the environment).
     let getType value env =
@@ -258,12 +258,11 @@ module EvaluatorPrims =
         fun argValues1 ->
             List.forall2Plus
                 (fun arg argValue ->
-                    let constraintRef = ref Unchecked.defaultof<Constraint>
-                    if constraints1.TryGetValue (arg.ArgName, constraintRef) then
-                        let constr = !constraintRef
+                    match constraints1.TryGetValue arg.ArgName with
+                    | (true, constr) ->
                         if hasType constr.ConstrTypeName argValue env then true
                         else hasProtocol constr.ConstrProtocolName argValue env
-                    else true)
+                    | (false, _) -> true)
                 args1
                 argValues1
 

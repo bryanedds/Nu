@@ -136,7 +136,7 @@ module Program =
                 match propertyName with
                 | "Name" ->
                     let valueStr = acstring value
-                    if Int64.TryParse (valueStr, ref 0L) then
+                    if fst <| Int64.TryParse valueStr then
                         trace <| "Invalid entity name '" + valueStr + "' (must not be a number)."
                         world
                     else
@@ -231,16 +231,12 @@ module Program =
             EntityTypeDescriptor optSource :> ICustomTypeDescriptor
 
     let getSnaps (form : NuEditForm) =
-        let positionSnap = ref 0
-        ignore <| Int32.TryParse (form.positionSnapTextBox.Text, positionSnap)
-        let rotationSnap = ref 0
-        ignore <| Int32.TryParse (form.rotationSnapTextBox.Text, rotationSnap)
-        (!positionSnap, !rotationSnap)
+        let positionSnap = snd <| Int32.TryParse form.positionSnapTextBox.Text
+        let rotationSnap = snd <| Int32.TryParse form.rotationSnapTextBox.Text
+        (positionSnap, rotationSnap)
     
     let getCreationDepth (form : NuEditForm) =
-        let creationDepth = ref 0.0f
-        ignore <| Single.TryParse (form.createDepthTextBox.Text, creationDepth)
-        !creationDepth
+        snd <| Single.TryParse form.createDepthTextBox.Text
 
     let getExpansionState (treeView : TreeView) =
         let nodeStates =
@@ -477,14 +473,12 @@ module Program =
         form.Close ()
 
     let handleFormCreateDepthPlusClick (form : NuEditForm) (_ : EventArgs) =
-        let depth = ref 0.0f
-        ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
-        form.createDepthTextBox.Text <- acstring (!depth + 1.0f)
+        let depth = snd <| Single.TryParse form.createDepthTextBox.Text
+        form.createDepthTextBox.Text <- acstring <| depth + 1.0f
 
     let handleFormCreateDepthMinusClick (form : NuEditForm) (_ : EventArgs) =
-        let depth = ref 0.0f
-        ignore <| Single.TryParse (form.createDepthTextBox.Text, depth)
-        form.createDepthTextBox.Text <- acstring (!depth - 1.0f)
+        let depth = snd <| Single.TryParse form.createDepthTextBox.Text
+        form.createDepthTextBox.Text <- acstring <| depth - 1.0f
     
     let handleFormTreeViewNodeSelect (form : NuEditForm) (worldChangers : WorldChangers) (refWorld : World ref) (_ : EventArgs) =
         ignore <| worldChangers.Add (fun world ->
