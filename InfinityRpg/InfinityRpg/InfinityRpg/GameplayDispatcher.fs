@@ -19,6 +19,8 @@ module GameplayDispatcherModule =
         static member setContentRandState (value : uint64) (screen : Screen) = screen?ContentRandState <- value
         member screen.OngoingRandState = screen?OngoingRandState : uint64
         static member setOngoingRandState (value : uint64) (screen : Screen) = screen?OngoingRandState <- value
+        member screen.InputPlayerTurn = screen?InputPlayerTurn : TurnDescriptor
+        static member setInputPlayerTurn (value : TurnDescriptor) (screen : Screen) = screen?InputPlayerTurn <- value
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
@@ -35,140 +37,6 @@ module GameplayDispatcherModule =
 
         static let getParticipants world =
             (getField world, List.ofSeq <| getEnemies world, getPlayer world, World.getScreen GameplayAddress world)
-
-        static let tryChangeEnemyActivityToWalk field (enemy : Entity) rand =
-            match enemy.ControlType with
-            | Player ->
-                debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
-                (enemy, rand)
-            | Chaos ->
-                let (randResult, rand) = Rand.nextIntUnder 4 rand
-                let walkDirection = Direction.fromInt randResult
-                let enemy = snd <| CharacterActivity.tryChangeActivityToNavigationByDirection walkDirection field enemy
-                (enemy, rand)
-            | Uncontrolled -> (enemy, rand)
-
-        static let tryChangeEnemyActivitiesToWalk field enemies rand =
-            List.fold
-                (fun (enemies, rand) (enemy : Entity) ->
-                    let (enemy, rand) = tryChangeEnemyActivityToWalk field enemy rand
-                    (enemy :: enemies, rand))
-                ([], rand)
-                enemies
-
-        static let advanceEnemyWalk playerActivityReport field (enemy : Entity) rand =
-            let wasNavigating = ActivityState.isNavigating enemy.ActivityState
-            let enemy = snd <| CharacterActivity.advanceNavigation field enemy
-            match playerActivityReport with
-            | TurnTaken ->
-                let justFinishedNavigation = wasNavigating && ActivityState.isNotNavigating enemy.ActivityState
-                if justFinishedNavigation then tryChangeEnemyActivityToWalk field enemy rand
-                else (enemy, rand)
-            | NoTurnTaken -> (enemy, rand)
-
-        static let advanceEnemiesWalk playerActivityReport field enemies rand =
-            List.fold
-                (fun (enemies, rand) (enemy : Entity) ->
-                    let (enemy, rand) = advanceEnemyWalk playerActivityReport field enemy rand
-                    (enemy :: enemies, rand))
-                ([], rand)
-                enemies
-
-        static let canPlayerAct enemies =
-            Seq.notExists (fun (enemy : Entity) -> enemy.ActivityState <> NoActivity) enemies
-
-        static let handleTick _ world =
-
-            // get participants
-            let (field, enemies, player, gameplay) = getParticipants world
-
-            // advance player - player always goes first in each turn
-            let (playerTurnReport, player) =
-                let optWalkDirection =
-                    if World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RIGHT) world then Some East
-                    elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LEFT) world then Some West
-                    elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_UP) world then Some North
-                    elif World.isKeyboardKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_DOWN) world then Some South
-                    else None
-                let (playerTurnReport, player) =
-                    match optWalkDirection with
-                    | Some walkDirection ->
-                        if canPlayerAct enemies
-                        then CharacterActivity.tryChangeActivityToNavigationByDirection walkDirection field player
-                        else (NoTurnTaken, player)
-                    | None -> (NoTurnTaken, player)
-                let (playerTurnReport2, player) = CharacterActivity.advanceNavigation field player
-                (TurnReport.join playerTurnReport playerTurnReport2, player)
-            let world = World.setEntity PlayerAddress player world
-
-            // advance enemies
-            let world =
-                let (enemies, rand) =
-                    let rand = Rand.make gameplay.OngoingRandState
-                    let (enemies, rand) =
-                        match playerTurnReport with
-                        | TurnTaken -> tryChangeEnemyActivitiesToWalk field enemies rand
-                        | NoTurnTaken -> (enemies, rand)
-                    advanceEnemiesWalk playerTurnReport field enemies rand
-                let world = World.setEntities SceneAddress enemies world
-                let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-                World.setScreen GameplayAddress gameplay world
-
-            // cascade
-            (Cascade, world)
-
-        static let handleTouchFeeler event world =
-
-            // pull in context
-            let touchPosition : Vector2 = World.unwrapD event world
-            let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
-            let (field, enemies, player, gameplay) = getParticipants world
-            
-            // advance player
-            let (playerTurnReport, player) =
-                if canPlayerAct enemies then CharacterActivity.touch touchPositionW field player
-                else (NoTurnTaken, player)
-            let world = World.setEntity PlayerAddress player world
-            
-            // advance enemies
-            let world =
-                match playerTurnReport with
-                | TurnTaken ->
-                    let rand = Rand.make gameplay.OngoingRandState
-                    let (enemies, rand) = tryChangeEnemyActivitiesToWalk field enemies rand
-                    let world = World.setEntities SceneAddress enemies world
-                    let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-                    World.setScreen GameplayAddress gameplay world
-                | NoTurnTaken -> world
-
-            // cascade
-            (Cascade, world)
-
-        static let handleDownDetail direction event world =
-            
-            // grab participants
-            let (field, enemies, player, gameplay) = getParticipants world
-
-            // advance player
-            let (playerTurnReport, player) =
-                if canPlayerAct enemies
-                then CharacterActivity.tryChangeActivityToNavigationByDirection direction field player
-                else (NoTurnTaken, player)
-            let world = World.setEntity PlayerAddress player world
-
-            // advance enemies
-            let world =
-                match playerTurnReport with
-                | TurnTaken ->
-                    let rand = Rand.make gameplay.OngoingRandState
-                    let (enemies, rand) = tryChangeEnemyActivitiesToWalk field (List.ofSeq enemies) rand
-                    let world = World.setEntities SceneAddress enemies world
-                    let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-                    World.setScreen GameplayAddress gameplay world
-                | NoTurnTaken -> world
-
-            // cascade
-            (Cascade, world)
 
         static let makeField rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
@@ -261,9 +129,136 @@ module GameplayDispatcherModule =
             let world = snd <| World.removeGroup SceneAddress scene world
             (Cascade, world)
 
+        static let queryEnemyTurn field (enemy : Entity) rand =
+            match enemy.ControlType with
+            | Player ->
+                debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
+                (NoTurn, rand)
+            | Chaos ->
+                let (randResult, rand) = Rand.nextIntUnder 4 rand
+                let walkDirection = Direction.fromInt randResult
+                let enemyTurn = CharacterActivity.queryTurnOnDirection walkDirection field enemy
+                (enemyTurn, rand)
+            | Uncontrolled -> (NoTurn, rand)
+
+        static let queryEnemyTurns field enemies rand =
+            //let (enemyTurnsRev, rand) =
+                List.foldBack
+                    (fun (enemy : Entity) (enemyTurns, rand) ->
+                        let (enemyTurn, rand) = queryEnemyTurn field enemy rand
+                        (enemyTurn :: enemyTurns, rand))
+                    enemies
+                    ([], rand)
+            //let enemyTurns = List.rev enemyTurnsRev
+            //(enemyTurns, rand)
+
+        static let setEnemyTurns enemyTurns enemies =
+            List.map2
+                (fun enemyTurn enemy ->
+                    match enemyTurn with
+                    | NavigationTurn navigationDescriptor -> Entity.setActivityState (Navigation navigationDescriptor) enemy
+                    | NoTurn -> Entity.setActivityState NoActivity enemy)
+                enemyTurns
+                enemies
+
+        static let advanceEnemyNavigations field enemies =
+            List.map (CharacterActivity.advanceNavigation field) enemies
+
+        static let isTurnInProgress player enemies (gameplay : Screen) =
+            match gameplay.InputPlayerTurn with
+            | NavigationTurn _ -> true
+            | NoTurn -> List.notExists (fun (character : Entity) -> character.ActivityState <> NoActivity) (player :: enemies)
+
+        static let handleTick _ world =
+
+            // get participants
+            let (field, enemies, player, gameplay) = getParticipants world
+
+            // make rand from gameplay
+            let rand = Rand.make gameplay.OngoingRandState
+
+            // get and update player turn from gameplay
+            let playerTurn =
+                match gameplay.InputPlayerTurn with
+                | NavigationTurn _ as playerTurn -> playerTurn
+                | NoTurn -> CharacterActivity.getNavigationTurn player
+            let gameplay = Screen.setInputPlayerTurn NoTurn gameplay
+            let world = World.setScreen GameplayAddress gameplay world
+
+            let (world, rand) =
+
+                let (player, enemies, rand) =
+                    match playerTurn with
+                    | NavigationTurn navigationDescriptor ->
+                    
+                        // get enemy turns
+                        let (enemyTurns, rand) = queryEnemyTurns field enemies rand
+
+                        // -> any intermediate processing of turns goes here <-
+
+                        // set player turn
+                        let player = Entity.setActivityState (Navigation navigationDescriptor) player
+
+                        // set enemy turns
+                        let enemies = setEnemyTurns enemyTurns enemies
+                        (player, enemies, rand)
+
+                    | NoTurn -> (player, enemies, rand)
+            
+                // advance player
+                let player = CharacterActivity.advanceNavigation field player
+                let world = World.setEntity PlayerAddress player world
+
+                // advance enemies
+                let enemies = advanceEnemyNavigations field enemies
+                let world = World.setEntities SceneAddress enemies world
+                (world, rand)
+
+            // update ongoing rand state
+            let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
+            let world = World.setScreen GameplayAddress gameplay world
+
+            // cascade
+            (Cascade, world)
+
+        static let handleTouchFeeler event world =
+
+            // pull in context
+            let touchPosition : Vector2 = World.unwrapD event world
+            let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
+            let (field, enemies, player, gameplay) = getParticipants world
+            
+            // update player turn
+            let playerTurn =
+                if isTurnInProgress player enemies gameplay
+                then CharacterActivity.touch touchPositionW field player
+                else NoTurn
+            let gameplay = Screen.setInputPlayerTurn playerTurn gameplay
+            let world = World.setScreen GameplayAddress gameplay world
+            
+            // cascade
+            (Cascade, world)
+
+        static let handleDownDetail direction event world =
+            
+            // grab participants
+            let (field, enemies, player, gameplay) = getParticipants world
+
+            // update player turn from gameplay
+            let playerTurn =
+                if isTurnInProgress player enemies gameplay
+                then CharacterActivity.queryTurnOnDirection direction field player
+                else NoTurn
+            let gameplay = Screen.setInputPlayerTurn playerTurn gameplay
+            let world = World.setScreen GameplayAddress gameplay world
+
+            // cascade
+            (Cascade, world)
+
         static member FieldDefinitions =
             [define? ContentRandState Rand.DefaultSeedState
-             define? OngoingRandState Rand.DefaultSeedState]
+             define? OngoingRandState Rand.DefaultSeedState
+             define? InputPlayerTurn NoTurn]
 
         override dispatcher.Register (address, screen, world) =
             if address <> GameplayAddress then failwith "Invalid address for GameplayDispatcher screen."

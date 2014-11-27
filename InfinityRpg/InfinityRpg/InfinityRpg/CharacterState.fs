@@ -209,13 +209,9 @@ module CharacterStateModule =
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
 
-    type TurnReport =
-        | TurnTaken
-        | NoTurnTaken
-        static member join turnReport turnReport2 =
-            match (turnReport, turnReport2) with
-            | (NoTurnTaken, NoTurnTaken) -> NoTurnTaken
-            | _ -> TurnTaken
+    type [<StructuralEquality; NoComparison>] TurnDescriptor =
+        | NavigationTurn of NavigationDescriptor
+        | NoTurn
 
     type ControlType =
         | Player
