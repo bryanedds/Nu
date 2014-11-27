@@ -215,10 +215,13 @@ module PlayerModule =
             else (Cascade, world)
 
         let handleJumpByKeyboardKey event world =
-            let keyboardKeyData = World.unwrapD event world
-            match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.Repeated) with
-            | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
-            | _ -> (Cascade, world)
+            if World.isSelectedScreenIdling world then
+                let keyboardKeyData = World.unwrapD event world
+                match (enum<SDL.SDL_Scancode> keyboardKeyData.ScanCode, keyboardKeyData.Repeated) with
+                | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump event world
+                | _ -> (Cascade, world)
+            else (Cascade, world)
+
 
         static member FieldDefinitions =
             [define? Size <| Vector2 (48.0f, 96.0f)

@@ -93,7 +93,7 @@ module AudioModule =
 
         static member private haltSound () =
             ignore <| SDL_mixer.Mix_HaltMusic ()
-            let (_, channelCount) =  SDL_mixer.Mix_QuerySpec (ref 0, ref 0us)
+            let (_, _, _, channelCount) =  SDL_mixer.Mix_QuerySpec ()
             for i in [0 .. channelCount - 1] do
                 ignore <| SDL_mixer.Mix_HaltChannel i
     

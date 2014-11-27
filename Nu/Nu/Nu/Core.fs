@@ -31,7 +31,7 @@ module Core =
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =
-        let resolution = ref 0
         let appSetting = ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"]
-        if not <| Int32.TryParse (appSetting, resolution) then resolution := defaultResolution
-        !resolution
+        match Int32.TryParse appSetting with
+        | (true, resolution) -> resolution
+        | (false, _) -> defaultResolution
