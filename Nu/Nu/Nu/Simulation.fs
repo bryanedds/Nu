@@ -547,8 +547,9 @@ module World =
     let private getAnyEventAddresses eventAddress =
         if not <| Address.isEmpty eventAddress then
             let anyEventAddressesKey = Address.allButLast eventAddress
-            let refAnyEventAddresses = ref Unchecked.defaultof<obj Address list>
-            if not <| AnyEventAddressesCache.TryGetValue (anyEventAddressesKey, refAnyEventAddresses) then
+            match AnyEventAddressesCache.TryGetValue anyEventAddressesKey with
+            | (true, anyEventAddresses) -> anyEventAddresses
+            | (false, _) ->
                 let eventAddressList = eventAddress.Names
                 let anyEventAddressList = WorldConstants.AnyEventAddress.Names
                 let anyEventAddresses =
@@ -557,7 +558,6 @@ module World =
                         yield Address.make subNameList]
                 AnyEventAddressesCache.Add (anyEventAddressesKey, anyEventAddresses)
                 anyEventAddresses
-            else !refAnyEventAddresses
         else failwith "Event name cannot be empty."
 
     let private getSubscriptionsSorted (publishSorter : SubscriptionSorter) eventAddress world =

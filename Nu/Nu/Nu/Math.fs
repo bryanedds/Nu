@@ -133,9 +133,8 @@ module Math =
     /// Snap an int value to an offset.
     let snap offset value =
         if offset <> 0 then
-            let rem = ref 0
-            let div = Math.DivRem (value, offset, rem)
-            let rem = if !rem < offset / 2 then 0 else offset
+            let (div, rem) = Math.DivRem (value, offset)
+            let rem = if rem < offset / 2 then 0 else offset
             div * offset + rem
         else value
 

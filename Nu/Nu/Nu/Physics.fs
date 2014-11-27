@@ -218,17 +218,12 @@ module PhysicsModule =
             | Kinematic -> Dynamics.BodyType.Kinematic
             | Dynamic -> Dynamics.BodyType.Dynamic
 
-        static member private getNormalAndManifold (contact : Contact) =
-            let (normal, manifold) = (ref <| Framework.Vector2 (), ref <| FixedArray2<Framework.Vector2> ())
-            contact.GetWorldManifold (normal, manifold)
-            (!normal, !manifold)
-
         static member private handleCollision
             integrator
             (fixture : Dynamics.Fixture)
             (fixture2 : Dynamics.Fixture)
             (contact : Dynamics.Contacts.Contact) =
-            let (normal, _) = Integrator.getNormalAndManifold contact
+            let normal = fst <| contact.GetWorldManifold ()
             let bodyCollisionMessage =
                 { SourceAddress = fixture.Body.UserData :?> obj Address
                   Source2Address = fixture2.Body.UserData :?> obj Address
@@ -352,12 +347,13 @@ module PhysicsModule =
             Integrator.createBody4 createBodyMessage.SourceId createBodyMessage.SourceAddress createBodyMessage.BodyProperties integrator
 
         static member private destroyBody2 physicsId integrator =
-            let body = ref Unchecked.defaultof<Dynamics.Body>
-            if  integrator.Bodies.TryGetValue (physicsId, body) then
+            match integrator.Bodies.TryGetValue physicsId with
+            | (true, body) ->
                 ignore <| integrator.Bodies.Remove physicsId
-                integrator.PhysicsContext.RemoveBody !body
-            elif not integrator.RebuildingHack then
-                debug <| "Could not destroy non-existent body with PhysicsId = " + acstring physicsId + "'."
+                integrator.PhysicsContext.RemoveBody body
+            | (false, _) ->
+                if not integrator.RebuildingHack then
+                    debug <| "Could not destroy non-existent body with PhysicsId = " + acstring physicsId + "'."
 
         static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) integrator =
             Integrator.destroyBody2 destroyBodyMessage.PhysicsId integrator
@@ -366,34 +362,29 @@ module PhysicsModule =
             List.iter (fun physicsId -> Integrator.destroyBody2 physicsId integrator) destroyBodiesMessage.PhysicsIds
 
         static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) integrator =
-            let body = ref Unchecked.defaultof<Dynamics.Body>
-            if  integrator.Bodies.TryGetValue (setBodyPositionMessage.PhysicsId, body) then
-                (!body).Position <- Integrator.toPhysicsV2 setBodyPositionMessage.Position
-            else debug <| "Could not set position of non-existent body with PhysicsId = " + acstring setBodyPositionMessage.PhysicsId + "'."
+            match integrator.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
+            | (true, body) -> body.Position <- Integrator.toPhysicsV2 setBodyPositionMessage.Position
+            | (false, _) -> debug <| "Could not set position of non-existent body with PhysicsId = " + acstring setBodyPositionMessage.PhysicsId + "'."
 
         static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) integrator =
-            let body = ref Unchecked.defaultof<Dynamics.Body>
-            if  integrator.Bodies.TryGetValue (setBodyRotationMessage.PhysicsId, body) then
-                (!body).Rotation <- setBodyRotationMessage.Rotation
-            else debug <| "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
+            match integrator.Bodies.TryGetValue setBodyRotationMessage.PhysicsId with
+            | (true, body) -> body.Rotation <- setBodyRotationMessage.Rotation
+            | (false, _) -> debug <| "Could not set rotation of non-existent body with PhysicsId = " + acstring setBodyRotationMessage.PhysicsId + "'."
 
         static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) integrator =
-            let body = ref Unchecked.defaultof<Dynamics.Body>
-            if  integrator.Bodies.TryGetValue (setBodyLinearVelocityMessage.PhysicsId, body) then
-                (!body).LinearVelocity <- Integrator.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
-            else debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + acstring setBodyLinearVelocityMessage.PhysicsId + "'."
+            match integrator.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
+            | (true, body) -> body.LinearVelocity <- Integrator.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+            | (false, _) -> debug <| "Could not set linear velocity of non-existent body with PhysicsId = " + acstring setBodyLinearVelocityMessage.PhysicsId + "'."
 
         static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) integrator =
-            let body = ref Unchecked.defaultof<Dynamics.Body>
-            if  integrator.Bodies.TryGetValue (applyBodyLinearImpulseMessage.PhysicsId, body) then
-                (!body).ApplyLinearImpulse (Integrator.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
-            else debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + acstring applyBodyLinearImpulseMessage.PhysicsId + "'."
+            match integrator.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
+            | (true, body) -> body.ApplyLinearImpulse (Integrator.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
+            | (false, _) -> debug <| "Could not apply linear impulse to non-existent body with PhysicsId = " + acstring applyBodyLinearImpulseMessage.PhysicsId + "'."
 
         static member private applyBodyForce applyBodyForceMessage integrator =
-            let body = ref Unchecked.defaultof<Dynamics.Body>
-            if  integrator.Bodies.TryGetValue (applyBodyForceMessage.PhysicsId, body) then
-                (!body).ApplyForce (Integrator.toPhysicsV2 applyBodyForceMessage.Force)
-            else debug <| "Could not apply force to non-existent body with PhysicsId = " + acstring applyBodyForceMessage.PhysicsId + "'."
+            match integrator.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
+            | (true, body) -> body.ApplyForce (Integrator.toPhysicsV2 applyBodyForceMessage.Force)
+            | (false, _) -> debug <| "Could not apply force to non-existent body with PhysicsId = " + acstring applyBodyForceMessage.PhysicsId + "'."
 
         static member private handlePhysicsMessage integrator physicsMessage =
             match physicsMessage with
@@ -448,7 +439,7 @@ module PhysicsModule =
                 let contacts = Integrator.getBodyContacts physicsId integrator
                 List.map
                     (fun (contact : Contact) ->
-                        let (normal, _) = Integrator.getNormalAndManifold contact
+                        let normal = fst <| contact.GetWorldManifold ()
                         Vector2 (normal.X, normal.Y))
                     contacts
         

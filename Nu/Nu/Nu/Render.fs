@@ -167,13 +167,12 @@ module RenderModule =
                 let fileFirstNameLength = String.length fileFirstName
                 if fileFirstNameLength >= 3 then
                     let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
-                    let fontSize = ref 0
-                    if Int32.TryParse (fontSizeText, fontSize) then
-                        let optFont = SDL_ttf.TTF_OpenFont (asset.FilePath, !fontSize)
-                        if optFont <> IntPtr.Zero
-                        then Some (asset.AssetTag.AssetName, FontAsset (optFont, !fontSize))
+                    match Int32.TryParse fontSizeText with
+                    | (true, fontSize) ->
+                        let optFont = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
+                        if optFont <> IntPtr.Zero then Some (asset.AssetTag.AssetName, FontAsset (optFont, fontSize))
                         else trace <| "Could not load font due to unparsable font size in file name '" + asset.FilePath + "'."; None
-                    else trace <| "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
+                    | (false, _) -> trace <| "Could not load font due to file name being too short: '" + asset.FilePath + "'."; None
                 else trace <| "Could not load font '" + asset.FilePath + "'."; None
             | _ -> trace <| "Could not load render asset '" + acstring asset + "' due to unknown extension '" + extension + "'."; None
 
@@ -246,11 +245,7 @@ module RenderModule =
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
-                    let textureFormat = ref 0u
-                    let textureAccess = ref 0
-                    let textureSizeX = ref 0
-                    let textureSizeY = ref 0
-                    ignore <| SDL.SDL_QueryTexture (texture, textureFormat, textureAccess, textureSizeX, textureSizeY)
+                    let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
                     let mutable sourceRect = SDL.SDL_Rect ()
                     match sprite.OptInset with
                     | Some inset ->
@@ -261,8 +256,8 @@ module RenderModule =
                     | None ->
                         sourceRect.x <- 0
                         sourceRect.y <- 0
-                        sourceRect.w <- !textureSizeX
-                        sourceRect.h <- !textureSizeY
+                        sourceRect.w <- textureSizeX
+                        sourceRect.h <- textureSizeY
                     let mutable destRect = SDL.SDL_Rect ()
                     destRect.x <- int <| positionView.X + camera.EyeSize.X * 0.5f
                     destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - sizeView.Y // negation for right-handedness
@@ -313,7 +308,7 @@ module RenderModule =
             | Some renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
-                    // OPTIMIZATION: allocating refs in a tight-loop = problematic
+                    // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
                     let refTileSourceRect = ref <| SDL.SDL_Rect ()
                     let refTileDestRect = ref <| SDL.SDL_Rect ()
                     let refTileRotationCenter = ref <| SDL.SDL_Point ()
@@ -381,21 +376,17 @@ module RenderModule =
                     let textSurface = SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, textSizeX)
                     if textSurface <> IntPtr.Zero then
                         let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
-                        let textureFormat = ref 0u
-                        let textureAccess = ref 0
-                        let textureSizeX = ref 0
-                        let textureSizeY = ref 0
-                        ignore <| SDL.SDL_QueryTexture (textTexture, textureFormat, textureAccess, textureSizeX, textureSizeY)
+                        let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
                         let mutable sourceRect = SDL.SDL_Rect ()
                         sourceRect.x <- 0
                         sourceRect.y <- 0
-                        sourceRect.w <- !textureSizeX
-                        sourceRect.h <- !textureSizeY
+                        sourceRect.w <- textureSizeX
+                        sourceRect.h <- textureSizeY
                         let mutable destRect = SDL.SDL_Rect ()
                         destRect.x <- int <| positionView.X + camera.EyeSize.X * 0.5f
-                        destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - single !textureSizeY // negation for right-handedness
-                        destRect.w <- !textureSizeX
-                        destRect.h <- !textureSizeY
+                        destRect.y <- int <| -positionView.Y + camera.EyeSize.Y * 0.5f - single textureSizeY // negation for right-handedness
+                        destRect.w <- textureSizeX
+                        destRect.h <- textureSizeY
                         if textTexture <> IntPtr.Zero then ignore <| SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect)
                         SDL.SDL_DestroyTexture textTexture
                         SDL.SDL_FreeSurface textSurface

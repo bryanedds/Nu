@@ -793,10 +793,9 @@ module Evaluator =
 
     /// Apply a built-in operator.
     and applyBuiltin name (args : Expr list) argCount env =
-        let appliableBuiltin = ref Unchecked.defaultof<string -> Expr list -> int -> Env -> EvalResult>
-        if appliableBuiltinDictionary.TryGetValue (name, appliableBuiltin)
-        then !appliableBuiltin name args argCount env
-        else applySpecialBuiltin name args argCount env
+        match appliableBuiltinDictionary.TryGetValue name with
+        | (true, appliableBuiltin) -> appliableBuiltin name args argCount env
+        | (false, _) -> applySpecialBuiltin name args argCount env
 
     /// Apply a built-in symbol.
     and applyBuiltinSymbol args argCount symbol env =
@@ -862,15 +861,14 @@ module Evaluator =
             let argValueContingentType = getType argValueContingent env
             match argValueContingentType with
             | Composite ctype ->
-                let sigImpl = ref Unchecked.defaultof<Expr>
-                if not (ctype.CompSigImpls.TryGetValue (dispatch.DispName, sigImpl))
-                then makeEvalViolation ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' operation.") env
-                else
-                    match !sigImpl with
+                match ctype.CompSigImpls.TryGetValue dispatch.DispName with
+                | (true, sigImpl) ->
+                    match sigImpl with
                     | Symbol symbol -> applyBuiltinSymbol argValues argCount symbol env
                     | Lambda lambda as l -> applyLambdaDispatch argValues argCount lambda.LamArgs lambda.LamArgCount lambda l env
                     | Dispatch dispatch2 -> applyDispatch argValues argCount dispatch2 true env
                     | _ -> makeEvalViolation ":v/eval/invalidDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' to either built-in function or lambda.") env
+                | (false, _) -> makeEvalViolation ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' operation.") env
             | _ -> makeEvalViolation ":v/eval/unresolvedDynamicDispatch" ("Could not resolve dynamic dispatch for '" + dispatch.DispName + "' operation.") env
     
     /// Apply a string selector.

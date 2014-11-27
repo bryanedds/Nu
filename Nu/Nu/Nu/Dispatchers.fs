@@ -758,12 +758,12 @@ module TileMapDispatcherModule =
             let td = Entity.makeTileData tm tmd tl ti
             match td.OptTileSetTile with
             | Some tileSetTile ->
-                let collisionProperty = ref Unchecked.defaultof<string>
-                if tileSetTile.Properties.TryGetValue (CollisionProperty, collisionProperty) then
-                    let collisionExpr = acstring collisionProperty.Value
+                match tileSetTile.Properties.TryGetValue CollisionProperty with
+                | (true, collisionProperty) ->
+                    let collisionExpr = acstring collisionProperty
                     let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti collisionExpr
                     Some tileBodyProperties
-                else None
+                | (false, _) -> None
             | None -> None
 
         let getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex (tileLayer : TmxLayer) =

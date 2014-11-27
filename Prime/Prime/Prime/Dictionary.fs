@@ -17,10 +17,9 @@ let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : Dictionary<'k, 'v>) 
 
 /// Try to find a value in a dictonary.
 let inline tryFind key (dictionary : Dictionary<'k, 'v>) =
-    let refValue = ref Unchecked.defaultof<'v>
-    if dictionary.TryGetValue (key, refValue)
-    then Some refValue.Value
-    else None
+    match dictionary.TryGetValue key with
+    | (true, value) -> Some value
+    | (false, _) -> None
 
 /// Like dict, but returns a concrete Dictionary instance with structural hashing.
 let dictC kvps =
