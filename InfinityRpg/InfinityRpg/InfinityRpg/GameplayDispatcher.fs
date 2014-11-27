@@ -129,7 +129,7 @@ module GameplayDispatcherModule =
             let world = snd <| World.removeGroup SceneAddress scene world
             (Cascade, world)
 
-        static let determineEnemyTurn field (enemy : Entity) rand =
+        static let determineEnemyTurn precedingTurns field (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
                 debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
@@ -141,10 +141,10 @@ module GameplayDispatcherModule =
                 (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
-        static let determineEnemyTurns field enemies rand =
+        static let determineEnemyTurns playerTurn field enemies rand =
             List.foldBack
                 (fun (enemy : Entity) (enemyTurns, rand) ->
-                    let (enemyTurn, rand) = determineEnemyTurn field enemy rand
+                    let (enemyTurn, rand) = determineEnemyTurn (playerTurn :: enemyTurns) field enemy rand
                     (enemyTurn :: enemyTurns, rand))
                 enemies
                 ([], rand)
@@ -188,9 +188,9 @@ module GameplayDispatcherModule =
                 let (player, enemies, rand) =
                     match playerTurn with
                     | NavigationTurn navigationDescriptor ->
-                    
+
                         // get enemy turns
-                        let (enemyTurns, rand) = determineEnemyTurns field enemies rand
+                        let (enemyTurns, rand) = determineEnemyTurns playerTurn field enemies rand
 
                         // ->
                         // -> any intermediate processing of turns goes here
