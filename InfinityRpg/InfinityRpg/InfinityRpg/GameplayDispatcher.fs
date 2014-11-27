@@ -129,7 +129,7 @@ module GameplayDispatcherModule =
             let world = snd <| World.removeGroup SceneAddress scene world
             (Cascade, world)
 
-        static let queryEnemyTurn field (enemy : Entity) rand =
+        static let determineEnemyTurn field (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
                 debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
@@ -137,37 +137,33 @@ module GameplayDispatcherModule =
             | Chaos ->
                 let (randResult, rand) = Rand.nextIntUnder 4 rand
                 let walkDirection = Direction.fromInt randResult
-                let enemyTurn = CharacterActivity.queryTurnOnDirection walkDirection field enemy
+                let enemyTurn = CharacterActivity.determineTurnFromDirection walkDirection field enemy
                 (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
-        static let queryEnemyTurns field enemies rand =
-            //let (enemyTurnsRev, rand) =
-                List.foldBack
-                    (fun (enemy : Entity) (enemyTurns, rand) ->
-                        let (enemyTurn, rand) = queryEnemyTurn field enemy rand
-                        (enemyTurn :: enemyTurns, rand))
-                    enemies
-                    ([], rand)
-            //let enemyTurns = List.rev enemyTurnsRev
-            //(enemyTurns, rand)
-
-        static let setEnemyTurns enemyTurns enemies =
-            List.map2
-                (fun enemyTurn enemy ->
-                    match enemyTurn with
-                    | NavigationTurn navigationDescriptor -> Entity.setActivityState (Navigation navigationDescriptor) enemy
-                    | NoTurn -> Entity.setActivityState NoActivity enemy)
-                enemyTurns
+        static let determineEnemyTurns field enemies rand =
+            List.foldBack
+                (fun (enemy : Entity) (enemyTurns, rand) ->
+                    let (enemyTurn, rand) = determineEnemyTurn field enemy rand
+                    (enemyTurn :: enemyTurns, rand))
                 enemies
+                ([], rand)
+
+        static let setEnemyActivityFromTurn enemyTurn enemy =
+            match enemyTurn with
+            | NavigationTurn navigationDescriptor -> Entity.setActivityState (Navigation navigationDescriptor) enemy
+            | NoTurn -> Entity.setActivityState NoActivity enemy
+
+        static let setEnemyActivitiesFromTurns enemyTurns enemies =
+            List.map2 setEnemyActivityFromTurn enemyTurns enemies
 
         static let advanceEnemyNavigations field enemies =
             List.map (CharacterActivity.advanceNavigation field) enemies
 
-        static let isTurnInProgress player enemies (gameplay : Screen) =
+        static let isTurnProgressing player enemies (gameplay : Screen) =
             match gameplay.InputPlayerTurn with
             | NavigationTurn _ -> true
-            | NoTurn -> List.notExists (fun (character : Entity) -> character.ActivityState <> NoActivity) (player :: enemies)
+            | NoTurn -> CharacterActivity.anyActivitiesInProgress (player :: enemies)
 
         static let handleTick _ world =
 
@@ -181,30 +177,35 @@ module GameplayDispatcherModule =
             let playerTurn =
                 match gameplay.InputPlayerTurn with
                 | NavigationTurn _ as playerTurn -> playerTurn
-                | NoTurn -> CharacterActivity.getNavigationTurn player
+                | NoTurn -> CharacterActivity.determineTurnFromActivityState player
             let gameplay = Screen.setInputPlayerTurn NoTurn gameplay
             let world = World.setScreen GameplayAddress gameplay world
 
+            // try to advance characters
             let (world, rand) =
 
+                // try to set character activities
                 let (player, enemies, rand) =
                     match playerTurn with
                     | NavigationTurn navigationDescriptor ->
                     
                         // get enemy turns
-                        let (enemyTurns, rand) = queryEnemyTurns field enemies rand
+                        let (enemyTurns, rand) = determineEnemyTurns field enemies rand
 
-                        // -> any intermediate processing of turns goes here <-
+                        // ->
+                        // -> any intermediate processing of turns goes here
+                        // ->
 
-                        // set player turn
+                        // set player activity
                         let player = Entity.setActivityState (Navigation navigationDescriptor) player
 
-                        // set enemy turns
-                        let enemies = setEnemyTurns enemyTurns enemies
+                        // set enemy activities
+                        let enemies = setEnemyActivitiesFromTurns enemyTurns enemies
                         (player, enemies, rand)
 
+                    // no new activity
                     | NoTurn -> (player, enemies, rand)
-            
+
                 // advance player
                 let player = CharacterActivity.advanceNavigation field player
                 let world = World.setEntity PlayerAddress player world
@@ -227,11 +228,11 @@ module GameplayDispatcherModule =
             let touchPosition : Vector2 = World.unwrapD event world
             let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
             let (field, enemies, player, gameplay) = getParticipants world
-            
+
             // update player turn
             let playerTurn =
-                if isTurnInProgress player enemies gameplay
-                then CharacterActivity.touch touchPositionW field player
+                if isTurnProgressing player enemies gameplay
+                then CharacterActivity.determineTurnFromTouch touchPositionW field player
                 else NoTurn
             let gameplay = Screen.setInputPlayerTurn playerTurn gameplay
             let world = World.setScreen GameplayAddress gameplay world
@@ -244,10 +245,10 @@ module GameplayDispatcherModule =
             // grab participants
             let (field, enemies, player, gameplay) = getParticipants world
 
-            // update player turn from gameplay
+            // update player turn
             let playerTurn =
-                if isTurnInProgress player enemies gameplay
-                then CharacterActivity.queryTurnOnDirection direction field player
+                if isTurnProgressing player enemies gameplay
+                then CharacterActivity.determineTurnFromDirection direction field player
                 else NoTurn
             let gameplay = Screen.setInputPlayerTurn playerTurn gameplay
             let world = World.setScreen GameplayAddress gameplay world

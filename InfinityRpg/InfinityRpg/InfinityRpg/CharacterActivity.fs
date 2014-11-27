@@ -47,7 +47,7 @@ module CharacterActivity =
         let openDirections = getOpenDirectionsFromPositionM positionM field
         Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
 
-    let private queryTurnOnDirectionInternal walkDirection field (character : Entity) =
+    let private determineTurnFromDirectionInternal walkDirection field (character : Entity) =
         let openDirections = getOpenDirectionsFromPosition character.Position field
         if Set.contains walkDirection openDirections then
             let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
@@ -55,11 +55,11 @@ module CharacterActivity =
             NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
         else NoTurn
 
-    let queryTurnOnDirection walkDirection field (character : Entity) =
+    let determineTurnFromDirection walkDirection field (character : Entity) =
         match character.ActivityState with
         | Action _ -> NoTurn
         | Navigation _ -> NoTurn
-        | NoActivity -> queryTurnOnDirectionInternal walkDirection field character
+        | NoActivity -> determineTurnFromDirectionInternal walkDirection field character
 
     let private advanceNavigationAfterWalkFinished navigationDescriptor (character : Entity) =
         let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
@@ -98,7 +98,7 @@ module CharacterActivity =
         | Navigation navigationDescriptor -> advanceNavigationInternal navigationDescriptor character
         | NoActivity -> character
 
-    let getNavigationTurn (character : Entity) =
+    let determineTurnFromActivityState (character : Entity) =
         match character.ActivityState with
         | Action _ -> NoTurn
         | Navigation navigationDescriptor ->
@@ -155,7 +155,7 @@ module CharacterActivity =
         | null -> None
         | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-    let private tryChangeActivityToNavigationByTouch touchPosition field character =
+    let private determineTurnFromNavigationTouch touchPosition field character =
         match tryGetNavigationPath field touchPosition character with
         | Some navigationPath ->
             match navigationPath with
@@ -167,8 +167,11 @@ module CharacterActivity =
                 NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
         | None -> NoTurn
 
-    let touch touchPosition field (character : Entity) =
+    let determineTurnFromTouch touchPosition field (character : Entity) =
         match character.ActivityState with
         | Action _ -> NoTurn
         | Navigation _ -> NoTurn
-        | NoActivity -> tryChangeActivityToNavigationByTouch touchPosition field character
+        | NoActivity -> determineTurnFromNavigationTouch touchPosition field character
+
+    let anyActivitiesInProgress characters =
+        List.notExists (fun (character : Entity) -> character.ActivityState <> NoActivity) characters
