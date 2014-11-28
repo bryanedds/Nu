@@ -23,11 +23,9 @@ module CoreModule =
 [<RequireQualifiedAccess>]
 module Core =
 
-    /// The invalid Id.
-    let InvalidId = Guid.Empty
-
     /// Make a Nu Id.
-    let makeId = Guid.NewGuid
+    let makeId () =
+        Guid.NewGuid ()
 
     /// Get a resolution along either an X or Y dimension.
     let getResolutionOrDefault isX defaultResolution =
