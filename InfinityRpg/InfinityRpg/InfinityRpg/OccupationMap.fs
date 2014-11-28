@@ -9,7 +9,7 @@ module OccupationMap =
     let makeFromFieldTiles fieldTiles =
         Map.fold
             (fun occupationMap fieldTilePositionM fieldTile ->
-                match fieldTile.FieldTileType with
+                match fieldTile.TileType with
                 | Impassable -> Map.add fieldTilePositionM true occupationMap
                 | Passable -> Map.add fieldTilePositionM false occupationMap)
             Map.empty

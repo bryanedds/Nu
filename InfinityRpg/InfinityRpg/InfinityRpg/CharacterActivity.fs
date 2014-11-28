@@ -11,6 +11,19 @@ open Nu.Observer
 open InfinityRpg
 open InfinityRpg.Constants
 
+[<AutoOpen>]
+module CharacterActivityModule =
+
+    type [<StructuralEquality; NoComparison>] TurnDescriptor =
+        | NavigationTurn of NavigationDescriptor
+        | CancelTurn
+        | NoTurn
+
+    type [<StructuralEquality; NoComparison>] PlayerTurnInput =
+        | Touch of Vector2
+        | DetailNavigation of Direction
+        | NoInput
+
 [<RequireQualifiedAccess>]
 module CharacterActivity =
 

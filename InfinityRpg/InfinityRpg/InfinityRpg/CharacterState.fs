@@ -213,14 +213,3 @@ module CharacterStateModule =
             | NoActivity -> false
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
-
-
-    type [<StructuralEquality; NoComparison>] TurnDescriptor =
-        | NavigationTurn of NavigationDescriptor
-        | CancelTurn
-        | NoTurn
-
-    type [<StructuralEquality; NoComparison>] PlayerTurnInput =
-        | Touch of Vector2
-        | DetailNavigation of Direction
-        | NoInput

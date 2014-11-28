@@ -72,7 +72,8 @@ module GameplayDispatcherModule =
             let player = Entity.setDepth CharacterDepth player
 
             // make enemies
-            let (enemyCount, rand) = Rand.nextIntUnder 10 rand
+            let (randResult, rand) = Rand.nextIntUnder 5 rand
+            let enemyCount = randResult + 5
             let (enemies, rand) =
                 List.fold
                     (fun (enemies, rand) positionM ->
@@ -170,20 +171,18 @@ module GameplayDispatcherModule =
         static let isTurnProgressing player enemies =
             CharacterActivity.anyActivitiesInProgress (player :: enemies)
 
-        static let determinePlayerTurn playerTurnInput occupationMapWithoutFarEnemies occupationMapWithEnemies camera enemies player =
+        static let determinePlayerTurn playerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies camera enemies player =
 
-            // determine player turn
+            // determine player turn from their current activity
             match CharacterActivity.determineTurnFromActivityState player with
             | NoTurn ->
 
                 // determine player turn from gameplay input
                 match playerTurnInput with
                 | Touch touchPosition ->
-
-                    // determine player turn
                     if not <| isTurnProgressing player enemies then
                         let touchPositionW = Camera.mouseToWorld Relative touchPosition camera
-                        let playerTurn = CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithoutFarEnemies player
+                        let playerTurn = CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player
                         match playerTurn with
                         | NavigationTurn navigationDescriptor as navigationTurn ->
                             let firstNavigationNode = List.head <| Option.get ^| navigationDescriptor.OptNavigationPath
@@ -193,18 +192,17 @@ module GameplayDispatcherModule =
                         | NoTurn -> NoTurn
                     else NoTurn
 
+                // determine player turn
                 | DetailNavigation direction ->
-                
-                    // determine player turn
                     if not <| isTurnProgressing player enemies
                     then CharacterActivity.determineTurnFromDirection direction occupationMapWithEnemies player
                     else NoTurn
 
+                // no turn
                 | NoInput -> NoTurn
 
+            // navigate if not blocked, cancel otherwise
             | NavigationTurn navigationDescriptor as navigationTurn ->
-                
-                // navigate if not blocked, cancel otherwise
                 let walkDescriptor = navigationDescriptor.WalkDescriptor
                 let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
                 if playerPositionM = walkDescriptor.WalkOriginM then
@@ -213,6 +211,7 @@ module GameplayDispatcherModule =
                     else navigationTurn
                 else navigationTurn
             
+            // probably should never reach this, but forward value if so
             | CancelTurn -> CancelTurn
 
         static let handleTick _ world =
@@ -227,7 +226,7 @@ module GameplayDispatcherModule =
 
             // determine player turn from input
             let playerTurn = determinePlayerTurn gameplay.PlayerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
-            let occupationMapWithPlayer = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
+            let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
             let gameplay = Screen.setPlayerTurnInput NoInput gameplay
             let world = World.setScreen GameplayAddress gameplay world
 
@@ -240,7 +239,7 @@ module GameplayDispatcherModule =
                     | NavigationTurn navigationDescriptor ->
 
                         // determine enemy turns
-                        let (enemyTurns, rand) = determineEnemyTurns playerTurn occupationMapWithPlayer enemies rand
+                        let (enemyTurns, rand) = determineEnemyTurns playerTurn occupationMapWithEveryone enemies rand
 
                         // ->
                         // -> any intermediate processing of turns goes here
@@ -254,9 +253,7 @@ module GameplayDispatcherModule =
                         (player, enemies, rand)
 
                     // cancel player activity
-                    | CancelTurn ->
-                        let player = Entity.setActivityState NoActivity player
-                        (player, enemies, rand)
+                    | CancelTurn -> (Entity.setActivityState NoActivity player, enemies, rand)
 
                     // no new activity
                     | NoTurn -> (player, enemies, rand)
