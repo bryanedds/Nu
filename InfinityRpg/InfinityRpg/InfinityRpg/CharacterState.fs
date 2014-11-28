@@ -166,6 +166,11 @@ module CharacterStateModule =
           BaseActions : ActionData list // base actions for all instances of character
           Reward : RewardData }
 
+    type ControlType =
+        | Player
+        | Chaos
+        | Uncontrolled
+
     type [<CustomEquality; NoComparison>] NavigationNode =
         { PositionM : Vector2i
           mutable Neighbors : NavigationNode list } // OPTIMIZATION: has to be mutable to be efficiently populated.
@@ -209,11 +214,13 @@ module CharacterStateModule =
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
 
+
     type [<StructuralEquality; NoComparison>] TurnDescriptor =
         | NavigationTurn of NavigationDescriptor
+        | CancelTurn
         | NoTurn
 
-    type ControlType =
-        | Player
-        | Chaos
-        | Uncontrolled
+    type [<StructuralEquality; NoComparison>] PlayerTurnInput =
+        | Touch of Vector2
+        | DetailNavigation of Direction
+        | NoInput
