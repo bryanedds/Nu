@@ -25,41 +25,40 @@ module CharacterActivity =
         then (destination, WalkFinished)
         else (next, WalkContinuing)
 
-    let private isTilePassable fieldTiles positionM =
-        match Map.tryFind positionM fieldTiles with
-        | Some tile -> tile.FieldTileType = Passable
+    let private isTilePassable occupationMap positionM =
+        match Map.tryFind positionM occupationMap with
+        | Some occupied -> not occupied
         | None -> false
 
-    let private getOpenDirectionsFromPositionM positionM (field : Entity) =
-        let fieldTiles = field.FieldMapNp.FieldTiles
+    let private getOpenDirectionsFromPositionM positionM occupationMap =
         Set.ofSeq <|
             seq {
-                if isTilePassable fieldTiles (positionM + Vector2i.Up) then yield North
-                if isTilePassable fieldTiles (positionM + Vector2i.Right) then yield East
-                if isTilePassable fieldTiles (positionM + Vector2i.Down) then yield South
-                if isTilePassable fieldTiles (positionM + Vector2i.Left) then yield West }
+                if isTilePassable occupationMap (positionM + Vector2i.Up) then yield North
+                if isTilePassable occupationMap (positionM + Vector2i.Right) then yield East
+                if isTilePassable occupationMap (positionM + Vector2i.Down) then yield South
+                if isTilePassable occupationMap (positionM + Vector2i.Left) then yield West }
 
-    let private getOpenDirectionsFromPosition (position : Vector2) field =
+    let private getOpenDirectionsFromPosition (position : Vector2) occupationMap =
         let positionM = Vector2i (int <| position.X / TileSize.X, int <| position.Y / TileSize.Y)
-        getOpenDirectionsFromPositionM positionM field
+        getOpenDirectionsFromPositionM positionM occupationMap
 
-    let private getOpenNeighborPositionMsFromPositionM field positionM =
-        let openDirections = getOpenDirectionsFromPositionM positionM field
+    let private getOpenNeighborPositionMsFromPositionM occupationMap positionM =
+        let openDirections = getOpenDirectionsFromPositionM positionM occupationMap
         Set.map (fun direction -> positionM + Direction.toVector2i direction) openDirections
 
-    let private determineTurnFromDirectionInternal walkDirection field (character : Entity) =
-        let openDirections = getOpenDirectionsFromPosition character.Position field
+    let private determineTurnFromDirectionInternal walkDirection occupationMap (character : Entity) =
+        let openDirections = getOpenDirectionsFromPosition character.Position occupationMap
         if Set.contains walkDirection openDirections then
             let currentPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
             let walkDescriptor = { WalkDirection = walkDirection; WalkOriginM = currentPositionM }
             NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = None }
         else NoTurn
 
-    let determineTurnFromDirection walkDirection field (character : Entity) =
+    let determineTurnFromDirection walkDirection occupationMap (character : Entity) =
         match character.ActivityState with
         | Action _ -> NoTurn
         | Navigation _ -> NoTurn
-        | NoActivity -> determineTurnFromDirectionInternal walkDirection field character
+        | NoActivity -> determineTurnFromDirectionInternal walkDirection occupationMap character
 
     let private advanceNavigationAfterWalkFinished navigationDescriptor (character : Entity) =
         let characterPositionM = Vector2i.Divide (Vector2i character.Position, TileSizeI)
@@ -92,7 +91,7 @@ module CharacterActivity =
         | WalkFinished -> advanceNavigationAfterWalkFinished navigationDescriptor character
         | WalkContinuing -> character
 
-    let advanceNavigation field (character : Entity) =
+    let advanceNavigation (character : Entity) =
         match character.ActivityState with
         | Action _ -> character
         | Navigation navigationDescriptor -> advanceNavigationInternal navigationDescriptor character
@@ -112,18 +111,15 @@ module CharacterActivity =
             else NoTurn
         | NoActivity -> NoTurn
 
-    let private makeNodes (field : Entity) =
+    let private makeNodes occupationMap =
         
         // make the nodes without neighbors
-        let nodes =
-            Map.map
-                (fun positionM _ -> { PositionM = positionM; Neighbors = [] })
-                field.FieldMapNp.FieldTiles
+        let nodes = Map.map (fun positionM _ -> { PositionM = positionM; Neighbors = [] }) occupationMap
 
         // OPTIMIZATION: populate node neghbors imperatively for speed
         Map.iter
             (fun positionM node -> 
-                let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM field positionM
+                let neighborPositionMs = List.ofSeq <| getOpenNeighborPositionMsFromPositionM occupationMap positionM
                 let neighbors =
                     List.fold
                         (fun neighbors neighborPositionM ->
@@ -138,8 +134,8 @@ module CharacterActivity =
         // teh nodes
         nodes
 
-    let private tryGetNavigationPath (field : Entity) touchPosition (character : Entity) =
-        let nodes = makeNodes field
+    let private tryGetNavigationPath touchPosition occupationMap (character : Entity) =
+        let nodes = makeNodes occupationMap
         let touchPositionE = touchPosition - (character.Position + character.Size * 0.5f)
         let touchPositionM = Vector2i (Vector2.Divide (touchPosition, TileSize))
         let goalNode = Map.find touchPositionM nodes
@@ -155,8 +151,8 @@ module CharacterActivity =
         | null -> None
         | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-    let private determineTurnFromNavigationTouch touchPosition field character =
-        match tryGetNavigationPath field touchPosition character with
+    let private determineTurnFromNavigationTouch touchPosition occupationMap character =
+        match tryGetNavigationPath touchPosition occupationMap character with
         | Some navigationPath ->
             match navigationPath with
             | [] -> NoTurn
@@ -167,11 +163,11 @@ module CharacterActivity =
                 NavigationTurn { WalkDescriptor = walkDescriptor; OptNavigationPath = Some navigationPath }
         | None -> NoTurn
 
-    let determineTurnFromTouch touchPosition field (character : Entity) =
+    let determineTurnFromTouch touchPosition occupationMap (character : Entity) =
         match character.ActivityState with
         | Action _ -> NoTurn
         | Navigation _ -> NoTurn
-        | NoActivity -> determineTurnFromNavigationTouch touchPosition field character
+        | NoActivity -> determineTurnFromNavigationTouch touchPosition occupationMap character
 
     let anyActivitiesInProgress characters =
-        List.notExists (fun (character : Entity) -> character.ActivityState <> NoActivity) characters
+        List.exists (fun (character : Entity) -> character.ActivityState <> NoActivity) characters

@@ -68,6 +68,7 @@
     <Compile Include="FieldMap.fs" />
     <Compile Include="FieldDispatcher.fs" />
     <Compile Include="CharacterState.fs" />
+    <Compile Include="OccupationMap.fs" />
     <Compile Include="CharacterFacets.fs" />
     <Compile Include="CharacterActivity.fs" />
     <Compile Include="CharacterDispatcher.fs" />
