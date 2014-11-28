@@ -55,7 +55,7 @@ module FieldDispatcherModule =
                                           Size = TileSize
                                           Rotation = field.Rotation
                                           ViewType = field.ViewType
-                                          OptInset = getOptTileInset tile.FieldTileSheetPositionM
+                                          OptInset = getOptTileInset tile.TileSheetPositionM
                                           Image = fieldMap.FieldTileSheet
                                           Color = Vector4.One }
                                     sprite :: sprites)

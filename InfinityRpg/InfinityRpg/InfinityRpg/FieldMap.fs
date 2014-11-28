@@ -12,17 +12,17 @@ module FieldMapModule =
         | Passable
 
     type FieldTile =
-        { FieldTileSheetPositionM : Vector2i
-          FieldTileType : FieldTileType }
+        { TileSheetPositionM : Vector2i
+          TileType : FieldTileType }
 
     type [<NoEquality; NoComparison>] FieldMap =
         { FieldSizeM : Vector2i
           FieldTiles : Map<Vector2i, FieldTile>
           FieldTileSheet : Image }
 
-        static member PathTile = { FieldTileSheetPositionM = Vector2i (3, 0); FieldTileType = Passable }
-        static member GrassTile = { FieldTileSheetPositionM = Vector2i (3, 3); FieldTileType = Passable }
-        static member TreeTile = { FieldTileSheetPositionM = Vector2i (1, 1); FieldTileType = Impassable }
+        static member PathTile = { TileSheetPositionM = Vector2i (3, 0); TileType = Passable }
+        static member GrassTile = { TileSheetPositionM = Vector2i (3, 3); TileType = Passable }
+        static member TreeTile = { TileSheetPositionM = Vector2i (1, 1); TileType = Impassable }
 
         static member makeGrid boundsM =
             seq {
