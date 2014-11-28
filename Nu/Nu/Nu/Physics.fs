@@ -21,8 +21,8 @@ module PhysicsModule =
           BodyId : Guid }
 
         /// The invalid physics id.
-        static member invalid =
-            { SourceId = Core.InvalidId; BodyId = Core.InvalidId }
+        static member InvalidId =
+            { SourceId = InvalidId; BodyId = InvalidId }
 
         /// Make a PhysicsId for an external source.
         static member make (sourceId : Guid) =

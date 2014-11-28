@@ -9,5 +9,5 @@ module Constants =
 
     let EditorScreenName = "EditorScreen"
     let EditorScreenAddress = stoa<Screen> EditorScreenName
-    let AddEntityKey = Guid.NewGuid ()
-    let RemovingEntityKey = Guid.NewGuid ()
+    let AddEntityKey = World.makeSubscriptionKey ()
+    let RemovingEntityKey = World.makeSubscriptionKey ()

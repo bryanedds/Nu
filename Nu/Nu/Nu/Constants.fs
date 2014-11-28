@@ -46,6 +46,7 @@ module Constants =
     let [<Literal>] AudioAssociation = "Audio"
     let [<Literal>] SuccessExitCode = 0
     let [<Literal>] FailureExitCode = 1
+    let InvalidId = Guid.Empty
     let DesiredFps = 60
     let ScreenClearing = ColorClear (255uy, 255uy, 255uy)
     let PhysicsStepRate = 1.0f / single DesiredFps

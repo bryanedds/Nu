@@ -43,14 +43,14 @@ module ReflectionModule =
         { DefineConstant : unit }
         static member (?) (_, fieldName) =
             fun (constant : 'c) ->
-                FieldDefinition.make fieldName typeof<'c> (Constant constant)
+                FieldDefinition.make fieldName typeof<'c> <| Constant constant
 
     /// In tandem with the variable literal, grants a nice syntax to define variable fields.
     type DefineVariable =
         { DefineVariable : unit }
         static member (?) (_, fieldName) =
             fun (variable : unit -> 'v) ->
-                FieldDefinition.make fieldName typeof<'v> (Variable (fun () -> variable () :> obj))
+                FieldDefinition.make fieldName typeof<'v> <| Variable (fun () -> variable () :> obj)
 
     /// In tandem with the DefineConstant type, grants a nice syntax to define constant fields.
     let define = { DefineConstant = () }
