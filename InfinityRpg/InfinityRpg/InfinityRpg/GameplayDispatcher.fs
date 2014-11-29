@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open System.IO
 open SDL2
 open OpenTK
 open Prime
@@ -119,9 +120,9 @@ module GameplayDispatcherModule =
             let sceneAddress = getSceneAddress gameplayAddress
 
             // get and initialize gameplay screen from read
-            let gameplay = World.getScreen gameplayAddress world
             let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
             let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
+            let gameplay = World.getScreen gameplayAddress world
             let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
             let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
             let world = World.setScreen gameplayAddress gameplay world
@@ -141,7 +142,7 @@ module GameplayDispatcherModule =
             // add scene hierarchy to world
             let world = snd <| World.addGroup sceneAddress sceneHierarchy world
             (Cascade, world)
-
+            
         static let handleClickSaveGame event world =
             let gameplayAddress = World.unwrapA event world
             let gameplayHierarchy = World.getScreenHierarchy gameplayAddress world
@@ -283,11 +284,12 @@ module GameplayDispatcherModule =
 
             // determine player turn from input
             let playerTurn = determinePlayerTurn gameplay.PlayerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
+            let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
             let gameplay = Screen.setPlayerTurnInput NoInput gameplay
             let world = World.setScreen gameplayAddress gameplay world
 
             // try advance and update participants
-            let (enemies, player, rand) = tryAdvanceCharacters playerTurn occupationMapWithEnemies enemies player rand
+            let (enemies, player, rand) = tryAdvanceCharacters playerTurn occupationMapWithEveryone enemies player rand
             let world = setParticipants gameplayAddress field enemies player world
 
             // update ongoing rand state
@@ -320,8 +322,8 @@ module GameplayDispatcherModule =
             let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail East) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail South) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail West) world |> snd
-            let world = observe ClickTitleNewGameEventAddress gameplayAddress |> product (SelectEventAddress ->>- gameplayAddress) |> subscribe handleNewGame world |> snd
-            let world = observe ClickTitleLoadGameEventAddress gameplayAddress |> product (SelectEventAddress ->>- gameplayAddress) |> subscribe handleLoadGame world |> snd
+            let world = observe ClickTitleNewGameEventAddress gameplayAddress |> subscribe handleNewGame world |> snd
+            let world = observe ClickTitleLoadGameEventAddress gameplayAddress |> filter (fun _ _ -> File.Exists SaveFilePath) |> subscribe handleLoadGame world |> snd
             let world = World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress world
             let world = World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplayAddress) gameplayAddress world
             (gameplay, world)
