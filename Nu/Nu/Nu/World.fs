@@ -20,14 +20,6 @@ open Nu.WorldConstants
 [<AutoOpen>]
 module WorldModule =
 
-    type World with
-
-        static member handleAsSwallow<'d> (_ : 'd Event) (world : World) =
-            (Resolve, world)
-
-        static member handleAsExit<'d> (_ : 'd Event) (world : World) =
-            (Resolve, World.exit world)
-
     let private ScreenTransitionMouseLeftKey = World.makeSubscriptionKey ()
     let private ScreenTransitionMouseCenterKey = World.makeSubscriptionKey ()
     let private ScreenTransitionMouseRightKey = World.makeSubscriptionKey ()
@@ -577,8 +569,7 @@ module WorldModule =
                     Map.ofList
                         [typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet
                          typeof<SpriteFacet>.Name, SpriteFacet () :> Facet
-                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet
-                         typeof<GuiFacet>.Name, GuiFacet () :> Facet]
+                         typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet]
                 let facets = Map.addMany (Map.toSeq userFacets) defaultFacets
 
                 // make entity dispatchers
@@ -586,6 +577,7 @@ module WorldModule =
                 let defaultEntityDispatchers =
                     Map.ofList
                         [typeof<EntityDispatcher>.Name, EntityDispatcher ()
+                         typeof<GuiDispatcher>.Name, GuiDispatcher () :> EntityDispatcher
                          typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> EntityDispatcher
                          typeof<LabelDispatcher>.Name, LabelDispatcher () :> EntityDispatcher
                          typeof<TextDispatcher>.Name, TextDispatcher () :> EntityDispatcher
