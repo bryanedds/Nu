@@ -16,11 +16,17 @@ module InfinityRpgModule =
     type InfinityRpgDispatcher () =
         inherit GameDispatcher ()
 
+        static let handleAsScreenTransitionToGameplay shallLoadGame event world =
+            let gameplay = World.getScreen GameplayAddress world
+            let gameplay = Screen.setShallLoadGame shallLoadGame gameplay
+            let world = World.setScreen GameplayAddress gameplay world
+            World.handleAsScreenTransition GameplayAddress event world
+
         static let addTitle world =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
             let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
-            let world = World.subscribe4 (World.handleAsScreenTransition GameplayAddress) ClickTitleNewGameEventAddress GameAddress world
-            let world = observe ClickTitleLoadGameEventAddress GameAddress |> filter (fun _ _ -> File.Exists SaveFilePath) |> subscribe (World.handleAsScreenTransition GameplayAddress) world |> snd
+            let world = World.subscribe4 (handleAsScreenTransitionToGameplay false) ClickTitleNewGameEventAddress GameAddress world
+            let world = World.subscribe4 (handleAsScreenTransitionToGameplay true) ClickTitleLoadGameEventAddress GameAddress world
             World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
 
         static let addCredits world =
