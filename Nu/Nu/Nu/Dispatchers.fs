@@ -231,6 +231,8 @@ module GuiDispatcherModule =
         
         member gui.Enabled = gui?Enabled : bool
         static member setEnabled (value : bool) (gui : Entity) = gui?Enabled <- value
+        member gui.DisabledColor = gui?DisabledColor : Vector4
+        static member setDisabledColor (value : Vector4) (gui : Entity) = gui?DisabledColor <- value
         member gui.SwallowMouseLeft = gui?SwallowMouseLeft : bool
         static member setSwallowMouseLeft (value : bool) (gui : Entity) = gui?SwallowMouseLeft <- value
 
@@ -246,6 +248,7 @@ module GuiDispatcherModule =
         static member FieldDefinitions =
             [define? ViewType Absolute
              define? Enabled true
+             define? DisabledColor <| Vector4 (0.667f, 0.667f, 0.667f, 1.0f)
              define? SwallowMouseLeft true]
 
         override dispatcher.Register (address, gui, world) =
@@ -259,7 +262,7 @@ module GuiDispatcherModule =
 module ButtonDispatcherModule =
 
     type Entity with
-
+    
         member button.Down = button?Down : bool
         static member setDown (value : bool) (button : Entity) = button?Down <- value
         member button.UpImage = button?UpImage : Image
@@ -303,11 +306,11 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Down false
+            [define? SwallowMouseLeft false
+             define? Down false
              define? UpImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? DownImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? OptClickSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }
-             define? SwallowMouseLeft false]
+             define? OptClickSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
 
         override dispatcher.Register (address, button, world) =
             let world =
@@ -328,7 +331,7 @@ module ButtonDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = if button.Down then button.DownImage else button.UpImage
-                              Color = Vector4.One }}]
+                              Color = if button.Enabled then Vector4.One else button.DisabledColor }}]
             else []
 
         override dispatcher.GetQuickSize (button, world) =
@@ -349,8 +352,8 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member FieldDefinitions =
-            [define? LabelImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }
-             define? SwallowMouseLeft true]
+            [define? SwallowMouseLeft true
+             define? LabelImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }]
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -364,7 +367,7 @@ module LabelDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = label.LabelImage
-                              Color = Vector4.One }}]
+                              Color = if label.Enabled then Vector4.One else label.DisabledColor }}]
             else []
 
         override dispatcher.GetQuickSize (label, world) =
@@ -393,12 +396,12 @@ module TextDispatcherModule =
         inherit GuiDispatcher ()
 
         static member FieldDefinitions =
-            [define? Text String.Empty
+            [define? SwallowMouseLeft true
+             define? Text String.Empty
              define? TextFont { FontPackageName = DefaultPackageName; FontAssetName = "Font" }
              define? TextOffset Vector2.Zero
              define? TextColor Vector4.One
-             define? BackgroundImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }
-             define? SwallowMouseLeft true]
+             define? BackgroundImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }]
 
         override dispatcher.GetRenderDescriptors (text, _) =
             if text.Visible then
@@ -422,7 +425,7 @@ module TextDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = text.BackgroundImage
-                              Color = Vector4.One }}]
+                              Color = if text.Enabled then Vector4.One else text.DisabledColor }}]
             else []
 
         override dispatcher.GetQuickSize (text, world) =
@@ -482,12 +485,12 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? On false
+            [define? SwallowMouseLeft false
+             define? On false
              define? Pressed false
              define? OffImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? OnImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? ToggleSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }
-             define? SwallowMouseLeft false]
+             define? ToggleSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
 
         override dispatcher.Register (address, toggle, world) =
             let world =
@@ -508,7 +511,7 @@ module ToggleDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = if toggle.On || toggle.Pressed then toggle.OnImage else toggle.OffImage
-                              Color = Vector4.One }}]
+                              Color = if toggle.Enabled then Vector4.One else toggle.DisabledColor }}]
             else []
 
         override dispatcher.GetQuickSize (toggle, world) =
@@ -550,8 +553,8 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? Touched false
-             define? SwallowMouseLeft false]
+            [define? SwallowMouseLeft false
+             define? Touched false]
 
         override dispatcher.Register (address, feeler, world) =
             let world =
@@ -588,11 +591,11 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member FieldDefinitions =
-            [define? Fill 0.0f
+            [define? SwallowMouseLeft true
+             define? Fill 0.0f
              define? FillInset 0.0f
              define? FillImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image9" }
-             define? BorderImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image10" }
-             define? SwallowMouseLeft true]
+             define? BorderImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image10" }]
 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
@@ -607,7 +610,7 @@ module FillBarDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = fillBar.BorderImage
-                              Color = Vector4.One }}
+                              Color = if fillBar.Enabled then Vector4.One else fillBar.DisabledColor }}
                  LayerableDescriptor
                     { Depth = fillBar.Depth
                       LayeredDescriptor =
@@ -618,7 +621,7 @@ module FillBarDispatcherModule =
                               ViewType = Absolute
                               OptInset = None
                               Image = fillBar.FillImage
-                              Color = Vector4.One }}]
+                              Color = if fillBar.Enabled then Vector4.One else fillBar.DisabledColor }}]
             else []
 
         override dispatcher.GetQuickSize (fillBar, world) =
