@@ -20,6 +20,8 @@ module GameplayDispatcherModule =
         static member setContentRandState (value : uint64) (screen : Screen) = screen?ContentRandState <- value
         member screen.OngoingRandState = screen?OngoingRandState : uint64
         static member setOngoingRandState (value : uint64) (screen : Screen) = screen?OngoingRandState <- value
+        member screen.ShallLoadGame = screen?ShallLoadGame : bool
+        static member setShallLoadGame (value : bool) (screen : Screen) = screen?ShallLoadGame <- value
         member screen.PlayerTurnInput = screen?PlayerTurnInput : PlayerTurnInput
         static member setPlayerTurnInput (value : PlayerTurnInput) (screen : Screen) = screen?PlayerTurnInput <- value
 
@@ -73,10 +75,9 @@ module GameplayDispatcherModule =
                 (Map.empty, rand)
                 [0 .. enemyCount - 1]
 
-        static let handleNewGame event world =
+        static let handleNewGame gameplayAddress gameplay world =
 
             // get common addresses
-            let gameplayAddress = World.unwrapA event world
             let sceneAddress = getSceneAddress gameplayAddress
 
             // generate non-deterministic random numbers
@@ -84,8 +85,7 @@ module GameplayDispatcherModule =
             let contentSeedState = uint64 <| sysrandom.Next ()
             let ongoingSeedState = uint64 <| sysrandom.Next ()
 
-            // get and initialize gameplay screen
-            let gameplay = World.getScreen gameplayAddress world
+            // initialize gameplay screen
             let gameplay = Screen.setContentRandState contentSeedState gameplay
             let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
             let world = World.setScreen gameplayAddress gameplay world
@@ -110,19 +110,16 @@ module GameplayDispatcherModule =
             let sceneHierarchy = (scene, entityMap)
 
             // add scene hierarchy to world
-            let world = snd <| World.addGroup sceneAddress sceneHierarchy world
-            (Cascade, world)
+            snd <| World.addGroup sceneAddress sceneHierarchy world
 
-        static let handleLoadGame event world =
+        static let handleLoadGame gameplayAddress gameplay world =
 
             // get common addresses
-            let gameplayAddress = World.unwrapA event world
             let sceneAddress = getSceneAddress gameplayAddress
 
             // get and initialize gameplay screen from read
             let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
             let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
-            let gameplay = World.getScreen gameplayAddress world
             let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
             let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
             let world = World.setScreen gameplayAddress gameplay world
@@ -140,7 +137,16 @@ module GameplayDispatcherModule =
             let sceneHierarchy = (scene, entityMap)
 
             // add scene hierarchy to world
-            let world = snd <| World.addGroup sceneAddress sceneHierarchy world
+            snd <| World.addGroup sceneAddress sceneHierarchy world
+
+        static let handleSelectGameplay event world =
+            let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
+            let world =
+                // NOTE: doing a File.Exists then loading the file is dangerous since the file can
+                // always be deleted / moved between the two operations!
+                if gameplay.ShallLoadGame && File.Exists SaveFilePath
+                then handleLoadGame gameplayAddress gameplay world
+                else handleNewGame gameplayAddress gameplay world
             (Cascade, world)
             
         static let handleClickSaveGame event world =
@@ -312,6 +318,7 @@ module GameplayDispatcherModule =
         static member FieldDefinitions =
             [define? ContentRandState Rand.DefaultSeedState
              define? OngoingRandState Rand.DefaultSeedState
+             define? ShallLoadGame false
              define? PlayerTurnInput NoInput]
 
         override dispatcher.Register (gameplayAddress, gameplay, world) =
@@ -322,8 +329,7 @@ module GameplayDispatcherModule =
             let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail East) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail South) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail West) world |> snd
-            let world = observe ClickTitleNewGameEventAddress gameplayAddress |> subscribe handleNewGame world |> snd
-            let world = observe ClickTitleLoadGameEventAddress gameplayAddress |> filter (fun _ _ -> File.Exists SaveFilePath) |> subscribe handleLoadGame world |> snd
+            let world = World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplayAddress) gameplayAddress world
             let world = World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress world
             let world = World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplayAddress) gameplayAddress world
             (gameplay, world)
