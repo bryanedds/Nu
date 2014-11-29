@@ -149,10 +149,10 @@ module CharacterCameraFacetModule =
         inherit Facet ()
 
         static let handleTick event world =
-            let character : Entity = World.unwrapS event world
+            let (address, character : Entity) = World.unwrapAS event world
             let eyeCenter = character.Position + character.Size * 0.5f
             let eyeCenter =
-                match World.getOptEntity FieldAddress world with
+                match World.getOptEntity (gatoea (Address.allButLast address) FieldName) world with
                 | Some field ->
                     let eyeSize = world.Camera.EyeSize
                     let eyeCornerNegative = eyeCenter - eyeSize * 0.5f

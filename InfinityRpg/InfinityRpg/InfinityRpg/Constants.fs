@@ -63,31 +63,21 @@ module Constants =
     // gameplay constants
     let GameplayName = "Gameplay"
     let GameplayAddress = ltoa<Screen> [GameplayName]
-
+    
     // hud constants
     let HudName = "Hud"
     let HudAddress = satoga GameplayAddress HudName
+    let HudBackName = "Back"
+    let HudBackAddress = gatoea HudAddress HudBackName
+    let HudSaveGameName = "SaveGame"
     let HudFeelerName = "Feeler"
-    let HudFeelerAddress = gatoea HudAddress HudFeelerName
     let HudDetailUpName = "DetailUp"
-    let HudDetailUpAddress = gatoea HudAddress HudDetailUpName
     let HudDetailRightName = "DetailRight"
-    let HudDetailRightAddress = gatoea HudAddress HudDetailRightName
     let HudDetailDownName = "DetailDown"
-    let HudDetailDownAddress = gatoea HudAddress HudDetailDownName
     let HudDetailLeftName = "DetailLeft"
-    let HudDetailLeftAddress = gatoea HudAddress HudDetailLeftName
-    let ClickHudBackEventAddress = ClickEventAddress ->>- HudAddress ->- ltoa ["Back"]
-    let ClickHudSaveGameEventAddress = ClickEventAddress ->>- HudAddress ->- ltoa ["SaveGame"]
-
-    // scene constants
     let SceneName = "Scene"
+    
+    // scene constants
     let SceneAddress = satoga GameplayAddress SceneName
-
-    // field constants
     let FieldName = "Field"
-    let FieldAddress = gatoea SceneAddress FieldName
-
-    // player constants
     let PlayerName = "Player"
-    let PlayerAddress = gatoea SceneAddress PlayerName
