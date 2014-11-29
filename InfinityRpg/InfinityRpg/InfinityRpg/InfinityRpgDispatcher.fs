@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open System.IO
 open OpenTK
 open Prime
 open Nu
@@ -19,7 +20,7 @@ module InfinityRpgModule =
             let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
             let world = World.subscribe4 (World.handleAsScreenTransition CreditsAddress) ClickTitleCreditsEventAddress GameAddress world
             let world = World.subscribe4 (World.handleAsScreenTransition GameplayAddress) ClickTitleNewGameEventAddress GameAddress world
-            let world = World.subscribe4 (World.handleAsScreenTransition GameplayAddress) ClickTitleLoadGameEventAddress GameAddress world
+            let world = observe ClickTitleLoadGameEventAddress GameAddress |> filter (fun _ _ -> File.Exists SaveFilePath) |> subscribe (World.handleAsScreenTransition GameplayAddress) world |> snd
             World.subscribe4 World.handleAsExit ClickTitleExitEventAddress GameAddress world
 
         static let addCredits world =
