@@ -43,8 +43,6 @@ module OccupationMap =
 
     let transferByTurn characterTurn character occupationMap =
         match characterTurn with
-        | NavigationTurn navigationDescriptor ->
-            let occupationMap = unoccupyByCharacter character occupationMap
-            occupyByTurn characterTurn occupationMap
+        | NavigationTurn _ -> unoccupyByCharacter character occupationMap |> occupyByTurn characterTurn
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
