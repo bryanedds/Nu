@@ -25,21 +25,32 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
-        static let getField world =
-            World.getEntity FieldAddress world
+        static let getHudAddress gameplayAddress = satoga gameplayAddress HudName
+        static let getHudSaveGameAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudSaveGameName
+        static let getHudFeelerAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudFeelerName
+        static let getHudDetailUpAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailUpName
+        static let getHudDetailRightAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailRightName
+        static let getHudDetailDownAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailDownName
+        static let getHudDetailLeftAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailLeftName
 
-        static let getEnemies world =
-            World.getEntities SceneAddress world |>
-            Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>)
+        static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
 
-        static let getPlayer world =
-            World.getEntity PlayerAddress world
+        static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName 
+        static let getField gameplayAddress world = World.getEntity (getFieldAddress gameplayAddress) world
+        static let setField gameplayAddress field world = World.setEntity (getFieldAddress gameplayAddress) field world
 
-        static let getGameplay world =
-            World.getScreen GameplayAddress world
+        static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName 
+        static let getPlayer gameplayAddress world = World.getEntity (getPlayerAddress gameplayAddress) world
+        static let setPlayer gameplayAddress player world = World.setEntity (getPlayerAddress gameplayAddress) player world
 
-        static let getParticipants world =
-            (getField world, List.ofSeq <| getEnemies world, getPlayer world, getGameplay world)
+        static let getEnemies gameplayAddress world = World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>)
+        static let setEnemies gameplayAddress enemies world = World.setEntities (getSceneAddress gameplayAddress) enemies world
+
+        static let getParticipants gameplayAddress world =
+            (getField gameplayAddress world, List.ofSeq <| getEnemies gameplayAddress world, getPlayer gameplayAddress world)
+        
+        static let setParticipants gameplayAddress field enemies player world =
+            world |> setField gameplayAddress field |> setEnemies gameplayAddress enemies |> setPlayer gameplayAddress player
 
         static let makeField rand world =
             let pathEdgesM = [(Vector2i (1, 10), Vector2i (20, 10))]
@@ -50,16 +61,22 @@ module GameplayDispatcherModule =
             let field = Entity.setPersistent false field
             (field, rand)
 
-        static let handleNewGame _ world =
+        static let handleNewGame event world =
 
-            // get and initialize gameplay screen
+            // get common addresses
+            let gameplayAddress = World.unwrapA event world
+            let sceneAddress = getSceneAddress gameplayAddress
+
+            // generate non-deterministic random numbers
             let sysrandom = Random ()
             let contentSeedState = uint64 <| sysrandom.Next ()
             let ongoingSeedState = uint64 <| sysrandom.Next ()
-            let gameplay = World.getScreen GameplayAddress world
+
+            // get and initialize gameplay screen
+            let gameplay = World.getScreen gameplayAddress world
             let gameplay = Screen.setContentRandState contentSeedState gameplay
             let gameplay = Screen.setOngoingRandState ongoingSeedState gameplay
-            let world = World.setScreen GameplayAddress gameplay world
+            let world = World.setScreen gameplayAddress gameplay world
 
             // make rand from gameplay
             let rand = Rand.make gameplay.ContentRandState
@@ -82,30 +99,33 @@ module GameplayDispatcherModule =
                         let enemy = Entity.setDepth CharacterDepth enemy
                         let enemy = Entity.setPosition enemyPosition enemy
                         let enemy = Entity.setCharacterAnimationSheet ZommieImage enemy
-                        (enemy :: enemies, rand))
-                    ([], rand)
+                        (Map.add enemy.Name enemy enemies, rand))
+                    (Map.empty, rand)
                     [0 .. enemyCount - 1]
-            let enemyMap = Map.ofListBy (fun (enemy : Entity) -> enemy.Name, enemy) enemies
-            let world = snd <| World.addEntities SceneAddress enemyMap world
+            let world = snd <| World.addEntities sceneAddress enemies world
 
             // make scene hierarchy
-            let entities = Map.ofList [(field.Name, field); (player.Name, player)]
+            let entityMap = Map.ofList [(field.Name, field); (player.Name, player)]
             let scene = World.makeGroup typeof<GroupDispatcher>.Name (Some SceneName) world
-            let sceneHierarchy = (scene, entities)
+            let sceneHierarchy = (scene, entityMap)
 
             // add scene hierarchy to world
-            let world = snd <| World.addGroup SceneAddress sceneHierarchy world
+            let world = snd <| World.addGroup sceneAddress sceneHierarchy world
             (Cascade, world)
 
-        static let handleLoadGame _ world =
+        static let handleLoadGame event world =
 
-            // read in gameplay screen
+            // get common addresses
+            let gameplayAddress = World.unwrapA event world
+            let sceneAddress = getSceneAddress gameplayAddress
+
+            // get and initialize gameplay screen from read
+            let gameplay = World.getScreen gameplayAddress world
             let gameplayHierarchy = World.readScreenHierarchyFromFile SaveFilePath world
             let (gameplayFromRead, groupHierarchies) = gameplayHierarchy
-            let gameplay = World.getScreen GameplayAddress world
             let gameplay = Screen.setContentRandState gameplayFromRead.ContentRandState gameplay
             let gameplay = Screen.setOngoingRandState gameplayFromRead.OngoingRandState gameplay
-            let world = World.setScreen GameplayAddress gameplay world
+            let world = World.setScreen gameplayAddress gameplay world
 
             // make rand from gameplay
             let rand = Rand.make gameplay.ContentRandState
@@ -116,21 +136,24 @@ module GameplayDispatcherModule =
             // find scene hierarchy and add field to it
             let sceneHierarchy = Map.find SceneName groupHierarchies
             let (scene, entities) = sceneHierarchy
-            let entities = Map.add field.Name field entities
-            let sceneHierarchy = (scene, entities)
+            let entityMap = Map.add field.Name field entities
+            let sceneHierarchy = (scene, entityMap)
 
             // add scene hierarchy to world
-            let world = snd <| World.addGroup SceneAddress sceneHierarchy world
+            let world = snd <| World.addGroup sceneAddress sceneHierarchy world
             (Cascade, world)
 
-        static let handleClickSaveGame _ world =
-            let gameplayHierarchy = World.getScreenHierarchy GameplayAddress world
+        static let handleClickSaveGame event world =
+            let gameplayAddress = World.unwrapA event world
+            let gameplayHierarchy = World.getScreenHierarchy gameplayAddress world
             World.writeScreenHierarchyToFile SaveFilePath gameplayHierarchy world
             (Cascade, world)
 
-        static let handleDeselectGameplay _ world =
-            let scene = World.getGroup SceneAddress world
-            let world = snd <| World.removeGroup SceneAddress scene world
+        static let handleDeselectGameplay event world =
+            let gameplayAddress = World.unwrapA event world
+            let sceneAddress = getSceneAddress gameplayAddress
+            let scene = World.getGroup sceneAddress world
+            let world = snd <| World.removeGroup sceneAddress scene world
             (Cascade, world)
 
         static let determineEnemyTurn occupationMap (enemy : Entity) rand =
@@ -168,7 +191,7 @@ module GameplayDispatcherModule =
         static let advanceEnemyNavigations field enemies =
             List.map CharacterActivity.advanceNavigation enemies
 
-        static let isTurnProgressing player enemies =
+        static let isTurnProgressing enemies player =
             CharacterActivity.anyActivitiesInProgress (player :: enemies)
 
         static let determinePlayerTurn playerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies camera enemies player =
@@ -180,7 +203,7 @@ module GameplayDispatcherModule =
                 // determine player turn from gameplay input
                 match playerTurnInput with
                 | Touch touchPosition ->
-                    if not <| isTurnProgressing player enemies then
+                    if not <| isTurnProgressing enemies player then
                         let touchPositionW = Camera.mouseToWorld Relative touchPosition camera
                         let playerTurn = CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player
                         match playerTurn with
@@ -194,7 +217,7 @@ module GameplayDispatcherModule =
 
                 // determine player turn
                 | DetailNavigation direction ->
-                    if not <| isTurnProgressing player enemies
+                    if not <| isTurnProgressing enemies player
                     then CharacterActivity.determineTurnFromDirection direction occupationMapWithEnemies player
                     else NoTurn
 
@@ -214,10 +237,11 @@ module GameplayDispatcherModule =
             // probably should never reach this, but forward value if so
             | CancelTurn -> CancelTurn
 
-        static let handleTick _ world =
+        static let handleTick event world =
 
             // construct context
-            let (field, enemies, player, gameplay) = getParticipants world
+            let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
+            let (field, enemies, player) = getParticipants gameplayAddress world
             let rand = Rand.make gameplay.OngoingRandState
             let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
             let occupationMapWithoutEnemies = OccupationMap.makeFromFieldTiles field.FieldMapNp.FieldTiles
@@ -228,7 +252,7 @@ module GameplayDispatcherModule =
             let playerTurn = determinePlayerTurn gameplay.PlayerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
             let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
             let gameplay = Screen.setPlayerTurnInput NoInput gameplay
-            let world = World.setScreen GameplayAddress gameplay world
+            let world = World.setScreen gameplayAddress gameplay world
 
             // try to advance characters
             let (world, rand) =
@@ -260,28 +284,30 @@ module GameplayDispatcherModule =
 
                 // advance player
                 let player = CharacterActivity.advanceNavigation player
-                let world = World.setEntity PlayerAddress player world
+                let world = setPlayer gameplayAddress player world
 
                 // advance enemies
                 let enemies = advanceEnemyNavigations field enemies
-                let world = World.setEntities SceneAddress enemies world
+                let world = setEnemies gameplayAddress enemies world
                 (world, rand)
 
             // update ongoing rand state
             let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-            let world = World.setScreen GameplayAddress gameplay world
+            let world = World.setScreen gameplayAddress gameplay world
 
             // cascade
             (Cascade, world)
 
         static let handleTouchFeeler event world =
-            let gameplay = Screen.setPlayerTurnInput (Touch event.Data) (getGameplay world)
-            let world = World.setScreen GameplayAddress gameplay world
+            let (gameplayAddress, gameplay) = World.unwrapAS event world
+            let gameplay = Screen.setPlayerTurnInput (Touch event.Data) gameplay
+            let world = World.setScreen gameplayAddress gameplay world
             (Cascade, world)
 
         static let handleDownDetail direction event world =
-            let gameplay = Screen.setPlayerTurnInput (DetailNavigation direction) (getGameplay world)
-            let world = World.setScreen GameplayAddress gameplay world
+            let (gameplayAddress, gameplay) = World.unwrapAS event world
+            let gameplay = Screen.setPlayerTurnInput (DetailNavigation direction) gameplay
+            let world = World.setScreen gameplayAddress gameplay world
             (Cascade, world)
 
         static member FieldDefinitions =
@@ -289,17 +315,16 @@ module GameplayDispatcherModule =
              define? OngoingRandState Rand.DefaultSeedState
              define? PlayerTurnInput NoInput]
 
-        override dispatcher.Register (address, screen, world) =
-            if address <> GameplayAddress then failwith "Invalid address for GameplayDispatcher screen."
-            let world = observe TickEventAddress address |> filter isSelected |> monitor handleTick world |> snd
-            let world = observe (TouchEventAddress ->>- HudFeelerAddress) address |> filter isSelected |> monitor handleTouchFeeler world |> snd
-            let world = observe (TouchEventAddress ->>- HudFeelerAddress) address |> filter isSelected |> monitor handleTouchFeeler world |> snd
-            let world = observe (DownEventAddress ->>- HudDetailUpAddress) address |> filter isSelected |> monitor (handleDownDetail North) world |> snd
-            let world = observe (DownEventAddress ->>- HudDetailRightAddress) address |> filter isSelected |> monitor (handleDownDetail East) world |> snd
-            let world = observe (DownEventAddress ->>- HudDetailDownAddress) address |> filter isSelected |> monitor (handleDownDetail South) world |> snd
-            let world = observe (DownEventAddress ->>- HudDetailLeftAddress) address |> filter isSelected |> monitor (handleDownDetail West) world |> snd
-            let world = observe ClickTitleNewGameEventAddress GameAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleNewGame world |> snd
-            let world = observe ClickTitleLoadGameEventAddress GameAddress |> product (SelectEventAddress ->>- GameplayAddress) |> subscribe handleLoadGame world |> snd
-            let world = World.subscribe4 handleClickSaveGame ClickHudSaveGameEventAddress GameAddress world
-            let world = World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- GameplayAddress) GameAddress world
-            (screen, world)
+        override dispatcher.Register (gameplayAddress, gameplay, world) =
+            let world = observe TickEventAddress gameplayAddress |> filter isSelected |> monitor handleTick world |> snd
+            let world = observe (TouchEventAddress ->>- getHudFeelerAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor handleTouchFeeler world |> snd
+            let world = observe (TouchEventAddress ->>- getHudFeelerAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor handleTouchFeeler world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailUpAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail North) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail East) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail South) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail West) world |> snd
+            let world = observe ClickTitleNewGameEventAddress gameplayAddress |> product (SelectEventAddress ->>- gameplayAddress) |> subscribe handleNewGame world |> snd
+            let world = observe ClickTitleLoadGameEventAddress gameplayAddress |> product (SelectEventAddress ->>- gameplayAddress) |> subscribe handleLoadGame world |> snd
+            let world = World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress world
+            let world = World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplayAddress) gameplayAddress world
+            (gameplay, world)
