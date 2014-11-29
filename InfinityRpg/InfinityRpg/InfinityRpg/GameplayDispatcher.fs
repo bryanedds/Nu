@@ -34,15 +34,12 @@ module GameplayDispatcherModule =
         static let getHudDetailLeftAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailLeftName
 
         static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
-
         static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName 
+        static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName 
         static let getField gameplayAddress world = World.getEntity (getFieldAddress gameplayAddress) world
         static let setField gameplayAddress field world = World.setEntity (getFieldAddress gameplayAddress) field world
-
-        static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName 
         static let getPlayer gameplayAddress world = World.getEntity (getPlayerAddress gameplayAddress) world
         static let setPlayer gameplayAddress player world = World.setEntity (getPlayerAddress gameplayAddress) player world
-
         static let getEnemies gameplayAddress world = World.getEntities (getSceneAddress gameplayAddress) world |> Seq.filter (Entity.dispatchesAs typeof<EnemyDispatcher>)
         static let setEnemies gameplayAddress enemies world = World.setEntities (getSceneAddress gameplayAddress) enemies world
 
@@ -60,6 +57,20 @@ module GameplayDispatcherModule =
             let field = Entity.setSize (Entity.getQuickSize field world) field
             let field = Entity.setPersistent false field
             (field, rand)
+
+        static let makeEnemies world rand =
+            let (randResult, rand) = Rand.nextIntUnder 5 rand
+            let enemyCount = randResult + 5
+            List.fold
+                (fun (enemies, rand) positionM ->
+                    let enemyPosition = single positionM * TileSize * 2.0f
+                    let enemy = World.makeEntity typeof<EnemyDispatcher>.Name None world
+                    let enemy = Entity.setDepth CharacterDepth enemy
+                    let enemy = Entity.setPosition enemyPosition enemy
+                    let enemy = Entity.setCharacterAnimationSheet ZommieImage enemy
+                    (Map.add enemy.Name enemy enemies, rand))
+                (Map.empty, rand)
+                [0 .. enemyCount - 1]
 
         static let handleNewGame event world =
 
@@ -89,19 +100,7 @@ module GameplayDispatcherModule =
             let player = Entity.setDepth CharacterDepth player
 
             // make enemies
-            let (randResult, rand) = Rand.nextIntUnder 5 rand
-            let enemyCount = randResult + 5
-            let (enemies, rand) =
-                List.fold
-                    (fun (enemies, rand) positionM ->
-                        let enemyPosition = single positionM * TileSize * 2.0f
-                        let enemy = World.makeEntity typeof<EnemyDispatcher>.Name None world
-                        let enemy = Entity.setDepth CharacterDepth enemy
-                        let enemy = Entity.setPosition enemyPosition enemy
-                        let enemy = Entity.setCharacterAnimationSheet ZommieImage enemy
-                        (Map.add enemy.Name enemy enemies, rand))
-                    (Map.empty, rand)
-                    [0 .. enemyCount - 1]
+            let (enemies, _) = makeEnemies world rand
             let world = snd <| World.addEntities sceneAddress enemies world
 
             // make scene hierarchy
@@ -131,7 +130,7 @@ module GameplayDispatcherModule =
             let rand = Rand.make gameplay.ContentRandState
 
             // make field
-            let (field, rand) = makeField rand world
+            let (field, _) = makeField rand world
 
             // find scene hierarchy and add field to it
             let sceneHierarchy = Map.find SceneName groupHierarchies
@@ -168,7 +167,7 @@ module GameplayDispatcherModule =
                 (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
-        static let determineEnemyTurns playerTurn occupationMap enemies rand =
+        static let determineEnemyTurns occupationMap enemies rand =
             let (_, enemyTurns, rand) =
                 List.foldBack
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
@@ -188,7 +187,7 @@ module GameplayDispatcherModule =
         static let setEnemyActivitiesFromTurns enemyTurns enemies =
             List.map2 setEnemyActivityFromTurn enemyTurns enemies
 
-        static let advanceEnemyNavigations field enemies =
+        static let advanceEnemyNavigations enemies =
             List.map CharacterActivity.advanceNavigation enemies
 
         static let isTurnProgressing enemies player =
@@ -237,6 +236,40 @@ module GameplayDispatcherModule =
             // probably should never reach this, but forward value if so
             | CancelTurn -> CancelTurn
 
+        static let tryAdvanceCharacters playerTurn occupationMap enemies player rand =
+
+            // try to set character activities
+            let (enemies, player, rand) =
+                match playerTurn with
+                | NavigationTurn navigationDescriptor ->
+
+                    // determine enemy turns
+                    let (enemyTurns, rand) = determineEnemyTurns occupationMap enemies rand
+
+                    // ->
+                    // -> any intermediate processing of turns goes here
+                    // ->
+
+                    // set player activity
+                    let player = Entity.setActivityState (Navigation navigationDescriptor) player
+
+                    // set enemy activities
+                    let enemies = setEnemyActivitiesFromTurns enemyTurns enemies
+                    (enemies, player, rand)
+
+                // cancel player activity
+                | CancelTurn -> (enemies, Entity.setActivityState NoActivity player, rand)
+
+                // no new activity
+                | NoTurn -> (enemies, player, rand)
+
+            // advance player
+            let player = CharacterActivity.advanceNavigation player
+
+            // advance enemies
+            let enemies = advanceEnemyNavigations enemies
+            (enemies, player, rand)
+
         static let handleTick event world =
 
             // construct context
@@ -250,52 +283,16 @@ module GameplayDispatcherModule =
 
             // determine player turn from input
             let playerTurn = determinePlayerTurn gameplay.PlayerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
-            let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
             let gameplay = Screen.setPlayerTurnInput NoInput gameplay
             let world = World.setScreen gameplayAddress gameplay world
 
-            // try to advance characters
-            let (world, rand) =
-
-                // try to set character activities
-                let (player, enemies, rand) =
-                    match playerTurn with
-                    | NavigationTurn navigationDescriptor ->
-
-                        // determine enemy turns
-                        let (enemyTurns, rand) = determineEnemyTurns playerTurn occupationMapWithEveryone enemies rand
-
-                        // ->
-                        // -> any intermediate processing of turns goes here
-                        // ->
-
-                        // set player activity
-                        let player = Entity.setActivityState (Navigation navigationDescriptor) player
-
-                        // set enemy activities
-                        let enemies = setEnemyActivitiesFromTurns enemyTurns enemies
-                        (player, enemies, rand)
-
-                    // cancel player activity
-                    | CancelTurn -> (Entity.setActivityState NoActivity player, enemies, rand)
-
-                    // no new activity
-                    | NoTurn -> (player, enemies, rand)
-
-                // advance player
-                let player = CharacterActivity.advanceNavigation player
-                let world = setPlayer gameplayAddress player world
-
-                // advance enemies
-                let enemies = advanceEnemyNavigations field enemies
-                let world = setEnemies gameplayAddress enemies world
-                (world, rand)
+            // try advance and update participants
+            let (enemies, player, rand) = tryAdvanceCharacters playerTurn occupationMapWithEnemies enemies player rand
+            let world = setParticipants gameplayAddress field enemies player world
 
             // update ongoing rand state
             let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
             let world = World.setScreen gameplayAddress gameplay world
-
-            // cascade
             (Cascade, world)
 
         static let handleTouchFeeler event world =

@@ -28,15 +28,10 @@ module CharacterActivityModule =
 module CharacterActivity =
 
     let private walk positive current destination =
-        let (walkSpeed, delta) =
-            if positive
-            then (CharacterWalkSpeed, destination - current)
-            else (-CharacterWalkSpeed, current - destination)
+        let walkSpeed = if positive then CharacterWalkSpeed else -CharacterWalkSpeed
         let next = current + walkSpeed
-        let newDelta = if positive then destination - next else next - destination
-        if newDelta < CharacterWalkSpeed
-        then (destination, WalkFinished)
-        else (next, WalkContinuing)
+        let delta = if positive then destination - next else next - destination
+        if delta < CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
 
     let private isTilePassable occupationMap positionM =
         match Map.tryFind positionM occupationMap with
@@ -119,7 +114,7 @@ module CharacterActivity =
             let walkOrigin = Vector2.Multiply (walkOriginM.Vector2, TileSize)
             if character.Position = walkOrigin then
                 match navigationDescriptor.OptNavigationPath with
-                | Some navigationPath -> NavigationTurn navigationDescriptor
+                | Some _ -> NavigationTurn navigationDescriptor
                 | None -> NoTurn
             else NoTurn
         | NoActivity -> NoTurn
@@ -149,7 +144,6 @@ module CharacterActivity =
 
     let private tryGetNavigationPath touchPosition occupationMap (character : Entity) =
         let nodes = makeNodes occupationMap
-        let touchPositionE = touchPosition - (character.Position + character.Size * 0.5f)
         let touchPositionM = Vector2i (Vector2.Divide (touchPosition, TileSize))
         let goalNode = Map.find touchPositionM nodes
         let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
