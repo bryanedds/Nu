@@ -1125,3 +1125,11 @@ module WorldEventModule =
         /// Unwrap commonly-useful values of an event.
         static member unwrapD<'d, 's> (event : 'd Event) (_ : World) =
             event.Data
+
+        /// Swallow all handled events.
+        static member handleAsSwallow<'d> (_ : 'd Event) (world : World) =
+            (Resolve, world)
+        
+        /// Handle event by exiting app.
+        static member handleAsExit<'d> (_ : 'd Event) (world : World) =
+            (Resolve, World.exit world)

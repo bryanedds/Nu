@@ -181,21 +181,6 @@ module AnimatedSpriteFacetModule =
             entity.TileSize
 
 [<AutoOpen>]
-module GuiFacetModule =
-
-    type Entity with
-        
-        member ui.Enabled = ui?Enabled : bool
-        static member setEnabled (value : bool) (ui : Entity) = ui?Enabled <- value
-
-    type GuiFacet () =
-        inherit Facet ()
-        
-        static member FieldDefinitions =
-            [define? Enabled true
-             define? ViewType Absolute]
-
-[<AutoOpen>]
 module EntityDispatcherModule =
 
     type Entity with
@@ -240,6 +225,37 @@ module EntityDispatcherModule =
                 entitiesSorted
 
 [<AutoOpen>]
+module GuiDispatcherModule =
+
+    type Entity with
+        
+        member gui.Enabled = gui?Enabled : bool
+        static member setEnabled (value : bool) (gui : Entity) = gui?Enabled <- value
+        member gui.SwallowMouseLeft = gui?SwallowMouseLeft : bool
+        static member setSwallowMouseLeft (value : bool) (gui : Entity) = gui?SwallowMouseLeft <- value
+
+    type GuiDispatcher () =
+        inherit EntityDispatcher ()
+
+        static let handleMouseLeft event world =
+            let (gui : Entity, mouseButtonData : MouseButtonData) = World.unwrapSD event world
+            let mousePositionWorld = Camera.mouseToWorld gui.ViewType mouseButtonData.Position world.Camera
+            let eventHandling = if gui.SwallowMouseLeft && Math.isPointInBounds3 mousePositionWorld gui.Position gui.Size then Resolve else Cascade
+            (eventHandling, world)
+        
+        static member FieldDefinitions =
+            [define? ViewType Absolute
+             define? Enabled true
+             define? SwallowMouseLeft true]
+
+        override dispatcher.Register (address, gui, world) =
+            let world =
+                world |>
+                World.monitor handleMouseLeft MouseLeftDownEventAddress address |>
+                World.monitor handleMouseLeft MouseLeftUpEventAddress address
+            (gui, world)
+
+[<AutoOpen>]
 module ButtonDispatcherModule =
 
     type Entity with
@@ -254,7 +270,7 @@ module ButtonDispatcherModule =
         static member setOptClickSound (value : Sound option) (button : Entity) = button?OptClickSound <- value
 
     type ButtonDispatcher () =
-        inherit EntityDispatcher ()
+        inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
@@ -287,14 +303,11 @@ module ButtonDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? Down false
+            [define? Down false
              define? UpImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? DownImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? OptClickSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
-
-        static member IntrinsicFacetNames =
-            [typeof<GuiFacet>.Name]
+             define? OptClickSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }
+             define? SwallowMouseLeft false]
 
         override dispatcher.Register (address, button, world) =
             let world =
@@ -333,14 +346,11 @@ module LabelDispatcherModule =
         static member setLabelImage (value : Image) (label : Entity) = label?LabelImage <- value
 
     type LabelDispatcher () =
-        inherit EntityDispatcher ()
+        inherit GuiDispatcher ()
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? LabelImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }]
-
-        static member IntrinsicFacetNames =
-            [typeof<GuiFacet>.Name]
+            [define? LabelImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }
+             define? SwallowMouseLeft true]
 
         override dispatcher.GetRenderDescriptors (label, _) =
             if label.Visible then
@@ -380,18 +390,15 @@ module TextDispatcherModule =
         static member setBackgroundImage (value : Image) (text : Entity) = text?BackgroundImage <- value
 
     type TextDispatcher () =
-        inherit EntityDispatcher ()
+        inherit GuiDispatcher ()
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? Text String.Empty
+            [define? Text String.Empty
              define? TextFont { FontPackageName = DefaultPackageName; FontAssetName = "Font" }
              define? TextOffset Vector2.Zero
              define? TextColor Vector4.One
-             define? BackgroundImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }]
-
-        static member IntrinsicFacetNames =
-            [typeof<GuiFacet>.Name]
+             define? BackgroundImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image4" }
+             define? SwallowMouseLeft true]
 
         override dispatcher.GetRenderDescriptors (text, _) =
             if text.Visible then
@@ -441,7 +448,7 @@ module ToggleDispatcherModule =
         static member setOptToggleSound (value : Sound option) (toggle : Entity) = toggle?OptToggleSound <- value
 
     type ToggleDispatcher () =
-        inherit EntityDispatcher ()
+        inherit GuiDispatcher ()
         
         let handleMouseLeftDown event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
@@ -475,15 +482,12 @@ module ToggleDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? On false
+            [define? On false
              define? Pressed false
              define? OffImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? OnImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? ToggleSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
-
-        static member IntrinsicFacetNames =
-            [typeof<GuiFacet>.Name]
+             define? ToggleSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }
+             define? SwallowMouseLeft false]
 
         override dispatcher.Register (address, toggle, world) =
             let world =
@@ -522,7 +526,7 @@ module FeelerDispatcherModule =
         static member setTouched (value : bool) (feeler : Entity) = feeler?Touched <- value
 
     type FeelerDispatcher () =
-        inherit EntityDispatcher ()
+        inherit GuiDispatcher ()
 
         let handleMouseLeftDown event world =
             let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
@@ -546,11 +550,8 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? Touched false]
-
-        static member IntrinsicFacetNames =
-            [typeof<GuiFacet>.Name]
+            [define? Touched false
+             define? SwallowMouseLeft false]
 
         override dispatcher.Register (address, feeler, world) =
             let world =
@@ -577,7 +578,7 @@ module FillBarDispatcherModule =
         static member setBorderImage (value : Image) (fillBar : Entity) = fillBar?BorderImage <- value
 
     type FillBarDispatcher () =
-        inherit EntityDispatcher ()
+        inherit GuiDispatcher ()
         
         let getFillBarSpriteDims (fillBar : Entity) =
             let spriteInset = fillBar.Size * fillBar.FillInset * 0.5f
@@ -587,14 +588,11 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member FieldDefinitions =
-            [define? ViewType Absolute // must override ViewType definition in EntityDispatcher
-             define? Fill 0.0f
+            [define? Fill 0.0f
              define? FillInset 0.0f
              define? FillImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image9" }
-             define? BorderImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image10" }]
-
-        static member IntrinsicFacetNames =
-            [typeof<GuiFacet>.Name]
+             define? BorderImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image10" }
+             define? SwallowMouseLeft true]
 
         override dispatcher.GetRenderDescriptors (fillBar, _) =
             if fillBar.Visible then
