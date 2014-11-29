@@ -107,7 +107,7 @@ module MetamapModule =
         static member wander stumbleLimit stumbleBounds tracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
             let stumblePredicate =
-                fun (trail : Vector2i Set) (destination : Vector2i, rand) ->
+                fun (trail : Vector2i Set) (destination : Vector2i, _) ->
                     MapBounds.isPointInBounds destination stumbleBounds &&
                     (match tracking with
                      | BackTracking -> true
@@ -146,14 +146,14 @@ module MetamapModule =
         static member wanderUntil predicate stumbleLimit stumbleBounds tracking optBias source rand =
             Option.get <| Direction.tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias 0 source rand
 
-        static member concretizePath maxLength abstractPath rand =
+        static member concretizePath maxLength abstractPath =
             let path = List.ofSeq <| Seq.tryTake maxLength abstractPath
             (List.map fst path, snd <| List.last path)
 
         static member concretizeOptPath maxLength abstractPath rand =
             match abstractPath with
             | Some path ->
-                let (path, rand) = Direction.concretizePath maxLength path rand
+                let (path, rand) = Direction.concretizePath maxLength path
                 (Some path, rand)
             | None -> (None, rand)
 
@@ -183,7 +183,7 @@ module MetamapModule =
             let path = Direction.wanderUntil predicate stumbleLimit stumbleBounds NoAdjacentTracking optBias source rand
             let pathDesiredEnd = Seq.findIndex (fun (point, _) -> point = destination) path + 1
             let pathTrimmed = Seq.take pathDesiredEnd path
-            let path = Direction.concretizePath maxPathLength pathTrimmed rand
+            let path = Direction.concretizePath maxPathLength pathTrimmed
             path
 
     type MetaTile<'k when 'k : comparison> =

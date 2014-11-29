@@ -39,33 +39,28 @@ module FieldDispatcherModule =
 
         override dispatcher.GetRenderDescriptors (field, world) =
             if field.Visible then
-                let fieldMap = field.FieldMapNp
-                let fieldTileSheetAssetTag = Image.toAssetTag fieldMap.FieldTileSheet
-                match Metadata.tryGetTextureSize fieldTileSheetAssetTag world.State.AssetMetadataMap with
-                | Some tileSheetSize ->
-                    let size = Vector2.Multiply (TileSize, TileSheetSize)
-                    if Camera.inView3 field.ViewType field.Position size world.Camera then
-                        let sprites =
-                            Map.fold
-                                (fun sprites tileCoords tile ->
-                                    let tileOffset = Vector2i.Multiply (tileCoords, TileSizeI)
-                                    let tilePosition = Vector2i field.Position + tileOffset
-                                    let sprite =
-                                        { Position = tilePosition.Vector2
-                                          Size = TileSize
-                                          Rotation = field.Rotation
-                                          ViewType = field.ViewType
-                                          OptInset = getOptTileInset tile.TileSheetPositionM
-                                          Image = fieldMap.FieldTileSheet
-                                          Color = Vector4.One }
-                                    sprite :: sprites)
-                                []
-                                fieldMap.FieldTiles
-                        [LayerableDescriptor { Depth = field.Depth; LayeredDescriptor = SpritesDescriptor sprites }]
-                    else []
-                | None -> []
+                let size = Vector2.Multiply (TileSize, TileSheetSize)
+                if Camera.inView3 field.ViewType field.Position size world.Camera then
+                    let sprites =
+                        Map.fold
+                            (fun sprites tileCoords tile ->
+                                let tileOffset = Vector2i.Multiply (tileCoords, TileSizeI)
+                                let tilePosition = Vector2i field.Position + tileOffset
+                                let sprite =
+                                    { Position = tilePosition.Vector2
+                                      Size = TileSize
+                                      Rotation = field.Rotation
+                                      ViewType = field.ViewType
+                                      OptInset = getOptTileInset tile.TileSheetPositionM
+                                      Image = field.FieldMapNp.FieldTileSheet
+                                      Color = Vector4.One }
+                                sprite :: sprites)
+                            []
+                            field.FieldMapNp.FieldTiles
+                    [LayerableDescriptor { Depth = field.Depth; LayeredDescriptor = SpritesDescriptor sprites }]
+                else []
             else []
 
-        override dispatcher.GetQuickSize (field, world) =
+        override dispatcher.GetQuickSize (field, _) =
             let fieldMap = field.FieldMapNp
             Vector2.Multiply (TileSize, fieldMap.FieldSizeM.Vector2)
