@@ -324,7 +324,8 @@ module SimulationModule =
     and [<ReferenceEquality>] Subsystems =
         { AudioPlayer : IAudioPlayer
           Renderer : IRenderer
-          Integrator : IIntegrator }
+          Integrator : IIntegrator
+          Overlayer : Overlayer }
 
     /// The world's message queues.
     and [<ReferenceEquality>] MessageQueues =
@@ -347,7 +348,7 @@ module SimulationModule =
           OptScreenTransitionDestinationAddress : Screen Address option
           AssetMetadataMap : AssetMetadataMap
           AssetGraphFilePath : string
-          Overlayer : Overlayer // TODO: maybe move this to subsystems?
+          OverlayRouter : OverlayRouter
           OverlayFilePath : string
           UserState : obj }
 
@@ -368,18 +369,21 @@ module SimulationModule =
           Callbacks : Callbacks
           State : State }
 
-    /// Provides a way to make user-defined components.
-    and UserComponentFactory () =
-        abstract MakeFacets : unit -> Map<string, Facet>
-        default this.MakeFacets () = Map.empty
-        abstract MakeEntityDispatchers : unit -> Map<string, EntityDispatcher>
-        default this.MakeEntityDispatchers () = Map.empty
-        abstract MakeGroupDispatchers : unit -> Map<string, GroupDispatcher>
-        default this.MakeGroupDispatchers () = Map.empty
-        abstract MakeScreenDispatchers : unit -> Map<string, ScreenDispatcher>
-        default this.MakeScreenDispatchers () = Map.empty
-        abstract MakeOptGameDispatcher : unit -> (string * GameDispatcher) option
+    /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
+    /// specific values.
+    and NuPlugin () =
+        abstract MakeFacets : unit -> Facet list
+        default this.MakeFacets () = []
+        abstract MakeEntityDispatchers : unit -> EntityDispatcher list
+        default this.MakeEntityDispatchers () = []
+        abstract MakeGroupDispatchers : unit -> GroupDispatcher list
+        default this.MakeGroupDispatchers () = []
+        abstract MakeScreenDispatchers : unit -> ScreenDispatcher list
+        default this.MakeScreenDispatchers () = []
+        abstract MakeOptGameDispatcher : unit -> GameDispatcher option
         default this.MakeOptGameDispatcher () = None
+        abstract MakeOverlayRoutes : unit -> (string * string option) list
+        default this.MakeOverlayRoutes () = []
 
 [<AutoOpen>]
 module WorldAddressModule =
@@ -708,6 +712,11 @@ module World =
         let subsystems = { world.Subsystems with Integrator = integrator }
         { world with Subsystems = subsystems }
 
+    /// Set the Overlayer field of the world.
+    let internal setOverlayer overlayer world =
+        let subsystems = { world.Subsystems with Overlayer = overlayer }
+        { world with Subsystems = subsystems }
+
     /// Clear the audio messages.
     let internal clearAudioMessages world =
         let messageQueues = { world.MessageQueues with AudioMessages = [] }
@@ -772,11 +781,6 @@ module World =
     let getCallbackState<'a> key world =
         let state = Map.find key world.Callbacks.CallbackStates
         state :?> 'a
-
-    /// Set the Overlayer field of the world.
-    let internal setOverlayer overlayer world =
-        let state = { world.State with Overlayer = overlayer }
-        { world with State = state }
 
     /// Increment the TickTime field of the world.
     let internal incrementTickTime world =

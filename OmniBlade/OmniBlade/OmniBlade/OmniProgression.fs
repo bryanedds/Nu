@@ -8,16 +8,15 @@ open OmniBlade
 open OmniBlade.OmniConstants
 module OmniProgression =
 
-    type OmniComponentFactory () =
-        inherit UserComponentFactory ()
+    type OmniPlugin () =
+        inherit NuPlugin ()
 
         override this.MakeGroupDispatchers () =
-            Map.ofList
-                [(typeof<BattleGroupDispatcher>.Name, BattleGroupDispatcher () :> GroupDispatcher)
-                 (typeof<FieldGroupDispatcher>.Name, FieldGroupDispatcher () :> GroupDispatcher)]
+            [BattleGroupDispatcher () :> GroupDispatcher
+             FieldGroupDispatcher () :> GroupDispatcher]
 
         override this.MakeOptGameDispatcher () =
-            Some (typeof<OmniBladeDispatcher>.Name, OmniBladeDispatcher () :> GameDispatcher)
+            Some (OmniBladeDispatcher () :> GameDispatcher)
 
     let addTitleScreen world =
         let world = snd <| World.addDissolveScreenFromGroupFile false DissolveData typeof<ScreenDispatcher>.Name TitleAddress TitleGroupFilePath world
@@ -39,8 +38,8 @@ module OmniProgression =
         World.subscribe4 (World.handleAsScreenTransition TitleAddress) ClickFieldBackEvent GameAddress world
 
     let tryMakeOmniBladeWorld userState sdlDeps =
-        let omniComponentFactory = OmniComponentFactory ()
-        let eitherWorld = World.tryMake false true GuiAndPhysics userState omniComponentFactory sdlDeps
+        let omniPlugin = OmniPlugin ()
+        let eitherWorld = World.tryMake false true GuiAndPhysics userState omniPlugin sdlDeps
         match eitherWorld with
         | Right world ->
             let world = World.hintRenderPackageUse GuiPackageName world

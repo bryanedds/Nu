@@ -120,10 +120,6 @@ module Metadata =
                 Right assetMetadataMap
         with exn -> Left <| acstring exn
 
-    /// Generate an empty asset metadata map.
-    let generateEmptyAssetMetadataMap () =
-        Map.empty
-
     /// Try to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) assetMetadataMap =
         let optPackage = Map.tryFind assetTag.PackageName assetMetadataMap

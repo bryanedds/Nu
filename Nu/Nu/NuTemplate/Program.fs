@@ -5,12 +5,13 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 module Program =
-
-    // this is a factory that creates user-defined components such as dispatchers of various sorts
-    // and facets. Currently, there are no overrides for its factory methods since there are no
-    // user-defined dispatchers defined yet for this project.
-    type $safeprojectname$ComponentFactory () =
-        inherit UserComponentFactory ()
+    
+    // this is a plugin for the Nu game engine by which user-defined dispatchers, facets, and other
+    // sorts of values can be obtained by both your application and NuEdit. Currently, there are no
+    // overrides for its factory methods since there are no user-defined dispatchers, facets, et al
+    // defined for this project yet.
+    type $safeprojectname$Plugin () =
+        inherit NuPlugin ()
 
     // this the entry point for the your Nu application
     let [<EntryPoint>] main _ =
@@ -48,16 +49,13 @@ module Program =
         // sense. In a Nu game, the world is represented as a complex record type named World.
         let tryMakeWorld sdlDeps =
 
-            // A component factory is the means by which user-defined dispatchers and facets are
-            // made available for creation by the engine, as well as by NuEdit. Note that any
-            // user-defined game dispatcher returned from a user-defined component factory will
-            // be used as your game's dispatcher.
-            let userComponentFactory = $safeprojectname$ComponentFactory ()
+            // an instance of the above plugin
+            let nuPlugin = $safeprojectname$Plugin ()
 
-            // here is an attempt to make the world with the various initial states, component
-            // factory, and SDL dependencies. Note that the first boolean, when true, protects from
+            // here is an attempt to make the world with the various initial states, the engine
+            // plugin, and SDL dependencies. Note that the first boolean, when true, protects from
             // a Farseer physics bug but slows down the engine badly, so that's why it's false.
-            World.tryMake false true GuiAndPhysicsAndGamePlay () userComponentFactory sdlDeps
+            World.tryMake false true GuiAndPhysicsAndGamePlay () nuPlugin sdlDeps
 
         // this is a callback that specifies your game's unique behavior when updating the world
         // every tick. The World value is the state of the world after the callback has transformed

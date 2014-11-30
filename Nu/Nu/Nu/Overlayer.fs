@@ -92,12 +92,10 @@ module Overlayer =
                 | None -> false
             | _ -> false
 
-    let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) optOldOverlayName target oldOverlayer =
+    let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) oldOverlayName target oldOverlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
-            (match optOldOverlayName with
-             | Some oldOverlayName -> isPropertyOverlaid oldOverlayName property.Name property.PropertyType target oldOverlayer
-             | None -> false)
+            isPropertyOverlaid oldOverlayName property.Name property.PropertyType target oldOverlayer
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
             let converter = AlgebraicConverter property.PropertyType
@@ -105,17 +103,17 @@ module Overlayer =
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
 
-    let private applyOverlayToDotNetProperties optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
+    let private applyOverlayToDotNetProperties oldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
             if property.Name <> "FacetNames" && property.PropertyType <> typeof<string list> then
                 match trySelectNode newOverlayName property.Name newOverlayer with
-                | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode optOldOverlayName target oldOverlayer
+                | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode oldOverlayName target oldOverlayer
                 | None -> ()
 
     // TODO: see if this can be decomposed
-    let private applyOverlayToXtension optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
+    let private applyOverlayToXtension oldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> ()
@@ -134,11 +132,7 @@ module Overlayer =
                 let xFields =
                     List.fold
                         (fun xFields (aType, node : XmlNode) ->
-                            let shouldApplyOverlay =
-                                match optOldOverlayName with
-                                | Some oldOverlayName -> isPropertyOverlaid oldOverlayName node.Name aType target oldOverlayer
-                                | None -> false
-                            if shouldApplyOverlay then
+                            if isPropertyOverlaid oldOverlayName node.Name aType target oldOverlayer then
                                 let value = AlgebraicDescriptor.convertFromString node.InnerText aType
                                 let xField = { FieldValue = value; FieldType = aType }
                                 (node.Name, xField) :: xFields
@@ -151,26 +145,26 @@ module Overlayer =
             | _ -> ()
 
     /// Apply an overlay to the FacetName field of the given target.
-    let applyOverlayToFacetNames optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
+    let applyOverlayToFacetNames oldOverlayName newOverlayName target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "FacetNames" with
         | null -> ()
         | facetNamesProperty ->
             match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
-            | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode optOldOverlayName target oldOverlayer
+            | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode oldOverlayName target oldOverlayer
             | None -> ()
 
     /// Apply an overlay to the given target (except for any FacetNames field).
     /// Only the properties / fields that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
-    let applyOverlay5 optOldOverlayName newOverlayName target oldOverlayer newOverlayer =
-        applyOverlayToDotNetProperties optOldOverlayName newOverlayName target oldOverlayer newOverlayer
-        applyOverlayToXtension optOldOverlayName newOverlayName target oldOverlayer newOverlayer
+    let applyOverlay5 oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+        applyOverlayToDotNetProperties oldOverlayName newOverlayName target oldOverlayer newOverlayer
+        applyOverlayToXtension oldOverlayName newOverlayName target oldOverlayer newOverlayer
 
     /// Apply an overlay to the given target.
     /// Only the properties / fields that are overlaid by the old overlay will be changed.
-    let applyOverlay optOldOverlayName newOverlayName target overlayer =
-        applyOverlay5 optOldOverlayName newOverlayName target overlayer overlayer
+    let applyOverlay oldOverlayName newOverlayName target overlayer =
+        applyOverlay5 oldOverlayName newOverlayName target overlayer overlayer
 
     /// Query that a property should be serialized.
     let shouldPropertySerialize overlayName propertyName propertyType target overlayer =
@@ -183,11 +177,26 @@ module Overlayer =
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.
     let make (filePath : string) (intrinsicOverlays : XmlDocument) =
+
+        // create new overlay document into which all nodes will be inserted
         let overlays = XmlDocument ()
-        overlays.Load filePath
-        for node in intrinsicOverlays.DocumentElement.ChildNodes do
+        let overlaysRoot = overlays.CreateElement RootNodeName
+        ignore <| overlays.AppendChild overlaysRoot
+
+        // load the user-defined overlay document from file
+        let loadedOverlays = XmlDocument ()
+        loadedOverlays.Load filePath
+
+        // add both intrinsic and loaded overlay nodes to document
+        let childNodes =
+            Seq.append
+                (enumerable intrinsicOverlays.DocumentElement.ChildNodes)
+                (enumerable loadedOverlays.DocumentElement.ChildNodes)
+        for node in childNodes do
             let imported = overlays.ImportNode (node, true)
             ignore <| overlays.DocumentElement.AppendChild imported
+
+        // make overlay
         { Overlays = overlays }
 
     /// Make an empty Overlayer.

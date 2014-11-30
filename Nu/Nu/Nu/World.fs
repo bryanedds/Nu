@@ -263,7 +263,7 @@ module WorldModule =
             try File.Copy (inputOverlayFilePath, outputOverlayFilePath, true)
 
                 // cache old overlayer and make new one
-                let oldOverlayer = world.State.Overlayer
+                let oldOverlayer = world.Subsystems.Overlayer
                 let dispatchers = World.getDispatchers world
                 let intrinsicOverlays = World.createIntrinsicOverlays dispatchers world.Components.Facets
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
@@ -285,10 +285,10 @@ module WorldModule =
                             match entity.OptOverlayName with
                             | Some overlayName ->
                                 let oldFacetNames = entity.FacetNames
-                                Overlayer.applyOverlayToFacetNames entity.OptOverlayName overlayName entity oldOverlayer world.State.Overlayer
+                                Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
                                 match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
                                 | Right (entity, world) ->
-                                    Overlayer.applyOverlay5 entity.OptOverlayName overlayName entity oldOverlayer world.State.Overlayer
+                                    Overlayer.applyOverlay5 overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
                                     World.setEntity address entity world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
@@ -536,31 +536,38 @@ module WorldModule =
         static member run tryMakeWorld handleUpdate sdlConfig =
             World.run4 tryMakeWorld handleUpdate id sdlConfig
 
+        static member private pairWithName source =
+            (Reflection.getTypeName source, source)
+
+        static member private pairWithNames sources =
+            Map.ofListBy World.pairWithName sources
+
         static member tryMake
             farseerCautionMode
             useLoadedGameDispatcher
             interactivity
             userState
-            (userComponentFactory : UserComponentFactory)
+            (nuPlugin : NuPlugin)
             sdlDeps =
 
             // attempt to generate asset metadata so the rest of the world can be created
             match Metadata.tryGenerateAssetMetadataMap AssetGraphFilePath with
             | Right assetMetadataMap ->
 
-                // make user components
-                let userFacets = userComponentFactory.MakeFacets ()
-                let userEntityDispatchers = userComponentFactory.MakeEntityDispatchers ()
-                let userGroupDispatchers = userComponentFactory.MakeGroupDispatchers ()
-                let userScreenDispatchers = userComponentFactory.MakeScreenDispatchers ()
-                let userOptGameDispatcher = userComponentFactory.MakeOptGameDispatcher ()
+                // make user-defined values
+                let userFacets = World.pairWithNames <| nuPlugin.MakeFacets ()
+                let userEntityDispatchers = World.pairWithNames <| nuPlugin.MakeEntityDispatchers ()
+                let userGroupDispatchers = World.pairWithNames <| nuPlugin.MakeGroupDispatchers ()
+                let userScreenDispatchers = World.pairWithNames <| nuPlugin.MakeScreenDispatchers ()
+                let userOptGameDispatcher = nuPlugin.MakeOptGameDispatcher ()
+                let userOverlayRoutes = nuPlugin.MakeOverlayRoutes ()
 
                 // infer the active game dispatcher
                 let defaultGameDispatcher = GameDispatcher ()
                 let activeGameDispatcher =
                     if useLoadedGameDispatcher then
                         match userOptGameDispatcher with
-                        | Some (_, gameDispatcher) -> gameDispatcher
+                        | Some gameDispatcher -> gameDispatcher
                         | None -> defaultGameDispatcher
                     else defaultGameDispatcher
 
@@ -574,36 +581,38 @@ module WorldModule =
 
                 // make entity dispatchers
                 // TODO: see if we can reflectively generate these
-                let defaultEntityDispatchers =
-                    Map.ofList
-                        [typeof<EntityDispatcher>.Name, EntityDispatcher ()
-                         typeof<GuiDispatcher>.Name, GuiDispatcher () :> EntityDispatcher
-                         typeof<ButtonDispatcher>.Name, ButtonDispatcher () :> EntityDispatcher
-                         typeof<LabelDispatcher>.Name, LabelDispatcher () :> EntityDispatcher
-                         typeof<TextDispatcher>.Name, TextDispatcher () :> EntityDispatcher
-                         typeof<ToggleDispatcher>.Name, ToggleDispatcher () :> EntityDispatcher
-                         typeof<FeelerDispatcher>.Name, FeelerDispatcher () :> EntityDispatcher
-                         typeof<FillBarDispatcher>.Name, FillBarDispatcher () :> EntityDispatcher
-                         typeof<BlockDispatcher>.Name, BlockDispatcher () :> EntityDispatcher
-                         typeof<BoxDispatcher>.Name, BoxDispatcher () :> EntityDispatcher
-                         typeof<TopViewCharacterDispatcher>.Name, TopViewCharacterDispatcher () :> EntityDispatcher
-                         typeof<SideViewCharacterDispatcher>.Name, SideViewCharacterDispatcher () :> EntityDispatcher
-                         typeof<TileMapDispatcher>.Name, TileMapDispatcher () :> EntityDispatcher]
+                let defaultEntityDispatcherList =
+                    [EntityDispatcher ()
+                     GuiDispatcher () :> EntityDispatcher
+                     ButtonDispatcher () :> EntityDispatcher
+                     LabelDispatcher () :> EntityDispatcher
+                     TextDispatcher () :> EntityDispatcher
+                     ToggleDispatcher () :> EntityDispatcher
+                     FeelerDispatcher () :> EntityDispatcher
+                     FillBarDispatcher () :> EntityDispatcher
+                     BlockDispatcher () :> EntityDispatcher
+                     BoxDispatcher () :> EntityDispatcher
+                     TopViewCharacterDispatcher () :> EntityDispatcher
+                     SideViewCharacterDispatcher () :> EntityDispatcher
+                     TileMapDispatcher () :> EntityDispatcher]
+                let defaultEntityDispatchers = World.pairWithNames defaultEntityDispatcherList
                 let entityDispatchers = Map.addMany (Map.toSeq userEntityDispatchers) defaultEntityDispatchers
 
                 // make group dispatchers
-                let defaultGroupDispatchers = Map.ofList [typeof<GroupDispatcher>.Name, GroupDispatcher ()]
+                let defaultGroupDispatchers = Map.ofList [World.pairWithName <| GroupDispatcher ()]
                 let groupDispatchers = Map.addMany (Map.toSeq userGroupDispatchers) defaultGroupDispatchers
 
                 // make screen dispatchers
-                let defaultScreenDispatchers = Map.ofList [typeof<ScreenDispatcher>.Name, ScreenDispatcher ()]
+                let defaultScreenDispatchers = Map.ofList [World.pairWithName <| ScreenDispatcher ()]
                 let screenDispatchers = Map.addMany (Map.toSeq userScreenDispatchers) defaultScreenDispatchers
 
                 // make game dispatchers
-                let defaultGameDispatchers = Map.ofList [typeof<GameDispatcher>.Name, defaultGameDispatcher]
+                let defaultGameDispatchers = Map.ofList [World.pairWithName <| defaultGameDispatcher]
                 let gameDispatchers = 
                     match userOptGameDispatcher with
-                    | Some (gameDispatcherName, gameDispatcher) -> Map.add gameDispatcherName gameDispatcher defaultGameDispatchers
+                    | Some gameDispatcher ->
+                        let (gameDispatcherName, gameDispatcher) = World.pairWithName gameDispatcher
+                        Map.add gameDispatcherName gameDispatcher defaultGameDispatchers
                     | None -> defaultGameDispatchers
 
                 // make intrinsic overlays
@@ -626,7 +635,8 @@ module WorldModule =
                 let subsystems =
                     { AudioPlayer = AudioPlayer.make AssetGraphFilePath
                       Renderer = Renderer.make sdlDeps.RenderContext AssetGraphFilePath
-                      Integrator = Integrator.make farseerCautionMode Gravity }
+                      Integrator = Integrator.make farseerCautionMode Gravity 
+                      Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays }
 
                 // make the world's message queues
                 let messageQueues =
@@ -649,7 +659,7 @@ module WorldModule =
                       OptScreenTransitionDestinationAddress = None
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
-                      Overlayer = Overlayer.make OverlayFilePath intrinsicOverlays
+                      OverlayRouter = OverlayRouter.make dispatchers userOverlayRoutes
                       OverlayFilePath = OverlayFilePath
                       UserState = userState }
 
@@ -678,6 +688,12 @@ module WorldModule =
             let groupDispatcher = GroupDispatcher ()
             let screenDispatcher = ScreenDispatcher ()
             let gameDispatcher = GameDispatcher ()
+            let dispatchers =
+                World.pairWithNames
+                    [entityDispatcher :> obj
+                     groupDispatcher :> obj
+                     screenDispatcher :> obj
+                     gameDispatcher :> obj]
 
             // make the world's components
             let components =
@@ -691,7 +707,8 @@ module WorldModule =
             let subsystems =
                 { AudioPlayer = { MockAudioPlayer  = () }
                   Renderer = { MockRenderer = () }
-                  Integrator = { MockIntegrator = () }}
+                  Integrator = { MockIntegrator = () }
+                  Overlayer = Overlayer.makeEmpty () }
 
             // make the world's message queues
             let messageQueues =
@@ -712,9 +729,9 @@ module WorldModule =
                   Liveness = Running
                   Interactivity = GuiOnly
                   OptScreenTransitionDestinationAddress = None
-                  AssetMetadataMap = Metadata.generateEmptyAssetMetadataMap ()
+                  AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty
-                  Overlayer = Overlayer.makeEmpty ()
+                  OverlayRouter = OverlayRouter.make dispatchers []
                   OverlayFilePath = String.Empty
                   UserState = userState }
 
