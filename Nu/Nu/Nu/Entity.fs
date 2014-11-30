@@ -84,7 +84,7 @@ module EntityModule =
         static member dispatchesAs (dispatcherTargetType : Type) (entity : Entity) =
             Reflection.dispatchesAs dispatcherTargetType entity.DispatcherNp
 
-        static member make dispatcherName dispatcher optName =
+        static member make dispatcher optOverlayName optName =
             let id = Core.makeId ()
             { Id = id
               Name = match optName with None -> acstring id | Some name -> name
@@ -99,7 +99,7 @@ module EntityModule =
               DispatcherNp = dispatcher
               FacetNames = []
               FacetsNp = []
-              OptOverlayName = Some dispatcherName
+              OptOverlayName = optOverlayName
               Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
 
     type [<StructuralEquality; NoComparison>] TileMapData =
@@ -264,13 +264,46 @@ module WorldEntityModule =
             World.transformSimulants World.addEntity gatoea groupAddress entities world
 
         static member makeEntity dispatcherName optName world =
+            
+            // find the entity's dispatcher
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
-            let entity = Entity.make dispatcherName dispatcher optName
+            
+            // compute the overlay names
+            let defaultOverlayName = dispatcherName
+            let optOverlayName = Map.find defaultOverlayName world.State.OverlayRouter
+            
+            // make the bare entity with name as id
+            let entity = Entity.make dispatcher optOverlayName optName
+
+            // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
+            
+            // apply the entity's overlay to its facet names
+            let entity =
+                match optOverlayName with
+                | Some overlayName ->
+                    let overlayer = world.Subsystems.Overlayer
+                    Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
+                        
+                    // synchronize the entity's facets (and attach their fields)
+                    match World.trySynchronizeFacets [] None entity world with
+                    | Right (entity, _) -> entity
+                    | Left error -> debug error; entity
+
+                | None -> entity
+
+            // attach the entity's dispatcher fields
             Reflection.attachFields dispatcher entity
-            match World.trySynchronizeFacets [] None entity world with
-            | Right (entity, _) -> entity
-            | Left error -> debug error; entity
+
+            // apply the entity's overlay
+            match entity.OptOverlayName with
+            | Some overlayName ->
+                // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
+                if defaultOverlayName <> overlayName then
+                    Overlayer.applyOverlay defaultOverlayName overlayName entity world.Subsystems.Overlayer
+                    entity
+                else entity
+            | None -> entity
 
         static member private tryGetFacet facetName world =
             match Map.tryFind facetName world.Components.Facets with
@@ -415,7 +448,7 @@ module WorldEntityModule =
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
             let shouldWriteProperty = fun propertyName propertyType ->
-                Overlayer.shouldPropertySerialize3 propertyName propertyType entity world.State.Overlayer
+                Overlayer.shouldPropertySerialize3 propertyName propertyType entity world.Subsystems.Overlayer
             Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
         static member writeEntities (writer : XmlWriter) entities world =
@@ -442,8 +475,12 @@ module WorldEntityModule =
                     let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
                     (dispatcherName, dispatcher)
 
+            // compute the overlay names
+            let defaultOverlayName = dispatcherName
+            let optOverlayName = Map.find defaultOverlayName world.State.OverlayRouter
+
             // make the bare entity with name as id
-            let entity = Entity.make dispatcherName dispatcher None
+            let entity = Entity.make dispatcher optOverlayName None
 
             // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
@@ -452,13 +489,14 @@ module WorldEntityModule =
             Serialization.readOptOverlayNameToTarget entityNode entity
             match entity.OptOverlayName with
             | Some overlayName ->
-                let defaultOptDispatcherName = Some typeof<EntityDispatcher>.Name
-                let overlayer = world.State.Overlayer
-                Overlayer.applyOverlayToFacetNames defaultOptDispatcherName overlayName entity overlayer overlayer
+                let overlayer = world.Subsystems.Overlayer
+                Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
             | None -> ()
 
-            // read the entity's facet names, synchronize its facets, and attach their fields
+            // read the entity's facet names
             Serialization.readFacetNamesToTarget entityNode entity
+            
+            // synchronize the entity's facets (and attach their fields)
             let entity =
                 match World.trySynchronizeFacets [] None entity world with
                 | Right (entity, _) -> entity
@@ -467,9 +505,16 @@ module WorldEntityModule =
             // attach the entity's dispatcher fields
             Reflection.attachFields dispatcher entity
 
-            // apply the entity's overlay
+            // attempt to apply the entity's overlay
             match entity.OptOverlayName with
-            | Some overlayName -> Overlayer.applyOverlay None overlayName entity world.State.Overlayer
+            | Some overlayName ->
+
+                // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
+                if defaultOverlayName <> overlayName then
+                    let overlayer = world.Subsystems.Overlayer
+                    Overlayer.applyOverlay defaultOverlayName overlayName entity overlayer
+                else ()
+
             | None -> ()
 
             // read the entity's properties

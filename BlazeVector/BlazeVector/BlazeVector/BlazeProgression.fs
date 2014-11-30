@@ -8,33 +8,28 @@ open BlazeVector
 open BlazeVector.BlazeConstants
 module BlazeProgression =
     
-    /// Creates BlazeVector-specific components (dispatchers and facets).
+    /// Creates BlazeVector-specific values (here dispatchers and facets).
     /// Allows BlazeVector simulation types to be created in the game as well as in NuEdit.
-    type BlazeComponentFactory () =
-        inherit UserComponentFactory ()
-
-        // currently we have no game-specific facets to create, so no need to override MakeFacets.
+    type BlazePlugin () =
+        inherit NuPlugin ()
 
         // make our game-specific entity dispatchers...
         override this.MakeEntityDispatchers () =
-            Map.ofList
-                [(typeof<BulletDispatcher>.Name, BulletDispatcher () :> EntityDispatcher)
-                 (typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher)
-                 (typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher)]
+            [BulletDispatcher () :> EntityDispatcher
+             PlayerDispatcher () :> EntityDispatcher
+             EnemyDispatcher () :> EntityDispatcher]
 
         // make our game-specific group dispatchers...
         override this.MakeGroupDispatchers () =
-            Map.ofList
-                [(typeof<StagePlayDispatcher>.Name, StagePlayDispatcher () :> GroupDispatcher)]
+            [StagePlayDispatcher () :> GroupDispatcher]
 
         // make our game-specific screen dispatchers...
         override this.MakeScreenDispatchers () =
-            Map.ofList
-                [(typeof<StageScreenDispatcher>.Name, StageScreenDispatcher () :> ScreenDispatcher)]
+            [StageScreenDispatcher () :> ScreenDispatcher]
 
         // make our game-specific game dispatcher...
         override this.MakeOptGameDispatcher () =
-            Some (typeof<BlazeVectorDispatcher>.Name, BlazeVectorDispatcher () :> GameDispatcher)
+            Some (BlazeVectorDispatcher () :> GameDispatcher)
 
     // this function handles playing the song "Machinery"
     let handlePlaySongMachinery _ world =
@@ -85,12 +80,12 @@ module BlazeProgression =
     // here we make the BlazeVector world in a callback from the World.run function.
     let tryMakeBlazeVectorWorld userState sdlDeps =
 
-        // create our game's component factory
-        let blazeComponentFactory = BlazeComponentFactory ()
+        // create our game's plugin
+        let blazePlugin = BlazePlugin ()
 
         // we use World.tryMake to create an empty world that we will transform to create the
         // BlazeVector world
-        let eitherWorld = World.tryMake false true GuiAndPhysicsAndGamePlay userState blazeComponentFactory sdlDeps 
+        let eitherWorld = World.tryMake false true GuiAndPhysicsAndGamePlay userState blazePlugin sdlDeps 
         match eitherWorld with
         | Right world ->
 

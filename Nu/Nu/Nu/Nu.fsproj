@@ -68,6 +68,7 @@
     <Compile Include="Math.fs" />
     <Compile Include="Xtension.fs" />
     <Compile Include="Overlayer.fs" />
+    <Compile Include="OverlayRouter.fs" />
     <Compile Include="Serialization.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Camera.fs" />

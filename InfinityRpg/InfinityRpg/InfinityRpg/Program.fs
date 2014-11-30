@@ -39,6 +39,6 @@ module Program =
 
         // after some configuration it is time to run the game. We're off and running!
         World.run
-            (fun sdlDeps -> World.tryMake false true GuiAndPhysicsAndGamePlay () (InfinityRpgComponentFactory ()) sdlDeps)
+            (fun sdlDeps -> World.tryMake false true GuiAndPhysicsAndGamePlay () (InfinityRpgPlugin ()) sdlDeps)
             (fun world -> world)
             sdlConfig

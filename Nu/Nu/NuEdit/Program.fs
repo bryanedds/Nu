@@ -93,21 +93,21 @@ module Program =
         let propertyCanWrite = match property with EntityXFieldDescriptor _ -> true | EntityPropertyInfo x -> x.CanWrite
 
         /// Synchonize an entity after an overlay change.
-        let synchronizeEntity oldOptOverlayName address (entity : Entity) world =
-            match entity.OptOverlayName with
-            | Some overlayName ->
+        let synchronizeEntity optOldOverlayName address (entity : Entity) world =
+            match (optOldOverlayName, entity.OptOverlayName) with
+            | (Some oldOverlayName, Some overlayName) ->
                 let entity = { entity with Id = entity.Id } // hacky copy for in-place mutation
                 let (entity, world) =
                     let oldFacetNames = entity.FacetNames
-                    let overlayer = world.State.Overlayer
-                    Overlayer.applyOverlayToFacetNames oldOptOverlayName overlayName entity overlayer overlayer
+                    let overlayer = world.Subsystems.Overlayer
+                    Overlayer.applyOverlayToFacetNames oldOverlayName overlayName entity overlayer overlayer
                     match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
                     | Right (entity, world) -> (entity, world)
                     | Left error -> debug error; (entity, world)
-                Overlayer.applyOverlay oldOptOverlayName overlayName entity world.State.Overlayer
+                Overlayer.applyOverlay oldOverlayName overlayName entity world.Subsystems.Overlayer
                 let world = World.setEntity address entity world
                 (entity, world)
-            | None -> (entity, world)
+            | (_, _) -> (entity, world)
 
         override this.ComponentType = propertyType.DeclaringType
         override this.PropertyType = propertyType
@@ -150,7 +150,7 @@ module Program =
                         entityTds.Form.propertyGrid.SelectedObject <- { entityTds with Address = entityAddress }
                         world
                 | "FacetNames" ->
-                    let facetNames = value :?> obj list |> List.map (fun obj -> obj :?> string)
+                    let facetNames = value :?> string list
                     let entity = World.getEntity entityTds.Address world
                     let world =
                         match World.trySetFacetNames entity.FacetNames facetNames (Some entityTds.Address) entity world with
@@ -164,9 +164,9 @@ module Program =
                     let (entity, world) =
                         match propertyName with
                         | "OptOverlayName" ->
-                            let oldOptOverlayName = entity.OptOverlayName
+                            let optOldOverlayName = entity.OptOverlayName
                             let entity = setEntityPropertyValue property value entity
-                            let (entity, world) = synchronizeEntity oldOptOverlayName entityTds.Address entity world
+                            let (entity, world) = synchronizeEntity optOldOverlayName entityTds.Address entity world
                             let world = World.setEntity entityTds.Address entity world
                             (entity, world)
                         | _ ->
@@ -804,7 +804,7 @@ module Program =
         updateRedoButton form world
         if form.IsDisposed then World.exit world
         else world
-    let selectTargetDirectoryAndMakeUserComponentFactory () =
+    let selectTargetDirectoryAndMakeNuPlugin () =
         use openDialog = new OpenFileDialog ()
         openDialog.Filter <- "Executable Files (*.exe)|*.exe"
         openDialog.Title <- "Select your game's executable file to make its assets and components available in the editor (or cancel for defaults)."
@@ -815,14 +815,14 @@ module Program =
             let assemblyTypes = assembly.GetTypes ()
             let optDispatcherType =
                 Array.tryFind
-                    (fun (aType : Type) -> aType.IsSubclassOf typeof<UserComponentFactory>)
+                    (fun (aType : Type) -> aType.IsSubclassOf typeof<NuPlugin>)
                     assemblyTypes
             match optDispatcherType with
             | Some aType ->
-                let userComponentFactory = Activator.CreateInstance aType :?> UserComponentFactory
-                (directoryName, userComponentFactory)
-            | None -> (".", UserComponentFactory ())
-        else (".", UserComponentFactory ())
+                let nuPlugin = Activator.CreateInstance aType :?> NuPlugin
+                (directoryName, nuPlugin)
+            | None -> (".", NuPlugin ())
+        else (".", NuPlugin ())
 
     let createNuEditForm worldChangers refWorld =
         let form = new NuEditForm ()
@@ -862,7 +862,7 @@ module Program =
         form.Show ()
         form
 
-    let tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory =
+    let tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin =
         let groupAddress = satoga EditorScreenAddress DefaultGroupName
         let editorState =
             { TargetDirectory = targetDirectory
@@ -874,7 +874,7 @@ module Program =
               PastWorlds = []
               FutureWorlds = []
               Clipboard = ref None }
-        let eitherWorld = World.tryMake true false GuiAndPhysics editorState userComponentFactory sdlDeps
+        let eitherWorld = World.tryMake true false GuiAndPhysics editorState nuPlugin sdlDeps
         match eitherWorld with
         | Right world ->
             let screen = World.makeScreen typeof<ScreenDispatcher>.Name (Some EditorScreenName) world
@@ -892,8 +892,8 @@ module Program =
             Right world
         | Left errorMsg -> Left errorMsg
 
-    let tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory =
-        match tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory with
+    let tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin =
+        match tryMakeEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin with
         | Right world ->
             populateCreateComboBox form world
             populateTreeViewGroups form world
@@ -904,7 +904,7 @@ module Program =
         World.init ()
         let worldChangers = WorldChangers ()
         let refWorld = ref Unchecked.defaultof<World>
-        let (targetDirectory, userComponentFactory) = selectTargetDirectoryAndMakeUserComponentFactory ()
+        let (targetDirectory, nuPlugin) = selectTargetDirectoryAndMakeNuPlugin ()
         let refinementDirectory = "Refinement"
         use form = createNuEditForm worldChangers refWorld
         let sdlViewConfig = ExistingWindow form.displayPanel.Handle
@@ -917,7 +917,7 @@ module Program =
               AudioChunkSize = AudioBufferSizeDefault }
         World.run4
             (fun sdlDeps ->
-                match tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps userComponentFactory with
+                match tryCreateEditorWorld targetDirectory refinementDirectory form worldChangers refWorld sdlDeps nuPlugin with
                 | Right world as right ->
                     refWorld := world
                     right

@@ -1,2 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Root/>
+<Root>
+  <InfinityButtonDispatcher include="[ButtonDispatcher]">
+    <FacetNames>[AnimatedSpriteFacet]</FacetNames>
+    <OptClickSound>None</OptClickSound>
+  </InfinityButtonDispatcher>
+</Root>

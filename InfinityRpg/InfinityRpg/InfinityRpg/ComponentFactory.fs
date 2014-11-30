@@ -7,27 +7,27 @@ open InfinityRpg
 open InfinityRpg.Constants
 
 [<AutoOpen>]
-module ComponentFactoryModule =
+module PluginModule =
 
-    type InfinityRpgComponentFactory () =
-        inherit UserComponentFactory ()
+    type InfinityRpgPlugin () =
+        inherit NuPlugin ()
 
         override this.MakeFacets () =
-            Map.ofList
-                [(typeof<CharacterStateFacet>.Name, CharacterStateFacet () :> Facet)
-                 (typeof<CharacterAnimationFacet>.Name, CharacterAnimationFacet () :> Facet)
-                 (typeof<CharacterCameraFacet>.Name, CharacterCameraFacet () :> Facet)]
+            [CharacterStateFacet () :> Facet
+             CharacterAnimationFacet () :> Facet
+             CharacterCameraFacet () :> Facet]
 
         override this.MakeEntityDispatchers () =
-            Map.ofList
-                [(typeof<FieldDispatcher>.Name, FieldDispatcher () :> EntityDispatcher)
-                 (typeof<EnemyDispatcher>.Name, EnemyDispatcher () :> EntityDispatcher)
-                 (typeof<CharacterDispatcher>.Name, CharacterDispatcher () :> EntityDispatcher)
-                 (typeof<PlayerDispatcher>.Name, PlayerDispatcher () :> EntityDispatcher)]
+            [FieldDispatcher () :> EntityDispatcher
+             EnemyDispatcher () :> EntityDispatcher
+             CharacterDispatcher () :> EntityDispatcher
+             PlayerDispatcher () :> EntityDispatcher]
 
         override this.MakeScreenDispatchers () =
-            Map.ofList
-                [(typeof<GameplayDispatcher>.Name, GameplayDispatcher () :> ScreenDispatcher)]
+            [GameplayDispatcher () :> ScreenDispatcher]
 
         override this.MakeOptGameDispatcher () =
-            Some (typeof<InfinityRpgDispatcher>.Name, InfinityRpgDispatcher () :> GameDispatcher)
+            Some (InfinityRpgDispatcher () :> GameDispatcher)
+
+        override this.MakeOverlayRoutes () =
+            [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]

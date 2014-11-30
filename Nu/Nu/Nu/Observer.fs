@@ -68,6 +68,7 @@ module Observer =
             (subscriptionAddress'', unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
 
+    // NOTE: this could also be called coproduct.
     let sum (eventAddress : 'b Address) (observable : Observable<'a, 'o>) : Observable<Either<'a, 'b>, 'o> =
         let subscribe = fun world ->
             let subscriptionKey = World.makeSubscriptionKey ()
