@@ -10,7 +10,6 @@
         <Position>88, -184</Position>
         <Depth>10</Depth>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | SaveGameDown]</DownImage>
           <UpImage type="Nu.RenderModule+Image">[Gui | SaveGameUp]</UpImage>
@@ -21,7 +20,6 @@
         <Position>88, -256</Position>
         <Depth>10</Depth>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | BackDown]</DownImage>
           <UpImage type="Nu.RenderModule+Image">[Gui | BackUp]</UpImage>
@@ -49,7 +47,6 @@
         <Name>DetailDown</Name>
         <Position>-368, -232</Position>
         <Depth>10</Depth>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | DetailDown]</DownImage>
           <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
@@ -60,7 +57,6 @@
         <Name>DetailLeft</Name>
         <Position>-440, -160</Position>
         <Depth>10</Depth>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | DetailLeft]</DownImage>
           <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
@@ -71,7 +67,6 @@
         <Name>DetailRight</Name>
         <Position>-296, -160</Position>
         <Depth>10</Depth>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | DetailRight]</DownImage>
           <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>
@@ -82,7 +77,6 @@
         <Name>DetailUp</Name>
         <Position>-368, -88</Position>
         <Depth>10</Depth>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | DetailUp]</DownImage>
           <OptClickSound type="Microsoft.FSharp.Core.FSharpOption`1[[Nu.AudioModule+Sound, Nu, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]">None</OptClickSound>

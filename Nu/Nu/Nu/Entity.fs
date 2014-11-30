@@ -271,28 +271,27 @@ module WorldEntityModule =
             // find the entity's dispatcher
             let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
             
-            // compute the overlay names
-            let defaultOverlayName = dispatcherName
-            let optOverlayName = Map.find defaultOverlayName world.State.OverlayRouter
+            // compute the opt overlay name
+            let intrinsicOverlayName = dispatcherName
+            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
             
             // make the bare entity with name as id
-            let entity = Entity.make dispatcher optOverlayName optName
+            let entity = Entity.make dispatcher defaultOptOverlayName optName
 
             // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
             
             // apply the entity's overlay to its facet names
             let entity =
-                match optOverlayName with
-                | Some overlayName ->
+                match defaultOptOverlayName with
+                | Some defaultOverlayName ->
                     let overlayer = world.Subsystems.Overlayer
-                    Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
+                    Overlayer.applyOverlayToFacetNames intrinsicOverlayName defaultOverlayName entity overlayer overlayer
                         
                     // synchronize the entity's facets (and attach their fields)
                     match World.trySynchronizeFacets [] None entity world with
                     | Right (entity, _) -> entity
                     | Left error -> debug error; entity
-
                 | None -> entity
 
             // attach the entity's dispatcher fields
@@ -301,10 +300,11 @@ module WorldEntityModule =
             // apply the entity's overlay
             match entity.OptOverlayName with
             | Some overlayName ->
-                // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
-                if defaultOverlayName <> overlayName then
+
+                // OPTIMIZATION: apply overlay only when it will change something (EG - when it's not the intrinsic overlay)
+                if intrinsicOverlayName <> overlayName then
                     let facetNames = Entity.getFacetNames entity
-                    Overlayer.applyOverlay defaultOverlayName overlayName facetNames entity world.Subsystems.Overlayer
+                    Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                     entity
                 else entity
             | None -> entity
@@ -484,21 +484,23 @@ module WorldEntityModule =
                     let dispatcher = Map.find dispatcherName world.Components.EntityDispatchers
                     (dispatcherName, dispatcher)
 
-            // compute the overlay names
-            let defaultOverlayName = dispatcherName
-            let optOverlayName = Map.find defaultOverlayName world.State.OverlayRouter
+            // compute the default overlay names
+            let intrinsicOverlayName = dispatcherName
+            let defaultOptOverlayName = Map.find intrinsicOverlayName world.State.OverlayRouter
 
             // make the bare entity with name as id
-            let entity = Entity.make dispatcher optOverlayName None
+            let entity = Entity.make dispatcher defaultOptOverlayName None
 
             // attach the entity's intrinsic facets and their fields
             let entity = World.attachIntrinsicFacetsViaNames entity world
 
-            // read the entity's overlay and apply it to its facet names
+            // read the entity's overlay and apply it to its facet names if applicable
             Serialization.tryReadOptOverlayNameToTarget entityNode entity
-            let overlayName = Option.getOrDefault (Option.getOrDefault defaultOverlayName optOverlayName) entity.OptOverlayName
-            let overlayer = world.Subsystems.Overlayer
-            Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
+            match (defaultOptOverlayName, entity.OptOverlayName) with
+            | (Some defaultOverlayName, Some overlayName) ->
+                let overlayer = world.Subsystems.Overlayer
+                Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
+            | (_, _) -> ()
 
             // read the entity's facet names
             Serialization.readFacetNamesToTarget entityNode entity
@@ -517,11 +519,10 @@ module WorldEntityModule =
             | Some overlayName ->
 
                 // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
-                if defaultOverlayName <> overlayName then
+                if intrinsicOverlayName <> overlayName then
                     let facetNames = Entity.getFacetNames entity
-                    Overlayer.applyOverlay defaultOverlayName overlayName facetNames entity world.Subsystems.Overlayer
+                    Overlayer.applyOverlay intrinsicOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                 else ()
-
             | None -> ()
 
             // read the entity's properties
