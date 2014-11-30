@@ -69,6 +69,9 @@ module EntityModule =
         static member getPickingPriority (entity : Entity) world =
             entity.DispatcherNp.GetPickingPriority (entity, world)
 
+        static member getFacetNames entity =
+            List.map Reflection.getTypeName entity.FacetsNp
+
         static member isFacetCompatible entityDispatcherMap facet (entity : Entity) =
             let facetType = facet.GetType ()
             let facetFieldDefinitions = Reflection.getFieldDefinitions facetType
@@ -300,7 +303,8 @@ module WorldEntityModule =
             | Some overlayName ->
                 // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
                 if defaultOverlayName <> overlayName then
-                    Overlayer.applyOverlay defaultOverlayName overlayName entity world.Subsystems.Overlayer
+                    let facetNames = Entity.getFacetNames entity
+                    Overlayer.applyOverlay defaultOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                     entity
                 else entity
             | None -> entity
@@ -448,7 +452,8 @@ module WorldEntityModule =
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
             let shouldWriteProperty = fun propertyName propertyType ->
-                Overlayer.shouldPropertySerialize3 propertyName propertyType entity world.Subsystems.Overlayer
+                let facetNames = Entity.getFacetNames entity
+                Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.Subsystems.Overlayer
             Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
         static member writeEntities (writer : XmlWriter) entities world =
@@ -511,8 +516,8 @@ module WorldEntityModule =
 
                 // OPTIMIZATION: applying overlay only when it will change something (EG - when it's not the default overlay)
                 if defaultOverlayName <> overlayName then
-                    let overlayer = world.Subsystems.Overlayer
-                    Overlayer.applyOverlay defaultOverlayName overlayName entity overlayer
+                    let facetNames = Entity.getFacetNames entity
+                    Overlayer.applyOverlay defaultOverlayName overlayName facetNames entity world.Subsystems.Overlayer
                 else ()
 
             | None -> ()

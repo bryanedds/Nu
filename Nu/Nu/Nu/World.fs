@@ -240,20 +240,13 @@ module WorldModule =
             let dissolveScreenHierarchy = (dissolveScreen, dissolveGroupHierarchies)
             World.addScreen address dissolveScreenHierarchy world
 
-        static member private createIntrinsicOverlays dispatchers facets =
-
-            let hasFacetNamesField = fun sourceType ->
-                sourceType = typeof<EntityDispatcher>
-
-            let usesFacets = fun sourceType ->
-                sourceType = typeof<EntityDispatcher> ||
-                sourceType.IsSubclassOf typeof<EntityDispatcher>
-
-            let dispatchers = Map.toValueList dispatchers
+        static member private createIntrinsicOverlays entityDispatchers facets =
+            let hasFacetNamesField = fun sourceType -> sourceType = typeof<EntityDispatcher>
+            let entityDispatchers = Map.toValueListBy objectify entityDispatchers
             let facets = Map.toValueListBy (fun facet -> facet :> obj) facets
-            let sources = facets @ dispatchers
+            let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
-            Reflection.createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes
+            Reflection.createIntrinsicOverlays hasFacetNamesField sourceTypes
 
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
@@ -264,8 +257,7 @@ module WorldModule =
 
                 // cache old overlayer and make new one
                 let oldOverlayer = world.Subsystems.Overlayer
-                let dispatchers = World.getDispatchers world
-                let intrinsicOverlays = World.createIntrinsicOverlays dispatchers world.Components.Facets
+                let intrinsicOverlays = World.createIntrinsicOverlays world.Components.EntityDispatchers world.Components.Facets
                 let overlayer = Overlayer.make outputOverlayFilePath intrinsicOverlays
                 let world = World.setOverlayer overlayer world
 
@@ -288,7 +280,8 @@ module WorldModule =
                                 Overlayer.applyOverlayToFacetNames overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
                                 match World.trySynchronizeFacets oldFacetNames (Some address) entity world with
                                 | Right (entity, world) ->
-                                    Overlayer.applyOverlay5 overlayName overlayName entity oldOverlayer world.Subsystems.Overlayer
+                                    let facetNames = Entity.getFacetNames entity
+                                    Overlayer.applyOverlay6 overlayName overlayName facetNames entity oldOverlayer world.Subsystems.Overlayer
                                     World.setEntity address entity world
                                 | Left error -> note <| "There was an issue in applying a reloaded overlay: " + error; world
                             | None -> world)
@@ -616,12 +609,7 @@ module WorldModule =
                     | None -> defaultGameDispatchers
 
                 // make intrinsic overlays
-                let dispatchers =
-                    Map.map Map.objectify entityDispatchers @@
-                    Map.map Map.objectify groupDispatchers @@
-                    Map.map Map.objectify screenDispatchers @@
-                    Map.map Map.objectify gameDispatchers
-                let intrinsicOverlays = World.createIntrinsicOverlays dispatchers facets
+                let intrinsicOverlays = World.createIntrinsicOverlays entityDispatchers facets
 
                 // make the world's components
                 let components =
@@ -659,7 +647,7 @@ module WorldModule =
                       OptScreenTransitionDestinationAddress = None
                       AssetMetadataMap = assetMetadataMap
                       AssetGraphFilePath = AssetGraphFilePath
-                      OverlayRouter = OverlayRouter.make dispatchers userOverlayRoutes
+                      OverlayRouter = OverlayRouter.make entityDispatchers userOverlayRoutes
                       OverlayFilePath = OverlayFilePath
                       UserState = userState }
 
@@ -688,12 +676,6 @@ module WorldModule =
             let groupDispatcher = GroupDispatcher ()
             let screenDispatcher = ScreenDispatcher ()
             let gameDispatcher = GameDispatcher ()
-            let dispatchers =
-                World.pairWithNames
-                    [entityDispatcher :> obj
-                     groupDispatcher :> obj
-                     screenDispatcher :> obj
-                     gameDispatcher :> obj]
 
             // make the world's components
             let components =
@@ -731,7 +713,7 @@ module WorldModule =
                   OptScreenTransitionDestinationAddress = None
                   AssetMetadataMap = Map.empty
                   AssetGraphFilePath = String.Empty
-                  OverlayRouter = OverlayRouter.make dispatchers []
+                  OverlayRouter = OverlayRouter.make (Map.ofList [World.pairWithName entityDispatcher]) []
                   OverlayFilePath = String.Empty
                   UserState = userState }
 

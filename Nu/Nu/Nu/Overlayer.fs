@@ -77,10 +77,11 @@ module Overlayer =
             | None -> Bare
         | None -> Bare
 
-    let private isPropertyOverlaid overlayName propertyName propertyType target overlayer =
-        getPropertyState overlayName propertyName propertyType target overlayer = Overlaid
+    let private isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer =
+        getPropertyState overlayName propertyName propertyType target overlayer = Overlaid ||
+        List.exists (fun facetName -> getPropertyState facetName propertyName propertyType target overlayer = Overlaid) facetNames
 
-    let private isPropertyOverlaid3 propertyName propertyType target overlayer =
+    let private isPropertyOverlaid5 facetNames propertyName propertyType target overlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "OptOverlayName" with
         | null -> false
@@ -88,14 +89,14 @@ module Overlayer =
             match optOverlayNameProperty.GetValue target with
             | :? (string option) as optOverlayName ->
                 match optOverlayName with
-                | Some overlayName -> isPropertyOverlaid overlayName propertyName propertyType target overlayer
+                | Some overlayName -> isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
                 | None -> false
             | _ -> false
 
-    let private tryApplyOverlayToRecordField (property : PropertyInfo) (valueNode : XmlNode) oldOverlayName target oldOverlayer =
+    let private tryApplyOverlayToRecordField facetNames (property : PropertyInfo) (valueNode : XmlNode) oldOverlayName target oldOverlayer =
         let shouldApplyOverlay =
             property.PropertyType <> typeof<Xtension> &&
-            isPropertyOverlaid oldOverlayName property.Name property.PropertyType target oldOverlayer
+            isPropertyOverlaid oldOverlayName facetNames property.Name property.PropertyType target oldOverlayer
         if shouldApplyOverlay then
             let valueStr = valueNode.InnerText
             let converter = AlgebraicConverter property.PropertyType
@@ -103,17 +104,17 @@ module Overlayer =
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
 
-    let private applyOverlayToDotNetProperties oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+    let private applyOverlayToDotNetProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
         for property in targetProperties do
             if property.Name <> "FacetNames" && property.PropertyType <> typeof<string list> then
                 match trySelectNode newOverlayName property.Name newOverlayer with
-                | Some fieldNode -> tryApplyOverlayToRecordField property fieldNode oldOverlayName target oldOverlayer
+                | Some fieldNode -> tryApplyOverlayToRecordField facetNames property fieldNode oldOverlayName target oldOverlayer
                 | None -> ()
 
     // TODO: see if this can be decomposed
-    let private applyOverlayToXtension oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+    let private applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
         let targetType = target.GetType ()
         match targetType.GetProperty "Xtension" with
         | null -> ()
@@ -132,7 +133,7 @@ module Overlayer =
                 let xFields =
                     List.fold
                         (fun xFields (aType, node : XmlNode) ->
-                            if isPropertyOverlaid oldOverlayName node.Name aType target oldOverlayer then
+                            if isPropertyOverlaid oldOverlayName facetNames node.Name aType target oldOverlayer then
                                 let value = AlgebraicDescriptor.convertFromString node.InnerText aType
                                 let xField = { FieldValue = value; FieldType = aType }
                                 (node.Name, xField) :: xFields
@@ -151,28 +152,28 @@ module Overlayer =
         | null -> ()
         | facetNamesProperty ->
             match trySelectNode newOverlayName facetNamesProperty.Name newOverlayer with
-            | Some fieldNode -> tryApplyOverlayToRecordField facetNamesProperty fieldNode oldOverlayName target oldOverlayer
+            | Some fieldNode -> tryApplyOverlayToRecordField [] facetNamesProperty fieldNode oldOverlayName target oldOverlayer
             | None -> ()
 
     /// Apply an overlay to the given target (except for any FacetNames field).
     /// Only the properties / fields that are overlaid by the old overlay as specified by the old
     /// overlayer will be changed.
-    let applyOverlay5 oldOverlayName newOverlayName target oldOverlayer newOverlayer =
-        applyOverlayToDotNetProperties oldOverlayName newOverlayName target oldOverlayer newOverlayer
-        applyOverlayToXtension oldOverlayName newOverlayName target oldOverlayer newOverlayer
+    let applyOverlay6 oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+        applyOverlayToDotNetProperties oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
+        applyOverlayToXtension oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer
 
     /// Apply an overlay to the given target.
     /// Only the properties / fields that are overlaid by the old overlay will be changed.
-    let applyOverlay oldOverlayName newOverlayName target overlayer =
-        applyOverlay5 oldOverlayName newOverlayName target overlayer overlayer
+    let applyOverlay oldOverlayName newOverlayName facetNames target overlayer =
+        applyOverlay6 oldOverlayName newOverlayName facetNames target overlayer overlayer
 
     /// Query that a property should be serialized.
-    let shouldPropertySerialize overlayName propertyName propertyType target overlayer =
-        not <| isPropertyOverlaid overlayName propertyName propertyType target overlayer
+    let shouldPropertySerialize overlayName facetNames propertyName propertyType target overlayer =
+        not <| isPropertyOverlaid overlayName facetNames propertyName propertyType target overlayer
 
     /// Query that a property should be serialized.
-    let shouldPropertySerialize3 propertyName propertyType target overlayer =
-        not <| isPropertyOverlaid3 propertyName propertyType target overlayer
+    let shouldPropertySerialize5 facetNames propertyName propertyType target overlayer =
+        not <| isPropertyOverlaid5 facetNames propertyName propertyType target overlayer
 
     /// Make an Overlayer by loading overlays from a file and then combining it with the given
     /// intrinsic overlays.
