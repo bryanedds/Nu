@@ -17,7 +17,6 @@
         <Name>Back</Name>
         <Position>-184, -224</Position>
         <Size>384, 64</Size>
-        <OptOverlayName>[Some | ButtonDispatcher]</OptOverlayName>
         <Xtension>
           <DownImage type="Nu.RenderModule+Image">[Gui | BackDown]</DownImage>
           <UpImage type="Nu.RenderModule+Image">[Gui | BackUp]</UpImage>
