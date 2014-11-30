@@ -451,9 +451,13 @@ module WorldEntityModule =
 
         static member writeEntity (writer : XmlWriter) (entity : Entity) world =
             writer.WriteAttributeString (DispatcherNameAttributeName, (entity.DispatcherNp.GetType ()).Name)
-            let shouldWriteProperty = fun propertyName propertyType ->
-                let facetNames = Entity.getFacetNames entity
-                Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.Subsystems.Overlayer
+            let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
+                if propertyName = "OptOverlayName" && propertyType = typeof<string option> then
+                    let defaultOptOverlayName = Map.find (Reflection.getTypeName entity.DispatcherNp) world.State.OverlayRouter
+                    defaultOptOverlayName <> (propertyValue :?> string option)
+                else
+                    let facetNames = Entity.getFacetNames entity
+                    Overlayer.shouldPropertySerialize5 facetNames propertyName propertyType entity world.Subsystems.Overlayer
             Serialization.writePropertiesFromTarget shouldWriteProperty writer entity
 
         static member writeEntities (writer : XmlWriter) entities world =
@@ -491,12 +495,10 @@ module WorldEntityModule =
             let entity = World.attachIntrinsicFacetsViaNames entity world
 
             // read the entity's overlay and apply it to its facet names
-            Serialization.readOptOverlayNameToTarget entityNode entity
-            match entity.OptOverlayName with
-            | Some overlayName ->
-                let overlayer = world.Subsystems.Overlayer
-                Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
-            | None -> ()
+            Serialization.tryReadOptOverlayNameToTarget entityNode entity
+            let overlayName = Option.getOrDefault (Option.getOrDefault defaultOverlayName optOverlayName) entity.OptOverlayName
+            let overlayer = world.Subsystems.Overlayer
+            Overlayer.applyOverlayToFacetNames defaultOverlayName overlayName entity overlayer overlayer
 
             // read the entity's facet names
             Serialization.readFacetNamesToTarget entityNode entity

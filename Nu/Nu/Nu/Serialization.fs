@@ -61,7 +61,7 @@ module Serialization =
         { XFields = xFields; CanDefault = false; Sealed = true }
 
     /// Attempt to read a target's property from Xml.
-    let tryReadPropertyToTarget (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
+    let tryReadPropertyToTarget3 (property : PropertyInfo) (valueNode : XmlNode) (target : 'a) =
         if property.PropertyType = typeof<Xtension> then
             let xtension = property.GetValue target :?> Xtension
             let xFields = readXFields valueNode
@@ -74,28 +74,31 @@ module Serialization =
                 let value = converter.ConvertFromString valueStr
                 property.SetValue (target, value)
 
-    /// Read a target's property from Xml if possible.
-    let readPropertyToTarget (fieldNode : XmlNode) (target : 'a) =
+    /// Try to read a target's property from Xml.
+    let tryReadPropertyToTarget (fieldNode : XmlNode) (target : 'a) =
         match typeof<'a>.GetPropertyWritable fieldNode.Name with
         | null -> ()
-        | property -> tryReadPropertyToTarget property fieldNode target
+        | property -> tryReadPropertyToTarget3 property fieldNode target
 
-    /// Read just the target's OptOverlayName from Xml.
-    let readOptOverlayNameToTarget (targetNode : XmlNode) target =
+    /// Try to read just the target's OptOverlayName from Xml.
+    let tryReadOptOverlayNameToTarget (targetNode : XmlNode) target =
         let targetType = target.GetType ()
         let targetProperties = targetType.GetProperties ()
-        let optOverlayNameProperty =
-            Array.find
+        let optOptOverlayNameProperty =
+            Array.tryFind
                 (fun (property : PropertyInfo) ->
                     property.Name = "OptOverlayName" &&
                     property.PropertyType = typeof<string option> &&
                     property.CanWrite)
                 targetProperties
-        match targetNode.[optOverlayNameProperty.Name] with
-        | null -> ()
-        | optOverlayNameNode ->
-            let optOverlayName = readOptOverlayName optOverlayNameNode
-            optOverlayNameProperty.SetValue (target, optOverlayName)
+        match optOptOverlayNameProperty with
+        | Some optOverlayNameProperty ->
+            match targetNode.[optOverlayNameProperty.Name] with
+            | null -> ()
+            | optOverlayNameNode ->
+                let optOverlayName = readOptOverlayName optOverlayNameNode
+                optOverlayNameProperty.SetValue (target, optOverlayName)
+        | None -> ()
 
     /// Read just the target's FacetNames from Xml.
     let readFacetNamesToTarget (targetNode : XmlNode) target =
@@ -119,7 +122,7 @@ module Serialization =
         for node in targetNode.ChildNodes do
             if  node.Name <> "OptOverlayName" &&
                 node.Name <> "FacetNames" then
-                readPropertyToTarget node target
+                tryReadPropertyToTarget node target
 
     /// Write an Xtension to Xml.
     // NOTE: XmlWriter can also write to an XmlDocument / XmlNode instance by using
@@ -128,14 +131,13 @@ module Serialization =
         for xFieldKvp in xtension.XFields do
             let xFieldName = xFieldKvp.Key
             let xFieldType = xFieldKvp.Value.FieldType
+            let xFieldValue = xFieldKvp.Value.FieldValue
             if  isPropertyPersistentByName xFieldName &&
-                shouldWriteProperty xFieldName xFieldType then
-                let xValue = xFieldKvp.Value.FieldValue
-                let xValueType = xFieldKvp.Value.FieldType
-                let xValueStr = (AlgebraicConverter xValueType).ConvertToString xValue
+                shouldWriteProperty xFieldName xFieldType xFieldValue then
+                let xFieldValueStr = (AlgebraicConverter xFieldType).ConvertToString xFieldValue
                 writer.WriteStartElement xFieldName
-                writer.WriteAttributeString (TypeAttributeName, xValueType.FullName)
-                writer.WriteString xValueStr
+                writer.WriteAttributeString (TypeAttributeName, xFieldType.FullName)
+                writer.WriteString xFieldValueStr
                 writer.WriteEndElement ()
 
     /// Write all of a target's properties to Xml.
@@ -153,7 +155,7 @@ module Serialization =
                 writer.WriteEndElement ()
             | _ ->
                 if  isPropertyPersistent target property &&
-                    shouldWriteProperty property.Name property.PropertyType then
+                    shouldWriteProperty property.Name property.PropertyType propertyValue then
                     let converter = AlgebraicConverter property.PropertyType
                     let valueStr = converter.ConvertToString propertyValue
                     writer.WriteElementString (property.Name, valueStr)

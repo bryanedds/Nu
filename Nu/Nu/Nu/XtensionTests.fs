@@ -71,7 +71,7 @@ module XtensionTests =
         let xtn = Xtension.mixed
         let xtn = xtn?TestField <- 5
         let xtn = { xtn with Sealed = true } // NOTE: equality semantics for Xtension include safety configuration info
-        use stream = writeToStream (Serialization.writeXtension tautology2) xtn
+        use stream = writeToStream (Serialization.writeXtension tautology3) xtn
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
         let xtnRead = readFromStream (fun node _ -> Serialization.readXtension node) stream <| Xtension.mixed
         Assert.Equal (xtn, xtnRead)
@@ -79,7 +79,7 @@ module XtensionTests =
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
         let xtd = { Xtension = Xtension.mixed }
         let xtd = xtd?TestField <- 5
-        use stream = writeToStream (Serialization.writePropertiesFromTarget tautology2) xtd
+        use stream = writeToStream (Serialization.writePropertiesFromTarget tautology3) xtd
         ignore <| stream.Seek (0L, SeekOrigin.Begin)
         let xtdRead = readFromStream (fun node target -> Serialization.readPropertiesToTarget node target; target) stream { Xtension = Xtension.mixed }
         Assert.Equal (xtd, xtdRead)
