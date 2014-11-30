@@ -240,9 +240,12 @@ module GuiDispatcherModule =
         inherit EntityDispatcher ()
 
         static let handleMouseLeft event world =
-            let (gui : Entity, mouseButtonData : MouseButtonData) = World.unwrapSD event world
-            let mousePositionWorld = Camera.mouseToWorld gui.ViewType mouseButtonData.Position world.Camera
-            let eventHandling = if gui.SwallowMouseLeft && Math.isPointInBounds3 mousePositionWorld gui.Position gui.Size then Resolve else Cascade
+            let (address, gui : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
+            let eventHandling =
+                if World.isAddressSelected address world && gui.Visible then
+                    let mousePositionWorld = Camera.mouseToWorld gui.ViewType mouseButtonData.Position world.Camera
+                    if gui.SwallowMouseLeft && Math.isPointInBounds3 mousePositionWorld gui.Position gui.Size then Resolve else Cascade
+                else Cascade
             (eventHandling, world)
         
         static member FieldDefinitions =
