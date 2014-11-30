@@ -252,7 +252,7 @@ module Reflection =
         attachIntrinsicFacetsViaNames dispatcherMap facetMap instrinsicFacetNames target
 
     /// Create intrinsic overlays.
-    let createIntrinsicOverlays hasFacetNamesField usesFacets sourceTypes =
+    let createIntrinsicOverlays hasFacetNamesField sourceTypes =
 
         // get the unique, decomposed source types
         let sourceTypeHashSet = HashSet ()
@@ -265,14 +265,10 @@ module Reflection =
         let overlayDescriptors =
             List.map
                 (fun (sourceType : Type) ->
-                    let optBaseName = if sourceType.BaseType <> typeof<obj> then Some sourceType.BaseType.Name else None
+                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
                     let fieldDefinitions = getFieldDefinitionsNoInherit sourceType
                     let hasFacetNamesField = hasFacetNamesField sourceType
-                    let optIntrinsicFacetNames =
-                        if usesFacets sourceType
-                        then Some <| getIntrinsicFacetNamesNoInherit sourceType
-                        else None
-                    (sourceType.Name, optBaseName, optIntrinsicFacetNames, fieldDefinitions, hasFacetNamesField))
+                    (sourceType.Name, includeNames, fieldDefinitions, hasFacetNamesField))
                 sourceTypes
 
         // create a document to house the overlay nodes
@@ -280,18 +276,10 @@ module Reflection =
         let root = document.CreateElement RootNodeName
 
         // construct the overlay nodes
-        for (overlayName, optBaseName, optFacetNames, definitions, hasFacetNamesField) in overlayDescriptors do
+        for (overlayName, includeNames, definitions, hasFacetNamesField) in overlayDescriptors do
 
             // make an empty overlay node
             let overlayNode = document.CreateElement overlayName
-
-            // combine the overlay's include names into a single list
-            let includeNames =
-                match (optBaseName, optFacetNames) with
-                | (Some baseName, Some facetNames) -> baseName :: facetNames
-                | (Some baseName, None) -> [baseName]
-                | (None, Some facetNames) -> facetNames
-                | (None, None) -> []
 
             // construct the "includes" attribute
             match includeNames with
