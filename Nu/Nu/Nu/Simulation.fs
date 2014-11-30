@@ -1066,8 +1066,6 @@ module WorldEventModule =
     type World with
 
         /// Unwrap commonly-useful values of an event.
-        /// TODO: these implementations build in the notion that only simulants are addressable.
-        /// While this is true for now, it may not be true later. Make this more general!
         static member unwrapASDE<'d, 's> (event : 'd Event) world =
             let subscriber = World.getOptSimulant (atoua event.SubscriberAddress) world |> Option.get |> Simulant.toGeneric<'s>
             (Address.changeType<obj, 's> event.SubscriberAddress, subscriber, event.Data, event)
