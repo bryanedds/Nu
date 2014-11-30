@@ -18,6 +18,10 @@ module Miscellanea =
     /// No matter what you pass it, it returns true.
     let inline tautology2 _ _ = true
 
+    /// The tautology function with three arguments.
+    /// No matter what you pass it, it returns true.
+    let inline tautology3 _ _ _ = true
+
     /// The absurdity function.
     /// No matter what you pass it, it returns false.
     let inline absurdity _ = false

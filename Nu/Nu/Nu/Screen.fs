@@ -171,7 +171,7 @@ module WorldScreenModule =
         static member writeScreenHierarchy (writer : XmlWriter) screenHierarchy world =
             let (screen : Screen, groupHierarchies) = screenHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (screen.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget tautology2 writer screen
+            Serialization.writePropertiesFromTarget tautology3 writer screen
             writer.WriteStartElement GroupsNodeName
             World.writeGroupHierarchies writer groupHierarchies world
             writer.WriteEndElement ()

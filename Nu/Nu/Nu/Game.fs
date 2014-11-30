@@ -76,7 +76,7 @@ module WorldGameModule =
         static member writeGameHierarchy (writer : XmlWriter) gameHierarchy world =
             let (game : Game, screenHierarchies) = gameHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
-            Serialization.writePropertiesFromTarget tautology2 writer game
+            Serialization.writePropertiesFromTarget tautology3 writer game
             writer.WriteStartElement ScreensNodeName
             World.writeScreenHierarchies writer screenHierarchies world
             writer.WriteEndElement ()
