@@ -198,7 +198,7 @@ module GameplayDispatcherModule =
             List.map CharacterActivity.advanceNavigation enemies
 
         static let isTurnProgressing enemies player =
-            CharacterActivity.anyActivitiesInProgress (player :: enemies)
+            CharacterActivity.anyActivitiesInProgress <| player :: enemies
 
         static let determinePlayerTurn playerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies camera enemies player =
 
