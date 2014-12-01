@@ -8,6 +8,7 @@ open Nu
 [<AutoOpen>]
 module MetamapModule =
 
+    // TODO: get rid of these?
     let mutable DebugWalkCounter = 0
     let mutable DebugTryStumbleCounter = 0
     let mutable DebugWanderCounter = 0
@@ -94,15 +95,15 @@ module MetamapModule =
 
         static member tryStumbleUntil predicate tryLimit optBias source rand =
             DebugTryStumbleCounter <- DebugTryStumbleCounter + 1
-            let take = if tryLimit <= 0 then id else Seq.take tryLimit
             let destinations =
-                take <|
-                    Seq.unfold
-                        (fun rand ->
-                            let (destination, rand) = Direction.stumble optBias source rand
-                            Some ((destination, rand), rand))
-                        rand
-            Seq.tryFind predicate destinations
+                Seq.unfold
+                    (fun rand ->
+                        let (destination, rand) = Direction.stumble optBias source rand
+                        Some ((destination, rand), rand))
+                    rand
+            let destinations = if tryLimit <= 0 then destinations else Seq.take tryLimit destinations
+            let destinations = Seq.tryFind predicate destinations
+            destinations
 
         static member wander stumbleLimit stumbleBounds tracking optBias source rand =
             DebugWanderCounter <- DebugWanderCounter + 1
@@ -120,28 +121,30 @@ module MetamapModule =
                              Set.contains (destination + Vector2i.Left) trail]
                         let containCount = List.filter ((=) true) contains |> List.length
                         containCount <= 1)
-            let tail =
+            let pathHead = (source, rand)
+            let pathTail =
                 Seq.unfold
-                    (fun (source, trail, rand) ->
+                    (fun (trail, source, rand) ->
                         match Direction.tryStumbleUntil (stumblePredicate trail) stumbleLimit optBias source rand with
                         | Some (destination, rand) ->
-                            let state = (destination, Set.add destination trail, rand)
+                            let state = (Set.add destination trail, destination, rand)
                             Some ((destination, rand), state)
                         | None -> None)
-                    (source, Set.singleton source, rand)
-            seq { yield (source, rand); yield! tail }
+                    (Set.singleton source, source, rand)
+            let path = seq { yield pathHead; yield! pathTail }
+            path
 
         static member tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias tryLimit source rand =
-            let take = if tryLimit <= 0 then id else Seq.take tryLimit
             let paths =
-                take <|
-                    Seq.unfold
-                        (fun (source, rand) ->
-                            let path = Direction.wander stumbleLimit stumbleBounds tracking optBias source rand
-                            let state = (source, Rand.advance rand)
-                            Some (path, state))
-                        (source, rand)
-            Seq.tryFind predicate paths
+                Seq.unfold
+                    (fun (source, rand) ->
+                        let path = Direction.wander stumbleLimit stumbleBounds tracking optBias source rand
+                        let state = (source, Rand.advance rand)
+                        Some (path, state))
+                    (source, rand)
+            let paths = if tryLimit <= 0 then paths else Seq.take tryLimit paths
+            let paths = Seq.tryFind predicate paths
+            paths
 
         static member wanderUntil predicate stumbleLimit stumbleBounds tracking optBias source rand =
             Option.get <| Direction.tryWanderUntil predicate stumbleLimit stumbleBounds tracking optBias 0 source rand
