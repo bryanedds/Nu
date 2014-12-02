@@ -48,13 +48,13 @@ module Either =
     /// The either monad.
     let either = EitherBuilder ()
 
-    /// Queries if the either is a Left value.
+    /// Query whether the either is a Left value.
     let isLeft either =
         match either with
         | Right _ -> false
         | Left _ -> true
     
-    /// Queries if the either is a Right value.
+    /// Query whether the either is a Right value.
     let isRight either =
         match either with
         | Right _ -> true
