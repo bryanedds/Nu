@@ -105,18 +105,22 @@ module AddressModule =
     /// Converts Address types.
     and AddressConverter (targetType : Type) =
         inherit TypeConverter ()
+        
         override this.CanConvertTo (_, destType) =
             destType = typeof<string> ||
             destType = targetType
+            
         override this.ConvertTo (_, _, source, destType) =
             if destType = typeof<string> then
                 let toStringMethod = targetType.GetMethod "ToString"
                 toStringMethod.Invoke (source, null)
             elif destType = targetType then source
             else failwith "Invalid AddressConverter conversion to source."
+            
         override this.CanConvertFrom (_, sourceType) =
             sourceType = typeof<string> ||
             sourceType = targetType
+            
         override this.ConvertFrom (_, _, source) =
             match source with
             | :? string ->
