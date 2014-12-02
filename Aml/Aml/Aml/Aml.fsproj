@@ -86,7 +86,7 @@
     <Compile Include="Writer.fs" />
     <Compile Include="Conversions.fs" />
     <Compile Include="Reader.fs" />
-    <Compile Include="EvaluatorPrims.fs" />
+    <Compile Include="EvaluatorPrimitives.fs" />
     <Compile Include="Evaluator.fs" />
     <Compile Include="Environment.fs" />
     <Compile Include="Repl.fs" />

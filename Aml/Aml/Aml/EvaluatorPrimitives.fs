@@ -13,7 +13,7 @@ open Aml.Initial
 open Aml.Writer
 open Aml.Conversions
 
-module EvaluatorPrims =
+module EvaluatorPrimitives =
 
     /// Make an evaluation result.
     let makeEvalResult value env = { Value = value; Env = env }
