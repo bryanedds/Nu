@@ -292,7 +292,6 @@ module SimulationModule =
     /// The game type that hosts the various screens used to navigate through a game.
     and [<CLIMutable; StructuralEquality; NoComparison>] Game =
         { Id : Guid
-          Name : string
           OptSelectedScreenAddress : Screen Address option
           CreationTimeNp : DateTime
           DispatcherNp : GameDispatcher

@@ -20,18 +20,13 @@ module GameModule =
         static member dispatchesAs (dispatcherTargetType : Type) (game : Game) =
             Reflection.dispatchesAs dispatcherTargetType game.DispatcherNp
 
-        static member make dispatcher optName =
-            let id = Core.makeId ()
-            let game =
-                { Id = id
-                  Name = match optName with None -> acstring id | Some name -> name
-                  OptSelectedScreenAddress = None
-                  CreationTimeNp = DateTime.UtcNow
-                  DispatcherNp = dispatcher
-                  Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true } }
-            Reflection.attachFields dispatcher game
-            game
-
+        static member makeG dispatcher =
+            { Id = Core.makeId ()
+              OptSelectedScreenAddress = None
+              CreationTimeNp = DateTime.UtcNow
+              DispatcherNp = dispatcher
+              Xtension = { XFields = Map.empty; CanDefault = false; Sealed = true }}
+            
 [<AutoOpen>]
 module WorldGameModule =
 
@@ -73,6 +68,11 @@ module WorldGameModule =
             | (_, Some []) -> false
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
+        static member makeGame dispatcher =
+            let game = Game.makeG dispatcher
+            Reflection.attachFields dispatcher game
+            game
+
         static member writeGameHierarchy (writer : XmlWriter) gameHierarchy world =
             let (game : Game, screenHierarchies) = gameHierarchy
             writer.WriteAttributeString (DispatcherNameAttributeName, (game.DispatcherNp.GetType ()).Name)
@@ -110,8 +110,7 @@ module WorldGameModule =
                     note <| "Could not locate dispatcher '" + dispatcherName + "'."
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName world.Components.GameDispatchers
-            let game = Game.make dispatcher None
-            Reflection.attachFields game.DispatcherNp game
+            let game = World.makeGame dispatcher
             Serialization.readPropertiesToTarget gameNode game
             let screenHierarchies =
                 World.readScreenHierarchies

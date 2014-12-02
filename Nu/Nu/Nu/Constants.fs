@@ -8,7 +8,6 @@ open Nu
 
 module Constants =
 
-    let [<Literal>] DefaultGameName = "Game"
     let [<Literal>] DefaultScreenName = "Screen"
     let [<Literal>] DefaultGroupName = "Group"
     let [<Literal>] DefaultEntityName = "Entity"
@@ -28,7 +27,7 @@ module Constants =
     let [<Literal>] PackageNodeName = "Package"
     let [<Literal>] AssetNodeName = "Asset"
     let [<Literal>] AssetsNodeName = "Assets"
-    let [<Literal>] GameNodeName = DefaultGameName
+    let [<Literal>] GameNodeName = "Game"
     let [<Literal>] ScreenNodeName = DefaultScreenName
     let [<Literal>] ScreensNodeName = DefaultScreenName + "s"
     let [<Literal>] GroupNodeName = DefaultGroupName

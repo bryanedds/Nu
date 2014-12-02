@@ -651,9 +651,12 @@ module WorldModule =
                       OverlayFilePath = OverlayFilePath
                       UserState = userState }
 
+                // make the game
+                let game = World.makeGame activeGameDispatcher
+
                 // make the world itself
                 let world =
-                    { Game = Game.make activeGameDispatcher <| Some DefaultGameName
+                    { Game = game
                       Screens = Map.empty
                       Groups = Map.empty
                       Entities = Map.empty
@@ -690,7 +693,7 @@ module WorldModule =
                 { AudioPlayer = { MockAudioPlayer  = () }
                   Renderer = { MockRenderer = () }
                   Integrator = { MockIntegrator = () }
-                  Overlayer = Overlayer.makeEmpty () }
+                  Overlayer = { Overlays = XmlDocument () }}
 
             // make the world's message queues
             let messageQueues =
@@ -717,9 +720,12 @@ module WorldModule =
                   OverlayFilePath = String.Empty
                   UserState = userState }
 
+            // make the game
+            let game = World.makeGame gameDispatcher
+
             // make the world itself
             let world =
-                { Game = Game.make gameDispatcher <| Some DefaultGameName
+                { Game = game
                   Screens = Map.empty
                   Groups = Map.empty
                   Entities = Map.empty

@@ -199,6 +199,3 @@ module Overlayer =
 
         // make overlay
         { Overlays = overlays }
-
-    /// Make an empty Overlayer.
-    let makeEmpty () = { Overlays = XmlDocument () }
