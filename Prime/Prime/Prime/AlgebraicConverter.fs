@@ -104,6 +104,7 @@ module AlgebraicConverterModule =
                 | _ ->
                     let convertFrom = typeConverterType.GetMethod ("ConvertFrom", [|typeof<obj>|])
                     convertFrom.Invoke (typeConverter, [|readerValue|])
+
             | None ->
                 if destType.Name = typedefof<_ list>.Name then
                     match readerValue with
