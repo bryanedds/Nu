@@ -35,7 +35,7 @@ module Overlayer =
                 let optLeaf = branch.SelectSingleNode propertyName
                 match optLeaf with
                 | null ->
-                    let optIncludeNames = branch.Attributes.[IncludeAttributeName]
+                    let optIncludeNames = branch.Attributes.[IncludesAttributeName]
                     match optIncludeNames with
                     | null -> None
                     | includeNames ->
