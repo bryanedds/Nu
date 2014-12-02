@@ -20,7 +20,7 @@ module GameModule =
         static member dispatchesAs (dispatcherTargetType : Type) (game : Game) =
             Reflection.dispatchesAs dispatcherTargetType game.DispatcherNp
 
-        static member makeG dispatcher =
+        static member make dispatcher =
             { Id = Core.makeId ()
               OptSelectedScreenAddress = None
               CreationTimeNp = DateTime.UtcNow
@@ -69,7 +69,7 @@ module WorldGameModule =
             | (addressHead :: _, Some (screenAddressHead :: _)) -> addressHead = screenAddressHead
 
         static member makeGame dispatcher =
-            let game = Game.makeG dispatcher
+            let game = Game.make dispatcher
             Reflection.attachFields dispatcher game
             game
 
