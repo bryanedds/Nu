@@ -74,7 +74,8 @@ module AddressModule =
             Address<'t>.make list
 
         /// The empty address.
-        static member empty = Address<'t>.make []
+        static member empty =
+            Address<'t>.make []
 
         interface 't Address IComparable with
             member this.CompareTo that =
