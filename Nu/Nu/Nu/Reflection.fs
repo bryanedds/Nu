@@ -284,9 +284,9 @@ module Reflection =
             // construct the "includes" attribute
             match includeNames with
             | _ :: _ ->
-                let includeAttribute = document.CreateAttribute IncludeAttributeName
-                includeAttribute.InnerText <- AlgebraicDescriptor.convertToString includeNames
-                ignore <| overlayNode.Attributes.Append includeAttribute
+                let includesAttribute = document.CreateAttribute IncludesAttributeName
+                includesAttribute.InnerText <- AlgebraicDescriptor.convertToString includeNames
+                ignore <| overlayNode.Attributes.Append includesAttribute
             | _ -> ()
 
             // construct the field nodes
