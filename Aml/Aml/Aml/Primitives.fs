@@ -15,8 +15,8 @@ module PrimitivesModule =
 
     /// The manner in which entries are appended to a procedural frame.
     type AppendType =
-        | AppendToNewFrame of int (*size*)
-        | AppendToHeadFrame of int (*offset*)
+        | AppendToNewFrame of Size : int
+        | AppendToHeadFrame of Offset : int
 
 module Primitives =
 

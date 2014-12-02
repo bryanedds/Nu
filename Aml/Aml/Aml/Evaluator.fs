@@ -15,7 +15,7 @@ open Aml.Initial
 open Aml.Writer
 open Aml.Conversions
 open Aml.Reader
-open Aml.EvaluatorPrims
+open Aml.EvaluatorPrimitives
 
 [<AutoOpen>]
 module EvaluatorModule =

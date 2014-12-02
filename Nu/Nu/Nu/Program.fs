@@ -35,6 +35,13 @@ module Program =
     memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
     need for complex intermediate states (albeit against a physics state that is one frame old). *)
 
+    (* WISDOM & TODO: the more generalized code is, the less ways in which it can be wrong.
+    
+    Due to that fact, much of Nu, including Addresses, Xtensions, serialization & reflection code,
+    as well as the purely functional event system, could be generalized and moved out to Prime.
+    
+    This non-trivial refactoring task should be undertaken as soon as time permits. *)
+
     (* WISDOM: On threading physics...
     
     A simulation that would put physics on another thread should likely do so in a different app
