@@ -16,17 +16,18 @@ module DesyncTests =
         World.init ()
         let world = World.makeEmpty 0
         let obs = observe UnitEventAddress (atooa UnitEventAddress)
-        #if DEBUG
         let proc =
             desync {
-                let! _ = call incUserState
+                do! call incUserState
+                for i in 0 .. 1 do pass () // does not compile!
                 return! call incUserStateTwice }
-        #else
-        let proc = bind { Operation = incUserState; OptNext = None } (fun _ -> returnM incUserStateTwice)
-        #endif
         let world = snd <| Desync.run tautology obs proc world
         let world = World.publish4 () UnitEventAddress GameAddress world
-        Assert.Equal (2, World.getUserState world)
+        Assert.Equal (1, World.getUserState world)
+        let world = World.publish4 () UnitEventAddress GameAddress world
+        Assert.Equal (1, World.getUserState world)
+        let world = World.publish4 () UnitEventAddress GameAddress world
+        Assert.Equal (1, World.getUserState world)
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (3, World.getUserState world)
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates

@@ -4,35 +4,61 @@ open Nu
 [<AutoOpen>]
 module DesyncModule =
 
-    // let d = desync { for i in 0 .. 3 do! snd; do! moveEnemy 0; do! moveEnemy 1; do! movePlayer }
-    // let (unsubscribe, world) = run ... d world
-
-    type [<NoEquality; NoComparison>] 'a Desync =
+    // Desynchronizes a series of operations.
+    type 'a Desync =
         { Operation : 'a
           OptNext : 'a Desync option }
 
-    let bind (m : 'a Desync) (f : 'a -> 'a Desync) : 'a Desync =
+    // this works, but is not really bind due to no 'b type...
+    let bind (m : 'a Desync) (f : unit -> 'a Desync) : 'a Desync =
+        { Operation = m.Operation; OptNext = Some <| f () }
+
+    // seems like it would be hard to get this wrong...
+    let returnFrom op =
+        op
+
+    // probably wrong, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
+    let forM m f =
         { Operation = m.Operation; OptNext = Some <| f m.Operation }
 
-    let pass (_, world) =
-        (Cascade, world)
+    // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
+    let yieldM op =
+        { Operation = op; OptNext = None }
 
+    // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
+    let rec combine m n =
+        match m.OptNext with
+        | Some next ->
+            match next.OptNext with
+            | None -> { Operation = next.Operation; OptNext = Some n }
+            | Some next2 -> { Operation = next.Operation; OptNext = Some <| combine next2 n }
+        | None -> n
+
+    // essentially the desync constructor
     let call op =
         { Operation = op; OptNext = None }
 
-    let returnFrom op =
-        op
+    // a desync constructor with a no-op
+    let pass () =
+        call World.handleAsPass
 
     type DesyncBuilder () =
 
         member this.Bind (m, f) = bind m f
         member this.ReturnFrom op = returnFrom op
+        member this.For (ops, f) = forM ops f
+        member this.Yield op = yieldM op
+        member this.Combine (m, n) = combine m n
+        member this.Zero () = pass ()
+        member this.Delay f = (fun () -> f ())
 
-    let desync = DesyncBuilder ()
+    let desync =
+        DesyncBuilder ()
 
 [<RequireQualifiedAccess>]
 module Desync =
 
+    /// Integrates desync with Nu's purely functional event system.
     let run shouldAdvance (observable : Observable<'a, 'o>) (desync : ('a Event * World -> EventHandling * World) Desync) world =
         let callbackKey = World.makeCallbackKey ()
         let world = World.addCallbackState callbackKey desync world
