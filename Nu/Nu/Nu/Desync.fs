@@ -31,10 +31,6 @@ module DesyncModule =
         Seq.map (fun _ -> f ()) ts
 
     // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
-    let yieldM op =
-        { Operation = op; OptNext = None }
-
-    // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
     let rec combine m n =
         match m.OptNext with
         | Some next ->
@@ -48,7 +44,6 @@ module DesyncModule =
         member this.Bind (m, f) = bind m f
         member this.ReturnFrom op = returnFrom op
         member this.For (ops, f) = forM ops f
-        member this.Yield op = yieldM op
         member this.Combine (m, n) = combine m n
         member this.Zero () = pass ()
         member this.Delay f = (fun () -> f ())
