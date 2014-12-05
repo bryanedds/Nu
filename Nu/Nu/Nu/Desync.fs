@@ -27,7 +27,7 @@ module DesyncModule =
         op
 
     // probably wrong, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
-    let forM ts f =
+    let forM (ts : 'a seq) (f : unit -> 'b Desync) =
         Seq.map (fun _ -> f ()) ts
 
     // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
