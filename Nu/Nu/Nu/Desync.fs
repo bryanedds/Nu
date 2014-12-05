@@ -9,6 +9,15 @@ module DesyncModule =
         { Operation : 'a
           OptNext : 'a Desync option }
 
+    // essentially the desync constructor
+    let call op =
+        { Operation = op; OptNext = None }
+
+    // a desync constructor with a no-op
+    // TODO: rename to zero?
+    let pass () =
+        call World.handleAsPass
+
     // this works, but is not really bind due to no 'b type...
     let bind (m : 'a Desync) (f : unit -> 'a Desync) : 'a Desync =
         { Operation = m.Operation; OptNext = Some <| f () }
@@ -18,8 +27,13 @@ module DesyncModule =
         op
 
     // probably wrong, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
-    let forM m f =
-        { Operation = m.Operation; OptNext = Some <| f m.Operation }
+    let forM ts f =
+        Seq.fold
+            (fun optM _ ->
+                match optM with
+                | Some m -> Some { Operation = m.Operation; OptNext = Some <| f () }
+                | None -> Some <| pass ())
+            ts
 
     // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
     let yieldM op =
@@ -33,14 +47,6 @@ module DesyncModule =
             | None -> { Operation = next.Operation; OptNext = Some n }
             | Some next2 -> { Operation = next.Operation; OptNext = Some <| combine next2 n }
         | None -> n
-
-    // essentially the desync constructor
-    let call op =
-        { Operation = op; OptNext = None }
-
-    // a desync constructor with a no-op
-    let pass () =
-        call World.handleAsPass
 
     type DesyncBuilder () =
 
