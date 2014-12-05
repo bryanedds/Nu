@@ -19,7 +19,8 @@ module DesyncTests =
         let proc =
             desync {
                 do! call incUserState
-                for i in 0 .. 1 do pass () // does not compile!
+                for i in 0 .. 1 do // does not compile!
+                    pass ()
                 return! call incUserStateTwice }
         let world = snd <| Desync.run tautology obs proc world
         let world = World.publish4 () UnitEventAddress GameAddress world
