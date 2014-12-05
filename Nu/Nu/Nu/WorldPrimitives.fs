@@ -615,6 +615,10 @@ module WorldEventModule =
         /// Unwrap commonly-useful values of an event.
         static member unwrapD<'d, 's> (event : 'd Event) (_ : World) =
             event.Data
+            
+        /// Ignore all handled events.
+        static member handleAsPass (_, world) =
+            (Cascade, world)
 
         /// Swallow all handled events.
         static member handleAsSwallow<'d> (_ : 'd Event) (world : World) =
