@@ -194,7 +194,7 @@ module WorldModule =
             let world = World.unsubscribe SplashScreenTickKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleTick idlingTime (inc ticks)
-                let world = World.subscribe SplashScreenTickKey subscription event.Address event.SubscriberAddress world
+                let world = World.subscribe SplashScreenTickKey subscription event.EventAddress event.SubscriberAddress world
                 (Cascade, world)
             else
                 match World.getOptSelectedScreenAddress world with

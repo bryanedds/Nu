@@ -99,9 +99,9 @@ module SimulationModule =
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] 'a Event =
-        { Address : 'a Address
-          SubscriberAddress : obj Address
+        { SubscriberAddress : obj Address
           PublisherAddress : obj Address
+          EventAddress : 'a Address
           Data : 'a }
 
     /// Describes whether an event has been resolved or should cascade.
