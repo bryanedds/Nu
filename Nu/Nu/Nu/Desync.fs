@@ -14,7 +14,7 @@ module DesyncModule =
         { Operation = op; OptNext = None }
 
     // a desync constructor with a no-op
-    // TODO: rename to zero?
+
     let pass () =
         call World.handleAsPass
 
@@ -28,12 +28,7 @@ module DesyncModule =
 
     // probably wrong, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
     let forM ts f =
-        Seq.fold
-            (fun optM _ ->
-                match optM with
-                | Some m -> Some { Operation = m.Operation; OptNext = Some <| f () }
-                | None -> Some <| pass ())
-            ts
+        Seq.map (fun _ -> f ()) ts
 
     // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
     let yieldM op =
