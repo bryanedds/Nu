@@ -296,9 +296,9 @@ module World =
                     if  (match eventHandling with Cascade -> true | Resolve -> false) &&
                         (match world.State.Liveness with Running -> true | Exiting -> false) then
                         let event =
-                            { Address = eventAddress
-                              SubscriberAddress = subscriberAddress
+                            { SubscriberAddress = subscriberAddress
                               PublisherAddress = atooa publisherAddress
+                              EventAddress = eventAddress
                               Data = eventData }
                         let callableSubscription = unbox<BoxableSubscription> subscription
                         let result = callableSubscription event world

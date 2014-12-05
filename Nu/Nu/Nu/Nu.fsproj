@@ -90,10 +90,12 @@
     <Compile Include="Dispatchers.fs" />
     <Compile Include="World.fs" />
     <Compile Include="Observer.fs" />
+    <Compile Include="Desync.fs" />
     <Compile Include="AddressTests.fs" />
     <Compile Include="XtensionTests.fs" />
     <Compile Include="WorldTests.fs" />
     <Compile Include="ObserverTests.fs" />
+    <Compile Include="DesyncTests.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="App.config" />
