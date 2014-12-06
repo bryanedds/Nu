@@ -16,16 +16,14 @@ module DesyncTests =
     let [<Fact>] desyncWorks () =
         World.init ()
         let world = World.makeEmpty 0
-        let obs = observe UnitEventAddress (atooa UnitEventAddress)
-        
         let proc =
             desync {
                 do! call incUserState
                 do! loop [0 .. 1] (fun i ->
                     if i = 0 then call incUserState
                     else pass ())
-                return incUserStateTwice }
-
+                return! call incUserStateTwice }
+        let obs = observe UnitEventAddress (atooa UnitEventAddress)
         let world = snd <| Desync.runWithEventSpecifyingHandling tautology obs proc world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
