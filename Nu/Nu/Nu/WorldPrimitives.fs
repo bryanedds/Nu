@@ -617,7 +617,7 @@ module WorldEventModule =
             event.Data
             
         /// Ignore all handled events.
-        static member handleAsPass (_ : 'd Event, world : World) =
+        static member handleAsPass (_ : 'd Event) (world : World) =
             (Cascade, world)
 
         /// Swallow all handled events.
