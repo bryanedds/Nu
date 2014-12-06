@@ -27,8 +27,20 @@ module DesyncModule =
         op
 
     // probably wrong, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
-    let forM (ts : 'a seq) (f : unit -> 'b Desync) =
-        Seq.map (fun _ -> f ()) ts
+    //let forM (ts : int seq) (f : int -> 'a Desync) : 'a Desync seq =
+    //    Seq.map (fun t -> f t) ts
+
+    // probably wrong, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
+    let forM (ts : int seq) (f : int -> 'a Desync) : 'a Desync =
+        let folded =
+            Seq.fold
+                (fun optM t ->
+                    match optM with
+                    | Some m -> Some { Operation = m.Operation; OptNext = Some <| f t }
+                    | None -> None)
+                None
+                ts
+        Option.get folded
 
     // probably useless, but had to define this to get use of `for` closer to compiling (tho it still doesn't)
     let rec combine m n =
@@ -42,11 +54,12 @@ module DesyncModule =
     type DesyncBuilder () =
 
         member this.Bind (m, f) = bind m f
+        member this.Return op = call op
         member this.ReturnFrom op = returnFrom op
         member this.For (ops, f) = forM ops f
         member this.Combine (m, n) = combine m n
+        member this.Yield op = call op
         member this.Zero () = pass ()
-        member this.Delay f = (fun () -> f ())
 
     let desync =
         DesyncBuilder ()
