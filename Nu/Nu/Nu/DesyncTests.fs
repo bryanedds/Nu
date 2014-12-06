@@ -26,7 +26,7 @@ module DesyncTests =
                     else pass ())
                 //if 1 = 2 then pass () else skip () // WHY CAN'T I GET THIS TO COMPILE (other than Delay missing)?
                 return! call incUserStateTwice }
-        let obs = observe UnitEventAddress (atooa UnitEventAddress)
+        let obs = observe UnitEventAddress GameAddress
         let world = snd <| Desync.runDesyncReferencingEventsSpecifyingHandling tautology obs proc world
         
         // assert the first publish executes the first desync'd operation

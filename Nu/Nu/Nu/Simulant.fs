@@ -22,36 +22,6 @@ module Simulant =
     let setChild childAdder childRemover address parent child =
         setOptChild childAdder childRemover address parent (Some child)
 
-    let toEntity simulant =
-        match simulant with
-        | Entity entity -> entity
-        | Group _ | Screen _ | Game _ -> failwith "Invalid conversion of simulant to entity."
-
-    let toGroup simulant =
-        match simulant with
-        | Group group -> group
-        | Entity _ | Screen _ | Game _ -> failwith "Invalid conversion of simulant to group."
-
-    let toScreen simulant =
-        match simulant with
-        | Screen screen -> screen
-        | Entity _ | Group _ | Game _ -> failwith "Invalid conversion of simulant to screen."
-
-    let toGame simulant =
-        match simulant with
-        | Game game -> game
-        | Entity _ | Group _ | Screen _ -> failwith "Invalid conversion of simulant to game."
-
-    let toGeneric<'s> simulant =
-        let s = typeof<'s>
-        // OPTIMIZATION: Entity type is most common and therefore checked first.
-        if s = typeof<Entity> then toEntity simulant :> obj :?> 's
-        elif s = typeof<Group> then toGroup simulant :> obj :?> 's
-        elif s = typeof<Screen> then toScreen simulant :> obj :?> 's
-        elif s = typeof<Game> then toGame simulant :> obj :?> 's
-        elif s = typeof<obj> then simulant :> obj :?> 's
-        else failwith <| "Invalid simulation type '" + s.Name + "'."
-
 [<AutoOpen>]
 module SimulantAddressModule =
 

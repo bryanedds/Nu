@@ -99,8 +99,8 @@ module SimulationModule =
 
     /// An event used by Nu's purely functional event system.
     and [<ReferenceEquality>] 'a Event =
-        { SubscriberAddress : obj Address
-          PublisherAddress : obj Address
+        { SubscriberAddress : Simulant Address
+          PublisherAddress : Simulant Address
           EventAddress : 'a Address
           Data : 'a }
 
@@ -221,6 +221,10 @@ module SimulationModule =
         abstract member GetQuickSize : Entity * World -> Vector2
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
+    /// A marker interface for simulation types (Game, Screen, Group, Entity).
+    and Simulant =
+        interface end
+
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
     /// TODO: now that there are field descriptors, consider making their persistence configurable
@@ -245,6 +249,8 @@ module SimulationModule =
           OptOverlayName : string option
           Xtension : Xtension }
 
+        interface Simulant
+
         static member (?) (this : Entity, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
@@ -260,6 +266,8 @@ module SimulationModule =
           CreationTimeNp : DateTime
           DispatcherNp : GroupDispatcher
           Xtension : Xtension }
+
+        interface Simulant
 
         static member (?) (this : Group, memberName) =
             Xtension.(?) (this.Xtension, memberName)
@@ -282,6 +290,8 @@ module SimulationModule =
           DispatcherNp : ScreenDispatcher
           Xtension : Xtension }
 
+        interface Simulant
+
         static member (?) (this : Screen, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
@@ -297,19 +307,14 @@ module SimulationModule =
           DispatcherNp : GameDispatcher
           Xtension : Xtension }
 
+        interface Simulant
+
         static member (?) (this : Game, memberName) =
             Xtension.(?) (this.Xtension, memberName)
 
         static member (?<-) (this : Game, memberName, value) =
             let xtension = Xtension.(?<-) (this.Xtension, memberName, value)
             { this with Xtension = xtension }
-
-    /// Abstracts over the simulation types (Game, Screen, Group, Entity).
-    and [<StructuralEquality; NoComparison>] Simulant =
-        | Game of Game
-        | Screen of Screen
-        | Group of Group
-        | Entity of Entity
 
     /// The world's components.
     and [<ReferenceEquality>] Components =
