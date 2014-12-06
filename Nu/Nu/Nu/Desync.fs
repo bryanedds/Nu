@@ -4,6 +4,7 @@ open Nu
 [<AutoOpen>]
 module DesyncModule =
 
+    // NOTE: sadly, I think this is not a true monadic bind due to a lack of a 'b type generalization...
     let internal desyncBind (m : 'a list) (f : unit -> 'a list) : 'a list = m @ f ()
     let internal desyncReturn op = [op]
     let internal desyncReturnFrom op = op
