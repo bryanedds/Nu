@@ -16,12 +16,26 @@ module DesyncTests =
         World.init ()
         let world = World.makeEmpty 0
         let obs = observe UnitEventAddress (atooa UnitEventAddress)
+        
+        let proc3 = desync { return incUserStateTwice }
+        ignore proc3
+        
+        let proc4 = desync.Return incUserStateTwice
+        ignore proc4
+        
+        let proc2 =
+            desync.Bind (call incUserState, fun () ->
+                desync.For ([0 .. 1], fun _ ->
+                    desync.Bind (pass (), fun () -> desync.Return incUserState)))
+        ignore proc2
+        
         let proc =
             desync {
                 do! call incUserState
-                for i in 0 .. 1 do // does not compile!
-                    pass ()
-                return! call incUserStateTwice }
+                //for i in [0 .. 1] do pass ()
+                do! desync.For ([0 .. 1], fun _ -> pass ())
+                return incUserStateTwice }
+        
         let world = snd <| Desync.run tautology obs proc world
         let world = World.publish4 () UnitEventAddress GameAddress world
         Assert.Equal (1, World.getUserState world)
