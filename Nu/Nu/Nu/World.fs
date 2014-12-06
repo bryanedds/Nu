@@ -33,18 +33,18 @@ module WorldModule =
 
         static member getSimulantDefinition (address : Simulant Address) world =
             match address.Names with
-            | [] -> Game <| world.Game
-            | [_] -> Screen <| World.getScreen (atosa address) world
-            | [_; _] -> Group <| World.getGroup (atoga address) world
-            | [_; _; _] -> Entity <| World.getEntity (atoea address) world
+            | [] -> world.Game :> Simulant
+            | [_] -> World.getScreen (atosa address) world :> Simulant
+            | [_; _] -> World.getGroup (atoga address) world :> Simulant
+            | [_; _; _] -> World.getEntity (atoea address) world :> Simulant
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member getOptSimulantDefinition address world =
             match address.Names with
-            | [] -> Some <| Game world.Game
-            | [_] -> Option.map Screen <| World.getOptScreen (atosa address) world
-            | [_; _] -> Option.map Group <| World.getOptGroup (atoga address) world
-            | [_; _; _] -> Option.map Entity <| World.getOptEntity (atoea address) world
+            | [] -> Some (world.Game :> Simulant)
+            | [_] -> Option.map (fun s -> s :> Simulant) <| World.getOptScreen (atosa address) world
+            | [_; _] -> Option.map (fun g -> g :> Simulant) <| World.getOptGroup (atoga address) world
+            | [_; _; _] -> Option.map (fun e -> e :> Simulant) <| World.getOptEntity (atoea address) world
             | _ -> failwith <| "Invalid simulant address '" + acstring address + "'."
 
         static member tryGetIsSelectedScreenIdling world =

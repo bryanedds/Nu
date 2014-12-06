@@ -356,7 +356,7 @@ module Program =
         match form.propertyGrid.SelectedObject with
         | null -> (Cascade, world)
         | :? EntityTypeDescriptorSource as entityTds ->
-            if event.PublisherAddress = atooa entityTds.Address then
+            if event.PublisherAddress = atoua entityTds.Address then
                 form.propertyGrid.SelectedObject <- null
                 let world = World.transformUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)
