@@ -22,11 +22,11 @@ module DesyncTests =
         let world = World.makeEmpty 0
         let proc =
             desync {
-                do! waitE (fun e -> lift <| incUserState e)
-                do! wait <| lift incUserStateNoEvent
-                do! respondE incUserState
-                do! respond incUserStateNoEvent
-                do! wait <| loop 0 inc (fun i -> i < 2) (fun _ -> (lift incUserStateTwiceNoEvent)) }
+                do! waitE (fun e -> call <| incUserState e)
+                do! wait <| call incUserStateNoEvent
+                do! reactE incUserState
+                do! react incUserStateNoEvent
+                do! wait <| loop 0 inc (fun i -> i < 2) (fun _ -> (call incUserStateTwiceNoEvent)) }
 
         let obs = observe IntEventAddress GameAddress
         let world = snd <| Desync.runDesyncAssumingCascade obs proc world
