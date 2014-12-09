@@ -30,7 +30,7 @@ module Desync =
     let get : Desync<'e, 's, 's> =
         Desync (fun s -> (s, Right s))
 
-    let put (s : 's) : Desync<'e, 's, unit> =
+    let set (s : 's) : Desync<'e, 's, unit> =
         Desync (fun _ -> (s, Right ()))
 
     let advance (m : 'e -> Desync<'e, 's, 'a>) (e : 'e) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
@@ -58,7 +58,7 @@ module Desync =
             desync {
                 let! s = get
                 let s = expr e s
-                do! put s }
+                do! set s }
 
     let lift expr : Desync<'e, 's, unit> =
         liftE (fun _ -> expr) Unchecked.defaultof<'e>
