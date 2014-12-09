@@ -21,8 +21,8 @@ module Unsync =
     let put (s : 's) : Unsync<'s, unit> =
         Unsync (fun _ -> (s, Right ()))
 
-    let wait k : Unsync<'s, 'a> =
-        Unsync (fun s -> (s, Left k))
+    let wait m : Unsync<'s, 'a> =
+        Unsync (fun s -> (s, Left m))
 
     let returnM (a : 'a) : Unsync<'s, 'a> =
         Unsync (fun s -> (s, Right a))
@@ -38,7 +38,28 @@ module Unsync =
         member this.Return op = returnM op
         member this.Bind (m, cont) = bind m cont
 
-    let unsync = UnsyncBuilder ()
+    let unsync =
+        UnsyncBuilder ()
+
+    let pass () =
+        wait <| returnM ()
+
+    let lift expr =
+        unsync {
+            let! s = get
+            let s = expr s
+            do! put s }
+
+    let respond expr =
+        wait <| lift expr
+
+    let rec loop state advance pred expr =
+        if pred state then
+            let state = advance state
+            unsync {
+                do! expr state
+                do! loop state advance pred expr }
+        else returnM ()
 
     /// Loop in the context of desynchronization.
     //let loop (ts : 't seq) (cont : 't -> 'a list) : 'a list =
