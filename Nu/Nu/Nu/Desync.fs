@@ -53,21 +53,21 @@ module Desync =
     let pass () : Desync<'e, 's, unit> =
         passE ()
 
-    let liftE expr : 'e -> Desync<'e, 's, unit> =
+    let callE expr : 'e -> Desync<'e, 's, unit> =
         fun e ->
             desync {
                 let! s = get
                 let s = expr e s
                 do! set s }
 
-    let lift expr : Desync<'e, 's, unit> =
-        liftE (fun _ -> expr) Unchecked.defaultof<'e>
+    let call expr : Desync<'e, 's, unit> =
+        callE (fun _ -> expr) Unchecked.defaultof<'e>
 
-    let respondE expr : Desync<'e, 's, unit> =
-        waitE <| (fun e -> liftE expr e)
+    let reactE expr : Desync<'e, 's, unit> =
+        waitE <| (fun e -> callE expr e)
 
-    let respond expr : Desync<'e, 's, unit> =
-        respondE (fun _ -> expr)
+    let react expr : Desync<'e, 's, unit> =
+        reactE (fun _ -> expr)
 
     let rec loopE (state : 't) (advance : 't -> 't) (pred : 't -> bool) (m : 'e -> 't -> Desync<'e, 's, unit>) =
         fun e ->
