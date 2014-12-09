@@ -26,7 +26,7 @@ module DesyncTests =
                 do! wait <| call incUserStateNoEvent
                 do! reactE incUserState
                 do! react incUserStateNoEvent
-                do! wait <| loop 0 inc (fun i -> i < 2) (fun _ -> (call incUserStateTwiceNoEvent)) }
+                do! wait <| loop 0 inc (fun i _ -> i < 2) (fun _ -> (call incUserStateTwiceNoEvent)) }
         let obs = observe IntEventAddress GameAddress
         let world = snd <| Desync.runDesyncAssumingCascade obs proc world
         
