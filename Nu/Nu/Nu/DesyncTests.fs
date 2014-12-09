@@ -20,24 +20,10 @@ module DesyncTests =
         let world = World.makeEmpty 0
         let proc =
             unsync {
-
-                do! wait <|
-                    unsync {
-                        let! world = get
-                        let world = World.transformUserState inc world
-                        do! put world }
-                
-                do! wait <|
-                    unsync {
-                        let! world = get
-                        let world = World.transformUserState inc world
-                        do! put world }
-                
-                do! wait <|
-                    unsync {
-                        let! world = get
-                        let world = World.transformUserState (inc >> inc) world
-                        do! put world }}
+                do! respond <| World.transformUserState inc
+                do! respond <| World.transformUserState inc
+                do! wait <| loop 0 inc (fun i -> i < 2) (fun _ ->
+                    lift <| World.transformUserState (inc >> inc)) }
 
         let obs = observe UnitEventAddress GameAddress
         let world = snd <| Unsync.runDesyncAssumingCascade obs proc world
@@ -56,7 +42,7 @@ module DesyncTests =
         
         // and so on...
         let world = World.publish4 () UnitEventAddress GameAddress world
-        Assert.Equal (4, World.getUserState world)
+        Assert.Equal (6, World.getUserState world)
         
         // assert no garbage is left over after desync'd computation is concluded
         Assert.True <| Map.isEmpty world.Callbacks.CallbackStates
