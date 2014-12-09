@@ -69,17 +69,27 @@ module Desync =
     let react expr : Desync<'e, 's, unit> =
         reactE (fun _ -> expr)
 
-    let rec loopE (state : 't) (advance : 't -> 't) (pred : 't -> bool) (m : 'e -> 't -> Desync<'e, 's, unit>) =
+    let rec loopE (i : 'i) (advance : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'e -> 'i -> Desync<'e, 's, unit>) =
         fun e ->
-            if pred state then
-                let state = advance state
-                desync {
-                    do! m e state
-                    do! loopE state advance pred m e }
-            else returnM ()
+            desync {
+                let! s = get
+                do! if pred i s then
+                        let i = advance i
+                        desync {
+                            do! m e i
+                            do! loopE i advance pred m e }
+                    else returnM ()
+                do! m e i
+                do! loopE i advance pred m e }
 
-    let loop (state : 't) (advance : 't -> 't) (pred : 't -> bool) (m : 't -> Desync<'e, 's, unit>) =
-        loopE state advance pred (fun _ -> m) Unchecked.defaultof<'e>
+    let loop (i : 'i) (advance : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'e, 's, unit>) =
+        loopE i advance pred (fun _ -> m) Unchecked.defaultof<'e>
+
+    let duringE (pred : 's -> bool) (m : 'e -> Desync<'e, 's, unit>) =
+        loopE () id (fun _ -> pred) (fun e _ -> m e)
+
+    let during (pred : 's -> bool) (m : Desync<'e, 's, unit>) =
+        duringE pred (fun _ -> m) Unchecked.defaultof<'e>
 
     let private runDesync4 makeSubscription (observable : Observable<'a, 'o>) (desync : Desync<'a Event, World, unit>) world =
         let callbackKey = World.makeCallbackKey ()
