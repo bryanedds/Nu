@@ -184,7 +184,7 @@ module World =
         { world with State = state }
 
     /// Transform the UserState field of the world.
-    let transformUserState (transformer : 'u -> 'v) world =
+    let updateUserState (transformer : 'u -> 'v) world =
         let state = getUserState world
         let state = transformer state
         setUserState state world

@@ -24,7 +24,6 @@
 #load "PersistentHashMap.fs"
 #load "HashSet.fs"
 #load "Dictionary.fs"
-#load "Lensx.fs"
 #load "AlgebraicReader.fs"
 #load "AlgebraicConverter.fs"
 #load "AlgebraicString.fs"
@@ -32,6 +31,7 @@
 #load "MapPlus.fs"
 #load "RduTree.fs"
 #load "Rand.fs"
+#load "Desync.fs"
 
 open System
 open Prime

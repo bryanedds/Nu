@@ -68,12 +68,12 @@ module Program =
         Map.toValueList entityMap
 
     let pushPastWorld pastWorld world =
-        World.transformUserState
+        World.updateUserState
             (fun editorState -> { editorState with PastWorlds = pastWorld :: editorState.PastWorlds; FutureWorlds = [] })
             world
 
     let clearOtherWorlds world =
-        World.transformUserState (fun editorState -> { editorState with PastWorlds = []; FutureWorlds = [] }) world
+        World.updateUserState (fun editorState -> { editorState with PastWorlds = []; FutureWorlds = [] }) world
 
     type [<TypeDescriptionProvider (typeof<EntityTypeDescriptorProvider>)>] EntityTypeDescriptorSource =
         { Address : Entity Address
@@ -358,7 +358,7 @@ module Program =
         | :? EntityTypeDescriptorSource as entityTds ->
             if event.PublisherAddress = atoua entityTds.Address then
                 form.propertyGrid.SelectedObject <- null
-                let world = World.transformUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
+                let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = DragEntityNone }) world
                 (Cascade, world)
             else (Cascade, world)
         | _ -> failwith "Unexpected match failure in NuEdit.Program.handleNuEntityRemoving."
@@ -367,7 +367,7 @@ module Program =
         let handled = if World.isGamePlaying world then Cascade else Resolve
         let mousePosition = World.getMousePositionF world
         ignore <| tryMousePick form mousePosition worldChangers refWorld world
-        let world = World.transformUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
+        let world = World.updateUserState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
 
     let handleNuEntityDragBegin (form : NuEditForm) worldChangers refWorld (_ : MouseButtonData Event) world =
@@ -379,7 +379,7 @@ module Program =
                 let world = pushPastWorld world world
                 let mousePositionWorld = Camera.mouseToWorld entity.ViewType mousePosition world.Camera
                 let dragState = DragEntityPosition (entity.Position + mousePositionWorld, mousePositionWorld, entityAddress)
-                let world = World.transformUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
+                let world = World.updateUserState (fun editorState -> { editorState with DragEntityState = dragState }) world
                 (handled, world)
             | None -> (handled, world)
         else (Cascade, world)
@@ -402,7 +402,7 @@ module Program =
         let mousePosition = World.getMousePositionF world
         let mousePositionScreen = Camera.mouseToScreen mousePosition world.Camera
         let dragState = DragCameraPosition (world.Camera.EyeCenter + mousePositionScreen, mousePositionScreen)
-        let world = World.transformUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
+        let world = World.updateUserState (fun editorState -> { editorState with DragCameraState = dragState }) world
         (Resolve, world)
 
     let handleNuCameraDragEnd (_ : NuEditForm) (_ : MouseButtonData Event) world =
@@ -590,7 +590,7 @@ module Program =
                 let world = pushPastWorld world world
                 let entity = World.getEntity entityTds.Address world
                 let (entity, world) = World.removeEntity entityTds.Address entity world
-                let world = World.transformUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
+                let world = World.updateUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
                 form.propertyGrid.SelectedObject <- null
                 world
             | _ -> trace <| "Invalid cut operation (likely a code issue in NuEdit)."; world)
@@ -602,7 +602,7 @@ module Program =
             | null -> world
             | :? EntityTypeDescriptorSource as entityTds ->
                 let entity = World.getEntity entityTds.Address world
-                World.transformUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
+                World.updateUserState (fun editorState -> editorState.Clipboard := Some entity; editorState) world
             | _ -> trace <| "Invalid copy operation (likely a code issue in NuEdit)."; world)
 
     let handleFormPaste atMouse (form : NuEditForm) (worldChangers : WorldChangers) refWorld (_ : EventArgs) =

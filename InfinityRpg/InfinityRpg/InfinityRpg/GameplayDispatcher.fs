@@ -4,6 +4,7 @@ open System.IO
 open SDL2
 open OpenTK
 open Prime
+open Prime.Desync
 open Nu
 open Nu.Constants
 open Nu.WorldConstants
@@ -304,13 +305,12 @@ module GameplayDispatcherModule =
                 | NavigationTurn _ ->
                     let world = advanceCharacters gameplayAddress playerTurn world
                     let advancer = desync {
-                        do! pass ()
-                        do! during
-                                (anyActivitiesInProgress gameplayAddress)
-                                (desync {
-                                    do! pass ()
-                                    let! playerTurn = getBy <| determinePlayerTurn NoInput gameplayAddress
-                                    do! call <| advanceCharacters gameplayAddress playerTurn })}
+                        do! next ()
+                        do! during (anyActivitiesInProgress gameplayAddress) (desync {
+                            do! next ()
+                            do! updateBy
+                                    (determinePlayerTurn NoInput gameplayAddress)
+                                    (advanceCharacters gameplayAddress) })}
                     let tickObs = observe TickEventAddress gameplayAddress
                     snd <| runDesyncAssumingCascade tickObs advancer world
                 | CancelTurn -> world
