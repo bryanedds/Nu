@@ -10,8 +10,8 @@ module ReactTests =
 
     let IntEventAddress = stoa<int> "Test"
     let UnitEventAddress = stoa<unit> "Test"
-    let incUserStateAndCascade _ world = (Cascade, World.transformUserState inc world)
-    let incUserStateAndResolve _ world = (Resolve, World.transformUserState inc world)
+    let incUserStateAndCascade _ world = (Cascade, World.updateUserState inc world)
+    let incUserStateAndResolve _ world = (Resolve, World.updateUserState inc world)
 
     let [<Fact>] subscribeWorks () =
         World.init ()

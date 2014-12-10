@@ -19,8 +19,8 @@ module WorldTests =
     let TestGroupAddress = ltoa<Group> [TestScreenName; TestGroupName]
     let TestScreenAddress = ltoa<Screen> [TestScreenName]
     let TestFilePath = "Test.xml"
-    let incUserStateAndCascade (_ : unit Event) world = (Cascade, World.transformUserState inc world)
-    let incUserStateAndResolve (_ : unit Event) world = (Resolve, World.transformUserState inc world)
+    let incUserStateAndCascade (_ : unit Event) world = (Cascade, World.updateUserState inc world)
+    let incUserStateAndResolve (_ : unit Event) world = (Resolve, World.updateUserState inc world)
 
     let [<Fact>] emptyWorldDoesntExplode () =
         World.init ()
