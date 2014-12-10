@@ -14,7 +14,6 @@ open Nu
 module NameKeyModule =
 
     /// A name key for optimized look-up in hashing containers.
-    /// TODO: check if turning this into a struct could improve performance.
     /// TODO: maybe put this in another place?
     type [<CustomEquality; NoComparison>] NameKey =
         { Hash : int // OPTIMIZATION: hash is most frequently accessed, so comes first

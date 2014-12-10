@@ -8,6 +8,7 @@ open Nu
 open Nu.Constants
 open Nu.WorldConstants
 open Nu.Observer
+open Nu.Desync
 open InfinityRpg
 open InfinityRpg.Constants
 
@@ -22,8 +23,6 @@ module GameplayDispatcherModule =
         static member setOngoingRandState (value : uint64) (screen : Screen) = screen?OngoingRandState <- value
         member screen.ShallLoadGame = screen?ShallLoadGame : bool
         static member setShallLoadGame (value : bool) (screen : Screen) = screen?ShallLoadGame <- value
-        member screen.PlayerTurnInput = screen?PlayerTurnInput : PlayerTurnInput
-        static member setPlayerTurnInput (value : PlayerTurnInput) (screen : Screen) = screen?PlayerTurnInput <- value
 
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
@@ -243,15 +242,28 @@ module GameplayDispatcherModule =
             // probably should never reach this, but forward value if so
             | CancelTurn -> CancelTurn
 
-        static let tryAdvanceCharacters playerTurn occupationMap enemies player rand =
+        static let advanceCharacters gameplayAddress playerInput world =
 
-            // try to set character activities
+            // construct screen context
+            let gameplay = World.getScreen gameplayAddress world
+            let rand = Rand.make gameplay.OngoingRandState
+
+            // construct local context
+            let (field, enemies, player) = getParticipants gameplayAddress world
+            let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
+            let occupationMapWithoutEnemies = OccupationMap.makeFromFieldTiles field.FieldMapNp.FieldTiles
+            let occupationMapWithAdjacentEnemies = List.fold (flip <| OccupationMap.occupyByAdjacentCharacter playerPositionM) occupationMapWithoutEnemies enemies
+            let occupationMapWithEnemies = List.fold (flip OccupationMap.occupyByCharacter) occupationMapWithoutEnemies enemies
+            let playerTurn = determinePlayerTurn playerInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
+            let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
+            
+            // try to advance characters
             let (enemies, player, rand) =
                 match playerTurn with
                 | NavigationTurn navigationDescriptor ->
 
                     // determine enemy turns
-                    let (enemyTurns, rand) = determineEnemyTurns occupationMap enemies rand
+                    let (enemyTurns, rand) = determineEnemyTurns occupationMapWithEveryone enemies rand
 
                     // ->
                     // -> any intermediate processing of turns goes here
@@ -275,55 +287,54 @@ module GameplayDispatcherModule =
 
             // advance enemies
             let enemies = advanceEnemyNavigations enemies
-            (enemies, player, rand)
-
-        static let handleTick event world =
-
-            // construct context
-            let (gameplayAddress, gameplay : Screen) = World.unwrapAS event world
-            let (field, enemies, player) = getParticipants gameplayAddress world
-            let rand = Rand.make gameplay.OngoingRandState
-            let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
-            let occupationMapWithoutEnemies = OccupationMap.makeFromFieldTiles field.FieldMapNp.FieldTiles
-            let occupationMapWithAdjacentEnemies = List.fold (flip <| OccupationMap.occupyByAdjacentCharacter playerPositionM) occupationMapWithoutEnemies enemies
-            let occupationMapWithEnemies = List.fold (flip OccupationMap.occupyByCharacter) occupationMapWithoutEnemies enemies
-
-            // determine player turn from input
-            let playerTurn = determinePlayerTurn gameplay.PlayerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
-            let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
-            let gameplay = Screen.setPlayerTurnInput NoInput gameplay
-            let world = World.setScreen gameplayAddress gameplay world
-
-            // try advance and update participants
-            let (enemies, player, rand) = tryAdvanceCharacters playerTurn occupationMapWithEveryone enemies player rand
+            
+            // update local context
             let world = setParticipants gameplayAddress field enemies player world
 
-            // update ongoing rand state
+            // update screen context
             let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
-            let world = World.setScreen gameplayAddress gameplay world
-            (Cascade, world)
+            World.setScreen gameplayAddress gameplay world
+
+        static let tryAdvanceTurn gameplayAddress playerInput world =
+
+            // construct advancer process
+            let advancer =
+                desync {
+                    do! call <| advanceCharacters gameplayAddress playerInput
+                    let! world = get
+                    let playerActivity = (getPlayer gameplayAddress world).ActivityState
+                    do! match playerActivity with
+                        | Navigation _ 
+                        | Action _ ->
+                            desync {
+                                do! pass ()
+                                do! during
+                                        (fun world -> (getPlayer gameplayAddress world).ActivityState <> NoActivity)
+                                        (react <| advanceCharacters gameplayAddress NoInput) }
+                        | NoActivity -> returnM () }
+
+            // run advancer process
+            let tickObs = observe TickEventAddress gameplayAddress
+            snd <| runDesyncAssumingCascade tickObs advancer world
 
         static let handleTouchFeeler event world =
-            let (gameplayAddress, gameplay) = World.unwrapAS event world
-            let gameplay = Screen.setPlayerTurnInput (Touch event.Data) gameplay
-            let world = World.setScreen gameplayAddress gameplay world
+            let gameplayAddress = World.unwrapA event world
+            let playerInput = Touch event.Data
+            let world = tryAdvanceTurn gameplayAddress playerInput world
             (Cascade, world)
 
         static let handleDownDetail direction event world =
-            let (gameplayAddress, gameplay) = World.unwrapAS event world
-            let gameplay = Screen.setPlayerTurnInput (DetailNavigation direction) gameplay
-            let world = World.setScreen gameplayAddress gameplay world
+            let gameplayAddress = World.unwrapA event world
+            let playerInput = DetailNavigation direction
+            let world = tryAdvanceTurn gameplayAddress playerInput world
             (Cascade, world)
 
         static member FieldDefinitions =
             [define? ContentRandState Rand.DefaultSeedState
              define? OngoingRandState Rand.DefaultSeedState
-             define? ShallLoadGame false
-             define? PlayerTurnInput NoInput]
+             define? ShallLoadGame false]
 
         override dispatcher.Register (gameplayAddress, gameplay, world) =
-            let world = observe TickEventAddress gameplayAddress |> filter isSelected |> monitor handleTick world |> snd
-            let world = observe (TouchEventAddress ->>- getHudFeelerAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor handleTouchFeeler world |> snd
             let world = observe (TouchEventAddress ->>- getHudFeelerAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor handleTouchFeeler world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailUpAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail North) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail East) world |> snd
