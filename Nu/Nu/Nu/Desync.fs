@@ -2,18 +2,19 @@
 open Prime
 open Nu
 
-module Desync =
+[<AutoOpen>]
+module DesyncModule =
 
     type [<NoComparison; NoEquality>] Desync<'e, 's, 'a> =
         Desync of ('s -> 's * Either<'e -> Desync<'e, 's, 'a>, 'a>)
 
-    let private step (m : Desync<'e, 's, 'a>) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
+    let internal step (m : Desync<'e, 's, 'a>) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
         match m with Desync f -> f s
 
-    let private returnM (a : 'a) : Desync<'e, 's, 'a> =
+    let internal returnM (a : 'a) : Desync<'e, 's, 'a> =
         Desync (fun s -> (s, Right a))
         
-    let rec private bind (m : Desync<'e, 's, 'a>) (cont : 'a -> Desync<'e, 's, 'b>) : Desync<'e, 's, 'b> =
+    let rec internal bind (m : Desync<'e, 's, 'a>) (cont : 'a -> Desync<'e, 's, 'b>) : Desync<'e, 's, 'b> =
         Desync (fun s ->
             match step m s with
             | (s', Left m') -> (s', Left (fun e -> bind (m' e) cont))
@@ -26,6 +27,8 @@ module Desync =
 
     let desync =
         DesyncBuilder ()
+
+module Desync =
 
     let get : Desync<'e, 's, 's> =
         Desync (fun s -> (s, Right s))
@@ -53,6 +56,9 @@ module Desync =
     let pass () : Desync<'e, 's, unit> =
         passE ()
 
+    let returnM () : Desync<'e, 's, unit> =
+        returnM ()
+
     let callE expr : 'e -> Desync<'e, 's, unit> =
         fun e ->
             desync {
@@ -74,13 +80,11 @@ module Desync =
             desync {
                 let! s = get
                 do! if pred i s then
-                        let i = advance i
                         desync {
                             do! m e i
+                            let i = advance i
                             do! loopE i advance pred m e }
-                    else returnM ()
-                do! m e i
-                do! loopE i advance pred m e }
+                    else returnM () }
 
     let loop (i : 'i) (advance : 'i -> 'i) (pred : 'i -> 's -> bool) (m : 'i -> Desync<'e, 's, unit>) =
         loopE i advance pred (fun _ -> m) Unchecked.defaultof<'e>
