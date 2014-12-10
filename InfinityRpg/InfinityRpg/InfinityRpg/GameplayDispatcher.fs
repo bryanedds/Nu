@@ -228,8 +228,8 @@ module GameplayDispatcherModule =
 
         static let determinePlayerTurnFromInput playerInput gameplayAddress world =
             match playerInput with
-            | Touch touchPosition -> determinePlayerTurnFromTouch touchPosition gameplayAddress world
-            | DetailNavigation direction -> determinePlayerTurnFromDetailNavigation direction gameplayAddress world
+            | TouchInput touchPosition -> determinePlayerTurnFromTouch touchPosition gameplayAddress world
+            | DetailInput direction -> determinePlayerTurnFromDetailNavigation direction gameplayAddress world
             | NoInput -> NoTurn
 
         static let determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world =
@@ -319,13 +319,13 @@ module GameplayDispatcherModule =
 
         static let handleTouchFeeler event world =
             let gameplayAddress = World.unwrapA event world
-            let playerInput = Touch event.Data
+            let playerInput = TouchInput event.Data
             let world = tryAdvanceTurn playerInput gameplayAddress world
             (Cascade, world)
 
         static let handleDownDetail direction event world =
             let gameplayAddress = World.unwrapA event world
-            let playerInput = DetailNavigation direction
+            let playerInput = DetailInput direction
             let world = tryAdvanceTurn playerInput gameplayAddress world
             (Cascade, world)
 
