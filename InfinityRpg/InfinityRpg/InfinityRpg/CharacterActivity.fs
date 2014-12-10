@@ -19,9 +19,9 @@ module CharacterActivityModule =
         | CancelTurn
         | NoTurn
 
-    type [<StructuralEquality; NoComparison>] PlayerTurnInput =
-        | Touch of Vector2
-        | DetailNavigation of Direction
+    type [<StructuralEquality; NoComparison>] PlayerInput =
+        | TouchInput of Vector2
+        | DetailInput of Direction
         | NoInput
 
 [<RequireQualifiedAccess>]
