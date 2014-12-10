@@ -199,50 +199,54 @@ module GameplayDispatcherModule =
         static let isTurnProgressing enemies player =
             CharacterActivity.anyActivitiesInProgress <| player :: enemies
 
-        static let determinePlayerTurn playerTurnInput occupationMapWithAdjacentEnemies occupationMapWithEnemies camera enemies player =
-
-            // determine player turn from their current activity
-            match CharacterActivity.determineTurnFromActivityState player with
-            | NoTurn ->
-
-                // determine player turn from gameplay input
-                match playerTurnInput with
-                | Touch touchPosition ->
-                    if not <| isTurnProgressing enemies player then
-                        let touchPositionW = Camera.mouseToWorld Relative touchPosition camera
-                        let playerTurn = CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player
-                        match playerTurn with
-                        | NavigationTurn navigationDescriptor as navigationTurn ->
-                            let firstNavigationNode = List.head <| Option.get ^| navigationDescriptor.OptNavigationPath
-                            if Map.find firstNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
-                            else navigationTurn
-                        | CancelTurn -> CancelTurn
-                        | NoTurn -> NoTurn
-                    else NoTurn
-
-                // determine player turn
-                | DetailNavigation direction ->
-                    if not <| isTurnProgressing enemies player
-                    then CharacterActivity.determineTurnFromDirection direction occupationMapWithEnemies player
-                    else NoTurn
-
-                // no turn
-                | NoInput -> NoTurn
-
-            // navigate if not blocked, cancel otherwise
-            | NavigationTurn navigationDescriptor as navigationTurn ->
-                let walkDescriptor = navigationDescriptor.WalkDescriptor
+        static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
+            let (field, enemies, player) = getParticipants gameplayAddress world
+            if not <| isTurnProgressing enemies player then
+                let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
                 let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
-                if playerPositionM = walkDescriptor.WalkOriginM then
-                    let walkDestinationM = walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection
-                    if Map.find walkDestinationM occupationMapWithEnemies then CancelTurn
+                let occupationMapWithAdjacentEnemies = OccupationMap.makeFromFieldTilesAndAdjacentCharacters playerPositionM field.FieldMapNp.FieldTiles enemies
+                match CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player with
+                | NavigationTurn navigationDescriptor as navigationTurn ->
+                    let firstNavigationNode = List.head <| Option.get ^| navigationDescriptor.OptNavigationPath
+                    let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                    if Map.find firstNavigationNode.PositionM occupationMapWithEnemies then CancelTurn
                     else navigationTurn
-                else navigationTurn
-            
-            // probably should never reach this, but forward value if so
+                | CancelTurn -> CancelTurn
+                | NoTurn -> NoTurn
+            else NoTurn
+
+        static let determinePlayerTurnFromDetailNavigation direction gameplayAddress world =
+            let (field, enemies, player) = getParticipants gameplayAddress world
+            if not <| isTurnProgressing enemies player then
+                let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                CharacterActivity.determineTurnFromDirection direction occupationMapWithEnemies player
+            else NoTurn
+
+        static let determinePlayerTurnFromInput playerInput gameplayAddress world =
+            match playerInput with
+            | Touch touchPosition -> determinePlayerTurnFromTouch touchPosition gameplayAddress world
+            | DetailNavigation direction -> determinePlayerTurnFromDetailNavigation direction gameplayAddress world
+            | NoInput -> NoTurn
+
+        static let determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world =
+            let (field, enemies, player) = getParticipants gameplayAddress world
+            let walkDescriptor = navigationDescriptor.WalkDescriptor
+            let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
+            if playerPositionM = walkDescriptor.WalkOriginM then
+                let walkDestinationM = walkDescriptor.WalkOriginM + Direction.toVector2i walkDescriptor.WalkDirection
+                let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
+                if Map.find walkDestinationM occupationMapWithEnemies then CancelTurn
+                else NavigationTurn navigationDescriptor
+            else NavigationTurn navigationDescriptor
+
+        static let determinePlayerTurn playerInput gameplayAddress world =
+            let player = getPlayer gameplayAddress world
+            match CharacterActivity.determineTurnFromActivityState player with
+            | NoTurn -> determinePlayerTurnFromInput playerInput gameplayAddress world
+            | NavigationTurn navigationDescriptor -> determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world
             | CancelTurn -> CancelTurn
 
-        static let advanceCharacters gameplayAddress playerInput world =
+        static let advanceCharacters gameplayAddress playerTurn world =
 
             // construct screen context
             let gameplay = World.getScreen gameplayAddress world
@@ -250,12 +254,7 @@ module GameplayDispatcherModule =
 
             // construct local context
             let (field, enemies, player) = getParticipants gameplayAddress world
-            let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
-            let occupationMapWithoutEnemies = OccupationMap.makeFromFieldTiles field.FieldMapNp.FieldTiles
-            let occupationMapWithAdjacentEnemies = List.fold (flip <| OccupationMap.occupyByAdjacentCharacter playerPositionM) occupationMapWithoutEnemies enemies
-            let occupationMapWithEnemies = List.fold (flip OccupationMap.occupyByCharacter) occupationMapWithoutEnemies enemies
-            let playerTurn = determinePlayerTurn playerInput occupationMapWithAdjacentEnemies occupationMapWithEnemies world.Camera enemies player
-            let occupationMapWithEveryone = OccupationMap.occupyByTurn playerTurn occupationMapWithEnemies
+            let occupationMap = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles (player :: enemies)
             
             // try to advance characters
             let (enemies, player, rand) =
@@ -263,7 +262,7 @@ module GameplayDispatcherModule =
                 | NavigationTurn navigationDescriptor ->
 
                     // determine enemy turns
-                    let (enemyTurns, rand) = determineEnemyTurns occupationMapWithEveryone enemies rand
+                    let (enemyTurns, rand) = determineEnemyTurns occupationMap enemies rand
 
                     // ->
                     // -> any intermediate processing of turns goes here
@@ -298,20 +297,24 @@ module GameplayDispatcherModule =
         static let tryAdvanceTurn gameplayAddress playerInput world =
 
             // construct advancer process
-            let advancer =
-                desync {
-                    do! call <| advanceCharacters gameplayAddress playerInput
-                    let! world = get
-                    let playerActivity = (getPlayer gameplayAddress world).ActivityState
-                    do! match playerActivity with
-                        | Navigation _ 
-                        | Action _ ->
-                            desync {
+            let advancer = desync {
+                do! match (getPlayer gameplayAddress world).ActivityState with
+                    | Navigation _ -> returnM () 
+                    | Action _ -> returnM ()
+                    | NoActivity -> desync {
+                        let! world = get
+                        let playerTurn = determinePlayerTurn playerInput gameplayAddress world
+                        do! match playerTurn with
+                            | NavigationTurn _ -> desync {
+                                do! call <| advanceCharacters gameplayAddress playerTurn
                                 do! pass ()
                                 do! during
                                         (fun world -> (getPlayer gameplayAddress world).ActivityState <> NoActivity)
-                                        (react <| advanceCharacters gameplayAddress NoInput) }
-                        | NoActivity -> returnM () }
+                                        (react <|
+                                            let playerTurn = determinePlayerTurn NoInput gameplayAddress world
+                                            advanceCharacters gameplayAddress playerTurn) }
+                            | CancelTurn -> returnM ()
+                            | NoTurn -> returnM () }}
 
             // run advancer process
             let tickObs = observe TickEventAddress gameplayAddress
