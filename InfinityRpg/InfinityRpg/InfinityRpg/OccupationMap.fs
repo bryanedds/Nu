@@ -61,6 +61,10 @@ module OccupationMap =
         let occupationMap = makeFromFieldTiles fieldTiles
         occupyByCharacters characters occupationMap
 
+    let makeFromFieldTilesAndCharactersAndTurn fieldTiles characters turn =
+        let occupationMap = makeFromFieldTilesAndCharacters fieldTiles characters
+        occupyByTurn turn occupationMap
+
     let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characters =
         let occupationMap = makeFromFieldTiles fieldTiles
         occupyByAdjacentCharacters positionM characters occupationMap

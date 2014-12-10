@@ -62,7 +62,7 @@ module GameplayDispatcherModule =
 
         static let makeEnemies world rand =
             let (randResult, rand) = Rand.nextIntUnder 5 rand
-            let enemyCount = randResult + 5
+            let enemyCount = randResult + 0
             List.fold
                 (fun (enemies, rand) positionM ->
                     let enemyPosition = single positionM * TileSize * 2.0f
@@ -161,6 +161,13 @@ module GameplayDispatcherModule =
             let world = snd <| World.removeGroup sceneAddress scene world
             (Cascade, world)
 
+        static let anyActivitiesInProgress2 enemies player =
+            CharacterActivity.anyActivitiesInProgress <| player :: enemies
+
+        static let anyActivitiesInProgress gameplayAddress world =
+            let (_, enemies, player) = getParticipants gameplayAddress world
+            anyActivitiesInProgress2 enemies player
+
         static let determineEnemyTurn occupationMap (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
@@ -196,12 +203,9 @@ module GameplayDispatcherModule =
         static let advanceEnemyNavigations enemies =
             List.map CharacterActivity.advanceNavigation enemies
 
-        static let isTurnProgressing enemies player =
-            CharacterActivity.anyActivitiesInProgress <| player :: enemies
-
         static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
             let (field, enemies, player) = getParticipants gameplayAddress world
-            if not <| isTurnProgressing enemies player then
+            if not <| anyActivitiesInProgress2 enemies player then
                 let touchPositionW = Camera.mouseToWorld Relative touchPosition world.Camera
                 let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
                 let occupationMapWithAdjacentEnemies = OccupationMap.makeFromFieldTilesAndAdjacentCharacters playerPositionM field.FieldMapNp.FieldTiles enemies
@@ -217,7 +221,7 @@ module GameplayDispatcherModule =
 
         static let determinePlayerTurnFromDetailNavigation direction gameplayAddress world =
             let (field, enemies, player) = getParticipants gameplayAddress world
-            if not <| isTurnProgressing enemies player then
+            if not <| anyActivitiesInProgress2 enemies player then
                 let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
                 CharacterActivity.determineTurnFromDirection direction occupationMapWithEnemies player
             else NoTurn
@@ -240,8 +244,7 @@ module GameplayDispatcherModule =
             else NavigationTurn navigationDescriptor
 
         static let determinePlayerTurn playerInput gameplayAddress world =
-            let player = getPlayer gameplayAddress world
-            match CharacterActivity.determineTurnFromActivityState player with
+            match CharacterActivity.determineTurnFromActivityState <| getPlayer gameplayAddress world with
             | NoTurn -> determinePlayerTurnFromInput playerInput gameplayAddress world
             | NavigationTurn navigationDescriptor -> determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world
             | CancelTurn -> CancelTurn
@@ -254,7 +257,7 @@ module GameplayDispatcherModule =
 
             // construct local context
             let (field, enemies, player) = getParticipants gameplayAddress world
-            let occupationMap = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles (player :: enemies)
+            let occupationMap = OccupationMap.makeFromFieldTilesAndCharactersAndTurn field.FieldMapNp.FieldTiles enemies playerTurn
             
             // try to advance characters
             let (enemies, player, rand) =
@@ -294,27 +297,25 @@ module GameplayDispatcherModule =
             let gameplay = Screen.setOngoingRandState (Rand.getState rand) gameplay
             World.setScreen gameplayAddress gameplay world
 
-        static let tryAdvanceTurn gameplayAddress playerInput world =
+        static let tryAdvanceTurn playerInput gameplayAddress world =
 
             // construct advancer process
             let advancer = desync {
-                do! match (getPlayer gameplayAddress world).ActivityState with
-                    | Navigation _ -> returnM () 
-                    | Action _ -> returnM ()
-                    | NoActivity -> desync {
-                        let! world = get
-                        let playerTurn = determinePlayerTurn playerInput gameplayAddress world
+                do! if not <| anyActivitiesInProgress gameplayAddress world then desync {
+                        let! playerTurn = getBy <| determinePlayerTurn playerInput gameplayAddress
                         do! match playerTurn with
                             | NavigationTurn _ -> desync {
                                 do! call <| advanceCharacters gameplayAddress playerTurn
                                 do! pass ()
                                 do! during
-                                        (fun world -> (getPlayer gameplayAddress world).ActivityState <> NoActivity)
-                                        (react <|
-                                            let playerTurn = determinePlayerTurn NoInput gameplayAddress world
-                                            advanceCharacters gameplayAddress playerTurn) }
+                                        (anyActivitiesInProgress gameplayAddress) <|
+                                        desync {
+                                            do! pass ()
+                                            let! playerTurn = getBy <| determinePlayerTurn NoInput gameplayAddress
+                                            do! call <| advanceCharacters gameplayAddress playerTurn }}
                             | CancelTurn -> returnM ()
-                            | NoTurn -> returnM () }}
+                            | NoTurn -> returnM () }
+                    else returnM () }
 
             // run advancer process
             let tickObs = observe TickEventAddress gameplayAddress
@@ -323,13 +324,13 @@ module GameplayDispatcherModule =
         static let handleTouchFeeler event world =
             let gameplayAddress = World.unwrapA event world
             let playerInput = Touch event.Data
-            let world = tryAdvanceTurn gameplayAddress playerInput world
+            let world = tryAdvanceTurn playerInput gameplayAddress world
             (Cascade, world)
 
         static let handleDownDetail direction event world =
             let gameplayAddress = World.unwrapA event world
             let playerInput = DetailNavigation direction
-            let world = tryAdvanceTurn gameplayAddress playerInput world
+            let world = tryAdvanceTurn playerInput gameplayAddress world
             (Cascade, world)
 
         static member FieldDefinitions =
