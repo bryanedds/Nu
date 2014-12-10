@@ -298,28 +298,24 @@ module GameplayDispatcherModule =
             World.setScreen gameplayAddress gameplay world
 
         static let tryAdvanceTurn playerInput gameplayAddress world =
-
-            // construct advancer process
-            let advancer = desync {
-                do! if not <| anyActivitiesInProgress gameplayAddress world then desync {
-                        let! playerTurn = getBy <| determinePlayerTurn playerInput gameplayAddress
-                        do! match playerTurn with
-                            | NavigationTurn _ -> desync {
-                                do! call <| advanceCharacters gameplayAddress playerTurn
-                                do! pass ()
-                                do! during
-                                        (anyActivitiesInProgress gameplayAddress) <|
-                                        desync {
-                                            do! pass ()
-                                            let! playerTurn = getBy <| determinePlayerTurn NoInput gameplayAddress
-                                            do! call <| advanceCharacters gameplayAddress playerTurn }}
-                            | CancelTurn -> returnM ()
-                            | NoTurn -> returnM () }
-                    else returnM () }
-
-            // run advancer process
-            let tickObs = observe TickEventAddress gameplayAddress
-            snd <| runDesyncAssumingCascade tickObs advancer world
+            if not <| anyActivitiesInProgress gameplayAddress world then
+                let playerTurn = determinePlayerTurn playerInput gameplayAddress world
+                match playerTurn with
+                | NavigationTurn _ ->
+                    let world = advanceCharacters gameplayAddress playerTurn world
+                    let advancer = desync {
+                        do! pass ()
+                        do! during
+                                (anyActivitiesInProgress gameplayAddress)
+                                (desync {
+                                    do! pass ()
+                                    let! playerTurn = getBy <| determinePlayerTurn NoInput gameplayAddress
+                                    do! call <| advanceCharacters gameplayAddress playerTurn })}
+                    let tickObs = observe TickEventAddress gameplayAddress
+                    snd <| runDesyncAssumingCascade tickObs advancer world
+                | CancelTurn -> world
+                | NoTurn -> world
+            else world
 
         static let handleTouchFeeler event world =
             let gameplayAddress = World.unwrapA event world
