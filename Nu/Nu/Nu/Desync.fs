@@ -33,8 +33,18 @@ module Desync =
     let get : Desync<'e, 's, 's> =
         Desync (fun s -> (s, Right s))
 
+    let getBy f : Desync<'e, 's, 'a> =
+        desync {
+            let! a = get
+            return f a }
+
     let set (s : 's) : Desync<'e, 's, unit> =
         Desync (fun _ -> (s, Right ()))
+
+    let modify f : Desync<'e, 's, unit> =
+        desync {
+            let! s = get
+            do! set <| f s }
 
     let advance (m : 'e -> Desync<'e, 's, 'a>) (e : 'e) (s : 's) : 's * Either<'e -> Desync<'e, 's, 'a>, 'a> =
         step (m e) s
@@ -56,8 +66,8 @@ module Desync =
     let pass () : Desync<'e, 's, unit> =
         passE ()
 
-    let returnM () : Desync<'e, 's, unit> =
-        returnM ()
+    let returnM a : Desync<'e, 's, 'a> =
+        returnM a
 
     let callE expr : 'e -> Desync<'e, 's, unit> =
         fun e ->
