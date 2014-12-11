@@ -507,7 +507,7 @@ module ToggleDispatcherModule =
              define? Pressed false
              define? OffImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image" }
              define? OnImage { ImagePackageName = DefaultPackageName; ImageAssetName = "Image2" }
-             define? ToggleSound { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
+             define? OptToggleSound <| Some { SoundPackageName = DefaultPackageName; SoundAssetName = "Sound" }]
 
         override dispatcher.Register (address, toggle, world) =
             let world =
