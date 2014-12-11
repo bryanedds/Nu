@@ -10,12 +10,11 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module DirectionModule =
 
-    // TODO: rename to Up, Right, Down, Left
     type Direction =
-        | North
-        | East
-        | South
-        | West
+        | Upward
+        | Rightward
+        | Downward
+        | Leftward
 
 [<AutoOpen>]
 module AnimationModule =

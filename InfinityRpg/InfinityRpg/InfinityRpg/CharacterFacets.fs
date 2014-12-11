@@ -97,10 +97,10 @@ module CharacterAnimationFacetModule =
                 | CharacterAnimationActing -> Vector2i (0, 2)
             let directionCoordsOffset =
                 match animationState.CharacterAnimationDirection with
-                | North -> Vector2i (0, 0)
-                | East -> Vector2i (2, 0)
-                | South -> Vector2i (0, 1)
-                | West -> Vector2i (2, 1)
+                | Upward -> Vector2i (0, 0)
+                | Rightward -> Vector2i (2, 0)
+                | Downward -> Vector2i (0, 1)
+                | Leftward -> Vector2i (2, 1)
             let frameXOffset =
                 (int world.State.TickTime - int animationState.ChangeTime) /
                 animationState.CharacterAnimationStutter % 2
@@ -122,7 +122,7 @@ module CharacterAnimationFacetModule =
             [define?
                 CharacterAnimationState
                 { CharacterAnimationType = CharacterAnimationFacing
-                  CharacterAnimationDirection = North
+                  CharacterAnimationDirection = Upward
                   CharacterAnimationStutter = 16
                   ChangeTime = 0L }
              define? CharacterAnimationSheet PlayerImage]
