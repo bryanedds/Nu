@@ -183,10 +183,7 @@ module CharacterActivity =
             | None ->
                 let touchPositionM = Vector2i (Vector2.Divide (touchPosition, TileSize))
                 let targetPosition = Vector2.Multiply (touchPositionM.Vector2, TileSize)
-                if  targetPosition = character.Position + Vector2 (0.0f, TileSize.Y) ||
-                    targetPosition = character.Position + Vector2 (TileSize.X, 0.0f) ||
-                    targetPosition = character.Position - Vector2 (0.0f, TileSize.Y) ||
-                    targetPosition = character.Position - Vector2 (TileSize.X, 0.0f) then
+                if Math.arePositionsAdjacent targetPosition character.Position then
                     if List.exists (fun (opponent : Entity) -> opponent.Position = targetPosition) opponents
                     then makeAttackTurn targetPosition
                     else NoTurn

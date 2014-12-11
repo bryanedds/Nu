@@ -26,11 +26,8 @@ module OccupationMap =
 
     let occupyByAdjacentCharacter positionM (character : Entity) occupationMap =
         let characterPositionM = Vector2i (Vector2.Divide (character.Position, TileSize))
-        if  characterPositionM = positionM + Vector2i.Up ||
-            characterPositionM = positionM + Vector2i.Right ||
-            characterPositionM = positionM + Vector2i.Down ||
-            characterPositionM = positionM + Vector2i.Left then
-            Map.add characterPositionM true occupationMap
+        if Math.arePositionMsAdjacent characterPositionM positionM
+        then Map.add characterPositionM true occupationMap
         else occupationMap
 
     let occupyByAdjacentCharacters positionM characters occupationMap =

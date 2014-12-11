@@ -170,16 +170,20 @@ module GameplayDispatcherModule =
             let (_, player, enemies) = getParticipants gameplayAddress world
             anyTurnsInProgress2 player enemies
 
-        static let determineDesiredEnemyTurn occupationMap player (enemy : Entity) rand =
+        static let determineDesiredEnemyTurn occupationMap (player : Entity) (enemy : Entity) rand =
             match enemy.ControlType with
             | Player ->
                 debug <| "Invalid ControlType '" + acstring enemy.ControlType + "' for enemy"
                 (NoTurn, rand)
             | Chaos ->
-                let (randResult, rand) = Rand.nextIntUnder 4 rand
-                let direction = Direction.fromInt randResult
-                let enemyTurn = CharacterActivity.determineTurnFromDirection direction occupationMap enemy [player]
-                (enemyTurn, rand)
+                if Math.arePositionsAdjacent enemy.Position player.Position then
+                    let enemyTurn = makeAttackTurn player.Position
+                    (enemyTurn, rand)
+                else
+                    let (randResult, rand) = Rand.nextIntUnder 4 rand
+                    let direction = Direction.fromInt randResult
+                    let enemyTurn = CharacterActivity.determineTurnFromDirection direction occupationMap enemy [player]
+                    (enemyTurn, rand)
             | Uncontrolled -> (NoTurn, rand)
 
         static let determineDesiredEnemyTurns occupationMap player enemies rand =
@@ -252,7 +256,12 @@ module GameplayDispatcherModule =
                             List.notExists
                                 (function Action _ -> true | Navigation _ | NoActivity -> false)
                                 precedingEnemyActivities
-                        if noPrecedingEnemyActionActivity then
+                        let noCurrentEnemyActivity =
+                            List.notExists
+                                (fun (enemy : Entity) -> enemy.ActivityState <> NoActivity)
+                                enemies
+                        if  noPrecedingEnemyActionActivity &&
+                            noCurrentEnemyActivity then
                             match enemy.DesiredTurn with
                             | ActionTurn actionDescriptor -> Action actionDescriptor
                             | NavigationTurn _ -> NoActivity
@@ -276,36 +285,34 @@ module GameplayDispatcherModule =
                 enemies
                 []
 
-        static let tryUpdateEnemyActivity newEnemyActivity enemy =
-            if newEnemyActivity <> NoActivity then
-                let enemy = Entity.setActivityState newEnemyActivity enemy
+        static let tryUpdateEnemyActivity newActivity enemy =
+            if newActivity <> NoActivity then
+                let enemy = Entity.setActivityState newActivity enemy
                 Entity.setDesiredTurn NoTurn enemy
             else enemy
 
         static let updateEnemyActivities (player : Entity) enemies =
 
             // determine enemy activities
-            let enemyNewActionActivities = determineEnemyActionActivities enemies 
-            let enemyNewNavigationActivities = determineEnemyNavigationActivities enemies
+            let newEnemyActionActivities = determineEnemyActionActivities enemies 
+            let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
 
             // determine if there is any enemy navigation to be done
             let anyEnemyNavigationActivity =
                 List.exists
                     (function Navigation _ -> true | Action _ | NoActivity -> false)
-                    enemyNewNavigationActivities
+                    newEnemyNavigationActivities
 
             // update enemy activities
             match player.ActivityState with
             | Action _ -> enemies
             | Navigation _ ->
                 if anyEnemyNavigationActivity
-                then List.map2 tryUpdateEnemyActivity enemyNewNavigationActivities enemies
+                then List.map2 tryUpdateEnemyActivity newEnemyNavigationActivities enemies
                 else enemies
             | NoActivity ->
-                let nextEnemyActivities =
-                    if anyEnemyNavigationActivity then enemyNewNavigationActivities
-                    else enemyNewActionActivities
-                List.map2 tryUpdateEnemyActivity nextEnemyActivities enemies
+                let newEnemyActivities = if anyEnemyNavigationActivity then newEnemyNavigationActivities else newEnemyActionActivities
+                List.map2 tryUpdateEnemyActivity newEnemyActivities enemies
 
         static let advanceCharacters gameplayAddress playerTurn world =
 
@@ -334,8 +341,8 @@ module GameplayDispatcherModule =
             // determine (and set) enemy desired turns when applicable
             let (enemies, rand) =
                 match optNewPlayerActivity with
-                | Some playerActivity ->
-                    if playerActivity <> NoActivity then
+                | Some newPlayerActivity ->
+                    if newPlayerActivity <> NoActivity then
                         let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap player enemies rand
                         let enemies = List.map2 Entity.setDesiredTurn enemyDesiredTurns enemies
                         (enemies, rand)
