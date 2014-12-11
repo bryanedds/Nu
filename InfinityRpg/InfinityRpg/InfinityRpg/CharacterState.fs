@@ -205,8 +205,8 @@ module CharacterStateModule =
           OptNavigationPath : NavigationNode list option }
 
     type [<StructuralEquality; NoComparison>] ActionDescriptor =
-        { ActionTicks : int // an arbitrary number to show a hacky action animation
-          ActionTarget : Vector2i option
+        { ActionTicks : int64 // an arbitrary number to show a hacky action animation
+          ActionTarget : Vector2 option
           ActionDataName : string }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
@@ -227,3 +227,9 @@ module CharacterStateModule =
         | NavigationTurn of NavigationDescriptor
         | CancelTurn
         | NoTurn
+
+    let makeAttackTurn target =
+        ActionTurn
+            { ActionTicks = 0L
+              ActionTarget = Some target
+              ActionDataName = AttackName }

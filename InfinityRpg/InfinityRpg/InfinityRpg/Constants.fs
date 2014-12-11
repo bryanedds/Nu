@@ -81,3 +81,7 @@ module Constants =
     let SceneAddress = satoga GameplayAddress SceneName
     let FieldName = "Field"
     let PlayerName = "Player"
+
+    // data
+    let AttackName = "Attack"
+    let ActionTickMax = 20L
