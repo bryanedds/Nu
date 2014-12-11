@@ -15,6 +15,7 @@ open InfinityRpg.Constants
 module CharacterActivityModule =
 
     type [<StructuralEquality; NoComparison>] TurnDescriptor =
+        | ActionTurn of ActionDescriptor
         | NavigationTurn of NavigationDescriptor
         | CancelTurn
         | NoTurn
@@ -175,6 +176,3 @@ module CharacterActivity =
         | Action _ -> NoTurn
         | Navigation _ -> NoTurn
         | NoActivity -> determineTurnFromNavigationTouch touchPosition occupationMap character
-
-    let anyActivitiesInProgress characters =
-        List.exists (fun (character : Entity) -> character.ActivityState <> NoActivity) characters

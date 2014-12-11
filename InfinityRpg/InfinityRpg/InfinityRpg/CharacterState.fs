@@ -202,14 +202,28 @@ module CharacterStateModule =
         { WalkDescriptor : WalkDescriptor
           OptNavigationPath : NavigationNode list option }
 
+    type [<StructuralEquality; NoComparison>] ActionDescriptor =
+        { ActionTarget : Vector2i
+          ActionDataName : string }
+
     type [<StructuralEquality; NoComparison>] ActivityState =
-        | Action of ActionData
+        | Action of ActionDescriptor
         | Navigation of NavigationDescriptor
         | NoActivity
+
         static member isNavigating activity =
             match activity with
             | Action _ -> false
             | Navigation _ -> true
             | NoActivity -> false
+
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
+
+        static member isActivityInProgress activityState =
+            match activityState with
+            | Action _ | Navigation _ -> true
+            | NoActivity -> false
+
+        static member isActivityNotInProgress activity =
+            not <| ActivityState.isActivityInProgress activity

@@ -9,6 +9,7 @@ module OccupationMap =
 
     let occupyByTurn characterTurn occupationMap =
         match characterTurn with
+        | ActionTurn _ -> occupationMap
         | NavigationTurn navigationDescriptor ->
             let characterOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
             let characterNextPositionM = characterOriginM + Direction.toVector2i navigationDescriptor.WalkDescriptor.WalkDirection
@@ -44,6 +45,7 @@ module OccupationMap =
 
     let transferByTurn characterTurn character occupationMap =
         match characterTurn with
+        | ActionTurn _ -> occupationMap
         | NavigationTurn _ -> unoccupyByCharacter character occupationMap |> occupyByTurn characterTurn
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
