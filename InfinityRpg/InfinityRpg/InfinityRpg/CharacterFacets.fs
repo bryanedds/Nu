@@ -17,6 +17,8 @@ module CharacterStateFacetModule =
     
         member entity.CharacterType = entity?CharacterType : CharacterType
         static member setCharacterType (value : CharacterType) (entity : Entity) = entity?CharacterType <- value
+        member entity.ReadyForTurn = entity?ReadyForTurn : bool
+        static member setReadyForTurn (value : bool) (entity : Entity) = entity?ReadyForTurn <- value
         member entity.ActivityState = entity?ActivityState : ActivityState
         static member setActivityState (value : ActivityState) (entity : Entity) = entity?ActivityState <- value
         member entity.HitPoints = entity?HitPoints : int
@@ -49,8 +51,9 @@ module CharacterStateFacetModule =
 
         static member FieldDefinitions =
             [define? CharacterType Player
+             define? ReadyForTurn false
              define? ActivityState NoActivity
-             define? HitPoints 1 // hp max is calculated
+             define? HitPoints 10 // note this is an arbitrary number as hp max is calculated
              define? SpecialPoints 1 // sp max is calculated
              define? PowerBuff 1.0f // rate at which power is buffed / debuffed
              define? ShieldBuff 1.0f // rate at which shield is buffed / debuffed
