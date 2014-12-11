@@ -282,39 +282,33 @@ module ButtonDispatcherModule =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world then
                 let mousePositionWorld = Camera.mouseToWorld button.ViewType mouseButtonData.Position world.Camera
-                if Math.isPointInBounds3 mousePositionWorld button.Position button.Size then
-                    if button.Enabled && button.Visible then
+                if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
+                    if button.Enabled then
                         let button = Entity.setDown true button
                         let world = World.setEntity address button world
                         let world = World.publish4 () (DownEventAddress ->>- address) address world
                         (Resolve, world)
-                    elif button.Visible then (Resolve, world)
-                    else (Cascade, world)
+                    else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
             let (address, button : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world then
-                let world =
-                    if button.Down then
-                        let button = Entity.setDown false button
-                        let world = World.setEntity address button world
-                        if button.Enabled && button.Visible
-                        then World.publish4 () (UpEventAddress ->>- address) address world
-                        else world
-                    else world
+                let wasDown = button.Down
+                let button = Entity.setDown false button
+                let world = World.setEntity address button world
                 let mousePositionWorld = Camera.mouseToWorld button.ViewType mouseButtonData.Position world.Camera
-                if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Down then
-                    if button.Enabled && button.Visible then
+                if Math.isPointInBounds3 mousePositionWorld button.Position button.Size && button.Visible then
+                    if button.Enabled && wasDown then
+                        let world = World.publish4 () (UpEventAddress ->>- address) address world
                         let world = World.publish4 () (ClickEventAddress ->>- address) address world
                         let world =
                             match button.OptClickSound with
                             | Some clickSound -> World.playSound 1.0f clickSound world
                             | None -> world
                         (Resolve, world)
-                    elif button.Visible then (Resolve, world)
-                    else (Cascade, world)
+                    else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
@@ -470,25 +464,26 @@ module ToggleDispatcherModule =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world then
                 let mousePositionWorld = Camera.mouseToWorld toggle.ViewType mouseButtonData.Position world.Camera
-                if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size then
-                    if toggle.Enabled && toggle.Visible then
+                if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
+                    if toggle.Enabled then
                         let toggle = Entity.setPressed true toggle
                         let world = World.setEntity address toggle world
                         (Resolve, world)
-                    elif toggle.Visible then (Resolve, world)
-                    else (Cascade, world)
+                    else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp event world =
             let (address, toggle : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world then
-                let world =
-                    let toggle = Entity.setOn (not toggle.On) toggle
-                    World.setEntity address toggle world
+                let wasPressed = toggle.Pressed
+                let toggle = Entity.setPressed false toggle
+                let world = World.setEntity address toggle world
                 let mousePositionWorld = Camera.mouseToWorld toggle.ViewType mouseButtonData.Position world.Camera
-                if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size then
-                    if toggle.Enabled && toggle.Visible then
+                if Math.isPointInBounds3 mousePositionWorld toggle.Position toggle.Size && toggle.Visible then
+                    if toggle.Enabled && wasPressed then
+                        let toggle = Entity.setOn (not toggle.On) toggle
+                        let world = World.setEntity address toggle world
                         let eventAddress = if toggle.On then OnEventAddress else OffEventAddress
                         let world = World.publish4 () (eventAddress ->>- address) address world
                         let world =
@@ -496,9 +491,8 @@ module ToggleDispatcherModule =
                             | Some toggleSound -> World.playSound 1.0f toggleSound world
                             | None -> world
                         (Resolve, world)
-                    elif toggle.Visible then (Resolve, world)
-                    else (Cascade, world)
-                else (Cascade, World.setEntity address toggle world)
+                    else (Resolve, world)
+                else (Cascade, world)
             else (Cascade, world)
 
         static member FieldDefinitions =
@@ -552,27 +546,25 @@ module FeelerDispatcherModule =
             let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
             if World.isAddressSelected address world then
                 let mousePositionWorld = Camera.mouseToWorld feeler.ViewType mouseButtonData.Position world.Camera
-                if Math.isPointInBounds3 mousePositionWorld feeler.Position feeler.Size then
-                    if feeler.Enabled && feeler.Visible then
+                if Math.isPointInBounds3 mousePositionWorld feeler.Position feeler.Size && feeler.Visible then
+                    if feeler.Enabled then
                         let feeler = Entity.setTouched true feeler
                         let world = World.setEntity address feeler world
                         let world = World.publish4 mouseButtonData.Position (TouchEventAddress ->>- address) address world
                         (Resolve, world)
-                    elif feeler.Visible then (Resolve, world)
-                    else (Cascade, world)
+                    else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
     
         let handleMouseLeftUp event world =
             let (address, feeler : Entity, mouseButtonData : MouseButtonData) = World.unwrapASD event world
-            if World.isAddressSelected address world then
-                if feeler.Enabled && feeler.Visible then
+            if World.isAddressSelected address world && feeler.Visible then
+                if feeler.Enabled then
                     let feeler = Entity.setTouched false feeler
                     let world = World.setEntity address feeler world
                     let world = World.publish4 mouseButtonData.Position (UntouchEventAddress ->>- address) address world
                     (Resolve, world)
-                elif feeler.Visible then (Resolve, world)
-                else (Cascade, world)
+                else (Resolve, world)
             else (Cascade, world)
 
         static member FieldDefinitions =
