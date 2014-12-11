@@ -222,6 +222,14 @@ module CharacterStateModule =
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
 
+        static member isActing activity =
+            match activity with
+            | Action _ -> true
+            | Navigation _ | NoActivity -> false
+
+        static member isNotActing activity =
+            not <| ActivityState.isActing activity
+
     type [<StructuralEquality; NoComparison>] Turn =
         | ActionTurn of ActionDescriptor
         | NavigationTurn of NavigationDescriptor
