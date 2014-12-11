@@ -8,7 +8,6 @@
       <Entity dispatcherName="LabelDispatcher">
         <Position>-456, -40</Position>
         <Size>512, 128</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
           <LabelImage type="Nu.RenderModule+Image">[Gui | ProgrammingLabel]</LabelImage>
         </Xtension>
@@ -27,7 +26,6 @@
         <Position>-512, 32</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
           <LabelImage type="Nu.RenderModule+Image">[Gui | CreditsLabel]</LabelImage>
         </Xtension>
@@ -35,7 +33,6 @@
       <Entity dispatcherName="LabelDispatcher">
         <Position>32, -144</Position>
         <Size>512, 128</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
           <LabelImage type="Nu.RenderModule+Image">[Gui | BryanEddsLabel]</LabelImage>
         </Xtension>
@@ -43,7 +40,6 @@
       <Entity dispatcherName="LabelDispatcher">
         <Position>-424, -144</Position>
         <Size>512, 128</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
           <LabelImage type="Nu.RenderModule+Image">[Gui | MusicAndArtLabel]</LabelImage>
         </Xtension>
@@ -51,7 +47,6 @@
       <Entity dispatcherName="LabelDispatcher">
         <Position>64, -40</Position>
         <Size>512, 128</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
           <LabelImage type="Nu.RenderModule+Image">[Gui | BryanEddsLabel]</LabelImage>
         </Xtension>

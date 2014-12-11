@@ -46,7 +46,6 @@
         <Position>-504, 0</Position>
         <Depth>-1</Depth>
         <Size>1024, 256</Size>
-        <OptOverlayName>[Some | LabelDispatcher]</OptOverlayName>
         <Xtension>
           <LabelImage type="Nu.RenderModule+Image">[Gui | TitleLabel]</LabelImage>
         </Xtension>
