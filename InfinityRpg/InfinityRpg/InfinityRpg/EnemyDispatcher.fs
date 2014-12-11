@@ -11,8 +11,14 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module EnemyDispatcherModule =
 
+    type Entity with
+
+        member entity.DesiredTurn = entity?DesiredTurn : Turn // TODO: move into enemy dispatcher
+        static member setDesiredTurn (value : Turn) (entity : Entity) = entity?DesiredTurn <- value
+
     type EnemyDispatcher () =
         inherit CharacterDispatcher ()
 
         static member FieldDefinitions =
-            [define? ControlType Chaos]
+            [define? ControlType Chaos
+             define? DesiredTurn NoTurn]

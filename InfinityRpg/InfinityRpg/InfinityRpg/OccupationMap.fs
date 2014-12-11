@@ -7,8 +7,8 @@ open InfinityRpg.Constants
 
 module OccupationMap =
 
-    let occupyByTurn characterTurn occupationMap =
-        match characterTurn with
+    let occupyByDesiredTurn desiredTurn occupationMap =
+        match desiredTurn with
         | ActionTurn _ -> occupationMap
         | NavigationTurn navigationDescriptor ->
             let characterOriginM = navigationDescriptor.WalkDescriptor.WalkOriginM
@@ -43,10 +43,10 @@ module OccupationMap =
     let unoccupyByCharacters characters occupationMap =
         List.fold (flip unoccupyByCharacter) occupationMap characters
 
-    let transferByTurn characterTurn character occupationMap =
-        match characterTurn with
+    let transferByDesiredTurn desiredTurn character occupationMap =
+        match desiredTurn with
         | ActionTurn _ -> occupationMap
-        | NavigationTurn _ -> unoccupyByCharacter character occupationMap |> occupyByTurn characterTurn
+        | NavigationTurn _ -> unoccupyByCharacter character occupationMap |> occupyByDesiredTurn desiredTurn
         | CancelTurn -> occupationMap
         | NoTurn -> occupationMap
 
@@ -63,9 +63,9 @@ module OccupationMap =
         let occupationMap = makeFromFieldTiles fieldTiles
         occupyByCharacters characters occupationMap
 
-    let makeFromFieldTilesAndCharactersAndTurn fieldTiles characters turn =
+    let makeFromFieldTilesAndCharactersAndDesiredTurn fieldTiles characters desiredTurn =
         let occupationMap = makeFromFieldTilesAndCharacters fieldTiles characters
-        occupyByTurn turn occupationMap
+        occupyByDesiredTurn desiredTurn occupationMap
 
     let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characters =
         let occupationMap = makeFromFieldTiles fieldTiles
