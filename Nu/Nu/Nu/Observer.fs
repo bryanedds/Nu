@@ -217,25 +217,27 @@ module Observer =
     let subscribe handleEvent world observable =
         observable |> using handleEvent |> subscribe2 world
 
-    let lifetime (observable : Observable<'a, 'o>) : Observable<'a, 'o> =
+    let until eventAddress (observable : Observable<'a, 'o>) : Observable<'a, 'o> =
         let subscribe = fun world ->
+            let eventKey = World.makeSubscriptionKey ()
             let subscriptionKey = World.makeSubscriptionKey ()
-            let subscriptionKey' = World.makeSubscriptionKey ()
             let subscriptionAddress = ltoa<'a> [acstring subscriptionKey]
-            let subscriptionAddress' = RemovingEventAddress ->>- observable.ObserverAddress
-            let (eventAddress, unsubscribe, world) = observable.Subscribe world
+            let (eventAddress', unsubscribe, world) = observable.Subscribe world
             let unsubscribe = fun world ->
                 let world = unsubscribe world
                 let world = World.unsubscribe subscriptionKey world
-                World.unsubscribe subscriptionKey' world
-            let handleRemoving = fun _ world -> let world = unsubscribe world in (Cascade, world)
-            let world = World.subscribe subscriptionKey' handleRemoving subscriptionAddress' observable.ObserverAddress world
+                World.unsubscribe eventKey world
+            let handleEvent = fun _ world -> let world = unsubscribe world in (Cascade, world)
+            let world = World.subscribe eventKey handleEvent eventAddress observable.ObserverAddress world
             let subscription = fun event world ->
                 let world = World.publish<'a, Simulant> World.sortSubscriptionsNone event.Data subscriptionAddress event.PublisherAddress world
                 (Cascade, world)
-            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress observable.ObserverAddress world
+            let world = World.subscribe<'a, 'o> subscriptionKey subscription eventAddress' observable.ObserverAddress world
             (subscriptionAddress, unsubscribe, world)
         { ObserverAddress = observable.ObserverAddress; Subscribe = subscribe }
+
+    let lifetime (observable : Observable<'a, 'o>) : Observable<'a, 'o> =
+        until (RemovingEventAddress ->>- observable.ObserverAddress) observable
 
     let monitor eventAddress world observable =
         observable |> lifetime |> subscribe eventAddress world
