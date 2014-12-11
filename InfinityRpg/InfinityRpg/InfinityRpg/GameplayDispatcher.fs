@@ -400,10 +400,10 @@ module GameplayDispatcherModule =
 
         override dispatcher.Register (gameplayAddress, gameplay, world) =
             let world = observe (TouchEventAddress ->>- getHudFeelerAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor handleTouchFeeler world |> snd
-            let world = observe (DownEventAddress ->>- getHudDetailUpAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail North) world |> snd
-            let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail East) world |> snd
-            let world = observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail South) world |> snd
-            let world = observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail West) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailUpAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Upward) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Rightward) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailDownAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Downward) world |> snd
+            let world = observe (DownEventAddress ->>- getHudDetailLeftAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Leftward) world |> snd
             let world = World.subscribe4 handleSelectGameplay (SelectEventAddress ->>- gameplayAddress) gameplayAddress world
             let world = World.subscribe4 handleClickSaveGame (ClickEventAddress ->>- getHudSaveGameAddress gameplayAddress) gameplayAddress world
             let world = World.subscribe4 handleDeselectGameplay (DeselectEventAddress ->>- gameplayAddress) gameplayAddress world

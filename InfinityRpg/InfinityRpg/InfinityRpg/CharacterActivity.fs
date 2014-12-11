@@ -36,10 +36,10 @@ module CharacterActivity =
     let private getOpenDirectionsFromPositionM positionM occupationMap =
         Set.ofSeq <|
             seq {
-                if isTilePassable occupationMap (positionM + Vector2i.Up) then yield North
-                if isTilePassable occupationMap (positionM + Vector2i.Right) then yield East
-                if isTilePassable occupationMap (positionM + Vector2i.Down) then yield South
-                if isTilePassable occupationMap (positionM + Vector2i.Left) then yield West }
+                if isTilePassable occupationMap (positionM + Vector2i.Up) then yield Upward
+                if isTilePassable occupationMap (positionM + Vector2i.Right) then yield Rightward
+                if isTilePassable occupationMap (positionM + Vector2i.Down) then yield Downward
+                if isTilePassable occupationMap (positionM + Vector2i.Left) then yield Leftward }
 
     let private getOpenDirectionsFromPosition (position : Vector2) occupationMap =
         let positionM = Vector2i (int <| position.X / TileSize.X, int <| position.Y / TileSize.Y)
@@ -80,15 +80,15 @@ module CharacterActivity =
     let private advanceNavigation navigationDescriptor (character : Entity) =
         let walkDescriptor = navigationDescriptor.WalkDescriptor
         let walkDirection = walkDescriptor.WalkDirection
-        let walkDistanceI = match walkDirection with North | South -> TileSizeI.Y | East | West -> TileSizeI.X
+        let walkDistanceI = match walkDirection with Upward | Downward -> TileSizeI.Y | Rightward | Leftward -> TileSizeI.X
         let walkDestinationI = walkDistanceI * (walkDescriptor.WalkOriginM + Direction.toVector2i walkDirection)
         let walkDestination = walkDestinationI.Vector2
         let (newPosition, walkState) =
             match walkDirection with
-            | North -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
-            | East -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
-            | South -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
-            | West -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+            | Upward -> let (newY, arrival) = walk true character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+            | Rightward -> let (newX, arrival) = walk true character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
+            | Downward -> let (newY, arrival) = walk false character.Position.Y walkDestination.Y in (Vector2 (character.Position.X, newY), arrival)
+            | Leftward -> let (newX, arrival) = walk false character.Position.X walkDestination.X in (Vector2 (newX, character.Position.Y), arrival)
         let character = Entity.setPosition newPosition character
         let characterAnimationState = { character.CharacterAnimationState with CharacterAnimationDirection = walkDirection }
         let character = Entity.setCharacterAnimationState characterAnimationState character

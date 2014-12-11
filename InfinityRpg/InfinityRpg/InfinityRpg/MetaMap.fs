@@ -33,20 +33,20 @@ module MetamapModule =
 
         static member fromInt n =
             match n with
-            | 0 -> North
-            | 1 -> East
-            | 2 -> South
-            | 3 -> West
+            | 0 -> Upward
+            | 1 -> Rightward
+            | 2 -> Downward
+            | 3 -> Leftward
             | _ -> failwith <| "Invalid conversion to Direction from int '" + acstring n + "'."
 
         static member fromVector2 v =
             if v <> Vector2.Zero then
                 let atan2 = Math.Atan2 (float v.Y, float v.X)
                 let angle = if atan2 < 0.0 then atan2 + Math.PI * 2.0 else atan2
-                if angle < Math.PI * 0.75 && angle >= Math.PI * 0.25 then North
-                elif angle < Math.PI * 0.25 || angle >= Math.PI * 1.75 then East
-                elif angle < Math.PI * 1.75 && angle >= Math.PI * 1.25 then South
-                else West
+                if angle < Math.PI * 0.75 && angle >= Math.PI * 0.25 then Upward
+                elif angle < Math.PI * 0.25 || angle >= Math.PI * 1.75 then Rightward
+                elif angle < Math.PI * 1.75 && angle >= Math.PI * 1.25 then Downward
+                else Leftward
             else failwith "Direction cannot be derived from Vector2.Zero."
 
         static member fromVector2i (v : Vector2i) =
@@ -54,10 +54,10 @@ module MetamapModule =
 
         static member toVector2i direction =
             match direction with
-            | North -> Vector2i.Up
-            | East -> Vector2i.Right
-            | South -> Vector2i.Down
-            | West -> Vector2i.Left
+            | Upward -> Vector2i.Up
+            | Rightward -> Vector2i.Right
+            | Downward -> Vector2i.Down
+            | Leftward -> Vector2i.Left
 
         static member toVector2 direction =
             let v = Direction.toVector2i direction in v.Vector2
@@ -71,10 +71,10 @@ module MetamapModule =
         static member walk (source : Vector2i) direction =
             DebugWalkCounter <- DebugWalkCounter + 1
             match direction with
-            | North -> Vector2i (source.X, source.Y + 1)
-            | East -> Vector2i (source.X + 1, source.Y)
-            | South -> Vector2i (source.X, source.Y - 1)
-            | West -> Vector2i (source.X - 1, source.Y)
+            | Upward -> Vector2i (source.X, source.Y + 1)
+            | Rightward -> Vector2i (source.X + 1, source.Y)
+            | Downward -> Vector2i (source.X, source.Y - 1)
+            | Leftward -> Vector2i (source.X - 1, source.Y)
 
         static member private stumbleUnbiased source rand =
             let (direction, rand) = Direction.next rand
