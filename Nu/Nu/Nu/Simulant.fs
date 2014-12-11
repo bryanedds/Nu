@@ -46,14 +46,14 @@ module SimulantAddressModule =
     let satoga screenAddress groupName =
         Address.changeType<Screen, Group> screenAddress ->- ltoa [groupName]
 
-    let matosa gameAddress screenName =
-        Address.changeType<Game, Screen> gameAddress ->- ltoa [screenName]
+    let satoea screenAddress groupName entityName =
+        gatoea (satoga screenAddress groupName) entityName
 
     let eatoga entityAddress =
-        Address.take 2 entityAddress |> Address.changeType<Entity, Group>
+        Address.take<Entity, Group> 2 entityAddress
 
     let gatosa groupAddress =
-        Address.take 1 groupAddress |> Address.changeType<Group, Screen>
+        Address.take<Group, Screen> 1 groupAddress
 
-    let satoma screenAddress =
-        Address.take 0 screenAddress |> Address.changeType<Screen, Game>
+    let eatosa entityAddress =
+        Address.take<Entity, Screen> 1 entityAddress
