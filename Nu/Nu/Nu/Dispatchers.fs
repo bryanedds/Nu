@@ -251,7 +251,7 @@ module GuiDispatcherModule =
         static member FieldDefinitions =
             [define? ViewType Absolute
              define? Enabled true
-             define? DisabledColor <| Vector4 (0.667f, 0.667f, 0.667f, 1.0f)
+             define? DisabledColor <| Vector4 0.75f
              define? SwallowMouseLeft true]
 
         override dispatcher.Register (address, gui, world) =

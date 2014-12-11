@@ -142,26 +142,26 @@ module AddressModule =
         { Names = address.Names; NamesRev = address.NamesRev; NameKeys = address.NameKeys; Hash = address.Hash; TypeCarrier = fun (_ : obj) -> () }
 
     /// Concatenate two addresses of the same type.
-    let acat (address : 'a Address) (address2 : 'a Address) =
+    let acat<'a> (address : 'a Address) (address2 : 'a Address) =
         let list = address.Names @ address2.Names
         Address<'a>.make list
 
     /// Concatenate two addresses, taking the type of first address.
-    let acatf (address : 'a Address) (address2 : obj Address) =
+    let acatf<'a> (address : 'a Address) (address2 : obj Address) =
         let list = address.Names @ address2.Names
         Address<'a>.make list
     
     /// Concatenate two addresses, forcing the type of first address.
-    let acatff (address : 'a Address) (address2 : 'b Address) =
+    let acatff<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
         acatf address <| atooa address2
 
     /// Concatenate two addresses, taking the type of the second address.
-    let acats (address : obj Address) (address2 : 'a Address) =
+    let acats<'a> (address : obj Address) (address2 : 'a Address) =
         let list = address.Names @ address2.Names
         Address<'a>.make list
     
     /// Concatenate two addresses, forcing the type of second address.
-    let acatsf (address : 'a Address) (address2 : 'b Address) =
+    let acatsf<'a, 'b> (address : 'a Address) (address2 : 'b Address) =
         acats (atooa address) address2
     
     /// Concatenate two addresses of the same type.
@@ -191,19 +191,20 @@ module Address =
         List.head address.Names
         
     /// Take the tail of an address.
-    let tail address =
-        Address.make <| List.tail address.Names
+    let tail<'t> address =
+        Address<'t>.make <| List.tail address.Names
 
     /// Take a name of an address.
     let at index address =
         List.at index address.Names
 
     /// Map over an address.
-    let map mapper address =
+    let map<'t> mapper (address : 't Address) =
         let list = List.map mapper address.Names
-        Address.make list
+        Address<'t>.make list
 
     /// Filter the names of an address.
+    /// NOTE: This doesn't seem to be a sensible operation for an address?
     let filter predicate address =
         let list = List.filter predicate address.Names
         Address.make list
@@ -213,20 +214,20 @@ module Address =
         List.fold folder state address.Names
 
     /// Take an address composed of the names of an address minus a skipped amount of names.
-    let skip n address =
-        Address.make <| List.skip n address.Names
+    let skip<'t, 'u> n (address : 't Address)=
+        Address<'u>.make <| List.skip n address.Names
 
     /// Take an address composed of the given number of names of an address.
-    let take n address =
-        Address.make <| List.take n address.Names
+    let take<'t, 'u> n (address : 't Address) =
+        Address<'u>.make <| List.take n address.Names
 
     /// Take the last name of an address.
     let last address =
         List.last address.Names
 
     /// Take an address composed of all but the last name of an address.
-    let allButLast address =
-        Address.make <| List.allButLast address.Names
+    let allButLast<'t, 'u> (address : 't Address) =
+        Address<'u>.make <| List.allButLast address.Names
 
     /// Get the length of an address by its names.
     let length address =
