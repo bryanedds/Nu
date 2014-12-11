@@ -253,13 +253,9 @@ module GameplayDispatcherModule =
                 (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
                         let noPrecedingEnemyActionActivity =
-                            List.notExists
-                                (function Action _ -> true | Navigation _ | NoActivity -> false)
-                                precedingEnemyActivities
+                            List.notExists ActivityState.isActing precedingEnemyActivities
                         let noCurrentEnemyActionActivity =
-                            List.notExists
-                                (fun (enemy : Entity) -> match enemy.ActivityState with Action _ -> true | Navigation _ | NoActivity -> false)
-                                enemies
+                            List.notExists (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState) enemies
                         if  noPrecedingEnemyActionActivity &&
                             noCurrentEnemyActionActivity then
                             match enemy.DesiredTurn with
@@ -277,7 +273,7 @@ module GameplayDispatcherModule =
                 (fun (enemy : Entity) enemyActivities ->
                     let noCurrentEnemyActionActivity =
                         List.notExists
-                            (fun (enemy : Entity) -> match enemy.ActivityState with Action _ -> true | Navigation _ | NoActivity -> false)
+                            (fun (enemy : Entity) -> ActivityState.isActing enemy.ActivityState)
                             enemies
                     let enemyActivity =
                         if noCurrentEnemyActionActivity then
@@ -299,21 +295,14 @@ module GameplayDispatcherModule =
 
         static let updateEnemyNaviagationActivities enemies =
             let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-            let anyEnemyNavigationActivity =
-                List.exists
-                    (function Navigation _ -> true | Action _ | NoActivity -> false)
-                    newEnemyNavigationActivities
-            if anyEnemyNavigationActivity
-            then List.map2 tryUpdateEnemyActivity newEnemyNavigationActivities enemies
+            let anyEnemyNavigationActivity = List.exists ActivityState.isNavigating newEnemyNavigationActivities
+            if anyEnemyNavigationActivity then List.map2 tryUpdateEnemyActivity newEnemyNavigationActivities enemies
             else enemies
 
         static let updateEnemyActivities enemies =
             let newEnemyActionActivities = determineEnemyActionActivities enemies 
             let newEnemyNavigationActivities = determineEnemyNavigationActivities enemies
-            let anyEnemyActionActivity =
-                List.exists
-                    (function Action _ -> true | Navigation _ | NoActivity -> false)
-                    newEnemyActionActivities
+            let anyEnemyActionActivity = List.exists ActivityState.isActing newEnemyActionActivities
             let newEnemyActivities = if anyEnemyActionActivity then newEnemyActionActivities else newEnemyNavigationActivities
             List.map2 tryUpdateEnemyActivity newEnemyActivities enemies
 
