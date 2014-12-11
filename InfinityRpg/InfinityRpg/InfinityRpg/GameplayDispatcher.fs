@@ -375,7 +375,7 @@ module GameplayDispatcherModule =
                             do! updateBy
                                     (determinePlayerTurn NoInput gameplayAddress)
                                     (advanceCharacters gameplayAddress) })
-                        do! updateEntity HudSaveGameAddress <| Entity.setEnabled true }
+                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
                     let tickObs = observe TickEventAddress gameplayAddress |> until (DeselectEventAddress ->>- gameplayAddress)
                     snd <| runDesyncAssumingCascade tickObs advancer world
                 else world
