@@ -205,7 +205,8 @@ module CharacterStateModule =
           OptNavigationPath : NavigationNode list option }
 
     type [<StructuralEquality; NoComparison>] ActionDescriptor =
-        { ActionTarget : Vector2i option
+        { ActionTicks : int // an arbitrary number to show a hacky action animation
+          ActionTarget : Vector2i option
           ActionDataName : string }
 
     type [<StructuralEquality; NoComparison>] ActivityState =

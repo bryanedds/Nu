@@ -193,8 +193,8 @@ module GameplayDispatcherModule =
                     (occupationMap, [], rand)
             (enemyTurns, rand)
 
-        static let advanceEnemyNavigations enemies =
-            List.map CharacterActivity.advanceNavigation enemies
+        static let advanceEnemyActivities enemies =
+            List.map CharacterActivity.advanceActivity enemies
 
         static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
             let (field, player, enemies) = getParticipants gameplayAddress world
@@ -203,7 +203,7 @@ module GameplayDispatcherModule =
                 let playerPositionM = Vector2i (Vector2.Divide (player.Position, TileSize))
                 let occupationMapWithAdjacentEnemies = OccupationMap.makeFromFieldTilesAndAdjacentCharacters playerPositionM field.FieldMapNp.FieldTiles enemies
                 match CharacterActivity.determineTurnFromTouch touchPositionW occupationMapWithAdjacentEnemies player with
-                | ActionTurn actionDescriptor -> ActionTurn actionDescriptor
+                | ActionTurn _ as actionTurn -> actionTurn
                 | NavigationTurn navigationDescriptor as navigationTurn ->
                     let firstNavigationNode = List.head <| Option.get ^| navigationDescriptor.OptNavigationPath
                     let occupationMapWithEnemies = OccupationMap.makeFromFieldTilesAndCharacters field.FieldMapNp.FieldTiles enemies
@@ -239,7 +239,7 @@ module GameplayDispatcherModule =
 
         static let determinePlayerTurn playerInput gameplayAddress world =
             match CharacterActivity.determineTurnFromActivityState <| getPlayer gameplayAddress world with
-            | ActionTurn actionDescriptor -> ActionTurn actionDescriptor
+            | ActionTurn _ as actionTurn -> actionTurn
             | NavigationTurn navigationDescriptor -> determinePlayerTurnFromNavigationState navigationDescriptor gameplayAddress world
             | CancelTurn -> CancelTurn
             | NoTurn -> determinePlayerTurnFromInput playerInput gameplayAddress world
@@ -268,9 +268,9 @@ module GameplayDispatcherModule =
                 (fun (enemy : Entity) enemyActivities ->
                     let enemyActivity =
                         match enemy.DesiredTurn with
-                        | ActionTurn _ -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.advanceCharacters."
+                        | ActionTurn _ -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.determineEnemyNavigationActivities."
                         | NavigationTurn navigationDescriptor -> Navigation navigationDescriptor
-                        | CancelTurn -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.advanceCharacters."
+                        | CancelTurn -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.determineEnemyNavigationActivities."
                         | NoTurn -> NoActivity
                     enemyActivity :: enemyActivities)
                 enemies
@@ -289,7 +289,7 @@ module GameplayDispatcherModule =
             // determine player activity state
             let optNewPlayerActivity =
                 match playerTurn with
-                | ActionTurn _ -> None // TODO: implement
+                | ActionTurn actionDescriptor -> Some <| Action actionDescriptor
                 | NavigationTurn navigationDescriptor -> Some <| Navigation navigationDescriptor
                 | CancelTurn -> Some NoActivity
                 | NoTurn -> None
@@ -332,11 +332,11 @@ module GameplayDispatcherModule =
                     (if noEnemyNavigationActivity then enemyNewActionActivities else enemyNewNavigationActivities)
                     enemies
 
-            // advance player navigation
-            let player = CharacterActivity.advanceNavigation player
+            // advance player activity
+            let player = CharacterActivity.advanceActivity player
 
-            // advance enemies navigation
-            let enemies = advanceEnemyNavigations enemies
+            // advance enemies activities
+            let enemies = advanceEnemyActivities enemies
             
             // update local context
             let world = setParticipants gameplayAddress field player enemies world
@@ -348,9 +348,7 @@ module GameplayDispatcherModule =
         static let tryAdvanceTurn playerInput gameplayAddress world =
             if not <| anyTurnsInProgress gameplayAddress world then
                 let playerTurn = determinePlayerTurn playerInput gameplayAddress world
-                match playerTurn with
-                | ActionTurn _ -> world
-                | NavigationTurn _ ->
+                if playerTurn <> NoTurn then
                     let world = advanceCharacters gameplayAddress playerTurn world
                     let advancer = desync {
                         do! next ()
@@ -361,8 +359,7 @@ module GameplayDispatcherModule =
                                     (advanceCharacters gameplayAddress) })}
                     let tickObs = observe TickEventAddress gameplayAddress
                     snd <| runDesyncAssumingCascade tickObs advancer world
-                | CancelTurn -> world
-                | NoTurn -> world
+                else world
             else world
 
         static let handleTouchFeeler event world =

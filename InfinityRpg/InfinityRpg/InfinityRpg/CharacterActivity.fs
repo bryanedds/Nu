@@ -59,7 +59,7 @@ module CharacterActivity =
 
     let determineTurnFromDirection walkDirection occupationMap (character : Entity) =
         match character.ActivityState with
-        | Action _ -> NoTurn
+        | Action _ -> NoTurn // TODO: implement action.
         | Navigation _ -> NoTurn
         | NoActivity -> determineTurnFromDirectionInternal walkDirection occupationMap character
 
@@ -94,9 +94,9 @@ module CharacterActivity =
         | WalkFinished -> advanceNavigationAfterWalkFinished navigationDescriptor character
         | WalkContinuing -> character
 
-    let advanceNavigation (character : Entity) =
+    let advanceActivity (character : Entity) =
         match character.ActivityState with
-        | Action _ -> character
+        | Action _ -> character // TODO: implement action.
         | Navigation navigationDescriptor -> advanceNavigationInternal navigationDescriptor character
         | NoActivity -> character
 
@@ -167,6 +167,6 @@ module CharacterActivity =
 
     let determineTurnFromTouch touchPosition occupationMap (character : Entity) =
         match character.ActivityState with
-        | Action _ -> NoTurn
+        | Action _ -> NoTurn // TODO: implement action.
         | Navigation _ -> NoTurn
         | NoActivity -> determineTurnFromNavigationTouch touchPosition occupationMap character
