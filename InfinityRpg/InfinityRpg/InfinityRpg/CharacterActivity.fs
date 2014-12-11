@@ -14,12 +14,6 @@ open InfinityRpg.Constants
 [<AutoOpen>]
 module CharacterActivityModule =
 
-    type [<StructuralEquality; NoComparison>] TurnDescriptor =
-        | ActionTurn of ActionDescriptor
-        | NavigationTurn of NavigationDescriptor
-        | CancelTurn
-        | NoTurn
-
     type [<StructuralEquality; NoComparison>] PlayerInput =
         | TouchInput of Vector2
         | DetailInput of Direction

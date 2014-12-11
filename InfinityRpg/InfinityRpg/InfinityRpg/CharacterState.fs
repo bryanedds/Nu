@@ -3,6 +3,8 @@ open System
 open AStar
 open OpenTK
 open Nu
+open InfinityRpg
+open InfinityRpg.Constants
 
 [<AutoOpen>]
 module CharacterStateModule =
@@ -203,7 +205,7 @@ module CharacterStateModule =
           OptNavigationPath : NavigationNode list option }
 
     type [<StructuralEquality; NoComparison>] ActionDescriptor =
-        { ActionTarget : Vector2i
+        { ActionTarget : Vector2i option
           ActionDataName : string }
 
     type [<StructuralEquality; NoComparison>] ActivityState =
@@ -213,17 +215,14 @@ module CharacterStateModule =
 
         static member isNavigating activity =
             match activity with
-            | Action _ -> false
+            | Action _ | NoActivity -> false
             | Navigation _ -> true
-            | NoActivity -> false
 
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
 
-        static member isActivityInProgress activityState =
-            match activityState with
-            | Action _ | Navigation _ -> true
-            | NoActivity -> false
-
-        static member isActivityNotInProgress activity =
-            not <| ActivityState.isActivityInProgress activity
+    type [<StructuralEquality; NoComparison>] Turn =
+        | ActionTurn of ActionDescriptor
+        | NavigationTurn of NavigationDescriptor
+        | CancelTurn
+        | NoTurn

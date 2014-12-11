@@ -162,12 +162,9 @@ module GameplayDispatcherModule =
             let world = snd <| World.removeGroup sceneAddress scene world
             (Cascade, world)
 
-        static let anyTurnsInProgress2 player enemies =
-            List.exists
-                (fun (character : Entity) ->
-                    ActivityState.isActivityInProgress character.ActivityState ||
-                    character.ReadyForTurn)
-                (player :: enemies)
+        static let anyTurnsInProgress2 (player : Entity) enemies =
+            player.ActivityState <> NoActivity ||
+            List.exists (fun (enemy : Entity) -> enemy.DesiredTurn <> NoTurn || enemy.ActivityState <> NoActivity) enemies
 
         static let anyTurnsInProgress gameplayAddress world =
             let (_, player, enemies) = getParticipants gameplayAddress world
@@ -190,7 +187,7 @@ module GameplayDispatcherModule =
                 List.foldBack
                     (fun (enemy : Entity) (occupationMap, enemyTurns, rand) ->
                         let (enemyTurn, rand) = determineDesiredEnemyTurn occupationMap enemy rand
-                        let occupationMap = OccupationMap.transferByTurn enemyTurn enemy occupationMap
+                        let occupationMap = OccupationMap.transferByDesiredTurn enemyTurn enemy occupationMap
                         (occupationMap, enemyTurn :: enemyTurns, rand))
                     enemies
                     (occupationMap, [], rand)
@@ -247,41 +244,37 @@ module GameplayDispatcherModule =
             | CancelTurn -> CancelTurn
             | NoTurn -> determinePlayerTurnFromInput playerInput gameplayAddress world
 
-        static let determineEnemyActionActivities enemyDesiredTurns enemies =
-            List.fold2
-                (fun precedingEnemyActivities enemyTurn (enemy : Entity) ->
+        static let determineEnemyActionActivities enemies =
+            List.foldBack
+                (fun (enemy : Entity) precedingEnemyActivities ->
                     let enemyActivity =
                         let noPrecedingEnemyActionActivity =
                             List.notExists
                                 (function Action _ -> true | Navigation _ | NoActivity -> false)
                                 precedingEnemyActivities
-                        if noPrecedingEnemyActionActivity && enemy.ReadyForTurn then
-                            match enemyTurn with
+                        if noPrecedingEnemyActionActivity then
+                            match enemy.DesiredTurn with
                             | ActionTurn actionDescriptor -> Action actionDescriptor
                             | NavigationTurn _ -> NoActivity
                             | CancelTurn -> NoActivity
                             | NoTurn -> NoActivity
                         else NoActivity
                     enemyActivity :: precedingEnemyActivities)
-                []
-                enemyDesiredTurns
                 enemies
+                []
 
-        static let determineEnemyNavigationActivities enemyDesiredTurns enemies =
-            List.fold2
-                (fun enemyActivities enemyTurn (enemy : Entity) ->
+        static let determineEnemyNavigationActivities enemies =
+            List.foldBack
+                (fun (enemy : Entity) enemyActivities ->
                     let enemyActivity =
-                        if enemy.ReadyForTurn then
-                            match enemyTurn with
-                            | ActionTurn _ -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.advanceCharacters."
-                            | NavigationTurn navigationDescriptor -> Navigation navigationDescriptor
-                            | CancelTurn -> NoActivity
-                            | NoTurn -> NoActivity
-                        else NoActivity
+                        match enemy.DesiredTurn with
+                        | ActionTurn _ -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.advanceCharacters."
+                        | NavigationTurn navigationDescriptor -> Navigation navigationDescriptor
+                        | CancelTurn -> failwith "Unexpected match in InfinityRpg.GameplayDispatcher.advanceCharacters."
+                        | NoTurn -> NoActivity
                     enemyActivity :: enemyActivities)
-                []
-                enemyDesiredTurns
                 enemies
+                []
 
         static let advanceCharacters gameplayAddress playerTurn world =
 
@@ -291,40 +284,52 @@ module GameplayDispatcherModule =
 
             // construct local context
             let (field, player, enemies) = getParticipants gameplayAddress world
-            let occupationMap = OccupationMap.makeFromFieldTilesAndCharactersAndTurn field.FieldMapNp.FieldTiles enemies playerTurn
+            let occupationMap = OccupationMap.makeFromFieldTilesAndCharactersAndDesiredTurn field.FieldMapNp.FieldTiles enemies playerTurn
 
             // determine player activity state
-            let playerActivity =
+            let optNewPlayerActivity =
                 match playerTurn with
-                | ActionTurn _ -> NoActivity // TODO: implement
-                | NavigationTurn navigationDescriptor -> Navigation navigationDescriptor
-                | CancelTurn -> NoActivity
-                | NoTurn -> NoActivity
-                
-            // set enemies as ready for their turn when applicable
-            let enemies =
-                if ActivityState.isActivityInProgress playerActivity
-                then List.map (Entity.setReadyForTurn true) enemies
-                else enemies
+                | ActionTurn _ -> None // TODO: implement
+                | NavigationTurn navigationDescriptor -> Some <| Navigation navigationDescriptor
+                | CancelTurn -> Some NoActivity
+                | NoTurn -> None
 
-            // determine desired enemy turns
-            let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap enemies rand
+            // set player activity
+            let player =
+                match optNewPlayerActivity with
+                | Some newPlayerActivity -> Entity.setActivityState newPlayerActivity player
+                | None -> player
+
+            // determine (and set) enemy desired turns when applicable
+            let (enemies, rand) =
+                match optNewPlayerActivity with
+                | Some playerActivity ->
+                    if playerActivity <> NoActivity then
+                        let (enemyDesiredTurns, rand) = determineDesiredEnemyTurns occupationMap enemies rand
+                        let enemies = List.map2 (Entity.setDesiredTurn) enemyDesiredTurns enemies
+                        (enemies, rand)
+                    else (enemies, rand)
+                | None -> (enemies, rand)
 
             // determine enemy action activities
-            let enemyActionActivities = determineEnemyActionActivities enemyDesiredTurns enemies 
+            let enemyNewActionActivities = determineEnemyActionActivities enemies 
 
             // determine enemy navigation activities
-            let enemyNavigationActivities = determineEnemyNavigationActivities enemyDesiredTurns enemies
+            let enemyNewNavigationActivities = determineEnemyNavigationActivities enemies
 
             // set enemy activities
             let enemies =
                 let noEnemyNavigationActivity =
                     List.notExists
                         (function Navigation _ -> true | Action _ | NoActivity -> false)
-                        enemyNavigationActivities
+                        enemyNewNavigationActivities
                 List.map2
-                    (Entity.setActivityState)
-                    (if noEnemyNavigationActivity then enemyActionActivities else enemyNavigationActivities)
+                    (fun newEnemyActivity (enemy : Entity) ->
+                        if newEnemyActivity <> NoActivity then
+                            let enemy = Entity.setActivityState newEnemyActivity enemy
+                            Entity.setDesiredTurn NoTurn enemy
+                        else enemy)
+                    (if noEnemyNavigationActivity then enemyNewActionActivities else enemyNewNavigationActivities)
                     enemies
 
             // advance player navigation
