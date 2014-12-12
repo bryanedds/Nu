@@ -22,11 +22,11 @@ module ScreenModule =
 
     type Screen with
 
-        static member setScreenState state screen = { screen with ScreenStateNp = state }
-        static member setTransitionTicks state screen = { screen with TransitionTicksNp = state }
-        static member setIncoming incoming screen = { screen with Incoming = incoming }
-        static member setOutgoing outgoing screen = { screen with Outgoing = outgoing }
-        static member setPersistent persistent (screen : Screen) = { screen with Persistent = persistent }
+        static member setScreenState value screen = { screen with ScreenStateNp = value }
+        static member setTransitionTicks value screen = { screen with TransitionTicksNp = value }
+        static member setIncoming value screen = { screen with Incoming = value }
+        static member setOutgoing value screen = { screen with Outgoing = value }
+        static member setPersistent value (screen : Screen) = { screen with Persistent = value }
 
         static member register address (screen : Screen) (world : World) : Screen * World =
             screen.DispatcherNp.Register (address, screen, world)

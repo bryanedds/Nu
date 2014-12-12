@@ -143,6 +143,7 @@ module SimulationModule =
              define? Rotation 0.0f
              define? Visible true
              define? ViewType Relative
+             define? PublishChanges false
              define? Persistent true]
 
         abstract member Register : Entity Address * Entity * World -> Entity * World
@@ -241,6 +242,7 @@ module SimulationModule =
           Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
           Visible : bool
           ViewType : ViewType
+          PublishChanges : bool
           Persistent : bool
           CreationTimeNp : DateTime // just needed for ordering writes to reduce diff volumes
           DispatcherNp : EntityDispatcher
