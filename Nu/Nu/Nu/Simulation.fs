@@ -223,8 +223,7 @@ module SimulationModule =
         default facet.GetQuickSize (_, _) = DefaultEntitySize
 
     /// A marker interface for simulation types (Game, Screen, Group, Entity).
-    and Simulant =
-        interface end
+    and Simulant = interface end
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -233,7 +232,7 @@ module SimulationModule =
     /// TODO: also now that there is sufficient type metadata in field descriptors, consider
     /// removing type names from serialized xfields as well as removing the ability to dynamically
     /// add and remove xfields in the editor. ALSO, this would allow xfields to be removed from the
-    /// Xtension tag as well - so that should also happen!
+    /// Xtension tag as well - so that could also happen!
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
