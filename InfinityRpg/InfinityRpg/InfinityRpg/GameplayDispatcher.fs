@@ -207,9 +207,6 @@ module GameplayDispatcherModule =
                     (occupationMap, [], rand)
             (enemyTurns, rand)
 
-        static let advanceEnemyActivities enemies =
-            List.map CharacterActivity.advanceActivity enemies
-
         static let determinePlayerTurnFromTouch touchPosition gameplayAddress world =
             let (field, player, enemies) = getParticipants gameplayAddress world
             if not <| anyTurnsInProgress2 player enemies then
@@ -362,7 +359,7 @@ module GameplayDispatcherModule =
             let player = CharacterActivity.advanceActivity player
 
             // advance enemies activities
-            let enemies = advanceEnemyActivities enemies
+            let enemies = List.map CharacterActivity.advanceActivity enemies
             
             // update local context
             let world = setParticipants gameplayAddress field player enemies world
@@ -385,10 +382,7 @@ module GameplayDispatcherModule =
                             let! event = nextE ()
                             do! match event.Data with
                                 | Left _ -> updateEntity playerAddress CharacterActivity.cancelNavigation
-                                | Right _ ->
-                                    updateBy
-                                        (determinePlayerTurn NoInput gameplayAddress)
-                                        (advanceCharacters gameplayAddress) } 
+                                | Right _ -> updateBy (determinePlayerTurn NoInput gameplayAddress) (advanceCharacters gameplayAddress) } 
                         do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
                     let obs =
                         observe (ClickEventAddress ->>- hudHaltAddress) gameplayAddress |>
