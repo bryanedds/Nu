@@ -232,7 +232,8 @@ module SimulationModule =
     /// with data instead of name-suffixing.
     /// TODO: also now that there is sufficient type metadata in field descriptors, consider
     /// removing type names from serialized xfields as well as removing the ability to dynamically
-    /// add and remove xfields in the editor.
+    /// add and remove xfields in the editor. ALSO, this would allow xfields to be removed from the
+    /// Xtension tag as well - so that should also happen!
     and [<CLIMutable; StructuralEquality; NoComparison>] Entity =
         { Id : Guid
           Name : string
