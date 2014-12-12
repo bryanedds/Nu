@@ -70,6 +70,7 @@ module Constants =
     let HudBackName = "Back"
     let HudBackAddress = gatoea HudAddress HudBackName
     let HudSaveGameName = "SaveGame"
+    let HudHaltName = "Halt"
     let HudFeelerName = "Feeler"
     let HudDetailUpName = "DetailUp"
     let HudDetailRightName = "DetailRight"
