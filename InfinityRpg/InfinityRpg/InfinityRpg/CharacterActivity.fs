@@ -188,3 +188,12 @@ module CharacterActivity =
                     then makeAttackTurn targetPosition
                     else NoTurn
                 else NoTurn
+
+    let cancelNavigation (character : Entity) =
+        let characterActivity = character.ActivityState
+        let characterActivity =
+            match characterActivity with
+            | Action _ as action -> action
+            | NoActivity -> NoActivity
+            | Navigation navDescriptor -> Navigation { navDescriptor with OptNavigationPath = None }
+        Entity.setActivityState characterActivity character

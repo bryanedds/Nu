@@ -30,6 +30,7 @@ module GameplayDispatcherModule =
 
         static let getHudAddress gameplayAddress = satoga gameplayAddress HudName
         static let getHudSaveGameAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudSaveGameName
+        static let getHudHaltAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudHaltName
         static let getHudFeelerAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudFeelerName
         static let getHudDetailUpAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailUpName
         static let getHudDetailRightAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailRightName
@@ -368,16 +369,22 @@ module GameplayDispatcherModule =
                     let world = advanceCharacters gameplayAddress playerTurn world
                     let advancer = desync {
                         let hudSaveGameAddress = getHudSaveGameAddress gameplayAddress
+                        let hudHaltAddress = getHudHaltAddress gameplayAddress
+                        let playerAddress = getPlayerAddress gameplayAddress
                         do! updateEntity hudSaveGameAddress <| Entity.setEnabled false
-                        do! next ()
-                        do! during (anyTurnsInProgress gameplayAddress) (desync {
-                            do! next ()
-                            do! updateBy
-                                    (determinePlayerTurn NoInput gameplayAddress)
-                                    (advanceCharacters gameplayAddress) })
-                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
-                    let tickObs = observe TickEventAddress gameplayAddress |> until (DeselectEventAddress ->>- gameplayAddress)
-                    snd <| runDesyncAssumingCascade tickObs advancer world
+                        do! updateEntity hudHaltAddress <| Entity.setEnabled true
+                        do! during (anyTurnsInProgress gameplayAddress) <| desync {
+                            let! event = nextE ()
+                            do! match event.Data with
+                                | Right _ -> updateEntity playerAddress CharacterActivity.cancelNavigation
+                                | Left _ -> updateBy (determinePlayerTurn NoInput gameplayAddress) (advanceCharacters gameplayAddress) }
+                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled true
+                        do! updateEntity hudHaltAddress <| Entity.setEnabled false }
+                    let obs =
+                        observe TickEventAddress gameplayAddress |>
+                        sum (ClickEventAddress ->>- getHudHaltAddress gameplayAddress) |>
+                        until (DeselectEventAddress ->>- gameplayAddress)
+                    snd <| runDesyncAssumingCascade obs advancer world
                 else world
             else world
 
