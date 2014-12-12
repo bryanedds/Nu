@@ -28,18 +28,26 @@ module GameplayDispatcherModule =
     type GameplayDispatcher () =
         inherit ScreenDispatcher ()
 
+        // hud addresses
         static let getHudAddress gameplayAddress = satoga gameplayAddress HudName
-        static let getHudSaveGameAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudSaveGameName
         static let getHudHaltAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudHaltName
+        static let getHudSaveGameAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudSaveGameName
         static let getHudFeelerAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudFeelerName
         static let getHudDetailUpAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailUpName
         static let getHudDetailRightAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailRightName
         static let getHudDetailDownAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailDownName
         static let getHudDetailLeftAddress gameplayAddress = gatoea (getHudAddress gameplayAddress) HudDetailLeftName
+        
+        // hud entities
+        static let getHudHalt gameplayAddress world = World.getEntity (getHudHaltAddress gameplayAddress) world
+        static let setHudHalt gameplayAddress field world = World.setEntity (getHudHaltAddress gameplayAddress) field world
 
+        // scene addresses
         static let getSceneAddress gameplayAddress = satoga gameplayAddress SceneName
         static let getFieldAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) FieldName 
         static let getPlayerAddress gameplayAddress = gatoea (getSceneAddress gameplayAddress) PlayerName 
+        
+        // scene entities
         static let getField gameplayAddress world = World.getEntity (getFieldAddress gameplayAddress) world
         static let setField gameplayAddress field world = World.setEntity (getFieldAddress gameplayAddress) field world
         static let getPlayer gameplayAddress world = World.getEntity (getPlayerAddress gameplayAddress) world
@@ -100,6 +108,7 @@ module GameplayDispatcherModule =
             // make player
             let player = World.makeEntity typeof<PlayerDispatcher>.Name (Some PlayerName) world
             let player = Entity.setDepth CharacterDepth player
+            let player = Entity.setPublishChanges true player
 
             // make enemies
             let (enemies, _) = makeEnemies world rand
@@ -128,7 +137,7 @@ module GameplayDispatcherModule =
             // make rand from gameplay
             let rand = Rand.make gameplay.ContentRandState
 
-            // make field
+            // make field frome rand (field is not serialized, but generated deterministically with ContentRandState)
             let (field, _) = makeField rand world
 
             // find scene hierarchy and add field to it
@@ -375,11 +384,7 @@ module GameplayDispatcherModule =
                         do! during (anyTurnsInProgress gameplayAddress) <| desync {
                             let! event = nextE ()
                             do! match event.Data with
-                                | Left (Left _) -> updateEntity playerAddress CharacterActivity.cancelNavigation
-                                | Left (Right _) ->
-                                    desync {
-                                        let! (entity : Entity) = getBy <| World.unwrapS event
-                                        do! updateEntity hudHaltAddress <| Entity.setEnabled ^| ActivityState.isNavigating entity.ActivityState }
+                                | Left _ -> updateEntity playerAddress CharacterActivity.cancelNavigation
                                 | Right _ ->
                                     updateBy
                                         (determinePlayerTurn NoInput gameplayAddress)
@@ -387,12 +392,20 @@ module GameplayDispatcherModule =
                         do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
                     let obs =
                         observe (ClickEventAddress ->>- hudHaltAddress) gameplayAddress |>
-                        sum (EntityChangeEventAddress ->>- playerAddress) |>
                         sum TickEventAddress |>
                         until (DeselectEventAddress ->>- gameplayAddress)
                     snd <| runDesyncAssumingCascade obs advancer world
                 else world
             else world
+
+        static let handlePlayerChange event world =
+            let gameplayAddress = World.unwrapA event world
+            let player = getPlayer gameplayAddress world
+            let hudHalt = getHudHalt gameplayAddress world
+            let isPlayerNavigatingPath = ActivityState.isNavigatingPath player.ActivityState
+            let hudHalt = Entity.setEnabled isPlayerNavigatingPath hudHalt
+            let world = setHudHalt gameplayAddress hudHalt world
+            (Cascade, world)
 
         static let handleTouchFeeler event world =
             let gameplayAddress = World.unwrapA event world
@@ -412,6 +425,7 @@ module GameplayDispatcherModule =
              define? ShallLoadGame false]
 
         override dispatcher.Register (gameplayAddress, gameplay, world) =
+            let world = observe (EntityChangeEventAddress ->>- getPlayerAddress gameplayAddress) gameplayAddress |> subscribe handlePlayerChange world |> snd
             let world = observe (TouchEventAddress ->>- getHudFeelerAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor handleTouchFeeler world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailUpAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Upward) world |> snd
             let world = observe (DownEventAddress ->>- getHudDetailRightAddress gameplayAddress) gameplayAddress |> filter isSelected |> monitor (handleDownDetail Rightward) world |> snd
