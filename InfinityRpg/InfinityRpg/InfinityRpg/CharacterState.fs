@@ -214,6 +214,14 @@ module CharacterStateModule =
         | Navigation of NavigationDescriptor
         | NoActivity
 
+        static member isActing activity =
+            match activity with
+            | Action _ -> true
+            | Navigation _ | NoActivity -> false
+
+        static member isNotActing activity =
+            not <| ActivityState.isActing activity
+
         static member isNavigating activity =
             match activity with
             | Action _ | NoActivity -> false
@@ -222,13 +230,10 @@ module CharacterStateModule =
         static member isNotNavigating activity =
             not <| ActivityState.isNavigating activity
 
-        static member isActing activity =
+        static member isNavigatingPath activity =
             match activity with
-            | Action _ -> true
-            | Navigation _ | NoActivity -> false
-
-        static member isNotActing activity =
-            not <| ActivityState.isActing activity
+            | Navigation navigationDescriptor -> Option.isSome navigationDescriptor.OptNavigationPath
+            | Action _ | NoActivity -> false
 
     type [<StructuralEquality; NoComparison>] Turn =
         | ActionTurn of ActionDescriptor

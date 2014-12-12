@@ -23,7 +23,7 @@ module EntityModule =
         static member setRotation value (entity : Entity) = { entity with Rotation = value }
         static member setVisible value (entity : Entity) = { entity with Visible = value }
         static member setViewType value (entity : Entity) = { entity with ViewType = value }
-        static member setPublishChanges value (entity : Entity) = { entity with Persistent = value }
+        static member setPublishChanges value (entity : Entity) = { entity with PublishChanges = value }
         static member setPersistent value (entity : Entity) = { entity with Persistent = value }
 
         static member register address (entity : Entity) world =
