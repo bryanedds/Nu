@@ -17,13 +17,14 @@ module EntityModule =
 
     type Entity with
 
-        static member setPosition position (entity : Entity) = { entity with Position = position }
-        static member setDepth depth (entity : Entity) = { entity with Depth = depth }
-        static member setSize size (entity : Entity) = { entity with Size = size }
-        static member setRotation rotation (entity : Entity) = { entity with Rotation = rotation }
-        static member setVisible visible (entity : Entity) = { entity with Visible = visible }
-        static member setViewType viewType (entity : Entity) = { entity with ViewType = viewType }
-        static member setPersistent persistent (entity : Entity) = { entity with Persistent = persistent }
+        static member setPosition value (entity : Entity) = { entity with Position = value }
+        static member setDepth value (entity : Entity) = { entity with Depth = value }
+        static member setSize value (entity : Entity) = { entity with Size = value }
+        static member setRotation value (entity : Entity) = { entity with Rotation = value }
+        static member setVisible value (entity : Entity) = { entity with Visible = value }
+        static member setViewType value (entity : Entity) = { entity with ViewType = value }
+        static member setPublishChanges value (entity : Entity) = { entity with Persistent = value }
+        static member setPersistent value (entity : Entity) = { entity with Persistent = value }
 
         static member register address (entity : Entity) world =
             let (entity, world) = entity.DispatcherNp.Register (address, entity, world)
@@ -97,6 +98,7 @@ module EntityModule =
               Rotation = 0.0f
               Visible = true
               ViewType = Relative
+              PublishChanges = false
               Persistent = true
               CreationTimeNp = DateTime.UtcNow
               DispatcherNp = dispatcher
@@ -184,7 +186,9 @@ module WorldEntityModule =
         static member setEntity address entity world =
             let oldEntity = Option.get <| World.optEntityFinder address world
             let world = World.entityAdder address world entity
-            World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
+            if entity.PublishChanges
+            then World.publish4 { OldEntity = oldEntity } (EntityChangeEventAddress ->>- address) address world
+            else world
 
         static member getOptEntity address world = World.optEntityFinder address world
         static member containsEntity address world = Option.isSome <| World.getOptEntity address world

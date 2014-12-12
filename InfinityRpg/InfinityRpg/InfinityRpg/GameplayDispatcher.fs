@@ -366,23 +366,29 @@ module GameplayDispatcherModule =
             if not <| anyTurnsInProgress gameplayAddress world then
                 let playerTurn = determinePlayerTurn playerInput gameplayAddress world
                 if playerTurn <> NoTurn then
-                    let world = advanceCharacters gameplayAddress playerTurn world
+                    let hudSaveGameAddress = getHudSaveGameAddress gameplayAddress
+                    let hudHaltAddress = getHudHaltAddress gameplayAddress
+                    let playerAddress = getPlayerAddress gameplayAddress
                     let advancer = desync {
-                        let hudSaveGameAddress = getHudSaveGameAddress gameplayAddress
-                        let hudHaltAddress = getHudHaltAddress gameplayAddress
-                        let playerAddress = getPlayerAddress gameplayAddress
                         do! updateEntity hudSaveGameAddress <| Entity.setEnabled false
-                        do! updateEntity hudHaltAddress <| Entity.setEnabled true
+                        do! update <| advanceCharacters gameplayAddress playerTurn
                         do! during (anyTurnsInProgress gameplayAddress) <| desync {
                             let! event = nextE ()
                             do! match event.Data with
-                                | Right _ -> updateEntity playerAddress CharacterActivity.cancelNavigation
-                                | Left _ -> updateBy (determinePlayerTurn NoInput gameplayAddress) (advanceCharacters gameplayAddress) }
-                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled true
-                        do! updateEntity hudHaltAddress <| Entity.setEnabled false }
+                                | Left (Left _) -> updateEntity playerAddress CharacterActivity.cancelNavigation
+                                | Left (Right _) ->
+                                    desync {
+                                        let! (entity : Entity) = getBy <| World.unwrapS event
+                                        do! updateEntity hudHaltAddress <| Entity.setEnabled ^| ActivityState.isNavigating entity.ActivityState }
+                                | Right _ ->
+                                    updateBy
+                                        (determinePlayerTurn NoInput gameplayAddress)
+                                        (advanceCharacters gameplayAddress) } 
+                        do! updateEntity hudSaveGameAddress <| Entity.setEnabled true }
                     let obs =
-                        observe TickEventAddress gameplayAddress |>
-                        sum (ClickEventAddress ->>- getHudHaltAddress gameplayAddress) |>
+                        observe (ClickEventAddress ->>- hudHaltAddress) gameplayAddress |>
+                        sum (EntityChangeEventAddress ->>- playerAddress) |>
+                        sum TickEventAddress |>
                         until (DeselectEventAddress ->>- gameplayAddress)
                     snd <| runDesyncAssumingCascade obs advancer world
                 else world

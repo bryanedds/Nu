@@ -13,7 +13,7 @@ module GroupModule =
 
     type Group with
 
-        static member setPersistent persistent (group : Group) = { group with Persistent = persistent }
+        static member setPersistent value (group : Group) = { group with Persistent = value }
 
         static member register address (group : Group) (world : World) : Group * World =
             group.DispatcherNp.Register (address, group, world)
